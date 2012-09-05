@@ -1,0 +1,1080 @@
+\input texinfo   @c -*-texinfo-*-
+@c $Id: sdic.texi,v 1.12 2002/07/02 11:19:39 tsuchiya Exp $
+@c %**start of header
+@setfilename sdic.info
+@settitle SDIC Reference Manual
+@setchapternewpage odd
+@c %**end of header
+
+@ifinfo
+This file documents about SDIC, an Emacs-Lisp program to look dictionaries.
+
+Copyright @copyright{} 1998,1999 TSUCHIYA Masatoshi
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+著作権表示とこの許可文がすべての複製に存在する限り、この説明書のまったく
+同一の複製を作り、配布することを許可する。
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+同一複製の条件の下で、それによって得られた結果をこの許可文の表示と同一の
+条件のもとで配布する限り、この説明書の修正版の複製をし、配布することを許
+可する。
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+
+上記の修正版に関する条件の下で、この説明書の翻訳の複製を作り、配布するこ
+とを許可する。
+@end ifinfo
+
+@titlepage
+@title SDIC Reference Manual
+@author by TSUCHIYA Masatoshi
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1998,1999 TSUCHIYA Masatoshi
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+著作権表示とこの許可文がすべての複製に存在する限り、この説明書のまったく
+同一の複製を作り、配布することを許可する。
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+同一複製の条件の下で、それによって得られた結果をこの許可文の表示と同一の
+条件のもとで配布する限り、この説明書の修正版の複製をし、配布することを許
+可する。
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+
+上記の修正版に関する条件の下で、この説明書の翻訳の複製を作り、配布するこ
+とを許可する。
+@end titlepage
+
+
+@node Top, Overview, (dir), (dir)
+@comment  node-name,  next,  previous,  up
+
+@ifinfo
+SDIC は、Emacs 上で英和/和英辞書を閲覧するための簡潔( simple )で、小さく
+( small )て、軽く( speedy )て、小粋( smart )なプログラムです。
+
+この説明書は、SDIC-2.1 に対応します。
+@end ifinfo
+
+@menu
+* Overview::                    概要
+* Search Dictionary::           辞書を検索する
+* Customizations::              SDIC を設定する
+* Dictionaries::                利用実績のある辞書
+* Dictionary Format::           辞書の形式
+* History::                     改変履歴
+* Acknowledgment::              謝辞
+@end menu
+
+
+
+@node Overview, Search Dictionary, Top, Top
+@comment  node-name,  next,  previous,  up
+@chapter 概要
+
+SDIC は、Emacs 上で英和/和英辞書を閲覧するための簡潔( simple )で、小さく
+( small )て、軽く( speedy )て、小粋( smart )なプログラムです。決して、
+Stupid DICtionary の略ではありません。
+
+Internet を通して、容易に入手できるようなテキスト形式の辞書を主な対象と
+しています。使用実績のある辞書については@xref{Dictionaries}.
+
+以下のような特長があります。
+
+@itemize @bullet
+@item
+派生語を自動的に検索します。
+英語には relation や lexicographic のように -tion / -ic などの語尾のつい
+た派生語が頻繁に現れますが、これら単語が辞書中に見つからなかった場合、自
+動的に元々の語を検索します。
+
+@item
+動詞や形容詞の規則変化や名詞の複数形を自動的に取り扱います。
+例えば、studies と入力すると、study を出力します。
+
+@item
+単純なユーザーインターフェース
+@end itemize
+
+一次配布元は、@file{http://namazu.org/~tsuchiya/sdic/} です。利用およ
+び再配布にあたっては、GNU 一般公用許諾書の「バージョン2」或いはそれ以
+降の適当なバージョンの条件に従ってください。正確な条件については、パッ
+ケージに同梱されている @file{COPYING} を参照してください。
+
+また、SDIC について議論するためのメーリングリスト 
+<sdic@@namazu.org> が開設されています。参加を希望される方は、
+
+@example
+sdic-ctl@@namazu.org
+@end example
+
+宛に subscribe ANATANO Namae という本文のメールを送って下さい。
+
+
+
+@node Search Dictionary, Customizations, Overview, Top
+@comment  node-name,  next,  previous,  up
+@chapter 辞書を検索する
+
+適切にインストールされていれば、SDIC を利用するのは極めて簡単です。単純
+に @key{M-x sdic} として下さい。
+
+@menu
+* Input Query::         検索語を入力する
+* Keymap::              閲覧時に使えるキー
+* Functions::           検索語を入力する関数
+@end menu
+
+
+
+@node Input Query, Keymap, Search Dictionary, Search Dictionary
+@comment  node-name,  next,  previous,  up
+@section 検索語を入力する
+@kindex M-x sdic
+
+適切にインストールされていれば、SDIC を利用するのは極めて簡単です。単純
+に @key{M-x sdic} として下さい。すると、
+
+@example
+Input word :
+@end example
+
+と表示され単語の入力が促されますから、ミニバッファに単語を入力すると、辞
+書をキーワード検索を行ないます。この結果として表示される辞書閲覧ウインド
+ウ内で利用可能なキーについては@xref{Keymap},を参照。
+
+なお、設定例通りに設定した場合は、@key{C-c w} とすれば SDIC が起動されま
+す。
+
+キーワード検索以外の検索を行なうためには、次のように特定の形式に従って検
+索語を入力して下さい。
+
+@table @samp
+@item 'word'
+検索語 word をシングルクオートで囲むと、word に完全一致する単語を検索し
+ます。
+
+@item word*
+検索語 word の最後にアスタリスクを付け加えると、word に前方一致する単語
+を検索します。
+
+@item *word
+検索語 word の先頭にアスタリスクを付け加えると、word に後方一致する単語
+を検索します。
+
+@item /word
+検索語 word の先頭にスラッシュを付け加えるとを、word をキーとして全文検
+索を行ないます。
+@end table
+
+
+
+@node Keymap, Functions, Input Query, Search Dictionary
+@comment  node-name,  next,  previous,  up
+@section キーマップ
+
+辞書閲覧ウインドウ内では以下のキーが利用できます。
+
+@table @samp
+@item w
+新たな単語を検索する。
+
+@item '
+新たな単語を完全一致検索する
+
+@item ^
+新たな単語を前方一致検索する
+
+@item $
+新たな単語を後方一致検索する
+
+@item /
+新たな単語を全文検索する
+
+@item SPC
+辞書閲覧ウインドウをスクロールアップする。
+
+@item b
+@itemx BS
+@itemx Delete
+辞書閲覧ウインドウをスクロールダウンする。
+
+@item n
+@itemx TAB
+次の項目に移動する。
+
+@item p
+@itemx M-TAB
+前の項目に移動する。
+
+@item o
+辞書閲覧ウインドウから他のウインドウに移る。
+
+@item q
+辞書閲覧ウインドウを消す。
+
+@item <
+辞書閲覧ウインドウの先頭に移動する。
+
+@item >
+辞書閲覧ウインドウの終端に移動する。
+
+@item ?
+ヘルプを表示する。
+
+@item Q
+SDIC を終了する。
+@end table
+
+@code{sdic-disable-vi-key}, @code{sdic-mode-hook} などの変数を使うことに
+よって、このキーマップを調節することが出来ます。@xref{Variables}.
+
+
+
+@node Functions, , Keymap, Search Dictionary
+@comment  node-name,  next,  previous,  up
+@section 検索語を入力する関数
+
+検索語を入力するために幾つかの関数が定義されています。好みにあった関数を
+利用して下さい。
+
+@defun sdic
+@defunx sdic-describe-word
+カーソル位置の単語をデフォルトの検索語とし、その語をミニバッファ内で編集
+してから検索を行なう関数
+@end defun
+
+@defun sdic-describe-word-at-point
+カーソル位置の単語をデフォルトの検索語としてキーワード検索を行なう関数。
+@code{sdic-describe-word} に比べて余分な入力を必要としないが、その代わり
+に検索語を修正できない。
+@end defun
+
+@defun sdic-describe-region
+リージョンで囲った範囲を検索語としてキーワード検索を行なう関数
+@end defun
+
+
+
+@node Customizations, Dictionaries, Search Dictionary, Top
+@comment  node-name,  next,  previous,  up
+@chapter カスタマイズ
+
+この章では、辞書を追加したり、SDIC の動作を調節する方法について説明しています。
+SDIC から利用することの出来る辞書については、@xref{Dictionaries}.
+
+
+@menu
+* Variables::                   動作を調節する変数
+* Setting Dictionary List::     利用する辞書のリストを設定する
+* Library for SDIC::            SDIC形式の辞書を検索する
+* Libraries for COMPAT::        COMPAT形式の辞書を検索する
+* Samples::                     設定例
+* Trouble Shooting::            トラブルの解決
+@end menu
+
+
+
+@node Variables, Setting Dictionary List, Customizations, Customizations
+@comment  node-name,  next,  previous,  up
+@section Lisp 変数
+
+@defvar sdic-left-margin
+見出し語に対しての説明文の字下げ幅を設定する変数です。デフォルトの値は 2 
+です。
+@end defvar
+
+@defvar sdic-fill-column
+説明文を整形する幅。デフォルトの値として @code{default-fill-column} が設
+定されています。
+@end defvar
+
+@defvar sdic-window-height
+検索結果表示ウインドウの高さ。デフォルトの値は 10 です。
+@end defvar
+
+@defvar sdic-warning-hidden-entry
+この変数に nil 以外の値が設定されている場合、検索結果表示ウインドウに表
+示しきれなかった情報があれば警告します。
+@end defvar
+
+@defvar sdic-disable-select-window
+この変数に nil 以外の値が設定されている場合、検索結果表示ウインドウにカー
+ソルを移動しないようにします。
+@end defvar
+
+@defvar sdic-face-style
+@defvarx sdic-face-color
+見出し語を装飾する方法を指定します。デフォルトの値は、Bold Font を使って
+見出し語を表示するようになっています。
+@end defvar
+
+@defvar sdic-disable-vi-key
+この変数に nil 以外の値が設定されている場合、辞書閲覧時に vi ライクのキー
+を使わないようにします。
+@end defvar
+
+@defvar sdic-mode-hook
+辞書閲覧時の動作を調節するための hook 変数
+@end defvar
+
+@defvar sdic-eiwa-dictionary-list
+SDIC から利用可能な英和辞書のリストを設定しておく変数。普通にインストー
+ルした場合は、同時にインストールした英和辞書が設定されています。
+@end defvar
+
+@defvar sdic-waei-dictionary-list
+SDIC から利用可能な和英辞書のリストを設定しておく変数。普通にインストー
+ルした場合は、同時にインストールした和英辞書が設定されています。
+@end defvar
+
+@defvar sdic-default-coding-system
+オプションによって漢字コードを明示的に指定しなかった場合に、辞書の漢字コー
+ドとして使われる値。デフォルトの値は日本語 EUC です。
+@end defvar
+
+
+
+@node Setting Dictionary List, Library for SDIC, Variables, Customizations
+@comment  node-name,  next,  previous,  up
+@section 検索する辞書を設定する
+
+SDIC を使って辞書を検索するためには、辞書ファイルと検索方法の指定を2つの
+変数 @code{sdic-eiwa-dictionary-list}, @code{sdic-waei-dictionary-list} 
+に設定する必要があります。
+
+2つのリストは、それぞれの辞書を定義する3つの要素からなる辞書定義情報のリ
+ストになっています。
+
+@enumerate
+@item
+検索ライブラリのシンボル
+
+@item
+ライブラリの必須引数
+
+@item
+ライブラリの省略可能な引数
+@end enumerate
+
+例えば、SDIC形式の英和辞書 @file{/usr/dict/gene.sdic} を 
+@file{sdicf-client.el} を使って検索出来るようにするには、次のようにして
+下さい。
+
+@lisp
+(setq sdic-eiwa-dictionary-list
+      '((sdicf-client "/usr/dict/gene.sdic")))
+@end lisp
+
+EDICT辞書 @file{/usr/dict/edict.sdic} を和英辞書として 
+@file{sdicf-client.el} を使って検索するには、次のように指定します。
+
+@lisp
+(setq sdic-waei-dictionary-list
+      '((sdicf-client "/usr/dict/edict.sdic")))
+@end lisp
+
+EDICT辞書から生成された和英辞書には、見出し語と見出し語の振り仮名が検索
+キーとして含まれています。次のように @file{sdicf-client.el} に対してオプ
+ションを与えると、漢字を含んだ見出し語とその振り仮名が同時に表示されるよ
+うになります。これは、ライブラリの省略可能な引数を設定する例となっていま
+す。
+
+@lisp
+(setq sdic-waei-dictionary-list
+      '((sdicf-client "/usr/dict/edict.sdic"
+                      (add-keys-to-headword t))))
+@end lisp
+
+次のようにすると、複数の省略可能なオプションを設定することが出来ます。
+
+@lisp
+(setq sdic-waei-dictionary-list
+      '((sdic-gene "/usr/dict/jgene.dic.bz2"
+		   (extract "bzip2")
+		   (extract-option "-cd"))))
+@end lisp
+
+どのようなオプションが使えるかについては、それぞれの検索ライブラリについ
+ての説明を参照してください。
+
+
+
+@node Library for SDIC, Libraries for COMPAT, Setting Dictionary List, Customizations
+@comment  node-name,  next,  previous,  up
+@section SDIC形式の辞書を検索する
+
+@file{sdicf-client.el} はSDIC形式の辞書を検索するためのライブラリです。
+SDIC形式の辞書の詳細については、@xref{SDIC Format}.
+
+@file{sdicf-client.el} に対して指定できるオプションは次の通りです。
+
+@table @asis
+@item coding-system
+辞書の漢字コードを指定します。省略した場合は、
+@i{sdic-default-coding-system} の値を使います。
+
+@item title
+辞書のタイトルを指定します。省略した場合は、辞書のファイル名の非ディレク
+トリ部分をタイトルとします。
+
+@item add-keys-to-headword
+全ての検索キーを含めて見出し語を構成する場合に nil 以外に設定して下さい。
+和英辞書を検索する場合に、振り仮名も含めて出力する場合に利用します。
+
+@item strategy
+@file{sdicf-client.el} は、辞書を検索する方法を使用環境に応じて使い分け
+ることが出来ます。省略した場合は、@file{sdicf.el} の自動判定によって選ば
+れた方法を使用します。
+@end table
+
+
+@i{strategy} オプションに対して指定できる検索方法は以下の通りです。
+
+@itemize @bullet
+@item
+direct
+
+辞書データを全てメモリに読み込んでから検索を行います。外部コマンドを必要
+としませんが、大量のメモリが必要になります。
+
+@item
+grep
+
+fgrep を利用して検索を行います。
+
+@item
+array
+
+array を利用して検索を行います。辞書の索引ファイルを事前に生成しておいて
+から検索を行いますので、高速に検索が可能です。しかし、索引ファイルは辞書
+の3倍程度の大きさになります。索引ファイルの準備などの詳細については、
+@xref{SUFARY}.
+@end itemize
+
+比較的小規模の辞書を検索する場合は grep が最適でしょう。しかし、5MByte 
+より大きい辞書の場合は array の利用を考慮すべきだと思います。
+
+
+
+@node SUFARY, , , Library for SDIC
+@comment  node-name,  next,  previous,  up
+@subsection SUFARY
+
+SDIC形式の辞書を array を利用して検索するためには、以下の手順で準備が必
+要です。
+
+@enumerate
+@item
+array は、SUFARY に附属している対話型全文検索プログラムです。SUFARY につ
+いては、@file{http://cactus.aist-nara.ac.jp/lab/nlt/ss/} を参照して下さ
+い。検索対象のテキストの索引を事前に作成しておくタイプの検索プログラムな
+ので、grep などよりも高速な検索が可能です。
+
+@item
+SUFARY の附属文書に従って、array と mkary をインストールしておいて下さい。
+
+@item
+辞書をSDIC形式に変換し、mkary を使って辞書の索引を生成しておきます。
+@end enumerate
+
+
+
+@node Libraries for COMPAT, Samples, Library for SDIC, Customizations
+@comment  node-name,  next,  previous,  up
+@section COMPAT形式の辞書を検索する
+
+@file{sdic-compat.el} と @file{sdic-gene.el} はCOMPAT形式の辞書を検索す
+るためのライブラリです。@file{sdic-compat.el} は外部コマンドを呼び出して
+いるのに対して、@file{sdic-gene.el} は Emacs の機能のみを利用しています。
+ただし、辞書をバッファに読み込んでから検索を行なうので、大量のメモリが必
+要になります。@xref{COMPAT Format}. 
+
+Default の設定では、必要な外部コマンドが見つかった場合は 
+@file{sdic-compat.el} を、見つからなかった場合には @file{sdic-gene.el} 
+を使うようになっています。
+
+@menu
+* sdic-gene.el::                Emacs のバッファ内で検索する
+* sdic-compat.el::              look / grep を使って検索する
+@end menu
+
+
+@node sdic-gene.el, sdic-compat.el, Libraries for COMPAT, Libraries for COMPAT
+@comment  node-name,  next,  previous,  up
+@subsection sdic-gene.el
+
+COMPAT形式の辞書を外部プログラムに頼らずに検索するライブラリです。
+COMPAT形式の詳細については@xref{COMPAT Format}.
+
+@file{sdic-gene.el} に対して指定できるオプションは次の通りです。
+
+@table @asis
+@item coding-system
+辞書の漢字コードを指定します。省略した場合は、
+@i{sdic-default-coding-system} の値を使います。
+
+@item title
+辞書のタイトルを指定します。省略した場合は、辞書のファイル名の非ディレク
+トリ部分をタイトルとします。
+
+@item extract
+圧縮辞書を展開するための外部コマンドを指定します。省略した場合は、辞書が
+圧縮されていないと見なします。
+
+@item extract-option
+@i{extract} オプションによって指定された外部コマンドに対して、辞書を展開
+して標準出力に出力させるためのコマンドライン引数を指定します。省略した場
+合は @i{sdic-gene-extract-option} の値を使います。
+@end table
+
+
+@node sdic-compat.el, , sdic-gene.el, Libraries for COMPAT
+@comment  node-name,  next,  previous,  up
+@subsection sdic-compat.el
+
+COMPAT 形式の辞書を外部プログラム( look / grep )を利用して検索するライブ
+ラリです。COMPAT 形式の詳細については@xref{COMPAT Format}.
+
+@file{sdic-compat.el} に対して指定できるオプションは次の通りです。
+
+@table @asis
+@item coding-system
+辞書の漢字コードを指定します。省略した場合は、
+@i{sdic-default-coding-system} の値を使います。
+
+@item title
+辞書のタイトルを指定します。省略した場合は、辞書のファイル名の非ディレク
+トリ部分をタイトルとします。
+
+@item look
+前方一致検索 / 完全一致検索の時に利用する外部コマンドの名前を指定します。
+省略した場合は @i{sdic-compat-look-command} の値を使います。
+
+@item look-case-option
+@i{look} オプションによって指定された外部コマンドに対して、英大文字 / 小
+文字を区別しないで検索( case-ignore search )するように指示するためのコマ
+ンドライン引数を指定します。省略した場合は 
+@i{sdic-compat-look-case-option} の値を使います。
+
+@item grep
+後方一致検索 / 全文検索の時に利用する外部コマンドの名前を指定します。省
+略した場合は @i{sdic-compat-grep-command} の値を使います。
+
+@item grep-case-option
+@i{grep} オプションによって指定された外部コマンドに対して、英大文字 / 小
+文字を区別しないで検索( case-ignore search )するように指示するためのコマ
+ンドライン引数を指定します。省略した場合は 
+@i{sdic-compat-grep-case-option} の値を使います。
+
+@item egrep
+正規表現検索の時に利用する外部コマンドの名前を指定します。省略した場合は 
+@i{sdic-compat-egrep-command} の値を使います。
+
+@item egrep-case-option
+@i{egrep} オプションによって指定された外部コマンドに対して、英大文字 / 
+小文字を区別しないで検索( case-ignore search )するように指示するためのコ
+マンドライン引数を指定します。省略した場合は 
+@i{sdic-compat-egrep-case-option} の値を使います。
+@end table
+
+
+
+@node Samples, Trouble Shooting, Libraries for COMPAT, Customizations
+@comment  node-name,  next,  previous,  up
+@section 設定例
+
+インストール時に同時に設定された辞書を検索する場合は、次のような設定を 
+@file{~/.emacs} に追加すれば十分です。
+
+@lisp
+(autoload 'sdic-describe-word "sdic" "単語の意味を調べる" t nil)
+(global-set-key "\C-cw" 'sdic-describe-word)
+(autoload 'sdic-describe-word-at-point "sdic" "カーソルの位置の単語の意味を調べる" t nil)
+(global-set-key "\C-cW" 'sdic-describe-word-at-point)
+@end lisp
+
+
+
+@node Trouble Shooting, , Samples, Customizations
+@comment  node-name,  next,  previous,  up
+@section トラブルの解決
+
+何か問題が発生した場合は、SDIC Users メーリングリストで相談してみて下さい。
+@xref{Overview}.
+
+@menu
+* Broken look::                 look の不具合について
+* Broken grep::                 grep の不具合について
+* Using array in Windows::
+@end menu
+
+
+
+@node Broken look, Broken grep, Trouble Shooting, Trouble Shooting
+@comment  node-name,  next,  previous,  up
+@subsection look の不具合について
+
+@file{sdic-compat.el} は、辞書を検索するために外部コマンドの look を利用
+しています。しかし、一部の look は、バッファのサイズの上限などにより、デー
+タが欠けることがあることが知られています。お使いの look にこの不具合が含
+まれているかどうか、調べるために次の2つのコマンドの実行結果を比較してみ
+て下さい。
+
+@example
+look -f 'a lot of' gene.dic
+grep -i '^a lot of' gene.dic
+@end example
+
+2つのコマンドの実行結果が同じであれば、おそらくその look は大丈夫でしょ
+う。look の実行結果の文字列の方が短ければ、look を再コンパイルする必要が
+あります。@file{ftp://nadia.ics.es.osaka-u.ac.jp/d1/net/misc/v15/look/} 
+などからソースを入手して、再コンパイルして下さい。
+
+または、@file{sdic-compat.el} を使わずに @file{sdic-gene.el} を利用する
+ように設定することも出来ます。以下の設定を @file{~/.emacs} に付け加えて
+下さい。
+
+@lisp
+(setq sdic-compat-look-command t)
+@end lisp
+
+
+@node Broken grep, Using array in Windows, Broken look, Trouble Shooting
+@comment  node-name,  next,  previous,  up
+@subsection grep の不具合について
+
+@file{sdic-compat.el} および @file{sdic-grep.el} は、辞書を検索するため
+に外部コマンドの grep を利用しています。しかし、GNU grep の古いバージョ
+ンは、検索対象のファイルの最後の行を正常に検索できないというバグがあるこ
+とが知られています。お使いの grep に、このバグが含まれているかどうか、調
+べるために次の手順を実行してください。
+
+@enumerate
+@item
+以下のコマンドにより辞書の最後の行を取り出します。
+
+@example
+tail /usr/dict/gene.dic
+@end example
+
+@item
+最後の行の単語を grep で検索します。
+
+@example
+grep zymase /usr/dict/gene.dic
+@end example
+@end enumerate
+
+辞書の最後の行も含めて出力されたならば、その grep はおそらく正常でしょう。
+
+バグが含まれている grep を使っている場合は、
+@file{ftp://ftp.media.kyoto-u.ac.jp/pub/GNU/grep/} などからソースを入手
+して最新の GNU grep をインストールするか、OS に付属している grep などの
+代替のプログラムを使用するように検索ライブラリに対して指定してください。
+
+@lisp
+; /usr/bin/grep が OS に付属している grep
+(setq sdic-compat-grep-command "/usr/bin/grep")
+(setq sdic-grep-command "/usr/bin/grep")
+@end lisp
+
+
+@node Using array in Windows, , Broken grep, Trouble Shooting
+@comment  node-name,  next,  previous,  up
+@subsection array を Windows 環境で使うための設定
+
+Windows 環境はサブプロセスの扱いに問題があるために、@file{sdicf-client.el}
+から array を利用して検索を行なうためには、幾つか注意することがあります。
+
+以下の手順は白井さんに教えて頂きました。
+
+@enumerate
+@item
+array と mkary は Cygnus-win32 上の環境で make 一発で動きます。array.exe 
+と mkary.exe を @code{path} の通ったところにおきましょう。
+
+@item
+Mule for Win32 では@emph{おそらく}そのままで動きます。Meadow + Win-NT で
+も、きっと大丈夫でしょう。
+
+@item
+Meadow + Win-95/98 では、array と一部の常駐ソフトの相性が悪いようです。
+ウイルスチェッカなどが特に相性が悪いので、常駐ソフトをはずして動作させて
+みて下さい。動作がおかしいときは、辞書の検索時は動くのですが、Meadow を
+終了する時に@emph{だめ}になるようです。
+
+@item
+それでもだめなときは、以下の条件を守れば動く@emph{かも}しれません。
+@itemize @bullet
+@item
+@file{sdicf-client.el} を使って検索する辞書をひとつだけにする。
+
+@item
+以下の様なコードを @file{~/.emacs} に書く。
+
+@lisp
+(add-hook 'sdic-mode-hook
+          '(lambda ()
+             (and (featurep 'meadow)
+                  (add-hook 'kill-emacs-hook 'sdic-kill-with-meadow))))
+
+(defun sdic-kill-with-meadow ()
+   "Meadow 終了時に sdic を安全に終了する関数"
+  (interactive)
+  (sdic-exit)
+  (and (boundp 'server-process)
+       (processp server-process)
+       (server-start t)))
+@end lisp
+@end itemize
+@end enumerate
+
+
+
+@node Dictionaries, Dictionary Format, Customizations, Top
+@comment  node-name,  next,  previous,  up
+@chapter 辞書について
+
+SDIC は、COMPAT形式とSDIC形式の2つの辞書形式をサポートしています。それぞ
+れの形式の詳細については @xref{Dictionary Format},を参照してください。現
+在、SDIC で使用実績のある辞書は次の通りです。
+
+
+@table @asis
+@item GENE95辞書
+@file{http://www.forest.impress.co.jp/dict.html#gene95}
+
+Kurumi さんが Nifty-Serve 英会話フォーラムで公開されている収録語数約
+57350語の英和辞書です。
+
+パッケージに同梱されている @file{gene.perl} を使用して、COMPAT形式または
+SDIC形式に変換してください。また、高林さんによる @file{jgene.perl} を使っ
+て、和英辞典を作ることもできます。
+
+@item 英辞朗
+@file{http://member.nifty.ne.jp/eijiro/index.html}
+
+英辞郎は、Nifty-Serve 英会話フォーラムまたは書籍から入手可能な辞書です。
+詳しくはそれらに附属のドキュメントを参照して下さい。単純なテキスト形式で
+配布されている英和辞書としては、おそらく最大のものだと思われますが、残念
+ながらインターネット上では配布されていません。
+
+パッケージに同梱されている @file{eijirou.perl} を使用して、COMPAT形式ま
+たはSDIC形式に変換してください。その方法については、付属の @file{INSTALL} 
+も参照してください。英辞朗は極めて巨大なので、検索に時間がかかります。
+UNIX 環境で使用される場合は、SDIC形式に変換して、SUFARY を利用して検索す
+る方が良いでしょう。@xref{Library for SDIC}.
+
+@item EDICT辞書
+@file{ftp://ftp.u-aizu.ac.jp/pub/SciEng/nihongo/ftp.cc.monash.edu.au/00INDEX.html}
+
+オーストラリア・Monash大学のJim Breen教授が収集された和英辞典をEDICT形式
+という独自フォーマットの辞書として配布されています。これらは、パッケージ
+に同梱されている @file{edict.perl} を使ってSDIC形式に変換することにより
+使用できます。
+@end table
+
+
+
+@node Dictionary Format, History, Dictionaries, Top
+@comment  node-name,  next,  previous,  up
+@chapter 辞書のフォーマット
+
+SDIC は、2つの辞書の形式をサポートしている。
+
+@menu
+* COMPAT Format::       COMPAT形式
+* SDIC Format::         SDIC形式
+@end menu
+
+
+
+@node COMPAT Format, SDIC Format, Dictionary Format, Dictionary Format
+@comment  node-name,  next,  previous,  up
+@section COMPAT 形式
+
+COMPAT形式は、look を使った前方一致検索が高速に行える構造になっている。
+また、構造が単純なので、辞書のファイルサイズが小さく抑えられる。
+
+
+@subsection BNF
+
+@example
+file     := line*
+line     := headword '\t' content '\n'
+headword := string
+content  := string
+string   := char+
+char     := [^\t\n]
+@end example
+
+
+
+@node SDIC Format, History, COMPAT Format, Dictionary Format
+@comment  node-name,  next,  previous,  up
+@section SDIC 形式
+
+SDIC形式は、grep などの行指向の検索プログラムを使って前方一致検索及び後
+方一致検索、完全一致検索、全文検索が容易に行なえる構造になっている。
+
+
+@subsection BNF
+
+@example
+file     := line*
+line     := comment | entry
+comment  := '#' [^\n]* '\n'
+entry    := headword keyword* content '\n'
+headword := '<H>' word '</H>' | keyword
+keyword  := '<K>' word '</K>'
+word     := char+
+char     := [^<>&\n] | '&lt;' | '&gt;' | '&amp;'
+content  := string
+string   := char_lf+
+char_lf  := char | '&lf;'
+@end example
+
+
+@subsection 注釈
+
+@enumerate
+@item
+@i{entry} は辞書の1つの要素に対応する構文要素である。
+
+@item
+@i{headword} は見出し語を保持する構文要素である。通常、検索結果を表示す
+るときの表題として用いられる。
+
+@item
+@i{content} は説明文を保持する構文要素である。
+
+@item
+@i{keyword} は検索用の文字列を保持する構文要素である。従って、見出し語 
+@i{headword} に以下の正規化を施した文字列を代入する。
+
+@itemize @bullet
+@item アルファベットの大文字を全て小文字に変換する
+@item 片仮名を平仮名にする
+@item 複数の空白文字を1つのスペースに置換する
+@end itemize
+
+見出し語に漢字が含まれている場合は、その読み仮名を @i{keyword} として追
+加することが望ましい。
+
+@item
+@i{headword} を表現するためのタグとして @samp{<H>} を用いる必要が生じる
+のは、多くの場合、見出し語に余分な要素が含まれている場合に限られる。例え
+ば、次のようなエントリが考えられる。
+
+@example
+<H>go {動-1}</H><K>go</K>行く
+@end example
+
+この例では、見出し語にその語の品詞情報が含まれている。このような品詞情報
+は、辞書の検索キーとして適当ではないので、検索時には対象としないようにし
+ておくのが適当だろう。
+
+また、@samp{<H>} と @samp{<K>} を適当に選択することによって、辞書の検索
+速度を低下させないようにすることができる。
+
+@example
+<K>United Nations</K><K>united nations</K>国際連合
+@end example
+
+というエントリがあったとする。この時、前方一致検索を行なうために 
+@samp{<K>united} をキーとして検索することを考える。行頭の文字列 
+@samp{<K>United 〜} と検索キーは3文字目まで比較されるだろう。もしもあな
+たが、この辞書を検索する場合、つねにアルファベットの大文字と小文字の違い
+を無視して検索したいと考えているならば、この比較は無駄な比較である。
+@samp{<H>} を用いていれば、このような無駄な比較を避けることができる。し
+かし、この選択は、その辞書を検索するアプリケーションと検索を行なうプログ
+ラムの性質に依存する問題である。
+
+@item
+タグは大文字小文字を区別する。アルファベットの大文字と小文字を区別しない
+検索( case-ignore search )が実装されていない検索プログラムを利用する可能
+性があるため。
+
+@item
+元々の辞書中に現れるメタキャラクタ <>& はそれぞれ @samp{&lt;}
+@samp{&gt;} @samp{&amp;} に置換する。従って、@i{string} には <> は現れな
+い。辞書の説明文に含まれている改行コードは @samp{&lf;} に置換する。
+
+@item
+@i{comment} は辞書についての説明などの各種のコメントを保持する構文要素で
+ある。
+
+@item
+SDIC形式は、SGMLとしての簡潔さや一貫性よりも、アプリケーション側からのア
+クセスの容易さを重要視する。従って、行頭の1文字のみによって @i{line} に
+代入され得る複数の構文要素を識別できるように拡張される。
+
+@item
+SDIC形式の辞書ファイルの標準拡張子を @file{.sdic} とする。
+@end enumerate
+
+
+@subsection 検索例
+
+@example
+前方一致検索        grep <K>study dictionary
+後方一致検索        grep study</K> dictionary
+完全一致検索        grep <K>study</K> dictionary
+@end example
+
+
+
+@node History, Acknowledgment, Dictionary Format, Top
+@comment  node-name,  next,  previous,  up
+@chapter 改変履歴
+
+SDIC は、1998年2月に最初のバージョンを xdic という名前で公開しました。そ
+の改変履歴は次の通りです。
+
+@itemize @bullet
+@item バージョン 1.0 (1998年2月3日)
+
+@item バージョン 1.1 (1998年2月4日)
+@itemize
+@item
+Emacs20 に対応。
+@item
+@file{Makefile} の修正
+@end itemize
+
+@item バージョン 1.2 (1998年2月6日)
+@itemize
+@item
+派生語に対応
+@end itemize
+
+@item バージョン 1.3 (1998年4月14日)
+@itemize
+@item
+バグフィックス
+@item
+Debian 用のパッケージを、川村さんがメンテナンスして下さるようになりました。
+@end itemize
+
+@item バージョン 1.4 (1998年7月14日)
+@itemize
+@item
+Emacs-19.28 ベースの Mule では、@i{previous-overlay-change} 関数が未定義
+のために、@i{xdic:previous-item} が動かなかった問題に対処。
+@item
+xdic-mode のキーバインドに BackSpace キーと Delete キーによるスクロール
+ダウンを追加。
+@item
+stemming 関数の改善。
+@end itemize
+
+@item バージョン 1.5 (1998年9月9日)
+@itemize
+@item
+Emacs のバージョンによって @i{fill-region} 関数の動作が異なっているため
+に @i{xdic:format-buffer} の出力に不具合があり、定義文の文末が欠けてしま
+うことがあったのを修正。
+@item
+「英辞郎」を利用するための Tips を README に追加。
+@end itemize
+
+@item バージョン 1.5p1 (1998年9月10日)
+@itemize
+@item
+複数の同一の見出し語が含まれている辞書を検索した場合、最後の見出し語のみ
+しか表示されていなかった不具合を修正。
+@end itemize
+
+@item バージョン 1.6 (1998年9月22日)
+@itemize @bullet
+@item
+Mule for Win32 で文字化けが起こっていた問題を修正。
+@item
+見出し語の修飾(デフォルトは bold)を変更できるようにした。
+@item
+その他、細かい修正
+@end itemize
+@end itemize
+
+その後、@samp{fj.sources} において、X 上で電子ブックを検索するための 
+xdic という同じ名前のプログラムが公開されたため、混同を避けるためにバー
+ジョン 2.0 を公開すると同時に名称を変更しました。これまでの xdic-1.x の
+系列からは内部構造についても設定についても大幅な変更が行なわれています。
+
+@itemize @bullet
+@item バージョン 2.0 (1999年2月3日)
+@itemize @bullet
+@item
+和英辞書に対応しました。
+@item
+複数の辞書を同時に検索することが出来るようになりました。
+@item
+英和辞書をキーワード検索する場合、前置詞を意識して検索を行なうようにしま
+した。
+@item
+キーワード検索以外に前方一致検索、後方一致検索、完全一致検索、全文検索が
+できるように拡張しました。
+@item
+SDIC形式の辞書に対する対応を追加しました。
+@item
+外部コマンドを頼らずに検索するための検索ライブラリを追加しました。
+@item
+XEmacs に対応しました。
+@end itemize
+@end itemize
+
+
+
+@node Acknowledgment, , History, Top
+@comment  node-name,  next,  previous,  up
+@chapter 謝辞
+
+SDIC の製作を手伝ってくださった全ての人々に感謝します。特に、
+
+@itemize @bullet
+@item
+小関さんは、最初期から @file{xdic.el} を使い、励ましてくれました。
+
+@item
+川村さんは、Debian 用パッケージをメンテナンスして下さっています。
+
+@item
+高林さんは、@file{jgene.perl} を作成し、様々な追加機能を提案して下さいま
+した。実現が遅くてごめんなさい。
+
+@item 
+白井さんは、大量のバグを見つけ、修正を手伝って下さいました。
+
+@item
+仲村さんは、Mule-2.3@@19.28 の環境でのバグ修正を手伝って下さいました。
+
+@item
+上田さんは、XEmacs 用のパッチを作製して下さいました。
+@end itemize
+
+そしてもちろん、動作テストに協力してくださった SDIC Users メーリングリス
+トのメンバーのみなさんと、ホームページなどコンピュータ資源を提供してくだ
+さった言語メディア研究室のみなさんに感謝します。
+
+ありがとうございました。これからも宜しくお願いします。

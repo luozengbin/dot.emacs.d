@@ -1,0 +1,1909 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Modifying Lists, Next: Sets And Lists, Prev: List Elements, Up: Lists
+
+既存のリスト構造の修正
+======================
+
+基本関数`setcar'や`setcdr'を使って、コンスセルのCARやCDRの内容を変更で
+きます。これらは、既存のリスト構造を変更するので、『破壊的』な操作と呼
+びます。
+
+     Common Lispに関した注意：` '
+     Common Lispでは、
+     リスト構造を変更するには`rplaca'や`rplacd'を使う。
+     これらは`setcar'や`setcdr'と同様に構造を変更する。
+     しかし、Common Lispの関数はコンスセルを返すが、
+     `setcar'や`setcdr'は新たなCARやCDRを返す。
+
+* Menu:
+
+* Setcar::          Replacing an element in a list.
+* Setcdr::          Replacing part of the list backbone.
+                      This can be used to remove or add elements.
+* Rearrangement::   Reordering the elements in a list; combining lists.
+
+
+
+File: elisp-ja, Node: Setcar, Next: Setcdr, Prev: Modifying Lists, Up: Modifying Lists
+
+`setcar'によるリスト要素の変更
+------------------------------
+
+コンスセルのCARを変更するには、`setcar'を使います。
+リストに対して使用すると、
+`setcar'はリストの1つの要素を別の要素に置き換えます。
+
+ -- Function: setcar CONS OBJECT
+     この関数は、CONSの新たなCARとしてOBJECTを格納し、以前のCARを置き換
+     える。いいかえれば、CONSのCARスロットがOBJECTを指すように変更する。
+     この関数は値OBJECTを返す。たとえば、つぎのようになる。
+
+          (setq x '(1 2))
+               => (1 2)
+          (setcar x 4)
+               => 4
+          x
+               => (4 2)
+
+コンスセルが複数のリストの共有構造の一部であるときには、コンスセルに新
+たなCARを格納すると、そのような各リストの1つの要素を変更することになり
+ます。
+
+     ;; 共有部分がある2つのリストを作る
+     (setq x1 '(a b c))
+          => (a b c)
+     (setq x2 (cons 'z (cdr x1)))
+          => (z b c)
+
+     ;; 共有部分のCARを置き換える
+     (setcar (cdr x1) 'foo)
+          => foo
+     x1                           ; 両方のリストが変更されている
+          => (a foo c)
+     x2
+          => (z foo c)
+
+     ;; 非共有部分のCARを置き換える
+     (setcar x1 'baz)
+          => baz
+     x1                           ; 1つのリストだけが変更されている
+          => (baz foo c)
+     x2
+          => (z foo c)
+
+変数`x1'と`x2'に入っている共有部分を持つ2つのリストを図示すると
+つぎのようになります。
+`b'を置き換えるとなぜ両者が変更されるのかわかるでしょう。
+
+             -- ---        -- ---      -- ---
+     x1---> |   |   |----> |   |   |--> |   |   |--> nil
+             -- ---        -- ---      -- ---
+              |        -->   |            |
+              |       |      |            |
+               --> a  |       --> b        --> c
+                      |
+            -- ---   |
+     x2--> |   |   |--
+            -- ---
+             |
+             |
+              --> z
+
+同じ関係を別の箱表示で示します。
+
+     x1:
+      --------------       --------------       --------------
+     | car   | cdr  |     | car   | cdr  |     | car   | cdr  |
+     |   a   |   o------->|   b   |   o------->|   c   |  nil |
+     |       |      |  -->|       |      |     |       |      |
+      --------------  |    --------------       --------------
+                      |
+     x2:              |
+      --------------  |
+     | car   | cdr  | |
+     |   z   |   o----
+     |       |      |
+      --------------
+
+
+
+File: elisp-ja, Node: Setcdr, Next: Rearrangement, Prev: Setcar, Up: Modifying Lists
+
+リストのCDRの変更
+-----------------
+
+CDRを修正するもっとも低レベルの基本関数は`setcdr'です。
+
+ -- Function: setcdr CONS OBJECT
+     この関数は、CONSの新たなCDRとしてOBJECTを格納し、以前のCDRを置き換
+     える。いいかえれば、CONSのCDRスロットがOBJECTを指すように変更する。
+     この関数は値OBJECTを返す。
+
+リストのCDRを別のリストで置き換える例を示します。
+リストの最初の要素以外は取り除かれ、
+要素の別のシーケンスになります。
+最初の要素は変更されません。
+というのは、それはリストのCARの中にあり、
+CDRからは辿れないからです。
+
+     (setq x '(1 2 3))
+          => (1 2 3)
+     (setcdr x '(4))
+          => (4)
+     x
+          => (1 4)
+
+リスト内のコンスセル群のCDRを変更することで、リストの中ほどの要素を削除
+できます。つぎの例は、リスト`(a b c)'の最初のコンスセルのCDRを変更する
+ことで、このリストの第2要素`b'を削除します。
+
+     (setq x1 '(a b c))
+          => (a b c)
+     (setcdr x1 (cdr (cdr x1)))
+          => (c)
+     x1
+          => (a c)
+
+箱表記では、この結果はつぎのようになります。
+
+                        --------------------
+                       |                    |
+      --------------   |   --------------   |    --------------
+     | car   | cdr  |  |  | car   | cdr  |   -->| car   | cdr  |
+     |   a   |   o-----   |   b   |   o-------->|   c   |  nil |
+     |       |      |     |       |      |      |       |      |
+      --------------       --------------        --------------
+
+以前に要素`b'を保持していた2番目のコンスセルはまだ存在していて、その
+CARもまだ`b'ですが、このリストの一部ではありません。
+
+CDRを変更して新たな要素を挿入するのも同様に簡単です。
+
+     (setq x1 '(a b c))
+          => (a b c)
+     (setcdr x1 (cons 'd (cdr x1)))
+          => (d b c)
+     x1
+          => (a d b c)
+
+箱表記では、この結果はつぎのようになります。
+
+      --------------        -------------       -------------
+     | car  | cdr   |      | car  | cdr  |     | car  | cdr  |
+     |   a  |   o   |   -->|   b  |   o------->|   c  |  nil |
+     |      |   |   |  |   |      |      |     |      |      |
+      --------- | --   |    -------------       -------------
+                |      |
+          -----         --------
+         |                      |
+         |    ---------------   |
+         |   | car   | cdr   |  |
+          -->|   d   |   o------
+             |       |       |
+              ---------------
+
+
+
+File: elisp-ja, Node: Rearrangement, Prev: Setcdr, Up: Modifying Lists
+
+リストの順序を変更する関数
+--------------------------
+
+以下は、リストを構成するコンスセルのCDRを変更することで、『破壊的に』リ
+ストの順序を変更する関数です。これらの関数を『破壊的』と呼ぶのは、渡さ
+れた引数であるもとのリストのコンスセルを繋ぎ換えて新たなリストに変える
+からです。
+
+コンスセルを変更する他の関数については、
+*Note Sets And Lists::のSee `delq'を参照してください。
+
+ -- Function: nconc &rest LISTS
+     この関数は、LISTSのすべての要素を入れたリストを返す。
+     `append'（*Note Building Lists::）と異なり、LISTSをコピー*しない*。
+     そのかわりに、各LISTSの最後のCDRを後続のリストを指すように変更する。
+     LISTSの最後は変更しない。たとえば、つぎのようになる。
+
+          (setq x '(1 2 3))
+               => (1 2 3)
+          (nconc x '(4 5))
+               => (1 2 3 4 5)
+          x
+               => (1 2 3 4 5)
+
+     `nconc'は最後の引数を変更しないので、上述の例のように、`'(4 5)'な
+     どの定数リストを使ってよい。同じ理由で最後の引数はリストである必要
+     もない。
+
+          (setq x '(1 2 3))
+               => (1 2 3)
+          (nconc x 'z)
+               => (1 2 3 . z)
+          x
+               => (1 2 3 . z)
+
+     しかしながら、すべての引数は（最後のものを除いて）リストである必要
+     がある。
+
+     よくある落し穴は、`nconc'の最後以外の引数に、クォートした定数リス
+     トを使うことである。こうすると、読者のプログラムは実行するたびに定
+     数を変えてしまう。たとえば、つぎのようになる。
+
+          (defun add-foo (x)            ; この関数は引数の先頭に
+            (nconc '(foo) x))           ;   `foo'を追加する、としたい
+
+          (symbol-function 'add-foo)
+               => (lambda (x) (nconc (quote (foo)) x))
+
+          (setq xx (add-foo '(1 2)))    ; 動いているように見える
+               => (foo 1 2)
+          (setq xy (add-foo '(3 4)))    ; どうなってるの？
+               => (foo 1 2 3 4)
+          (eq xx xy)
+               => t
+
+          (symbol-function 'add-foo)
+               => (lambda (x) (nconc (quote (foo 1 2 3 4) x)))
+
+ -- Function: nreverse LIST
+     この関数は、LISTの要素の順番を逆順にする。
+     `reverse'と異なり、`nreverse'は
+     リストを構成するコンスセルのCDRを逆向きにして引数を変えてしまう。
+     LISTの最後にあったコンスセルは戻り値の最初のコンスセルになる。
+
+     たとえば、つぎのようになる。
+
+          (setq x '(1 2 3 4))
+               => (1 2 3 4)
+          x
+               => (1 2 3 4)
+          (nreverse x)
+               => (4 3 2 1)
+          ;; 先頭にあったコンスセルは、今、最後になっている
+          x
+               => (1)
+
+     混乱を避けるために、`nreverse'の結果は、もとのリストを収めていたも
+     のと同じ変数に格納する。
+
+          (setq x (nreverse x))
+
+     `nreverse'を`(a b c)'に適用した結果を図示するとつぎのようになる。
+
+          もとのリストの先頭                        逆順にしたリスト
+           -------------        -------------        ------------
+          | car  | cdr  |      | car  | cdr  |      | car | cdr  |
+          |   a  |  nil |<--   |   b  |   o  |<--   |   c |   o  |
+          |      |      |   |  |      |   |  |   |  |     |   |  |
+           -------------    |   --------- | -    |   -------- | -
+                            |             |      |            |
+                             -------------        ------------
+
+ -- Function: sort LIST PREDICATE
+     この関数は、破壊的にではあるが、LISTを順序を保ってソートしたリスト
+     を返す。要素の比較にはPREDICATEを使う。順序を保ったソートとは、同
+     じソートキーを持つ要素の相対順序を、ソート実行前後で変更しないソー
+     トである。異なる基準でつぎつぎにソートするときには、順序を保つこと
+     は重要である。
+
+     引数PREDICATEは、2つの引数を取る関数である必要がある。この関数は、
+     LISTの2つの要素で呼び出される。昇順のソートでは、PREDICATEは、第1
+     引数が第2引数より『小さい』ときに`t'を返し、さもなければ`nil'を返
+     す必要がある。
+
+     比較関数PREDICATEは、少なくとも単一の`sort'の呼び出し中は、引数の
+     任意の対に対して信頼できる結果を返す必要がある。
+     まず、"反対称"であること。
+     つまり、AがBより小さいときには、
+     BがAより小さくてはいけない。
+     また、"遷移則"が成り立つこと。
+     つまり、AがBより小さく、かつ、BがCより小さいときには、
+     AはCより小さくなければならない。
+     これらの要請を満たさない比較関数を用いると、
+     `sort'の結果は予測できない。
+
+     `sort'が破壊的であるというのは、LISTを構成するコンスセルのCDRを変
+     更して、コンスセルの順序を変更するからである。非破壊的なソート関数
+     では、ソートした要素を格納するために新たなコンスセルを作成するであ
+     ろう。もとのリストを破壊せずにソートしたければ、まず
+     `copy-sequence'でコピーを作り、それをソートする。
+
+     ソートする際、LISTのコンスセルのCARは変更しない。LIST内の要素`a'を
+     入れていたコンスセルは、ソート後にもそのCARには`a'が入っている。し
+     かし、CDRを変更してあるので、リスト内では異なる場所に現れる。たと
+     えば、つぎのようになる。
+
+          (setq nums '(1 3 2 6 5 4 0))
+               => (1 3 2 6 5 4 0)
+          (sort nums '<)
+               => (0 1 2 3 4 5 6)
+          nums
+               => (1 2 3 4 5 6)
+
+     *警告*：` '`nums'のリストには0が入っていないことに注意。（`nums'が
+     指す）コンスセルはソート前と同じコンスセルだが、それはもはやリスト
+     の先頭にはない。引数を保持していた変数が、ソートしたリスト全体を保
+     持していると仮定しないこと！` ' かわりに、`sort'の結果を保存して、
+     それを使う。多くの場合、つぎのように、もとのリストを保持していた変
+     数に結果を保存し直す。
+
+          (setq nums (sort nums '<))
+
+     ソートを行う他の関数については、*Note Sorting::。
+     `sort'の有用な例については、
+     *Note Accessing Documentation::の`documentation'を参照。
+
+
+
+File: elisp-ja, Node: Sets And Lists, Next: Association Lists, Prev: Modifying Lists, Up: Lists
+
+集合としてのリストの利用
+========================
+
+リストで、数学の順序のない集合を表現できます。つまり、リストに現れる要
+素を集合の要素と考え、リスト内での順序は無視します。2つの集合の和集合を
+作るには、（要素が重複することを気にしなければ）`append'を使います。集
+合向けの他の有用な関数には、`memq'や`delq'、および、これらの`equal'版で
+ある`member'や`delete'があります。
+
+     Common Lispに関した注意：` ' Common Lispには、集合演算向けに（要素
+     の重複を避ける）関数`union'と`intersection'があるが、GNU Emacs
+     Lispにはない。必要ならば、読者みずからLispでこれらを書ける。
+
+ -- Function: memq OBJECT LIST
+     この関数は、OBJECTがLISTの要素かどうか調べる。そうならば、`memq'は
+     OBJECTが最初に現れるところから始まるリストを返す。さもなければ
+     `nil'を返す。`memq'の文字`q'は、リストの要素に対するOBJECTの比較に
+     `eq'を使うことを意味する。たとえば、
+
+          (memq 'b '(a b c b a))
+               => (b c b a)
+          (memq '(2) '((1) (2)))    ; `(2)'と`(2)'は`eq'ではない
+               => nil
+
+ -- Function: delq OBJECT LIST
+     この関数は、LISTからOBJECTに`eq'であるすべての要素を破壊的に削除す
+     る。`delq'の文字`q'は、`memq'と同様に、リストの要素に対するOBJECT
+     の比較に`eq'を使うことを意味する。
+
+`delq'がリストの先頭から要素を削除する場合には、単にリストを辿って削除
+した要素のつぎから始まる部分リストを返します。
+
+     (delq 'a '(a b c)) == (cdr '(a b c))
+
+リストの中ほどの要素を削除する場合には、削除にはCDRの変更を伴います
+（*Note Setcdr::）。
+
+     (setq sample-list '(a b c (4)))
+          => (a b c (4))
+     (delq 'a sample-list)
+          => (b c (4))
+     sample-list
+          => (a b c (4))
+     (delq 'c sample-list)
+          => (a b (4))
+     sample-list
+          => (a b (4))
+
+`(delq 'c sample-list)'は、3番目の要素を切り取って`sample-list'を変更し
+ますが、`(delq 'a sample-list)'では、なにも切り取らずに単に短いリストを
+返すことに注意してください。引数LISTを保持していた変数が、実行後には少
+ない要素を持つと仮定したり、もとのリストを保持し続けていると仮定したり
+しないでください！` ' そのかわりに、`delq'の結果を保存して、それを使っ
+てください。多くの場合、つぎのように、もとのリストを保持していた変数に
+結果を保存し直します。
+
+     (setq flowers (delq 'rose flowers))
+
+つぎの例では、`delq'が一致を取ろうとしている`(4)'と
+`sample-list'の`(4)'とは`eq'ではありません。
+
+     (delq '(4) sample-list)
+          => (a c (4))
+
+つぎの2つの関数は、`memq'や`delq'に似ていますが、
+比較には`eq'のかわりに`equal'を使います。
+*Note Equality Predicates::。
+
+ -- Function: member OBJECT LIST
+     関数`member'は、`equal'を使ってOBJECTと要素を比較して、OBJECTが
+     LISTの要素かどうか調べる。OBJECTが要素であれば、`member'はLIST内で
+     それが最初に現れるところから始まるリストを返す。さもなければ`nil'
+     を返す。
+
+     `memq'と比較してほしい。
+
+          (member '(2) '((1) (2)))  ; `(2)'と`(2)'は`equal'である
+               => ((2))
+          (memq '(2) '((1) (2)))    ; `(2)'と`(2)'は`eq'ではない
+               => nil
+          ;; 同じ内容の2つの文字列は`equal'である
+          (member "foo" '("foo" "bar"))
+               => ("foo" "bar")
+
+ -- Function: delete OBJECT LIST
+     この関数は、LISTからOBJECTに`equal'であるすべての要素を破壊的に削
+     除する。`member'が`memeq'に対応するように、`delq'に対応する。
+     `member'と同様に、要素とOBJECTとの比較には`equal'を使う。一致する
+     要素をみつけると、`delq'と同様に要素を削除する。たとえば、つぎのと
+     おり。
+
+          (delete '(2) '((2) (1) (2)))
+               => ((1))
+
+     Common Lispに関した注意：` ' GNU Emacs Lispの関数`member'と関数
+     `delete'はMaclispから受け継いだものであり、Common Lispからではない。
+     Common Lisp版では要素の比較には`equal'を使わない。
+
+変数に格納したリストに要素を追加する別の方法については、
+*Note Setting Variables::の関数`add-to-list'を参照してください。
+
+
+
+File: elisp-ja, Node: Association Lists, Prev: Sets And Lists, Up: Lists
+
+連想リスト
+==========
+
+"連想リスト"（association list）、略して"alist"は、キーから値への対応付
+けを記録しています。これは"連想"（associations）と呼ばれるコンスセルの
+リストです。各コンスセルのCARは"key"であり、CDRは"連想値"（associated
+value）です。 (1) (*Note Association Lists-Footnotes::)
+
+連想リストの例を示します。キー`pine'を値`cones'に、キー`oak'を値
+`acorns'に、キー`maple'を値`seeds'に対応付けています。
+
+     '((pine . cones)
+       (oak . acorns)
+       (maple . seeds))
+
+連想リスト内の連想値は任意のLispオブジェクトでよく、キーもそうです。
+たとえば、つぎの連想リストでは、シンボル`a'に数`1'を、
+文字列`"b"'に*リスト*`(2 3)'を対応付けています。
+*リスト*`(2 3)'は連想リストの要素のCDRです。
+
+     ((a . 1) ("b" 2 3))
+
+要素のCDRのCARに連想値を格納するように連想リストを設計したほうがよい場
+合もあります。つぎのようにします。
+
+     '((rose red) (lily white) (buttercup yellow))
+
+ここで、`red'は`rose'に対応付けた値と考えます。この種の連想リストの利点
+の1つは、関連する別の情報を、他の項目から成るリストでさえも、CDRのCDRに
+格納できることです。1つの欠点は、`rassq'（下記参照）を使って指定した値
+を含む要素を探せないことです。これらの条件が重要でない場合には、1つの連
+想リストに関する限り、一貫性があればどちらを選ぶかは好みの問題です。
+
+上に示した連想リストは、要素のCDRに連想値が収めてあると
+考えることもできます。
+`rose'の連想値はリスト`(red)'になります。
+
+連想リストはスタックなどに置くような情報の記録に使います。というには、
+リストの先頭に新たな連想を追加するのが簡単だからです。指定したキーに対
+する連想を連想リストから探すとき、それらが複数個存在する場合には、最初
+にみつかったものを返します。
+
+Emacs Listでは、連想リストの要素がコンスセルでなくてもエラーでは*ありま
+せん*。連想リスト探索関数はそのような要素を単に無視します。他の多くの
+Lispでは、そのような場面ではエラーを通知します。
+
+属性リストもいろいろな意味で連想リストに類似しています。属性リストは、
+キーが一度しか現れない連想リストのようにふるまいます。属性リストと連想
+リストの比較については、*Note Property Lists::。
+
+ -- Function: assoc KEY ALIST
+     この関数は、ALIST内のKEYに対する最初の連想を返す。KEYと連想リスト
+     の各要素との比較には、`equal'（*Note Equality Predicates::）を用い
+     る。ALISTの中にCARがKEYに`equal'である連想が存在しなければ、`nil'
+     を返す。たとえば、つぎのとおり。
+
+          (setq trees '((pine . cones) (oak . acorns) (maple . seeds)))
+               => ((pine . cones) (oak . acorns) (maple . seeds))
+          (assoc 'oak trees)
+               => (oak . acorns)
+          (cdr (assoc 'oak trees))
+               => acorns
+          (assoc 'birch trees)
+               => nil
+
+     つぎは、キーと値がシンボルではない例。
+
+          (setq needles-per-cluster
+                '((2 "Austrian Pine" "Red Pine")
+                  (3 "Pitch Pine")
+                  (5 "White Pine")))
+
+          (cdr (assoc 3 needles-per-cluster))
+               => ("Pitch Pine")
+          (cdr (assoc 2 needles-per-cluster))
+               => ("Austrian Pine" "Red Pine")
+
+関数`assoc-ignore-representation'と`assoc-ignore-case'は
+`assoc'に似ていますが、
+それらは比較に`compare-strings'を使う点が異なります。
+*Note Text Comparison::。
+
+ -- Function: rassoc VALUE ALIST
+     この関数は、ALISTの中でVALUEを値とする最初の連想を返す。ALISTの中
+     にCDRがVALUEに`equal'である連想が存在しなければ、`nil'を返す。
+
+     `rassoc'は`assoc'に似ているが、ALISTの各連想のCARのかわりにCDRを比
+     較する点が異なる。指定した値に対するキーを探す『`assoc'の逆演算』
+     と考えることができる。
+
+ -- Function: assq KEY ALIST
+     この関数は、ALIST内のKEYに対する最初の連想を返すという意味で
+     `assoc'に似ているが、`equal'のかわりに`eq'で比較する。ALIST内の連
+     想のCARがKEYに`eq'であるものが存在しないと、`assq'は`nil'を返す。
+     この関数は`assoc'より多用される。というのは、`eq'は`equal'より高速
+     であり、ほとんどの連想リストではキーとしてシンボルを使うからである。
+
+          (setq trees '((pine . cones) (oak . acorns) (maple . seeds)))
+               => ((pine . cones) (oak . acorns) (maple . seeds))
+          (assq 'pine trees)
+               => (pine . cones)
+
+     一方で、キーがシンボルではない連想リストでは、
+     `assq'は、通常、有用ではない。
+
+          (setq leaves
+                '(("simple leaves" . oak)
+                  ("compound leaves" . horsechestnut)))
+
+          (assq "simple leaves" leaves)
+               => nil
+          (assoc "simple leaves" leaves)
+               => ("simple leaves" . oak)
+
+ -- Function: rassq VALUE ALIST
+     この関数は、ALISTの中でVALUEを値とする最初の連想を返す。ALISTの中
+     にCDRがVALUEに`eq'である連想が存在しなければ、`nil'を返す。
+
+     `rassq'は`assq'に似ているが、ALISTの各連想のCARのかわりにCDRを比較
+     する点が異なる。指定した値に対するキーを探す『`assq'の逆演算』と考
+     えることができる。
+
+     たとえばつぎのとおり。
+
+          (setq trees '((pine . cones) (oak . acorns) (maple . seeds)))
+
+          (rassq 'acorns trees)
+               => (oak . acorns)
+          (rassq 'spores trees)
+               => nil
+
+     `rassq'では、要素のCDRのCARに格納された値を探せないことに注意。
+
+          (setq colors '((rose red) (lily white) (buttercup yellow)))
+
+          (rassq 'white colors)
+               => nil
+
+     この場合、連想`(lily white)'のCDRは、シンボル`white'ではなくリスト
+     `(white)'である。連想をドット対記法で書くとこれが明確になる。
+
+          (lily white) == (lily . (white))
+
+ -- Function: assoc-default KEY ALIST TEST DEFAULT
+     この関数は、KEYに一致するものをALISTから探す。
+     ALISTの各要素について、（アトムならば）要素とKEYを、
+     あるいは、（コンスならば）要素のCARとKEYを比較する。
+     比較にはこれらを2つの引数としてTESTを呼び出す。
+     引数を渡す順序はこの順なので、
+     正規表現（*Note Regexp Search::）を収めた連想リストに対して
+     `string-match'を使うと有益な結果を得られる。
+     TESTを省略したり`nil'であると、比較には`equal'を用いる。
+
+     上の条件で連想リストの要素がKEYに一致するならば、`assoc-default'は
+     その要素に基づく値を返す。要素がコンスならば値は要素のCDR。さもな
+     ければ、戻り値はDEFAULT。
+
+     KEYに一致する連想リストの要素が存在しなければ、
+     `assoc-default'は`nil'を返す。
+
+ -- Function: copy-alist ALIST
+     この関数は、ALISTを2レベルの深さまでコピーしたものを返す。各連想ご
+     とに新たなコピーを作るので、新たな連想リストの連想を変更しても、も
+     との連想リストは変更しない。
+
+          (setq needles-per-cluster
+                '((2 . ("Austrian Pine" "Red Pine"))
+                  (3 . ("Pitch Pine"))
+                  (5 . ("White Pine"))))
+          =>
+          ((2 "Austrian Pine" "Red Pine")
+           (3 "Pitch Pine")
+           (5 "White Pine"))
+
+          (setq copy (copy-alist needles-per-cluster))
+          =>
+          ((2 "Austrian Pine" "Red Pine")
+           (3 "Pitch Pine")
+           (5 "White Pine"))
+
+          (eq needles-per-cluster copy)
+               => nil
+          (equal needles-per-cluster copy)
+               => t
+          (eq (car needles-per-cluster) (car copy))
+               => nil
+          (cdr (car (cdr needles-per-cluster)))
+               => ("Pitch Pine")
+          (eq (cdr (car (cdr needles-per-cluster)))
+              (cdr (car (cdr copy))))
+               => t
+
+     この例は、`copy-alist'により、コピーの連想を変更して他のものになぜ
+     影響しないかを示す。
+
+          (setcdr (assq 3 copy) '("Martian Vacuum Pine"))
+          (cdr (assq 3 needles-per-cluster))
+               => ("Pitch Pine")
+
+
+File: elisp-ja  Node: Association Lists-Footnotes, Up: Association Lists
+
+(1) この『キー』の使い方は、『キー列』とは無関係。キーとは、表の項目を
+探すために使う値を意味する。ここでは、表は連想リストであり、項目は連想
+リストの連想値である。
+
+
+File: elisp-ja, Node: Sequences Arrays Vectors, Next: Symbols, Prev: Lists, Up: Top
+
+シーケンス、配列、ベクトル
+**************************
+
+"シーケンス"（sequence）型とは、Lispの2つの異なる型の和であることを思い
+出してください。いいかえれば、任意のリストはシーケンスであり、任意の配
+列もシーケンスです。すべてのシーケンスに共通する性質は、それぞれ、要素
+の順序付けた集まりであるということです。
+
+"配列"（array）は、各要素ごとに1つ1つスロットを用意してある単一の基本オ
+ブジェクトです。すべての要素は一定時間内に参照できますが、既存の配列の
+長さは変更できません。文字列、ベクトル、文字テーブル、ブールベクトルは、
+配列型の4つの型です。
+
+リストは、要素を並べたものですが、単一の基本オブジェクトではありません。
+コンスセルから作られていて、1つの要素あたり1つのセルがあります。N番目の
+要素を探すには、N個のコンスセルを調べる必要があるので、リストの先頭から
+遠い要素を参照するには余計に時間がかかります。しかし、リストには要素を
+追加したり削除したりできます。
+
+以下の図は、これらの型の関係を示します。
+
+     　　　　　┌────────────────────────┐
+     　　　　　│　　　　　　シーケンス　　　　　　　　　　　　　│
+     　　　　　│┌───┐　┌───────────────┐　│
+     　　　　　││　　　│　│　　　　　　　　　　　　　　　│　│
+     　　　　　││リスト│　│　　　　　　配列　　　　　　　│　│
+     　　　　　││　　　│　│　┌────┐　┌───┐　　│　│
+     　　　　　││　　　│　│　│　　　　│　│　　　｜　　│　│
+     　　　　　│└───┘　│　│ベクトル│　│文字列｜　　│　│
+     　　　　　│　　　　　　│　│　　　　│　│　　　｜　　│　│
+     　　　　　│　　　　　　│　└────┘　└───┘　　│　│
+     　　　　　│　　　　　　│　┌────┐　┌────┐　│　│
+     　　　　　│　　　　　　│　│文字　　│　│ブール　│　│　│
+     　　　　　│　　　　　　│　│テーブル│　│ベクトル│　│　│
+     　　　　　│　　　　　　│　└────┘　└────┘　│　│
+     　　　　　│　　　　　　└───────────────┘　│
+     　　　　　└────────────────────────┘
+
+ベクトルやリストの要素は、どんなLispオブジェクトでもかまいません。文字
+列の要素はすべて文字です。
+
+* Menu:
+
+* Sequence Functions::    Functions that accept any kind of sequence.
+* Arrays::                Characteristics of arrays in Emacs Lisp.
+* Array Functions::       Functions specifically for arrays.
+* Vectors::               Special characteristics of Emacs Lisp vectors.
+* Vector Functions::      Functions specifically for vectors.
+* Char-Tables::           How to work with char-tables.
+* Bool-Vectors::          How to work with bool-vectors.
+
+
+
+File: elisp-ja, Node: Sequence Functions, Next: Arrays, Prev: Sequences Arrays Vectors, Up: Sequences Arrays Vectors
+
+シーケンス
+==========
+
+Emacs Lispでは、"シーケンス"（sequence）とはリストか配列のことです。す
+べてのシーケンスに共通する性質は、要素の順序付けた集まりであるというこ
+とです。本節では任意のシーケンスを受け付ける関数を説明します。
+
+ -- Function: sequencep OBJECT
+     OBJECTが、リスト、ベクトル、あるいは、文字列ならば`t'を返し、さも
+     なければ`nil'を返す。
+
+ -- Function: length SEQUENCE
+     この関数はSEQUENCE内の要素の個数を返す。SEQUENCEが（最後のCDRが
+     `nil'ではないため）リストではないコンスセルであると、エラー
+     `wrong-type-argument'を通知する。
+
+     関連する関数`safe-length'については、*Note List Elements::。
+
+          (length '(1 2 3))
+              => 3
+          (length ())
+              => 0
+          (length "foobar")
+              => 6
+          (length [1 2 3])
+              => 3
+          (length (make-bool-vector 5 nil))
+              => 5
+
+ -- Function: elt SEQUENCE INDEX
+     この関数はINDEXで添字付けされるSEQUENCEの要素を返す。INDEXの正当な
+     値は、0からSEQUENCEの長さより1小さい範囲の整数である。SEQUENCEがリ
+     ストである場合には、範囲外のINDEXに対しては`nil'を返す。さもなけれ
+     ばエラー`args-out-of-range'を引き起こす。
+
+          (elt [1 2 3 4] 2)
+               => 3
+          (elt '(1 2 3 4) 2)
+               => 3
+          ;; `string'を用いて`elt'が返す文字を明確にする
+          (string (elt "1234" 2))
+               => "3"
+          (elt [1 2 3 4] 4)
+               error--> Args out of range: [1 2 3 4], 4
+          (elt [1 2 3 4] -1)
+               error--> Args out of range: [1 2 3 4], -1
+
+     この関数は、`aref'（*Note Array Functions::）や
+     `nth'（*Note List Elements::）を汎用にしたものである。
+
+ -- Function: copy-sequence SEQUENCE
+     SEQUENCEのコピーを返す。コピーは、もとのシーケンスと同じ型のオブジェ
+     クトであり、同じ要素が同じ順序で入っている。
+
+     コピーに新たな要素を格納しても、もとのSEQUENCEには影響せず、その逆
+     もそうである。しかし、新たなシーケンスの要素はコピーしていない。つ
+     まり、それらはもとの要素と同一（`eq'）である。したがって、シーケン
+     スのコピーにおいて、それらの要素の内部を変更すると、もとのシーケン
+     スでもその変更がわかる。
+
+     シーケンスがテキスト属性を持つ文字列である場合には、コピーの中の属
+     性リストそのものもコピーであり、もとの属性リストを共有するのではな
+     い。しかし、属性の実際の値は共有される。
+
+     シーケンスをコピーする別の方法については、
+     *Note Building Lists::の`append'、*Note Creating Strings::の`concat'、
+     *Note Vectors::の`vconcat'を参照。
+
+          (setq bar '(1 2))
+               => (1 2)
+          (setq x (vector 'foo bar))
+               => [foo (1 2)]
+          (setq y (copy-sequence x))
+               => [foo (1 2)]
+
+          (eq x y)
+               => nil
+          (equal x y)
+               => t
+          (eq (elt x 1) (elt y 1))
+               => t
+
+          ;; 1つのシーケンスの1つの要素を置き換える
+          (aset x 0 'quux)
+          x => [quux (1 2)]
+          y => [foo (1 2)]
+
+          ;; 共有された要素の内部を修正する
+          (setcar (aref x 1) 69)
+          x => [quux (69 2)]
+          y => [foo (69 2)]
+
+
+
+File: elisp-ja, Node: Arrays, Next: Array Functions, Prev: Sequence Functions, Up: Sequences Arrays Vectors
+
+配列
+====
+
+"配列"（array）オブジェクトには、配列の要素と呼ばれるLispオブジェクトを
+保持するためのスロットがいくつかあります。配列の任意の要素は一定時間で
+参照できます。一方、リストの要素の参照には、リスト内でのその要素の位置
+に比例した時間が必要です。
+
+Emacsには4つの型の配列があり、すべて1次元です。
+"文字列"（strings）、"ベクトル"（vectors）、
+"ブールベクトル"（bool-vectors）、"文字テーブル"（char-tables）です。
+ベクトルは汎用の配列であり、
+その要素は任意のLispオブジェクトでかまいません。
+文字列は特化された配列であり、その要素は文字（つまり、0から255までの整数）で
+ある必要があります。
+配列のそれぞれの型には、独自の入力構文があります。
+*Note String Type::と*Note Vector Type::。
+
+配列の4つの型すべてには、以下の性質があります。
+
+   * 配列の最初の要素は添字0であり、2番目の要素は添字1であり、といった具合。
+     これを"ゼロ原点"（zero-origin）の添字付けと呼ぶ。
+     たとえば、4要素の配列の添字は、0、1、2、そして、3。
+
+   * 配列の長さは、いったん作成すると固定される。既存配列の長さは変更で
+     きない。
+
+   * 配列は、評価上は定数である。いいかえれば、それ自身に評価される。
+
+   * 配列要素の参照や変更は、それぞれ、関数`aref'や`aset'で行う（*Note
+     Array Functions::）。
+
+文字テーブル以外の配列を作成するときには、その長さを指定する必要があり
+ます。文字テーブルの長さは指定できません。というのは、その長さは文字コー
+ドの範囲で決まるからです。
+
+原理的には、テキスト文字の配列が必要ならば文字列かベクトルを使います。
+実用上は、以下の4つの理由から、そのような場合には文字列を使います。
+
+   * 同じ要素のベクトルの1/4の領域を専有するだけ。
+
+   * 文字列の表示方法は、その内容をテキストとして明確に示す。
+
+   * 文字列は、テキスト属性を保持できる。
+     *Note Text Properties::。
+
+   * Emacsの特化された編集機能や入出力機能の多くは、
+     文字列だけを受け付ける。
+     たとえば、文字のベクトルをバッファには挿入できないが、
+     文字列ならば挿入できる。
+     *Note Strings and Characters::。
+
+一方、（キー列のような）キーボード入力文字の配列には、
+ベクトルが必要です。
+というのは、キーボード入力文字の多くは、文字列に納まる範囲外だからです。
+*Note Key Sequence Input::。
+
+
+
+File: elisp-ja, Node: Array Functions, Next: Vectors, Prev: Arrays, Up: Sequences Arrays Vectors
+
+配列操作関数
+============
+
+本節では任意の配列型を受け付ける関数を説明します。
+
+ -- Function: arrayp OBJECT
+     この関数はOBJECTが配列
+     （つまり、ベクトル、文字列、ブールベクトル、あるいは、文字テーブル）ならば、
+     `t'を返す。
+
+          (arrayp [a])
+               => t
+          (arrayp "asdf")
+               => t
+          (arrayp (syntax-table))    ;; 文字テーブル
+               => t
+
+ -- Function: aref ARRAY INDEX
+     この関数はARRAYのINDEX番目の要素を返す。最初の要素の添字は0。
+
+          (setq primes [2 3 5 7 11 13])
+               => [2 3 5 7 11 13]
+          (aref primes 4)
+               => 11
+          (aref "abcdefg" 1)
+               => 98           ; `b'は、ASCIIコード98
+
+     *Note Sequence Functions::の関数`elt'も参照。
+
+ -- Function: aset ARRAY INDEX OBJECT
+     この関数は配列ARRAYのINDEX番目の要素にOBJECTを設定する。
+     OBJECTを返す。
+
+          (setq w [foo bar baz])
+               => [foo bar baz]
+          (aset w 0 'fu)
+               => fu
+          w
+               => [fu bar baz]
+
+          (setq x "asdfasfd")
+               => "asdfasfd"
+          (aset x 3 ?Z)
+               => 90
+          x
+               => "asdZasfd"
+
+     ARRAYが文字列であり、かつ、OBJECTが文字でなければ、
+     結果はエラー`wrong-type-argument'となる。
+     ARRAYが文字列であり、かつ、OBJECTが文字であっても、
+     現在`(aref OBJECT INDEX)'に保存されている文字のバイト数と
+     OBJECTが使うバイト数が異なれば、やはり、エラーとなる。
+     *Note Splitting Characters::。
+
+ -- Function: fillarray ARRAY OBJECT
+     この関数は、配列ARRAYをOBJECTで埋め、
+     ARRAYの各要素がOBJECTとなるようにする。
+     ARRAYを返す。
+
+          (setq a [a b c d e f g])
+               => [a b c d e f g]
+          (fillarray a 0)
+               => [0 0 0 0 0 0 0]
+          a
+               => [0 0 0 0 0 0 0]
+          (setq s "When in the course")
+               => "When in the course"
+          (fillarray s ?-)
+               => "------------------"
+
+     ARRAYが文字列であり、かつ、OBJECTが文字でなければ、結果はエラー
+     `wrong-type-argument'になる。
+
+配列であることが既知のオブジェクトに対しては、
+汎用のシーケンス関数`copy-sequence'や`length'がしばしば有用です。
+*Note Sequence Functions::。
+
+
+
+File: elisp-ja, Node: Vectors, Next: Vector Functions, Prev: Array Functions, Up: Sequences Arrays Vectors
+
+ベクトル
+========
+
+Lispの配列は、ほとんどの言語の配列と同様に、その要素を一定時間で参照可
+能なメモリのブロックです。"ベクトル"（vector）は指定長の汎用配列です。
+その要素はどんなLispオブジェクトでもかまいません。（対照的に、文字列は
+要素としては文字だけを保持する。）Emacsでは、オブジェクト配列
+obarray（シンボルのベクトル）、キーマップ（コマンドのベクトル）の一部に
+ベクトルを使っています。これらは、内部的には、バイトコード関数の表現の
+一部にも使っています。そのような関数を表示すると、その中にベクトルがあ
+るのがわかります。
+
+Emacs Lispでは、ベクトルの要素の添字は0から始まります。
+
+ベクトルは要素を角括弧で囲んで表示します。したがって、要素がシンボル
+`a'、`b'、`a'であるベクトルは、`[a b a]'と表示されます。Lispへの入力で
+は同じようにベクトルを書きます。
+
+文字列や数と同様に、評価上、ベクトルは定数とみなします。それを評価した
+結果は、同じベクトルです。この評価では、ベクトルの要素を評価したり調べ
+たりはしません。
+
+以下は、これらの原理を例示するものです。
+
+     (setq avector [1 two '(three) "four" [five]])
+          => [1 two (quote (three)) "four" [five]]
+     (eval avector)
+          => [1 two (quote (three)) "four" [five]]
+     (eq avector (eval avector))
+          => t
+
+
+
+File: elisp-ja, Node: Vector Functions, Next: Char-Tables, Prev: Vectors, Up: Sequences Arrays Vectors
+
+ベクトル向け関数
+================
+
+ベクトルに関連した関数はつぎのとおりです。
+
+ -- Function: vectorp OBJECT
+     この関数は、OBJECTがベクトルならば`t'を返す。
+
+          (vectorp [a])
+               => t
+          (vectorp "asdf")
+               => nil
+
+ -- Function: vector &rest OBJECTS
+     この関数は、引数OBJECTSを要素とするベクトルを作成しそれを返す。
+
+          (vector 'foo 23 [bar baz] "rats")
+               => [foo 23 [bar baz] "rats"]
+          (vector)
+               => []
+
+ -- Function: make-vector LENGTH OBJECT
+     この関数は、各要素をOBJECTに初期化した
+     LENGTH個の要素から成る新たなベクトルを返す。
+
+          (setq sleepy (make-vector 9 'Z))
+               => [Z Z Z Z Z Z Z Z Z]
+
+ -- Function: vconcat &rest SEQUENCES
+     この関数は、SEQUENCESのすべての要素を入れた新たなベクトルを返す。
+     引数SEQUENCESは、リスト、ベクトル、文字列を含む任意の配列でよい。
+     SEQUENCESを指定しないと空ベクトルを返す。
+
+     その値は、既存のベクトルと`eq'でない新たに作成したベクトルである。
+
+          (setq a (vconcat '(A B C) '(D E F)))
+               => [A B C D E F]
+          (eq a (vconcat a))
+               => nil
+          (vconcat)
+               => []
+          (vconcat [A B C] "aa" '(foo (6 7)))
+               => [A B C 97 97 foo (6 7)]
+
+     関数`vconcat'は、引数としてバイトコード関数でも受け付ける。
+     これは、バイトコード関数オブジェクトの全内容を簡単に参照できるように
+     するための特別な機能である。
+     *Note Byte-Code Objects::。
+
+     関数`vconcat'は、引数として整数も受け付ける。
+     整数はその10進の表示表現の文字列に変換してから、
+     その文字列を整数のかわりに使う。
+     *この機能を使わないでほしい。
+     削除する予定である。
+     読者がこの機能を使っていたら、今すぐプログラムを直すこと！*` '
+     整数をこのような10進数に変換する正しい方法は、
+     `format'（*Note Formatting Strings::）や
+     `number-to-string'（*Note String Conversion::）を使うことである。
+
+     他の連結関数については、
+     *Note Mapping Functions::の`mapconcat'、
+     *Note Creating Strings::の`concat'、
+     *Note Building Lists::の`append'を参照。
+
+関数`append'は、ベクトルを同じ要素から成るリストへ変換する便利な方法で
+す（*Note Building Lists::）。
+
+     (setq avector [1 two (quote (three)) "four" [five]])
+          => [1 two (quote (three)) "four" [five]]
+     (append avector nil)
+          => (1 two (quote (three)) "four" [five])
+
+
+
+File: elisp-ja, Node: Char-Tables, Next: Bool-Vectors, Prev: Vector Functions, Up: Sequences Arrays Vectors
+
+文字テーブル
+============
+
+文字テーブルはベクトルによく似ていますが、文字コードで添字付けする点が
+異なります。修飾子を伴わない任意の正当な文字コードは、文字テーブルの添
+字に使えます。文字テーブルの要素は、任意の配列のように、`aref'や`aset'
+で参照できます。さらに、文字テーブルでは、特定の文字コードには対応しな
+い追加データを保持するための"追加スロット"を保持できます。評価時には、
+文字テーブルは定数です。
+
+各文字テーブルには、シンボルである"サブタイプ"（subtype）があります。サ
+ブタイプには2つの目的があります。異なる使い方をする文字テーブルを区別す
+るためと、追加スロットの個数を制御するためです。たとえば、表示テーブル
+はサブタイプが`display-table'である文字テーブルであり、構文テーブルはサ
+ブタイプが`syntax-table'である文字テーブルです。正当なサブタイプには、
+`char-table-extra-slots'属性があるはずで、その値は0から10までの整数です。
+この整数が文字テーブルの"追加スロット"の個数を指定します。
+
+文字テーブルは、別の文字テーブルである"親"を持てます。
+その場合、特定の文字Cに対する文字テーブルの指定が`nil'のときには、
+親において指定された値を継承します。
+いいかえれば、CHAR-TABLE自体に`nil'を指定してあると、
+`(aref CHAR-TABLE C)'は、
+CHAR-TABLEの親の値を返します。
+
+文字テーブルは、"デフォルト値"も持てます。
+その場合、文字テーブルが指定する値が`nil'であると、
+`(aref CHAR-TABLE C)'はデフォルト値を返します。
+
+ -- Function: make-char-table SUBTYPE &optional INIT
+     サブタイプがSUBTYPEである新たに作成した文字テーブルを返す。各要素
+     をINITで初期化する。なお、INITのデフォルトは`nil'である。文字テー
+     ブル作成後には、文字テーブルのサブタイプは変更できない。
+
+     文字テーブルの長さを指定する引数はない。なぜなら、すべての文字テー
+     ブルでは、任意の正当な文字コードを添字として使えるからである。
+
+ -- Function: char-table-p OBJECT
+     この関数は、OBJECTが文字テーブルならば`t'を返し、さもなければ
+     `nil'を返す。
+
+ -- Function: char-table-subtype CHAR-TABLE
+     この関数はCHAR-TABLEのサブタイプを表すシンボルを返す。
+
+ -- Function: set-char-table-default CHAR-TABLE NEW-DEFAULT
+     この関数はCHAR-TABLEのデフォルト値をNEW-DEFAULTにする。
+
+     文字テーブルのデフォルト値を参照するための特別な関数はない。それに
+     は`(char-table-range CHAR-TABLE nil)'を使う。
+
+ -- Function: char-table-parent CHAR-TABLE
+     この関数はCHAR-TABLEの親を返す。親は、`nil'であるか他の文字テーブ
+     ルである。
+
+ -- Function: set-char-table-parent CHAR-TABLE NEW-PARENT
+     この関数はCHAR-TABLEの親をNEW-PARENTにする。
+
+ -- Function: char-table-extra-slot CHAR-TABLE N
+     この関数はCHAR-TABLEの追加スロットNの内容を返す。文字テーブル内の
+     追加スロットの個数はそのサブタイプで決まる。
+
+ -- Function: set-char-table-extra-slot CHAR-TABLE N VALUE
+     この関数はCHAR-TABLEの追加スロットNにVALUEを格納する。
+
+文字テーブルでは、1つの文字コードに対して1つの要素値を指定できます。ま
+た、文字集合全体に対して1つの値を指定することもできます。
+
+ -- Function: char-table-range CHAR-TABLE RANGE
+     これは、CHAR-TABLEにおいて文字範囲RANGEに指定されている値を返す。
+     RANGEとして可能なものは以下のとおり。
+
+     `nil'
+          デフォルト値を指す。
+
+     CHAR
+          （CHARが正当な文字コードであると仮定して）文字CHARに対する要
+          素を指す。
+
+     CHARSET
+          文字集合CHARSET全体に対して指定してある値を指す（*Note
+          Character Sets::）。
+
+     GENERIC-CHAR
+          文字集合に対する汎用文字を表す。引数として汎用文字を指定する
+          ことは、文字集合名を指定することと同値。汎用文字の説明は、
+          *Note Splitting Characters::。
+
+ -- Function: set-char-table-range CHAR-TABLE RANGE VALUE
+     この関数は文字範囲RANGEに対するCHAR-TABLEの値を設定する。
+     RANGEとして可能なものは以下のとおり。
+
+     `nil'
+          デフォルト値を指す。
+
+     `t'
+          文字コードの範囲全体を指す。
+
+     CHAR
+          （CHARが正当な文字コードであると仮定して）文字CHARに対する要
+          素を指す。
+
+     CHARSET
+          文字集合CHARSET全体に対して指定してある値を指す（*Note
+          Character Sets::）。
+
+     GENERIC-CHAR
+          文字集合に対する汎用文字を表す。引数として汎用文字を指定する
+          ことは、文字集合名を指定することと同値。汎用文字の説明は、
+          *Note Splitting Characters::。
+
+ -- Function: map-char-table FUNCTION CHAR-TABLE
+     この関数は、CHAR-TABLEの各要素についてFUNCTIONを呼び出す。
+     FUNCTIONをキーと値の2つの引数で呼び出す。キーは`char-table-range'
+     に対する可能なRANGE引数であり、正当な文字か汎用文字である。値は
+     `(char-table-range CHAR-TABLE KEY)'である。
+
+     全体として、FUNCTIONに渡すキー・値の対は、
+     CHAR-TABLEに格納されたすべての値を表す。
+
+     戻り値はつねに`nil'である。この関数が有用であるようにするには、
+     FUNCTIONには副作用があるべきである。たとえば、つぎは構文テーブルの
+     各要素の調べ方である。
+
+          (let (accumulator)
+            (map-char-table
+             #'(lambda (key value)
+                 (setq accumulator
+                       (cons (list key value) accumulator)))
+             (syntax-table))
+            accumulator)
+          =>
+          ((475008 nil) (474880 nil) (474752 nil) (474624 nil)
+           ... (5 (3)) (4 (3)) (3 (3)) (2 (3)) (1 (3)) (0 (3)))
+
+
+
+File: elisp-ja, Node: Bool-Vectors, Prev: Char-Tables, Up: Sequences Arrays Vectors
+
+ブールベクトル
+==============
+
+ブールベクトルはベクトルによく似ていますが、`t'と`nil'の値だけを保存で
+きる点が異なります。ブールベクトルの要素に`nil'以外の値を保存しようとす
+ると、その効果は`t'を保存することになります。すべての配列と同様に、ブー
+ルベクトルの添字は0から始まり、ブールベクトルをいったん作成すると長さは
+変更できません。評価時には、ブールベクトルは定数です。
+
+ブールベクトルを操作する特別な関数は2つあります。それに加えて、他の種類
+の配列を扱う関数でも操作できます。
+
+ -- Function: make-bool-vector LENGTH INITIAL
+     INITIALに初期化した長さLENGTHの新たなブールベクトルを返す。
+
+ -- Function: bool-vector-p OBJECT
+     OBJECTがブールベクトルであれば`t'を返し、さもなければ`nil'を返す。
+
+
+
+File: elisp-ja, Node: Symbols, Next: Evaluation, Prev: Sequences Arrays Vectors, Up: Top
+
+シンボル
+********
+
+"シンボル"（symbol）とは、一意な名前が付いたオブジェクトです。本章では、
+シンボル、その構成要素、属性リスト、作成方法とインターン方法について説
+明します。シンボルの変数としての使用方法、関数名としての使用方法につい
+て説明した別の章もあります。*Note Variables::と*Note Functions::。シン
+ボルの正確な入力構文については、*Note Symbol Type::。
+
+`symbolp'で、任意のLispオブジェクトがシンボルかどうか調べられます。
+
+ -- Function: symbolp OBJECT
+     この関数は、OBJECTがシンボルならば`t'を返し、さもなければ`nil'を返
+     す。
+
+* Menu:
+
+* Symbol Components::        Symbols have names, values, function definitions
+                               and property lists.
+* Definitions::              A definition says how a symbol will be used.
+* Creating Symbols::         How symbols are kept unique.
+* Property Lists::           Each symbol has a property list
+                               for recording miscellaneous information.
+
+
+
+File: elisp-ja, Node: Symbol Components, Next: Definitions, Prev: Symbols, Up: Symbols
+
+シンボルの構成要素
+==================
+
+各シンボルには4つの構成要素（つまり、『セル』）があり、それぞれで別のオ
+ブジェクトを参照します。
+
+表示名（print name）
+     "表示名セル"（print name cell）には、
+     シンボルの入力や表示に使う名前である文字列が入っている。
+     *Note Creating Symbols::の`symbol-name'を参照。
+
+値（value）
+     "値セル"（value cell）には、
+     シンボルの変数としての現在値が入っている。
+     シンボルをフォームとして使用したとき、
+     フォームの値はシンボルの値セルの内容である。
+     *Note Accessing Variables::の`symbol-value'を参照。
+
+関数（function）
+     "関数セル"（function cell）には、シンボルの関数定義が入っている。
+     シンボルを関数として使用したとき、その関数定義を使う。
+     シンボルが、編集コマンドを実行するためのキーマップやキーボードマクロを
+     表すときもこのセルを使う。
+     各シンボルには値セルと関数セルが別々にあるので、
+     変数名と関数名は衝突しない。
+     *Note Function Cells::の`symbol-function'を参照。
+
+属性リスト（property list）
+     "属性リストセル"（property list cell）には、
+     シンボルの属性リストが入っている。
+     *Note Property Lists::の`symbol-plist'を参照。
+
+表示名セルはつねに文字列を保持していて、変更できません。他の3つのセルに
+は、任意の指定したLispオブジェクトを個別に設定できます。
+
+表示名セルは、シンボルの名前である文字列を保持しています。
+シンボルはテキスト上はその名前で表現されるので、
+2つのシンボルが同じ名前を持たないことが重要です。
+Lispリーダがこのことを保証します。
+シンボルを読み取るたびに、新たにシンボルを作成するまえに、
+指定した名前のシンボルが存在するかどうか調べます。
+（GNU Emacs Lispでは、これにはハッシュアルゴリズムと
+オブジェクト配列obarrayを使う。
+*Note Creating Symbols::。）
+
+普通の使い方では、関数セルには関数（*Note Functions::）やマクロ（*Note
+Macros::）が入っていて、Lispインタープリタはそのように仮定します
+（*Note Evaluation::）。シンボルの関数セルには、キーボードマクロ
+（*Note Keyboard Macros::）、キーマップ（*Note Keymaps::）、自動ロード
+オブジェクト（*Note Autoloading::）が入っていることもあります。『関数
+`foo'』といった場合、実際には、シンボル`foo'の関数セルに入っている関数
+を意味します。必要な場合に限って区別します。
+
+属性リストセルは、通常、正しい形式の属性リスト（*Note Property Lists::）
+が入っている必要があり、さまざまな関数がそのように仮定しています。
+
+関数セルや値セルは"空"（void）でもかまいません。つまり、セルはどんなオ
+ブジェクトも指していません。（このことは、シンボル`void'を保持している
+とか、シンボル`nil'を保持しているのとは違う。）空である関数セルや値セル
+を参照すると、その結果は`Symbol's value as variable is void' （「変数と
+してのシンボルの値は空」）のようなエラーになります。
+
+4つの関数、`symbol-name'、`symbol-value'、`symbol-plist'、
+`symbol-function'は、シンボルの4つのセルの内容を返します。以下に、シン
+ボル`buffer-file-name'の4つのセルの内容を表示する例を示します。
+
+     (symbol-name 'buffer-file-name)
+          => "buffer-file-name"
+     (symbol-value 'buffer-file-name)
+          => "/gnu/elisp/symbols.texi"
+     (symbol-plist 'buffer-file-name)
+          => (variable-documentation 29529)
+     (symbol-function 'buffer-file-name)
+          => #<subr buffer-file-name>
+
+このシンボルは、カレントバッファで訪問しているファイルの名前を保持する
+ので、値セルの内容は本書Emacs Lispマニュアルの本章のソースファイルの名
+前です。属性リストセルには、リスト`(variable-documentation 29529)'が入っ
+ていて、ドキュメント関数に対してファイル`DOC-VERSION'のどこに変数
+`buffer-file-name'の説明文字列が入っているか伝えます。（29529は、当該説
+明文字列の開始位置を表す`DOC-VERSION'の先頭からのオフセット。*Note
+Documentation Basics::を参照。）関数セルには、ファイルの名前を返す関数
+が入っています。`buffer-file-name'は基本関数の名前です。これには入力構
+文はなく、ハッシュ記法（*Note Primitive Function Type::）で表示されてい
+ます。Lispで書いた関数を表すシンボルでは、このセルにラムダ式（あるいは
+バイトコードオブジェクト）が入っています。
+
+
+
+File: elisp-ja, Node: Definitions, Next: Creating Symbols, Prev: Symbol Components, Up: Symbols
+
+シンボルを定義する
+==================
+
+Lispにおける"定義"（definition）とは、特定のシンボルをどのように使うか
+を意思表示するスペシャルフォームです。Emacs Lispでは、シンボルを変数と
+定義したり、関数（あるいはマクロ）と定義したり、あるいは、それらを独立
+に定義できます。
+
+定義を行う構文では、典型的には、値を指定したり、シンボルを特定の使い方
+をすると指定したりし、さらに、そのような使い方をしたときの意味を表すた
+めの説明文字列を指定します。したがって、シンボルを変数として定義すると
+きには、変数に初期値を与え、その変数の説明文字列を指定できます。
+
+`defvar'と`defconst'は、シンボルをグローバル変数として定義する
+スペシャルフォームです。
+これらは*Note Defining Variables::で詳しく説明してあります。
+カスタマイズ可能なようにユーザーオプション用の変数を定義するには、
+`defcustom'（*Note Customization::）を使います。
+
+`defun'は、シンボルを関数として定義し、
+ラムダ式を作ってシンボルの関数セルに格納します。
+したがって、このラムダ式がシンボルの関数定義になります。
+（用語『関数定義』は、関数セルの内容を意味し、
+`defun'がシンボルに関数としての定義を与えることからきている。）
+`defsubst'と`defalias'は、関数を定義する別の2つの方法です。
+*Note Functions::。
+
+`defmacro'は、シンボルをマクロとして定義します。
+マクロオブジェクトを作ってシンボルの関数セルに格納します。
+シンボルは、マクロか関数のいずれかであって、
+同時に両方にはならないことに注意してください。
+というのは、マクロ定義も関数定義も関数セルに収められ、
+そのセルにはどんなときでもたった1つのLispオブジェクトしか
+保持できないからです。
+*Note Macros::。
+
+Emacs Lispでは、シンボルを変数や関数として使うための
+定義は必須ではありません。
+したがって、シンボルをあらかじめ定義しようがしまいが、
+`setq'を使ってシンボルをグローバル変数にできます。
+定義の真の目的は、プログラマに対する指針であり、プログラミングツールなのです。
+これらは、コードを読むプログラマに対して、
+特定のシンボルを変数として使うのか関数として使うのか、
+その*意図*を伝えます。
+さらに、`etags'や`make-docfile'などのユーティリティは、
+定義を認識してタグテーブルやファイル`DOC-VERSION'に
+適切な情報を追加します。
+*Note Accessing Documentation::。
+
+
+
+File: elisp-ja, Node: Creating Symbols, Next: Property Lists, Prev: Definitions, Up: Symbols
+
+シンボルの作成とインターン
+==========================
+
+GNU Emacs Lispにおいて、どのようにシンボルを作成するかを理解するには、
+Lispがそれらをどのように読むかを知る必要があります。Lispは、同じ文字群
+を読み取るたびに、同じシンボルをみつけることを保証する必要があります。
+これに失敗すると完全に混乱します。
+
+Lispリーダがシンボルに出会うと、名前の文字群をすべて読み取ります。そし
+て、これらの文字群を『ハッシュ化』して、"オブジェクト配列"（obarray）と
+呼ばれる表の添字を探します。ハッシュ化は効率的に探索する手法です。たと
+えば、Jan Jonesを電話番号簿の表紙から1ページずつ順に探すかわりに、Jのペー
+ジから探し始めます。これは単純なハッシュ化です。オブジェクト配列の各要
+素は、あるハッシュコードを有するすべてのシンボルを格納した"バケット
+（bucket）です。ある名前を探すには、その名前のハッシュコードに対応する
+バケット内のすべてのシンボルを調べるだけで十分です。
+
+目的の名前のシンボルがみつかれば、リーダはそのシンボルを使います。オブ
+ジェクト配列に目的の名前のシンボルがなければ、リーダは新たなシンボルを
+作成し、それをオブジェクト配列に追加します。ある名前のシンボルを探した
+り追加することをシンボルを"インターン"（interning）するといい、そのシン
+ボルを"インターンしたシンボル"（interned symbol）と呼びます。
+
+インターンすることで、各オブジェクト配列には特定の名前のシンボルが1個だ
+けあることを保証します。他の似たような名前のシンボルが存在しても、同じ
+オブジェクト配列には入っていません。したがって、同じオブジェクト配列を
+使って読む限り、リーダは同じ名前に対して同じシンボルを得ることができま
+す。
+
+すべてのシンボルがオブジェクト配列に入っているとは限りません。実際、ど
+のオブジェクト配列にも属さないシンボルがいくつかあります。これらを"イン
+ターンしてないシンボル"（uninterned symbols）と呼びます。インターンして
+ないシンボルにも、他のシンボルと同様に4つのセルがあります。しかし、それ
+を参照する手段は、他のオブジェクトを介して探すか、変数の値として探すし
+かありません。
+
+Emacs Lispでは、オブジェクト配列は実際にはベクトルです。ベクトルの各要
+素はバケットです。その値は、そのバケットにハッシュ化される名前のインター
+ンしたシンボルであるか、そのバケットが空ならば0です。インターンした各シ
+ンボルには、バケットのつぎのシンボルを指す（ユーザーには見えない）内部
+的なリンクがあります。このリンクは見えないので、`mapatoms'（下記）を使
+う以外には、オブジェクト配列内のすべてのシンボルを探す方法はありません。
+バケット内でのシンボルの順序は関係ありません。
+
+空のオブジェクト配列では、各要素は0です。`(make-vector LENGTH 0)'でオブ
+ジェクト配列を作成できます。*これは、オブジェクト配列を作成する唯一の正
+当な方法です。* 長さとして素数を用いると、ハッシュ化の結果がよい傾向が
+あります。2の巾より1小さい長さもよい結果になります。
+
+*読者自身でオブジェクト配列にシンボルを入れないでください。* うまくいき
+ません。オブジェクト配列にシンボルを正しく入れられるのは`intern'だけで
+す。
+
+     Common Lispに関した注意：` ' Common Lispでは、1つのシンボルを複数
+     のオブジェクト配列に入れることができる。
+
+下記の関数のほとんどは、引数に名前を取り、場合によってはオブジェクト配
+列を引数に取ります。名前が文字列でなかったり、オブジェクト配列がベクト
+ルでないと、エラー`wrong-type-argument'を通知します。
+
+ -- Function: symbol-name SYMBOL
+     この関数は、SYMBOLの名前を表す文字列を返す。たとえば、つぎのとおり。
+
+          (symbol-name 'foo)
+               => "foo"
+
+     *警告：*` ' 文字列の文字を置き換えるとシンボルの名前を変更するが、
+     オブジェクト配列は更新できないので変更しないこと！
+
+ -- Function: make-symbol NAME
+     この関数は、NAME（文字列であること）を名前とする新たに割り付けたイ
+     ンターンしていないシンボルを返す。その値と関数定義は空であり、属性
+     リストは`nil'である。以下の例では、`sym'の値は`foo'と`eq'ではない。
+     なぜなら、名前は`foo'ではあるが、インターンしていない別のシンボル
+     であるため。
+
+          (setq sym (make-symbol "foo"))
+               => foo
+          (eq sym 'foo)
+               => nil
+
+ -- Function: intern NAME &optional OBARRAY
+     この関数は、NAMEを名前とするインターンしたシンボルを返す。
+     そのようなシンボルがオブジェクト配列OBARRAYに存在しなければ、
+     `intern'は新たなものを作成し、それをオブジェクト配列に追加してから、
+     それを返す。
+     OBARRAYを省略すると、グローバル変数`obarray'の値を使う。
+
+          (setq sym (intern "foo"))
+               => foo
+          (eq sym 'foo)
+               => t
+
+          (setq sym1 (intern "foo" other-obarray))
+               => foo
+          (eq sym 'foo)
+               => nil
+
+     Common Lispに関した注意：` ' Common Lispでは、既存のシンボルをオブ
+     ジェクト配列にインターンできる。Emacs Lispでは、これはできない。な
+     ぜなら、`intern'の引数は文字列である必要があり、シンボルではない。
+
+ -- Function: intern-soft NAME &optional OBARRAY
+     この関数は、OBARRAY内のNAMEを名前とするシンボルを返す。
+     ただし、その名前のシンボルがOBARRAYになければ`nil'を返す。
+     したがって、`intern-soft'を用いて、指定した名前のシンボルが
+     インターンされているかどうか調べられる。
+     OBARRAYを省略すると、グローバル変数`obarray'の値を使う。
+
+          (intern-soft "frazzle")        ; そのようなシンボルは存在しない
+               => nil
+          (make-symbol "frazzle")        ; インターンしないものを作る
+               => frazzle
+          (intern-soft "frazzle")        ; そのようなものはみつからない
+               => nil
+          (setq sym (intern "frazzle"))  ; インターンしたものを作る
+               => frazzle
+          (intern-soft "frazzle")        ; そのようなものがみつかった！
+               => frazzle
+          (eq sym 'frazzle)              ; しかも、それらは同一
+               => t
+
+ -- Variable: obarray
+     この変数は、`intern'や`read'が使う標準のオブジェクト配列。
+
+ -- Function: mapatoms FUNCTION &optional OBARRAY
+     この関数は、オブジェクト配列OBARRAYの各シンボルについて、
+     1回ずつFUNCTIONを呼び出す。
+     そして、`nil'を返す。
+     OBARRAYを省略すると、通常のシンボル向けの標準のオブジェクト配列である
+     `obarray'の値をデフォルトにする。
+
+          (setq count 0)
+               => 0
+          (defun count-syms (s)
+            (setq count (1+ count)))
+               => count-syms
+          (mapatoms 'count-syms)
+               => nil
+          count
+               => 1871
+
+     `mapatoms'を使った別の例については、
+     *Note Accessing Documentation::の`documentation'を参照。
+
+ -- Function: unintern SYMBOL &optional OBARRAY
+     この関数は、オブジェクト配列OBARRAYからSYMBOLを削除する。
+     `symbol'が実際にはオブジェクト配列内になければ、
+     `unintern'はなにもしない。
+     OBARRAYが`nil'であると、現在のオブジェクト配列を使う。
+
+     SYMBOLのシンボルのかわりに文字列を指定すると、それはシンボルの名前
+     を表す。そして、`unintern'はその名前のシンボルを（あれば）オブジェ
+     クト配列から削除する。そのようなシンボルがなければ、`unintern'はな
+     にもしない。
+
+     `unintern'は、シンボルを削除したときには`t'を返す。さもなければ
+     `nil'を返す。
+
+
+
+File: elisp-ja, Node: Property Lists, Prev: Creating Symbols, Up: Symbols
+
+属性リスト
+==========
+
+"属性リスト"（property list、略して"plist"）とは、シンボルの属性リスト
+セルに格納された対になった要素から成るリストです。各対は、属性名（通常、
+シンボル）を属性、すなわち、属性値に対応付けます。属性リストは、一般に、
+シンボルに関する情報を記録します。変数としての説明文字列、定義されてい
+るファイルの名前、言語理解システムにおいては（語を表す）シンボルの文法
+クラスなどです。
+
+文字列内やバッファ内の文字位置も属性リストを持てます。
+*Note Text Properties::。
+
+属性リスト内の属性名と属性値は、任意のLispオブジェクトでかまいませんが、
+普通、属性名はシンボルです。属性リスト関数は、`eq'を使って属性名を比較
+します。コンパイラをロードした際のシンボル`progn'の属性リストをつぎに示
+します。
+
+     (lisp-indent-function 0 byte-compile byte-compile-progn)
+
+ここで、`lisp-indent-function'や`byte-compile'は属性名であり、他の2つの
+要素は対応する属性値です。
+
+* Menu:
+
+* Plists and Alists::           Comparison of the advantages of property
+                                  lists and association lists.
+* Symbol Plists::               Functions to access symbols' property lists.
+* Other Plists::                Accessing property lists stored elsewhere.
+
+
+
+File: elisp-ja, Node: Plists and Alists, Next: Symbol Plists, Prev: Property Lists, Up: Property Lists
+
+属性リストと連想リスト
+----------------------
+
+連想リスト（*Note Association Lists::）は、属性リストに非常によく似てい
+ます。連想リストと異なり、属性名は一意である必要があるので、属性リスト
+内での対の出現順序は関係ありません。
+
+さまざまなLisp関数やLisp変数に情報を付加するには、属性リストは連想リス
+トより優れています。読者のプログラムで1つの連想リストにすべての連想を入
+れておいたとすると、1つの連想を探すたびに、リスト全体を探索する必要があ
+ります。これには時間がかかります。一方、同じ情報を関数名や変数自身の属
+性リストに保持しておけば、各探索では1つの属性リストを走査するだけでよく、
+属性リストは、普通、短いものです。このため、変数の説明文字列を
+`variable-documentation'という名前の属性に記録しているのです。同様に、
+バイトコンパイラも、特別な処理が必要な関数を属性を使って記録しています。
+
+しかしながら、連想リストにもそれ独自の利点があります。読者のアプリケー
+ションに依存しますが、属性を更新するより、連想リストの先頭に連想を追加
+するほうが速いです。あるシンボルのすべての属性は同一の属性リストに格納
+してあるので、1つの属性名を異なる目的に使うと衝突します。（この理由から、
+プログラムで普通に使う変数名や関数名の接頭辞で始まる属性名を選ぶなどし
+て、一意な属性名を選ぶのがよい。）連想リストは、リストの先頭に要素を追
+加し、先頭から要素を削除するので、スタックのように使えます。属性リスト
+では、これは不可能です。
+
+
+
+File: elisp-ja, Node: Symbol Plists, Next: Other Plists, Prev: Plists and Alists, Up: Property Lists
+
+シンボル向け属性リスト関数
+--------------------------
+
+ -- Function: symbol-plist SYMBOL
+     この関数はSYMBOLの属性リストを返す。
+
+ -- Function: setplist SYMBOL PLIST
+     この関数は、SYMBOLの属性リストをPLISTとする。通常、PLISTは正しい形
+     の属性リストであるべきだが強要されない。
+
+          (setplist 'foo '(a 1 b (2 3) c nil))
+               => (a 1 b (2 3) c nil)
+          (symbol-plist 'foo)
+               => (a 1 b (2 3) c nil)
+
+     普通の使い方を意図していない特別なオブジェクト配列内のシンボルに対
+     しては、属性リストセルの非標準な使い方にも意味があろう。実際、略語
+     機構（*Note Abbrevs::）ではそのようにしている。
+
+ -- Function: get SYMBOL PROPERTY
+     この関数は、SYMBOLの属性リストからPROPERTYという名前の属性の値を探
+     す。そのような属性がなければ、`nil'を返す。つまり、`nil'という値と
+     属性の欠如を区別できない。
+
+     名前PROPERTYは既存の属性名と`eq'で比較するため、どんなオブジェクト
+     でも正当な属性である。
+
+     例については、`put'を参照。
+
+ -- Function: put SYMBOL PROPERTY VALUE
+     この関数は、SYMBOLの属性リストにおいて、属性名PROPERTYの古い属性値
+     をVALUEで置き換える。関数`put'はVALUEを返す。
+
+          (put 'fly 'verb 'transitive)
+               =>'transitive
+          (put 'fly 'noun '(a buzzing little bug))
+               => (a buzzing little bug)
+          (get 'fly 'verb)
+               => transitive
+          (symbol-plist 'fly)
+               => (verb transitive noun (a buzzing little bug))
+
+
+
+File: elisp-ja, Node: Other Plists, Prev: Symbol Plists, Up: Property Lists
+
+シンボルの外部の属性リスト
+--------------------------
+
+シンボル以外の場所に保存した属性リストの操作に便利な2つの関数があります。
+
+ -- Function: plist-get PLIST PROPERTY
+     これは、属性リストPLISTに保存されている属性PROPERTYの値を返す。た
+     とえば、つぎのとおり。
+
+          (plist-get '(foo 4) 'foo)
+               => 4
+
+ -- Function: plist-put PLIST PROPERTY VALUE
+     これは、属性リストPLISTに、PROPERTYの値としてVALUEを格納する。これ
+     はPLISTを破壊的に変更するか、あるいは、古いものを変更せずに新たな
+     リスト構造を構築する。関数は変更した属性リストを返すので、PLISTを
+     保持していたところへ保存し直せる。たとえば、つぎのとおり。
+
+          (setq my-plist '(bar t foo 4))
+               => (bar t foo 4)
+          (setq my-plist (plist-put my-plist 'foo 69))
+               => (bar t foo 69)
+          (setq my-plist (plist-put my-plist 'quux '(a)))
+               => (bar t foo 69 quux (a))
+
+つぎのようにして、`plist-put'を用いて`put'を定義できます。
+
+     (defun put (symbol prop value)
+       (setplist symbol
+                 (plist-put (symbol-plist symbol) prop value)))
+
+
+File: elisp-ja, Node: Evaluation, Next: Control Structures, Prev: Symbols, Up: Top
+
+評価
+****
+
+Emacs Lispにおける式の"評価"（evaluation）は、"Lispインタープリタ
+（Lisp interpreter）が行います。これは、入力としてLispオブジェクトを受
+け取り、"式としての値"を計算するプログラムです。計算方法は、本章で述べ
+る規則に従ってオブジェクトのデータ型に依存します。インタープリタは、読
+者のプログラムのある部分を評価するために自動的に動作しますが、Lisp基本
+関数`eval'を介してインタープリタを明示的に呼ぶ出すこともできます。
+
+* Menu:
+
+* Intro Eval::  Evaluation in the scheme of things.
+* Forms::       How various sorts of objects are evaluated.
+* Quoting::     Avoiding evaluation (to put constants in the program).
+* Eval::        How to invoke the Lisp interpreter explicitly.
+
+
+
+File: elisp-ja, Node: Intro Eval, Next: Forms, Prev: Evaluation, Up: Evaluation
+
+評価とは
+========
+
+Lispインタープリタ、つまり、エバリュエータは、与えられた式の値を計算す
+るプログラムです。Lispで書いた関数を呼び出すと、エバリュエータは、その
+関数本体内の式を評価することで関数の値を計算します。したがって、どんな
+Lispプログラムの実行でも、Lispインタープリタを実行することを意味します。
+
+エバリュエータによるオブジェクトの扱い方は、主にオブジェクトのデータ型
+に依存します。
+
+評価することを意図したLispオブジェクトを"式"（expression）とか"フォーム
+（form）と呼びます。式はデータオブジェクトであり単なるテキストではない
+という事実は、Lisp様言語と典型的なプログラム言語との基本的な違いの1つで
+す。どんなオブジェクトでも評価できますが、実用上は、数、シンボル、リス
+ト、文字列を評価することが多いのです。
+
+Lisp式を読み取りその式を評価することはとても一般的なことですが、読み取
+りと評価は別々の動作であり、それぞれを別々に実行することもできます。読
+み取り自体では、なにも評価しません。Lispオブジェクトの表示表現をオブジェ
+クトそのものに変換します。このオブジェクトを評価すべきフォームとするか、
+まったく別の目的に使うかは、`read'の呼び出し側で決まります。
+
+評価とコマンドキーの解釈を混同しないでください。エディタコマンドループ
+は、有効なキーマップを用いてキーボード入力をコマンド（対話的に呼び出し
+可能な関数）に変換し、`call-interactively'を使ってコマンドを起動します。
+コマンドがLispで書いてあれば、コマンド自体の実行には評価が関わってきま
+すが、そのことは、コマンドキーの解釈自体には含まれていません。
+
+評価は再帰的な処理です。つまり、フォームの評価では、`eval'を呼び出して
+そのフォームの一部分を評価することもあります。たとえば、関数呼び出しの
+評価においては、まず、関数呼び出しの各引数を評価してから、関数本体の各
+フォームを評価します。`(car x)'の評価を考えてみましょう。まず最初に`x'
+を再帰的に評価する必要があります。その値を関数`car'の引数として渡せるよ
+うにするのです。
+
+関数呼び出しの評価においては、最終的に指定した関数を呼び出します。
+*Note Functions::。関数の実行そのものも、関数定義を評価する場合もありま
+す。あるいは、関数はC言語で実装されたLisp基本関数かもしれませんし、バイ
+トコード関数かもしれません（*Note Byte Compilation::）。
+
+フォームの評価は、"環境"（environment）と呼ばれる文脈において行われます。
+環境とは、すべてのLisp変数の現在値と束縛です (1) (*Note Intro
+Eval-Footnotes::)。フォームが新たな束縛を作らずに変数を参照する場合には、
+現在の環境におけるその変数の束縛の値を使います。*Note Variables::。
+
+フォームを評価すると、変数（*Note Local Variables::）を束縛して、再帰的
+評価のための新たな環境を作ることがあります。これらの環境は一時的なもの
+で、そのフォームの評価を完了すると消えてしまいます。フォームは恒久的な
+変更を行ってもかまいません。このような変更を"副作用"（side effects）と
+呼びます。副作用を持つフォームの例は、`(setq foo 1)'です。
+
+フォームの各種類ごとの評価の意味の詳細は、以下で説明します（*Note
+Forms::）。
+
+
+File: elisp-ja  Node: Intro Eval-Footnotes, Up: Intro Eval
+
+(1) 『環境』のこの定義は、プログラムの結果に影響するすべてのデータを含
+むことは意図していない。
+
+
+
+File: elisp-ja, Node: Forms, Next: Quoting, Prev: Intro Eval, Up: Evaluation
+
+フォームの種類
+==============
+
+評価することを意図したLispオブジェクトを"フォーム"（form）と呼びます。
+Emacsがどのようにフォームを評価するかは、そのデータ型に依存します。
+Emacsには、評価方法が異なる3種類のフォームがあります。シンボル、リスト、
+および、『その他すべての型』です。本節では、3種類すべてについて1つ1つ説
+明します。まず、自己評価型フォームである『その他すべての型』から説明し
+ます。
+
+* Menu:
+
+* Self-Evaluating Forms::   Forms that evaluate to themselves.
+* Symbol Forms::            Symbols evaluate as variables.
+* Classifying Lists::       How to distinguish various sorts of list forms.
+* Function Indirection::    When a symbol appears as the car of a list,
+			      we find the real function via the symbol.
+* Function Forms::          Forms that call functions.
+* Macro Forms::             Forms that call macros.
+* Special Forms::           "Special forms" are idiosyncratic primitives,
+                              most of them extremely important.
+* Autoloading::             Functions set up to load files
+                              containing their real definitions.
+
+
+
+File: elisp-ja, Node: Self-Evaluating Forms, Next: Symbol Forms, Prev: Forms, Up: Forms
+
+自己評価型フォーム
+------------------
+
+"自己評価型フォーム"（self-evaluating form）とは、リストでもシンボルで
+もない任意のフォームのことです。自己評価型フォームはそれ自身に評価され、
+評価結果は評価されるオブジェクトと同じものです。つまり、数25は25と評価
+され、文字列`"foo"'は文字列`"foo"'と評価されます。同様に、ベクトルを評
+価してもベクトルの個々の要素を評価することはありません。その内容をまっ
+たく変更することなく、同じベクトルを返します。
+
+     '123               ; 評価していない数
+          => 123
+     123                ; 普通どおり評価。結果は同じ
+          => 123
+     (eval '123)        ; 『手で』評価。結果は同じ
+          => 123
+     (eval (eval '123)) ; 2回評価してもなにも変わらない
+          => 123
+
+Lispコードにおいては、数、文字、文字列、さらにベクトルでさえも、それら
+が自己評価型である事実を利用して書くのが普通です。しかし、入力構文を持
+たない型については、このようにしません。というのは、それらをテキストと
+して書く方法がないからです。そのような型を含むLisp式を構成するには、
+Lispプログラムを使います。
+
+     ;; バッファオブジェクトを含む式を作る
+     (setq print-exp (list 'print (current-buffer)))
+          => (print #<buffer eval.texi>)
+     ;; それを評価する
+     (eval print-exp)
+          -| #<buffer eval.texi>
+          => #<buffer eval.texi>
+
+
+
+File: elisp-ja, Node: Symbol Forms, Next: Classifying Lists, Prev: Self-Evaluating Forms, Up: Forms
+
+シンボルフォーム
+----------------
+
+シンボルを評価するときには、シンボルを変数として扱います。その結果は、
+値があれば、変数の値です。（値セルが空であり）値がなければ、エラーを通
+知します。変数の使い方について詳しくは、*Note Variables::。
+
+つぎの例では、`setq'を使ってシンボルの値を設定します。そのあとでシンボ
+ルを評価すると、`setq'で保存した値を取り出せます。
+
+     (setq a 123)
+          => 123
+     (eval 'a)
+          => 123
+     a
+          => 123
+
+シンボル`nil'と`t'は特別に扱い、
+`nil'の値はつねに`nil'であり、
+`t'の値はつねに`t'です。
+これらに別の値を設定したり、別の値を束縛することはできません。
+したがって、`eval'はこれらを他のシンボルと同様に扱いますが、
+これら2つのシンボルは自己評価型フォームのようにふるまいます。
+`:'で始まる名前のシンボルも同じ意味で自己評価型であり、
+同様に、その値を変更できません。
+*Note Constant Variables::。
+
+
+

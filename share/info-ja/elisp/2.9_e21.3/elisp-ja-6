@@ -1,0 +1,1959 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Setting Variables, Next: Variable Scoping, Prev: Accessing Variables, Up: Variables
+
+変数値の変更
+============
+
+変数の値を変更する普通の方法は、スペシャルフォーム`setq'を使うことです。
+実行時に選択する変数を計算する必要があるときには、関数`set'を使います。
+
+ -- Special form: setq [SYMBOL FORM]...
+     このスペシャルフォームは、変数の値を変更するもっとも一般的な方法で
+     ある。各SYMBOLに、対応するFORMの評価結果である新たな値を与える。シ
+     ンボルの既存の際、ローカルの束縛を変更する。
+
+     `setq'はSYMBOLを評価しない。
+     読者が書いたシンボルに設定する。
+     この変数は"自動的にクォートされる"のである。
+     `setq'の`q'は、『quoted（クォートする）』を表す。
+
+     フォーム`setq'の値は、最後のFORMの値である。
+
+          (setq x (1+ 2))
+               => 3
+          x                   ; `x'はグローバル値を持つ
+               => 3
+          (let ((x 5))
+            (setq x 6)        ; `x'のローカル束縛を設定する
+            x)
+               => 6
+          x                   ; グローバル値は変更されない
+               => 3
+
+     最初のFORMを評価して最初のSYMBOLに設定し、つぎに、2番目のFORMを評
+     価して2番目のSYMBOLに設定し、といった具合になることに注意。
+
+          (setq x 10          ; `x'は、`y'の値を計算するまえに
+                y (1+ x))     ;   設定されることに注意
+               => 11
+
+ -- Function: set SYMBOL VALUE
+     この関数は、SYMBOLの値としてVALUEを設定し、VALUEを返す。`set'は関
+     数なので、SYMBOLとして書いた式は、設定するシンボルを得るために評価
+     される。
+
+     変数の既存の最ローカルの束縛に設定する。隠されている束縛には影響し
+     ない。
+
+          (set one 1)
+          error--> Symbol's value as variable is void: one
+          (set 'one 1)
+               => 1
+          (set 'two 'one)
+               => one
+          (set two 2)         ; `two'はシンボル`one'に評価される
+               => 2
+          one                 ; そのため、`one'に設定される
+               => 2
+          (let ((one 1))      ; `one'のこの束縛が設定され、
+            (set 'one 3)      ;   グローバル値は設定されない
+            one)
+               => 3
+          one
+               => 2
+
+     SYMBOL（の評価結果）が実際にはシンボルでないと、エラー
+     `wrong-type-argument'を通知する。
+
+          (set '(x y) 'z)
+          error--> Wrong type argument: symbolp, (x y)
+
+     論理的には、`set'は`setq'よりもさらに基本的な操作である。
+     どんな`setq'の使い方でも、`set'で素直に書き直せる。
+     `setq'は、`set'を使ってマクロとして定義することも可能である。
+     しかし、`set'そのものを使うことは稀であり、
+     初心者は`set'を知る必要がほとんどない。
+     設定する変数を実行時に選ぶときにのみ有用である。
+     たとえば、コマンド`set-variable'は、
+     ユーザーから変数名を読み取りその変数に設定するので、
+     `set'を使う必要がある。
+
+          Common Lispに関した注意：` '
+          Common Lispでは、`set'はつねにシンボルの『スペシャル』な、つまり、
+          動的な値を変更し、文脈上の束縛を無視する。
+          Emacs Lispでは、すべての変数とすべての束縛は動的であり、
+          `set'はつねに既存の最ローカルの束縛に作用する。
+
+変数に設定する別の関数は、リストに既存でない要素を追加するように設計さ
+れたものです。
+
+ -- Function: add-to-list SYMBOL ELEMENT
+     この関数は、ELEMENTが変数SYMBOLの値のリストのメンバでなければ、
+     ELEMENTと変数SYMBOLの値をコンスした値を変数SYMBOLに設定する。リス
+     トを変更してもしなくても結果のリストを返す。呼び出すまえに、
+     SYMBOLの値はリストであるほうがよい。
+
+     引数SYMBOLは暗黙にクォートされない。`add-to-list'は、`set'のように
+     普通の関数であり、`setq'とは違う。必要ならば、読者自身でクォートす
+     る。
+
+`add-to-list'の使い方を以下に示します。
+
+     (setq foo '(a b))
+          => (a b)
+
+     (add-to-list 'foo 'c)     ;; `c'を追加する
+          => (c a b)
+
+     (add-to-list 'foo 'b)     ;; なんの効果もない
+          => (c a b)
+
+     foo                       ;; `foo'は変更されている
+          => (c a b)
+
+`(add-to-list 'VAR VALUE)'に等価な式はつぎのとおりです。
+
+     (or (member VALUE VAR)
+         (setq VAR (cons VALUE VAR)))
+
+
+
+File: elisp-ja, Node: Variable Scoping, Next: Buffer-Local Variables, Prev: Setting Variables, Up: Variables
+
+変数束縛のスコープルール
+========================
+
+あるシンボル`foo'は、さまざまなローカルな変数束縛を持つことができます。
+Lispプログラムの異なる場所で確立されたものやグローバル束縛です。もっと
+も最近に確立した束縛が他のものに優先します。
+
+Emacs Lispのローカル束縛は、"無限のスコープ"（indefinite scope）と"動的
+存続期間"（dynamic extent）を持ちます。"スコープ"（scope）とは、ソース
+コードのテキスト上の*どこ*から束縛を参照できるかを表します。無限のスコー
+プとは、プログラムのどこからでも変数束縛を参照できることを意味します。
+存続期間"（extent）とは、プログラムの実行にしたがって、*いつ*束縛が存在
+するかを表します。動的存続期間とは、束縛を作成した構造が有効である限り、
+束縛が存続することを意味します。
+
+動的存続期間と無限のスコープの組み合せを"動的スコープ"（dynamic
+scoping）と呼びます。対照的に、ほとんどのプログラム言語は、"レキシカル
+スコープ"（lexical scoping）を用います。つまり、ローカル変数の参照は、
+その変数を束縛する関数やブロックのテキスト上で内側にある必要があります。
+
+     Common Lispに関した注意：` ' Common Lispでは、『スペシャル』と宣言
+     した変数は、Emacs Lispのすべての変数と同様に、動的スコープである。
+
+* Menu:
+
+* Scope::          Scope means where in the program a value is visible.
+                     Comparison with other languages.
+* Extent::         Extent means how long in time a value exists.
+* Impl of Scope::  Two ways to implement dynamic scoping.
+* Using Scoping::  How to use dynamic scoping carefully and avoid problems.
+
+
+
+File: elisp-ja, Node: Scope, Next: Extent, Prev: Variable Scoping, Up: Variable Scoping
+
+スコープ
+--------
+
+Emacs Lispでは、ローカル変数束縛は"無限のスコープ"（indefinite scope）
+です。つまり、プログラムテキスト上のどの関数からでも、ある変数束縛を参
+照できるのです。つぎの関数定義を考えてみましょう。
+
+     (defun binder (x)   ; `x'は、`binder'で束縛
+        (foo 5))         ; `foo'は別の関数
+
+     (defun user ()      ; `x'は、`user'において『自由』
+       (list x))
+
+テキスト上のスコープを用いる言語では、
+`binder'内の`x'の束縛を、`user'で参照することはできません。
+なぜなら、`user'は、テキスト上で関数`binder'の内側にはないからです。
+しかしながら、動的スコープのEmacs Lispでは、
+状況に応じて、`binder'内で確立した`x'の束縛を
+`user'から参照してもしなくてもよいのです。
+
+   * `binder'をまったく呼び出さずに、直接`user'を呼び出したときには、と
+     にかくみつかった`x'の束縛を使うが、それは`binder'のものではありえ
+     ない。
+
+   * `foo'をつぎのように定義して`binder'を呼び出したときには、
+     `binder'が作った束縛を`user'で見える。
+
+          (defun foo (lose)
+            (user))
+
+   * しかし、`foo'をつぎのように定義して`binder'を呼び出したときには、
+     `binder'が作った束縛は`user'では*見えない*。
+
+          (defun foo (x)
+            (user))
+
+     ここで、`binder'が`foo'を呼び出すと、
+     `foo'は`x'を束縛する。
+     （`foo'の束縛は`binder'の束縛を"隠す"（shadow）という。）
+     したがって、`user'は、`binder'の束縛ではなく、
+     `foo'の束縛を参照することになる。
+
+Emacs Lispで動的スコープを使うのは、テキスト上のスコープの単純な実装は
+遅いからです。さらに、すべてのLispシステムは、少なくともオプションとし
+て、動的スコープを使えるようにする必要があります。テキスト上のスコープ
+が標準であると、特定の変数に対して動的スコープを指定する方法が必要にな
+ります。Emacsで両方のスコープを使えるようにしてもよいのですが、動的スコー
+プだけだと実装がより簡単になります。
+
+
+
+File: elisp-ja, Node: Extent, Next: Impl of Scope, Prev: Scope, Up: Variable Scoping
+
+存続期間
+--------
+
+"存続期間"（Extent）とは、プログラムの実行中において、変数名が有効であ
+る期間を指します。Emacs Lispでは、束縛を作ったフォームを実行している期
+間中だけ、変数は有効です。これを"動的存続期間"（dynamic extent）と呼び
+ます。CやPascalなどのほとんどの言語の『ローカル』変数や『自動』変数も動
+的存続期間です。
+
+動的存続期間とは別のものに"無限の存続期間"（indefinite extent）がありま
+す。つまり、変数束縛は、その束縛を作ったフォームから抜けても存続するの
+です。たとえば、Common LispやSchemeにはこれがありますが、Emacs Lispには
+ありません。
+
+これを説明するために、つぎの関数`make-add'を考えます。この関数は、Nに自
+身の引数Mを加算する関数を返します。この関数はCommon Lispでは動作します
+が、Emacs Lispではだめです。というのは、`make-add'の呼び出しを抜けると、
+変数Nは実引数2に束縛されなくなるからです。
+
+     (defun make-add (n)
+         (function (lambda (m) (+ n m))))  ; 関数を返す
+          => make-add
+     (fset 'add2 (make-add 2))  ; 関数`add2'を
+                                ;   `(make-add 2)'を使って定義する
+          => (lambda (m) (+ n m))
+     (add2 4)                   ; 4に2を加算してみる
+     error--> Symbol's value as variable is void: n
+
+Lispの方言のいくつかには『クロージャ』（closure）があります。それは関数
+のようなオブジェクトですが、追加の変数束縛を記録します。Emacs Lispには
+クロージャはありません。
+
+
+
+File: elisp-ja, Node: Impl of Scope, Next: Using Scoping, Prev: Extent, Up: Variable Scoping
+
+動的スコープの実装
+------------------
+
+（Emacs Lispの実際の動作とは異なるが）単純な実装例が、動的束縛を理解す
+る助けになるでしょう。この技法を"深い束縛"（ディープバインディング、
+deep binding）と呼び、初期のLispシステムで使われていました。
+
+変数・値の対である束縛のスタックがあるとしましょう。関数やフォーム
+`let'に入ると、引数やローカル変数の束縛をスタックに積みます。束縛を作っ
+た構造から抜けるとそれらの束縛を取りさります。
+
+変数の値は、スタックの先頭から底へ向けてその変数の束縛を探索します。そ
+の束縛から得る値が変数の値になります。変数に設定するには、現在の束縛を
+探して、その束縛に新たな値を格納します。
+
+これからわかるように、関数の束縛は、その関数の実行中には、たとえ別の関
+数を呼び出していても、存続しています。これが束縛の存続が動的であるとい
+う理由です。また、その束縛が有効である期間中ならば、同じ変数を使えば他
+の関数からも束縛を参照できるのです。これがスコープが無限であるという理
+由です。
+
+GNU Emacs Lispにおいて、変数のスコープの実際の実装には、"浅い束縛"（シャ
+ローバインディング、shallow binding）と呼ばれる技法を用いています。各変
+数には現在値を保存しておく標準の場所、シンボルの値セルがあります。
+
+浅い束縛では、変数の設定は値セルに値を格納することで動作します。新たな
+束縛を作成すると（以前の束縛に属する）古い値をスタックに積み、新たなロー
+カル値を値セルに格納します。束縛を解くときには、古い値をスタックから取
+り出して値セルに格納します。
+
+浅い束縛を用いる理由は、束縛を探索する必要がないため、深い束縛と同じ結
+果を持ちながら高速に動作するからです。
+
+
+
+File: elisp-ja, Node: Using Scoping, Prev: Impl of Scope, Up: Variable Scoping
+
+動的スコープの正しい使い方
+--------------------------
+
+ある関数で変数を束縛し別の関数でそれを使うことは、強力な技法ですが、な
+んの制限もせずに使うとプログラムを理解し難いものにしてしまいます。この
+技法を見通しよく使うための2つの方法があります。
+
+   * 1つのファイル内で近くに書いた関連する少数の関数でだけ、変数を使っ
+     たり束縛したりする。そのような変数は、1つのプログラム内での通信に
+     使う。
+
+     他のプログラマに対して、彼らがそのような変数を目にするまえに、その
+     ような変数の使い方がわかるようなコメントを書き、他の場所では使わな
+     いように助言しておく。
+
+   * 変数にはよくわかる意味を与え、それに関連する適切なすべての関数が
+     （束縛も設定もしないで）参照するようにする。たとえば、変数
+     `case-fold-search'は、『`nil'以外であれば探索時に大文字小文字を区
+     別しない』と定義されている。さまざまな探索関数や置換関数が、この変
+     数を直接に、あるいは、サブルーティンを介して参照するが、この変数を
+     束縛したり設定したりしない。
+
+     こうしておいて別のプログラムで変数を束縛するが、それにどのような効
+     果があるか確実に知ってから行える。
+
+いずれの場合でも、変数は`defvar'で定義するべきです。
+これは、関数間での変数の使い方を見るように伝えることで、
+他人が読者のプログラムを理解するのを助けます。
+また、バイトコンパイラからの警告も防ぎます。
+変数名が衝突しないようにも注意しましょう。
+`x'のような短い名前を使わないでください。
+
+
+
+File: elisp-ja, Node: Buffer-Local Variables, Next: Frame-Local Variables, Prev: Variable Scoping, Up: Variables
+
+バッファローカルな変数
+======================
+
+グローバルとローカルの変数束縛は、ほとんどのプログラム言語にいろいろな
+形であります。Emacsには、あまり普通でない追加の種類の変数束縛があります。
+1つのバッファだけに適用される"バッファローカル"な束縛、1つのフレームだ
+けに適用されるフレームローカルな束縛です。異なるバッファやフレームごと
+に変数に異なる値があるということは、重要なカスタマイズ技法です。
+
+本節では、バッファローカルな束縛を説明します。
+フレームローカルな束縛については、つぎの節と
+*Note Frame-Local Variables::。
+（各端末にローカルな束縛を持つ変数も少数ある。
+*Note Multiple Displays::。）
+
+* Menu:
+
+* Intro to Buffer-Local::      Introduction and concepts.
+* Creating Buffer-Local::      Creating and destroying buffer-local bindings.
+* Default Value::              The default value is seen in buffers
+                                 that don't have their own buffer-local values.
+
+
+
+File: elisp-ja, Node: Intro to Buffer-Local, Next: Creating Buffer-Local, Prev: Buffer-Local Variables, Up: Buffer-Local Variables
+
+バッファローカルな変数の紹介
+----------------------------
+
+バッファローカルな変数には、特定のバッファに関連したバッファローカルな
+束縛があります。この束縛は、そのバッファがカレントバッファであるときに
+有効になります。さもなければなんの効果もありません。バッファローカルな
+束縛が有効なときに変数に設定すると、新しい値はその束縛に入り、他の束縛
+は変更されません。つまり、その変更は、変更を行ったバッファだけで見るこ
+とができるのです。
+
+変数の通常の束縛、つまり、特定のバッファに関連していない束縛を"デフォル
+トの束縛"（default binding）と呼びます。多くの場合、これはグローバル束
+縛です。
+
+変数は、あるバッファ群ではバッファローカルな束縛を持ち、他のバッファで
+はそのような束縛を持たないようにできます。変数に対する独自の束縛を持た
+ないバッファすべてでは、デフォルトの束縛を共有します。（これには、新た
+に作成されるバッファも含む。）バッファローカルな束縛を持たないバッファ
+で変数に設定すると、（状況を複雑にするフレームローカルな束縛はないと仮
+定して）デフォルトの束縛を使います。したがって、新たな値はデフォルトの
+束縛を見るバッファすべてで見えます。
+
+バッファローカルな束縛のもっとも一般的な使い方は、
+メジャーモードでコマンドのふるまいを制御する変数に変更することです。
+たとえば、CモードやLispモードでは、変数`paragraph-start'を設定して、
+空行だけが段落を区切るように指定します。
+これには、CモードやLispモードになったバッファでは、
+変数をバッファローカルにしてから、
+そのモード用の新たな値を変数に設定するのです。
+*Note Major Modes::。
+
+バッファローカルな束縛を作る普通の方法は、`make-local-variable'です。メ
+ジャーモードのコマンドは典型的にこれを使います。これはカレントバッファ
+だけに影響します。（これから作成するものも含めて）他のすべてのバッファ
+は、それ専用のバッファローカルな束縛を明示的に与えない限り、デフォルト
+値を共有し続けます。
+
+より強力な操作は、`make-variable-buffer-local'を呼び出して変数を"自動的
+にバッファローカルに"するように印を付けることです。これは、これから作成
+するものも含めたバッファすべてで、変数をバッファローカルにすると考える
+ことができます。より正確には、変数がカレントバッファにローカルでなけれ
+ば、自動的に変数をカレントバッファにローカルにするように設定する効果が
+あります。すべてのバッファは通常どおり変数のデフォルト値を共有して始ま
+りますが、変数に設定するとカレントバッファにバッファローカルな束縛を作
+ります。新たな値はバッファローカルな束縛に格納され、デフォルトの束縛は
+変更しません。つまり、どのバッファでもデフォルト値を`setq'では変更でき
+ません。デフォルト値を変更する唯一の方法は、`setq-default'を使うことで
+す。
+
+*警告：*` ' 複数のバッファにおいて変数にバッファローカルな値があるとき
+に、変数を`let'で束縛してから、別の束縛が有効である別のバッファに切り替
+えて`let'を抜けると、Emacsをとても混乱させることになる。こうすると、バッ
+ファローカルな束縛とデフォルトの束縛を混ぜ合わせてしまう。
+
+混乱を避けるために、このような変数の使い方は避けてください。別のバッファ
+に切り替える各コード部分を`save-excursion'で囲めば、このような問題はあ
+りません。
+
+     (setq foo 'b)
+     (set-buffer "a")
+     (make-local-variable 'foo)
+     (setq foo 'a)
+     (let ((foo 'temp))
+       (set-buffer "b")
+       BODY...)
+     foo => 'a      ; バッファ`a'の古いバッファローカルな値が
+                    ;   現在のデフォルト値
+     (set-buffer "a")
+     foo => 'temp   ; 消えているべきローカルな`let'の値が
+                    ;   バッファ`a'の現在のバッファローカルな値
+
+しかし、つぎに示すように`save-excursion'を使えば、この問題を回避できま
+す。
+
+     (let ((foo 'temp))
+       (save-excursion
+         (set-buffer "b")
+         BODY...))
+
+BODY内での`foo'への参照は、バッファ`b'のバッファローカルな束縛を使いま
+す。
+
+ファイルでローカル変数の値を指定していると、
+そのファイルを訪問したときに、それらはバッファローカルな値になります。
+*Note ファイルにローカルな変数: (emacs)File Variables。
+
+
+
+File: elisp-ja, Node: Creating Buffer-Local, Next: Default Value, Prev: Intro to Buffer-Local, Up: Buffer-Local Variables
+
+バッファローカルな束縛の作成と削除
+----------------------------------
+
+ -- コマンド: make-local-variable VARIABLE
+     この関数は、カレントバッファにおいて、VARIABLE（シンボル）のバッファ
+     ローカルな束縛を作る。他のバッファは影響されない。返す値は
+     VARIABLE。
+
+     VARIABLEのバッファローカルな値は、
+     VARIABLEの以前と同じ値で始まる。
+     VARIABLEが空であれば、空のままである。
+
+          ;; バッファ`b1'では、
+          (setq foo 5)                ; すべてのバッファに影響する
+               => 5
+          (make-local-variable 'foo)  ; `b1'にローカル
+               => foo
+          foo                         ; これは値を
+               => 5                   ;   変えない
+          (setq foo 6)                ; `b1'での値を
+               => 6                   ;   変更する
+          foo
+               => 6
+
+          ;; バッファ`b2'では、値は変わっていない
+          (save-excursion
+            (set-buffer "b2")
+            foo)
+               => 5
+
+     変数の`let'束縛の内側でその変数をバッファローカルにしても、そのバッ
+     ファが`let'に入るときや抜けるときにカレントバッファになっていない
+     と、正しく動作しない。これは、`let'が、異なる種類の束縛を区別しな
+     いからであり、どの変数の束縛を作るかだけを知っているからである。
+
+     変数が端末にローカルなときには、この関数はエラーを通知する。
+     そのような変数は、同時にバッファローカルな束縛を持てない。
+     *Note Multiple Displays::。
+
+     *注意：*` '
+     フック変数に対して`make-local-variable'を使わないこと。
+     そのかわりに`make-local-hook'を使う。
+     *Note Hooks::。
+
+ -- コマンド: make-variable-buffer-local VARIABLE
+     この関数は、VARIABLE（シンボル）を自動的にバッファローカルにするよ
+     うに印を付け、これ以降にその変数に設定しようとすると、その時点のカ
+     レントバッファにローカルにする。
+
+     この機能の重要な点は、（`let'や他の束縛を作る構文で）変数を束縛し
+     ても、その変数のバッファローカルな束縛を作らないことである。
+     （`set'や`setq'で）変数を設定して初めてそのようにする。
+
+     返す値はVARIABLEである。
+
+     *警告：*` ' ユーザーが異なるバッファでは異なったカスタマイズをする
+     かも*しれない*というだけで、ユーザーオプション変数に
+     `make-variable-buffer-local'を使うべきだと仮定しないこと。ユーザー
+     は、必要ならば、どんな変数でもローカルにできる。選択はユーザーに任
+     せるのがよい。
+
+     2つのバッファが同じ束縛を共有しないことが重要な場面では、
+     `make-variable-buffer-local'を使う。
+     たとえば、異なるバッファでは異なる値を持つことに依存するような
+     Lispプログラムで内部目的に変数を使うときには、
+     `make-variable-buffer-local'を使うのが最良である。
+
+ -- Function: local-variable-p VARIABLE &optional BUFFER
+     これは、VARIABLEがバッファBUFFER （デフォルトはカレントバッファ）
+     においてバッファローカルであれば`t'を返し、さもなければ`nil'を返す。
+
+ -- Function: buffer-local-variables &optional BUFFER
+     この関数は、バッファBUFFERのバッファローカルな変数を記述したリスト
+     を返す。（BUFFERを省略するとカレントバッファを使う。）バッファロー
+     カルな変数とその値を入れた要素から成る連想リスト（*Note
+     Association Lists::）を返す。しかし、BUFFERにおける変数のバッファ
+     ローカルな束縛が空であると、変数は結果のリストに直接現れる。
+
+          (make-local-variable 'foobar)
+          (makunbound 'foobar)
+          (make-local-variable 'bind-me)
+          (setq bind-me 69)
+          (setq lcl (buffer-local-variables))
+              ;; まず、すべてのバッファでローカルな組み込み変数
+          => ((mark-active . nil)
+              (buffer-undo-list . nil)
+              (mode-name . "Fundamental")
+              ...
+              ;; 続いて、組み込みでないバッファローカルな変数
+              ;; これはバッファローカルで、かつ、空
+              foobar
+              ;; これはバッファローカルで、かつ、空ではない
+              (bind-me . 69))
+
+     このリストのコンスセルのCDRに新たな値を格納しても、変数のバッファ
+     ローカルな値を変更*しない*ことに注意してほしい。
+
+ -- コマンド: kill-local-variable VARIABLE
+     この関数は、カレントバッファにおけるVARIABLE（シンボル）のバッファ
+     ローカルな束縛を（あれば）削除する。その結果、このバッファでは、
+     VARIABLEのデフォルトの束縛が見えるようになる。典型的には、
+     VARIABLEの値が変わる。なぜなら、デフォルト値は、削除したバッファロー
+     カルな値とは普通は異なるからである。
+
+     自動的にバッファローカルにする印が付いた変数のバッファローカルな束
+     縛を削除すると、カレントバッファではデフォルト値が見えるようになる。
+     しかし、変数に再度設定すると、それに対するバッファローカルな束縛が
+     再度作成される。
+
+     `kill-local-variable'はVARIABLEを返す。
+
+     この関数がコマンドであるのは、対話的にバッファローカルな変数を作る
+     のが有用なように、対話的にバッファローカルな変数を削除するのが有用
+     な場合があるからである。
+
+ -- Function: kill-all-local-variables
+     この関数は、カレントバッファにおいて、『恒久的』と印付けしてある変
+     数を除いて、すべてのバッファローカルな変数束縛を削除する。その結果、
+     バッファでは、ほとんどの変数のデフォルト値が見えるようになる。
+
+     この関数は、バッファに属する他のある種の情報もリセットする。つまり、
+     ローカルキーマップに`nil'、構文テーブルに
+     `(standard-syntax-table)'の値、大文字小文字テーブルに
+     `(standard-case-table)'、略語テーブルに
+     `fundamental-mode-abbrev-table'の値を設定する。
+
+     この関数が最初に行うことは、ノーマルフック
+     `change-major-mode-hook'（下記参照）を実行することである。
+
+     各メジャーモードコマンドはこの関数を呼び出すことから始める。つまり、
+     基本（fundamental）モードに切り替え、それ以前のメジャーモードのほ
+     とんどの効果を消しさる。この処理を保証するために、メジャーモードで
+     設定する変数には、恒久的の印を付けないこと。
+
+     `kill-all-local-variables'は`nil'を返す。
+
+ -- Variable: change-major-mode-hook
+     関数`kill-all-local-variables'は、最初にこのノーマルフックを実行する。
+     このフックはメジャーモードに対して、
+     ユーザーが別のメジャーモードに切り替えていた場合には、
+     なにか特別なことを行う情報を提供する。
+     最良の結果を得るためには、この変数をバッファローカルにしておくと
+     その役目を終えると変数は消えてしまい、それ以降のメジャーモードに干渉しない。
+     *Note Hooks::。
+
+バッファローカル変数は、変数名（シンボル）の属性`permanent-local'が
+`nil'以外であると、"恒久的"（permanent）です。恒久的なローカル変数は、
+編集作業の文脈ではなく、どのファイルを訪問中であるとかどのように保存す
+るとかに関連する情報に適しています。
+
+
+
+File: elisp-ja, Node: Default Value, Prev: Creating Buffer-Local, Up: Buffer-Local Variables
+
+バッファローカル変数のデフォルト値
+----------------------------------
+
+バッファローカルな束縛がある変数のグローバル値を、"デフォルト"値とも呼
+びます。カレントバッファや選択したフレームに変数の独自の束縛がない場合
+に、グローバル値を使うからです。
+
+関数`default-value'と関数`setq-default'は、カレントバッファにバッファロー
+カルな束縛があるかどうかに関わらず、変数のデフォルト値を参照したり変更
+したりします。たとえば、`setq-default'を使って、ほとんどのバッファの
+`paragraph-start'のデフォルト値を変更できます。この変数のバッファローカ
+ルな値があるCモードやLispモードのバッファで行ってもこれは動作します。
+
+スペシャルフォーム`defvar'や`defconst'も、バッファローカルやフレームロー
+カルな値ではなく、（変数に設定する場合には）デフォルト値を設定します。
+
+ -- Function: default-value SYMBOL
+     この関数は、SYMBOLのデフォルト値を返す。この値は、この変数に対して
+     独自の値を持たないバッファやフレームで見える値である。SYMBOLがバッ
+     ファローカルでなければ、これは、`symbol-value'（*Note Accessing
+     Variables::）と等価。
+
+ -- Function: default-boundp SYMBOL
+     関数`default-boundp'は、
+     SYMBOLのデフォルト値が空でないことを調べる。
+     `(default-boundp 'foo)'が`nil'を返せば、
+     `(default-value 'foo)'はエラーになる。
+
+     `default-boundp'は、`boundp'が`symbol-value'に対応するように、
+     `default-value'に対応する。
+
+ -- Special form: setq-default [SYMBOL FORM]...
+     このスペシャルフォームは、各SYMBOLに、対応するFORMの評価結果である
+     新たなデフォルト値を与える。SYMBOLは評価しないが、FORMは評価する。
+     フォーム`setq-default'の値は、最後のFORMの値である。
+
+     SYMBOLがカレントバッファでバッファローカルではなく、かつ、自動的に
+     バッファローカルにする印が付いていなければ、`setq-default'は
+     `setq'と同じ効果がある。SYMBOLがカレントバッファでバッファローカル
+     ならば、（バッファローカルな値を持たない）別のバッファが見る値を変
+     更し、カレントバッファが見る値は変更しない。
+
+          ;; バッファ`foo'において、
+          (make-local-variable 'buffer-local)
+               => buffer-local
+          (setq buffer-local 'value-in-foo)
+               => value-in-foo
+          (setq-default buffer-local 'new-default)
+               => new-default
+          buffer-local
+               => value-in-foo
+          (default-value 'buffer-local)
+               => new-default
+
+          ;; （新たな）バッファ`bar'では、
+          buffer-local
+               => new-default
+          (default-value 'buffer-local)
+               => new-default
+          (setq buffer-local 'another-default)
+               => another-default
+          (default-value 'buffer-local)
+               => another-default
+
+          ;; バッファ`foo'に戻ってみると
+          buffer-local
+               => value-in-foo
+          (default-value 'buffer-local)
+               => another-default
+
+ -- Function: set-default SYMBOL VALUE
+     この関数は`setq-default'に似ているが、
+     SYMBOLは普通どおりに評価される引数である。
+
+          (set-default (car '(a b c)) 23)
+               => 23
+          (default-value 'a)
+               => 23
+
+
+
+File: elisp-ja, Node: Frame-Local Variables, Next: Future Local Variables, Prev: Buffer-Local Variables, Up: Variables
+
+フレームローカルな変数
+======================
+
+変数にバッファローカルな束縛があるように、変数にはフレームローカルな束
+縛もあります。これらの束縛は1つのフレームに属し、そのフレームを選択して
+いるときに有効になります。フレームローカルな束縛は、実際にはフレームパ
+ラメータです。特定のフレームでフレームローカルな束縛を作るには
+`modify-frame-parameters'を呼び出し、パラメータ名として変数名を指定しま
+す。
+
+特定の変数に対するフレームローカルな束縛を有効にするには、関数
+`make-variable-frame-local'を呼び出します。
+
+ -- コマンド: make-variable-frame-local VARIABLE
+     VARIABLEに対してフレームローカルな束縛を使うようにする。この関数そ
+     のものはVARIABLEに対してフレームローカルな束縛を作成しない。しかし、
+     フレームパラメータとしてVARIABLEの値を持つフレームがすでに存在すれ
+     ば、その値は自動的にフレームローカルな束縛になる。
+
+     変数が端末にローカルであると、この関数はエラーを通知する。そのよう
+     な変数はフレームローカルな束縛を同時には持てないからである。*Note
+     Multiple Displays::。Emacsで特別に実装されている少数の変数は（普通）
+     バッファローカルになることができるが、フレームローカルにはならない。
+
+バッファローカルな束縛はフレームローカルな束縛に優先します。変数`foo'を
+考えてみましょう。カレントバッファに`foo'のバッファローカルな束縛がある
+と、その束縛が有効になります。選択したフレームに`foo'のフレームローカル
+な束縛があると、その束縛が有効になります。さもなければ、`foo'のデフォル
+トの束縛が有効になります。
+
+つぎに例を示します。まず、`foo'の束縛を準備しておきます。
+
+     (setq f1 (selected-frame))
+     (make-variable-frame-local 'foo)
+
+     ;; `b1'において、`foo'のバッファローカルな束縛を作る
+     (set-buffer (get-buffer-create "b1"))
+     (make-local-variable 'foo)
+     (setq foo '(b 1))
+
+     ;; 新しいフレームで`foo'のフレームローカルな束縛を作る
+     ;; そのフレームを`f2'に格納する
+     (setq f2 (make-frame))
+     (modify-frame-parameters f2 '((foo . (f 2))))
+
+では、さまざまな文脈で`foo'を調べてみましょう。
+バッファ`b1'がカレントバッファであれば、
+選択したフレームに関係なく、
+`b1'のバッファローカルな束縛が有効になっています。
+
+     (select-frame f1)
+     (set-buffer (get-buffer-create "b1"))
+     foo
+          => (b 1)
+
+     (select-frame f2)
+     (set-buffer (get-buffer-create "b1"))
+     foo
+          => (b 1)
+
+さもなければ、フレームの束縛を使う可能性があります。フレーム`f2'を選択
+していると、そのフレームローカルな束縛が有効になります。
+
+     (select-frame f2)
+     (set-buffer (get-buffer "*scratch*"))
+     foo
+          => (f 2)
+
+カレントバッファにもフレームにも束縛がなければ、デフォルトの束縛を使い
+ます。
+
+     (select-frame f1)
+     (set-buffer (get-buffer "*scratch*"))
+     foo
+          => nil
+
+変数の有効な束縛がフレームローカルな束縛であるとき、
+変数に設定するとその束縛を変更します。
+`frame-parameters'でその結果を見ることができます。
+
+     (select-frame f2)
+     (set-buffer (get-buffer "*scratch*"))
+     (setq foo 'nobody)
+     (assq 'foo (frame-parameters f2))
+          => (foo . nobody)
+
+
+
+File: elisp-ja, Node: Future Local Variables, Prev: Frame-Local Variables, Up: Variables
+
+将来のローカル変数
+==================
+
+フレームに分類されるものでローカルな束縛というアイデアを考察しています。
+たとえば、すべてのカラーフレーム、暗い背景色のすべてのフレームなどです。
+この機能が本当に有用なのか明らかでないので、それらをまだ実装してはいま
+せん。`after-make-frame-hook'に関数を追加して、各フレームの適切な状態に
+応じたフレームパラメータを設定すれば、同じような結果を得られます。
+
+ウィンドウローカルな束縛を実装することも可能です。これが有用である多く
+の状況を知りませんが、バッファローカルな束縛を持つ間接バッファ（*Note
+Indirect Buffers::）で、そのような状況をより堅牢に扱えると思います。
+
+これら2種類のローカル束縛のいずれかを必要とする十分な数のアプリケーショ
+ンがみつかれば、Emacsの将来の版でそのような束縛を提供するでしょう。
+
+
+
+
+File: elisp-ja, Node: Functions, Next: Macros, Prev: Variables, Up: Top
+
+関数
+****
+
+Lispプログラムは、主にLisp関数から構成されます。本章では、関数とはなに
+か、引数をどのように受け取るのか、どのように関数を定義するのかを説明し
+ます。
+
+* Menu:
+
+* What Is a Function::    Lisp functions vs. primitives; terminology.
+* Lambda Expressions::    How functions are expressed as Lisp objects.
+* Function Names::        A symbol can serve as the name of a function.
+* Defining Functions::    Lisp expressions for defining functions.
+* Calling Functions::     How to use an existing function.
+* Mapping Functions::     Applying a function to each element of a list, etc.
+* Anonymous Functions::   Lambda expressions are functions with no names.
+* Function Cells::        Accessing or setting the function definition
+                            of a symbol.
+* Inline Functions::	  Defining functions that the compiler will open code.
+* Related Topics::        Cross-references to specific Lisp primitives
+                            that have a special bearing on how functions work.
+
+
+
+File: elisp-ja, Node: What Is a Function, Next: Lambda Expressions, Prev: Functions, Up: Functions
+
+関数とはなにか
+==============
+
+一般的には、関数とは、"引数"（arguments）と呼ばれる値を与えられ、計算を
+行うための規則です。この計算結果を関数の値と呼びます。計算では副作用、
+つまり、変数の値やデータ構造の内容に継続する変更を伴うこともできます。
+
+Emacs Lispの関数や関数のようなオブジェクトに関する重要な用語をあげてお
+きます。
+
+"関数"
+     Emacs Lispでは、Lispプログラムにおいて引数に適用可能ものはなんであ
+     れ"関数"（function）である。Lispで書いた関数を意味する場合もある。
+     スペシャルフォームやマクロは関数ではない。
+
+"基本関数"
+     "基本関数"（primitive）は、`car'や`append'などのCで書いたLispから
+     呼び出し可能な関数である。これらの関数は、"組み込み"関数とか
+     subrs"とも呼ぶ。（スペシャルフォームは基本関数とも考えられる。）
+
+     関数を基本関数として実装する理由は、
+     それが基本的なものである、
+     それがオペレーティングシステムの機能に対する
+     低レベルのインターフェイスを提供する、
+     あるいは、高速に動作する必要があるからである。
+     基本関数を変更したり追加する唯一の方法は、
+     Cソースを変更してエディタを再コンパイルすることである。
+     *Note Writing Emacs Primitives::。
+
+"ラムダ式"
+     "ラムダ式"（lambda expression）は、Lispで書いた関数である。これら
+     については以下の節で説明する。
+     *Note Lambda Expressions::。
+
+"スペシャルフォーム"
+     "スペシャルフォーム"（special form）は関数に似た基本関数であるが、
+     その引数すべてを普通のようには評価しない。
+     引数の一部を評価したり、普通とは異なる順序で評価したり、
+     複数回評価したりする。
+     多くのスペシャルフォームについては、
+     *Note Control Structures::で説明してある。
+
+"マクロ"
+     "マクロ"（macro）は、プログラマがLispで定義した構文である。マクロ
+     と関数との違いは、マクロは、読者が書いたLisp式をもとの式のかわりに
+     評価される等価な式に変換する。マクロは、スペシャルフォームでできる
+     種類のことをLispプログラマに提供する。マクロの定義方法と使い方につ
+     いては、*Note Macros::。
+
+"コマンド"
+     "コマンド"（command）とは、`command-execute'が起動できるオブジェク
+     トであり、キー列に対して定義できる。いくつかの関数はコマンドである。
+     Lispで書いた関数に対話宣言（*Note Defining Commands::）が含まれて
+     いるとき、その関数はコマンドである。そのような関数は、他の関数と同
+     様にLisp式から呼び出すことができる。その場合、関数がコマンドである
+     という事実は関係ない。
+
+     キーボードマクロ（文字列かベクトル）もコマンドであるが、それらは関
+     数ではない。シンボルの関数定義がコマンドであれば、シンボルはコマン
+     ドである。そのようなシンボルは、`M-x'で起動できる。シンボルの定義
+     が関数であれば、シンボルは関数でもある。
+
+"打鍵コマンド"
+     "打鍵コマンド"（keystroke command）とは、キー列（典型的には1から3
+     打鍵）にバインドされたコマンドである。ここでの区別は、Emacs以外の
+     エディタの『コマンド』の意味との混乱を防ぐためであるが、Lispプログ
+     ラムにとっては、この区別は普通は重要ではない。
+
+"バイトコード関数"
+     "バイトコード関数"（byte-code function）とは、
+     バイトコンパイラでコンパイルした関数である。
+     *Note Byte-Code Type::。
+
+ -- Function: functionp OBJECT
+     この関数は、OBJECTが、なんらかの関数、スペシャルフォーム、マクロで
+     あれば、`t'を返す。
+
+ -- Function: subrp OBJECT
+     この関数は、OBJECTが組み込み関数（つまり、Lisp基本関数）であれば
+     `t'を返す。
+
+          (subrp 'message)            ; `message'はシンボルであり、
+               => nil                 ;   subrオブジェクトではない
+          (subrp (symbol-function 'message))
+               => t
+
+ -- Function: byte-code-function-p OBJECT
+     この関数は、OBJECTがバイトコード関数であれば`t'を返す。たとえば、
+     つぎのとおり。
+
+          (byte-code-function-p (symbol-function 'next-line))
+               => t
+
+
+
+File: elisp-ja, Node: Lambda Expressions, Next: Function Names, Prev: What Is a Function, Up: Functions
+
+ラムダ式
+========
+
+Lispで書いた関数はつぎのようなリストです。
+
+     (lambda (ARG-VARIABLES...)
+       [DOCUMENTATION-STRING]
+       [INTERACTIVE-DECLARATION]
+       BODY-FORMS...)
+
+このようなリストを"ラムダ式"（lambda expression）と呼びます。Emacs
+Lispでは、これは式として正しいもので、それ自身に評価されます。Lispの他
+の方言では、ラムダ式は正しい式ではありません。いずれの場合でも、その主
+な用途は式として評価することではなく、関数として呼び出すことです。
+
+* Menu:
+
+* Lambda Components::       The parts of a lambda expression.
+* Simple Lambda::           A simple example.
+* Argument List::           Details and special features of argument lists.
+* Function Documentation::  How to put documentation in a function.
+
+
+
+File: elisp-ja, Node: Lambda Components, Next: Simple Lambda, Prev: Lambda Expressions, Up: Lambda Expressions
+
+ラムダ式の構成要素
+------------------
+
+
+Lispで書いた関数（『ラムダ式』）はつぎのようなリストです。
+
+     (lambda (ARG-VARIABLES...)
+       [DOCUMENTATION-STRING]
+       [INTERACTIVE-DECLARATION]
+       BODY-FORMS...)
+
+ラムダ式の先頭要素は、つねにシンボル`lambda'です。このシンボルは、リス
+トが関数を表すことを示します。関数は`lambda'で始まると定義してあるのは、
+他の目的向けの他のリストが誤って正しい関数とならないようにするためです。
+
+第2要素は、シンボルのリスト、つまり、引数変数名です。
+これを"ラムダリスト"（lambda list）と呼びます。
+Lisp関数が呼ばれると、引数値をラムダリストの変数に対応させ、
+指定した値を持つローカル束縛になります。
+*Note Local Variables::。
+
+説明文字列は、関数定義の内側にあるLisp文字列オブジェクトであり、
+Emacsのヘルプ機能に対して関数を記述します。
+*Note Function Documentation::。
+
+対話宣言は、`(interactive CODE-STRING)'の形式のリストです。この宣言は、
+関数が対話的に使われたときに、どのように引数を与えるかを指定します。こ
+の宣言を有する関数を"コマンド"（commands）と呼びます。コマンドは、
+`M-x'で呼び出したり、キーにバインドできます。このように呼ばれることを意
+図していない関数には、対話宣言を付けてはいけません。対話宣言の書き方に
+ついては、*Note Defining Commands::。
+
+残りの要素は、関数の"本体"（body）です。関数の動作を行うLispコードです
+（Lispプログラマとしては、『評価するべきLispフォームのリスト』という）。
+関数が返す値は、本体の最後の要素が返す値です。
+
+
+
+File: elisp-ja, Node: Simple Lambda, Next: Argument List, Prev: Lambda Components, Up: Lambda Expressions
+
+簡単なラムダ式の例
+------------------
+
+つぎの関数を考えてみましょう。
+
+     (lambda (a b c) (+ a b c))
+
+この関数を呼び出すには、つぎのように式のCARにこの関数を書きます。
+
+     ((lambda (a b c) (+ a b c))
+      1 2 3)
+
+この呼び出しは、変数`a'には1、変数`b'には2、変数`c'には3を束縛し、ラム
+ダ式の本体を評価します。本体の評価ではこれらを加算し、結果6を生じます。
+したがって、この関数呼び出しは6を返します。
+
+つぎの例のように、他の関数呼び出しの結果が引数になることもあります。
+
+     ((lambda (a b c) (+ a b c))
+      1 (* 2 3) (- 5 4))
+
+これは、引数、`1'、`(* 2 3)'、`(- 5 4)'を左から右へ順に評価します。そし
+て、引数値、1、6、1にラムダ式を適用し、値8を生じます。
+
+このようにフォームのCARとしてラムダ式を書くのは、あまり便利ではありませ
+ん。スペシャルフォーム`let'（*Note Local Variables::）を使って、ローカ
+ル変数を作ってそれらに値を与えても、同じ結果を得られます。さらに、
+`let'は見通しがよく使いやすいです。実用上、ラムダ式は、シンボルの関数定
+義として格納して名前付き関数を作るか、他の関数に引数として渡します
+（*Note Anonymous Functions::）。
+
+しかしながら、スペシャルフォーム`let'がなかった初期のLispでは、ラムダ式
+を明示的に呼び出すことはとても便利でした。その頃では、ラムダ式はローカ
+ル変数を束縛し初期化する唯一の方法でした。
+
+
+
+File: elisp-ja, Node: Argument List, Next: Function Documentation, Prev: Simple Lambda, Up: Lambda Expressions
+
+引数リストのその他の機能
+------------------------
+
+単純な関数の例`(lambda (a b c) (+ a b c))'では、3つの引数変数を指定して
+いるので、これは3引数で呼び出す必要があります。2引数や4引数で呼び出そう
+とすると、エラー`wrong-number-of-arguments'になります。
+
+特定の引数を省略できる関数を書けると便利なことがしばしばあります。たと
+えば、関数`substring'は3つの引数、つまり、文字列、開始と終了の添字を取
+りますが、第3引数を省略するとデフォルトは文字列のLENGTHになります。
+`list'や`+'のように、特定の関数では任意個数の引数を受け付けると便利なこ
+ともあります。
+
+関数呼び出し時に省略してもよい引数を指定するには、省略可能な引数のまえ
+にキーワード`&optional'を含めるだけです。0個以上の引数のリストを指定す
+るには、最後の引数のまえにキーワード`&rest'を含めます。
+
+したがって、引数リストの完全な構文はつぎのようになります。
+
+     (REQUIRED-VARS...
+                    ; 必須の引数
+      [&optional OPTIONAL-VARS...]
+                    ; 省略可能な引数
+      [&rest REST-VAR])
+                    ; 残りの引数
+
+角括弧は、`&optional'や`&rest'の節やそれに続く変数は省略できることを示
+します。
+
+関数呼び出し時には、各REQUIRED-VARSに1つの実引数が必要です。
+0個以上のOPTIONAL-VARSにも実引数が必要ですが、
+ラムダリストに`&rest'がない限り、
+OPTIONAL-VARSの個数を超える実引数は指定できません。
+`&rest'があれば、任意個の余分な実引数を指定できます。
+
+`&optional'や`&rest'に対応する実引数を省略すると、それらのデフォルトは
+`nil'です。関数では、`nil'を明示した引数と省略した引数とを区別する方法
+はありません。しかしながら、関数本体で`nil'を適切な意味ある値の省略とみ
+なすことは自由です。`substring'はそのようにしています。`substring'の第
+3引数が`nil'であると、指定した文字列の長さを使うことを意味します。
+
+     Common Lispに関した注意：` ' Common Lispでは、省略可能引数を省略し
+     たときのデフォルト値を関数で指定できる。Emacs Lispではつねに`nil'
+     を使う。Emacs Lispには、明示的に引数を指定したかどうか調べる
+     『supplied-p』変数はない。
+
+たとえば、引数リストはつぎのようになります。
+
+     (a b &optional c d &rest e)
+
+これは、`a'と`b'に最初の2つの実引数を束縛し、これらは必須です。さらに1
+個か2個の引数を指定すると、それらは、それぞれ`c'と`d'に束縛します。最初
+の4個よりあとの引数はリストにまとめ、`e'にそのリストを束縛します。引数
+が2個だけであると、`c'は`nil'です。引数が2個か3個だけであると、`d'は
+`nil'です。引数が4個以下であると、`e'は`nil'です。
+
+省略可能な引数のあとに必須引数を指定する方法はありませんし、それには意
+味がありません。なぜそうなのかを理解するために、上の例で、`c'は省略可能
+であり、`d'は必須であるとしましょう。3つの実引数を指定したとき、どの引
+数を3番目と考えるのでしょう？` ' 同様に、`&rest'のうしろに余分に（必須、
+もしくは省略可能な）引数があっても意味がありません。
+
+引数リストと正しい呼び出しの例をあげます。
+
+     ((lambda (n) (1+ n))                ; 1個が必須
+      1)                                 ; 引数は1個だけ
+          => 2
+     ((lambda (n &optional n1)           ; 1個は必須、1個は省略可
+              (if n1 (+ n n1) (1+ n)))   ; 引数は1個か2個
+      1 2)
+          => 3
+     ((lambda (n &rest ns)               ; 1個は必須、あとは残り全部
+              (+ n (apply '+ ns)))       ; 引数は1個以上いくつでもよい
+      1 2 3 4 5)
+          => 15
+
+
+
+File: elisp-ja, Node: Function Documentation, Prev: Argument List, Up: Lambda Expressions
+
+関数の説明文字列
+----------------
+
+ラムダ式には、ラムダリストの直後に
+"説明文字列"（documentation string）があってもかまいません。
+この文字列は関数の実行には影響しません。
+コメントのようなものですが、Lisp内部に現れる系統的なコメントであり、
+Emacsのヘルプ機能が使用します。
+DOCUMENTATION-STRINGの参照方法については、*Note Documentation::。
+
+読者のプログラムの関数すべてに、たとえ内部的に使用されるものであっても
+説明文字列を与えることはよいことです。説明文字列はコメントに似ています
+が、参照するのはもっと簡単です。
+
+説明文字列の先頭行は、その1行で完結しているべきです。というのは、
+`apropos'は先頭行だけを表示するからです。関数の機能をまとめた1つか2つの
+文にしましょう。
+
+説明文字列の先頭は、ソースファイル上では普通字下げしてあるでしょうが、
+それらの空白は文字列を始めるダブルクォートのまえにありますから、それら
+は文字列の一部ではありません。説明文字列の残りの行を字下げして、プログ
+ラムソース上でテキスト行が揃うようにする人もいます。しかし、*それはまち
+がいです*。後続の行の字下げは文字列の内側にあります。ソースファイルで綺
+麗に見えても、ヘルプコマンドの表示では不恰好になります。
+
+関数の必須の構成要素（本体）があとに続くのに、説明文字列を省略できるの
+を不思議に思うかもしれません。文字列を評価すると、副作用なしに、その文
+字列を返すので、それが本体の最後のフォームでなければ、なんの効果もあり
+ません。したがって、実用上、本体の最初のフォームと説明文字列を混同する
+ことはありません。本体のフォームが文字列だけであると、それは戻り値でも
+あり説明文字列でもあります。
+
+
+
+File: elisp-ja, Node: Function Names, Next: Defining Functions, Prev: Lambda Expressions, Up: Functions
+
+関数を命名する
+==============
+
+ほとんどの計算機言語では、各関数には名前があります。名前のない関数とい
+う考えは本質的ではありません。Lispでは、もっとも厳密にいえば、関数には
+名前はありません。関数は、先頭要素が単に`lambda'であるリスト、バイトコー
+ド関数オブジェクト、あるいは、基本関数のsubrオブジェクトです。
+
+しかしながら、シンボルは関数の名前として働きます。
+シンボルの"関数セル"（function cell、*Note Symbol Components::）に
+関数を入れると、このようになります。
+そうすると、シンボルそのものは正当な呼び出し可能な関数となり、
+関数セルが参照するリストやsubrオブジェクトと等価になります。
+関数セルの内容をシンボルの"関数定義"（function definition）とも呼びます。
+シンボルのかわりにシンボルの関数定義を使う処理を
+"シンボルの関数間接"（symbol function indirection）と呼びます。
+*Note Function Indirection::。
+
+実用上、ほとんどすべての関数には、このようにして名前が付いていて、その
+名前で参照します。たとえば、シンボル`car'は、その関数セルに基本関数の
+subrオブジェクト`#<subr car>'が格納してあるので、その動作を行う関数とし
+て動作します。
+
+関数に名前を与えるのは、Lisp式からその名前で参照できると便利だからです。
+`#<subr car>'のような基本関数のsubrオブジェクトでは、名前はそれらを参照
+する唯一の方法です。そのようなオブジェクトには入力構文はありません。
+Lispで書いた関数では、明示的なラムダ式より名前を使うほうがより便利です。
+また、関数に名前があればそれを参照できます。つまり、再帰呼び出しができ
+ます。関数の名前をその定義そのものに書くことは、関数定義がそれ自身を指
+すようにする（これは不可能ではないにしても、実用上はさまざまな欠点があ
+る）よりは、とても便利です。
+
+関数を指名するシンボルで関数をしばしば識別します。たとえば、しばしば
+『関数`car'』といって、シンボル`car'と関数定義である基本関数のsubrオブ
+ジェクトとを区別しません。ほとんどの目的には、区別する必要はありません。
+
+たとえそうであっても、関数に一意な名前は必要ないことを心に留めておいて
+ください。関数オブジェクトは*普通*1つのシンボルの関数セルだけに現れます
+が、これは単なる便法です。`fset'を使って、複数のシンボルに格納するのは
+簡単です。そうすると、各シンボルは同じ関数を同等に指名します。
+
+関数名として使うシンボルは、変数としても使えます。シンボルのこれら2つの
+使い方は独立していて衝突しません。（SchemeなどのLispの方言のなかには、
+シンボルの値とその関数定義を区別しないものもある。変数としてのシンボル
+の値は、その関数定義でもある。）シンボルに関数定義を与えていないと、そ
+のシンボルを関数としては使えません。これは、シンボルに変数としての値が
+あるかどうかには関係しません。
+
+
+
+File: elisp-ja, Node: Defining Functions, Next: Calling Functions, Prev: Function Names, Up: Functions
+
+関数を定義する
+==============
+
+関数を作成するときには、普通、関数に名前を与えます。これを"関数を定義す
+る"と呼び、スペシャルフォーム`defun'で行います。
+
+ -- Special form: defun NAME ARGUMENT-LIST BODY-FORMS
+     `defun'は、新たにLisp関数を定義する普通の方法である。これは、シン
+     ボルNAMEをつぎのような関数として定義する。
+
+          (lambda ARGUMENT-LIST . BODY-FORMS)
+
+     `defun'は、このラムダ式をNAMEの関数セルに格納する。値NAMEを返すが、
+     普通、これは無視する。
+
+     前述（*Note Lambda Expressions::）のように、ARGUMENT-LISTは引数名
+     のリストであり、キーワード`&optional'や`&rest'が入っていてもよい。
+     また、BODY-FORMSの最初の2つは、説明文字列と対話宣言でもよい。
+
+     同一のシンボルNAMEを変数として使っていても衝突はない。
+     というのは、シンボルの値セルは関数セルとは独立だからである。
+     *Note Symbol Components::。
+
+     例を示そう。
+
+          (defun foo () 5)
+               => foo
+          (foo)
+               => 5
+
+          (defun bar (a &optional b &rest c)
+              (list a b c))
+               => bar
+          (bar 1 2 3 4 5)
+               => (1 2 (3 4 5))
+          (bar 1)
+               => (1 nil nil)
+          (bar)
+          error--> Wrong number of arguments.
+
+          (defun capitalize-backwards ()
+            "Upcase the last letter of a word."
+            (interactive)
+            (backward-word 1)
+            (forward-word 1)
+            (backward-char 1)
+            (capitalize-word 1))
+               => capitalize-backwards
+
+     既存の関数を意図せずに再定義しないように注意すること。`defun'は、
+     たとえ`car'などの基本関数であっても、なんの躊躇も注意もせずに再定
+     義してしまう。既存関数の再定義は注意深く行うが、不本意な再定義と熟
+     考した再定義を区別する方法はない。
+
+ -- Function: defalias NAME DEFINITION
+     このスペシャルフォームは、シンボルNAMEを定義DEFINITION（任意の正し
+     いLisp関数）とする関数として定義する。
+
+     `defalias'を使う正しい場所は、特定の関数名が定義されている場所であ
+     る。特に、ロード中のソースファイルで明示的に名前が現れている場所で
+     ある。というのは、`defalias'は、`defun'と同様に、関数が定義された
+     ファイルを記録するからである（*Note Unloading::）。
+
+     一方、他の目的で関数定義を操作するプログラムでは、そのような記録を
+     保持しない`fset'を使うのがよい。
+
+`defun'のように関数を定義し、かつ、
+Lispコンパイラに関数定義を展開するように指示する
+`defsubst'も参照してください。
+*Note Inline Functions::。
+
+
+
+File: elisp-ja, Node: Calling Functions, Next: Mapping Functions, Prev: Defining Functions, Up: Functions
+
+関数呼び出し
+============
+
+関数を定義することは、全体の半分でしかありません。関数を"呼ぶ"までは、
+つまり、実行を命じなければ、関数はなにもしません。関数呼び出しは"起動"
+（invocation）ともいいます。
+
+関数を起動するもっとも一般的な方法は、リストを評価することです。たとえ
+ば、リスト`(concat "a" "b")'を評価すると、関数`concat'を引数`"a"'と
+`"b"'で呼び出します。評価については*Note Evaluation::。
+
+読者のプログラムで式としてリストを書くときには、
+呼び出す関数名を読者のプログラムに書きます。
+つまり、プログラムを書くときに、
+どの関数をどれだけの引数で呼び出すかを指定できることを意味します。
+これが、普通にしたいことでしょう。
+呼び出す関数を実行時に計算する必要がある場合もあるでしょう。
+それには、関数`funcall'を使います。
+渡す引数の個数を実行時に決定する必要があるときには、
+`apply'を使います。
+
+ -- Function: funcall FUNCTION &rest ARGUMENTS
+     `funcall'は、FUNCTIONをARGUMENTSで呼び出し、
+     FUNCTIONがなにを返そうともそれを返す。
+
+     `funcall'は関数なので、FUNCTIONの呼び出しを評価するまえにFUNCTION
+     を含めた引数すべてを評価する。つまり、呼び出す関数を得るためのどん
+     な式でも使えることを意味する。また、`funcall'は、読者がARGUMENTSに
+     書いた式を見ることはなく、それらの値だけを見ることになる。これらの
+     値は、FUNCTIONを呼び出す操作において、2回目の評価を行うことは*ない
+     *。`funcall'は、通常の関数呼び出し処理において、引数を評価し終えた
+     ところから始める。
+
+     引数FUNCTIONは、Lisp関数か基本関数である必要がある。スペシャルフォー
+     ムやマクロは許されない。それらには、『未評価』の引数式を与えたとき
+     だけ意味があるからである。`funcall'ではそのようにできない。なぜな
+     ら、上の説明でわかるように、未評価の引数をまったく知らないからであ
+     る。
+
+          (setq f 'list)
+               => list
+          (funcall f 'x 'y 'z)
+               => (x y z)
+          (funcall f 'x 'y '(z))
+               => (x y (z))
+          (funcall 'and t nil)
+          error--> Invalid function: #<subr and>
+
+     これらの例を`apply'の例と比較してほしい。
+
+ -- Function: apply FUNCTION &rest ARGUMENTS
+     `apply'は、`funcall'のように、FUNCTIONをARGUMENTSで呼び出すが、1点
+     だけ異なる。ARGUMENTSの最後はオブジェクトのリストであり、FUNCTION
+     にはこれを、単一のリストではなく、個々の引数として渡す。これを、
+     `apply'は、このリストの個々の要素が引数となるように"分配する"とい
+     う。
+
+     `apply'は、FUNCTIONの呼び出し結果を返す。`funcall'と同様に、
+     FUNCTIONはLisp関数か基本関数である必要がある。スペシャルフォームや
+     マクロは、`apply'では意味がない。
+
+          (setq f 'list)
+               => list
+          (apply f 'x 'y 'z)
+          error--> Wrong type argument: listp, z
+          (apply '+ 1 2 '(3 4))
+               => 10
+          (apply '+ '(1 2 3 4))
+               => 10
+
+          (apply 'append '((a b c) nil (x y z) nil))
+               => (a b c x y z)
+
+     `apply'を使った興味深い例として、
+     *Note Mapping Functions::の`mapcar'の説明を見てほしい。
+
+Lisp関数にとっては、引数として関数を受け取ったり、データ構造（特に、フッ
+ク変数や属性リスト）内の関数を探して`funcall'や`apply'を使ってそれを呼
+び出すことは一般的です。関数引数を受け付ける関数をしばしば"ファンクショ
+ナル"（functionals）と呼びます。
+
+場合によっては、ファンクショナルを呼び出すときには、引数としてなにもし
+ない関数（no-op）を指定できると有用です。つぎのものは、2種類のなにもし
+ない関数です。
+
+ -- Function: identity ARG
+     この関数はARGを返し、副作用を持たない。
+
+ -- Function: ignore &rest ARGS
+     この関数は引数を無視し、`nil'を返す。
+
+
+
+File: elisp-ja, Node: Mapping Functions, Next: Anonymous Functions, Prev: Calling Functions, Up: Functions
+
+マップ関数
+==========
+
+"マップ関数"（mapping function）は、
+リストや他の集まりの各要素に指定した関数を適用します。
+Emacs Lispにはそのような関数がいくつかあります。
+`mapcar'と`mapconcat'はリストを走査するもので、ここで説明します。
+オブジェクト配列obarray内のシンボルについて
+マップする関数`mapatoms'については、
+*Note Creating Symbols::。
+
+これらのマップ関数では、文字テーブルは扱えません。というのは、文字テー
+ブルは疎な配列であり、その添字範囲も非常に大きいからです。文字テーブル
+の疎な性質を考慮して文字テーブルについてマップするには、関数
+`map-char-table'（*Note Char-Tables::）を使います。
+
+ -- Function: mapcar FUNCTION SEQUENCE
+     `mapcar'は、SEQUENCEの各要素に順にFUNCTIONを適用し、結果のリストを
+     返す。
+
+     引数SEQUENCEは文字テーブル以外の任意の種類のシーケンスでよい。つま
+     り、リスト、ベクトル、ブールベクトル、あるいは、文字列である。結果
+     はつねにリストである。結果の長さはSEQUENCEの長さと同じである。
+
+     たとえば、つぎのとおり。
+
+          (mapcar 'car '((a b) (c d) (e f)))
+               => (a c e)
+          (mapcar '1+ [1 2 3])
+               => (2 3 4)
+          (mapcar 'char-to-string "abc")
+               => ("a" "b" "c")
+
+          ;; `my-hooks'の各関数を呼び出す
+          (mapcar 'funcall my-hooks)
+
+          (defun mapcar* (function &rest args)
+            "Apply FUNCTION to successive cars of all ARGS.
+          Return the list of results."
+            ;; リストをつくしていなければ
+            (if (not (memq 'nil args))
+                ;; CARに関数を適用する
+                (cons (apply function (mapcar 'car args))
+                      (apply 'mapcar* function
+                             ;; Recurse for rest of elements.
+                             (mapcar 'cdr args)))))
+
+          (mapcar* 'cons '(a b c) '(1 2 3 4))
+               => ((a . 1) (b . 2) (c . 3))
+
+ -- Function: mapconcat FUNCTION SEQUENCE SEPARATOR
+     `mapconcat'は、SEQUENCEの各要素にFUNCTIONを適用する。それらの結果
+     は、文字列である必要があり、連結される。`mapconcat'は、結果の文字
+     列のあいだに文字列SEPARATORを挿入する。普通、SEPARATORは、空白やコ
+     ンマ、その他の句読点を含む。
+
+     引数FUNCTIONは、引数を1つ取る関数であり、文字列を返す必要がある。
+     引数SEQUENCEは、文字テーブル以外の任意の種類のシーケンスでよい。つ
+     まり、リスト、ベクトル、ブールベクトル、あるいは、文字列である。
+
+          (mapconcat 'symbol-name
+                     '(The cat in the hat)
+                     " ")
+               => "The cat in the hat"
+
+          (mapconcat (function (lambda (x) (format "%c" (1+ x))))
+                     "HAL-8000"
+                     "")
+               => "IBM.9111"
+
+
+
+File: elisp-ja, Node: Anonymous Functions, Next: Function Cells, Prev: Mapping Functions, Up: Functions
+
+無名関数
+========
+
+Lispでは、関数とは、`lambda'で始まるリスト、そのようなリストをコンパイ
+ルしたバイトコード関数、あるいは、基本関数のsubrオブジェクトです。名前
+は『余分』なのです。普通の関数は`defun'で定義し、そのとき名前を与えます
+が、明示的なラムダ式、つまり、無名関数を使ったほうがより簡素な場合もあ
+ります。そのようなリストは、関数名を使える場面ならば、どこでも使えます。
+
+そのようなリストをどんな方法で作っても、正しい関数となります。つぎのよ
+うにしてもかまわないのです。
+
+     (setq silly (append '(lambda (x)) (list (list '+ (* 3 4) 'x))))
+     => (lambda (x) (+ 12 x))
+
+これは、`(lambda (x) (+ 12 x))'のようなリストを計算し、その値を`silly'
+の値（関数定義では*ない*！）とします。
+
+この関数はつぎのように呼び出せます。
+
+     (funcall silly 1)
+     => 13
+
+（`(silly 1)'と書いても動作*しない*。なぜなら、この関数は、`silly'の*関
+数定義*ではないからである。`silly'には関数定義を与えてなく、変数として
+の値を与えただけである。）
+
+ほとんどの場合、無名関数は読者のプログラムに現れる定数です。
+たとえば、関数`mapcar'の引数の1つに渡したいときなどです。
+`mapcar'は、リストの各要素に指定した関数を適用します。
+
+第3引数に関数を取る関数`change-property'を定義します。
+
+     (defun change-property (symbol prop function)
+       (let ((value (get symbol prop)))
+         (put symbol prop (funcall function value))))
+
+ここで、数を2倍する関数を渡して`change-property'を使う関数を定義します。
+
+     (defun double-property (symbol prop)
+       (change-property symbol prop '(lambda (x) (* 2 x))))
+
+このような場合、つぎのように、無名関数をクォートするには、単純なクォー
+トのかわりにスペシャルフォーム`function'を使います。
+
+     (defun double-property (symbol prop)
+       (change-property symbol prop
+                        (function (lambda (x) (* 2 x)))))
+
+`quote'のかわりに`function'を使った場合に違いがでるのは、
+関数`double-property'をコンパイルしたときです。
+たとえば、`double-property'の2番目の定義をコンパイルすると、
+無名関数もコンパイルされます。
+一方、普通の`quote'を使った最初の定義をコンパイルすると、
+`change-property'へ渡す引数は、書いたとおりのリストです。
+
+     (lambda (x) (* x 2))
+
+Lispコンパイラは、このリストが関数に見えたとしても、このリストを関数と
+はみなしません。というのは、コンパイラには`change-property'がリストにな
+にを行うかわからないからです。たぶん、第3要素のCARがシンボル`*'かどうか
+調べればよいのでしょう！` ' `function'を使うと、コンパイラに対して先へ
+進んで定数の関数をコンパイルしても安全であることを伝えます。
+
+関数名をクォートするときに`quote'のかわりに`function'を書くこともありま
+すが、この用法はコメントのようなものです。
+
+     (function SYMBOL) == (quote SYMBOL) == 'SYMBOL
+
+入力構文`#''は、`function'の省略形です。たとえば、
+
+     #'(lambda (x) (* x x))
+
+は、つぎと等価です。
+
+     (function (lambda (x) (* x x)))
+
+ -- Special form: function FUNCTION-OBJECT
+     このスペシャルフォームは、FUNCTION-OBJECTを評価せずに
+     FUNCTION-OBJECTを返す。
+     この意味では`quote'に等価である。
+     しかし、これは、Emacs Lispコンパイラに対しては注意書きとして働き、
+     FUNCTION-OBJECTを関数としてのみ使う意図があり、
+     したがって、コンパイルしても安全であることを意味する。
+     *Note Quoting::の`quote'と比較してほしい。
+
+`function'と無名関数を用いた実際的な例は、
+*Note Accessing Documentation::の`documentation'を参照してください。
+
+
+
+File: elisp-ja, Node: Function Cells, Next: Inline Functions, Prev: Anonymous Functions, Up: Functions
+
+関数セルの内容の参照
+====================
+
+シンボルの"関数定義"（function definition）とは、シンボルの関数セルに格
+納されたオブジェクトです。ここで説明する関数は、シンボルの関数セルを参
+照したり、調べたり、設定したりします。
+
+*Note Function Indirection::の関数`indirect-function'も参照してください。
+
+ -- Function: symbol-function SYMBOL
+     これは、SYMBOLの関数セルのオブジェクトを返す。シンボルの関数セルが
+     空であると、エラー`void-function'を通知する。
+
+     この関数は、返すオブジェクトが正しい関数であるかどうか検査しない。
+
+          (defun bar (n) (+ n 2))
+               => bar
+          (symbol-function 'bar)
+               => (lambda (n) (+ n 2))
+          (fset 'baz 'bar)
+               => bar
+          (symbol-function 'baz)
+               => bar
+
+シンボルに一度も関数定義を与えていないと、そのシンボルの関数セルは"空"
+（void）であるといいます。いいかえれば、関数セルにはどんなLispオブジェ
+クトも入っていません。そのようなシンボルを関数として呼び出そうとすると、
+エラー`void-function'を通知します。
+
+空（void）は、`nil'やシンボル`void'と違うことに注意してください。シンボ
+ル`nil'も`void'もLispオブジェクトであり、それらは他のオブジェクトと同様
+に関数セルに格納できます（そして、それらを`defun'で定義しておけば、正し
+い関数である）。空の関数セルには、どんなオブジェクトも含まれていません。
+
+シンボルの関数定義が空かどうかは`fboundp'で調べることができます。
+シンボルに関数定義を与えたあとでも、
+`fmakunbound'を使ってふたたび空にできます。
+
+ -- Function: fboundp SYMBOL
+     この関数は、シンボルの関数セルにオブジェクトが入っていれば`t'を返
+     し、さもなければ`nil'を返す。オブジェクトが正しい関数であるかどう
+     か検査しない。
+
+ -- Function: fmakunbound SYMBOL
+     この関数はSYMBOLの関数セルを空にする。これ以降にこのセルを参照しよ
+     うとすると、エラー`void-function'を引き起こす。（*Note Void
+     Variables::の`makunbound'も参照）。
+
+          (defun foo (x) x)
+               => foo
+          (foo 1)
+               =>1
+          (fmakunbound 'foo)
+               => foo
+          (foo 1)
+          error--> Symbol's function definition is void: foo
+
+ -- Function: fset SYMBOL DEFINITION
+     この関数は、SYMBOLの関数セルにDEFINITIONを格納する。結果は
+     DEFINITIONである。通常、DEFINITIONは関数か関数名であるべきだが、そ
+     うであるかどうか検査しない。引数SYMBOLは通常どおり評価される引数で
+     ある。
+
+     この関数の普通の3つの使い方はつぎのとおり。
+
+        * あるシンボルの関数定義を別のものにコピーする。
+          いいかえれば、関数の別名を作る。
+          （これを新たな名前の定義と考えるならば、
+          `fset'のかわりに`defalias'を使うべきである。
+          *Note Defining Functions::。）
+
+        * リストではない関数定義をシンボルに与える。これは、`defun'では
+          できない。たとえば、`fset'を使って、`s1'に関数定義として別の
+          シンボル`s2'を与えることができる。すると、`s1'は、`s2'の現在
+          の定義の別名として働く。（これを`s1'の定義と考えるのであれば、
+          やはり、`fset'のかわりに`defalias'を使う。）
+
+        * 関数を定義したり変更したりする構文で使う。
+          `defun'が基本関数でなかったならば、
+          `fset'を使って（マクロとして）Lispで`defun'を書くことができる。
+
+     これらの使用例を示す。
+
+          ;; `foo'の定義を`old-foo'に保存する
+          (fset 'old-foo (symbol-function 'foo))
+
+          ;; シンボル`car'を`xfirst'の関数定義にする
+          ;; （これには、`fset'より`defalias'のほうがよい）
+          (fset 'xfirst 'car)
+               => car
+          (xfirst '(1 2 3))
+               => 1
+          (symbol-function 'xfirst)
+               => car
+          (symbol-function (symbol-function 'xfirst))
+               => #<subr car>
+
+          ;; 名前付きのキーボードマクロを定義する
+          (fset 'kill-two-lines "\^u2\^k")
+               => "\^u2\^k"
+
+          ;; 他の関数を変更する関数
+          (defun copy-function-definition (new old)
+            "Define NEW with the same function definition as OLD."
+            (fset new (symbol-function old)))
+
+既存の関数定義を拡張する関数を書くときには、つぎのような常套句を使うこ
+ともあります。
+
+     (fset 'old-foo (symbol-function 'foo))
+     (defun foo ()
+       "Just like old-foo, except more so."
+       (old-foo)
+       (more-so))
+
+`foo'が自動ロードと定義されていると、これは正しく動作しません。
+そのような場合には、`foo'が`old-foo'を呼び出すと、
+Lispはファイルをロードして`old-foo'を定義しようとします。
+しかし、これは`old-foo'ではなく`foo'を定義するので、
+正しい結果を得られません。
+この問題を回避する唯一の方法は、
+`foo'の古い定義を移すまえに、確実にファイルをロードしておくことです。
+
+しかし、別の箇所で定義された関数を再定義するLispファイルに対しては、い
+ずれにしても、これではモジュール化も見通しもよくありません。アドバイズ
+機能（*Note Advising Functions::）を使えば、見通しがよくなります。
+
+
+
+File: elisp-ja, Node: Inline Functions, Next: Related Topics, Prev: Function Cells, Up: Functions
+
+インライン関数
+==============
+
+`defun'のかわりに`defsubst'を使うことで、"インライン関数"（inline
+function）を定義できます。インライン関数は、1つの点を除いて、普通の関数
+と同様に動作します。そのような関数の呼び出しをコンパイルすると、関数定
+義は呼び出し側で展開されます。
+
+関数を展開すると明示的な呼び出しが高速になります。しかし、それには欠点
+もあります。その1つは、柔軟性を減らすことです。関数の定義を変更しても、
+コンパイルし直すまでは、すでに展開された呼び出しは古い定義を使い続けま
+す。関数を再定義できる柔軟性はEmacsでは重要な機能ですから、速度が本当に
+重要でなければ、関数を展開すべきではありません。
+
+別の欠点は、大きな関数を展開すると、コンパイルした関数のサイズがファイ
+ル内でもメモリ上でも増加します。インライン関数のスピードの利点は、小さ
+な関数でもっとも大きいので、一般には大きな関数を展開すべきではありませ
+ん。
+
+インライン関数が実行するのと同じコードに展開するようにマクロを定義する
+ことも可能です。（*Note Macros::。）しかし、マクロは式で直接使った場合
+に制限されます。マクロは、`apply'や`mapcar'などで呼び出せません。さらに、
+普通の関数をマクロに変換するには、多少の作業が必要です。普通の関数をイ
+ンライン関数に変換するのはとても簡単です。単に、`defun'を`defsubst'で置
+き換えるだけです。インライン関数の各引数は、ちょうど1回だけ評価されるの
+で、マクロのように本体で引数を何回使うかを考慮する必要はありません。
+（*Note Argument Evaluation::。）
+
+インライン関数は、マクロと同様に、同じファイル内の定義位置よりうしろで
+使われ展開されます。
+
+
+
+
+File: elisp-ja, Node: Related Topics, Prev: Inline Functions, Up: Functions
+
+関数に関連したその他の話題
+==========================
+
+関数呼び出しと関数定義に関連したいくつかの関数の一覧をあげておきます。
+これらは別の場所で説明してありますが、相互参照をあげておきます。
+
+`apply'
+     *Note Calling Functions::。
+
+`autoload'
+     *Note Autoload::。
+
+`call-interactively'
+     *Note Interactive Call::。
+
+`commandp'
+     *Note Interactive Call::。
+
+`documentation'
+     *Note Accessing Documentation::。
+
+`eval'
+     *Note Eval::。
+
+`funcall'
+     *Note Calling Functions::。
+
+`function'
+     *Note Anonymous Functions::。
+
+`ignore'
+     *Note Calling Functions::。
+
+`indirect-function'
+     *Note Function Indirection::。
+
+`interactive'
+     *Note Using Interactive::。
+
+`interactive-p'
+     *Note Interactive Call::。
+
+`mapatoms'
+     *Note Creating Symbols::。
+
+`mapcar'
+     *Note Mapping Functions::。
+
+`map-char-table'
+     *Note Char-Tables::。
+
+`mapconcat'
+     *Note Mapping Functions::。
+
+`undefined'
+     *Note Key Lookup::。
+
+
+
+File: elisp-ja, Node: Macros, Next: Customization, Prev: Functions, Up: Top
+
+マクロ
+******
+
+"マクロ"（macros）により、新たな制御構造の構文を定義したり、他の言語の
+機能を定義したりできます。マクロは関数のように定義しますが、値の計算方
+法を指示するかわりに、値を計算するための別のLisp式の計算方法を指示しま
+す。この式をマクロの"展開形"（expansion）と呼びます。
+
+マクロでこのようなことができるのは、関数が評価済みの引数を操作するのに
+対して、マクロは引数の未評価の式を操作するからです。そのため、これらの
+引数の式やその一部を含む展開形を構築できるのです。
+
+実行速度のために普通の関数でできることにマクロを使うのであれば、そのか
+わりにインライン関数を使うことを考えてください。
+
+* Menu:
+
+* Simple Macro::            A basic example.
+* Expansion::               How, when and why macros are expanded.
+* Compiling Macros::        How macros are expanded by the compiler.
+* Defining Macros::         How to write a macro definition.
+* Backquote::               Easier construction of list structure.
+* Problems with Macros::    Don't evaluate the macro arguments too many times.
+                              Don't hide the user's variables.
+
+
+
+File: elisp-ja, Node: Simple Macro, Next: Expansion, Prev: Macros, Up: Macros
+
+マクロの簡単な例
+================
+
+C言語の演算子`++'のように、変数の値を増加させるLispの構文を定義したいと
+しましょう。`(inc x)'のように書いて、`(setq x (1+ x))'のような効果を得
+たいのです。これを行うマクロ定義はつぎのようになります。
+
+     (defmacro inc (var)
+        (list 'setq var (list '1+ var)))
+
+これを`(inc x)'のように呼び出すと、引数VARはシンボル`x'になります。関数
+のように`x'の*値*では*ありません*。マクロの本体では、これを使って展開形
+`(setq x (1+ x))'を構築します。マクロ定義がこの展開形を返すと、Lispはそ
+れを評価することに進み、`x'を増やします。
+
+
+
+File: elisp-ja, Node: Expansion, Next: Compiling Macros, Prev: Simple Macro, Up: Macros
+
+マクロ呼び出しの展開
+====================
+
+マクロ呼び出しはマクロ名で始まるリストであり、関数呼び出しとほとんど同
+じに見えます。リストの残りの要素はマクロの引数です。
+
+マクロ呼び出しの評価は、関数呼び出しの評価のように始められますが、1つだ
+け重要な違いがあります。マクロの引数は、マクロ呼び出しに現れた実際の引
+数です。マクロ定義に渡すまえに、それらを評価しません。一方、関数の引数
+は、関数呼び出しのリストの要素を評価した結果です。
+
+引数を得ると、Lispは関数定義を起動するのと同様にマクロ定義を起動します。
+マクロの引数変数は、マクロ呼び出しの引数値や`&rest'引数の場合にはそれら
+のリストに束縛されます。そうして、マクロ本体を実行し、関数本体と同様に
+値を返します。
+
+マクロと関数の重要な違いの2つめは、マクロ本体が返した値はマクロ呼び出し
+の値ではないことです。戻り値は値を計算するためのかわりの式であり、これ
+をマクロの"展開形"（expansion）といいます。Lispインタープリタは、マクロ
+から戻ってくると、ただちに展開形を評価することへ進みます。
+
+展開形は、通常どおりに評価されるので、展開形から他のマクロを呼び出して
+もかまいません。同一のマクロを呼び出してもかまいませんが、それは一般的
+ではありません。
+
+`macroexpand'を呼ぶと、指定したマクロの展開形を調べることができます。
+
+ -- Function: macroexpand FORM &optional ENVIRONMENT
+     この関数は、FORMがマクロ呼び出しならば、それを展開する。その結果が
+     また別のマクロ呼び出しであれば、さらに展開する。マクロ呼び出しでな
+     い結果を得るまでこれを繰り返す。それが、`macroexpand'が返す値であ
+     る。FORMが始めからマクロ呼び出しでなければ、与えられたとおりのもの
+     を返す。
+
+     `macroexpand'はFORMの部分式を調べないことに注意してほしい
+     （ただし、マクロ定義によっては調べるかもしれない）。
+     部分式がマクロ呼び出しであったとしても、
+     `macroexpand'はそれらを展開しない。
+
+     関数`macroexpand'は、インライン関数の呼び出しは展開しない。インラ
+     イン関数の呼び出しを理解することは普通の関数呼び出しを理解するのと
+     かわりないので、通常、そのような展開を行う必要はない。
+
+     ENVIRONMENTを指定すると、それは、現在定義済みのマクロを隠すマクロ
+     定義の連想リストを表す。バイトコンパイルではこの機能を使う。
+
+          (defmacro inc (var)
+              (list 'setq var (list '1+ var)))
+               => inc
+
+          (macroexpand '(inc r))
+               => (setq r (1+ r))
+
+          (defmacro inc2 (var1 var2)
+              (list 'progn (list 'inc var1) (list 'inc var2)))
+               => inc2
+
+          (macroexpand '(inc2 r s))
+               => (progn (inc r) (inc s))  ; ここでは`inc'を展開しない
+
+
+
+File: elisp-ja, Node: Compiling Macros, Next: Defining Macros, Prev: Expansion, Up: Macros
+
+マクロとバイトコンパイル
+========================
+
+なぜ、マクロの展開形をわざわざ計算してから展開形を評価するのか、疑問に
+思うかもしれません。なぜ、マクロ本体で望みの結果を直接出さないのでしょ
+う？` ' その理由には、コンパイルが関係しています。
+
+コンパイルするLispプログラムにマクロ呼び出しが現れると、Lispコンパイラ
+は、インタープリタがするのと同様にマクロ定義を呼び出し、その展開形を受
+け取ります。この展開形を評価するかわりに、コンパイラは、展開形がプログ
+ラムに直接現れたかのようにそれをコンパイルします。その結果、コンパイル
+済みのコードは、マクロが意図した値と副作用を生じ、かつ、実行速度はコン
+パイルした速度になるのです。マクロ本体そのもので値と副作用を計算したの
+では、このように動作しません。コンパイル時に計算してしまい、それでは意
+味がありません。
+
+マクロ呼び出しが正しくコンパイルされるためには、それらの呼び出しをコン
+パイルするときに、Lisp内でマクロが定義済みである必要があります。コンパ
+イラには、読者がこのようにすることを補佐する機能があります。コンパイル
+対象のファイルにフォーム`defmacro'が含まれていると、そのファイルの残り
+をコンパイルするあいだは、一時的にマクロを定義します。この機能が動作す
+るためには、`defmacro'を同じファイルの最初に利用する箇所よりまえに入れ
+ておく必要があります。
+
+ファイルをバイトコンパイルすると、そのファイルのトップレベルにある
+`require'の呼び出しを実行します。これは、ファイルを正しくコンパイルする
+ために必要なパッケージを表します。コンパイル中に必要なマクロ定義が使え
+ることを保証する1つの方法は、それらのマクロを定義するファイルを
+`require'に指定しておくことです（*Note Named Features::）。コンパイル済
+みのプログラムを*実行*するときに、マクロを定義したファイルをロードして
+しまうことを避けるには、`require'の呼び出しの周りに`eval-when-compile'
+を書いておきます（*Note Eval During Compile::）。
+
+
+
+File: elisp-ja, Node: Defining Macros, Next: Backquote, Prev: Compiling Macros, Up: Macros
+
+マクロ定義
+==========
+
+Lispのマクロは、そのCARが`macro'であるリストです。そのCDRは関数であるべ
+きです。マクロの展開は、マクロ呼び出しの未評価の引数式に（`apply'で）関
+数を適用して動作します。
+
+無名関数のように無名Lispマクロを使うことも可能ですが、けっしてしないで
+しょう。`mapcar'のようなファンクショナルに無名マクロを渡す意味がないか
+らです。実用上は、すべてのLispマクロには名前があり、普通、スペシャル
+フォーム`defmacro'で定義します。
+
+ -- Special form: defmacro NAME ARGUMENT-LIST BODY-FORMS...
+     `defmacro'は、シンボルNAMEをつぎのようなマクロとして定義する。
+
+          (macro lambda ARGUMENT-LIST . BODY-FORMS)
+
+     （このリストのCDRは関数、つまり、ラムダ式であることに注意。）この
+     マクロオブジェクトは、NAMEの関数セルに格納される。フォーム
+     `defmacro'を評価した結果、返される値はNAMEであるが、通常この値は無
+     視する。
+
+     ARGUMENT-LISTの形式と意味は、関数のそれと同じであり、
+     キーワード`&rest'や`&optional'を使ってもよい
+     （*Note Argument List::）。
+     マクロにも説明文字列を指定できるが、
+     マクロを対話的に呼び出すことはできないので、
+     `interactive'宣言は無視する。
+
+
+

@@ -1,0 +1,1882 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja  Node: Timers-Footnotes, Up: Timers
+
+(1) 【訳注】fortnightは2週間のこと.
+
+
+
+File: elisp-ja, Node: Terminal Input, Next: Terminal Output, Prev: Timers, Up: System Interface
+
+端末入力
+========
+
+本節では, 端末入力を記録したり処理する関数や変数について述べます.  関
+連する関数については*Note Display::を参照してください.
+
+* Menu:
+
+* Input Modes::		Options for how input is processed.
+* Translating Input::   Low level conversion of some characters or events
+			  into others.
+* Recording Input::	Saving histories of recent or all input events.
+
+
+
+File: elisp-ja, Node: Input Modes, Next: Translating Input, Prev: Terminal Input, Up: Terminal Input
+
+入力方式
+--------
+
+ -- Function: set-input-mode INTERRUPT FLOW META QUIT-CHAR
+     この関数は, キーボード入力を読み取るモードを設定する.  INTERRUPT
+     が`nil'以外であると, Emacsは入力割り込みを用いる.  `nil'であると,
+     CBREAKモードを用いる.  デフォルトの設定はシステムに依存する.  こ
+     の指定に関わらずつねにCBREAKモードを用いるシステムもある.
+
+     EmacsがXと直接通信しているときは, 通信方法が割り込みであると承知
+     しているとこの引数を無視して割り込みを使う.
+
+     FLOWが`nil'以外であると, Emacsは端末出力にフロー制御XON/XOFF
+     （`C-q', `C-s'）を用いる.  CBREAKモード以外ではこれの効果はない.
+     *Note Flow Control::.
+
+     引数METAは, 文字コードが127を越える入力文字の扱い方を制御する.
+     METAが`t'であると, 8ビット目が立っている文字をメタ文字に変換する.
+     METAが`nil'であると, 8ビット目を無視する.  パリティビットを用いる
+     端末では, これが必要である.  METAが`t'でも`nil'でもないと, Emacs
+     は入力した8ビットすべてを無変更で使う.  8ビット文字集合を使う端末
+     には, これがよい.
+
+     QUIT-CHARが`nil'以外であると, 中断に使用する文字を指定する.  通常, 
+     この文字は`C-g'である.  *Note Quitting::.
+
+関数`current-input-mode'は, Emacsが現在使用している入力モードの設定を
+返します.
+
+ -- Function: current-input-mode
+     この関数は, キーボード入力を読み取るための現在のモードを返す.
+     `set-input-mode'の引数に対応する`(INTERRUPT FLOW META QUIT)'の形
+     のリストを返す.  各要素の意味はつぎのとおりである.
+     INTERRUPT
+          `nil'以外であると, Emacsは割り込み駆動の入力を用いている.
+          `nil'であると, EmacsはCBREAKモードを用いている.
+     FLOW
+          `nil'以外であると, Emacsは端末出力にフロー制御XON/XOFF
+          （`C-q', `C-s'）を用いている.  この値は, INTERRUPTが`nil'の
+          場合にのみ意味を持つ.
+     META
+          Emacsが入力文字の8ビット目をメタビットとして扱うときには`t'
+          である.  Emacsが各入力文字の8ビット目をつねに0にするときには
+          `t'である.  さもなければ, Emacsは文字コードとして8ビットすべ
+          てを使っている.
+     QUIT
+          現在Emacsが中断に使っている文字であり, 普通は`C-g'である.
+
+
+
+File: elisp-ja, Node: Translating Input, Next: Recording Input, Prev: Input Modes, Up: Terminal Input
+
+入力イベントの変換
+------------------
+
+本節では, 入力イベントをキー列の一部になるまえに別の入力イベントに変換
+する機能について述べます.  これらの機能は, ここに述べる順に各イベント
+に適用されます.  つまり, 各イベントはまず`extra-keyboard-modifiers'に
+従って修正され, つぎに（適切ならば）`keyboard-translate-table'を介して
+変換され, 最後に指定されているキーボードコーディングシステムで復号化さ
+れます.  キー列の一部として読み取られるイベントであると, 読み取られる
+キー列に追加され, それを含む部分キー列をまず`function-key-map'で検査し
+てから, つぎに`key-translation-map'で検査します.
+
+ -- Variable: extra-keyboard-modifiers
+     この変数は, Lispプログラムがキーボード上の修飾キーを『押す』こと
+     ができるようにする.
+
+     1
+          SHIFTキー.
+     2
+          LOCKキー.
+     4
+          CTLキー.
+     8
+          METAキー.
+
+     ユーザーがキーボードのキーを打つたびに, ビットマスクで指定した修
+     飾キーが押し下げられているかのようにキーを修正する.
+
+     ウィンドウシステムを使っているときには, プログラムは任意の修飾キー
+     を『押す』ことができる.  さもなければ, CTLとMETAのキーのみを仮想
+     的に押すことができる.
+
+ -- Variable: keyboard-translate-table
+     この変数は, キーボード文字の変換表である.  これにより, コマンドの
+     バインディングを変更せずに, キーボードのキー配置を変更できる.  そ
+     の値は普通は文字テーブルであるか, あるいは, `nil'である.
+
+     `keyboard-translate-table'が文字テーブルであると, キーボードから
+     読み取った各文字をこの文字テーブルで探す.  みつけた値が`nil'以外
+     であると, 実際の入力文字のかわりにその値を使う.
+
+     つぎの例では, `keyboard-translate-table'に文字テーブルを設定する. 
+     そして, 文字`C-s'と`C-\', `C-q'と`C-^'を入れ換える.  これ以降,
+     `C-\'を打つと`C-s'を打った効果があり, その逆もそうである.  （この
+     話題に関しては詳しくは, *Note Flow Control::. ）
+
+          (defun evade-flow-control ()
+            "Replace C-s with C-\ and C-q with C-^."
+            (interactive)
+            (setq keyboard-translate-table
+                  (make-char-table 'keyboard-translate-table nil))
+            ;; C-sとC-\を入れ換える
+            (aset keyboard-translate-table ?\034 ?\^s)
+            (aset keyboard-translate-table ?\^s ?\034)
+            ;; C-qとC-^を入れ換える
+            (aset keyboard-translate-table ?\036 ?\^q)
+            (aset keyboard-translate-table ?\^q ?\036))
+
+     この変換は, 端末から読み取った文字に最初に行われる変換である.
+     `recent-keys'のような記録機能やドリブルファイルは, 変換後の文字を
+     記録する.
+
+ -- Function: keyboard-translate FROM TO
+     この関数は, 文字コードFROMを文字コードTOに変換するように
+     `keyboard-translate-table'を変更する.  必要ならばキーボード変換表
+     を作成する.
+
+残りの変換機能は, 読み取ったキー列の部分列を変換します.  それらは
+`read-key-sequence'に実装されていて, `read-event'で読む入力には効果は
+ありません.
+
+ -- Variable: function-key-map
+     この変数は, 普通の文字端末上のファンクションキーが送出する文字の
+     列を記述したキーマップを保持する.  このキーマップは他のキーマップ
+     と同じ構造であるが, 使い方が異なる.  キー列のバインディングではな
+     く, 読み取りつつあるキー列を変換する方法を指定する.
+
+     `function-key-map'がキー列KをベクトルVに『バインド』すると, キー
+     列の*どこに*Kが現れても, Vのイベントで置き換える.
+
+     たとえば, 端末VT100は, キーパッドのキーPF1を押すと`ESC O P'を送出
+     する.  したがって, Emacsではこの列を1つのイベント`pf1'に変換した
+     い.  VT100を使っているときに`function-key-map'において`ESC O P'を
+     `[pf1]'に『バインド』すれば, これを行える.
+
+     つまり, `C-c PF1'を打つと文字の列`C-c ESC O P'が送出される.  のち
+     に関数`read-key-sequence'がこれを`C-c PF1'に戻し, ベクトル`[?\C-c
+     pf1]'を返す.
+
+     マイナモード／ローカル／グローバルのキーマップに矛盾するような
+     `function-key-map'内の項目は無視される.  この意図は, ファンクショ
+     ンキーが送出する文字の列にはそれ独自のキーバインディングがあるべ
+     きではなく, もしあったとしても, もとの定義を優先することである.
+
+     `function-key-map'の値は, 端末のterminfoやtermcapの情報に従って自
+     動的に普通は設定されるが, 端末固有のLispファイルの助けが必要な場
+     合もある.  Emacsには, 一般的な多くの端末向けの端末固有ファイルが
+     ある.  それらの主目的は, terminfoやtermcapから推定できないものを
+     `function-key-map'に定義することである.  *Note
+     Terminal-Specific::.
+
+ -- Variable: key-translation-map
+     この変数は, `function-key-map'と同様に入力イベントを別の入力イベ
+     ントへ変換するために用いる別のキーマップである.
+     `function-key-map'とは2つの意味で異なる.
+
+        * `key-translation-map'は, `function-key-map'の変換後に使われ
+          る.  `function-key-map'による変換結果を使う.
+
+        * `key-translation-map'は, 実際のキーバインディングに優先する. 
+          たとえば, `key-translation-map'で`C-x f'にバインディングがあ
+          ると, グローバルマップに`C-x f'のバインディングがあったとし
+          ても変換結果が効果を持つ.
+
+     `key-translation-map'の意図は, `self-insert-command'に普通はバイ
+     ンドされる通常の文字を含めてユーザー向けに文字集合を別の文字集合
+     に対応付けられるようにすることである.
+
+キーの『変換として』キー列のかわりに関数を用いると, `function-key-map'
+や`key-translation-map'は単なる配置替え以上のことに使えます.  その関数
+で当該キーの変換を計算するのです.
+
+キー変換関数は1つの引数を受け取ります.  その引数は,
+`read-key-sequence'で指定されたプロンプトか, エディタコマンドループが
+キー列を読み取っている場合には`nil'です.  多くの場合, プロンプトの値は
+無視できます.
+
+関数自身が入力を読むときには, 後続のイベントを変更することもできます. 
+たとえば, 後続の文字をハイパー文字にする`C-c h'の定義はつぎのようにな
+ります.
+
+     (defun hyperify (prompt)
+       (let ((e (read-event)))
+         (vector (if (numberp e)
+                     (logior (lsh 1 24) e)
+                   (if (memq 'hyper (event-modifiers e))
+                       e
+                     (add-event-modifier "H-" e))))))
+
+     (defun add-event-modifier (string e)
+       (let ((symbol (if (symbolp e) e (car e))))
+         (setq symbol (intern (concat string
+                                      (symbol-name symbol))))
+         (if (symbolp e)
+             symbol
+           (cons symbol (cdr e)))))
+
+     (define-key function-key-map "\C-ch" 'hyperify)
+
+`set-keyboard-coding-system'を用いたキーボード文字集合の復号化を有効に
+しているときには, 上に述べた変換を終えてから復号化を行います.  *Note
+Specifying Coding Systems::.  Emacsの将来の版では, 他の変換のまえに復
+号化を行うでしょう.
+
+
+
+File: elisp-ja, Node: Recording Input, Next: Terminal Output, Prev: Translating Input, Up: Terminal Input
+
+入力を記録する
+--------------
+
+ -- Function: recent-keys
+     この関数は, キーボードやマウスからの最近の100個の入力イベントを収
+     めたベクトルを返す.  キー列として使われたかどうかに関わらず, すべ
+     てのイベントを含む.  したがって, キーボードマクロで生成したイベン
+     トを数えずに最後の100個のイベントをつねに得ることになる.  （キー
+     ボードマクロで生成したイベントを省くのは, それらはデバッグにはあ
+     まり役立たないからである.  キーボードマクロを起動したイベントが見
+     えれば十分なはずである. ）
+
+ -- コマンド: open-dribble-file FILENAME
+     この関数は, FILENAMEという名前の"ドリブルファイル" （dribble file）
+     をオープンする.  ドリブルファイルをオープンしていると, （キーボー
+     ドマクロを除く）キーボードやマウスからの各入力イベントをそのファ
+     イルに書き出す.  文字でないイベントは, その表示表現を`<...>'で囲っ
+     て表す.
+
+     ドリブルファイルをクローズするには, 引数に`nil'を指定してこの関数
+     を呼び出す.
+
+     この関数は, バグ報告のためにEmacsのバグを引き起こす入力を記録する
+     ために普通は使う.
+
+          (open-dribble-file "~/dribble")
+               => nil
+
+関数`open-termscript'（*Note Terminal Output::）も参照してください.
+
+
+
+File: elisp-ja, Node: Terminal Output, Next: Special Keysyms, Prev: Terminal Input, Up: System Interface
+
+端末出力
+========
+
+端末出力関数は, 端末に出力を送ったり, 端末へ送った出力を記録します. 
+変数`baud-rate'は, Emacsが考えている端末の出力速度を表します.
+
+ -- Variable: baud-rate
+     この変数の値は, Emacsが関知する端末の出力速度である.  この変数に
+     設定しても実際のデータ転送速度を変更しないが, その値はパディング
+     などの計算に用いられる.  また, ウィンドウシステムを使っている場合
+     であっても, スクリーンのどの部分をスクロールするか, あるいは, 再
+     描画するかの決定に影響する.  （このような決定を調整する方法を与え
+     るために, ウィンドウシステムには真の『出力速度』はないがこのよう
+     に設計した. ）
+
+     値の単位はボー（baud）である.
+
+ネットワーク経由で使い, ネットワークの異なる部分が異なる速度で動いてい
+るときには, Emacsが返す値はローカル端末で使っている場合の値と異なるか
+もしれません.  リモートマシンへの通信速度でローカル端末と通信するネッ
+トワークプロトコルもあり, そのような場合, Emacsや他のプログラムは正し
+い値を得られます.  その他の場合では正しい値を得られません.  Emacsの値
+がまちがっているときには, あまり最適でない決定をくだすでしょう.  この
+問題を修正するには, `baud-rate'に設定します.
+
+ -- Function: baud-rate
+     この廃れた関数は, 変数`baud-rate'の値を返す.
+
+ -- Function: send-string-to-terminal STRING
+     この関数は, なにも変更せずに文字列STRINGを端末へ送る.  STRING内の
+     コントロール文字は, 端末に依存する効果を持つ.
+
+     この関数の1つの用途は, ファンクションキーの定義をダウンロード可能
+     な端末のファンクションキーを定義することである.  たとえば, ファン
+     クションキー4を（文字の列`C-u C-f'を計算機に送って）4文字進めると
+     定義にするには, 特定の端末ではつぎのようにする.
+
+          (send-string-to-terminal "\eF4\^U\^F")
+               => nil
+
+ -- コマンド: open-termscript FILENAME
+     この関数は, Emacsが端末へ送出するすべての文字を記録する"タームス
+     クリプトファイル"（termscript file）をオープンするために使う.  関
+     数は`nil'を返す.  タームスクリプトファイルは, Emacsがスクリーンを
+     乱してしまう問題, 誤ったtermcap定義やEmacsの実際のバグではない端
+     末の望ましくない設定の問題を調べるのに有用である.  どのような文字
+     の列が実際に出力されるか確信できれば, それらが使用中のtermcapのど
+     の定義に対応するか調べられる.
+
+     *Note Terminal Input::の`open-dribble-file'も参照.
+
+          (open-termscript "../junk/termscript")
+               => nil
+
+
+
+File: elisp-ja, Node: Special Keysyms, Next: Flow Control, Prev: Terminal Output, Up: System Interface
+
+システム固有のX11のキーシンボル
+===============================
+
+システム固有のX11のキーシンボル（keysym）を定義するには, 変数
+`system-key-alist'に設定します.
+
+ -- Variable: system-key-alist
+     この変数の値は, 各要素がシステム固有の各キーシンボルに対応する連
+     想リストであること.  要素は`(CODE . SYMBOL)'の形である.  ここで,
+     CODEは（『提供業者固有の』ビット
+     -2**28を
+     含まない）数値のキーシンボルコードであり, SYMBOLはファンクション
+     キーの名前である.
+
+     たとえば, `(168 . mute-acute)'は, 数値コードが
+     -2**28
+     + 168 であるHP Xサーバーが使うシステム固有キーを定義する.
+
+     実際に使用しているXサーバーのキーシンボルと衝突しなければ, 他のX
+     サーバー向けのキーシンボルを連想リストから省かなくても問題ない.
+
+     変数は現在の端末につねにローカルであり, バッファローカルにはなり
+     えない.  *Note Multiple Displays::.
+
+
+
+File: elisp-ja, Node: Flow Control, Next: Batch Mode, Prev: Special Keysyms, Up: System Interface
+
+フロー制御
+==========
+
+本節では, 『Emacsがなぜコマンド文字集合の中からフロー制御文字を使うの
+か？』という質問に答えたいと思います.  この話題に関する別の視点につい
+ては, 配布に含まれるファイル`emacs/INSTALL'の中のフロー制御に関する記
+述を読んでください.  termcapの定義とDECの端末集線器については,
+`emacs/etc/TERMS'を参照してください.
+
+ある時期には, ほとんどの端末ではフロー制御を行っておらず, `C-s'と`C-q'
+をフロー制御に用いるものもありませんでした.  したがって, コマンド文字
+として`C-s'と`C-q'を選ぶことは自然であり議論の余地はありませんでした. 
+キーに割り付けるべきコマンドがたくさんあったので, ほとんどすべての
+ASCIIコントロール文字に意味を与えました.
+
+のちに, フロー制御にこれらの文字を必要とする端末が導入されたのです. 
+それらはフルスクリーンエディタ向きの端末ではなかったので, Emacsの保守
+陣はそれらを無視しました.  後年, `C-s'と`C-q'によるフロー制御が端末で
+広く使われるようになりましたが, 当時はそれはオプションでした.  Emacsユー
+ザーの多くはフロー制御をオフにして, フロー制御のために無意味なキーバイ
+ンディングに替えようとはしなかったのです.
+
+Emacsと端末や集線器の製造業者のどちらの使い方が『正しい』でしょう？` ' 
+この問に簡単な答えはありません.
+
+`C-s'と`C-q'で引き起こされる問題を解消するのに気が進まないのは, `C-s'
+と`C-q'であることに理由がないからです.  文字ストリームに透過な別の（実
+用上一般的ではないが）フロー制御技術があります.  さらに, それらをフロー
+制御に使うのは正式な規格ではありません.  興味深いことですが, （1970年
+ころの）紙テープパンチャ付きのテレタイプモデル33では, 計算機からパンチャ
+をオン／オフするために`C-s'と`C-q'を送っていました！
+
+ウィンドウシステムやPC端末エミュレータが文字端末を置き換えるようになり
+フロー制御の問題は徐々に解消しつつあります.  しばらくは, 読者が望むな
+らEmacsはフロー制御をオンにする手軽な方法を提供します.  関数
+`enable-flow-control'を呼び出すのです.
+
+ -- コマンド: enable-flow-control
+     この関数は, 出力のフロー制御に`C-s'と`C-q'を使うようにするととも
+     に, `keyboard-translate-table' （*Note Translating Input::）を用
+     いて`C-\'と`C-^'をそれらのかわりに使えるようにする.
+
+読者のファイル`.emacs'で関数`enable-flow-control-on'を使えば, 特定の種
+類の端末で自動的にフロー制御をオンにできます.
+
+ -- Function: enable-flow-control-on &rest TERMTYPES
+     この関数は, 端末の種類がTERMTYPESの1つであると, フロー制御をオン
+     にし`C-\'と`C-^'をかわりに使う.  たとえば, つぎのように使う.
+
+          (enable-flow-control-on "vt200" "vt300" "vt101" "vt131")
+
+`enable-flow-control'が行う処理はつぎのとおりです.
+
+  1. `(set-input-mode nil t)'で端末入力をCBREAKモードに設定し, オペレー
+     ティングシステムにフロー制御を行うように指示する.
+
+  2. `C-\'と`C-^'を`C-s'と`C-q'に変換するように
+     `keyboard-translate-table'を設定する.  非常に下位レベルであること
+     を除けば, Emacsは`C-s'や`C-q'を打ったと考えるので, たとえ他のコマ
+     ンドに対しても`C-\'や`C-^'を打ったとしても実質的には`C-s'や`C-q'
+     を打ったことになる.  *Note Translating Input::.
+
+端末側がフロー制御文字を発行するのであれば, カーネルのフロー制御処理を
+オンにすれば, その端末に対する普通のパディングより少なくしても動作する
+はずです.  termcapの定義をカスタマイズしてパディング量を減らします. 
+あるいは, `baud-rate'に小さめの値を設定すると, パディングの必要量の計
+算にEmacsは低い速度を使います.  *Note Terminal Output::.
+
+
+
+File: elisp-ja, Node: Batch Mode, Next: Display, Prev: Flow Control, Up: System Interface
+
+バッチモード
+============
+
+コマンド行オプション`-batch'は, Emacsを非対話的に実行します.  このモー
+ドでは, Emacsは端末からコマンドを読まず, 端末のモードを変更せず, スク
+リーンに出力もしません.  これは, 実行するLispプログラムを指定できるよ
+うにするためです.  それが終るとEmacsも終了します.  実行すべきプログラ
+ムは, FILEという名前のライブラリをロードする`-l FILE', および, 引数な
+しで関数FUNCTIONを呼び出す`-f FUNCTION'で指定します.
+
+バッチモードでは, ストリームとして`t'を指定した`message'や`prin1'など
+でエコー領域に表示されるLispプログラムの出力は, Emacsの標準エラー記述
+子へ出力されます.  したがって, Emacsは非対話的なアプリケーションプログ
+ラムのようにふるまいます.  （コマンドの表示などのEmacs自身がエコー領域
+に出力するものは完全に抑制される. ）
+
+ -- Variable: noninteractive
+     この変数は, Emacsがバッチモードで動作していると`nil'以外である.
+
+
+File: elisp-ja, Node: Display, Next: Calendar, Prev: Processes, Up: Top
+
+Emacsの画面表示
+***************
+
+本章では, Emacsがユーザーに提示する画面表示に関連するさまざまな機能に
+ついて述べます.
+
+* Menu:
+
+* Refresh Screen::      Clearing the screen and redrawing everything on it.
+* Truncation::          Folding or wrapping long text lines.
+* The Echo Area::       Where messages are displayed.
+* Invisible Text::      Hiding part of the buffer text.
+* Selective Display::   Hiding part of the buffer text (the old way).
+* Overlay Arrow::       Display of an arrow to indicate position.
+* Temporary Displays::  Displays that go away automatically.
+* Overlays::		Use overlays to highlight parts of the buffer.
+* Width::               How wide is a character or string.
+* Faces::		A face defines a graphics appearance: font, color, etc.
+* Blinking::            How Emacs shows the matching open parenthesis.
+* Inverse Video::	Specifying how the screen looks.
+* Usual Display::	The usual conventions for displaying nonprinting chars.
+* Display Tables::	How to specify other conventions.
+* Beeping::             Audible signal to the user.
+* Window Systems::      Which window system is being used.
+
+
+
+File: elisp-ja, Node: Refresh Screen, Next: Truncation, Prev: Display, Up: Display
+
+スクリーン全体の再表示
+======================
+
+関数`redraw-frame'は, 指定したフレーム（*Note Frames::）の内容全体を再
+表示します.
+
+ -- Function: redraw-frame FRAME
+     この関数は, フレームFRAMEをクリアしてから再表示する.
+
+より強力なのは`redraw-display'です.
+
+ -- コマンド: redraw-display
+     この関数は, すべての可視フレームをクリアしてから再表示する.
+
+ユーザー入力の処理のほうが再表示より絶対的に優先します.  入力があると
+きにこれらの関数を呼び出してもただちにはなにもしませんが, 入力をすべて
+処理し終えてから再表示します.
+
+通常, Emacsを停止したり再開してもスクリーン全体を再表示します.  Emacs
+のようなディスプレイ向けプログラムと通常の逐次表示向けに, 表示内容を個
+別に記録できる端末エミュレータもあります.  そのような端末を使っている
+ときには, 再開時の再表示を禁止した場合もあります.
+
+ -- Variable: no-redraw-on-reenter
+     この変数は, 停止後に再開したあとで, スクリーン全体を再表示するか
+     どうかを制御する.  `nil'以外であると再描画の必要はないことを意味
+     し, `nil'であると再描画が必要であることを意味する.  デフォルトは
+     `nil'である.
+
+
+
+File: elisp-ja, Node: Truncation, Next: The Echo Area, Prev: Refresh Screen, Up: Display
+
+表示の切り詰め
+==============
+
+テキスト行がウィンドウの右端を越えていると, その行をつぎのスクリーン行
+へ継続するか, スクリーン行1行に切り詰めます.  長いテキスト行を表示する
+ために使われる追加のスクリーン行を"継続"行と呼びます.  通常, ウィンド
+ウの最右端のコラムに現れる`$'で切り詰めたことを示し, `\'でつぎの行に
+『折り返した』こと, つまり, "継続している"行であることを示します. 
+（表示テーブルで別の文字を指定できる.  *Note Display Tables::を参
+照. ）
+
+継続することと詰め込みは別のことです.  継続はスクリーン上だけのことで
+あり, バッファ内容は変わりません.  また, 継続では単語の境界ではなく, 
+正確にスクリーンの右端で行を分けます.  *Note Filling::.
+
+ -- User Option: truncate-lines
+     このバッファローカルな変数は, ウィンドウの右端を越える行をどのよ
+     うに表示するかを制御する.  デフォルトは`nil'であり継続を意味する. 
+     値が`nil'以外であると, そのような行を切り詰める.
+
+     変数`truncate-partial-width-windows'が`nil'以外であると, （フレー
+     ム内で）左右に並んだウィンドウでは, `truncate-lines'の値に関わら
+     ずつねに切り詰る.
+
+ -- User Option: default-truncate-lines
+     この変数は, `truncate-lines'のバッファローカルな値を持たないバッ
+     ファ向けの`truncate-lines'のデフォルト値である.
+
+ -- User Option: truncate-partial-width-windows
+     この変数は, 左右に並んだウィンドウ（*Note Splitting Windows::）に
+     おいて, ウィンドウの右端を越える行の表示を制御する.  `nil'以外で
+     あると, そのような行を切り詰める.  さもなければ, `truncate-lines'
+     に従って表示する.
+
+ウィンドウで水平方向にスクロールしている（*Note Horizontal Scrolling::）
+と, 強制的に切り詰めます.
+
+継続や切り詰めを表す文字は, 表示テーブルを使って変更できます.  *Note
+Display Tables::.
+
+バッファに*とても*長い行があるときにそれらの表示に継続行を使うと, それ
+によりEmacsの再表示が遅くなります.  コラム計算や字下げ関数も遅くなりま
+す.  そのような場合には, `cache-long-line-scans'に`t'を設定するのがよ
+いです.
+
+ -- Variable: cache-long-line-scans
+     この変数が`nil'以外であると, 字下げ／移動関数とEmacsの再表示にお
+     いて, バッファを走査した結果をキャッシュし, バッファが変更されて
+     いないときにはキャッシュを調べてバッファの対象領域の再走査を回避
+     する.
+
+     キャッシュするようにすると, 短い行の処理が多少遅くなる.
+
+     この変数は, すべてのバッファで自動的にバッファローカルである.
+
+
+
+File: elisp-ja, Node: The Echo Area, Next: Invisible Text, Prev: Truncation, Up: Display
+
+エコー領域
+==========
+
+"エコー領域"（echo area）は, 基本関数`message'でメッセージを表示したり, 
+打鍵を表示するために使われます.  （活性な）ミニバッファはエコー領域と
+同じスクリーン上の位置に現れますが, エコー領域とミニバッファは同じもの
+ではありません.  `GNU Emacs マニュアル'には, エコー領域とミニバッファ
+がスクリーンの同じ箇所を使う際の衝突を回避する規則が述べてあります
+（*Note ミニバッファ: (emacs-ja)Minibuffer..）.  エラーメッセージもエ
+コー領域に現れます.  *Note Errors::.
+
+エコー領域に表示するには, ストリーム（*Note Output Functions::）として
+`t'を指定したLisp表示関数を使うか, あるいはつぎのようにします.
+
+ -- Function: message STRING &rest ARGUMENTS
+     この関数は, エコー領域に1行のメッセージを表示する.  引数STRINGは, 
+     言語Cの`printf'の制御文字列と同様である.  書式指定について詳しく
+     は, *Note String Conversion::の`format'を参照.  `message'は構築し
+     た文字列を返す.
+
+     バッチモードでは, `message'はメッセージテキストと改行を標準エラー
+     ストリームへ出力する.
+
+     STRINGが`nil'であると, `message'はエコー領域をクリアする.  ミニバッ
+     ファが活性であると, これによりミニバッファの内容がスクリーンにた
+     だちに表示される.
+
+          (message "Minibuffer depth is %d."
+                   (minibuffer-depth))
+           -| Minibuffer depth is 0.
+          => "Minibuffer depth is 0."
+
+          ---------- Echo Area ----------
+          Minibuffer depth is 0.
+          ---------- Echo Area ----------
+
+ -- Function: message-or-box STRING &rest ARGUMENTS
+     この関数は`message'と同様にメッセージを表示するが, エコー領域のか
+     わりに対話ボックスを使うこともある.  この関数がマウスを用いて起動
+     されたコマンドから呼ばれたとき, より正確には,
+     `last-nonmenu-event'（*Note Command Loop Info::）が`nil'かリスト
+     のいずれかであると, メッセージを表示するために対話ボックスかポッ
+     プアップメニューを用いる.  さもなければエコー領域を用いる.  （こ
+     れは, 同様な決定をくだす`y-or-n-p'の判定条件と同じである.  *Note
+     Yes-or-No Queries::. ）
+
+     呼び出しの周りで`last-nonmenu-event'に適切な値を束縛することで, 
+     マウスを使うかエコー領域を使うか強制できる.
+
+ -- Function: message-box STRING &rest ARGUMENTS
+     この関数は`message'と同様にメッセージを表示するが, 可能な限り対話
+     ボックス（やポップアップメニュー）を使う.  対話ボックスやポップアッ
+     プメニューを扱えない端末などでこれらを使用できない場合には,
+     `message-box'は`message'と同様にエコー領域を使う.
+
+ -- Function: current-message
+     この関数は, エコー領域に現在表示されているメッセージを返す.  なけ
+     れば`nil'を返す.
+
+ -- Variable: cursor-in-echo-area
+     この変数は, エコー領域にメッセージを表示しているときにカーソルを
+     どこに表示するかを制御する.  `nil'以外であると, メッセージの末尾
+     にカーソルを表示する.  さもなければ, エコー領域にではなく, ポイン
+     ト位置にカーソルを表示する.
+
+     この値は普通は`nil'である.  Lispプログラムはこれに`t'を短い期間だ
+     け束縛する.
+
+ -- Variable: echo-area-clear-hook
+     このノーマルフックは, `(message nil)'や他の理由でエコー領域をクリ
+     アするたびに実行される.
+
+エコー領域に表示したほとんどすべてのメッセージはバッファ`*Messages*'に
+も記録されます.
+
+ -- User Option: message-log-max
+     この変数は, バッファ`*Messages*'に保持する行数を指定する.  値`t'
+     は, 保持する行数を制限しないことを意味する.  値`nil'は, メッセー
+     ジをまったく記録しないことを意味する.  メッセージを表示しつつそれ
+     を記録しないようにするにはつぎのようにする.
+
+          (let (message-log-max)
+            (message ...))
+
+ -- Variable: echo-keystrokes
+     この変数は, コマンド文字を表示するまでの経過時間を決定する.  この
+     値は整数であり, 表示し始めるまでに待つ秒数を指定する.  ユーザーが
+     （`C-x'などの）プレフィックスキーを打ってからつぎを打つまでにこの
+     秒数だけ遅れがあると, プレフィックスキーをエコー領域に表示する. 
+     （いったんキー列の表示を始めると, 同じキー列の以降の文字すべてを
+     表示する. ）
+
+     値がゼロであると, コマンド入力を表示しない.
+
+
+
+File: elisp-ja, Node: Invisible Text, Next: Selective Display, Prev: The Echo Area, Up: Display
+
+不可視なテキスト
+================
+
+属性`invisible'で文字群を"不可視"にできます.  つまり, それらをスクリー
+ンに表示されないようにするのです.  テキスト属性（*Note Text
+Properties::）かオーバレイの属性（*Note Overlays::）を使います.
+
+もっとも単純な場合, 属性`invisible'が`nil'以外であると文字は見えなくな
+ります.  これはデフォルトの場合, つまり, `buffer-invisibility-spec'の
+デフォルト値を変更していない場合であり, このようにして属性`invisible'
+は動作します.
+
+より一般的には, 変数`buffer-invisibility-spec'を使って, 属性
+`invisible'のどの値のものを不可視なテキストにするかを制御できます.  つ
+まり, `invisible'の異なる値を与えてテキストをあらかじめいくつかのグルー
+プに分類しておき, そのあとで`buffer-invisibility-spec'の値を変更してさ
+まざまなグループを可視／不可視にします.
+
+`buffer-invisibility-spec'で可視性を制御することは, データベースの項目
+の一覧を表示するようなプログラムで特に有用です.  データベースの特定の
+項目だけを見るための便利なフィルタコマンドを実装できます.  この変数に
+設定するのはとても速くでき, 変更すべき属性を探すためにバッファ内の全テ
+キストを走査するよりも速いのです.
+
+ -- Variable: buffer-invisibility-spec
+     この変数は, 属性`invisible'のどの種類を実際に不可視な文字にするか
+     を指定する.
+
+     `t'
+          属性`invisible'が`nil'以外の文字を不可視にする.  これがデフォ
+          ルト.
+
+     リスト
+          リストの各要素で不可視にする条件を指定する.  文字の属性
+          `invisible'がこれらの条件の1つを満たすと, その文字を不可視に
+          する.  リストには2種類の要素がありうる.
+
+          `ATOM'
+               文字の属性`invisible'の値がATOMであるか, そのリストのメ
+               ンバにATOMがあると, 文字を不可視にする.
+
+          `(ATOM . t)'
+               文字の属性`invisible'の値がATOMであるか, そのリストのメ
+               ンバにATOMがあると, 文字を不可視にする.  さらに, その文
+               字が行末にあり, 直後に目に見える改行がある場合には,
+               `...'を表示する.
+
+`buffer-invisibility-spec'に要素を追加したり削除するために2つの関数が
+特別にあります.
+
+ -- Function: add-to-invisibility-spec ELEMENT
+     （リストにELEMENTが既存でなければ）`buffer-invisibility-spec'に要
+     素ELEMENTを追加する.
+
+ -- Function: remove-from-invisibility-spec ELEMENT
+     `buffer-invisibility-spec'から要素ELEMENTを削除する.
+
+`buffer-invisibility-spec'の使い方の慣習の1つに, メジャーモードでは
+`buffer-invisibility-spec'の1要素と属性`invisible'の値にモード自体の名
+前を使うべきであるというのがあります.
+
+     ;; `...'を表示したければ
+     (add-to-invisibility-spec '(my-symbol . t)) 
+     ;; `...'を表示しくなければ
+     (add-to-invisibility-spec 'my-symbol) 
+
+     (overlay-put (make-overlay beginning end)
+                  'invisible 'my-symbol)
+
+     ;; オーバレイを終了したら
+     (remove-from-invisibility-spec '(my-symbol . t))
+     ;; 同じように
+     (remove-from-invisibility-spec 'my-symbol)
+
+普通, テキストを操作したりポイントを移動するコマンドは, テキストの可視
+性に注意しません.  ユーザーレベルの移動コマンドは,
+`line-move-ignore-invisible'が`nil'以外であれば不可視な改行を明示的に
+無視しますが, それはそのように明示的にプログラムしてあるからにすぎませ
+ん.
+
+インクリメンタルサーチでは, 不可視なテキストを含む一致箇所では, 不可視
+なオーバレイを一時的にあるいは恒久的に可視にできます.  これを可能にす
+るには, オーバレイの属性`isearch-open-invisible'が`nil'以外である必要
+があります.  その属性の値は, オーバレイを引数として呼ばれる関数である
+必要があります.  その関数がオーバレイを恒久的に可視にします.  その関数
+は, 探索から抜けるときに一致箇所がオーバレイにまたがっているときに使わ
+れます.
+
+探索中には, そのようなオーバレイは, それらの属性`invisible'と
+`intangible'を一時的に変更することで一時的に可視にされます.  特定のオー
+バレイに対して異なる扱いをしたければ, 属性
+`isearch-open-invisible-temporary'に関数を与えておきます.  その関数は2
+つの引数で呼ばれます.  第1引数はオーバレイ, 第2引数は, オーバレイを可
+視にする`t', あるいは, オーバレイを再度不可視にする`nil'です.
+
+
+
+File: elisp-ja, Node: Selective Display, Next: Overlay Arrow, Prev: Invisible Text, Up: Display
+
+選択表示
+========
+
+"選択表示"とは, スクリーン上の特定の行を隠すための関連する機能対を指し
+ます.
+
+最初の変種は, 明示的な選択表示で, Lispプログラムで使用するために設計さ
+れています.  テキストを変更することでどの行を隠すかを制御します.  テキ
+ストを不可視にする機能（*Note Invisible Text::）は, この機能で部分的に
+置き換えてあります.
+
+2番目の変種は, 字下げに基づいて自動的に隠す行を選択します.  この変種は, 
+ユーザーレベルの機能であるように設計されています.
+
+明示的な選択表示を制御するには, 改行（コントロールJ）を復帰（コントロー
+ルM）に置き換えます.  置換前の改行に続いていたそれまでの行は見えなくな
+ります.  厳密にいえば, 改行だけが行を区切るため, 一時的にはもう行では
+なくなっているのです.  つまり, 先行する行の一部になっているのです.
+
+選択表示は, 編集コマンドに直接には影響しません.  たとえば, `C-f'
+（`forward-char'）は躊躇なく不可視なテキストの中へポイントを移動します. 
+しかし, 改行文字を復帰文字に置換すると影響を受ける編集コマンドもありま
+す.  たとえば, `next-line'は, 改行だけを探すため不可視な行を飛び越して
+しまいます.  選択表示を使用するモードでは, 改行を考慮するようにコマン
+ドを定義したり, テキストの一部を可視／不可視にするコマンドを定義できま
+す.
+
+選択表示しているバッファをファイルに書き出すときには, すべてのコントロー
+ルM（復帰）は改行として出力されます.  つまり, つぎにファイルを読み込む
+と不可視なものはなく, 普通に見えるのです.  選択表示の効果は, Emacsの内
+側だけで見えるのです.
+
+ -- Variable: selective-display
+     このバッファローカルな変数は, 選択表示をオンにする.  つまり, 行や
+     行の一部を不可視にできる.
+
+        * `selective-display'の値が`t'であると, 行内のコントロールM
+          （復帰）以降の部分を表示しない.  これは明示的な選択表示であ
+          る.
+
+        * `selective-display'の値が正整数であると, 字下げのコラム幅が
+          その数より大きな行を表示しない.
+
+     バッファのある部分が不可視であると, 垂直方向に移動するコマンドは, 
+     その部分が存在しないがごとく動作し, 1つのコマンド`next-line'で任
+     意個数の不可視行を飛び越えられる.  しかし, （`forward-char'などの）
+     文字単位の移動コマンドは不可視な部分を無視せず, 不可視な部分への
+     テキストの挿入／削除は可能である.
+
+     つぎの例では, `selective-display'の値を変えてバッファ`foo'の*見た
+     目*を示す.  バッファの*内容*に変更はない.
+
+          (setq selective-display nil)
+               => nil
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column
+            3n this column
+            3n this column
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+          (setq selective-display 2)
+               => 2
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+ -- Variable: selective-display-ellipses
+     このバッファローカルな変数が`nil'以外であると, 不可視なテキストが
+     続く行末に`...'を表示する.  つぎの例は, 上の例の続きである.
+
+          (setq selective-display-ellipses t)
+               => t
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column ...
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+     表示テーブルを使って`...'にかわる別のテキストを指定できる.  *Note
+     Display Tables::.
+
+
+
+File: elisp-ja, Node: Overlay Arrow, Next: Temporary Displays, Prev: Selective Display, Up: Display
+
+オーバレイ矢印
+==============
+
+"オーバレイ矢印"（overlay arrow）は, バッファの特定の行にユーザーの注
+意を向けるために有用です.  たとえば, デバッガとのインターフェイスを取
+るためのモードでは, オーバレイ矢印で実行するコードの行を示します.
+
+ -- Variable: overlay-arrow-string
+     この変数は, 特定の行に注意を向けるために表示する文字列を保持する. 
+     矢印機能を使っていなければ`nil'である.
+
+ -- Variable: overlay-arrow-position
+     この変数は, オーバレイ矢印を表示する箇所を表すマーカを保持する. 
+     行頭を指すこと.  矢印のテキストはその行の先頭に現れ, その場所に本
+     来現れるべきテキストを隠す.  矢印は普通は短く, 行には字下げがある
+     ので, 重要なものは普通はなにも上書きされない.
+
+     オーバレイ文字列は, マーカが指すバッファでのみ表示される.  したがっ
+     て, ある時点では, 1つのバッファだけにオーバレイ矢印を表示できる.
+
+同様のことは, 属性`before-string'のオーバレイを作成してもできます.
+*Note Overlay Properties::.
+
+
+
+File: elisp-ja, Node: Temporary Displays, Next: Overlays, Prev: Overlay Arrow, Up: Display
+
+一時的な表示
+============
+
+一時的な表示は, 出力をバッファに置き編集目的にではなくユーザーに読むよ
+うに提示するためにLispプログラムが使います.
+
+ -- Special form: with-output-to-temp-buffer BUFFER-NAME FORMS...
+     この関数は, BUFFER-NAMEという名前のバッファにFORMSの任意の出力が
+     挿入されるように準備してFORMSを実行する.  そのバッファは適当なウィ
+     ンドウに表示されるが, そのバッファは選択されない.
+
+     文字列BUFFER-NAMEは, 既存である必要はない一時的なバッファを指定す
+     る.  引数は, バッファではなく文字列であること.  （問い合わせずに）
+     はじめにバッファを消去し, `with-output-to-temp-buffer'が終了する
+     と未変更と印を付ける.
+
+     `with-output-to-temp-buffer'は, `standard-output'に一時的なバッファ
+     を束縛し, FORMSのフォーム群を評価する.  FORMS内で用いたLisp出力関
+     数からの出力はデフォルトでそのバッファに入る（しかし, スクリーン
+     表示やエコー領域のメッセージは, 用語の一般的な意味で『出力』であ
+     るが, 影響されない. ）*Note Output Functions::.
+
+     FORMSの最後のフォームの値を返す.
+
+          ---------- Buffer: foo ----------
+           This is the contents of foo.
+          ---------- Buffer: foo ----------
+
+          (with-output-to-temp-buffer "foo"
+              (print 20)
+              (print standard-output))
+          => #<buffer foo>
+
+          ---------- Buffer: foo ----------
+          20
+
+          #<buffer foo>
+
+          ---------- Buffer: foo ----------
+
+ -- Variable: temp-buffer-show-function
+     この変数が`nil'以外であると, ヘルプバッファを表示するために
+     `with-output-to-temp-buffer'がこの値を関数として呼び出す.  関数は
+     1つの引数, つまり, 表示すべきバッファを受け取る.
+
+     この関数では, `save-window-excursion'を使いウィンドウとバッファを
+     選択した内側で, `with-output-to-temp-buffer'が普通に行うように
+     `temp-buffer-show-hook'を呼び出すのがよい.
+
+ -- Variable: temp-buffer-show-hook
+     このノーマルフックは, ヘルプバッファを表示後に
+     `with-output-to-temp-buffer'が実行する.  フックを実行するときには, 
+     ヘルプバッファがカレントバッファであり, それを表示しているウィン
+     ドウが選択されているウィンドウである.
+
+ -- Function: momentary-string-display STRING POSITION &optional CHAR MESSAGE
+     この関数は, カレントバッファ内の位置POSITIONに文字列STRINGを瞬間
+     的に表示する.  アンドゥリストやバッファの変更状態には影響しない.
+
+     瞬間的な表示は, つぎの入力イベントまで持続する.  つぎの入力イベン
+     トがCHARであると, `momentary-string-display'はそれを無視して戻る. 
+     さもなければ, そのイベントは入力として使われるように保存される. 
+     したがって, CHARを打つと文字列の表示が単に消えるだけであるが, 
+     （たとえば）`C-f'を打つと文字列の表示が消えるだけでなく（たぶん）
+     ポイントを進めることになる.  引数CHARはデフォルトでは空白である.
+
+     `momentary-string-display'の戻り値に意味はない.
+
+     文字列STRINGにコントロール文字が含まれなければ, 属性
+     `before-string'のオーバレイを作成（のちに削除）することでより一般
+     的な方法で同じことを行える.  *Note Overlay Properties::.
+
+     MESSAGEが`nil'以外であると, STRINGをバッファに表示中には, MESSAGE
+     をエコー領域に表示する.  `nil'であると, デフォルトは「継続するに
+     は文字CHARを打つこと」といったメッセージである.
+
+     つぎの例では, ポイントは始めは2行目の先頭に位置している.
+
+          ---------- Buffer: foo ----------
+          This is the contents of foo.
+          -!-Second line.
+          ---------- Buffer: foo ----------
+
+          (momentary-string-display
+            "**** Important Message! ****"
+            (point) ?\r
+            "Type RET when done reading")
+          => t
+
+          ---------- Buffer: foo ----------
+          This is the contents of foo.
+          **** Important Message! ****Second line.
+          ---------- Buffer: foo ----------
+
+          ---------- Echo Area ----------
+          Type RET when done reading
+          ---------- Echo Area ----------
+
+
+
+File: elisp-ja, Node: Overlays, Next: Width, Prev: Temporary Displays, Up: Display
+
+オーバレイ
+==========
+
+ユーザーに提示するためにスクリーン上でのバッファのテキストの見た目を変
+えるために"オーバレイ"（overlay）を使えます.  オーバレイは, 特定のバッ
+ファに属するオブジェクトであり, 指定された開始位置と終了位置があります. 
+また, 調べたり設定できる属性もあります.  これらの属性は, オーバレイの
+内側のテキストの表示に影響します.
+
+* Menu:
+
+* Overlay Properties::	How to read and set properties.
+			What properties do to the screen display.
+* Managing Overlays::   Creating, moving, finding overlays.
+
+
+
+File: elisp-ja, Node: Overlay Properties, Next: Managing Overlays, Prev: Overlays, Up: Overlays
+
+オーバレイ属性
+--------------
+
+オーバレイ属性はある意味でテキスト属性に似ていて, どちらの属性でも文字
+の表示方法を変更できます.  しかし, 多くの点で異なります.  テキスト属性
+は, テキストの一部であるとみなされますが, オーバレイはテキストの一部と
+はみなしません.  したがって, さまざまなバッファや文字列のあいだでテキ
+ストをコピーしてもテキスト属性は保存されますが, オーバレイは保存されま
+せん.  バッファ内のテキスト属性を変更するとバッファを変更済みと印を付
+けますが, オーバレイを移動したりその属性を変更してもバッファの変更とは
+考えません.  テキスト属性の変更と異なり, オーバレイの変更はバッファの
+アンドゥリストには記録されません.  比較のために*Note Text
+Properties::.
+
+`priority'
+     この属性の値（非負の数であること）は, オーバレイの優先順位を決定
+     する.  優先順位は, 複数のオーバレイが同じ文字を覆い, いずれも表示
+     用のフェイスを指定している場合に意味を持つ.  `priority'の値の大き
+     なものが他に優先し, そのフェイス属性が他の低い順位の属性のフェイ
+     ス属性に優先する.
+
+     現在, すべてのオーバレイ属性はテキスト属性に優先する.  負の優先順
+     位の意味を決めかねているので, 負の優先順位は避けてほしい.
+
+`window'
+     属性`window'が`nil'以外であると, オーバレイをそのウィンドウだけに
+     適用する.
+
+`category'
+     オーバレイに属性`category'があると, それをオーバレイの"カテゴリ"
+     （category）と呼ぶ.  これはシンボルであること.  シンボルの属性が
+     オーバレイの属性のデフォルトの役割を果たす.
+
+`face'
+     この属性は, テキストの表示方法, たとえば, フォントや表示色を制御
+     する.  その値は, フェイス名であるかフェイス名のリストである.  詳
+     しくは, *Note Faces::.
+
+     属性値がリストであると, その要素は, `(foreground-color
+     . COLOR-NAME)'か`(background-color . COLOR-NAME)'の形でもよい. 
+     これらの要素は, 前景色だけや背景色だけを指定する.  したがって, 使
+     用する各色を表すフェイスを作成する必要はない.
+
+`mouse-face'
+     この属性は, マウスがオーバレイの範囲に入っているときに`face'のか
+     わりに使われる.
+
+`modification-hooks'
+     この属性の値は, オーバレイの内側の文字を変更したり, オーバレイの
+     内側にテキストを挿入したときに呼び出される関数のリストである.
+
+     フック関数は, 各変更の前後に呼び出される.  関数が受け取った情報を
+     保存し呼び出しごとに比較すればバッファテキストにどのような変更が
+     行われたかを正確に判定できる.
+
+     変更前に呼ばれるときには, 各関数は4つの引数を受け取る.  オーバレ
+     イ, `nil', 変更対象のテキスト範囲の先頭と末尾である.
+
+     変更後に呼ばれるときには, 各関数は5つの引数を受け取る.  オーバレ
+     イ, `t', 変更済みのテキスト範囲の先頭と末尾, その範囲の変更前のテ
+     キストの長さである.  （挿入では変更前の長さはゼロである.  削除で
+     は変更前の長さは削除された文字数であり, 変更後の先頭位置と末尾位
+     置は同じである. ）
+
+`insert-in-front-hooks'
+     この属性の値は, オーバレイの開始位置へのテキスト挿入の前後に呼び
+     出される関数のリストである.  呼び出し方法は`modification-hooks'の
+     関数群と同じである.
+
+`insert-behind-hooks'
+     この属性の値は, オーバレイの終了位置へのテキスト挿入の前後に呼び
+     出される関数のリストである.  呼び出し方法は`modification-hooks'の
+     関数群と同じである.
+
+`invisible'
+     属性`invisible'は, オーバレイ内のテキストを不可視にする.  つまり, 
+     それらはスクリーン上に現れない.  詳しくは, *Note Invisible
+     Text::.
+
+`intangible'
+     属性`intangible'は, オーバレイにおいてテキスト属性`intangible'と
+     同様に働く.  詳しくは, *Note Special Properties::.
+
+`isearch-open-invisible'
+     この属性は, インクリメンタルサーチに対して, 一致箇所がオーバレイ
+     に重なったときに不可視なオーバレイを恒久的に可視にする方法を指示
+     する.  *Note Invisible Text::.
+
+`isearch-open-invisible-temporary'
+     この属性は, インクリメンタルサーチに対して, 探索中に不可視なオー
+     バレイを一時的に可視にする方法を指示する.  *Note Invisible
+     Text::.
+
+`before-string'
+     この属性の値は, オーバレイの先頭位置に追加表示する文字列である. 
+     文字列はいかなる意味においてもバッファには現れず, スクリーン上の
+     みに現れる.  文字列は1コラムで表示される文字のみであること.  タブ
+     や改行を含むコントロール文字を含むと奇妙な結果を生じる.
+
+`after-string'
+     この属性の値は, オーバレイの末尾位置に追加表示する文字列である. 
+     文字列はいかなる意味においてもバッファには現れず, スクリーン上の
+     みに現れる.  文字列は1コラムで表示される文字のみであること.  タブ
+     や改行を含むコントロール文字を含むと奇妙な結果を生じる.
+
+`evaporate'
+     この属性が`nil'以外であると, オーバレイが空に（つまり覆う文字がな
+     く）なると, 自動的にオーバレイを削除する.
+
+`local-map'
+     この属性が`nil'以外であると, 当該部分のテキストに対するキーマップ
+     を指定する.  ポイントの直後の文字がオーバレイに入っていると, 属性
+     の値はバッファローカルなキーマップに置き換わる.  *Note Active
+     Keymaps::.
+
+つぎは, オーバレイの属性を読み書きするための関数です.
+
+ -- Function: overlay-get OVERLAY PROP
+     この関数は, オーバレイOVERLAYに記録されている属性PROPの値をあれば
+     返す.  OVERLAYにそのような属性に対する値が記録されていなくても, 
+     属性`category'がありそれがシンボルであれば, そのシンボルの属性
+     PROPを使う.  さもなければ値は`nil'である.
+
+ -- Function: overlay-put OVERLAY PROP VALUE
+     この関数は, オーバレイOVERLAYに属性PROPの値としてVALUEを設定する.
+     VALUEを返す.
+
+与えられた文字のオーバレイ属性とテキスト属性の両方を調べる関数
+`get-char-property'も参照してください.  *Note Examining Properties::.
+
+
+
+File: elisp-ja, Node: Managing Overlays, Next: Width, Prev: Overlay Properties, Up: Overlays
+
+オーバレイの管理
+----------------
+
+本節では, オーバレイを作成, 削除, 移動したり, それらの内容を調べる関数
+について述べます.
+
+ -- Function: make-overlay START END &optional BUFFER FRONT-ADVANCE REAR-ADVANCE
+     この関数は, バッファBUFFERに属するSTARTからENDまでを覆うオーバレ
+     イを作成しそれを返す.  STARTとENDのどちらもバッファ内位置を指定す
+     る整数かマーカであること.  BUFFERを省略すると, カレントバッファに
+     オーバレイを作成する.
+
+     引数FRONT-ADVANCEとREAR-ADVANCEは, オーバレイの開始位置と終了位置
+     における挿入型を指定する.  *Note Marker Insertion Types::.
+
+ -- Function: overlay-start OVERLAY
+     この関数は, オーバレイOVERLAYの開始位置を整数で返す.
+
+ -- Function: overlay-end OVERLAY
+     この関数は, オーバレイOVERLAYの終了位置を整数で返す.
+
+ -- Function: overlay-buffer OVERLAY
+     この関数は, オーバレイOVERLAYが属するバッファを返す.
+
+ -- Function: delete-overlay OVERLAY
+     この関数は, オーバレイOVERLAYを削除する.  Lispオブジェクトとして
+     はオーバレイは存在し続けるが, それが属したバッファとの対応付けは
+     消失し, 表示上の効果もなくなる.
+
+     削除したオーバレイは恒久的に無意味ではない.  `move-overlay'を呼び
+     出して新たなバッファ内位置をそれに与えられる.
+
+ -- Function: move-overlay OVERLAY START END &optional BUFFER
+     この関数は, オーバレイOVERLAYをバッファBUFFERに移し, STARTからEND
+     を覆うようにする.  STARTとENDのどちらもバッファ内位置を指定し, 整
+     数かマーカである.  BUFFERを省略すると, オーバレイは同じバッファに
+     留まる.
+
+     戻り値はOVERLAYである.
+
+     これは, オーバレイの端を変更する唯一の正しい方法である.  オーバレ
+     イのマーカを手で修正しようとしないこと.  他の重要なデータ構造を更
+     新しそこない, いくつかのオーバレイを『失う』ことにもなりかねない.
+
+ -- Function: overlays-at POS
+     この関数は, カレントバッファの位置POSを覆うすべてのオーバレイのリ
+     ストを返す.  このリスト内の順番に意味はない.  オーバレイが位置POS
+     かそのまえで始まり, かつ, 位置POSかそのうしろで終るときに, オーバ
+     レイは位置POSを覆う.
+
+ -- Function: overlays-in BEG END
+     この関数は, BEGからENDまでの領域と重なり合っているすべてのオーバ
+     レイのリストを返す.  『重なり合っている』とは, 少なくとも1文字が
+     オーバレイに覆われていて, かつ, その文字が指定された領域に入って
+     いることを意味する.  しかし, 空のオーバレイであってもそれがBEGに
+     あるかBEGとENDのあいだにあれば, 空のオーバレイも結果に含まれる.
+
+ -- Function: next-overlay-change POS
+     この関数は, 位置POSのうしろにあるオーバレイのつぎの開始位置か終了
+     位置を返す.
+
+ -- Function: previous-overlay-change POS
+     この関数は, 位置POSのまえにあるオーバレイのまえの開始位置か終了位
+     置を返す.
+
+
+
+File: elisp-ja, Node: Width, Next: Faces, Prev: Overlays, Up: Display
+
+表示幅
+======
+
+すべての文字が同じ表示幅ではありませんから, これらの関数で文字の表示幅
+を検査できます.  関連する関数については, *Note Primitive Indent::と
+*Note Screen Lines::
+
+ -- Function: char-width CHAR
+     この関数は, 文字CHARを選択されているウィンドウでカレントバッファ
+     に表示した場合のコラム幅を返す.
+
+ -- Function: string-width STRING
+     この関数は, 文字列STRINGを選択されているウィンドウでカレントバッ
+     ファに表示した場合のコラム幅を返す.
+
+ -- Function: truncate-string-to-width STRING WIDTH &optional START-COLUMN PADDING
+     この関数は, 幅WIDTHに収まる文字列STRINGの部分を新たな文字列として
+     返す.
+
+     STRINGが幅WIDTHに満たない場合, STRINGの終りで結果は終る.  STRING
+     内の1つの複数コラム文字がコラムWIDTHを越える場合には, その文字は
+     結果に含めない.  したがって, 結果はWIDTHより短くなりえるがそれを
+     越えることはない.
+
+     省略可能な引数START-COLUMNは, 開始コラムを指定する.  これが`nil'
+     以外であると, 文字列のはじめのSTART-COLUMNコラムを結果から省く.
+     STRING内の1つの複数コラム文字がコラムSTART-COLUMNを越える場合には, 
+     その文字は結果に含めない.
+
+     省略可能な引数PADDINGが`nil'以外であると, 結果の文字列の先頭や末
+     尾に付加してちょうどWIDTHコラムにするためのパディング文字である.
+     WIDTHより短くなる場合に結果の末尾にパディング文字を使う.  複数コ
+     ラム文字がコラムSTART-COLUMNを越える場合には, 結果の先頭にパディ
+     ング文字を使う.
+
+          (truncate-string-to-width "\tab\t" 12 4)
+               => "ab"
+          (truncate-string-to-width "\tab\t" 12 4 ?\ )
+               => "    ab  "
+
+
+
+File: elisp-ja, Node: Faces, Next: Blinking, Prev: Width, Up: Display
+
+フェイス
+========
+
+"フェイス"（face）とは, 図形的な属性, つまり, フォント, 前景色, 背景色, 
+下線の名前付きの集合体です.  フェイスはスクリーン上のテキストの表示を
+制御します.
+
+各フェイスには固有の"フェイス番号"（face number）があり, Emacs内部の下
+位レベルでフェイスを区別するために使われます.  しかし, ほとんどの目的
+には, Lispプログラムでは名前でフェイスを参照できます.
+
+ -- Function: facep OBJECT
+     この関数は, OBJECTがフェイスを指名するシンボル（あるいは, フェイ
+     スデータを記録するために内部的に使われる種類のベクトル）であると
+     `t'を返す.  さもなければ`nil'を返す.
+
+各フェイス名はすべてのフレームで有効であり, デフォルトではすべてのフレー
+ムで同じ意味を持ちます.  しかし, 望みの1つのフレームで特定のフェイス名
+に特定の意味を持たせることもできます.
+
+* Menu:
+
+* Standard Faces::      The faces Emacs normally comes with.
+* Defining Faces::      How to define a face with `defface'.
+* Merging Faces::	How Emacs decides which face to use for a character.
+* Face Functions::	How to define and examine faces.
+
+
+
+File: elisp-ja, Node: Standard Faces, Next: Defining Faces, Prev: Faces, Up: Faces
+
+標準フェイス
+------------
+
+つぎの表はすべての標準フェイスとその用途です.
+
+`default'
+     このフェイスは通常のテキストに対して使う.
+
+`modeline'
+     このフェイスはモード行とメニューバーに対して使う.
+
+`region'
+     このフェイスは, 暫定マーク（transient-mark）モードでリージョンを
+     強調表示するために使う.
+
+`secondary-selection'
+     このフェイスは, 指定した任意の二次セレクションを示すために使う.
+
+`highlight'
+     このフェイスは, さまざま目的向けに強調表示するために使う.
+
+`underline'
+     このフェイスは, テキストに下線を引く.
+
+`bold'
+     このフェイスは, 可能ならば太字（bold）フォントを使う.  フレームの
+     フォントに太字（bold）変種があればそれを使う.  太字変種を使用した
+     い場合には, 太字フォント変種を有するデフォルトフォントを選ぶのは
+     読者の責任である.
+
+`italic'
+     このフェイスは, フレームのフォントに斜体（italic）変種があればそ
+     れを使う.
+
+`bold-italic'
+     このフェイスは, フレームのフォントに太字斜体（bold-italic）変種が
+     あればそれを使う.
+
+
+
+File: elisp-ja, Node: Defining Faces, Next: Merging Faces, Prev: Standard Faces, Up: Faces
+
+フェイスを定義する
+------------------
+
+新たなフェイスを定義する方法は, `defface'を使うことです.  これは, カス
+タマイズバッファ（*Note 簡便なカスタマイズ方法: (emacs-ja)Easy
+Customization..）を用いてユーザーがカスタマイズできるカスタマイズ項目
+（*Note Customization::）の一種を作成します.
+
+ -- Macro: defface FACE SPEC DOC [KEYWORD VALUE]...
+     SPECに従ったデフォルトを持つカスタマイズ可能なフェイスとしてFACE
+     を宣言する.  シンボルFACEをクォートしないこと.  引数DOCは, フェイ
+     スの説明文字列を指定する.
+
+     `defface'を実行すると, SPECに従ったフェイスを定義し, ファイル
+     `.emacs'から読み取った任意のカスタマイズをSPECの指定に優先させる.
+
+     SPECの目的は, 異なる種類の端末でフェイスがどのような見た目になる
+     かを指定することである.  `(DISPLAY ATTS)'の形の要素から成る連想リ
+     ストであること.  要素のCARのDISPLAYは端末の種類を指定する.  CDRの
+     ATTSはフェイスの属性とその値のリストであり, その種類の端末上でそ
+     のフェイスがどのように見えるかを指定する.  可能な属性は,
+     `custom-face-attributes'の値で定義される.
+
+     SPECの要素のDISPLAY部分は, 要素を適用するフレームを決定する.
+     SPECの1つより多くの要素が指定されたフレームに一致する場合, そのフ
+     レームに一致した最初の要素だけを用いる.  DISPLAYには2つの可能性が
+     ある.
+
+     `t'
+          SPECの要素はすべてのフレームで一致する.  したがって, SPECの
+          以降の要素をけっして使わない.  通常, `t'はSPECの最後の（ある
+          いは唯一）の要素に使う.
+
+     リスト
+          DISPLAYがリストであると, 各要素は`(CHARACTERISTIC VALUE...)'
+          の形であること.  ここで, CHARACTERISTICはフレームの分類方法
+          であり, VALUEはDISPLAYを適用すべき分類とみなす値である.  特
+          性CHARACTERISTICの可能な値はつぎのとおりである.
+
+          `type'
+               フレームが使用するウィンドウシステムの種類であり, `x',
+               `pc'（MS-DOSのコンソール）, `w32'（MS Windows 9X/NT）,
+               `tty'のいずれかである.
+
+          `class'
+               フレームで扱える表示色の種類であり, `color',
+               `grayscale', `mono'のいずれかである.
+
+          `background'
+               背景の種類であり, `light'か`dark'のいずれかである.
+
+          DISPLAYの1つの要素において, 指定されたCHARACTERISTICに1つよ
+          り多くのVALUEを指定すると, それらのいずれの値でも受け入れる.
+          DISPLAYに1つより多くの要素がある場合, 各要素は異なる
+          CHARACTERISTICを指定すること.  そうすれば, フレームの*各*特
+          性はDISPLAYに指定されたそのフレーム向けのVALUEの1つに一致す
+          るはずである.
+
+標準フェイス`region'を`defface'で定義するとつぎのようになります.
+
+     (defface region
+              ((((class color) (background dark))
+                (:background "blue"))
+               (t (:background "gray")))
+       "Used for displaying the region.")
+
+内部的には`defface'は, `defface'に指定されたフェイス属性の記録にはシン
+ボルの属性`face-defface-spec', カスタマイズバッファでユーザーが保存し
+た属性の記録には`saved-face', 説明文字列の記録には`face-documentation'
+を使います.
+
+ -- User Option: frame-background-mode
+     このオプションが`nil'以外であると, フェイスの定義を解釈する際に用
+     いる背景の型を指定する.  これが`dark'であると, 実際の背景色に関わ
+     らずEmacsはすべてのフレームの背景は暗いとみなす.  これが`light'で
+     あると, Emacsはすべてのフレームの背景は明るいとみなす.
+
+
+
+File: elisp-ja, Node: Merging Faces, Next: Face Functions, Prev: Defining Faces, Up: Faces
+
+表示向けにフェイスを併合する
+----------------------------
+
+テキストの表示に使用するフェイスを指定する方法はつぎのとおりです.
+
+   * デフォルトを使う.  各フレームには"デフォルトのフェイス"があり, 他
+     のフェイスを指定していないすべてのテキストに使用される.  （Emacs
+     の将来の版では, すべてのテキスト向けのデフォルトに変更するかもし
+     れない. ）
+
+   * テキスト属性を使う.  文字は属性`face'を持てる.  それがある場合, 
+     そのフェイスで表示される.  *Note Special Properties::.
+
+     文字に属性`mouse-face'がある場合は, マウスが文字に『十分近い』と
+     きには属性`face'のかわりにそれを使う.
+
+   * オーバレイを使う.  オーバレイは属性`face'や`mouse-face'を持てる. 
+     そのオーバレイが覆うすべてのテキストに適用される.
+
+   * 活性なリージョンを使う.  暫定マーク（transient-mark）モードでは, 
+     リージョンを特定のフェイス（下記の`region-face'を参照）で強調表示
+     する.
+
+   * 特別な字形を使う.  各字形では特定のフェイス番号を指定できる.
+     *Note Glyphs::.
+
+ある文字に対してこれらのさまざまな指定が1つより多くのフェイスを指定す
+る場合, Emacsは指定されたさまざまなフェイスの属性を併合します.  特別な
+字形のフェイスが最初です.  適切ならば, つぎはリージョンの強調表示のフェ
+イスです.  そのつぎはオーバレイのフェイスの属性, さらにテキスト属性の
+フェイスが続き, 最後はデフォルトのフェイスです.
+
+複数のオーバレイが1つの文字を覆う場合, 高い優先順位のオーバレイが低い
+ものに優先します.  *Note Overlays::.
+
+フォントや表示色のような属性がうえのどれでも指定されていない場合には, 
+フレーム独自のフォントや表示色を使います.
+
+
+
+File: elisp-ja, Node: Face Functions, Next: Blinking, Prev: Merging Faces, Up: Faces
+
+フェイスを扱う関数
+------------------
+
+フェイスの属性で指定できるのは, フォント, 前景色, 背景色, 下線です. 
+フェイスでは値`nil'を指定することでこれらを未指定にできます.
+
+以下は, フェイスを作成したり変更する基本関数です.
+
+ -- Function: make-face NAME
+     この関数は, すべての属性を`nil'としたNAMEという名前の新たなフェイ
+     スを定義する.  NAMEという名前のフェイスが既存ならばなにもしない.
+
+ -- Function: face-list
+     この関数は, 定義済みのすべてのフェイス名のリストを返す.
+
+ -- Function: copy-face OLD-FACE NEW-NAME &optional FRAME NEW-FRAME
+     この関数は, 既存のOLD-FACEという名前のフェイスのコピーとしてフェ
+     イスNEW-NAMEを定義する.  NEW-NAMEが既存でなければ, フェイス
+     NEW-NAMEを作成する.
+
+     省略可能な引数フレームFRAMEを指定すると, この関数はそのフレームだ
+     けに適用する.  さもなければ, 各フレームにおいて個別に, そのフレー
+     ムのOLD-FACEの属性を同じフレームのNEW-FACEにコピーする.
+
+     省略可能な引数フレームNEW-FRAMEを指定すると, `copy-face'はフレー
+     ムFRAMEのOLD-FACEの属性をフレームNEW-FRAMEのNEW-FACEにコピーする.
+
+以下の関数を使って既存のフレームの属性を変更できます.  フレームFRAMEを
+指定すると, そのフレームだけに影響します.  さもなければ, 新たなフレー
+ムに適用されるデフォルトに加えてすべてのフレームに影響します.
+
+ -- Function: set-face-foreground FACE COLOR &optional FRAME
+ -- Function: set-face-background FACE COLOR &optional FRAME
+     これらの関数は, フェイスFACEの前景色（あるいは背景色）としてCOLOR
+     を設定する.  引数COLORは, 表示色名の文字列であること.
+
+     白黒スクリーンでは, 濃淡は点猫パターンで実現する.
+
+ -- Function: set-face-stipple FACE PATTERN &optional FRAME
+     この関数は, フェイスFACEの背景点猫パターンとしてPATTERNを設定する. 
+     引数PATTERNは, Xサーバーで定義された背景点猫パターンの名前である
+     こと.  あるいは, 点猫を使わないことを意味する`nil'であること.
+
+     白黒階調の特定の濃淡を扱うために自動的に点猫パターンを使うため, 
+     普通は点猫パターンに注意する必要はない.
+
+ -- Function: set-face-font FACE FONT &optional FRAME
+     この関数は, フェイスFACEのフォントを設定する.  引数FONTは, 読者の
+     システムの正しいフォント名かEmacsのフォントセット名（*Note
+     Fontsets::）の文字列であること.  フォントを明示的に設定するとつね
+     に正確にそれを使うため, 太字（bold）や斜体（italic）の属性の効果
+     は消失することに注意.
+
+ -- Function: set-face-bold-p FACE BOLD-P &optional FRAME
+     この関数は, フェイスFACEの太字（bold）の属性を設定する.  `nil'以
+     外は太字あり, `nil'は太字なしを意味する.
+
+ -- Function: set-face-italic-p FACE ITALIC-P &optional FRAME
+     この関数は, フェイスFACEの斜体（italic）の属性を設定する.  `nil'
+     以外は斜体あり, `nil'は斜体なしを意味する.
+
+ -- Function: set-face-underline-p FACE UNDERLINE-P &optional FRAME
+     この関数は, フェイスFACEの下線の属性を設定する.  `nil'以外は下線
+     あり, `nil'は下線なしを意味する.
+
+ -- Function: invert-face FACE &optional FRAME
+     フェイスFACEの前景色と背景色を入れ換える.  フェイスに前景色と背景
+     色の両者が設定されていないと, その前景色と背景色にはデフォルトの
+     背景色と前景色を設定する.
+
+つぎの関数は, フェイスの属性を調べます.  フレームFRAMEを指定しない場合, 
+新たなフレーム向けのデフォルトのデータを参照します.
+
+ -- Function: face-foreground FACE &optional FRAME
+ -- Function: face-background FACE &optional FRAME
+     この関数は, フェイスFACEの前景色（あるいは背景色）を文字列で返す.
+
+ -- Function: face-stipple FACE &optional FRAME
+     この関数は, フェイスFACEの背景点猫パターンの名前を返す.  なければ
+     `nil'を返す.
+
+ -- Function: face-font FACE &optional FRAME
+     この関数はフェイスFACEのフォントの名前を返す.
+
+ -- Function: face-bold-p FACE &optional FRAME
+     この関数はフェイスFACEの太字（bold）属性を返す.
+
+ -- Function: face-italic-p FACE &optional FRAME
+     この関数はフェイスFACEの斜体（italic）属性を返す.
+
+ -- Function: face-underline-p FACE &optional FRAME
+     この関数はフェイスFACEの下線属性を返す.
+
+ -- Function: face-id FACE
+     この関数はフェイスFACEのフェイス番号を返す.
+
+ -- Function: face-documentation FACE
+     この関数はフェイスFACEの説明文字列を返す.  なければ`nil'を返す.
+
+ -- Function: face-equal FACE1 FACE2 &optional FRAME
+     この関数は, フェイスFACE1とFACE2が表示上の同じ属性を持てば`t'を返
+     す.
+
+ -- Function: face-differs-from-default-p FACE &optional FRAME
+     この関数は, フェイスFACEの表示がデフォルトのフェイスの表示と異な
+     る場合には`t'を返す.  フェイスの各属性がデフォルトフェイスの対応
+     する属性に等しいか（デフォルトから継承すること意味する）`nil'であ
+     ると, フェイスはデフォルトのフェイスと『等しい』とみなす.
+
+ -- Variable: region-face
+     この変数の値は, リージョンが活性（暫定マーク（transient-mark）モー
+     ドのみ）の場合にリージョン内の文字の表示に使用するフェイス番号を
+     指定する.  リージョン内の文字では, これが指定するフェイスがテキス
+     ト属性やオーバレイのすべてのフェイスに優先する.  暫定マーク
+     （transient-mark）モードについて詳しくは, *Note The Mark::.
+
+     通常, 値は`region'という名前のフェイスのフェイス番号である.
+
+ -- Function: frame-update-face-colors FRAME
+     この関数は, フレームFRAMEの前景色や背景色を変更後にフレームFRAME
+     上のフェイスの表示を更新する.
+
+
+
+File: elisp-ja, Node: Blinking, Next: Inverse Video, Prev: Faces, Up: Display
+
+括弧を点滅する
+==============
+
+本節では, ユーザーが閉じ括弧を挿入したときにEmacsが対応する開き括弧を
+指し示す機構について述べます.
+
+ -- Variable: blink-paren-function
+     この変数の値は, 閉じ括弧構文の文字が挿入されるたびに呼び出される
+     （引数なしの）関数であること.  `blink-paren-function'の値が`nil'
+     であると, なにもしない.
+
+ -- User Option: blink-matching-paren
+     この変数が`nil'であると, `blink-matching-open'はなにもしない.
+
+ -- User Option: blink-matching-paren-distance
+     この変数は, 対応する括弧の走査を諦めるまでの最大距離を指定する.
+
+ -- User Option: blink-matching-delay
+     この関数は, 対応する括弧にカーソルを留める秒数を指定する.  秒未満
+     を指定してもしばしば結果は良好であるが, デフォルトはすべてのシス
+     テムで動作する1である.
+
+ -- コマンド: blink-matching-open
+     この関数は, `blink-paren-function'のデフォルト値である.  閉じ括弧
+     構文の文字のうしろにポイントがあることを仮定し, カーソルを対応す
+     る開き括弧へ一時的に移動する.  その文字がスクリーン上になければ, 
+     その文字が現れる文脈をエコー領域に表示する.  遅れが大きくならない
+     ように, `blink-matching-paren-distance'文字より離れては探さない.
+
+     つぎは, この関数を明示的に呼び出す例である.
+
+          (defun interactive-blink-matching-open ()
+            "Indicate momentarily the start of sexp before point."
+            (interactive)
+            (let ((blink-matching-paren-distance
+                   (buffer-size))
+                  (blink-matching-paren t))
+              (blink-matching-open)))
+
+
+
+File: elisp-ja, Node: Inverse Video, Next: Usual Display, Prev: Blinking, Up: Display
+
+反転表示
+========
+
+ -- User Option: inverse-video
+     この変数は, スクリーン上のすべてのテキストに反転表示を使うかどう
+     かを制御する.  `nil'以外は使うことを意味し, `nil'は使わないことを
+     意味する.  デフォルトは`nil'である.
+
+ -- User Option: mode-line-inverse-video
+     この変数は, モード行に反転表示を使うかどうかを制御する.  `nil'以
+     外であると, モード行を反転表示する.  さもなければ, テキストと同様
+     にモード行を普通に表示する.  デフォルトは`t'である.
+
+     ウィンドウフレームでは, `modeline'という名前のフェイスを使ってモー
+     ド行を表示する.  このフェイスは, 変更していなければ, デフォルトフェ
+     イスの反転表示である.
+
+
+
+File: elisp-ja, Node: Usual Display, Next: Display Tables, Prev: Inverse Video, Up: Display
+
+通常の画面表示慣習
+==================
+
+通常の画面表示慣習は, 各文字コードをどのように表示するかを定義します. 
+表示テーブル（*Note Display Tables::）を設定すれば, これらの慣習を無効
+にできます.  通常の画面表示慣習をつぎに示します.
+
+   * 文字コード32から126は, 字形コード32から126に対応付ける.  これは各
+     文字をそのまま表示することを普通は意味する.
+
+   * 文字コード9は水平タブである.  `tab-width'で決定される位置まで空白
+     として表示する.
+
+   * 文字コード10は改行である.
+
+   * 0から31の範囲とコード127のコードすべてには, `ctl-arrow'の値に従っ
+     て2つの表示方法の一方を使う.  `ctl-arrow'が`nil'以外であると, こ
+     れらのコードを2つの字形列に対応付け, 最初の字形は`^'のASCIIコード
+     である.  （表示テーブルで`^'のかわりに使う字形を指定できる. ）さ
+     もなければ, これらは128から255の範囲のコードと同様に対応付ける.
+
+   * 文字コード128から255は, 4つの字形列に対応付ける.  つまり, 最初の
+     字形は`\'のASCIIコード, 残りは文字コードを8進数表示した数字文字で
+     ある.  （表示テーブルで`\'のかわりに使う字形を指定できる. ）
+
+   * 256を越えるマルチバイト文字コードは, そのまま表示する.  あるいは, 
+     端末に表示できない文字は, 疑問符か白抜きの箱で表示する.
+
+通常の画面表示慣習は, たとえ表示テーブルがあっても, 活性な表示テーブル
+においてその文字に対する項目が`nil'であるような文字すべてに適用されま
+す.  したがって, 表示テーブルを設定するときには, 特別なふるまいをさせ
+たい文字だけを指定すればよいのです.
+
+これらの変数は, 特定の文字群のスクリーンへの表示方法に影響します.  こ
+れらは文字が占めるコラム数を変化させるので, 字下げ関数にも影響します. 
+これらの変数は, モード行の表示方法にも影響します.  新たな値を用いてモー
+ド行の再表示を強制したいときには, 関数`force-mode-line-update'（*Note
+Mode Line Format::）を呼び出します.
+
+ -- User Option: ctl-arrow
+     このバッファローカルな変数は, コントロール文字の表示方法を制御す
+     る.  `nil'以外であると, `^A'のようにカレットに続けて文字を表示す
+     る.  `nil'であると, `\001'のようにバックスラッシュに続けて3桁の8
+     進数字で表示する.
+
+ -- Variable: default-ctl-arrow
+     この変数の値は, `ctl-arrow'を書き換えていないバッファ向けの
+     `ctl-arrow'のデフォルト値である.  *Note Default Value::.
+
+ -- User Option: tab-width
+     この変数の値は, Emacsのバッファ内のタブ文字の表示に使うタブストッ
+     プの間隔である.  デフォルトは8である.  この機能は, コマンド
+     `tab-to-tab-stop'で設定するユーザー設定可能なタブストップとはまっ
+     たく独立であることに注意.  *Note Indent Tabs::.
+
+
+
+File: elisp-ja, Node: Display Tables, Next: Beeping, Prev: Usual Display, Up: Display
+
+表示テーブル
+============
+
+"表示テーブル"（display table）機能を使って, すべての可能な文字コード
+のスクリーンへの表示方法を制御できます.  これは, ASCII文字集合にない文
+字を用いるヨーロッパの言語を表示するのに有用です.
+
+表示テーブルは, 各文字コードを"字形"（glyph）の列に対応付けます.  各字
+形は, スクリーン上で1文字を占める像です.  "字形テーブル"（glyph table）
+を使えば, 読者の端末に各字形を表示する方法を定義することもできます.
+
+表示テーブルは, モード行の表示方法にも影響します.  新たな表示テーブル
+を用いてモード行の再表示を強制したいときには, 関数
+`force-mode-line-update'（*Note Mode Line Format::）を呼び出します.
+
+* Menu:
+
+* Display Table Format::	What a display table consists of.
+* Active Display Table::	How Emacs selects a display table to use.
+* Glyphs::			How to define a glyph, and what glyphs mean.
+
+
+
+File: elisp-ja, Node: Display Table Format, Next: Active Display Table, Prev: Display Tables, Up: Display Tables
+
+表示テーブルの書式
+------------------
+
+表示テーブルは, 実際にはサブタイプが`display-table'である文字テーブル
+（*Note Char-Tables::）です.
+
+ -- Function: make-display-table
+     表示テーブルを作成して返す.  テーブルのすべての要素の初期値は
+     `nil'である.
+
+表示テーブルの通常の要素は, 文字コードで添字付けします.  添字Cの要素は, 
+文字コードCの表示方法を指定します.  値は`nil'であるか, 字形の値のベク
+トル（*Note Glyphs::）です.  要素が`nil'であると, その文字を通常の画面
+表示慣習（*Note Usual Display::）に従って表示する指定です.
+
+表示テーブルを使って改行文字の表示を変更すると, バッファ全体は長い1つ
+の『行』として表示されます.
+
+表示テーブルには6つの『追加スロット』もあり, それらは特別な目的を果た
+します.  それらの意味をつぎに示します.  スロットの内容が`nil'であると, 
+そのスロットに対して以下に述べるデフォルトを使うことを意味します.
+
+0
+     切り詰めたスクリーン行の末尾に使う字形（デフォルトは`$'）.  *Note
+     Glyphs::.
+1
+     継続している行の末尾に使う字形（デフォルトは`\'）.
+2
+     文字を8進数文字コードで表示したことを表す字形（デフォルトは`\'）.
+3
+     コントロール文字を表す字形（デフォルトは`^'）.
+4
+     符可視な行があることを表す字形のベクトル（デフォルトは`...'）.
+     *Note Selective Display::.
+5
+     左右に隣り合ったウィンドウの境界に使う字形（デフォルトは`|'）.
+     *Note Splitting Windows::.
+
+たとえば, `ctl-arrow'に`nil'以外の値を設定した効果を模倣する表示テーブ
+ルの作成方法をつぎに示します.
+
+     (setq disptab (make-display-table))
+     (let ((i 0))
+       (while (< i 32)
+         (or (= i ?\t) (= i ?\n)
+             (aset disptab i (vector ?^ (+ i 64))))
+         (setq i (1+ i)))
+       (aset disptab 127 (vector ?^ ??)))
+
+ -- Function: display-table-slot DISPLAY-TABLE SLOT
+     この関数は表示テーブルDISPLAY-TABLEの追加スロットSLOTの値を返す. 
+     引数SLOTは0から5までの数であるか, スロット名（シンボル）であるこ
+     と.  正しいシンボルは, `truncation', `wrap', `escape', `control',
+     `selective-display', `vertical-border'である.
+
+ -- Function: set-display-table-slot DISPLAY-TABLE SLOT VALUE
+     この関数は表示テーブルDISPLAY-TABLEの追加スロットSLOTに値VALUEを
+     保存する.  引数SLOTは0から5までの数であるか, スロット名（シンボル）
+     であること.  正しいシンボルは, `truncation', `wrap', `escape',
+     `control', `selective-display', `vertical-border'である.
+
+
+
+File: elisp-ja, Node: Active Display Table, Next: Glyphs, Prev: Display Table Format, Up: Display Tables
+
+活性な表示テーブル
+------------------
+
+各ウィンドウに表示テーブルを指定でき, 各バッファにも表示テーブルを指定
+できます.  バッファBがウィンドウWに表示されているとき, ウィンドウWに表
+示テーブルがあればそれを使って表示します.  さもなければ, バッファBに表
+示テーブルがあればそれを使います.  それ以外では, 標準の表示テーブルが
+あればそれを使います.  選択されている表示テーブルを"活性な"表示テーブ
+ルと呼びます.
+
+ -- Function: window-display-table WINDOW
+     この関数は, ウィンドウWINDOWの表示テーブルを返す.  WINDOWに表示テー
+     ブルが割り付けられていなければ`nil'を返す.
+
+ -- Function: set-window-display-table WINDOW TABLE
+     この関数は, ウィンドウWINDOWの表示テーブルとしてTABLEを設定する. 
+     引数TABLEは, 表示テーブルであるか`nil'であること.
+
+ -- Variable: buffer-display-table
+     この変数はすべてのバッファで自動的にバッファローカルである.  バッ
+     ファでの値は, そのバッファに対して用いる表示テーブルを指定する. 
+     それが`nil'であると, バッファに表示テーブルを割り付けていないこと
+     を意味する.
+
+ -- Variable: standard-display-table
+     この変数の値はデフォルトの表示テーブルであり, ウィンドウに表示テー
+     ブルがなくそのウィンドウのバッファにも表示テーブルがない場合に使
+     われる.  この変数はデフォルトでは`nil'である.
+
+特定のウィンドウにおいて使用する表示テーブルがない場合には, つまり, ウィ
+ンドウで未指定であり, そのバッファでも未指定であり,
+`standard-display-table'が`nil'である場合には, そのウィンドウ内のすべ
+ての文字コードには通常の画面表示慣習を使います.  *Note Usual
+Display::.
+
+
+

@@ -1,0 +1,1889 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Equality Predicates, Next: Numbers, Prev: Type Predicates, Up: Lisp Data Types
+
+同値述語
+========
+
+2つのオブジェクトの同値関係を調べる2つの関数を説明します.  文字列など
+の特定のオブジェクトが同値であるかを調べる関数群もあります.  これらの
+述語については, データ型を述べている適切な章を参照してください.
+
+ -- Function: eq OBJECT1 OBJECT2
+     この関数は, OBJECT1とOBJECT2が同一オブジェクトであれば`t'を返し, 
+     さもなければ`nil'を返す.  『同一オブジェクト』とは, 一方を変更す
+     ると, 他方にも同じ変更が反映されることを意味する.
+
+     `eq'は, OBJECT1とOBJECT2が同じ値の整数であると`t'を返す.  また, 
+     シンボル名は, 普通, 一意であるので, 引数が同じ名前のシンボルであ
+     れば, それらは`eq'である.  （リスト, ベクトル, 文字列などの）それ
+     以外の型の場合, 2つの引数が同じ内容や要素であっても, 互いに`eq'で
+     あるとは限らない.  それらが同一オブジェクトである場合に限り`eq'で
+     ある.
+
+          (eq 'foo 'foo)
+               => t
+
+          (eq 456 456)
+               => t
+
+          (eq "asdf" "asdf")
+               => nil
+
+          (eq '(1 (2 (3))) '(1 (2 (3))))
+               => nil
+
+          (setq foo '(1 (2 (3))))
+               => (1 (2 (3)))
+          (eq foo foo)
+               => t
+          (eq foo '(1 (2 (3))))
+               => nil
+
+          (eq [(1 2) 3] [(1 2) 3])
+               => nil
+
+          (eq (point-marker) (point-marker))
+               => nil
+
+     関数`make-symbol'は, インターンしたシンボルを返す.  このシンボル
+     は, Lisp式に書いた同じ名前のシンボルと区別される.  名前が同じでも
+     区別されるシンボルは`eq'ではない.  *Note Creating Symbols::.
+
+          (eq (make-symbol "foo") 'foo)
+               => nil
+
+ -- Function: equal OBJECT1 OBJECT2
+     この関数は, OBJECT1とOBJECT2が等しい要素を持てば`t'を返し, さもな
+     ければ`nil'を返す.  `eq'は引数が同一オブジェクトかどうかを調べる
+     が, `equal'は, 同一ではない引数の内部を調べ, それらの要素が同じか
+     どうかを調べる.  したがって, 2つのオブジェクトが`eq'ならば, それ
+     らは`equal'であるが, その逆はつねに真とは限らない.
+
+          (equal 'foo 'foo)
+               => t
+
+          (equal 456 456)
+               => t
+
+          (equal "asdf" "asdf")
+               => t
+          (eq "asdf" "asdf")
+               => nil
+
+          (equal '(1 (2 (3))) '(1 (2 (3))))
+               => t
+          (eq '(1 (2 (3))) '(1 (2 (3))))
+               => nil
+
+          (equal [(1 2) 3] [(1 2) 3])
+               => t
+          (eq [(1 2) 3] [(1 2) 3])
+               => nil
+
+          (equal (point-marker) (point-marker))
+               => t
+
+          (eq (point-marker) (point-marker))
+               => nil
+
+     文字列の比較では大文字小文字を区別するが, テキスト属性は考慮しな
+     い.  つまり, 文字列内の文字だけを比較する.  文字列の内容がすべて
+     ASCIIでなければ, ユニバイト文字列とマルチバイト文字列が等しいこと
+     はない（*Note Text Representations::）.
+
+          (equal "asdf" "ASDF")
+               => nil
+
+     たとえ内容が同じであっても, 異なる2つのバッファが`equal'であるこ
+     とはない.
+
+`equal'の検査は再帰で実装されているので, リストに循環があると無限再帰
+を引き起こし（エラーになり）ます.
+
+
+File: elisp-ja, Node: Numbers, Next: Strings and Characters, Prev: Lisp Data Types, Up: Top
+
+数
+**
+
+GNU Emacsでは2種類の数値データを扱えます.  "整数"（integers）と"浮動小
+数点数"（floating point numbers）です.  整数は, -3, 0, 7, 13, 511のよ
+うなちょうどの数です.  これらの値は正確です.  浮動小数点数は, -4.5,
+0.0, 2.71828のように小数部がある数です.  これらは指数表記で表します. 
+たとえば, 1.5e2は150に等しいのです.  この例の`e2'は10の2乗を表し, それ
+を1.5倍します.  浮動小数点数の値は厳密ではありません.  これらの精度に
+は定まった限界があります.
+
+* Menu:
+
+* Integer Basics::            Representation and range of integers.
+* Float Basics::	      Representation and range of floating point.
+* Predicates on Numbers::     Testing for numbers.
+* Comparison of Numbers::     Equality and inequality predicates.
+* Numeric Conversions::	      Converting float to integer and vice versa.
+* Arithmetic Operations::     How to add, subtract, multiply and divide.
+* Rounding Operations::       Explicitly rounding floating point numbers.
+* Bitwise Operations::        Logical and, or, not, shifting.
+* Math Functions::            Trig, exponential and logarithmic functions.
+* Random Numbers::            Obtaining random integers, predictable or not.
+
+
+
+File: elisp-ja, Node: Integer Basics, Next: Float Basics, Prev: Numbers, Up: Numbers
+
+整数の基本
+==========
+
+整数の値の範囲は計算機に依存します.  最小の範囲は, -134217728から
+134217727まで（28ビット長, つまり
+-2**27
+から2**27 - 1）ですが, これより広い範囲を扱える計算機もあります.  本章
+の多くの例題では, 整数は28長ビットであると仮定します.
+
+Lispリーダは, 先頭に符号があってもよく, 最後にピリオドがあってもよい, 
+数字の列として整数を読み取ります.
+
+      1               ; 整数1
+      1.              ; 整数1
+     +1               ; これも整数1
+     -1               ; 整数-1
+      268435457       ; 桁溢れのため, これも整数1
+      0               ; 整数0
+     -0               ; 整数0
+
+整数を扱うさまざまな関数を理解するには, 特にビット演算（*Note Bitwise
+Operations::）を理解するには, 数を2進表現で考えるとよいです.
+
+28ビット長の2進表現では, 10進整数5はつぎのようになります.
+
+     0000  0000 0000  0000 0000  0000 0101
+
+（4ビットのまとまりごとに空白を1個, 8ビットのまとまりごとに空白を2個挿
+入して, 読みやすくする. ）
+
+整数-1はつぎのようになります.
+
+     1111  1111 1111  1111 1111  1111 1111
+
+-1は, 28個の1で表現されます. 
+（これを"2の補数"（two's complement）表記と呼ぶ. ）
+
+負の数-5は, -1から4を引いて作れます.  10進数4は, 2進表記では100です. 
+したがって, -5は, つぎのようになります.
+
+     1111  1111 1111  1111 1111  1111 1011
+
+この実装では, 28ビット長の2進整数の最大値は, 10進で134,217,727になりま
+す.  2進表記では, つぎのようになります.
+
+     0111  1111 1111  1111 1111  1111 1111
+
+算術関数は, 整数がその範囲外に出たかどうか検査しないので, 134,217,727
+に1を足すと, 値は負の数-134,217,728になります.
+
+     (+ 1 134217727)
+          => -134217728
+          => 1000  0000 0000  0000 0000  0000 0000
+
+本章で述べる多くの関数は, 数の引数としてマーカを受け付けます.  （*Note
+Markers::）.  そのような関数の実際の引数は数かマーカであるので, それら
+の引数をしばしばNUMBER-OR-MARKERという名前で書きます.  引数の値がマー
+カであるときには, その位置の値を使いバッファは無視します.
+
+
+
+File: elisp-ja, Node: Float Basics, Next: Predicates on Numbers, Prev: Integer Basics, Up: Numbers
+
+浮動小数点数の基本
+==================
+
+浮動小数点数は, 整数ではない数を表現するのに便利です.  浮動小数点数の
+正確な範囲は計算機に依存します.  使用している計算機のC言語のデータ型
+`double'の範囲と同じです.
+
+浮動小数点数の入力構文は, 小数点（に続けて1桁以上の小数部）または指数, 
+あるいは, その両方が必要です.  たとえば, `1500.0', `15e2', `15.0e2',
+`1.5e3', `.15e4'は, 同じ1500という値の浮動小数点数を書き表す5つの方法
+です.  どれも, まったく等価です.  負の浮動小数点数を書くには, `-1.0'の
+ようにマイナス符号を使います.
+
+現代の計算機はIEEEの浮動小数点数規格に基づいています.  この規格では, 
+浮動小数点数の値には正の無限大と負の無限大があります.  また, NaNすなわ
+ち『非数値』（not-a-number）と呼ばれる値の種類もあります.  算術関数は, 
+正しい答えがないときには, このような値を返します.  たとえば, `(sqrt
+-1.0)'はNaNを返します.  実用的には, Emacs Lispでは異なるNaNの値に重要
+な違いはなく, 特定の場面で正確にはどのNaNの値を使うかの規則もないので,
+Emacs Lispではそれらを区別しようとはしません.  浮動小数点数の入力構文
+はつぎのとおりです.
+
+正の無限大
+     `1.0e+INF'
+負の無限大
+     `-1.0e+INF'
+非数値
+     `0.0e+NaN'.
+
+さらに, IEEEの浮動小数点数では値`-0.0'を普通のゼロと区別します（しかし,
+`equal'と`='は, これらを等しい値と扱う）.
+
+浮動小数点数の2進指数を取り出すには（あるいは, 整数の対数を予測するに
+は）, `logb'を使います.
+
+ -- Function: logb NUMBER
+     この関数はNUMBERの2進指数を返す.  より正確には, その値はNUMBERの2
+     を底とする対数を整数に切り下げたもの.
+
+          (logb 10)
+               => 3
+          (logb 10.0e20)
+               => 69
+
+
+
+File: elisp-ja, Node: Predicates on Numbers, Next: Comparison of Numbers, Prev: Float Basics, Up: Numbers
+
+数向けの型述語
+==============
+
+本節の関数は, 引数が数であるか, とか, 特定の種類の数であるか検査します. 
+関数`integerp'と`floatp'は引数として任意の型のLispオブジェクトを取りま
+す（さもないと, 述語の利用価値がない）.  しかし, 述語`zerop'の引数には
+数が必要です.  *Note Predicates on Markers::の`integer-or-marker-p'と
+`number-or-marker-p'も参照してください.
+
+ -- Function: floatp OBJECT
+     この述語は, 引数が浮動小数点数かどうか調べ, そうならば`t'を返し, 
+     さもなければ`nil'を返す.
+
+     Emacs 18以前の版には`floatp'はない.
+
+ -- Function: integerp OBJECT
+     この述語は, 引数が整数かどうか調べ, そうならば`t'を返し, さもなけ
+     れば`nil'を返す.
+
+ -- Function: numberp OBJECT
+     この述語は, 引数が数（整数か浮動小数点数）かどうか調べ, そうなら
+     ば`t'を返し, さもなければ`nil'を返す.
+
+ -- Function: wholenump OBJECT
+     （『whole-number-p』からきている名前の）述語`wholenump'は, 引数が
+     非負整数かどうか調べ, そうならば`t'を返し, さもなければ`nil'を返
+     す.  0は非負整数として扱う.
+
+     `natnump'は, `wholenump'の廃れた同義語.
+
+ -- Function: zerop NUMBER
+     この述語は, 引数が0かどうか調べ, そうならば`t'を返し, さもなけれ
+     ば`nil'を返す.  引数は数であること.
+
+     つぎの2つのフォームは等価.  `(zerop x)' == `(= x 0)'.
+
+
+
+File: elisp-ja, Node: Comparison of Numbers, Next: Numeric Conversions, Prev: Predicates on Numbers, Up: Numbers
+
+数の比較
+========
+
+2つの数が数値的に等しいかどうか調べるには, 普通, `eq'ではなく`='を使う
+べきです.  数値的には等しい多くの異なる浮動小数点数が存在しえます.  そ
+れらの比較に`eq'を使うと, 2つの値が同一*オブジェクト*かどうか調べるこ
+とになります.  対照的に, `='はオブジェクトの数値だけを比較します.
+
+現時点では, Emacs Lispにおいて, 各整数値は一意なLispオブジェクトです. 
+したがって, 整数に限れば`eq'は`='と等価です.  未知の値と整数を比較する
+ために`eq'を使うと便利な場面があります.  というのは, `eq'は任意の型の
+引数を受け付けるので, `eq'は未知の値が数でなくてもエラーを報告しないか
+らです.  対照的に, `='は, 引数が数やマーカでないと, エラーを通知します. 
+しかしながら, Emacsの将来の版で整数の表現方法を変更する場合に備えて, 
+整数を比較するときであっても, 可能ならば, `='を使うほうがよいでしょう.
+
+`equal'で数を比較したほうが便利なこともあります.  `equal'は, 2つの数が
+同じデータ型（どちらも整数であるか, どちらも浮動小数点数である）で, 同
+じ値であれば, 2つの数を等しいと扱います.  一方, `='は, 整数と浮動小数
+点数が等しいことを扱えます.
+
+別のことがらもあります.  浮動小数点数演算は厳密ではないので, 2つの浮動
+小数点数が等しいかどうか調べるのは正しくありません.  普通, 近似的に等
+しいことを調べるほうがよいのです.  つぎの関数はそのようにします.
+
+     (defvar fuzz-factor 1.0e-6)
+     (defun approx-equal (x y)
+       (or (and (= x 0) (= y 0))
+           (< (/ (abs (- x y))
+                 (max (abs x) (abs y)))
+              fuzz-factor)))
+
+     Common Lispに関した注意：` ' Common Lispでは, 数の比較にはつねに
+     `='を使う必要がある.  というのは, Common Lispでは複数ワードの整数
+     を実装しているため, 2つの異なる整数オブジェクトが同じ数値を表すこ
+     とがありえる.  Emacs Lispでは, 整数値の範囲が制限されているため, 
+     任意の値の整数オブジェクトはそれぞれ1つしかない.
+
+ -- Function: = NUMBER-OR-MARKER1 NUMBER-OR-MARKER2
+     この関数は, 引数が数値的に等しいか調べ, そうならば`t'を返し, さも
+     なければ`nil'を返す.
+
+ -- Function: /= NUMBER-OR-MARKER1 NUMBER-OR-MARKER2
+     この関数は, 引数が数値的に等しいか調べ, 等しくなければ`t'を返し, 
+     等しければ`nil'を返す.
+
+ -- Function: < NUMBER-OR-MARKER1 NUMBER-OR-MARKER2
+     この関数は, 第1引数が第2引数より小さいか調べ, そうならば`t'を返し, 
+     さもなければ`nil'を返す.
+
+ -- Function: <= NUMBER-OR-MARKER1 NUMBER-OR-MARKER2
+     この関数は, 第1引数が第2引数より小さいか, あるいは, 等しいか調べ, 
+     そうならば`t'を返し, さもなければ`nil'を返す.
+
+ -- Function: > NUMBER-OR-MARKER1 NUMBER-OR-MARKER2
+     この関数は, 第1引数が第2引数より大きいか調べ, そうならば`t'を返し, 
+     さもなければ`nil'を返す.
+
+ -- Function: >= NUMBER-OR-MARKER1 NUMBER-OR-MARKER2
+     この関数は, 第1引数が第2引数より大きいか, あるいは, 等しいか調べ, 
+     そうならば`t'を返し, さもなければ`nil'を返す.
+
+ -- Function: max NUMBER-OR-MARKER &rest NUMBERS-OR-MARKERS
+     この関数は, 引数の中で最大のものを返す.
+
+          (max 20)
+               => 20
+          (max 1 2.5)
+               => 2.5
+          (max 1 3 2.5)
+               => 3
+
+ -- Function: min NUMBER-OR-MARKER &rest NUMBERS-OR-MARKERS
+     この関数は, 引数の中で最小のものを返す.
+
+          (min -4 1)
+               => -4
+
+ -- Function: abs NUMBER
+     この関数は, NUMBERの絶対値を返す.
+
+
+
+File: elisp-ja, Node: Numeric Conversions, Next: Arithmetic Operations, Prev: Comparison of Numbers, Up: Numbers
+
+数の変換
+========
+
+整数を浮動小数点数に変換するには, 関数`float'を使います.
+
+ -- Function: float NUMBER
+     この関数は, 浮動小数点数に変換したNUMBERを返す.  NUMBERがすでに浮
+     動小数点数ならば, `float'はNUMBERを変更せずに返す.
+
+浮動小数点数を整数に変換する関数は4つあります.  これらの関数は, 整数も
+引数に取りますが, 整数引数は変更せずに返します.
+
+ -- Function: truncate NUMBER
+     これは, 0に向けて切り捨てて整数に変換したNUMBERを返す.
+
+ -- Function: floor NUMBER &optional DIVISOR
+     これは, （負の無限大に向けて）切り下げて整数に変換したNUMBERを返
+     す.
+
+     DIVISORを指定すると, 切り下げるまえにNUMBERをDIVISORで除算する. 
+     これには, `mod'に対応した除算を使い切り下げる.  DIVISORが0である
+     と, 結果は`arith-error'になる.
+
+ -- Function: ceiling NUMBER
+     これは, （正の無限大に向けて）切り上げて整数に変換したNUMBERを返
+     す.
+
+ -- Function: round NUMBER
+     これは, もっとも近い整数に丸めて整数に変換したNUMBERを返す.  2つ
+     の整数に等距離にある値を丸める場合には, 使用している計算機に依存
+     して, ゼロに近いほうの整数を選ぶか偶数を選ぶ.
+
+
+
+File: elisp-ja, Node: Arithmetic Operations, Next: Rounding Operations, Prev: Numeric Conversions, Up: Numbers
+
+算術演算
+========
+
+Emacs Lispには, 伝統的な四則演算, 加算, 減算, 乗算, 除算があります. 
+除算関数を補う, 余りと剰余の関数もあります.  Lispの伝統でもあり, また, 
+多用するので, 1を加算したり減算する関数もあります.
+
+これらの関数は, `%'を除いて, 引数が1つでも浮動小数点数であると, 浮動小
+数点数を返します.
+
+Emacs Lispでは, 算術関数は桁溢れ（オーバフロー）を検査しないことに注意
+してください.  つまり, 読者の計算機に依存しますが, `(1+ 134217727)'を
+評価すると-134217728になる場合もあります.
+
+ -- Function: 1+ NUMBER-OR-MARKER
+     この関数は, NUMBER-OR-MARKER足す1を返す.
+
+          (setq foo 4)
+               => 4
+          (1+ foo)
+               => 5
+
+     この関数はC言語の演算子`++'の類似ではない.  つまり, 変数を増加し
+     ない.  したがって, つぎのようになる.
+
+          foo
+               => 4
+
+     変数を増加するには, つぎのように`setq'を使う必要がある.
+
+          (setq foo (1+ foo))
+               => 5
+
+ -- Function: 1- NUMBER-OR-MARKER
+     この関数は, NUMBER-OR-MARKER引く1を返す.
+
+ -- Function: + &rest NUMBERS-OR-MARKERS
+     この関数は, 引数をすべて加算する.  引数を指定しないと`+'は0を返す.
+
+          (+)
+               => 0
+          (+ 1)
+               => 1
+          (+ 1 2 3 4)
+               => 10
+
+ -- Function: - &optional NUMBER-OR-MARKER &rest MORE-NUMBERS-OR-MARKERS
+     関数`-'は, 2つの役割, つまり, 符号反転と減算を果たす.  `-'に1つの
+     引数を指定すると, その値は, 引数の符号を反転したものである.  複数
+     個の引数を指定すると, `-'は, NUMBER-OR-MARKERから
+     MORE-NUMBERS-OR-MARKERSの1つ1つを減算する.  引数を指定しないと結
+     果は0である.
+
+          (- 10 1 2 3 4)
+               => 0
+          (- 10)
+               => -10
+          (-)
+               => 0
+
+ -- Function: * &rest NUMBERS-OR-MARKERS
+     この関数は, 引数をすべて掛け合わせた乗算結果を返す.  引数を指定し
+     ないと`*'は1を返す.
+
+          (*)
+               => 1
+          (* 1)
+               => 1
+          (* 1 2 3 4)
+               => 24
+
+ -- Function: / DIVIDEND DIVISOR &rest DIVISORS
+     この関数は, DIVIDENDをDIVISORで除し商を返す.  追加の引数DIVISORS
+     を指定してあると, DIVIDENDをDIVISORSの1つ1つで除す.  各引数は数か
+     マーカである.
+
+     すべての引数が整数である場合, 結果も整数となる.  つまり, 結果は切
+     り捨てになる.  ほとんどの計算機では各除算の結果は0に向けて切り捨
+     てになるが, 負の引数を別の方法で丸める計算機もある.  これは, Lisp
+     関数`/'をC言語の除算演算子で実装しているからであり, C言語の除算演
+     算子では計算機依存に丸めることを許しているからである.  実用上, す
+     べての既知の計算機は標準的な方法で丸める.
+
+     整数を0で除算すると, エラー`arith-error'を通知する.  （*Note
+     Errors::. ）浮動小数点数を0で除算すると, IEEE浮動小数点数を使う計
+     算機では, 無限大かNaNを返す.  さもなければエラー`arith-error'を通
+     知する.
+
+          (/ 6 2)
+               => 3
+          (/ 5 2)
+               => 2
+          (/ 5.0 2)
+               => 2.5
+          (/ 5 2.0)
+               => 2.5
+          (/ 5.0 2.0)
+               => 2.5
+          (/ 25 3 2)
+               => 4
+          (/ -17 6)
+               => -2
+
+     原理的には, `(/ -17 6)'が-3になる計算機もある.
+
+ -- Function: % DIVIDEND DIVISOR
+     この関数は, DIVIDENDをDIVISORで除したあとの整数の余りを返す.  引
+     数は整数かマーカである必要がある.
+
+     負の引数では, 余りは原理的に計算機依存である.  実用上, すべての既
+     知の計算機は同じようにふるまう.
+
+     DIVISORが0であると`arith-error'になる.
+
+          (% 9 4)
+               => 1
+          (% -9 4)
+               => -1
+          (% 9 -4)
+               => 1
+          (% -9 -4)
+               => -1
+
+     2つの任意の整数DIVIDENDとDIVISORにおいて,
+
+          (+ (% DIVIDEND DIVISOR)
+             (* (/ DIVIDEND DIVISOR) DIVISOR))
+
+     は, つねにDIVIDENDに等しい.
+
+ -- Function: mod DIVIDEND DIVISOR
+     この関数は, DIVIDENDのDIVISORによる剰余を返す.  いいかえれば,
+     DIVIDENDをDIVISORで除した余りを返す.  ただし, その符号はDIVISORと
+     同じ.  引数は数かマーカである必要がある.
+
+     `%'と違い, `mod'は負の引数に対しても厳密に定義された結果を返す. 
+     浮動小数点の引数も許す.  商を（負の無限大に向けて）切り下げて整数
+     にし, その商を用いて余りを計算する.
+
+     DIVISORが0であると`arith-error'になる.
+
+          (mod 9 4)
+               => 1
+          (mod -9 4)
+               => 3
+          (mod 9 -4)
+               => -3
+          (mod -9 -4)
+               => -1
+          (mod 5.5 2.5)
+               => .5
+
+     2つの任意の整数DIVIDENDとDIVISORにおいて,
+
+          (+ (mod DIVIDEND DIVISOR)
+             (* (floor DIVIDEND DIVISOR) DIVISOR))
+
+     は, つねにDIVIDENDに等しい.  ただし, どちらかの引数が浮動小数点数
+     の場合には, 丸め誤差の範囲内で等しい.  `floor'については, *Note
+     Numeric Conversions::を参照.
+
+
+
+File: elisp-ja, Node: Rounding Operations, Next: Bitwise Operations, Prev: Arithmetic Operations, Up: Numbers
+
+丸め演算
+========
+
+関数, `ffloor', `fceiling', `fround', `ftruncate'は, 浮動小数点数引数
+を受け取り, その値に近い整数を値とする浮動小数点数を返します.
+`ffloor'は, もっとも近いより小さな整数を返します.  `fceiling'は, もっ
+とも近いより大きな整数を返します.  `ftruncate'は, 0に向けて切り捨てた
+もっとも近い整数を返します.  `fround'は, もっとも近い整数を返します.
+
+ -- Function: ffloor FLOAT
+     この関数は, FLOATをこれより小さな整数値に切り下げ, その値を浮動小
+     数点数として返す.
+
+ -- Function: fceiling FLOAT
+     この関数は, FLOATをこれより大きな整数値に切り上げ, その値を浮動小
+     数点数として返す.
+
+ -- Function: ftruncate FLOAT
+     この関数は, FLOATを0に向けて整数値に切り捨て, その値を浮動小数点
+     数として返す.
+
+ -- Function: fround FLOAT
+     この関数は, FLOATをもっとも近い整数値に丸め, その値を浮動小数点数
+     として返す.
+
+
+
+File: elisp-ja, Node: Bitwise Operations, Next: Math Functions, Prev: Rounding Operations, Up: Numbers
+
+整数のビット演算
+================
+
+計算機内部では, 整数は2進数, つまり, "ビット"（bit, 各桁は0か1）列で表
+現されます.  ビット演算は, そのようなビット列の各ビットごとに作用しま
+す.  たとえば, "シフト"（shifting）は, ビット列を全体として左や右に1桁
+以上移動して, その『移動後の』パターンを結果とします.
+
+Emacs Lispにおけるビット演算は整数に限ります.
+
+ -- Function: lsh INTEGER1 COUNT
+     "論理シフト"（logical shift）の略からきている`lsh'は, INTEGER1の
+     ビット列をCOUNT桁左へ, あるいは, COUNTが負ならば右へずらし, 空い
+     たビットには0を詰める.  COUNTが負であれば, `lsh'は最左（最上位）
+     ビットに0を詰め, INTEGER1が負であっても結果は正になる.  これと対
+     照的なのが下の`ash'.
+
+     `lsh'の例を2つ示す.  ビットパターンを1桁左へずらす.  ビットパター
+     ンの上位ビットはすべて0なので下位8ビットだけを示す.
+
+          (lsh 5 1)
+               => 10
+          ;; 10進数5は,  10進数10になる
+          00000101 => 00001010
+
+          (lsh 7 1)
+               => 14
+          ;; 10進数7は, 10進数14になる
+          00000111 => 00001110
+
+     例からわかるように, ビットパターンを1桁左へずらすと, もとの数値の
+     2倍の数になる.
+
+     ビットパターンを2桁左へずらすと, （8ビット長の2進数では）つぎのよ
+     うになる.
+
+          (lsh 3 2)
+               => 12
+          ;; 10進数3は, 10進数12になる
+          00000011 => 00001100       
+
+     一方, 右へずらすとつぎのようになる.
+
+          (lsh 6 -1)
+               => 3
+          ;; 10進数6は, 10進数3になる
+          00000110 => 00000011       
+
+          (lsh 5 -1)
+               => 2
+          ;; 10進数5は, 10進数2になる
+          00000101 => 00000010       
+
+     例からわかるように, ビットパターンを1桁右へずらすと, 正の整数の数
+     を2で除して切り下げる.
+
+     Emacs Lispのすべての算術関数と同様に, 関数`lsh'は桁溢れ（オーバフ
+     ロー）を検査しないので, 左へずらすと上位ビットを捨てさり数の符号
+     を変えてしまうことがある.  たとえば, 28ビット長の計算機では,
+     134,217,727を左へずらすと-2になる.
+
+          (lsh 134217727 1)          ; 左シフト
+               => -2
+
+     28ビット長の実装の2進数では, 引数はつぎのようになっている.
+
+          ;; 10進数134,217,727
+          0111  1111 1111  1111 1111  1111 1111         
+
+     これを左へずらすと, つぎのようになる
+
+          ;; 10進数-2
+          1111  1111 1111  1111 1111  1111 1110         
+
+ -- Function: ash INTEGER1 COUNT
+     `ash'（"算術シフト"（arithmetic shift））は, INTEGER1のビットを
+     COUNT桁左へ, あるいは, COUNTが負ならば右へずらす.
+
+     `ash'は`lsh'と同じ結果になるが, INTEGER1とCOUNTの両者が負の場合を
+     除く.  この場合, `ash'は左の空いたビットには1を入れるが, `lsh'は
+     そのようなビットには0を入れる.
+
+     したがって, `ash'でビットパターンを1桁右へずらすとつぎのようにな
+     る.
+
+          (ash -6 -1) => -3            
+          ;; 10進数-6は, 10進数-3になる
+          1111  1111 1111  1111 1111  1111 1010
+               => 
+          1111  1111 1111  1111 1111  1111 1101
+
+     対照的に, `lsh'でビットパターンを1桁右へずらすとつぎのようになる.
+
+          (lsh -6 -1) => 134217725
+          ;; 10進数-6は, 10進数134,217,725になる
+          1111  1111 1111  1111 1111  1111 1010
+               => 
+          0111  1111 1111  1111 1111  1111 1101
+
+     他の例を以下にしめす.
+
+                             ;               28ビット2進値
+
+          (lsh 5 2)          ;   5  =  0000  0000 0000  0000 0000  0000 0101
+               => 20         ;      =  0000  0000 0000  0000 0000  0001 0100
+          (ash 5 2)
+               => 20
+          (lsh -5 2)         ;  -5  =  1111  1111 1111  1111 1111  1111 1011
+               => -20        ;      =  1111  1111 1111  1111 1111  1110 1100
+          (ash -5 2)
+               => -20
+          (lsh 5 -2)         ;   5  =  0000  0000 0000  0000 0000  0000 0101
+               => 1          ;      =  0000  0000 0000  0000 0000  0000 0001
+          (ash 5 -2)
+               => 1
+          (lsh -5 -2)        ;  -5  =  1111  1111 1111  1111 1111  1111 1011
+               => 4194302    ;      =  0011  1111 1111  1111 1111  1111 1110
+          (ash -5 -2)        ;  -5  =  1111  1111 1111  1111 1111  1111 1011
+               => -2         ;      =  1111  1111 1111  1111 1111  1111 1110
+
+ -- Function: logand &rest INTS-OR-MARKERS
+     この関数は引数の『論理積』を返す.  つまり, すべての引数のN番目の
+     ビットが1である場合に限り, 結果のN番目のビットも1になる.
+
+     たとえば, 4ビットの2進数で考えると, 13と12の『論理積』は12になる. 
+     つまり, 1101に1100を組み合わせると1100になる.  どちらの2進数も最
+     左の2ビットは1なので, 戻り値の最左の2ビットも1になる.  しかし, 最
+     右の2ビットは, 一方の引数ではそれぞれが0なので, 戻り値の最右の2ビッ
+     トも0になる.
+
+     したがって, つぎのとおり.
+
+          (logand 13 12)
+               => 12
+
+     `logand'にまったく引数を指定しないと値-1を返す.  この数は2進表現
+     ではすべて1だけなので, `logand'の恒等元である.  `logand'に引数を1
+     つだけ指定するとその引数を返す.
+
+                             ;                28ビット2進値
+
+          (logand 14 13)     ; 14  =  0000  0000 0000  0000 0000  0000 1110
+                             ; 13  =  0000  0000 0000  0000 0000  0000 1101
+               => 12         ; 12  =  0000  0000 0000  0000 0000  0000 1100
+
+          (logand 14 13 4)   ; 14  =  0000  0000 0000  0000 0000  0000 1110
+                             ; 13  =  0000  0000 0000  0000 0000  0000 1101
+                             ;  4  =  0000  0000 0000  0000 0000  0000 0100
+               => 4          ;  4  =  0000  0000 0000  0000 0000  0000 0100
+
+          (logand)
+               => -1         ; -1  =  1111  1111 1111  1111 1111  1111 1111
+
+ -- Function: logior &rest INTS-OR-MARKERS
+     この関数は引数の『論理和』を返す.  つまり, 少なくともどれか1つの
+     引数のN番目のビットが1である場合に限り, 結果のN番目のビットも1に
+     なる.  引数を指定しないと0を返すが, これはこの演算の恒等元である.
+     `logior'に引数を1つだけ指定するとその引数を返す.
+
+                             ;                28ビット2進値
+
+          (logior 12 5)      ; 12  =  0000  0000 0000  0000 0000  0000 1100
+                             ;  5  =  0000  0000 0000  0000 0000  0000 0101
+               => 13         ; 13  =  0000  0000 0000  0000 0000  0000 1101
+
+          (logior 12 5 7)    ; 12  =  0000  0000 0000  0000 0000  0000 1100
+                             ;  5  =  0000  0000 0000  0000 0000  0000 0101
+                             ;  7  =  0000  0000 0000  0000 0000  0000 0111
+               => 15         ; 15  =  0000  0000 0000  0000 0000  0000 1111
+
+ -- Function: logxor &rest INTS-OR-MARKERS
+     この関数は引数の『排他的論理和』を返す.  つまり, 引数のN番目のビッ
+     トが1であるものが奇数個の場合に限り, 結果のN番目のビットも1になる. 
+     引数を指定しないと0を返すが, これはこの演算の恒等元である.
+     `logxor'に引数を1つだけ指定するとその引数を返す.
+
+                             ;               28ビット2進値
+
+          (logxor 12 5)      ; 12  =  0000  0000 0000  0000 0000  0000 1100
+                             ;  5  =  0000  0000 0000  0000 0000  0000 0101
+               => 9          ;  9  =  0000  0000 0000  0000 0000  0000 1001
+
+          (logxor 12 5 7)    ; 12  =  0000  0000 0000  0000 0000  0000 1100
+                             ;  5  =  0000  0000 0000  0000 0000  0000 0101
+                             ;  7  =  0000  0000 0000  0000 0000  0000 0111
+               => 14         ; 14  =  0000  0000 0000  0000 0000  0000 1110
+
+ -- Function: lognot INTEGER
+     この関数は引数の論理的な補数を返す.  つまり, INTEGERのN番目のビッ
+     トが0である場合に限り, 結果のN番目のビットは1になる.
+
+          (lognot 5)             
+               => -6
+          ;;  5  =  0000  0000 0000  0000 0000  0000 0101
+          ;; becomes
+          ;; -6  =  1111  1111 1111  1111 1111  1111 1010
+
+
+
+File: elisp-ja, Node: Math Functions, Next: Random Numbers, Prev: Bitwise Operations, Up: Numbers
+
+標準数学関数
+============
+
+これらの数学関数は浮動小数点数に加えて整数も引数として受け付けます.
+
+ -- Function: sin ARG
+ -- Function: cos ARG
+ -- Function: tan ARG
+     これらは普通の三角関数であり, 引数は弧度法で表す.
+
+ -- Function: asin ARG
+     `(asin ARG)'の値は-pi/2からpi/2までの数であり, その正弦（sin）は
+     ARGに等しい.  しかし, ARGが（[-1, 1]の）範囲を越えていると結果は
+     NaN.
+
+ -- Function: acos ARG
+     `(acos ARG)'の値は0からpiまでの数であり, その余弦（cos）はARGに等
+     しい.  しかし, ARGが（[-1, 1]の）範囲を越えていると結果はNaN.
+
+ -- Function: atan ARG
+     `(atan ARG)'の値は-pi/2からpi/2までの数であり, その正接（tan）は
+     ARGに等しい.
+
+ -- Function: exp ARG
+     これは指数関数であり, e のARG乗を返す.  e は数学の基本定数であり, 
+     自然対数の底とも呼ぶ.
+
+ -- Function: log ARG &optional BASE
+     この関数はARGのBASEを底とする対数を返す.  BASEを指定しなければ, 
+     底としてe を使う.  ARGが負であると結果はNaN.
+
+
+ -- Function: log10 ARG
+     この関数はARGの10を底とする対数を返す.  ARGが負であると結果はNaN. 
+     少なくとも誤差を考慮すれば, `(log10 X)' == `(log X 10)'.
+
+ -- Function: expt X Y
+     この関数はXのY乗を返す.  どちらの引数も整数でありYが正ならば, 結
+     果は整数.  この場合, 結果は整数値の可能な範囲に切り詰められる.
+
+ -- Function: sqrt ARG
+     この関数はARGの平方根を返す.  ARGが負であると値はNaN.
+
+
+
+File: elisp-ja, Node: Random Numbers, Next: Strings and Characters, Prev: Math Functions, Up: Numbers
+
+乱数
+====
+
+決定論的な計算機プログラムは真の乱数を発生できません.  しかし, ほとん
+どの目的には"疑似乱数"（pseudo-random numbers）で十分です.  一連の疑似
+乱数を決定論的な方法で生成します.  それらの数は真の乱数ではありません
+が, 乱数列のある種の性質に似た性質があります.  たとえば, 疑似乱数列で
+もすべての可能な数がしばしば等しく生起します.
+
+Emacsでは, 疑似乱数は『種』となる数から生成します.  指定した任意の種か
+ら始めても, 関数`random'は同じ数の列を生成します.  Emacsはつねに同じ種
+の値で計算し始めるため, それぞれのEmacsの実行でも`random'は実際には同
+じ数の列を生成します.  たとえば, あるオペレーティングシステムで, Emacs
+開始直後に`random'を呼ぶとつねに-1457731を返し, つぎに呼ぶとつねに-
+7692030を返します.  このような再現性はデバッグには有利です.
+
+予測不可能な乱数が必要ならば`(random t)'を実行します.  これは, 現在時
+刻とEmacsプロセスのID番号に基づいて, 新たな種の値を選びます.
+
+ -- Function: random &optional LIMIT
+     この関数は疑似乱数の整数を返す.  繰り返し呼び出すと一連の疑似乱数
+     の整数を返す.
+
+     LIMITが正整数ならば, 非負でLIMIT未満になるように値を選ぶ.
+
+     LIMITが`t'ならば, 現在時刻とEmacsプロセスのID番号に基づいて, 新た
+     な種の値を選ぶことを意味する.
+
+     `random'の結果は, Lispにおいて表現可能な任意の整数になる計算機も
+     ある.  他の計算機では, 結果はある最大値と（負数）最小値のあいだに
+     ある.
+
+
+File: elisp-ja, Node: Strings and Characters, Next: Lists, Prev: Numbers, Up: Top
+
+文字列と文字
+************
+
+Emacs Lispの文字列は文字の順序列を保持している配列です.  文字列は, シ
+ンボル, バッファ, ファイルのそれぞれの名前として, ユーザーへメッセージ
+を送るため, バッファ間でコピーするテキストを保持するため, その他さまざ
+まな目的に使われます.  文字列はとても重要なので, Emacs Lispには文字列
+を操作する関数が数多くあります.  Emacs Lispのプログラムでは, 個々の文
+字よりも文字列を多用します.
+
+キーボード文字イベントを表す文字列に関する特別な配慮については, *Note
+Strings of Events::.
+
+* Menu:
+
+* Basics: String Basics.      Basic properties of strings and characters.
+* Predicates for Strings::    Testing whether an object is a string or char.
+* Creating Strings::          Functions to allocate new strings.
+* Modifying Strings::         Altering the contents of an existing string.
+* Text Comparison::           Comparing characters or strings.
+* String Conversion::         Converting characters or strings and vice versa.
+* Formatting Strings::        `format': Emacs's analogue of `printf'.
+* Case Conversion::           Case conversion functions.
+* Case Tables::		      Customizing case conversion.
+
+
+
+File: elisp-ja, Node: String Basics, Next: Predicates for Strings, Prev: Strings and Characters, Up: Strings and Characters
+
+文字列と文字の基本
+==================
+
+Emacs Lispの文字列は文字の順序列を保持している配列です.  Emacs Lispで
+は文字を整数で表現します.  整数が文字であるかどうかは, その使われ方か
+らしか判断できません.  したがって, 文字列は, 実際には, 整数群を保持し
+ているのです.
+
+（任意の配列と同様に）文字列の長さは固定されていて, 文字列をいったん作
+成すると変更できません.  Lispの文字列は特別な文字コードで終端されるの
+では*ありません*.  （対照的に, C言語の文字列はASCIIコード0で終端される. 
+）
+
+文字列は配列ですからシーケンスでもあり, 一般の配列関数やシーケンス関数
+で文字列を操作できます.  （*Note Sequences Arrays Vectors::. ）たとえ
+ば, 関数`aref'と`aset'（*Note Array Functions::）を用いて, 文字列内の
+個々の文字を参照したり変更できます.
+
+Emacs文字列（およびバッファ）内の非ASCII文字のテキスト表現は2種類あり
+ます.  ユニバイトとマルチバイトです（*Note Text Representations::）.
+ASCII文字は, 文字列内ではつねに1バイトを占めます.  実際, すべてがASCII
+文字である文字列では, 2つの表現に違いはありません.  ほとんどのLispプロ
+グラムでは, 読者はこれらの2つの表現を考慮する必要はないでしょう.
+
+キー列を文字列として表現することがあります.  文字列がキー列を表す場合,
+128から255の範囲にある文字列の要素は, その範囲の文字コードとしてではな
+く, （非常に大きな整数になる）メタ文字を表現します.
+
+文字列は, ハイパー, スーパー, アルトの修飾子を持つ文字を保持できません. 
+文字列はASCIIコントロール文字を保持できますが, それ以外のコントロール
+文字を保持できません.  文字列では, ASCIIコントロール文字の大文字小文字
+を区別できません.  キー列などのそのような文字をシーケンスに収めるには, 
+文字列のかわりにベクトルを使う必要があります.  キーボード入力文字に対
+するメタなどの修飾子の表現については, *Note Character Type::.
+
+文字列は正規表現を保持するのにも便利です.  文字列に対して正規表現の一
+致を取ることもできます（*Note Regexp Search::）.  関数`match-string'
+（*Note Simple Match Data::）と`replace-match'（*Note Replacing
+Match::）は, 正規表現の一致に基づいて文字列を分解したり変更するのに便
+利です.
+
+バッファと同様に, 文字列は, 文字そのものに加えて文字列内の文字に対する
+テキスト属性を保持できます.  *Note Text Properties::.  文字列からバッ
+ファや他の文字列へテキストをコピーするすべてのLisp基本関数は, コピーす
+る文字の属性もコピーします.
+
+文字列を表示したりバッファへコピーする関数については, *Note Text::. 
+文字と文字列の構文については, *Note Character Type::と*Note String
+Type::.  テキスト表現を変換したり, 文字コードを符号化／復号化する関数
+については, *Note Non-ASCII Characters::.
+
+
+
+File: elisp-ja, Node: Predicates for Strings, Next: Creating Strings, Prev: String Basics, Up: Strings and Characters
+
+文字列向けの述語
+================
+
+一般のシーケンスや配列に対する述語について詳しくは, *Note Sequences
+Arrays Vectors::と*Note Arrays::.
+
+ -- Function: stringp OBJECT
+     この関数は, OBJECTが文字列ならば`t'を返し, さもなければ`nil'を返
+     す.
+
+ -- Function: char-or-string-p OBJECT
+     この関数は, OBJECTが文字列か文字（つまり, 整数）ならば`t'を返し, 
+     さもなければ`nil'を返す.
+
+
+
+File: elisp-ja, Node: Creating Strings, Next: Modifying Strings, Prev: Predicates for Strings, Up: Strings and Characters
+
+文字列の作成
+============
+
+以下の関数は, 新たに文字列を作成したり, 文字列を連結したり分解して文字
+列を作成します.
+
+ -- Function: make-string COUNT CHARACTER
+     この関数は, 文字CHARACTERをCOUNT回繰り返して作成した文字列を返す.
+     COUNTが負であるとエラーを通知する.
+
+          (make-string 5 ?x)
+               => "xxxxx"
+          (make-string 0 ?x)
+               => ""
+
+     この関数に対比するものに, `char-to-string'（*Note String
+     Conversion::）, `make-vector'（*Note Vectors::）, `make-list'
+     （*Note Building Lists::）などがある.
+
+ -- Function: string &rest CHARACTERS
+     これは, 複数個の文字群CHARACTERSが入った文字列を返す.
+
+          (string ?a ?b ?c)
+               => "abc"
+
+ -- Function: substring STRING START &optional END
+     この関数は, STRINGのSTARTからEND（の直前）までの範囲にある文字か
+     ら成る新たな文字列を返す.  先頭の文字を0で添字付けする.
+
+          (substring "abcdefg" 0 3)
+               => "abc"
+
+     ここで, `a'の添字は0, `b'の添字は1, `c'の添字は2である.  したがっ
+     て, 文字列`"abcdefg"'から3文字`abc'をコピーする.  添字3はコピーす
+     る部分文字列の境界の文字位置を表す.  添字が3である文字は, 実際に
+     は文字列内の4番目の文字である.
+
+     負の数は文字列の末尾から数える.  したがって, -1は文字列の最後の文
+     字の添字である.  たとえば,
+
+          (substring "abcdefg" -3 -1)
+               => "ef"
+
+     この例では, `e'の添字は-3, `f'の添字は-2, `g'の添字は-1である. 
+     したがって, `e'と`f'を含むが`g'は含まない.
+
+     添字に`nil'を使うと, 文字列の長さを意味する.  したがって, つぎの
+     ようになる.
+
+          (substring "abcdefg" -3 nil)
+               => "efg"
+
+     引数ENDを省略することは, `nil'を指定することと等価である.  そのた
+     め, `(substring STRING 0)'は, STRING全体をコピーしたものを返す.
+
+          (substring "abcdefg" 0)
+               => "abcdefg"
+
+     しかし, このような目的には`copy-sequence'を勧める（*Note Sequence
+     Functions::）.
+
+     STRINGからコピーした文字にテキスト属性があれば, 新たな文字列にも
+     そのテキスト属性をコピーする.  *Note Text Properties::.
+
+     `substring'は第1引数としてベクトルも受け付ける.  たとえば, つぎの
+     とおり.
+
+          (substring [a b (c) "d"] 1 3)
+               => [b (c)]
+
+     STARTやENDが整数でも`nil'でもないと, エラー`wrong-type-argument'
+     を通知する.  STARTがENDよりうしろの文字を指していたり, いずれかの
+     整数がSTRINGの範囲外であるとエラー`args-out-of-range'を通知する.
+
+     この関数と対照的なのが`buffer-substring' （*Note Buffer
+     Contents::）であり, カレントバッファ内のテキストの一部を収めた文
+     字列を返す.  文字列の先頭は0で添字付けするが, バッファの先頭は1で
+     添字付けする.
+
+ -- Function: concat &rest SEQUENCES
+     この関数は, 渡した引数の文字から成る（テキスト属性があればそれも
+     含めて）新たな文字列を返す.  引数は, 文字列, 数のリスト, 数のベク
+     トルである.  引数自身は変更しない.  `concat'に引数を指定しないと
+     空文字列を返す.
+
+          (concat "abc" "-def")
+               => "abc-def"
+          (concat "abc" (list 120 121) [122])
+               => "abcxyz"
+          ;; `nil'は空シーケンス
+          (concat "abc" nil "-def")
+               => "abc-def"
+          (concat "The " "quick brown " "fox.")
+               => "The quick brown fox."
+          (concat)
+               => ""
+
+     関数`concat'は, 既存の文字列と`eq'ではない新たな文字列をつねに作
+     り出す.
+
+     引数が（整数のシーケンスではなく）整数であると, その整数の表示表
+     現を構成する文字列に変換する.  *この機能を使わないでほしい.  削除
+     する予定である.  読者がこの機能を使っていたら, 今すぐプログラムを
+     直すこと！*` ' 整数をこのような10進数に変換する正しい方法は,
+     `format'（*Note Formatting Strings::）や`number-to-string'（*Note
+     String Conversion::）を使うことである.
+
+          (concat 137)
+               => "137"
+          (concat 54 321)
+               => "54321"
+
+     他の連結関数については, *Note Mapping Functions::の`mapconcat',
+     *Note Vectors::の`vconcat', *Note Building Lists::の`append'を参
+     照.
+
+ -- Function: split-string STRING SEPARATORS
+     STRINGを正規表現SEPARATORSの一致箇所で区切って部分文字列に分解す
+     る.  SEPARATORSに一致するそれぞれの部分が分割箇所を定義する.  分
+     割箇所のあいだにある部分文字列をリストにまとめ, これを値とする.
+     SEPARATORSが`nil'である（つまり, 省略する）と, デフォルトは`"[
+     \f\t\n\r\v]+"'である.
+
+     たとえば, つぎのようになる.
+
+          (split-string "Soup is good food" "o")
+          => ("S" "up is g" "" "d f" "" "d")
+          (split-string "Soup is good food" "o+")
+          => ("S" "up is g" "d f" "d")
+
+     文字列の先頭や末尾で一致した場合には, リストの先頭や末尾に空文字
+     列は現れない.
+
+          (split-string "out to moo" "o+")
+          => ("ut t" " m")
+
+     空の一致箇所は, それらが連続していない限り分割点になる.
+
+          (split-string "Soup is good food" "o*")
+          =>("S" "u" "p" " " "i" "s" " " "g" "d" " " "f" "d")
+          (split-string "Nice doggy!" "")
+          =>("N" "i" "c" "e" " " "d" "o" "g" "g" "y" "!")
+
+
+
+File: elisp-ja, Node: Modifying Strings, Next: Text Comparison, Prev: Creating Strings, Up: Strings and Characters
+
+文字列の変更
+============
+
+既存の文字列の内容を変更するもっとも基本的な方法は, `aset'（*Note
+Array Functions::）を使うことです.  `(aset STRING IDX CHAR)'は, STRING
+の添字IDX位置にCHARを格納します.  各文字は1バイト以上を占めます.  CHAR
+が必要とするバイト数が指定した添字位置の文字が占めるバイト数と異なる場
+合には, `aset'はエラーを通知します.
+
+より強力な関数は`store-substring'です.
+
+ -- Function: store-substring STRING IDX OBJ
+     この関数は, 文字列STRINGの添字IDX位置から始まる部分にOBJを格納す
+     ることで, 文字列STRINGの内容の一部分を変更する.  引数OBJは文字で
+     あるか（より小さな）文字列.
+
+     既存の文字列の長さを変更することは不可能なので, 新たな文字に必要
+     なバイト数がSTRINGの当該箇所の文字のバイト数と異なるなどして, OBJ
+     がSTRINGの実際の長さに収まらないときにはエラーである.
+
+
+
+File: elisp-ja, Node: Text Comparison, Next: String Conversion, Prev: Modifying Strings, Up: Strings and Characters
+
+文字と文字列の比較
+==================
+
+ -- Function: char-equal CHARACTER1 CHARACTER2
+     この関数は, 引数が同じ文字を表していれば`t'を返し, さもなければ
+     `nil'を返す.  `case-fold-search'が`nil'以外であると, この関数は大
+     文字小文字の違いを区別しない.
+
+          (char-equal ?x ?x)
+               => t
+          (let ((case-fold-search nil))
+            (char-equal ?x ?X))
+               => nil
+
+ -- Function: string= STRING1 STRING2
+     この関数は, 2つの文字列の各文字が正確に一致すれば`t'を返す.  大文
+     字小文字を区別する.
+
+          (string= "abc" "abc")
+               => t
+          (string= "abc" "ABC")
+               => nil
+          (string= "ab" "ABC")
+               => nil
+
+     関数`string='は2つの文字列のテキスト属性を無視する.  `equal'
+     （*Note Equality Predicates::）が2つの文字列を比較する際には,
+     `string='を使う.
+
+     文字列に非ASCII文字が含まれ, 一方がユニバイトであり他方がマルチバ
+     イトである場合, それらが等しいことはない.  *Note Text
+     Representations::.
+
+ -- Function: string-equal STRING1 STRING2
+     `string-equal'は`string='の別名.
+
+ -- Function: string< STRING1 STRING2
+     この関数は2つの文字列を1文字ずつ比較する.  まず, 文字列を走査し, 
+     対応する文字同士の対で一致しないものを探す.  そのような対の文字の
+     小さいほうがSTRING1の文字であるならば, STRING1が小さく, この関数
+     は`t'を返す.  文字の小さいほうがSTRING2の文字であるならば,
+     STRING1が大きく, この関数は`nil'を返す.  2つの文字列が完全に一致
+     する場合, 値は`nil'である.
+
+     文字の対は, それらの文字コードで比較する.  ASCII文字集合では, 小
+     文字は大文字より大きな数値であり, 数字文字や多くの句読点文字は大
+     文字より小さな数値であることに注意.  ASCII文字はどんな非ASCII文字
+     よりも小さい.  ユニバイト非ASCII文字はマルチバイト非ASCII文字より
+     もつねに小さい.  （*Note Text Representations::）.
+
+          (string< "abc" "abd")
+               => t
+          (string< "abd" "abc")
+               => nil
+          (string< "123" "abc")
+               => t
+
+     文字列の長さが異なりSTRING1の長さまで一致する場合, 結果は`t'であ
+     る.  STRING2の長さまで一致する場合, 結果は`nil'である.  空文字列
+     は他のどんな文字列よりも小さい.
+
+          (string< "" "abc")
+               => t
+          (string< "ab" "abc")
+               => t
+          (string< "abc" "")
+               => nil
+          (string< "abc" "ab")
+               => nil
+          (string< "" "")
+               => nil 
+
+ -- Function: string-lessp STRING1 STRING2
+     `string-lessp'は`string<'の別名.
+
+ -- Function: compare-strings STRING1 START1 END1 STRING2 START2 END2 &optional IGNORE-CASE
+     この関数は, STRING1の指定部分とSTRING2の指定部分を比較する.
+     STRING1の指定部分は, 添字START1位置から始まり添字END1位置までであ
+     る（デフォルトは文字列の末尾）.  STRING2の指定部分は, 添字START2
+     位置から始まり添字END2位置までである（デフォルトは文字列の末尾）.
+
+     どちらの文字列も比較のためにマルチバイトに変換するので（*Note
+     Text Representations::）, ユニバイト文字列とマルチバイトが等しく
+     なる場合もある.  IGNORE-CASEが`nil'でなければ, 大文字小文字を区別
+     しないので, 大文字は小文字に等しくなる
+
+     2つの文字列の指定部分が一致すれば, 値は`t'.  さもなければ, 値は何
+     文字目までが一致してどちらの文字列が小さいかを示す.  その絶対値は,
+     2つの文字列の始めから一致した文字の個数に1を加えたもの.  STRING1
+     （の指定部分）が小さいならば符号は負になる.
+
+ -- Function: assoc-ignore-case KEY ALIST
+     この関数は, `assoc'と同様に動作するが, KEYは文字列である必要があ
+     り, `compare-strings'を用いて比較する点が異なる.  大文字小文字を
+     区別しないで比較する.
+
+ -- Function: assoc-ignore-representation KEY ALIST
+     この関数は, `assoc'と同様に動作するが, KEYは文字列である必要があ
+     り, `compare-strings'を用いて比較する点が異なる.  大文字小文字を
+     区別して比較する.
+
+バッファ内のテキストを比較する*Note Comparing Text::の
+`compare-buffer-substrings'も参照してください.  文字列に対して正規表現
+の一致を取る関数`string-match'は, ある種の文字列比較に使えます.  *Note
+Regexp Search::.
+
+
+
+File: elisp-ja, Node: String Conversion, Next: Formatting Strings, Prev: Text Comparison, Up: Strings and Characters
+
+文字と文字列の変換
+==================
+
+本節では, 文字や文字列と整数のあいだの変換関数について説明します.
+`format'と`prin1-to-string'（*Note Output Functions::）は, Lispオブジェ
+クトを文字列に変換するために使えます.  `read-from-string'（*Note Input
+Functions::）は, Lispオブジェクトの文字列表現をオブジェクトに『変換』
+できます.  関数`string-make-multibyte'と`string-make-unibyte'は, 文字
+列のテキスト表現を変換します（*Note Converting Representations::）.
+
+テキスト文字と一般の入力イベントのテキスト表現を生成する関数
+（`single-key-description'と`text-char-description'）については, *Note
+Documentation::.  これらの関数は, 主に, ヘルプメッセージの作成に使いま
+す.
+
+ -- Function: char-to-string CHARACTER
+     この関数は, 1つの文字CHARACTERだけを含む新たな文字列を返す.  関数
+     `string'のほうがより汎用であるので, この関数はほぼ廃れている.
+     *Note Creating Strings::.
+
+ -- Function: string-to-char STRING
+     この関数は, STRINGの先頭文字を返す.  文字列が空であると関数は0を
+     返す.  文字列STRINGの先頭文字が, ASCIIコードが0のナル文字であると
+     きも, 値は0である.
+
+          (string-to-char "ABC")
+               => 65
+          (string-to-char "xyz")
+               => 120
+          (string-to-char "")
+               => 0
+          (string-to-char "\000")
+               => 0
+
+     この関数は, 存続させるほど有用でなければ, 将来, 取り除くかもしれ
+     ない.
+
+ -- Function: number-to-string NUMBER
+     この関数は, NUMBERの表示表現である文字列を返す.  NUMBERは整数か浮
+     動小数点数.  引数が負であれば値の文字列は符号で始まる.
+
+          (number-to-string 256)
+               => "256"
+          (number-to-string -23)
+               => "-23"
+          (number-to-string -23.5)
+               => "-23.5"
+
+     `int-to-string'は, この関数のほぼ廃れている別名.
+
+     *Note Formatting Strings::の`format'も参照.
+
+ -- Function: string-to-number STRING &optional BASE
+     この関数は, STRING内の文字群が表す数値を返す.  BASEが`nil'以外な
+     らば, これを基数として整数に変換する.  BASEが`nil'ならば10を基数
+     とする.  浮動小数点数の変換はつねに10を基数とする.  浮動小数点数
+     に対しては別の基数を実装していない.  作業量も多くそのわりには有用
+     とも思えないからである.
+
+     解析するとき, STRINGの先頭にある空白やタブは無視し, 数と解釈でき
+     る限りをSTRINGから読み取る.  （先頭の空白やタブ以外の他の白文字を
+     無視するシステムもある. ）無視した白文字のあとの最初の文字が, 数
+     字文字, プラス記号, マイナス記号でなければ, この関数は0を返す.
+
+          (string-to-number "256")
+               => 256
+          (string-to-number "25 is a perfect square.")
+               => 25
+          (string-to-number "X256")
+               => 0
+          (string-to-number "-4.5")
+               => -4.5
+
+     `string-to-int'はこの関数の廃れた別名.
+
+文字列へ／から変換するその他の関数を以下にあげておきます.
+
+`concat'
+     `concat'は, ベクトルやリストを文字列へ変換する.  *Note Creating
+     Strings::.
+
+`vconcat'
+     `vconcat'は, 文字列をベクトルへ変換する.  *Note Vector
+     Functions::.
+
+`append'
+     `append'は, 文字列をリストへ変換する.  *Note Building Lists::.
+
+
+
+File: elisp-ja, Node: Formatting Strings, Next: Case Conversion, Prev: String Conversion, Up: Strings and Characters
+
+文字列の書式付け
+================
+
+"書式付け"（formatting）とは, 定数文字列内のさまざま部分を計算値で置き
+換えた文字列を作ることです.  この文字列は, 文字列自体に加えて, 他の値
+をどのように表示するかも制御します.  この文字列を"書式付け文字列"
+（format string）と呼びます.
+
+書式付けは, 表示するメッセージを計算する場合に便利です.  実際, 関数
+`message'と関数`error'には, ここで説明するのと同じ書式付け機能がありま
+す.  それらと`format'との違いは, 書式付けした結果をどのように利用する
+かです.
+
+ -- Function: format STRING &rest OBJECTS
+     この関数は, STRINGをコピーし, コピー内の書式付け指定を対応する
+     OBJECTSの表現で置き換えた新たな文字列を返す.  引数OBJECTSは書式付
+     けすべき計算値である.
+
+書式付け指定は`%'で始まる文字の列です.  したがって, STRING内に`%d'があ
+ると, 関数`format'はそれを書式付けすべき値の1つ（引数OBJECTSの1つ）の
+表示表現で置き換えます.  たとえば, つぎのとおりです.
+
+     (format "The value of fill-column is %d." fill-column)
+          => "The value of fill-column is 72."
+
+STRINGに2個以上の書式付け指定がある場合, 書式付け指定はOBJECTSの後続の
+値に対応します.  つまり, STRINGの最初の書式付け指定は最初の値を使い, 2
+番目の書式付け指定は2番目の値を使い, といった具合です.  （値が対応しな
+い）余計な書式付け指定は, 予測不可能なふるまいを引き起こします.  余計
+な値は無視します.
+
+特定の書式付け指定は, 特定の型の値を必要とします.  要求に適合しない値
+を読者が指定するとエラーを通知します.
+
+有効な書式付け指定をつぎに示します.
+
+`%s'
+     書式付け指定をオブジェクトのクォートしない（つまり, `prin1'ではな
+     く`princ'を用いる. *Note Output Functions::）表示表現で置き換える. 
+     したがって, 文字列は`"'文字なしでその内容を表示し, シンボルは`\'
+     文字なしで表示する.
+
+     対応するオブジェクトがなければ空文字列を使う.
+
+`%S'
+     書式付け指定をオブジェクトのクォートした（つまり, `prin1'を用いる.
+     *Note Output Functions::）表示表現で置き換える.  したがって, 文字
+     列は`"'文字で囲んで表示し, シンボルは特別な文字のまえには`\'文字
+     を付けて表示する.
+
+     対応するオブジェクトがなければ空文字列を使う.
+
+`%o'
+     書式付け指定を整数の基数8の表示表現で置き換える.
+
+`%d'
+     書式付け指定を整数の基数10の表示表現で置き換える.
+
+`%x'
+     書式付け指定を整数の基数16の表示表現で置き換える.
+
+`%c'
+     書式付け指定を指定値の文字で置き換える.
+
+`%e'
+     書式付け指定を浮動小数点数の指数表記で置き換える.
+
+`%f'
+     書式付け指定を浮動小数点数の小数点表記で置き換える.
+
+`%g'
+     書式付け指定を浮動小数点数の指数表記か小数点表記のどちらか短いほ
+     うで置き換える.
+
+`%%'
+     文字列に1個の`%'を入れる.  この書式付け指定は, 値を使わない点で特
+     別である.  たとえば, `(format "%% %d" 30)'は`"% 30"'を返す.
+
+上記以外の書式付け文字は, エラー`Invalid format operation'になります.
+
+例をいくつか示します.
+
+     (format "The name of this buffer is %s." (buffer-name))
+          => "The name of this buffer is strings.texi."
+
+     (format "The buffer object prints as %s." (current-buffer))
+          => "The buffer object prints as strings.texi."
+
+     (format "The octal value of %d is %o, 
+              and the hex value is %x." 18 18 18)
+          => "The octal value of 18 is 22, 
+              and the hex value is 12."
+
+すべての書式付け文字には, `%'とその文字のあいだに, 数前置子を指定でき
+ます.  省略可能な数前置子はオブジェクトの最小幅を指定します.  オブジェ
+クトの表示表現がこの幅より小さい場合, パディングします.  数前置子が正
+ならば（あるいはゼロで始まれば）左側にパディングし, 数前置子が負ならば
+右側にパディングします.  パディング文字は, 通常, 空白ですが, 数前置子
+がゼロで始まれば, ゼロでパディングします.  パディングの例を示します.
+
+     (format "%06d is padded on the left with zeros" 123)
+          => "000123 is padded on the left with zeros"
+
+     (format "%-6d is padded on the right" 123)
+          => "123    is padded on the right"
+
+`format'は, どんな幅を指定しても, オブジェクトの表示表現を切り詰めるこ
+とはありません.  つまり, 情報を失うことなく, 数前置子を使って最小の桁
+幅を指定できます.
+
+つぎの3つの例において, `%7s'は最小幅7を指定します.  最初の例では,
+`%7s'に置き換わる文字列は3文字ですから, パディングとして空白4個を挿入
+します.  2番目の例では, 文字列`"specification"'は13文字幅ですが切り詰
+めません.  3番目の例では, 右側にパディングします.
+
+     (format "The word `%7s' actually has %d letters in it."
+             "foo" (length "foo"))
+          => "The word `    foo' actually has 3 letters in it."  
+
+     (format "The word `%7s' actually has %d letters in it."
+             "specification" (length "specification")) 
+          => "The word `specification' actually has 13 letters in it."  
+
+     (format "The word `%-7s' actually has %d letters in it."
+             "foo" (length "foo"))
+          => "The word `foo    ' actually has 3 letters in it."  
+
+
+
+File: elisp-ja, Node: Case Conversion, Next: Case Tables, Prev: Formatting Strings, Up: Strings and Characters
+
+Lispの大文字小文字変換
+======================
+
+大文字小文字変換関数は, 1文字や文字列内の大文字小文字を変更します.  関
+数は, 通常, アルファベット文字（非ASCII文字のアルファベットに加えて,
+`A'から`Z'と`a'から`z'）だけを変換します.  それ以外の文字は変わりませ
+ん.  （大文字小文字テーブルを指定して異なる大文字小文字変換を指定でき
+る.  *Note Case Tables::）
+
+これらの関数は, 引数として渡した文字列は変更しません.
+
+以下の例では, 文字`X'と`x'を使います.  ASCIIコードは, それぞれ, 88と
+120です.
+
+ -- Function: downcase STRING-OR-CHAR
+     この関数は, 文字や文字列を小文字に変換する.
+
+     `downcase'の引数が文字列であると, この関数は, 引数の各文字の大文
+     字を小文字に変換した新たな文字列を作成する.  `downcase'の引数が文
+     字であると, `downcase'は対応する小文字を返す.  この値は整数である. 
+     もとの文字が小文字であったりアルファベット文字でなければ, 値はも
+     との文字に等しい.
+
+          (downcase "The cat in the hat")
+               => "the cat in the hat"
+
+          (downcase ?X)
+               => 120
+
+ -- Function: upcase STRING-OR-CHAR
+     この関数は, 文字や文字列を大文字に変換する.
+
+     `upcase'の引数が文字列であると, この関数は, 引数の各文字の小文字
+     を大文字に変換した新たな文字列を作成する.
+
+     `upcase'の引数が文字であると, `upcase'は対応する大文字を返す.  こ
+     の値は整数である.  もとの文字が大文字であったりアルファベット文字
+     でなければ, 値はもとの文字に等しい.
+
+          (upcase "The cat in the hat")
+               => "THE CAT IN THE HAT"
+
+          (upcase ?x)
+               => 88
+
+ -- Function: capitalize STRING-OR-CHAR
+     この関数は, 文字列や文字をキャピタライズ（先頭文字だけを大文字に）
+     する.  STRING-OR-CHARが文字列ならば, この関数は, STRING-OR-CHARの
+     コピーの各単語をキャピタライズしたものを内容とする新たな文字列を
+     作成して返す.  つまり, 各単語の先頭文字だけを大文字にして残りを小
+     文字にする.
+
+     単語の定義は, 現在の構文テーブル（*Note Syntax Class Table::）に
+     おいて単語構成文字に分類された文字が連続した列である.
+
+     `capitalize'の引数が文字の場合には, `capitalize'は`upcase'の結果
+     と同じである.
+
+          (capitalize "The cat in the hat")
+               => "The Cat In The Hat"
+
+          (capitalize "THE 77TH-HATTED CAT")
+               => "The 77th-Hatted Cat"
+
+          (capitalize ?x)
+               => 88
+
+ -- Function: upcase-initials STRING
+     この関数は, STRING内の単語の先頭文字だけを大文字にし, 先頭文字以
+     外の文字は変更しない.  この関数は, STRINGのコピーの各単語の先頭文
+     字を大文字に変換したものを内容とする新たな文字列を返す.
+
+     単語の定義は, 現在の構文テーブル（*Note Syntax Class Table::）に
+     おいて単語構成文字に分類された文字が連続した列である.
+
+          (upcase-initials "The CAT in the hAt")
+               => "The CAT In The HAt"
+
+文字列を比較する関数については, *Note Text Comparison::.  これらは, 大
+文字小文字を区別しないものもあれば, 場合によって大文字小文字を区別しな
+いものもある.
+
+
+
+File: elisp-ja, Node: Case Tables, Next: Lists, Prev: Case Conversion, Up: Strings and Characters
+
+大文字小文字テーブル
+====================
+
+特別な"大文字小文字テーブル"（case table）をインストールすれば, 大文字
+小文字変換をカスタマイズできます.  大文字小文字テーブルは, 大文字と小
+文字の対応関係を指定します.  このテーブルは, Lispオブジェクトの大文字
+小文字変換関数（前節参照）とバッファ内のテキストに作用する大文字小文字
+変換関数（*Note Case Changes::）の両方に影響します.  各バッファごとに
+大文字小文字テーブルがあります.  新たなバッファの大文字小文字テーブル
+を初期化するために使う標準の大文字小文字テーブルもあります.
+
+大文字小文字テーブルは, サブタイプが`case-table'である文字テーブル
+（*Note Char-Tables::）です.  この文字テーブルは, 各文字を対応する小文
+字に対応付けます.  これには3つの追加スロットがあり, 関連するテーブルを
+保持します.
+
+UPCASE
+     upcase（大文字）テーブルは, 各文字を対応する大文字に対応付ける.
+CANONICALIZE
+     canonicalize（正則）テーブルは大文字小文字に関連する1組の文字群を
+     その文字群の特定のメンバに対応付ける.
+EQUIVALENCES
+     equivalences（同値）テーブルは, 大文字小文字に関連する1組の文字群
+     の各要素をその文字群内のつぎの文字に対応付ける.
+
+単純な場合, 必要なことは, 小文字への対応付けを指定するだけです.  関連
+する3つのテーブルはこの対応付けから自動的に計算されます.
+
+言語によっては, 大文字と小文字の対応関係が1対1でないことがあります.  2
+つの異なる小文字が同じ大文字に対応することがあります.  このような場合, 
+大文字から小文字への対応付けと, 小文字から大文字への対応付けの両方を指
+定する必要があります.
+
+追加のテーブルCANONICALIZE（正則）は, 各文字を正則文字に対応付けます.
+2つの任意の文字が大文字小文字変換で関連付けられている場合, その2つの文
+字は同一の正則文字を持ちます.  たとえば, `a'と`A'は, 大文字小文字変換
+で関連付けられているので, これらは同一の正則文字を持つはずです（両方の
+文字に対して`a'であるか, 両方の文字に対して`A'である）.
+
+追加のテーブルEQUIVALENCES（同値）は, 同じ正則クラス（同一の正則文字を
+持つ文字群）の文字を巡回して対応付けます.  （普通のASCIIでは, `a'を`A'
+に対応付け, `A'を`a'に対応付ける.  各正則クラスについても同様. ）
+
+大文字小文字テーブルを作成するときには, CANONICALIZE（正則）には`nil'
+を指定できます.  そうすると, Emacsはこのスロットを小文字と大文字の対応
+付けから埋めます.  EQUIVALENCES（同値）にも`nil'を指定できます.  そう
+すると, EmacsはこのスロットをCANONICALIZE（正則）から埋めます.  実際に
+使用している大文字小文字テーブルでは, これらの要素は`nil'以外です.
+CANONICALIZE（正則）を指定せずにEQUIVALENCES（同値）を指定しないでくだ
+さい,
+
+つぎに, 大文字小文字テーブルを操作する関数を示します.
+
+ -- Function: case-table-p OBJECT
+     この述語は, OBJECTが正しい大文字小文字テーブルならば`nil'以外を返
+     す.
+
+ -- Function: set-standard-case-table TABLE
+     この関数は, TABLEを標準の大文字小文字テーブルとし, これ以降に作成
+     する任意のバッファに使用できるようにする.
+
+ -- Function: standard-case-table
+     これは, 標準の大文字小文字テーブルを返す.
+
+ -- Function: current-case-table
+     この関数は, カレントバッファの大文字小文字テーブルを返す.
+
+ -- Function: set-case-table TABLE
+     これは, カレントバッファの大文字小文字テーブルをTABLEとする.
+
+以下の3つ関数は, 非ASCII文字集合を定義するパッケージ向けの便利なサブルー
+ティンです.  これらは, 指定した大文字小文字テーブルCASE-TABLEを変更し
+ます.  さらに, 標準の構文テーブルも変更します.  *Note Syntax Tables::. 
+普通, 標準の大文字小文字テーブルを変更するためにこれらの関数を使います.
+
+ -- Function: set-case-syntax-pair UC LC CASE-TABLE
+     この関数は対応する大文字と小文字を指定する.
+
+ -- Function: set-case-syntax-delims L R CASE-TABLE
+     この関数は, 文字LとRを大文字小文字不変区切りの対応する対にする.
+
+ -- Function: set-case-syntax CHAR SYNTAX CASE-TABLE
+     この関数は, CHARを構文SYNTAXの大文字小文字不変にする.
+
+ -- コマンド: describe-buffer-case-table
+     このコマンドは, カレントバッファの大文字小文字テーブルの内容を記
+     述する.
+
+
+
+File: elisp-ja, Node: Lists, Next: Sequences Arrays Vectors, Prev: Strings and Characters, Up: Top
+
+リスト
+******
+
+"リスト"（list）は, 0個以上の（任意のLispオブジェクトの）要素の列を表
+現します.  リストとベクトルの重要な相違点は, 複数のリストがそれらの構
+造の一部を共有できることです.  さらに, リスト全体をコピーすることなく, 
+リストに要素を追加したり削除できることです.
+
+* Menu:
+
+* Cons Cells::          How lists are made out of cons cells.
+* Lists as Boxes::                 Graphical notation to explain lists.
+* List-related Predicates::        Is this object a list?  Comparing two lists.
+* List Elements::       Extracting the pieces of a list.
+* Building Lists::      Creating list structure.
+* Modifying Lists::     Storing new pieces into an existing list.
+* Sets And Lists::      A list can represent a finite mathematical set.
+* Association Lists::   A list can represent a finite relation or mapping.
+
+
+
+File: elisp-ja, Node: Cons Cells, Next: Lists as Boxes, Prev: Lists, Up: Lists
+
+リストとコンスセル
+==================
+
+Lispのリストは基本データ型ではありません.  リストは"コンスセル"（cons
+cells）で構成されます.  コンスセルはドット対を表現するデータオブジェク
+トです.  ドット対は2つのLispオブジェクトを保持, つまり, 『指し』ます. 
+その2つのLispオブジェクトの一方をCAR, 他方をCDRといいます.  これらの名
+前は歴史的なものです.  *Note Cons Cell Type::.  CDRは『クダー』と読み
+ます.
+
+リストはコンスセルを連ねたものであり, リストの各要素ごとにコンスセルが
+1つあります.  慣習として, コンスセルのCARはリストの要素であり, CDRはリ
+ストを繋ぐために使います.  つまり, 各コンスセルのCDRは後続のコンスセル
+です.  最後のコンスセルのCDRは`nil'です.  CARとCDRの非対称性は単なる慣
+習によるものです.  コンスセルのレベルでは, CARとCDRには同じ性質があり
+ます.
+
+ほとんどのコンスセルはリストの一部として使われるので, "リスト構造"
+（list structure）という用語は, コンスセルで構成した任意の構造を意味す
+るようになりました.
+
+シンボル`nil'は, シンボルであるとともにリストでもあるとみなします.  こ
+れは要素を持たないリストです.  慣習として, シンボル`nil'のCDR（および
+CAR）は`nil'であるとみなします.
+
+空でない任意のリストLのCDRは, Lの先頭要素を除くすべての要素を含んだリ
+ストです.
+
+
+
+File: elisp-ja, Node: Lists as Boxes, Next: List-related Predicates, Prev: Cons Cells, Up: Lists
+
+箱の対を連ねたリスト
+====================
+
+コンスセルは1対の箱で図示できます.  最初の箱はCARを表し, 2番目の箱は
+CDRを表します.  つぎは, 2つのコンスセルから成る2要素のリスト`(tulip
+lily)'を図示したものです.
+
+      ---------------         ---------------
+     | car   | cdr   |       | car   | cdr   |
+     | tulip |   o---------->| lily  |  nil  |
+     |       |       |       |       |       |
+      ---------------         ---------------
+
+各1対の箱がコンスセルを表します.  各箱は, Lispオブジェクトを『参照する』, 
+『指す』, 『含む』のです.  （これらの用語は同義語. ）最初のコンスセル
+のCARを表す最初の箱は, シンボル`tulip'を含みます.  最初のコンスセルの
+CDR箱から2番目のコンスセルへ向かう矢印は, 最初のコンスセルのCDRが2番目
+のコンスセルであることを表します.
+
+同じリストは, つぎのような別の箱記法でも図示できます.
+
+         -- ---      -- ---
+        |   |   |--> |   |   |--> nil
+         -- ---      -- ---
+          |            |
+          |            |
+           --> tulip    --> lily
+
+つぎは, より複雑で, 最初の要素が2要素リストであるような3要素リストを図
+示したものです.
+
+         -- ---      -- ---      -- ---
+        |   |   |--> |   |   |--> |   |   |--> nil
+         -- ---      -- ---      -- ---
+          |            |            |
+          |            |            |
+          |             --> oak      --> maple
+          |
+          |     -- ---      -- ---
+           --> |   |   |--> |   |   |--> nil
+                -- ---      -- ---
+                 |            |
+                 |            |
+                  --> pine     --> needles
+
+同じリストを最初の箱記法で表現するとつぎのようになります.
+
+      --------------       --------------       --------------
+     | car   | cdr  |     | car   | cdr  |     | car   | cdr  |
+     |   o   |   o------->| oak   |   o------->| maple |  nil |
+     |   |   |      |     |       |      |     |       |      |
+      -- | ---------       --------------       --------------
+         |
+         |
+         |        --------------       ----------------
+         |       | car   | cdr  |     | car     | cdr  |
+          ------>| pine  |   o------->| needles |  nil |
+                 |       |      |     |         |      |
+                  --------------       ----------------
+
+コンスセルとリストの入力構文と表示表現, および, 『箱と矢印』によるリス
+トの図示については, *Note Cons Cell Type::
+
+
+
+File: elisp-ja, Node: List-related Predicates, Next: List Elements, Prev: Lists as Boxes, Up: Lists
+
+リスト向け述語
+==============
+
+以下の述語は, Lispオブジェクトが, アトムであるか, コンスセル, つまり, 
+リストであるか, 特別なオブジェクト`nil'であるか調べます.  （これらの多
+く述語は, それぞれ残りの述語で定義可能である.  しかし, 多用するため, 
+これらすべてを用意しておく価値がある. ）
+
+ -- Function: consp OBJECT
+     この関数は, OBJECTがコンスセルならば`t'を返し, さもなければ`nil'
+     を返す.  `nil'はコンスセルではないが, 空リスト*である*.
+
+ -- Function: atom OBJECT
+     この関数は, OBJECTがアトムならば`t'を返し, さもなければ`nil'を返
+     す.  コンスセルを除くすべてのオブジェクトはアトムである.  シンボ
+     ル`nil'はアトムでもありリストでもある.  このようなLispオブジェク
+     トは`nil'だけである.
+
+          (atom OBJECT) == (not (consp OBJECT))
+
+ -- Function: listp OBJECT
+     この関数は, OBJECTがコンスセルか`nil'ならば`t'を返す.  さもなけれ
+     ば`nil'を返す.
+
+          (listp '(1))
+               => t
+          (listp '())
+               => t
+
+ -- Function: nlistp OBJECT
+     この関数は, `listp'の反対である.  OBJECTがリストでなければ`t'を返
+     す.  さもなければ`nil'を返す.
+
+          (listp OBJECT) == (not (nlistp OBJECT))
+
+ -- Function: null OBJECT
+     この関数は, OBJECTが`nil'ならば`t'を返し, さもなければ`nil'を返す. 
+     この関数は, `not'と同一であるが, 意図を明確にするために, OBJECTを
+     リストと考えるときには`null'を使い, OBJECTを真理値と考えるときに
+     は`not'を使う（*Note Combining Conditions::の`not'を参照）
+
+          (null '(1))
+               => nil
+          (null '())
+               => t
+
+
+
+

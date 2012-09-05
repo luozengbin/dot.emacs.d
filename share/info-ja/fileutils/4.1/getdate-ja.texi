@@ -1,0 +1,391 @@
+@node Date input formats
+@chapter 日付入力の書式
+
+@cindex date input formats
+@findex getdate
+
+最初の引用：
+
+@quotation
+我々の時間を計る単位は，秒から月まであり，かなり複雑で，非対称で，連結で
+きないので，徹頭徹尾，頭の計算で間に合わせることは，ほとんど不可能です．
+本当に，非道な神が我々を時間の奴隷にし，ぼんやりした繰り返し仕事と不快な
+驚きへの従属から，我々が逃げることをほとんど不可能にしようと企てたので，
+彼は我々の現在のシステムを伝える以上のことを行うことができませんでした．
+それは，台形の建築用ブロックの集合に似ていて，垂直や水平の表面が無く，最
+も単純な考えで，建造物を飾り立てることを要求された言語に似ていて，役に立
+たない微粒子と長い遠回しな表現です．我々がはっきりとした，または，少なく
+とも頭打ちな経験に直面することを可能にした，より成功した言語と科学ののパ
+ターンと異なり，我々の時間を計るシステムは，静かにそして繰り返し，時間の
+恐怖を呼び起こします．
+
+@dots{} それは，建築家がフィートで長さを，メートルで幅を，そしてellで高
+さを計る必要があるかのようなものです．基本的な指示用のマニュアルで，五つ
+の異なる言語の知識を必要とするかのようなものです．我々が，どうにもならな
+い混乱した気分で，この間の火曜日や日曜日からの一週間といった，短い過去あ
+るいは近い将来を調査することがよくあるのは，不思議ではありません． 
+@dots{} @footnote{この引用の訳は，訳者本人が理解できていません．}
+
+--- Robert Grudin, @cite{Time and the Art of Living}.
+@end quotation
+
+このセクションでは，@sc{gnu}プログラムが受け入れる，文章上での日付の表現
+を記述します．これらは，様々なプログラムの引数としてユーザが供給可能な文
+字列です．(@code{getdate}関数による)Cのインターフェースはここでは述べま
+せん．
+
+@cindex beginning of time, for @sc{posix}
+@cindex epoch, for @sc{posix}
+ここでの日付の構文は，0年から表現することは可能ですが，コンピュータの整
+数は，そのような長い範囲を表現することができないことがよくあります．
+@sc{posix}システム上では，時刻は1970-01-01 00:00:00 @sc{utc}から始まりま
+す．@sc{posix}は，@sc{posix} エポック時間より前と，遠い将来の時間のサポー
+トを要求しません．伝統的なUnixシステムは，32ビットの符号付き
+@code{time_t}があり，1901-12-13 20:45:52から2038-01-19 03:14:07 @sc{utc} 
+まで表現可能です．64ビットの符号付き@code{time_t}を用いたシステムでは，
+知られている宇宙の一生の全ての時間を表現可能です．
+
+@menu
+* General date syntax::            Common rules.
+* Calendar date items::            19 Dec 1994.
+* Time of day items::              9:20pm.
+* Time zone items::                @sc{est}, @sc{pdt}, @sc{gmt}, ...
+* Day of week items::              Monday and others.
+* Relative items in date strings:: next tuesday, 2 years ago.
+* Pure numbers in date strings::   19931219, 1440.
+* Authors of getdate::             Bellovin, Eggert, Salz, Berets, et al.
+@end menu
+
+
+@node General date syntax
+@section 一般的な日付の構文
+
+@cindex general date syntax
+
+@cindex items in date strings
+@dfn{日付}は，空白で分けられた多くの項目を含む，空も可能な文字列です．曖
+昧にならないとき，空白は省略できます．空の文字列は今日の始まり(すなわち
+真夜中)を意味します．項目の順序は重要ではありません．日付の文字列は，項
+目の多くの特色を含むことができます．
+
+@itemize @bullet
+@item カレンダーの日付項目
+@item その日の時間の項目
+@item タイムゾーンの項目
+@item 曜日の項目
+@item 相対的な項目
+@item 純粋な数字
+@end itemize
+
+@noindent
+我々は，これらの項目形式のそれぞれを，以下で順番に記述します．
+
+@cindex numbers, written-out
+@cindex ordinal numbers
+@findex first @r{in date strings}
+@findex next @r{in date strings}
+@findex last @r{in date strings}
+いくつかの数字は，ほとんどの文脈で単語で書き出すことができます．これは曜
+日の項目や相対的な項目を指定するとき，最も役に立ちます(以下を参照してく
+ださい)．ここにリストがあります．1に対する@samp{first}，2に対する
+@samp{next}，3に対する@samp{third}，4に対する@samp{fourth}，5に対する
+@samp{fifth}，6に対する@samp{sixth}，7に対する@samp{seventh}，8に対する
+@samp{eighth}，9に対する@samp{ninth}，10に対する@samp{tenth}，11に対する
+@samp{eleventh}，そして12に対する@samp{twelfth}です．また@samp{last}は，
+正確に@math{-1}を意味します．
+
+@cindex months, written-out
+月をこの方法で書くとき，``完全な綴り''の代わりに，それは数字で書かれてい
+ると考えられます．これは文字に変更することもできます．
+
+@cindex language, in dates
+現在の実装では，@samp{AM}，@samp{DST}，@samp{EST}，@samp{first}，
+@samp{January}，@samp{Sunday}，@samp{tomorrow}，そして@samp{year}のよう
+な，単語と省略は英語のみサポートされています．
+
+@cindex language, in dates
+@cindex time zone item
+@command{date}の出力は，言語の問題だけでなく，@samp{IST}のようなタイムゾー
+ン項目に対する標準的な意味がないため，日付文字列として常に受け入れ可能で
+はありません．後でパースする目的で日付文字列を生成するために
+@command{date}を使用するとき，言語に独立して，@samp{UTC}と@samp{Z}以外の
+タイムゾーン項目を使用しない日付の書式を指定してください．こうするための
+方法が，ここにいくつかあります．
+
+@example
+$ LC_ALL=C TZ=UTC0 date
+Fri Dec 15 19:48:05 UTC 2000
+$ TZ=UTC0 date +"%Y-%m-%d %H:%M:%SZ"
+2000-12-15 19:48:05Z
+$ date --iso-8601=seconds  # a GNU extension
+2000-12-15T11:48:05-0800
+$ date --rfc-822  # a GNU extension
+Fri, 15 Dec 2000 11:48:05 -0800
+$ date +"%Y-%m-%d %H:%M:%S %z"  # %z is a GNU extension.
+2000-12-15 11:48:05 -0800
+@end example
+
+@cindex case, ignored in dates
+@cindex comments, in dates
+英文字の大文字小文字は，日付では完全に無視されます．コメントは，適切に入
+れ子状になった丸カッコに含まれる限り，丸カッコの間で導入可能です．数字に
+続かないハイフンは，現在無視されます．数字の前に前置されるゼロは無視され
+ます．
+
+
+@node Calendar date items
+@section カレンダーの日付の項目
+
+@cindex calendar date item
+
+@dfn{カレンダーの日付の項目}は年の日付を指定します．それは，月が数字で指
+定されるか，文字で指定されるかによって異なりますこれら全ての文字列は，同
+じカレンダーの日付を指定します．
+
+@example
+1972-09-24     # @sc{iso} 8601．
+72-9-24        # 69から99では19xx
+               # 68から00では20xxと仮定します．
+72-09-24       # 前置されるゼロは無視されます．
+9/24/72        # U.S.の一般的な表記です．
+24 September 1972
+24 Sept 72     # Septemberの省略指定です．
+24 Sep 72      # 三文字の省略は常に利用可能です．
+Sep 24, 1972
+24-sep-72
+24sep72
+@end example
+
+年も省略できます．この場合，最後に指定された年，または，無ければ現在の年
+が利用されます．例えば，以下のようになります．
+
+@example
+9/24
+sep 24
+@end example
+
+ここに規則があります．
+
+@cindex @sc{iso} 8601 date format
+@cindex date format, @sc{iso} 8601
+数字の月に対し，@sc{iso} 8601書式@samp{@var{year}-@var{month}-@var{day}} 
+が可能で，@var{year}は正の数，@var{month}は01と12の間の数，そして
+@var{day}は01と31の間の数です．数字が10未満の場合，前置されるゼロが存在
+する必要があります．@var{year}が68以下の場合，2000が加えられます．それ以
+外の場合で，@var{year}が100未満の場合，1900が加えられます．合州国でよく
+使用される@samp{@var{month}/@var{day}/@var{year}}の構成も受け入れられま
+す．同様に，年を削除すると@samp{@var{month}/@var{day}}です．
+
+@cindex month names in date strings
+@cindex abbreviations for months
+文字の月は完全に綴ることもできます．@samp{January}，@samp{February}，
+@samp{March}，@samp{April}，@samp{May}，@samp{June}，@samp{July}，
+@samp{August}，@samp{September}，@samp{October}，@samp{November}，または，
+@samp{December}です．文字の月は最初の三文字で省略でき，省略のドットの後
+置も可能です．@samp{September}の代わりに@samp{Sept}と書くことも許可され
+ています．
+
+月が文字で書かれるとき，カレンダーの日付は以下のようにして与えられます．
+
+@example
+@var{day} @var{month} @var{year}
+@var{day} @var{month}
+@var{month} @var{day} @var{year}
+@var{day}-@var{month}-@var{year}
+@end example
+
+または，年を省略します．
+
+@example
+@var{month} @var{day}
+@end example
+
+
+@node Time of day items
+@section 日付の時間の項目
+
+@cindex time of day item
+
+日付文字列での@dfn{日付の時間の項目}は，与えられた日付の時間を指定します．
+ここにいくつか例があり，全て同じ時間を表現しています．
+
+@example
+20:02:0
+20:02
+8:02pm
+20:02-0500      # @sc{est} (合州国東部標準時)
+@end example
+
+より一般的に，日付の時間は，@samp{@var{hour}:@var{minute}:@var{second}} 
+として与えることができ，@var{hour}は0と23の間の数字，@var{minute}は0と59 
+の間の数字，そして@var{second}は0と59の間の数字です．代わりに，
+@samp{:@var{second}}は省略でき，その場合，それは0です．
+
+@findex am @r{in date strings}
+@findex pm @r{in date strings}
+@findex midnight @r{in date strings}
+@findex noon @r{in date strings}
+時間に@samp{am}や@samp{pm}(または，@samp{a.m.}や@samp{p.m.})が続く場合，
+@var{hour}は1から12までの実行に限定され，@samp{:@var{minute}}は省略でき
+ます(ゼロとされます)．@samp{am}は午前を示し，@samp{pm}は午後を示します．
+この注釈で，12は1の前になります．真夜中は@samp{12am}で，一方正午は
+@samp{12pm}です．(これは，@samp{12m}を正午，@samp{12pm}を真夜中として使
+用する，ラテン語に由来する古い伝統の反対となる，@samp{12am}と@samp{12pm} 
+のゼロを起点にした解釈です．)
+
+@cindex time zone correction
+@cindex minutes, time zone correction by
+時刻は，代わりにタイムゾーン修正を続けることができ，それは
+@samp{@var{s}@var{hh}@var{mm}}として表現され，@var{s}は@samp{+}または
+@samp{-}，@var{hh}は時間の数字，そして@var{mm}は地域の分の数字になります．
+タイムゾーン修正がこのように与えられるとき，それは，世界標準時(@sc{utc})
+に関連する時間として解釈され，タイムゾーンや地域的タイムゾーンに対する，
+あらゆる前置される指定に優先します．日付の時間の@var{minute}の部分は，タ
+イムゾーン修正が使用されるとき省略できません．これは，時間の分数部分でタ
+イムゾーン修正を指定する唯一の方法です．
+
+@samp{am}/@samp{pm}やタイムゾーン修正は，どちらか一方のみ指定でき，両方
+はできません．
+
+
+@node Time zone items
+@section タイムゾーンの項目
+
+@cindex time zone item
+
+@dfn{タイムゾーンの項目}は，国際的なタイムゾーンを指定し，例えば世界標準
+時に対する@samp{UTC}や@samp{Z}のような小さな文字集合で示されます．含まれ
+るピリオドは全て無視されます．別々の(すなわち，いくつかの空白で区切られ
+ている)単語内の文字列@samp{DST}が夏時間でないタイムゾーンに続くことで，
+対応する夏時間のタイムゾーンが指定可能です．
+
+@samp{UTC}と@samp{Z}以外のタイムゾーンの項目は時代遅れで，曖昧なので推奨
+されません．例えば，@samp{EST}はオーストラリアと合州国では異なる意味を持
+ちます．代わりに，前のセクションで記述されている，@samp{-0500}のような曖
+昧でない数字のタイムゾーンコレクションを使用した方が良いでしょう．
+
+
+@node Day of week items
+@section 曜日の項目
+
+@cindex day of week item
+
+曜日の明示的な記述は，将来，曜日に到達するよう，(必要なら)日付に前置され
+ます．
+
+曜日は，完全に綴ることができます．@samp{Sunday}，@samp{Monday}，
+@samp{Tuesday}，@samp{Wednesday}，@samp{Thursday}，@samp{Friday}，または，
+@samp{Saturday}です．曜日は，最初の三文字で省略でき，追加のピリオドを続
+けることができます．特別な省略として，@samp{Tuesday}に対する@samp{Tues}，
+@samp{Wednesday}に対する@samp{Wednes}，そして，@samp{Thursday}に対する
+@samp{Thur}や@samp{Thurs}も許可されます．
+
+@findex next @var{day}
+@findex last @var{day}
+前置された追加分の週を移動するため，数字を曜日項目に前置することができま
+す．それは，@samp{third monday}のような表現が最も良い使用法です．この文
+脈では，@samp{last @var{day}}や@samp{next @var{day}}も受け入れられます．
+それらは@var{day}で表現されている日付の1週間前，または後になります．
+
+曜日に続くカンマは無視されます．
+
+
+@node Relative items in date strings
+@section 日付文字の相対的な項目
+
+@cindex relative items in date strings
+@cindex displacement of dates
+
+@samp{相対的な項目}は，日付(それが無い場合は現在の日付)を前後に調整しま
+す．相対的な項目の効果は蓄積されます．ここにいくつか例があります．
+
+@example
+1 year
+1 year ago
+3 years
+2 days
+@end example
+
+@findex year @r{in date strings}
+@findex month @r{in date strings}
+@findex fortnight @r{in date strings}
+@findex week @r{in date strings}
+@findex day @r{in date strings}
+@findex hour @r{in date strings}
+@findex minute @r{in date strings}
+時間の置換の単位は，年や月全体を移動するため，文字列@samp{year}や
+@samp{month}が選択できます．年や月は全てが同じ期間ではないので，これらは
+曖昧な単位です．より正確な単位は，14日と等価な@samp{fortnight}，7日と等
+価な@samp{week}，24時間と等価な@samp{day}，60分と等価な@samp{hour}，60秒
+と等価な@samp{minute}や@samp{min}，そして1秒と等価な@samp{second}や
+@samp{sec}です．これらの単位の@samp{s}接尾子は受け入れられ，無視されます．
+
+@findex ago @r{in date strings}
+時間の単位は乗数を前置でき，それは追加の符号付きの数字で与えられます．符
+号無しの数字は，正の符号として扱われます．全く数字が無いものは，乗数とし
+て1が暗示されます．文字列@samp{ago}が続く相対的な項目は，値@math{-1}の乗
+数が前置された単位と等価です．
+
+@findex day @r{in date strings}
+@findex tomorrow @r{in date strings}
+@findex yesterday @r{in date strings}
+文字列@samp{tomorrow}は，未来の1日と等価で(@samp{day}と等価)，文字列
+@samp{yesterday}は，過去の1日と等価です(@samp{day ago}と等価)．
+
+@findex now @r{in date strings}
+@findex today @r{in date strings}
+@findex this @r{in date strings}
+文字列@samp{now}や@samp{today}は，ゼロ値の時間を置換する相対的な項目で，
+これらの文字列は，ゼロ値の時間を置換することは，前の項目で変化されていな
+いときの現在時間を表現するという事実に由来します．それらは@samp{12:00
+today}のように，他の項目を強調するために使用できます．文字列@samp{this} 
+もゼロ値の時間を置換する意味を持ちますが，@samp{this thursday}のような日
+付文字列で好まれます．
+
+相対的な項目が，調整された時刻を跨るために結果として日付が生成されるとき，
+特に夏時間では，結果として生じる日付と時間は，それに応じて調整されます．
+
+
+@node Pure numbers in date strings
+@section 日付文字列の純粋な数字
+
+@cindex pure numbers in date strings
+
+純粋な10進数の正確な解釈は，日付文字列の文脈に依存します．
+
+10進数が，形式@var{yyyy}@var{mm}@var{dd}で，他のカレンダーの日付項目
+(@pxref{Calendar date items})が，その日付項目の前に現われない場合，
+@var{yyyy}は年，@var{mm}は月の数字，そして@var{dd}は月の日付として，指定
+されたカレンダーの日付として読み込まれます．
+
+10進数が形式@var{hh}@var{mm}で，他の日付の時間の項目がその日付文字列の前
+に現われない場合，@var{hh}は日付の時間，そして@var{mm}は時間の分として，
+指定された日付の時間として読み込まれます．@var{mm}は省略もできます．
+
+カレンダーの日付と日付の時間が，両方とも日付文字列の数字の左に現われ，そ
+して相対的な項目が無い場合，数字は年に優先します．
+
+
+@node Authors of getdate
+@section @code{getdate}の著者
+
+@cindex authors of @code{getdate}
+
+@cindex Bellovin, Steven M.
+@cindex Salz, Rich
+@cindex Berets, Jim
+@cindex MacKenzie, David
+@cindex Meyering, Jim
+@cindex Eggert, Paul
+@code{getdate}は元々，Chapel HillのNorth Carolina大学にいるときに，
+Steven M. Bellovin (@email{smb@@research.att.com})によって実装されました．
+コードはその後Usenetの2人に捻りを加えられ，Rich $alz
+(@email{rsalz@@bbn.com})とJim Berets (@email{jberets@@bbn.com})が，1990 
+年8月に完全に点検しました．@sc{gnu}システムに対する様々な修正は，David
+MacKenzie，Jim Meyering他によってなされました．
+
+@cindex Pinard, F.
+@cindex Berry, K.
+この章は元々，Fran@,{c}ois Pinard (@email{pinard@@iro.umontreal.ca})が
+@file{getdate.y}ソースコードから生成し，K.@: Berry
+(@email{kb@@cs.umb.edu})が編集しました．

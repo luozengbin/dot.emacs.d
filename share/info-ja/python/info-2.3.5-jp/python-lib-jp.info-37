@@ -1,0 +1,1210 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: HTMLParser,  Next: sgmllib,  Prev: 構造化マークアップツール,  Up: 構造化マークアップツール
+
+HTML および XHTML のシンプルなパーザ
+====================================
+
+HTML と XHTML を扱えるシンプルなパーザ。
+
+このモジュールでは `HTMLParser' クラスを定義します。 このクラスは HTML
+(ハイパーテキスト記述言語、 HyperText Mark-up Language) および XHTML
+で書式化されているテキストファイルを解釈するための基礎と
+なります。`htmllib' にあるパーザと違って、このパーザ は `sgmllib' の
+SGML パーザに基づいてはいません。
+
+`HTMLParser()'
+     `HTMLParser' クラスは引数なしでインスタンス化します。
+
+     HTMLParser インスタンスに HTML データが入力されると、
+     タグが開始したとき、及び終了したときに関数を呼び出します。
+     `HTMLParser' クラスは、ユーザが行いたい動作を提供する
+     ために上書きできるようになっています。
+
+     `htmllib' のパーザと違い、このパーザは終了タグが開始タグと
+     一致しているか調べたり、外側のタグ要素が閉じるときに内側で明示的
+     に閉じられていないタグ要素のタグ終了ハンドラを呼び出したりはしません。
+
+`HTMLParser' インスタンスは以下のメソッドを提供します:
+
+`reset()'
+     インスタンスをリセットします。未処理のデータは全て失われます。
+     インスタンス化の際に非明示的に呼び出されます。
+
+`feed(data)'
+     パーザにテキストを入力します。入力が完全なタグ要素で構成されている
+     場合に限り処理が行われます; 不完全なデータであった場合、新たに
+     データが入力されるか、`close()' が呼び出されるまでバッファ
+     されます。
+
+`close()'
+     全てのバッファされているデータについて、その後にファイル終了マーク
+     が続いているとみなして強制的に処理を行います。このメソッドは
+     入力データの終端で行うべき追加処理を定義するために導出クラスで
+     上書きすることができますが、再定義を行ったクラスでは常に、
+     `HTMLParser' 基底クラスのメソッド `close()' を
+     呼び出さなくてはなりません。
+
+`getpos()'
+     現在の行番号およびオフセット値を返します。
+
+`get_starttag_text()'
+     最も最近開かれた開始タグのテキスト部分を返します。このテキストは
+     必ずしも元データを構造化する上で必須ではありませんが、
+     "広く知られている (as deployed)" HTML を扱ったり、入力を
+     最小限の変更で再生成 (属性間の空白をそのままにする、など) したり
+     する場合に便利なことがあります。
+
+`handle_starttag(tag, attrs)'
+     このメソッドはタグの開始部分を処理するために呼び出されます。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+     TAG 引数はタグの名前で、小文字に変換されています。 ATTRS 引数は
+     `(NAME, VALUE)' のペアからなる リストで、タグの `<>'
+     括弧内にある属性が収められています。 NAME
+     は小文字に変換され、VALUE 内のエンティティ参照
+     は変換されます。二重引用符やバックスラッシュは変換しません。例えば、
+     タグ `<A HREF="http://www.cwi.nl/">' を処理する場合、このメソッドは
+     `handle_starttag('a', [('href', 'http://www.cwi.nl/')])'
+     として呼び出されます。
+
+`handle_startendtag(tag, attrs)'
+     `handle_starttag()' と似ていますが、パーザが XHTML 形式の 空タグ
+     (`<a .../>') に遭遇した場合に呼び出されます。 この特定の語彙情報
+     (lexical information) が必要な場合、
+     このメソッドをサブクラスで上書きすることができます; 標準の実装
+     では、単に `handle_starttag()' および `handle_endtag()'
+     を呼ぶだけです。
+
+`handle_endtag(tag)'
+     このメソッドはあるタグ要素の終了タグを処理するために呼び出されます。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。TAG 引数はタグの名前で、小文字に変換されています。
+
+`handle_data(data)'
+     このメソッドは，他のメソッドに当てはまらない任意のデータを処理するために
+     呼び出されます。 導出クラスで上書きするためのメソッドです;
+     基底クラスの実装では 何も行いません。
+
+`handle_charref(ref)'
+     このメソッドはタグ外の `&#REF;' 形式の文字参照 (character
+     reference) を処理するために呼び出されます。 REF には，先頭の`&#'
+     および末尾の`;' は 含まれません。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+`handle_entityref(name)'
+     このメソッドはタグ外の `&NAME;' 形式の一般のエンティティ参照
+     (entity reference) NAME を処理するために呼び出されます。 NAME
+     には，先頭の`&' および末尾の`;' は 含まれません。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+`handle_comment(data)'
+     このメソッドはコメントに遭遇した場合に呼び出されます。COMMENT
+     引数は文字列で、`<!-`-'' and `-`-'>' デリミタ間の、
+     デリミタ自体を除いたテキストが収められています。例えば、コメント
+     `<!-`-'text-`-'>' があると、このメソッドは引数 `'text''
+     で呼び出されます。 導出クラスで上書きするためのメソッドです;
+     基底クラスの実装では 何も行いません。
+
+`handle_decl(decl)'
+     パーザが SGML 宣言を読み出した際に呼び出されるメソッドです。 DECL
+     パラメタは `<!'...`>' 記述内の宣言内容 全体になります。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+`handle_pi(data)'
+     処理指令に遭遇した場合に呼び出されます。DATAには、処理指令
+     全体が含まれ、例えば`<?proc color='red'>'という処理指令の場合、
+     `handle_pi("proc color='red'")'のように呼び出されます。
+     このメソッドは導出クラスで上書きするためのメソッドです;
+     基底クラスの 実装では何も行いません。
+
+     _Note:_ The
+     `HTMLParser'クラスでは、処理指令にSGMLの構文を使用します。
+     末尾に`?'がXHTMLの処理指令では、`?'がDATAに 含まれます。
+
+`HTMLParseError'
+     HTML の構文に沿わないパターンを発見したときに送出される例外です。
+     HTML
+     構文法上の全てのエラーを発見できるわけではないので注意してください。
+
+* Menu:
+
+* HTML パーザアプリケーションの例::
+
+
+File: python-lib-jp.info,  Node: HTML パーザアプリケーションの例,  Prev: HTMLParser,  Up: HTMLParser
+
+HTML パーザアプリケーションの例
+-------------------------------
+
+基礎的な例として、`HTMLParser' クラスを使い、発見したタグを出力
+する、非常に基礎的な HTML パーザを以下に示します。
+
+     from HTMLParser import HTMLParser
+     
+     class MyHTMLParser(HTMLParser):
+     
+         def handle_starttag(self, tag, attrs):
+             print "Encountered the beginning of a %s tag" % tag
+     
+         def handle_endtag(self, tag):
+             print "Encountered the end of a %s tag" % tag
+
+
+File: python-lib-jp.info,  Node: sgmllib,  Next: htmllib,  Prev: HTMLParser,  Up: 構造化マークアップツール
+
+単純な SGML パーザ
+==================
+
+HTML を解析するのに必要な機能だけを備えた SGML パーザ。
+
+このモジュールでは SGML (Standard Generalized Mark-up Language:
+汎用マークアップ言語標準) で書式化されたテキストファイルを解析
+するための基礎として働く `SGMLParser' クラスを定義しています。
+実際には、このクラスは完全な SGML パーザを提供しているわけではありません
+-- このクラスは HTML で用いられているような SGML だけを解析し、
+モジュール自体も `htmllib' モジュールの基礎にするため
+だけに存在しています。XHTML をサポートし、少し異なったインタフェースを
+提供しているもう一つの HTML パーザは、`HTMLParser'
+モジュールで使うことができます。
+
+`SGMLParser()'
+     `SGMLParser' クラスは引数無しでインスタンス化されます。
+     このパーザは以下の構成を認識するようにハードコードされています:
+
+        * `<TAG ATTR="VALUE" ...>' と `</TAG>'
+          で表されるタグの開始部と終了部。
+
+        * `&#NAME;' 形式をとる文字の数値参照。
+
+        * `&NAME;' 形式をとるエンティティ参照。
+
+        * `<!--TEXT-->' 形式をとる SGML コメント。 末尾の `>'
+          とその直前にある `--' の間には
+          スペース、タブ、改行を入れることができます。
+
+
+`SGMLParser' インスタンスは以下のインタフェースメソッドを 持っています:
+
+`reset()'
+     インスタンスをリセットします。未処理のデータは全て失われます。
+     このメソッドはインスタンス生成時に非明示的に呼び出されます。
+
+`setnomoretags()'
+     タグの処理を停止します。以降の入力をリテラル入力 (CDATA)
+     として扱います。(この機能は古い HTML タグ `<PAINTEXT>' を実装
+     できるようにするためだけに提供されています)
+
+`setliteral()'
+     リテラルモード (CDATA モード) に移行します。
+
+`feed(data)'
+     テキストをパーザに入力します。入力は完全なエレメントから成り立つ
+     場合に限り処理されます;
+     不完全なデータは追加のデータが入力されるか、 `close()'
+     が呼び出されるまでバッファに蓄積されます。
+
+`close()'
+     バッファに蓄積されている全てのデータについて、直後にファイル終了記号
+     が来た時のようにして強制的に処理します。このメソッドは導出クラスで
+     再定義して、入力の終了時に追加の処理行うよう定義することができますが、
+     このメソッドの再定義されたバージョンでは常に `close()'
+     を呼び出さなければなりません。
+
+`get_starttag_text()'
+     もっとも最近開かれた開始タグのテキストを返します。通常、構造化された
+     データの処理をする上でこのメソッドは必要ありませんが、
+     "広く知られている (as deployed)" HTML を扱ったり、入力を
+     最小限の変更で再生成 (属性間の空白をそのままにする、など) したり
+     する場合に便利なことがあります。
+
+`handle_starttag(tag, method, attributes)'
+     このメソッドは `start_TAG()' か `do_TAG()'
+     のどちらかのメソッドが定義されている開始タグを処理するために呼び出され
+     ます。TAG 引数はタグの名前で、小文字に変換されています。 METHOD
+     引数は開始タグの意味解釈をサポートするために用いられる
+     バインドされたメソッドです。 ATTRIBUTES 引数は `(NAME, VALUE)'
+     のペアからなる リストで、タグの `<>'
+     括弧内にある属性が収められています。 NAME は小文字に変換され、
+     VALUE 内の二重引用符と バックスラッシュも変換されます。例えば、タグ
+     `<A HREF="http://www.cwi.nl/">' を処理する場合、このメソッドは
+     `unknown_starttag('a', [('href', 'http://www.cwi.nl/')])'
+     として呼び出されます。基底クラスの実装では、単に METHOD
+     を単一の引数 ATTRIBUTES と共に呼び出します。
+
+`handle_endtag(tag, method)'
+     このメソッドは `end_TAG()' メソッドの定義されている
+     終了タグを処理するために呼び出されます。 TAG
+     引数はタグの名前で、小文字に変換されており、 METHOD
+     引数は終了タグの意味解釈をサポートするために使われる
+     バインドされたメソッドです。`end_TAG()' メソッドが
+     終了エレメントとして定義されていない場合、ハンドラは一切呼び出され
+     ません。基底クラスの実装では単に METHOD を呼び出します。
+
+`handle_data(data)'
+     このメソッドは何らかのデータを処理するために呼び出されます。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+`handle_charref(ref)'
+     このメソッドは `&#REF;' 形式の文字参照 (character reference)
+     を処理するために呼び出されます。 基底クラスの実装では、REF は
+     0-255 の範囲の 10 進数で なければなりません。このメソッドは文字を
+     ASCII に 変換し、 その文字を引数として `handle_data()' を
+     呼び出します。REF が無効な値か、範囲を超えた値である
+     場合、エラーを処理するために `unknown_charref(REF)'
+     が呼び出されます。
+     名前づけされた文字エンティティをサポートするためには
+     このメソッドをサブクラスで上書きしなければなりません。
+
+`handle_entityref(ref)'
+     このメソッドは REF を一般エンティティ参照として、 `&REF;'
+     形式のエンティティ参照を処理するために 呼び出されます。
+
+     このメソッドは、エンティティ名を対応する変換文字に対応付けている
+     インスタンス (またはクラス) 変数である `entitydefs' 中で REF
+     を探します。変換が見つかった場合、変換された文字を 引数にして
+     `handle_data()' を呼び出します; そうでない場合、
+     `unknown_entityref(REF)' を呼び出します。 標準では `entitydefs' は
+     `&amp;'、 `&apos'、 `&gt;'、 `&lt;'、および `&quot;'
+     の変換を定義しています。
+
+`handle_comment(comment)'
+     このメソッドはコメントに遭遇した場合に呼び出されます。COMMENT
+     引数は文字列で、`<!--' and `-->' デリミタ間の、
+     デリミタ自体を除いたテキストが収められています。例えば、コメント
+     `<!--text-->' があると、このメソッドは引数 `'text''
+     で呼び出されます。基底クラスの実装では何も行いません。
+
+`handle_decl(data)'
+     パーザが SGML 宣言を読み出した際に呼び出されるメソッドです。
+     実際には、`DOCTYPE' は HTML だけに見られる宣言ですが、
+     パーザは宣言間の相違 (や誤った宣言) を判別しません。`DOCTYPE'
+     の内部サブセット宣言はサポートされていません。 DECL パラメタは
+     `<!'...`>' 記述内の宣言内容
+     全体になります。基底クラスの実装では何も行いません。
+
+`report_unbalanced(tag)'
+     個のメソッドは対応する開始エレメントのない終了タグが発見された
+     時に呼び出されます。
+
+`unknown_starttag(tag, attributes)'
+     未知の開始タグを処理するために呼び出されるメソッドです。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+`unknown_endtag(tag)'
+     This method is called to process an unknown end tag.
+     未知の終了タグを処理するために呼び出されるメソッドです。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+`unknown_charref(ref)'
+     このメソッドは解決不能な文字参照数値を処理するために呼び出され
+     ます。標準で何が処理可能かは `handle_charref()' を参照
+     してください。 導出クラスで上書きするためのメソッドです;
+     基底クラスの実装では 何も行いません。
+
+`unknown_entityref(ref)'
+     未知のエンティティ参照を処理するために呼び出されるメソッドです。
+     導出クラスで上書きするためのメソッドです; 基底クラスの実装では
+     何も行いません。
+
+上に挙げたメソッドを上書きしたり拡張したりするのとは別に、導出
+クラスでは以下の形式のメソッドを定義して、特定のタグを処理する
+こともできます。入力ストリーム中のタグ名は大小文字の区別に依存
+しません; メソッド名中の TAG は小文字でなければなりません:
+
+`start_TAG(attributes)'
+     このメソッドは開始タグ TAG を処理するために呼び出されます。
+     `do_TAG()' よりも高い優先順位があります。 ATTRIBUTES 引数は上の
+     `handle_starttag()' で記述されて いるのと同じ意味です。
+
+`do_TAG(attributes)'
+     このメソッドは対応する終了タグのない開始タグ TAG
+     を処理するために呼び出されます。ATTRIBUTES 引数は 上の
+     `handle_starttag()' で記述されているのと同じ 意味です。
+
+`end_TAG()'
+     このメソッドは終了タグ TAG を処理するために呼び出されます。
+
+パーザは開始されたエレメントのうち、終了タグがまだ見つかっていない
+もののスタックを維持しているので注意してください。 `start_TAG()'
+で処理されたタグだけがスタックにプッシュ されます。are pushed on this
+stack.  Definition of an それらのタグに対する `end_TAG()'
+メソッドの定義は オプションです。`do_TAG()' や `unknown_tag()'
+で処理されるタグについては、`end_TAG()' を定義しては いけません;
+定義されていても使われることはありません。 あるタグに対して `start_TAG'
+および `do_TAG()' メソッドの両方が存在する場合、`start_TAG()'
+が優先されます。
+
+
+File: python-lib-jp.info,  Node: htmllib,  Next: htmlentitydefs,  Prev: sgmllib,  Up: 構造化マークアップツール
+
+HTML 文書の解析器
+=================
+
+HTML 文書の解析器。
+
+このモジュールでは、ハイパーテキスト記述言語 (HTML, HyperText Mark-up
+Language) 形式で書式化されたテキストファイルを解析するための基盤として
+役立つクラスを定義しています。このクラスは I/O と直接的には接続
+されません -- このクラスにはメソッドを介して文字列形式の入力を
+提供する必要があり、出力を生成するには "フォーマッタ (formatter)"
+オブジェクトのメソッドを何度か呼び出さなくてはなりません。
+
+`HTMLParser' クラスは、機能を追加するために他のクラスの基底クラス
+として利用するように設計されており、ほとんどのメソッドが拡張したり
+上書きしたりできるようになっています。 さらにこのクラスは `sgmllib'
+モジュール で定義されている `SGMLParser'
+クラスから導出されており、その機能 を拡張しています。`HTMLParser'
+の実装は、RFC 1866
+
+で解説されている HTML 2.0 記述言語をサポートします。 `formatter'  では
+2 つのフォーマッタ オブジェクト実装が提供されています;
+フォーマッタのインタフェースに ついての情報は `formatter'
+モジュールのドキュメントを参照 してください。
+
+以下は `sgmllib.SGMLParser' で定義されているインタフェースの 概要です:
+
+   * インスタンスにデータを与えるためのインタフェースは `feed()'
+     メソッドで、このメソッドは文字列を引数に取ります。
+     このメソッドに一度に与えるテキストは必要に応じて多くも少なくも
+     できます; というのは `p.feed(a);p.feed(b)' は `p.feed(a+b)'
+     と同じ効果を持つからです。 与えられたデータが完全な HTML
+     タグ群を含む場合、それらのタグは 即座に処理されます;
+     不完全な要素はバッファに保存されます。
+     全ての未処理データを強制的に処理させるには、 `close()'
+     メソッドを呼び出します。
+
+     例えば、ファイルの全内容を解析するには:
+          parser.feed(open('myfile.html').read())
+          parser.close()
+
+     のようにします。
+
+   * HTML タグに対して意味付けを定義するためのインタフェースはとても
+     単純です: サブクラスを導出して、`start_TAG()'、
+     `end_TAG()'、あるいは `do_TAG()'
+     といったメソッドを定義するだけです。
+     パーザはこれらのメソッドを適切なタイミングで呼び出します:
+     `start_TAG' や `do_TAG()' は `<TAG ...>'
+     の形式の開始タグに遭遇した時に呼び出されます; `end_TAG()' は
+     `<TAG>' の形式の終了タグに 遭遇した時に呼び出されます。`<H1>' ...
+     `</H1>' のように
+     開始タグが終了タグと対応している必要がある場合、クラス中で
+     `start_TAG()' が定義されていなければなりません; `<P>'
+     のように終了タグが必要ない場合、クラス中では `do_TAG()'
+     を定義しなければなりません。
+
+
+このモジュールではクラスを一つだけ定義しています:
+
+`HTMLParser(formatter)'
+     基底となる HTML パーザクラスです。HTML 2.0 仕様 (RFC 1866 ) が要求
+     している全てのエンティティ名をサポートしています。このクラスでは
+     また、 HTML 2.0 の全てのタグ要素と HTML 3.0 および 3.2 の多くの
+     タグ要素に対するハンドラを定義しています。
+
+See also:
+     *Note formatter:: 抽象化された書式イベントの流れを writer
+     オブジェクト上の特定の出力イベントに変換するための
+     インターフェース。 *Note HTMLParser:: HTML
+     パーザのひとつです。やや低いレベル でしか入力を扱えませんが、XHTML
+     を扱うことができるように設計 されています。"広く知られている HTML
+     (HTML as deployed)" では 使われておらずかつ XHTML
+     では正しくないとされる SGML 構文のいくつか は実装されていません。
+     *Note htmlentitydefs:: HTML 2.0 エンティティに対する置換
+     テキストの定義。 *Note sgmllib:: `HTMLParser' の基底クラス。
+
+* Menu:
+
+* HTMLParser オブジェクト::
+
+
+File: python-lib-jp.info,  Node: HTMLParser オブジェクト,  Prev: htmllib,  Up: htmllib
+
+HTMLParser オブジェクト
+-----------------------
+
+タグメソッドに加えて、`HTMLParser' クラスではタグメソッド
+で利用するためのいくつかのメソッドとインスタンス変数を提供しています。
+
+`formatter'
+     パーザに関連付けられているフォーマッタインスタンスです。
+
+`nofill'
+     ブール値のフラグで、空白文字を縮約したくないときには真、縮約するときには
+     偽にします。一般的には、この値を真にするのは、`<PRE>' 要素の
+     中のテキストのように、文字列データが "書式化済みの (preformatted)"
+     場合だけです。標準の値は偽です。この値は `handle_data()' および
+     `save_end()' の操作に影響します。
+
+`anchor_bgn(href, name, type)'
+     このメソッドはアンカー領域の先頭で呼び出されます。引数は `<A>'
+     タグの属性で同じ名前を持つものに対応します。
+     標準の実装では、ドキュメント内のハイパーリンク (`<A>' タグの
+     `HREF' 属性) を列挙したリスト
+     を維持しています。ハイパーリンクのリストはデータ属性 `anchorlist'
+     で手に入れることができます。
+
+`anchor_end()'
+     このメソッドはアンカー領域の末尾で呼び出されます。標準の
+     実装では、テキストの注釈マーカを追加します。マーカは
+     `anchor_bgn()' で作られたハイパーリンクリストの インデクス値です。
+
+`handle_image(source, alt[, ismap[, align[, width[, height]]]])'
+     このメソッドは画像を扱うために呼び出されます。標準の実装では、
+     単に `handle_data()' に ALT の値を渡すだけです。
+
+`save_bgn()'
+     文字列データをフォーマッタオブジェクトに送らずにバッファに保存
+     する操作を開始します。保存されたデータは `save_end()'
+     で取得してください。 `save_bgn()' / `save_end()'
+     のペアを入れ子構造にすることはできません。
+
+`save_end()'
+     文字列データのバッファリングを終了し、以前 `save_bgn()'
+     を呼び出した時点から保存されている全てのデータを返します。
+     `nofill' フラグが偽の場合、空白文字は全てスペース文字
+     一文字に置き換えられます。予め `save_bgn()' を呼ばないで
+     このメソッドを呼び出すと `TypeError' 例外が送出されます。
+
+
+File: python-lib-jp.info,  Node: htmlentitydefs,  Next: xmlparsersexpat,  Prev: htmllib,  Up: 構造化マークアップツール
+
+HTML 一般エンティティの定義
+===========================
+
+HTML 一般エンティティの定義。
+
+このモジュールでは`entitydefs'、`codepoint2name'、`entitydefs'
+の三つの辞書を定義しています。 `entitydefs'は`htmllib' モジュールで
+`HTMLParser' クラスの `entitydefs' メンバを定義するために使われます。
+このモジュールでは XHTML 1.0
+で定義された全てのエンティティを提供しており、 Latin-1 キャラクタセット
+(ISO-8859-1)の簡単なテキスト置換を行う事ができます。
+
+`entitydefs'
+     各 XHTML 1.0 エンティティ定義について、ISO Latin-1 における置換
+     テキストへの対応付けを行っている辞書です。
+
+`name2codepoint'
+     HTMLのエンティティ名をUnicodeのコードポイントに変換するための辞書です。
+     _Added in Python version 2.3_
+
+`codepoint2name'
+     A dictionary that maps Unicode codepoints to HTML entity names.
+     UnicodeのコードポイントをHTMLのエンティティ名に変換するための辞書です。
+     _Added in Python version 2.3_
+
+
+File: python-lib-jp.info,  Node: xmlparsersexpat,  Next: xmldom,  Prev: htmlentitydefs,  Up: 構造化マークアップツール
+
+Expat を使った高速な XML 解析
+=============================
+
+Expat による、検証を行わない XML パーザへのインタフェース
+
+_Added in Python version 2.0_
+
+`xml.parsers.expat' モジュールは、検証 (validation) を 行わない XML
+パーザ (parser, 解析器)、Expat  への Python インタフェースです。
+モジュールは一つの拡張型 `xmlparser' を提供します。これは
+XMLパーザの現在の状況を表します。一旦 `xmlparser' オブジェクトを
+生成すると、オブジェクトの様々な属性をハンドラ関数 (handler function)
+に設定できます。 その後、XML 文書をパーザに入力すると、
+XML文書の文字列とマークアップ に応じてハンドラ関数が呼び出されます。
+
+このモジュールでは、Expatパーザへのアクセスを提供するために `pyexpat'
+モジュールを使用します。
+`pyexpat'モジュールの直接使用は撤廃されています。
+
+このモジュールは、例外を一つと型オブジェクトを一つ提供しています。
+
+`ExpatError'
+     Expat がエラーを報告したときに例外を送出します。Expatのエラーを
+     解釈する上での詳細な情報は、 *Note ExpatError 例外:: の
+     "ExpatError Exceptions," を参照してください。
+
+`error'
+     `ExpatError'への別名です。
+
+`XMLParserType'
+     `ParserCreate()' 関数から返された戻り値の型を示します。
+
+`xml.parsers.expat' モジュールには以下の 2 つの関数が収められて います:
+
+`ErrorString(errno)'
+     与えられたエラー番号 ERRNO を解説する文字列を返します。
+
+`ParserCreate([encoding[, namespace_separator]])'
+     新しい `xmlparser' オブジェクトを作成し、返します。 ENCODING
+     が指定されていた場合、XMLデータで使われている
+     文字列のエンコード名でなければなりません。Expatは、Pythonのように多くの
+     エンコードをサポートしておらず、またエンコーディングのレパートリを
+     拡張することはできません; サポートするエンコードは、UTF-8, UTF-16,
+     ISO-8859-1 (Latin1), ASCII です。ENCODINGが
+     指定されると、文書に対する明示的、非明示的なエンコード指定を
+     上書き (override) します。
+
+     Expat はオプションで XML 名前空間の処理を行うことができます。
+     これは引数  NAMESPACE_SEPARATOR に値を指定することで
+     有効になります。 この値は、1文字の文字列でなければなりません;
+     文字列が誤った長さ を持つ場合には `ValueError' が送出されます
+     (`None' は 値の省略と見なされます)
+     名前空間の処理が可能なとき、名前空間に属する
+     要素と属性が展開されます。要素のハンドラである
+     `StartElementHandler' と `EndElementHandler' に渡された
+     要素名は、名前空間のURI、名前空間の区切り文字、要素名のローカル部を
+     連結したものになります。名前空間の区切り文字が 0 バイト (`chr(0)')
+     の場合、名前空間の URI とローカル部は区切り文字なしで
+     連結されます。
+
+     たとえば、 NAMESPACE_SEPARATOR に空白文字(` ')がセットされ、
+     次のような文書が解析されるとします。
+
+          <?xml version="1.0"?>
+          <root xmlns    = "http://default-namespace.org/"
+                xmlns:py = "http://www.python.org/ns/">
+            <py:elem1 />
+            <elem2 xmlns="" />
+          </root>
+
+     `StartElementHandler'
+     は各要素ごとに次のような文字列を受け取ります。
+
+          http://default-namespace.org/ root
+          http://www.python.org/ns/ elem1
+          elem2
+
+
+See also:
+     `The Expat XML Parser' {Expatプロジェクトのホームページ}
+
+* Menu:
+
+* XMLParser Objects::
+* ExpatError 例外::
+* 例 14::
+* 内容モデルの記述::
+* Expat エラー定数::
+
+
+File: python-lib-jp.info,  Node: XMLParser Objects,  Next: ExpatError 例外,  Prev: xmlparsersexpat,  Up: xmlparsersexpat
+
+XMLParser Objects
+-----------------
+
+`xmlparser' オブジェクトは以下のようなメソッドを持ちます。
+
+`Parse(data[, isfinal])'
+     文字列 DATA の内容を解析し、解析されたデータを処理するための
+     適切な関数を呼び出します。このメソッドを最後に呼び出す時は ISFINAL
+     を真にしなければなりません。 DATA
+     は空の文字列を取ることもできます。
+
+`ParseFile(file)'
+     FILE オブジェクトから読み込んだXMLデータを解析します。 FILE には
+     `read(NBYTES)' メソッドのみが必要です。
+     このメソッドはデータなくなった場合に空文字列を返さねばなりません。。
+
+`SetBase(base)'
+     (XML) 宣言中のシステム識別子中の相対 URI を解決するための、 基底
+     URI を設定します。相対識別子の解決はアプリケーションに 任されます:
+     この値は関数 `ExternalEntityRefHandler' や
+     `NotationDeclHandler'、`UnparsedEntityDeclHandler' に引数 BASE
+     としてそのまま渡されます。
+
+`GetBase()'
+     以前の `SetBase()' によって設定された基底 URI を文字列の形で
+     返します。`SetBase()'が呼ばれていないときには `None' を 返します。
+
+`GetInputContext()'
+     現在のイベントを発生させた入力データを文字列として返します。
+     データはテキストの入っているエンティティが持っているエンコードに
+     なります。
+     イベントハンドラがアクティブでないときに呼ばれると、戻り値は
+     `None'となります。 _Added in Python version 2.1_
+
+`ExternalEntityParserCreate(context[, encoding])'
+     親となるパーザで解析された内容が参照している、外部で解析される
+     エンティティを解析するために使える "子の" パーザを作成します。
+     CONTEXT パラメータは、以下に記すように `ExternalEntityRefHandler()'
+     ハンドラ関数に渡される文字列でなければなりません。子のパーザは
+     `ordered_attributes'、`returns_unicode'、 `specified_attributes'
+     が現在のパーザの値に設定されて 生成されます。
+
+`xmlparser' オブジェクトは次のような属性を持ちます:
+
+`buffer_size'
+     `buffer_text' が真の時に使われるバッファのサイズです。
+     この値は変更できません。 _Added in Python version 2.3_
+
+`buffer_text'
+     この値を真にすると、`xmlparser' オブジェクトが Expatから返された
+     もとの内容をバッファに保持するようになります。これにより可能なときに
+     何度も `CharacterDataHandler()' を呼び出してしまうようなことを
+     避けることができます。Expatは通常、文字列のデータを行末ごと大量に破棄
+     するため、かなりパフォーマンスを改善できるはずです。この属性はデフォルト
+     では偽で、いつでも変更可能です。 _Added in Python version 2.3_
+
+`buffer_used'
+     `buffer_text' が利用可能なとき、バッファに保持されたバイト数です。
+     これらのバイトはUTF-8でエンコードされたテキストを表します。この属性は
+     `buffer_text' が偽の時には意味がありません。 _Added in Python
+     version 2.3_
+
+`ordered_attributes'
+     この属性をゼロ以外の整数にすると、報告される(XMLノードの) 属性を
+     辞書型ではなくリスト型にします。属性は文書のテキスト中の出現順で示されます。
+     それぞれの属性は、2つのリストのエントリ:
+     属性名とその値、が与えられます。
+     (このモジュールの古いバージョンでも、同じフォーマットが使われています。)
+     デフォルトでは、この属性はデフォルトでは偽となりますが、
+     いつでも変更可能です。 _Added in Python version 2.1_
+
+`returns_unicode'
+     この属性をゼロ以外の整数にすると、ハンドラ関数に Unicode 文字列が
+     渡されます。 `returns_unicode' が 0 の時には、UTF-8でエンコード
+     されたデータを含む 8 ビット文字列がハンドラに渡されます。 _Changed
+     in Python version 1.6_
+
+`specified_attributes'
+     ゼロ以外の整数にすると、パーザは文書のインスタンスで特定される
+     属性だけを報告し、属性宣言から導出された属性は報告しないようになります。
+     この属性が指定されたアプリケーションでは、XMLプロセッサの振る舞いに
+     関する標準に従うために必要とされる (文書型)
+     宣言によって、どのような
+     付加情報が利用できるのかということについて特に注意を払わなければなりません。
+     デフォルトで、この属性は偽となりますが、いつでも変更可能です。
+     _Added in Python version 2.1_
+
+以下の属性には、 `xmlparser' オブジェクトで最も最近に起きた
+エラーに関する値が入っており、また `Parse()' または
+`ParseFile()'メソッドが `xml.parsers.expat.ExpatError'
+例外を送出した際にのみ正しい値となります。
+
+`ErrorByteIndex'
+     エラーが発生したバイトのインデクスです。
+
+`ErrorCode'
+     エラーを特定する数値によるコードです。この値は`ErrorString()' に
+     渡したり、 `errors' オブジェクトで定義された内容と比較できます。
+
+`ErrorColumnNumber'
+     エラーの発生したカラム番号です。
+
+`ErrorLineNumber'
+     エラーの発生した行番号です。
+
+以下に指定可能なハンドラのリストを示します。 `xmlparser' オブジェクト O
+に ハンドラを指定するには、`O.HANDLERNAME = FUNC' を使用します。
+HANDLERNAME は、以下のリストに挙げた値をとらねば ならず、また FUNC
+は正しい数の引数を受理する呼び出し可能な
+オブジェクトでなければなりません。引数は特に明記しない限り、すべて
+文字列となります。
+
+`XmlDeclHandler(version, encoding, standalone)'
+     XML 宣言が解析された時に呼ばれます。XML宣言とは、XML勧告の適用
+     バージョン
+     (オプション)、文書テキストのエンコード、そしてオプションの
+     "スタンドアロン" の宣言です。 VERSION と ENCODING は
+     `returns_unicode' 属性によって指示された型を示す文字列となり、
+     STANDALONE は、文書がスタンドアロンであると宣言される場合には
+     `1'に、文書がスタンドアロンでない場合には `0' に、
+     スタンドアロン宣言を省略する場合には `-1' になります。
+     このハンドラは Expat のバージョン1.95.0以降のみ使用できます。
+     _Added in Python version 2.1_
+
+`StartDoctypeDeclHandler(doctypeName, systemId, publicId, has_internal_subset)'
+     Expatが文書型宣言`<!DOCTYPE ...')を解析し始めたときに
+     呼び出されます。DOCTYPENAME は、与えられた値がそのまま Expat
+     に提供されます。SYSTEMID と PUBLICID パラメタが
+     指定されている場合、それぞれシステムと公開識別子を与えます。
+     省略する時には`None' にします。文書が内部的な文書宣言のサブセット
+     (internal document declaration subset) を持つか、サブセット自体の
+     場合、HAS_INTERNAL_SUBSET は true になります。
+     このハンドラには、Expat version 1.2以上が必要です。
+
+`EndDoctypeDeclHandler()'
+     Expatが文書型宣言の解析を終えたときに呼び出されます。
+     このハンドラには、Expat version 1.2以上が必要です。
+
+`ElementDeclHandler(name, model)'
+     それぞれの要素型宣言ごとに呼び出されます。NAMEは要素型の名前であり、
+     MODEL は内容モデル (content model) の表現です。
+
+`AttlistDeclHandler(elname, attname, type, default, required)'
+     ひとつの要素型で宣言される属性ごとに呼び出されます。属性リストの宣言が
+     3つの属性を宣言したとすると、このハンドラはひとつの属性に1度づつ、
+     3度呼び出されます。 ELNAME
+     は要素名であり、これに対して宣言が適用され、ATTNAMEが
+     宣言された属性名となります。 属性型は文字列で、TYPE として渡され
+     ます; 取りえる値は、`'CDATA'', `'ID'',`'IDREF'', ...  です。
+     DEFAULTは、属性が文書のインスタンスによって指定されていないときに
+     使用されるデフォルト値を与えます。デフォルト値(`#IMPLIED' values)が
+     存在しないときには`None'を与えます。文書のインスタンスによって属性値が
+     与えられる必要のあるときにはREQUIREDがtrueになります。
+     このメソッドはExpat version 1.95.0 以上が必要です。
+
+`StartElementHandler(name, attributes)'
+     要素の開始を処理するごとに呼び出されます。NAME は要素名を格納した
+     文字列で、ATTRIBUTES はその値に属性名を対応付ける辞書型です。
+
+`EndElementHandler(name)'
+     要素の終端を処理するごとに呼び出されます。
+
+`ProcessingInstructionHandler(target, data)'
+     Called for every processing instruction.
+     処理命令を処理するごとに呼び出されます。
+
+`CharacterDataHandler(data)'
+     文字データを処理するときに呼びだされます。このハンドラは通常の文字データ、
+     CDATAセクション、無視できる空白文字列のために呼び出されます。
+     これらを識別しなければならないアプリケーションは、要求された情報を
+     収集するために `StartCdataSectionHandler',
+     `EndCdataSectionHandler', and
+     `ElementDeclHandler'コールバックメソッドを使用できます。
+
+`UnparsedEntityDeclHandler(entityName, base, systemId, publicId, notationName)'
+     解析されていない (NDATA)
+     エンティティ宣言を処理するために呼び出されます。 このハンドラは
+     Expat ライブラリのバージョン1.2のためだけに存在します;
+     より最近のバージョンでは、
+     代わりに`EntityDeclHandler'を使用してください (根底にある Expat
+     ライブラリ内の関数は、撤廃されたものであると宣言されています)。
+
+`EntityDeclHandler(entityName, is_parameter_entity, value, base, systemId, publicId, notationName)'
+     エンティティ宣言ごとに呼び出されます。パラメタと内部エンティティに
+     ついて、VALUE はエンティティ宣言の宣言済みの内容を与える文字列
+     となります; 外部エンティティの時には`None' となります。解析済み
+     エンティティの場合、NOTATIONNAME パラメタは `None' となり、
+     解析されていないエンティティの時には記法 (notation) 名となります。
+     IS_PARAMETER_ENTITY は、エンティティがパラメタエンティティの
+     場合真に、一般エンティティ (general entitiy) の場合には偽になります
+     (ほとんどのアプリケーションでは、一般エンティティのことしか気に
+     する必要がありません)。 このハンドラは Expat
+     ライブラリのバージョン1.95.0 以降でのみ使用できます。 _Added in
+     Python version 2.1_
+
+`NotationDeclHandler(notationName, base, systemId, publicId)'
+     記法の宣言 (notation declaration) で呼び出されます。 NOTATIONNAME,
+     BASE, SYSTEMID, および PUBLICID
+     を与える場合、文字列にします。public な識別子が省略された場合、
+     PUBLICID は `None' になります。
+
+`StartNamespaceDeclHandler(prefix, uri)'
+     要素が名前空間宣言を含んでいる場合に呼び出されます。名前空間宣言は、
+     宣言が配置されている要素に対して `StartElementHandler' が
+     呼び出される前に処理されます。
+
+`EndNamespaceDeclHandler(prefix)'
+     名前空間宣言を含んでいたエレメントの終了タグに到達したときに
+     呼び出されます。このハンドラは、要素に関する名前空間宣言ごとに、
+     `StartNamespaceDeclHandler' とは逆の順番で一度だけ呼び
+     出され、各名前空間宣言のスコープが開始されたことを示します。
+     このハンドラは、要素が終了する際、対応する `EndElementHandler'
+     が呼ばれた後に呼び出されます。
+
+`CommentHandler(data)'
+     コメントで呼び出されます。DATA はコメントのテキストで、 先頭の
+     ``<!-'`-'' と末尾の ``-'`->'' を除きます。
+
+`StartCdataSectionHandler()'
+     CDATA セクションの開始時に呼び出されます。CDATA セクションの
+     構文的な開始と終了位置を識別できるようにするには、このハンドラと
+     `StartCdataSectionHandler' が必要です。
+
+`EndCdataSectionHandler()'
+     CDATA セクションの終了時に呼び出されます。
+
+`DefaultHandler(data)'
+     XML 文書中で、適用可能なハンドラが指定されていない
+     文字すべてに対して呼び出されます。この文字とは、検出されたことが
+     報告されるが、ハンドラは指定されていないような コンストラクト
+     (construct) の一部である文字を意味します。
+
+`DefaultHandlerExpand(data)'
+     `DefaultHandler' と同じですが、内部エンティティの
+     展開を禁止しません。エンティティ参照はデフォルトハンドラに
+     渡されません。
+
+`NotStandaloneHandler()'
+     XML
+     文書がスタンドアロンの文書として宣言されていない場合に呼び出されます。
+     外部サブセットやパラメタエンティティへの参照が存在するが、XML
+     宣言が XML 宣言中で standalone 変数を `yes' に設定していない場合に
+     起きます。このハンドラが `0' を返すと、パーザは
+     `XML_ERROR_NOT_STANDALONE' を送出します。
+     このハンドラが設定されていなければ、パーザは前述の事態で
+     例外を送出しません。
+
+`ExternalEntityRefHandler(context, base, systemId, publicId)'
+     外部エンティティの参照時に呼び出されます。BASE は現在の基底 (base)
+     で、以前の `SetBase()' で設定された値になっています。
+     public、および system の識別子である、SYSTEMID とPUBLICID
+     が指定されている場合、値は文字列です; public
+     識別子が指定されていない 場合、 PUBLICID は `None' になります。
+     CONTEXT の値は不明瞭なものであり、以下に記述するようにしか
+     使ってはなりません。
+
+     外部エンティティが解析されるようにするには、このハンドラを実装
+     しなければなりません。このハンドラは、
+     `ExternalEntityParserCreate(CONTEXT)' を使って
+     適切なコールバックを指定し、子パーザを生成して、
+     エンティティを解析する役割を担います。このハンドラは整数を
+     返さねばなりません;  `0' を返した場合、パーザは
+     `XML_ERROR_EXTERNAL_ENTITY_HANDLING' エラーを送出します。
+     そうでないばあい、解析を継続します。
+
+     このハンドラが与えられておらず、 `DefaultHandler'
+     コールバックが指定されていれば、
+     外部エンティティは`DefaultHandler' で報告されます。
+
+
+File: python-lib-jp.info,  Node: ExpatError 例外,  Next: 例 14,  Prev: XMLParser Objects,  Up: xmlparsersexpat
+
+ExpatError 例外
+---------------
+
+`ExpatError' 例外はいくつかの興味深い属性を備えています:
+
+`code'
+     特定のエラーにおける Expat の内部エラー番号です。この値は
+     このモジュールの`errors' オブジェクトで定義されている
+     定数のいずれかに一致します。 _Added in Python version 2.1_
+
+`lineno'
+     エラーが検出された場所の行番号です。最初の行の番号は `1' です。
+     _Added in Python version 2.1_
+
+`offset'
+     エラーが発生した場所の行内でのオフセットです。最初のカラムの番号は
+     `0' です。 _Added in Python version 2.1_
+
+
+File: python-lib-jp.info,  Node: 例 14,  Next: 内容モデルの記述,  Prev: ExpatError 例外,  Up: xmlparsersexpat
+
+例
+--
+
+以下のプログラムでは、与えられた引数を出力するだけの三つのハンドラを
+定義しています。
+
+     import xml.parsers.expat
+     
+     # 3 handler functions
+     def start_element(name, attrs):
+         print 'Start element:', name, attrs
+     def end_element(name):
+         print 'End element:', name
+     def char_data(data):
+         print 'Character data:', repr(data)
+     
+     p = xml.parsers.expat.ParserCreate()
+     
+     p.StartElementHandler = start_element
+     p.EndElementHandler = end_element
+     p.CharacterDataHandler = char_data
+     
+     p.Parse("""<?xml version="1.0"?>
+     <parent id="top"><child1 name="paul">Text goes here</child1>
+     <child2 name="fred">More text</child2>
+     </parent>""")
+
+このプログラムの出力は以下のようになります:
+
+     Start element: parent {'id': 'top'}
+     Start element: child1 {'name': 'paul'}
+     Character data: 'Text goes here'
+     End element: child1
+     Character data: '\n'
+     Start element: child2 {'name': 'fred'}
+     Character data: 'More text'
+     End element: child2
+     Character data: '\n'
+     End element: parent
+
+
+File: python-lib-jp.info,  Node: 内容モデルの記述,  Next: Expat エラー定数,  Prev: 例 14,  Up: xmlparsersexpat
+
+内容モデルの記述
+----------------
+
+内容モデルは入れ子になったタプルを使って記述されています。 各タプルには
+4 つの値: 型、限定詞 (quantifier)、名前、そして子の
+タプル、が収められています。子のタプルは単に内容モデルを
+記述したものです。
+
+最初の二つのフィールドの値は `xml.parsers.expat' モジュールの `model'
+オブジェクトで定義されている定数です。これらの定数は 二つのグループ:
+モデル型 (model type) グループと限定子 (quantifier)
+グループ、に取りまとめられます。
+
+以下にモデル型グループにおける定数を示します:
+
+`XML_CTYPE_ANY'
+     モデル名で指定された要素は `ANY' の内容モデルを持つと
+     宣言されます。
+
+`XML_CTYPE_CHOICE'
+     指定されたエレメントはいくつかのオプションから選択できるようになって
+     います; `(A | B | C)' のような内容モデルで用いられます。
+
+`XML_CTYPE_EMPTY'
+     `EMPTY' であると宣言されている要素はこのモデル型を持ちます。
+
+`XML_CTYPE_MIXED'
+
+`XML_CTYPE_NAME'
+
+`XML_CTYPE_SEQ'
+     順々に続くようなモデルの系列を表すモデルがこのモデル型で表されます。
+     `(A, B, C)' のようなモデルで用いられます。
+
+限定子グループにおける定数を以下に示します:
+
+`XML_CQUANT_NONE'
+     修飾子 (modifier) が指定されていません。従って `A' のように、
+     厳密に一つだけです。
+
+`XML_CQUANT_OPT'
+     このモデルはオプションです: `A?' のように、一つか全くないかです。
+
+`XML_CQUANT_PLUS'
+     このモデルは (`A+' のように) 一つかそれ以上あります。
+
+`XML_CQUANT_REP'
+     このモデルは `A*' のようにゼロ回以上あります。
+
+
+File: python-lib-jp.info,  Node: Expat エラー定数,  Prev: 内容モデルの記述,  Up: xmlparsersexpat
+
+Expat エラー定数
+----------------
+
+以下の定数は `xml.parsers.expat' モジュールにおける `errors'
+オブジェクトで提供されています。これらの定数は、
+エラーが発生した際に送出される `ExpatError'
+例外オブジェクトのいくつかの属性を解釈する上で便利です。
+
+`errors' オブジェクトは以下の属性を持ちます:
+
+`XML_ERROR_ASYNC_ENTITY'
+
+`XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF'
+     属性値中のエンティティ参照が、内部エンティティではなく外部エンティティ
+     を参照しました。
+
+`XML_ERROR_BAD_CHAR_REF'
+     文字参照が、XML では正しくない (illegal) 文字を参照しました
+     (例えば `0' や ``&#0;'')。
+
+`XML_ERROR_BINARY_ENTITY_REF'
+     エンティティ参照が、記法 (notation) つきで宣言されている
+     エンティティを参照したため、解析できません。
+
+`XML_ERROR_DUPLICATE_ATTRIBUTE'
+     一つの属性が一つの開始タグ内に一度より多く使われています。
+
+`XML_ERROR_INCORRECT_ENCODING'
+
+`XML_ERROR_INVALID_TOKEN'
+     入力されたバイトが文字に適切に関連付けできない際に送出されます;
+     例えば、UTF-8 入力ストリームにおける NUL バイト (値 `0') などです。
+
+`XML_ERROR_JUNK_AFTER_DOC_ELEMENT'
+     空白以外の何かがドキュメント要素の後にあります。
+
+`XML_ERROR_MISPLACED_XML_PI'
+     入力データの先頭以外の場所に XML 定義が見つかりました。
+
+`XML_ERROR_NO_ELEMENTS'
+     このドキュメントには要素が入っていません (XML
+     では全てのドキュメントは
+     確実にトップレベルの要素を一つ持つよう要求しています)。
+
+`XML_ERROR_NO_MEMORY'
+     Expat が内部メモリを確保できませんでした。
+
+`XML_ERROR_PARAM_ENTITY_REF'
+     パラメタエンティティが許可されていない場所で見つかりました。
+
+`XML_ERROR_PARTIAL_CHAR'
+
+`XML_ERROR_RECURSIVE_ENTITY_REF'
+     エンティティ参照中に、同じエンティティへの別の参照が入っていました;
+     おそらく違う名前で参照しているか、間接的に参照しています。
+
+`XML_ERROR_SYNTAX'
+     何らかの仕様化されていない構文エラーに遭遇しました。
+
+`XML_ERROR_TAG_MISMATCH'
+     終了タグが最も内側で開かれている開始タグに一致しません。
+
+`XML_ERROR_UNCLOSED_TOKEN'
+     何らかの (開始タグのような) トークン が閉じられないまま、
+     ストリームの終端や次のトークンに遭遇しました。
+
+`XML_ERROR_UNDEFINED_ENTITY'
+     定義されていないエンティティへの参照が行われました。
+
+`XML_ERROR_UNKNOWN_ENCODING'
+     ドキュメントのエンコードが Expat でサポートされていません。
+
+
+File: python-lib-jp.info,  Node: xmldom,  Next: xmldomminidom,  Prev: xmlparsersexpat,  Up: 構造化マークアップツール
+
+文書オブジェクトモデル (DOM) API
+================================
+
+Python のための文書オブジェクトモデル API。
+
+_Added in Python version 2.0_
+
+文書オブジェクトモデル、または "DOM" は、ワールドワイドウェブ
+コンソーシアム (World Wide Web Consortium, W3C) による、XML
+ドキュメントにアクセスしたり変更を加えたりするための、プログラミング
+言語間共通の API です。DOM 実装によって、XML ドキュメントは
+ツリー構造として表現されます。また、クライアントコード側で
+ツリー構造をゼロから構築できるようになります。さらに、
+前述の構造に対して、よく知られたインタフェースをもつ一連の
+オブジェクトを通したアクセス手段も提供します。
+
+DOM はランダムアクセスを行うアプリケーションで非常に有用です。 SAX
+では、一度に閲覧することができるのはドキュメントのほんの
+一部分です。ある SAX 要素に注目している際には、別の要素をアクセス
+することはできません。またテキストノードに注目しているときには、
+その中に入っている要素をアクセスすることができません。 SAX
+によるアプリケーションを書くときには、プログラムがドキュメント内の
+どこを処理しているのかを追跡するよう、コードのどこかに記述する
+必要があります。SAX 自体がその作業を行ってくれることはありません。
+さらに、XML ドキュメントに対する先読み (look ahead) が必要だと
+すると不運なことになります。
+
+アプリケーションによっては、ツリーにアクセスできなければ
+イベント駆動モデルを実現できません。もちろん、何らかのツリーを SAX
+イベントに応じて自分で構築することもできるでしょうが、 DOM
+ではそのようなコードを書かなくてもよくなります。 DOM は XML
+データに対する標準的なツリー表現なのです。
+
+文書オブジェクトモデルは、W3C によっていくつかの段階、W3C の用語で
+言えば "レベル (level)" で定義されています。 Python においては、 DOM
+API への対応付け は実質的には DOM レベル~2 勧告に基づいています。
+現在はドラフト形式でのみ入手できる レベル~3 仕様への対応付けは、 Python
+XML 分科会 (Special Interest Group) により、 PyXML パッケージ
+の一部として 開発中です。 DOM レベル~3
+サポートの現在の状態についての情報は、 PyXML
+パッケージに同梱されているドキュメントを参照してください。
+
+DOM アプリケーションは、普通は XML を DOM に解析するところから始まり
+ます。どのようにして解析を行うかについては DOM レベル~1 では全く
+カバーしておらず、レベル~2 では限定的な改良だけが行われました: レベル~2
+では`Document' を生成するメソッドを提供する `DOMImplementation'
+オブジェクトクラスがありますが、 実装に依存しない方法で XML
+リーダ(reader)/パーザ(parser)/文書ビルダ (Document builder)
+にアクセスする方法はありません。また、既存の `Document'
+オブジェクトなしにこれらのメソッドにアクセスする
+ような、よく定義された方法もありません。 Python では、各々の DOM 実装で
+`getDOMImplementation()' が定義されているはずです。 DOM レベル~3
+ではロード(Load)/ストア(Store) 仕様が追加され、リーダの
+インタフェースにを定義していますが、Python 標準ライブラリではまだ
+利用することができません。
+
+DOM 文書オブジェクトを生成したら、そのプロパティとメソッドを使って XML
+文書の一部にアクセスできます。これらのプロパティは DOM
+仕様で定義されています; 本リファレンスマニュアルでは、 Python において
+DOM 仕様がどのように解釈されているかを記述しています。
+
+W3C から提供されている仕様は、 DOM API を Java、ECMAScript、および OMG
+IDL で定義しています。ここで定義されている Python での対応づけは、
+大部分がこの仕様の IDL 版に基づいていますが、厳密な準拠は必要と
+されていません (実装で IDL の厳密な対応付けをサポートするのは自由
+ですが)。API への対応付けに関する詳細な議論は *Note 適合性:: 、
+"適合性" を参照してください。
+
+See also:
+     `Document Object Model (DOM) Level~2 Specification' {Python DOM
+     API が準拠している W3C 勧告。} `Document Object Model (DOM)
+     Level~1 Specification' {`xml.dom.minidom' でサポートされている W3C
+     の DOM に関する勧告。} `PyXML'{完全な機能をもった DOM
+     実装を必要とするユーザは PyXML パッケージを利用すべきです。}
+     `CORBA Scripting with Python' {このドキュメントでは OMG IDL から
+     Python への対応付けを 記述しています。}
+
+* Menu:
+
+* モジュールの内容 4::
+* DOM 内のオブジェクト::
+* 適合性::
+
+
+File: python-lib-jp.info,  Node: モジュールの内容 4,  Next: DOM 内のオブジェクト,  Prev: xmldom,  Up: xmldom
+
+モジュールの内容
+----------------
+
+`xml.dom' には、以下の関数が収められています:
+
+`registerDOMImplementation(name, factory)'
+     ファクトリ関数 (factory function) FACTORY を名前 NAME で
+     登録します。ファクトリ関数は `DOMImplementation' インタフェース
+     を実装するオブジェクトを返さなければなりません。ファクトリ関数は
+     毎回同じオブジェクトを返すこともでき、呼び出されるたびに、特定の実装
+     (例えば実装が何らかのカスタマイズをサポートしている場合) における、
+     適切な新たなオブジェクトを返すこともできます。
+
+`getDOMImplementation([name[, features]])'
+     適切な DOM 実装を返します NAME は、よく知られた DOM 実装の
+     モジュール名か、`None' になります。`None' でない場合、
+     対応するモジュールを import して、import が成功した場合
+     `DOMImplementation' オブジェクトを返します。NAME が与えられ
+     ておらず、環境変数 `PYTHON_DOM' が設定されていた場合、 DOM
+     実装を見つけるのに環境変数が使われます。
+
+     NAME が与えられない場合、 利用可能な実装を調べて、 指定された機能
+     (feature) セットを持つものを探します。 実装が見つからなければ
+     `ImportError' を送出します。 FEATURES のリストは `(FEATURE,
+     VERSION)' の ペアからなる配列で、利用可能な `DOMImplementation'
+     オブジェクト の `hasFeature()' メソッドに渡されます。
+
+いくつかの便利な定数も提供されています:
+
+`EMPTY_NAMESPACE'
+     DOM 内のノードに名前空間が何も関連づけられていないことを示すために
+     使われる値です。この値は通常、ノードの `namespaceURI' の値
+     として見つかったり、名前空間特有のメソッドに対する NAMESPACEURI
+     パラメタとして使われます。 _Added in Python version 2.2_
+
+`XML_NAMESPACE'
+     (4 節) で定義されている、予約済みプレフィクス (reserved prefix)
+     `xml' に関連付けられた名前空間 URI です。 _Added in Python version
+     2.2_
+
+`XMLNS_NAMESPACE'
+     (1.1.8 節) で定義されている、名前空間宣言への名前空間 URI です。
+     _Added in Python version 2.2_
+
+`XHTML_NAMESPACE'
+     (3.1.1 節) で定義されている、XHTML 名前空間 URI です。 _Added in
+     Python version 2.2_
+
+加えて、 `xml.dom' には基底となる `Node' クラスと DOM
+例外クラスが収められています。このモジュールで提供されている `Node'
+クラスは DOM 仕様で定義されているメソッドや属性は 何ら実装していません;
+これらは具体的な DOM 実装において提供
+しなければなりません。このモジュールの一部として提供されている `Node'
+クラスでは、具体的な `Node' オブジェクトの `nodeType'
+属性として使う定数を提供しています; これらの 定数は、DOM
+仕様に適合するため、クラスではなくモジュールのレベルに
+配置されています。
+

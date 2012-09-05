@@ -1,0 +1,1228 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: Itertool関数,  Next: 例 6,  Prev: itertools,  Up: itertools
+
+Itertool関数
+------------
+
+以下の関数は全て、イテレータを作成して返します。無限長のストリームのイテ
+レータを返す関数もあり、この場合にはストリームを中断するような関数かルー
+プ処理から使用しなければなりません。
+
+`chain(*iterables)'
+     先頭のiterableの全要素を返し、次に2番目のiterableの全要素…と全
+     iterableの要素を返すイテレータを作成します。連続したシーケンスを、一つ
+     のシーケンスとして扱う場合に使用します。この関数は以下のスクリプトと同
+     等です：
+
+               def chain(*iterables):
+                   for it in iterables:
+                       for element in it:
+                           yield element
+
+
+`count([n])'
+     Nで始まる、連続した整数を返すイテレータを作成します。N を
+     指定しなかった場合、デフォルト値はゼロです。現在、
+     Pythonの長整数はサポートしていません。`imap()'で連続したデー
+     タを生成する場合や`izip()'でシーケンスに番号を追加する場合な
+     どに引数として使用することができます。この関数は以下のスクリプトと同等
+     です：
+
+               def count(n=0):
+                   while True:
+                       yield n
+                       n += 1
+
+     `count()'はオーバーフローのチェックを行いません。このため、
+     `sys.maxint'を超えると負の値を返します。この動作は将来変更されま
+     す。
+
+`cycle(iterable)'
+     iterableから要素を取得し、同時にそのコピーを保存するイテレータを作成し
+     ます。iterableの全要素を返すと、セーブされたコピーから要素を返し、これ
+     を無限に繰り返します。この関数は以下のスクリプトと同等です：
+
+               def cycle(iterable):
+                   saved = []
+                   for element in iterable:
+                       yield element
+                       saved.append(element)
+                   while saved:
+                       for element in saved:
+                             yield element
+
+     `cycle'はこのツールキットの中で唯一、大きなメモリ領域を使用し
+     ます。使用するメモリ量はiterableの大きさに依存します。
+
+`dropwhile(predicate, iterable)'
+     predicateが真である限りは要素を無視し、その後は全ての要素を返すイテ
+     レータを作成します。このイテレータは、predicateが真の間は_全く_要
+     素を返さないため、最初の要素を返すまでに長い時間がかかる場合がありま
+     す。この関数は以下のスクリプトと同等です：
+
+               def dropwhile(predicate, iterable):
+                   iterable = iter(iterable)
+                   for x in iterable:
+                       if not predicate(x):
+                           yield x
+                           break
+                   for x in iterable:
+                       yield x
+
+
+`ifilter(predicate, iterable)'
+     predicateが`True'となる要素だけを返すイテレータを作成します。
+     PREDICATEが`None'の場合、値が真であるアイテムだけを返しま
+     す。この関数は以下のスクリプトと同等です：
+
+               def ifilter(predicate, iterable):
+                   if predicate is None:
+                       predicate = bool
+                   for x in iterable:
+                       if predicate(x):
+                           yield x
+
+
+`ifilterfalse(predicate, iterable)'
+     predicateが`False'となる要素だけを返すイテレータを作成します。
+     PREDICATEが`None'の場合、値が偽であるアイテムだけを返しま
+     す。この関数は以下のスクリプトと同等です：
+
+               def ifilterfalse(predicate, iterable):
+                   if predicate is None:
+                       predicate = bool
+                   for x in iterable:
+                       if not predicate(x):
+                           yield x
+
+
+`imap(function, *iterables)'
+     iterablesの要素を引数としてfuntionを呼び出すイテレータを作成します。
+     FUNCTIONが`None'の場合、引数のタプルを返します。
+     `map()'と似ていますが、最短のiterableの末尾まで到達した後は
+     `None'を補って処理を続行するのではなく、終了します。これは、
+     `map()'に無限長のイテレータを指定するのは多くの場合誤りですが
+     (全出力が評価されてしまうため)、`imap()'の場合には一般的で役
+     に立つ方法であるためです。この関数は以下のスクリプトと同等です：
+
+               def imap(function, *iterables):
+                   iterables = map(iter, iterables)
+                   while True:
+                       args = [i.next() for i in iterables]
+                       if function is None:
+                           yield tuple(args)
+                       else:
+                           yield function(*args)
+
+
+`islice(iterable, [start,] stop [, step])'
+     iterableから要素を選択して返すイテレータを作成します。STARTが0以
+     外であれば、iterableの先頭要素はstartに達するまでスキップします。以
+     降、STEPが1以下なら連続した要素を返し、1以上なら指定された値分の
+     要素をスキップします。STOPが`None'であれば、無限に、もしく
+     はiterableの全要素を返すまで値を返します。`None'以外ならイテレー
+     タは指定された要素位置で停止します。通常のスライスと異なり、
+     START、STOP、STEPに負の値を指定する事はできません。
+     配列化されたデータから関連するデータを取得する場合（複数行からなるレ
+     ポートで、三行ごとに名前が指定されている場合など）に使用します。この関
+     数は以下のスクリプトと同等です：
+               def islice(iterable, *args):
+                   s = slice(*args)
+                   next, stop, step = s.start or 0, s.stop, s.step or 1
+                   for cnt, element in enumerate(iterable):
+                       if cnt < next:
+                           continue
+                       if stop is not None and cnt >= stop:
+                           break
+                       yield element
+                       next += step
+
+
+`izip(*iterables)'
+     各iterableの要素をまとめるイテレータを作成します。`zip()'に似
+     ていますが、リストではなくイテレータを返します。複数のイテレート可能オ
+     ブジェクトに対して、同じ繰り返し処理を同時に行う場合に使用します。この
+     関数は以下のスクリプトと同等です：
+
+               def izip(*iterables):
+                   iterables = map(iter, iterables)
+                   while iterables:
+                       result = [i.next() for i in iterables]
+                       yield tuple(result)
+
+     _Changed in Python version 2.3.1_
+
+`repeat(object[, times])'
+     繰り返しOBJECTを返すイテレータを作成します。TIMESを指定し
+     ない場合、無限に値を返し続けます。`imap()'で常に同じオブジェク
+     トを関数の引数として指定する場合に使用します。また、`izip()'
+     で作成するタプルの全要素に常に同じオブジェクトを指定する場合にも使用す
+     ることもできます。この関数は以下のスクリプトと同等です：
+
+               def repeat(object, times=None):
+                   if times is None:
+                       while True:
+                           yield object
+                   else:
+                       for i in xrange(times):
+                           yield object
+
+
+`starmap(function, iterable)'
+     iterablesの要素を引数としてfuntionを呼び出すイテレータを作成します。
+     functionの引数が単一のiterableにタプルとして格納されている場合("zip済
+     み")、`imap()'の代わりに使用します。`imap()'と
+     `starmap()'ではfunctionの呼び出し方法が異なり、
+     `imap()'は`function(a,b)'、`starmap()'では
+     `function(*c)'のように呼び出します。この関数は以下のスクリプトと
+     同等です：
+
+               def starmap(function, iterable):
+                   iterable = iter(iterable)
+                   while True:
+                       yield function(*iterable.next())
+
+
+`takewhile(predicate, iterable)'
+     predicateが真である限りiterableから要素を返すイテレータを作成します。
+     この関数は以下のスクリプトと同等です：
+
+               def takewhile(predicate, iterable):
+                   for x in iterable:
+                       x = iterable.next()
+                       if predicate(x):
+                           yield x
+                       else:
+                           break
+
+
+
+File: python-lib-jp.info,  Node: 例 6,  Prev: Itertool関数,  Up: itertools
+
+例
+--
+
+以下に各ツールの一般的な使い方と、ツールの組み合わせの例を示します。
+
+
+     >>> amounts = [120.15, 764.05, 823.14]
+     >>> for checknum, amount in izip(count(1200), amounts):
+     ...     print 'Check %d is for $%.2f' % (checknum, amount)
+     ...
+     Check 1200 is for $120.15
+     Check 1201 is for $764.05
+     Check 1202 is for $823.14
+     
+     >>> import operator
+     >>> for cube in imap(operator.pow, xrange(1,4), repeat(3)):
+     ...    print cube
+     ...
+     1
+     8
+     27
+     
+     >>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura',
+                       '', 'martin', '', 'walter', '', 'samuele']
+     >>> for name in islice(reportlines, 3, None, 2):
+     ...    print name.title()
+     ...
+     Alex
+     Laura
+     Martin
+     Walter
+     Samuele
+
+この節では、itertools を組み合わせてより強力な itertools を作り出す
+`enumerate()'と`iteritems()'の非常に効率的な実装はPython
+に含まれていますが、ここでは高レベルなツールを基本的な部品から作成する例
+として取り上げています。
+
+     def take(n, seq):
+         return list(islice(seq, n))
+     
+     def enumerate(iterable):
+         return izip(count(), iterable)
+     
+     def tabulate(function):
+         "Return function(0), function(1), ..."
+         return imap(function, count())
+     
+     def iteritems(mapping):
+         return izip(mapping.iterkeys(), mapping.itervalues())
+     
+     def nth(iterable, n):
+         "Returns the nth item"
+         return list(islice(iterable, n, n+1))
+     
+     def all(seq, pred=bool):
+         "Returns True if pred(x) is True for every element in the iterable"
+         return False not in imap(pred, seq)
+     
+     def any(seq, pred=bool):
+         "Returns True if pred(x) is True at least one element in the iterable"
+         return True in imap(pred, seq)
+     
+     def no(seq, pred=bool):
+         "Returns True if pred(x) is False for every element in the iterable"
+         return True not in imap(pred, seq)
+     
+     def quantify(seq, pred=bool):
+         "Count how many times the predicate is True in the sequence"
+         return sum(imap(pred, seq))
+     
+     def padnone(seq):
+         "Returns the sequence elements and then returns None indefinitely"
+         return chain(seq, repeat(None))
+     
+     def ncycles(seq, n):
+         "Returns the sequence elements n times"
+         return chain(*repeat(seq, n))
+     
+     def dotproduct(vec1, vec2):
+         return sum(imap(operator.mul, vec1, vec2))
+     
+     def window(seq, n=2):
+         "Returns a sliding window (of width n) over data from the iterable"
+         "   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
+         it = iter(seq)
+         result = tuple(islice(it, n))
+         if len(result) == n:
+             yield result
+         for elem in it:
+             result = result[1:] + (elem,)
+             yield result
+     
+     def tee(iterable):
+         "Return two independent iterators from a single iterable"
+         def gen(next, data={}, cnt=[0]):
+             dpop = data.pop
+             for i in count():
+                 if i == cnt[0]:
+                     item = data[i] = next()
+                     cnt[0] += 1
+                 else:
+                     item = dpop(i)
+                 yield item
+         next = iter(iterable).next
+         return (gen(next), gen(next))
+
+
+File: python-lib-jp.info,  Node: ConfigParser,  Next: fileinput,  Prev: itertools,  Up: 各種サービス
+
+設定ファイルの構文解析器
+========================
+
+Configuration file parser.
+
+このモジュールでは， `ConfigParser'クラスを定義しています。
+`ConfigParser' クラスは，Microsoft Windows の INI ファイルに
+見られるような構造をもつ，基礎的な設定ファイルを実装しています．
+このモジュールを使って，エンドユーザーが簡単にカスタマイズできるような
+Python プログラムを書くことができます。
+
+_Notice:_ [warning]
+このライブラリでは、Windowsのレジストリ用に拡張された INI 文法はサポート
+_していません_。
+
+設定ファイルは 1 つ以上のセクションからなり、セクションは `[section]'
+ヘッダとそれに続くRFC 822 形式の `name: value'
+エントリからなっています。 `name=value' という形式も使えます。
+値の先頭にある空白文字は削除されるので注意してください．
+オプションの値には，同じセクションか `DEFAULT' セクションに
+ある値を参照するような書式化文字列を含めることができます．
+初期化時や検索時に別のデフォルト値を与えることもできます． `#'か`;'
+ではじまる行は無視され，コメントを書く ために利用できます。
+
+例:
+
+     [My Section]
+     foodir: %(dir)s/whatever
+     dir=frob
+
+この場合`%(dir)s'は変数`dir' (この場合は`frob')に展開さ れます。
+参照の展開は必要に応じて実行されます。
+
+デフォルト値は
+`ConfigParser'のコンストラクタに辞書として渡すことで設定できます。
+追加の(他の値をオーバーライドする)デフォルト値は`get()'メソッドに
+渡すことができます。
+
+`RawConfigParser([defaults])'
+     基本的な設定オブジェクトです。
+     DEFAULTSが与えられた場合、オブジェクト
+     に固有のデフォルト値がその値で初期化されます。
+     このクラスは値の置換をサポートしません。 _Added in Python version
+     2.3_
+
+`ConfigParser([defaults])'
+     `RawConfigParser'の派生クラスで値の置換を実装しており、
+     `get()'メソッドと`items()'メソッドに省略可能な引数を追加し
+     ています。 DEFAULTSに含まれる値は`%()s'による値の置換に
+     適当なものである必要があります。
+     __NAME__は組み込みのデフォルト値で、セクション名が含まれるので
+     DEFAULTSで設定してもオーバーライドされます。
+
+`SafeConfigParser([defaults])'
+     `ConfigParser'の派生クラスでより安全な値の置換を実装しています。
+     この実装のはより予測可能性が高くなっています。
+     新規に書くアプリケーションでは、古いバージョンのPythonと互換性を持たせる
+     必要がない限り、このバージョンを利用することが望ましいです。
+     _Added in Python version 2.3_
+
+`NoSectionError'
+     指定したセクションが見つからなかった時に起きる例外です。
+
+`DuplicateSectionError'
+     同じ名前をもつセクションが複数見つかった時や、すでに存在する
+     セクション名に対して `add_section()' が呼び出された際に
+     起きる例外です。
+
+
+`NoOptionError'
+     指定したオプションが指定したセクションに存在しなかった時に起きる例外です。
+
+`InterpolationError'
+     文字列の置換中に問題が起きた時に発生する例外の基底クラスです。
+
+`InterpolationDepthError'
+     `InterpolationError'の派生クラスで、文字列の置換回数が
+     `MAX_INTERPOLATION_DEPTH'を越えたために完了しなかった場合に
+     発生する例外です。
+
+`InterpolationMissingOptionError'
+     `InterpolationError'の派生クラスで、値が参照しているオプションが
+     見つからない場合に発生する例外です。
+
+`InterpolationSyntaxError'
+     `InterpolationError'の派生クラスで、指定された構文で値を置換
+     することができなかった場合に発生する例外です。 _Added in Python
+     version 2.3_
+
+
+`MissingSectionHeaderError'
+     セクションヘッダを持たないファイルを構文解析しようとした時に起きる例外です。
+
+`ParsingError'
+     ファイルの構文解析中にエラーが起きた場合に発生する例外です。
+
+`MAX_INTERPOLATION_DEPTH'
+     RAWが偽だった場合の`get()'による再帰的な文字列置換の繰り返
+     しの最大値です。`ConfigParser'クラスだけに関係します。
+
+See also:
+     *Note shlex::  UNIX のシェルに似た，アプリケーションの設定ファイル
+     用フォーマットとして使えるもう一つの小型言語です．
+
+* Menu:
+
+* RawConfigParser オブジェクト::
+* ConfigParser オブジェクト::
+
+
+File: python-lib-jp.info,  Node: RawConfigParser オブジェクト,  Next: ConfigParser オブジェクト,  Prev: ConfigParser,  Up: ConfigParser
+
+RawConfigParser オブジェクト
+----------------------------
+
+`RawConfigParser'クラスのインスタンスは以下のメソッドを持ちます:
+
+`defaults()'
+     インスタンス全体で使われるデフォルト値の辞書を返します。
+
+`sections()'
+     利用可能なセクションのリストを返します。`DEFAULT'はこのリストに含まれ
+     ません。
+
+`add_section(section)'
+     SECTIONという名前のセクションをインスタンスに追加します。
+     同名のセク ションが存在した場合、`DuplicateSectionError'が発生
+     します。
+
+`has_section(section)'
+     指定したセクションがコンフィグレーションファイルに存在するかを返します。
+     `DEFAULT'セクションは存在するとみなされません。
+
+`options(section)'
+     SECTIONで指定したセクションで利用できるオプションのリストを返し
+     ます。
+
+`has_option(section, option)'
+     与えられたセクションが存在してかつオプションが与えられていれば1を返し、
+     そうでなければ 0 を返します。 _Added in Python version 1.6_
+
+`read(filenames)'
+     ファイル名のリストを読んで解析します。
+     もしFILENAMESが文字列かユニコード文字列なら、1つのファイル名として
+     扱われます。FILENAMESで指定されたファイルが開けない場合、そのファイ
+     ルは無視されます。この挙動は設定ファイルが置かれる可能性のある場所(例えば、
+     カレントディレクトリ、ホームディレクトリ、システム全体の設定を行うディ
+     レクトリ)を設定して、そこに存在する設定ファイルを読むことを想定して設計
+     されています。 設定ファイルが存在しなかった場合、`ConfigParser'
+     のインスタンスは
+     空のデータセットを持ちます。初期値の設定ファイルを先に読み込んでおく
+     必要があるアプリケーションでは、`readfp())'を
+     `read()'の前に呼び出すことでそのような動作を実現できます:
+
+          import ConfigParser, os
+          
+          config = ConfigParser.ConfigParser()
+          config.readfp(open('defaults.cfg'))
+          config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
+
+
+`readfp(fp[, filename])'
+     FPで与えられるファイルかファイルのようなオブジェクトを読み込んで構
+     文解析します(`readline()'メソッドだけを使います)。もし
+     FILENAMEが省略されてFPが`name'属性を持っていれば
+     FILENAMEの代わりに使われます。ファイル名の初期値は`<???>'です。
+
+`get(section, option)'
+     SECTIONのOPTION変数を取得します。
+
+`getint(section, option)'
+     SECTIONのOPTIONを整数として評価する関数です。
+
+`getfloat(section, option)'
+     SECTIONのOPTIONを浮動小数点数として評価する関数です。
+
+`getboolean(section, option)'
+     指定した SECTION の OPTION 値をブール値に型強制する
+     便宜メソッドです。OPTION として受理できる値は、真 (True) としては
+     `"1"'、 `"yes"'、 `"true"'、 `"on"' 、偽 (False) としては `"0"'、
+     `"no"'、 `"false"'、 `"off"' です。
+     これらの文字列値に対しては大文字小文字の区別をしません。
+     その他の値の場合には `ValueError' を送出します。
+
+`items(section)'
+     与えられたSECTIONのそれぞれのオプションについて `(NAME,
+     VALUE)'ペアのリストを返します。
+
+`set(section, option, value)'
+     与えられたセクションが存在していれば、オプションを指定された値に設定しま
+     す。セクションが存在しなければ`NoSectionError'が発生します。
+     _Added in Python version 1.6_
+
+`write(fileobject)'
+     設定を文字列表現に変換してファイルオブジェクトに書き出します。この
+     文字列表現は`read()'で読み込むことができます。 _Added in Python
+     version 1.6_
+
+`remove_option(section, option)'
+     指定されたSECTIONから指定されたOPTIONを削除します。
+     セクションが存在しなければ、`NoSectionError' を起こします。
+     存在するオプションを削除した時は1、そうでない時は0を返します。
+     _Added in Python version 1.6_
+
+`remove_section(section)'
+     指定されたSECTIONを設定から削除します。
+     もし指定されたセクションが存在すれば`True'、そうでなければ
+     `False'を返します。
+
+`optionxform(option)'
+     入力ファイル中に見つかったオプション名か，
+     クライアントコードから渡されたオプション名 OPTION を，
+     内部で利用する形式に変換します。デフォルトではOPTIONを
+     全て小文字に変換した名前が返されます。サブルクラスではこの関数をオーバー
+     ライドすることでこの振舞いを替えることができます。たとえば、このメソッ
+     ドを`str()'に設定することで大小文字の差を区別するように
+     変更することができます。
+
+
+File: python-lib-jp.info,  Node: ConfigParser オブジェクト,  Prev: RawConfigParser オブジェクト,  Up: ConfigParser
+
+ConfigParser オブジェクト
+-------------------------
+
+`ConfigParser'クラスは`RawConfigParser'のインターフェースを
+いくつかのメソッドについて拡張し、省略可能な引数を追加しています。
+
+`get(section, option[, raw[, vars]])'
+     SECTIONのOPTION変数を取得します。
+     RAWが真でない時には、全ての`%'置換は
+     コンストラクタに渡されたデフォルト値か、VARS が与えられていれば
+     それを元にして展開されてから返されます。
+
+`items(section[, raw[, vars]])'
+     指定したSECTION 内の各オプションに対して、 `(NAME, VALUE)'
+     のペアからなるリストを返します。
+     省略可能な引数は`get()'メソッドと同じ意味を持ちます。 _Added in
+     Python version 2.3_
+
+
+File: python-lib-jp.info,  Node: fileinput,  Next: xreadlines,  Prev: ConfigParser,  Up: 各種サービス
+
+複数の入力ストリームをまたいだ行の繰り返し処理をサポートする。
+==============================================================
+
+Perlのような複数の入力ストリームをまたいだ行の繰り返し処理をサポートする
+(その場で保存する機能つき)。
+
+このモジュールは標準入力やファイルの並びにまたがるループを素早く書くため
+のヘルパークラスと関数を提供しています。
+
+典型的な使い方は以下の通りです:
+
+     import fileinput
+     for line in fileinput.input():
+         process(line)
+
+このプログラムは`sys.argv[1:]'に含まれる全てのファイルをまたいで繰
+り返します。もし該当するものがなければ、`sys.stdin'がデフォルトとし
+て扱われます。ファイル名として`'-''が与えられた場合も、
+`sys.stdin'に置き換えられます。別のファイル名リストを使いたい時には、
+`input()'の最初の引数にリストを与えます。単一ファイル名の文字列
+も受け付けます。
+
+全てのファイルはテキストモードでオープンされます。オープン中あるいは読み
+込み中にI/Oエラーが発生した場合には、`IOError'が発生します。
+
+`sys.stdin'が2回以上使われた場合は、2回目以降は行を返しません。
+ただしインタラクティブに利用している時や明示的にリセット
+(`sys.stdin.seek(0))'を使う)を行った場合はその限りではありません。
+
+空のファイルは開いた後すぐ閉じられます。
+空のファイルはファイル名リストの最後にある場合にしか外部に影響を与えませ
+ん。
+
+ファイルの最後が改行文字で終っていない場合には、最後に改行文字を追加して
+返します。
+
+以下の関数がこのモジュールの基本的なインタフェースです:
+
+`input([files[, inplace[, backup]]])'
+     `FileInput'クラスのインスタンスを作ります。生成されたインスタンス
+     は、このモジュールの関数群が利用するグローバルな状態として利用されます。
+     この関数への引数は`FileInput'クラスのコンストラクタへ渡されます。
+
+以下の関数は`input()'関数によって作られたグローバルな状態を利用
+します。アクティブな状態が無い場合には、`RuntimeError'が発生し ます。
+
+`filename()'
+     現在読み込み中のファイル名を返します。一行目が読み込まれる前は
+     `None'を返します。
+
+`lineno()'
+     最後に読み込まれた行の、累積した行番号を返します。1行目が読み込まれる前
+     は`0'を返します。最後のファイルの最終行が読み込まれた後には、その
+     行の行番号を返します。
+
+`filelineno()'
+     現在のファイル中での行番号を返します。1行目が読み込まれる前は`0'を
+     返します。最後のファイルの最終行が読み込まれた後には、その
+     行のファイル中での行番号を返します。
+
+
+`isfirstline()'
+     最後に読み込まれた行がファイルの1行目ならTrue、そうでなければFalseを返します。
+
+
+`isstdin()'
+     最後に読み込まれた行が`sys.stdin'から読まれていればTrue、そうでなけ
+     ればFalseを返します。
+
+`nextfile()'
+     現在のファイルを閉じます。次の繰り返しでは(存在すれば)次のファイルの最初
+     の行が読み込まれます。閉じたファイルの読み込まれなかった行は、累積の行
+     数にカウントされません。ファイル名は次のファイルの最初の行が読み込まれ
+     るまで変更されません。最初の行の読み込みが行われるまでは、この関数は呼
+     び出されても何もしませんので、最初のファイルをスキップするために利用す
+     ることはできません。最後のファイルの最終行が読み込まれた後にも、この関
+     数は呼び出されても何もしません。
+
+
+`close()'
+     シーケンスを閉じます。
+
+このモジュールのシーケンスの振舞いを実装しているクラスの
+サブクラスを作ることもできます。
+
+`FileInput([files[, inplace[, backup]]])'
+     `FileInput'クラスはモジュールの関数に対応するメソッド
+     `filename()'、`lineno()'、`fileline()'、
+     `isfirstline()'、`isstdin()'、`nextfile()'、
+     `close()'を実装しています。それに加えて、次の入力行を返す
+     `readline()'メソッドと、シーケンスの振舞
+     いの実装をしている`__getitem__()'メソッドがあります。
+     シーケンスはシーケンシャルに読み込むことしかできません。つまりランダムア
+     クセスと`readline()'を混在させることはできません。
+
+*その場で保存するオプション機能:*
+
+キーワード引数 `INPLACE=1' が `input()'か
+`FileInput'クラスのコンストラクタに渡された場合には、
+入力ファイルはバックアップファイルに移動され、標準出力が入力ファイルに設
+定されます(バックアップファイルと同じ名前のファイルが既に存在していた
+場合には、警告無しに置き替えられます)。
+これによって入力ファイルをその場で書き替えるフィルタを書くことができます。
+キーワード引数`BACKUP='.<拡張子>''も与えられていれば、バック
+アップファイルの拡張子を決めることができます。デフォルトでは
+`'.bak''になっています。出力先のファイルが閉じられればバックアップ
+ファイルは消されます。その場で保存する機能は、標準入力を読み込んでいる間
+は無効にされます。
+
+*警告:* 現在の実装はMS-DOSの8+3ファイルシステムでは動作しません。
+
+
+File: python-lib-jp.info,  Node: xreadlines,  Next: calendar,  Prev: fileinput,  Up: 各種サービス
+
+ファイルの各行に対する効率のよい反復処理
+========================================
+
+ファイルの各行に対する効率のよい反復処理。
+
+_Added in Python version 2.1_
+
+_This is deprecated in Python 2.3.  `for line in file'
+を代わりに使ってください。_
+
+このモジュールでは、あるファイル内の各行に対して効率的に反復を行える
+ような新たなオブジェクト型を定義します。xreadline オブジェクトは `for'
+文や関数 `filter()' で必要とされるような、 `0'
+から始まる単純かつ順序正しいインデクス付けを実装した配列型 です。
+
+つまり、以下のコード
+
+     import xreadlines, sys
+     
+     for line in xreadlines.xreadlines(sys.stdin):
+         pass
+
+は、
+
+     while 1:
+         lines = sys.stdin.readlines(8*1024)
+         if not lines: break
+         for line in lines:
+             pass
+
+とだいたい同じ速度とメモリ消費になります。ただし前者は `for'
+文のままなのでより明快です。
+
+`xreadlines(fileobj)'
+     FILEOBJ の内容にわたって反復を行うような、新しい xreadlines
+     オブジェクトを返します。FILEOBJ は、引数 SIZEHINT を サポートする
+     `readlines()' メソッドを持っていなければなりません。 _Note:_
+     `readlines()' メソッドばデータをバッファするので、ファイル
+     オブジェクトを非バッファリングに設定しても無視されます。
+
+xreadlines オブジェクト S は以下の配列操作をサポートします:
+
+操作                                 結果
+------                               -----
+S[I]                                 S の I 行目
+
+I の値が `0' から始まる連続した数でない場合、 このコードは
+例外`RuntimeError' を送出します。
+
+ファイルの最後の行が読み出された後、このコードは例外 `IndexError'
+を送出します。
+
+
+File: python-lib-jp.info,  Node: calendar,  Next: cmd,  Prev: xreadlines,  Up: 各種サービス
+
+一般的なカレンダーに関する関数群
+================================
+
+UNIX の `cal' プログラム相当の機能を含んだカレン ダーに関する関数群
+
+このモジュールはUNIXの`cal'プログラムのようなカレンダー出力を
+行い、それに加えてカレンダーに関する有益な関数群を提供します。標準ではこ
+れらのカレンダーは（ヨーロッパの慣例に従って）月曜日を週の始まりとし、日
+曜日を最後の日としています。
+`setfirstweekday()'を用いることで、日曜日(6)や他の曜日を週の始
+まりに設定することができます。日付を表す引数は整数値で与えます。
+
+このモジュールで提供する関数のほとんどは `datetime' に依存しており、
+過去も未来も現代のグレゴリオ暦を利用します。この方式はDershowitzとReingold
+の書籍「Calendrical Calculations」にあるproleptic
+Gregorian暦に一致しており、
+同書では全ての計算の基礎となる暦としています。
+
+`setfirstweekday(weekday)'
+     週の最初の曜日(`0'は月曜日, `6'は日曜日)を設定します。定数
+     `MONDAY', `TUESDAY', `WEDNESDAY',`THURSDAY', `FRIDAY',
+     `SATURDAY'及び`SUNDAY' は便宜上提供されています。
+     例えば、日曜日を週の開始日に設定するとき:
+
+          import calendar
+          calendar.setfirstweekday(calendar.SUNDAY)
+
+     _Added in Python version 2.0_
+
+`firstweekday()'
+     現在設定されている週の最初の曜日を返します。 _Added in Python
+     version 2.0_
+
+`isleap(year)'
+     YEARが閏年なら`1'を、そうでなければ`0'を返します。
+
+`leapdays(y1, y2)'
+     範囲(Y1...Y2)指定された期間の閏年の回数を返します。
+     ここでY1やY2は年を表します。 _Changed in Python version 2.0_
+
+`weekday(year, month, day)'
+     YEAR(`1970'-...), MONTH (`1'-`12'),
+     DAY(`1'-`31')で与えられた日の曜日(`0'は月曜日)を 返します。
+
+`weekheader(n)'
+     曜日の短縮名の入ったヘッダを返します。N には個々の曜日を
+     表す文字列の長さを指定します。
+
+`monthrange(year, month)'
+     YEARとMONTHで指定された月の一日の曜日と日数を返します。
+
+`monthcalendar(year, month)'
+     月のカレンダーを行列で返します。各行が週を表し、月の範囲外の日は0になり
+     ます。
+     それぞれの週は`setfirstweekday()'で設定をしていない限り月曜日か
+     ら始まります。
+
+`prmonth(theyear, themonth[, w[, l]])'
+     `month()'関数によって返される月のカレンダーを出力します。
+
+`month(theyear, themonth[, w[, l]])'
+     月のカレンダーを複数行の文字列で返します。Wにより日の列幅を変える
+     ことができ、それらはセンタリングされます。Lにより各週の表示される
+     行数を変えることができます。週の最初の曜日は
+     `setfirstweekday()'関数の設定に依存します。 _Added in Python
+     version 2.0_
+
+`prcal(year[, w[, l[c]]])'
+     `calendar()'関数で返される一年間のカレンダーを出力します。
+
+`calendar(year[, w[, l[c]]])'
+     3列からなる一年間のカレンダーを複数行の文字列で返します。任意の引数
+     W,L, 及びCはそれぞれ、日付列の表示幅、各週の行数及び
+     月と月の間のスペースの数を変更するためのものです。週の最初の曜日は
+     `setfirstweekday()'関数の設定に依存します。出力されるカレンダー
+     の起点となる年はプラットフォームに依存します。 _Added in Python
+     version 2.0_
+
+`timegm(tuple)'
+     関連はありませんが便利な関数で、`time'モジュールの
+     `gmtime()'関数の戻値のような時間のタプルを受け取り、 1970年を
+     起点とし、POSIX規格のエンコードによるUNIXのタイムスタンプに相当する
+     値を返します。実際、`time.gmtime()'と`timegm()'は反対
+     の動作をします。 _Added in Python version 2.0_
+
+See also:
+     *Note time:: 低レベルの時間に関連した関数群。
+
+
+File: python-lib-jp.info,  Node: cmd,  Next: shlex,  Prev: calendar,  Up: 各種サービス
+
+行指向のコマンドインタープリタのサポート
+========================================
+
+行指向のコマンドインタープリタを構築
+
+`Cmd'クラスでは、行指向のコマンドインタープリタを書くための簡単なフレームワークを提供します。テスト用の仕掛けや管理ツール、そして、後により洗練されたインターフェイスでラップするプロトタイプとして、こうしたインタープリタはよく役に立ちます。
+
+`Cmd([completekey][,  stdin[,stdout]])'
+     `Cmd'インスタンス、あるいはサブクラスのインスタンスは、行指向のインタープリタ・フレームワークです。`Cmd'自身をインスタンス化することはありません。むしろ、`Cmd'のメソッドを継承したり、
+     アクションメソッドをカプセル化するために、あなたが自分で定義するインタープリタクラスのスーパークラスとしての便利です。
+
+     オプション引数 COMPLETEKEY は、補完キーの`readline'
+     名です。デフォルトは<Tab>です。COMPLETEKEYが`None'
+     でなく、`readline'が利用できるならば、コマンド補完は
+     自動的に行われます。
+
+     オプション引数 STDINとSTDOUTには、Cmd
+     インスタンス又はサブクラスのインスタンスが入出力に使用するファイルオブジェクトを指定します。省略時にはSYS.STDIN
+     と SYS.STDOUT を使用します。
+
+     _Changed in Python version 2.3_
+
+* Menu:
+
+* Cmdオブジェクト::
+
+
+File: python-lib-jp.info,  Node: Cmdオブジェクト,  Prev: cmd,  Up: cmd
+
+Cmdオブジェクト
+---------------
+
+`Cmd'インスタンスは、次のメソッドを持ちます:
+
+`cmdloop([intro])'
+     プロンプトを繰り返し出し、入力を受け取り、受け取った入力から取り去った先頭の語を解析し、その行の残りを引数としてアクションメソッドへディスパッチします。
+
+     オプションの引数は、最初のプロンプトの前に表示されるバナーあるいは紹介用の文字列です(これはクラスメンバ`intro'をオーバーライドします)。
+
+     `readline'モジュールがロードされているなら、入力は自動的に`bash'のような履歴リスト編集機能を受け継ぎます(例えば、<Control-P>は直前のコマンドへのスクロールバック、<Control-N>は次のものへ進む、<Control-F>はカーソルを右へ非破壊的に進める、<Control-B>はカーソルを非破壊的に左へ移動させる等)。
+
+     入力のファイル終端は、文字列`'EOF''として渡されます。
+
+     メソッド`do_foo()'を持っている場合に限って、インタープリタのインスタンスはコマンド名`foo'を認識します。特別な場合として、文字`?'で始まる行はメソッド`do_help()'へディスパッチします。他の特別な場合として、文字`!'で始まる行はメソッド`do_shell()'へディスパッチします(このようなメソッドが定義されている場合)。
+
+     このメソッドは、`postcmd()' が真値を返した場合に処理を
+     戻します。`postcmd()' のSTOP 引数は、`do_*()'
+     メソッドに対応するコマンドからの戻り値になります．
+
+     補完が有効になっているなら、コマンドの補完が自動的に行われます。また、コマンド引数の補完は、引数TEXT、LINE、BEGIDX、およびENDIDXと共に`complete_foo()'を呼び出すことによって行われます。TEXTは、我々がマッチしようとしている文字列の先頭の語です。返されるマッチは全てそれで始まっていなければなりません。LINEは始めの空白を除いた現在の入力行です。BEGIDXとENDIDXは先頭のテキストの始まりと終わりのインデックスで、引数の位置に依存した異なる補完を提供するのに使えます。
+
+     `Cmd'のすべてのサブクラスは、定義済みの`do_help()'を継承します。このメソッドは、(引数`'bar''と共に呼ばれたとすると)対応するメソッド`help_bar()'を呼び出します。引数がなければ、`do_help()'は、すべての利用可能なヘルプ見出し(すなわち、対応する`help_*()'メソッドを持つすべてのコマンド)をリストアップします。また、文書化されていないコマンドでも、すべてリストアップします。
+
+`onecmd(str)'
+     プロンプトに答えてタイプしたかのように引数を解釈実行します。これをオーバーライドすることがあるかもしれませんが、通常は必要ないでしょう。便利な実行フックについては、`precmd()'と`postcmd()'メソッドを参照してください。戻り値は、インタープリタによるコマンドの解釈実行をやめるかどうかを示すフラグです。
+     コマンドSTRに対する `do_*()'メソッドが存在する場合、
+     そのメソッドの戻り値を返します。それ以外の場合、`default()'
+     からの戻り値を返します。
+
+`emptyline()'
+     プロンプトに空行が入力されたときに呼び出されるメソッド。このメソッドがオーバーライドされていないなら、最後に入力された空行でないコマンドが繰り返されます。
+
+`default(line)'
+     コマンドの先頭の語が認識されないときに、入力行に対して呼び出されます。このメソッドがオーバーライドされていないなら、エラーメッセージを表示して戻ります。
+
+`completedefault(text, line, begidx, endidx)'
+     利用可能なコマンド固有の`complete_*()'が存在しないときに、入力行を補完するために呼び出されるメソッド。デフォルトでは、空行を返します。
+
+`precmd(line)'
+     コマンド行LINEが解釈実行される直前、しかし入力プロンプトが作られ表示された後に実行されるフックメソッド。このメソッドは`Cmd'内のスタブであって、サブクラスでオーバーライドされるために存在します。戻り値は`onecmd()'メソッドが実行するコマンドとして使われます。`precmd()'の実装では、コマンドを書き換えるかもしれないし、あるいは単に変更していないLINEを返すかもしれません。
+
+`postcmd(stop, line)'
+     コマンドディスパッチが終わった直後に実行されるフックメソッド。このメソッドは`Cmd'内のスタブで、サブクラスでオーバーライドされるために存在します。LINEは実行されたコマンド行で、STOPは`postcmd()'の呼び出しの後に実行を停止するかどうかを示すフラグです。これは`onecmd()'メソッドの戻り値です。このメソッドの戻り値は、STOPに対応する内部フラグの新しい値として使われます。偽を返すと、実行を続けます。
+
+`preloop()'
+     `cmdloop()'が呼び出されたときに一度だけ実行されるフックメソッド。このメソッドは`Cmd'内のスタブであって、サブクラスでオーバーライドされるために存在します。
+
+`postloop()'
+     `cmdloop()'が戻る直前に一度だけ実行されるフックメソッド。このメソッドは`Cmd'内のスタブであって、サブクラスでオーバーライドされるために存在します。
+
+`Cmd'のサブクラスのインスタンスは、公開されたインスタンス変数をいくつか持っています:
+
+`prompt'
+     入力を求めるために表示されるプロンプト。
+
+`identchars'
+     コマンドの先頭の語として受け入れられる文字の文字列。
+
+`lastcmd'
+     最後の空でないコマンドプリフィックス。
+
+`intro'
+     紹介またはバナーとして表示される文字列。`cmdloop()'メソッドに引数を与えるために、オーバーライドされるかもしれません。
+
+`doc_header'
+     ヘルプの出力に文書化されたコマンドの部分がある場合に表示するヘッダ。
+
+`misc_header'
+     ヘルプの出力にその他のヘルプ見出しがある(すなわち、`do_*()'メソッドに対応していない`help_*()'メソッドが存在する)場合に表示するヘッダ。
+
+`undoc_header'
+     ヘルプの出力に文書化されていないコマンドの部分がある(すなわち、対応する`help_*()'メソッドを持たない`do_*()'メソッドが存在する)場合に表示するヘッダ。
+
+`ruler'
+     ヘルプメッセージのヘッダの下に、区切り行を表示するために使われる文字。空のときは、ルーラ行が表示されません。デフォルトでは、`='です。
+
+`use_rawinput'
+     フラグ、デフォルトでは真。真ならば、`cmdloop()'はプロンプトを表示して次のコマンド読み込むために`raw_input()'を使います。偽ならば、`sys.stdout.write()'と`sys.stdin.readline()'が使われます。(これが意味するのは、`readline'をimportすることによって、それをサポートするシステム上では、インタープリタが自動的にEmacs形式の行編集とコマンド履歴のキーストロークをサポートするということです。)
+
+
+
+File: python-lib-jp.info,  Node: shlex,  Prev: cmd,  Up: 各種サービス
+
+単純な字句解析
+==============
+
+UNIX シェル類似の言語に対する単純な字句解析。
+
+_Added in Python version 1.5.2_
+
+`shlex' クラスは UNIX シェルを思わせる単純な構文に
+対する字句解析器を簡単に書けるようにします。このクラスはしばしば、
+Python アプリケーションのための実行制御ファイルのような、
+小規模言語を書く上で便利です。
+
+See also:
+     *Note ConfigParser:: Windows `.ini'
+     ファイルに似た設定ファイルのパーザ。
+
+* Menu:
+
+* モジュールの内容::
+* shlex オブジェクト::
+* 解析規則::
+
+
+File: python-lib-jp.info,  Node: モジュールの内容,  Next: shlex オブジェクト,  Prev: shlex,  Up: shlex
+
+モジュールの内容
+----------------
+
+`shlex' モジュールは以下の関数を定義します。
+
+`split(s[, comments=`False'])'
+     シェル類似の文法を使って、文字列 S を分割します。COMMENTS が
+     `False' の場合、受理した文字列内のコメントを解析しません (`shlex'
+     インスタンスの `commenters' メンバの値を空文字列に します)。
+     この関数は POSIX モードで動作します。 _Added in Python version 2.3_
+
+`shlex' モジュールは以下のクラスを定義します。
+
+`shlex([instream=`sys.stdin'[, infile=`None'[, posix=`False']]])'
+     `shlex'
+     クラスとサブクラスのインスタンスは、字句解析器オブジェクトです。
+     初期化引数を与えると、どこから文字を読み込むかを指定できます。指定先は
+     `read()' メソッドと `readline()' メソッドを持つファイル/ス
+     トリーム類似オブジェクトか、文字列でなくてはいけません（文字列が受理され
+     るようになったのは Python 2.3 以降）。引数が与えられなければ、
+     `sys.stdin' から入力を受け付けます。第 2 引数は、ファイル名を表す文
+     字列で、 `infile' メンバの値の初期値を決定します。INSTREAM
+     引数が省略された場合や、この値が `sys.stdin' である場合、第2引数の
+     デフォルト値は "stdin" になります。POSIX 引数は Python 2.3 で導
+     入されました。これは動作モードを定義します。POSIX が真でない場合
+     （デフォルト）、`shlex' インスタンスは互換モードで動作します。
+     POSIX モードで動作中、`shlex' は、できる限り POSIX シェルの
+     解析規則に似せようとします。~*Note shlex オブジェクト::
+     を参照のこと。
+
+
+File: python-lib-jp.info,  Node: shlex オブジェクト,  Next: 解析規則,  Prev: モジュールの内容,  Up: shlex
+
+shlex オブジェクト
+------------------
+
+`shlex' インスタンスは以下のメソッドを持っています:
+
+`get_token()'
+     トークンを一つ返します。トークンが `push_token()' で
+     使ってスタックに積まれていた場合、トークンをスタックからポップ
+     します。そうでない場合、トークンを一つ入力ストリームから読み出します。
+     読み出し即時にファイル終了子に遭遇した場合、`self.eof' (非 POSIX
+     モードでは空文字列 (`''')、POSIX モードでは `None') が返されます。
+
+`push_token(str)'
+     トークンスタックに引数文字列をスタックします。
+
+`read_token()'
+     生 (raw) のトークンを読み出します。プッシュバックスタックを無視し、
+     かつソースリクエストを解釈しません
+     (通常これは便利なエントリポイント
+     ではありません。完全性のためにここで記述されています)。
+
+`sourcehook(filename)'
+     `shlex' がソースリクエスト (下の `source' を参照して ください)
+     を検出した際、このメソッドはその後に続くトークンを
+     引数として渡され、ファイル名と開かれたファイル類似オブジェクトからなる
+     タプルを返すとされています。
+
+     通常、このメソッドはまず引数から何らかのクオートを剥ぎ取ります。
+     処理後の引数が絶対パス名であった場合か、以前に有効になったソースリクエスト
+     が存在しない場合か、以前のソースが (`sys.stdin' のような)
+     ストリームであった場合、この結果はそのままにされます。そうでない
+     場合で、処理後の引数が相対パス名の場合、ソースインクルードスタックに
+     ある直前のファイル名からディレクトリ部分が取り出され、相対パスの
+     前の部分に追加されます (この動作は C 言語プリプロセッサにおける
+     `#include "file.h"' の扱いと同様です) 。
+
+     これらの操作の結果はファイル名として扱われ、タプルの最初の要素
+     として返されます。同時にこのファイル名で `open()' を呼び出した
+     結果が二つ目の要素になります (注意: インスタンス初期化のときとは
+     引数の並びが逆になっています！)
+
+     このフックはディレクトリサーチパスや、ファイル拡張子の追加、その他の
+     名前空間に関するハックを実装できるようにするために公開されています。
+     `close' フックに対応するものはありませんが、shlex インスタンスは
+     ソースリクエストされている入力ストリームが `EOF' を返した時には
+     `close()' を呼び出します。
+
+     ソーススタックをより明示的に操作するには、`push_source()' および
+     `pop_source()' メソッドを使ってください。
+
+`push_source(stream[, filename])'
+     入力ソースストリームを入力スタックにプッシュします。ファイル名
+     引数が指定された場合、以後のエラーメッセージ中で利用することが
+     できます。`sourcehook' メソッドが内部で使用しているのと
+     同じメソッドです。 _Added in Python version 2.1_
+
+`pop_source()'
+     最後にプッシュされた入力ソースを入力スタックからポップします。
+     字句解析器がスタック上の入力ストリームの `EOF' に到達した際に
+     利用するメソッドと同じです。 _Added in Python version 2.1_
+
+`error_leader([file[, line]])'
+     このメソッドはエラーメッセージの論述部分を UNIX C コンパイラ
+     エラーラベルの形式で生成します; この書式は `'"%s", line %d: ''
+     で、`%s' は現在のソースファイル名 で置き換えられ、`%d'
+     は現在の入力行番号で置き換えられます
+     (オプションの引数を使ってこれらを上書きすることもできます)。
+
+     このやり方は、`shlex' のユーザに対して、Emacs やその他の UNIX
+     ツール群が解釈できる一般的な書式でのメッセージを生成する
+     ことを推奨するために提供されています。
+
+`shlex' サブクラスのインスタンスは、字句解析を制御したり、
+デバッグに使えるような public なインスタンス変数を持っています:
+
+`commenters'
+     コメントの開始として認識される文字列です。コメントの開始から行末
+     までのすべてのキャラクタ文字は無視されます。 標準では単に `#'
+     が入っています。
+
+`wordchars'
+     複数文字からなるトークンを構成するためにバッファに蓄積していく
+     ような文字からなる文字列です。標準では、全ての ASCII 英数字
+     およびアンダースコアが入っています。
+
+`whitespace'
+     空白と見なされ、読み飛ばされる文字群です。空白はトークンの境界を
+     作ります。標準では、スペース、タブ、改行 (linefeed) および 復帰
+     (carriage-return) が入っています。
+
+`escape'
+     エスケープ文字と見なされる文字群です。これは POSIX
+     モードでのみ使われ、デフォルトでは `\' だけが入っています。 _Added
+     in Python version 2.3_
+
+`quotes'
+     文字列引用符と見なされる文字群です。トークンを構成する際、
+     同じクオートが再び出現するまで文字をバッファに蓄積します
+     (すなわち、異なるクオート形式はシェル中で互いに保護し合う
+     関係にあります)。標準では、ASCII 単引用符および二重引用符
+     が入っています。
+
+`escapedquotes'
+     `quotes' のうち、`escape' で定義されたエスケープ文字を解釈
+     する文字群です。これは POSIX モードでのみ使われ、デフォルトでは
+     `"' だけが入っています。 _Added in Python version 2.3_
+
+`whitespace_split'
+     この値が `True'
+     であれば、トークンは空白文字でのみで分割されます。たとえば `shlex'
+     がシェル引数と同じ方法で、コマンドラインを解析するのに便利です。
+     _Added in Python version 2.3_
+
+`infile'
+     現在の入力ファイル名です。クラスのインスタンス化時に初期設定
+     されるか、その後のソースリクエストでスタックされます。
+     エラーメッセージを構成する際にこの値を調べると便利なことがあります。
+
+`instream'
+     `shlex' インスタンスが文字を読み出している入力ストリームです。
+
+`source'
+     このメンバ変数は標準で `None' を取ります。この値に文字列を
+     代入すると、その文字列は多くのシェルにおける `source' キーワード
+     に似た、字句解析レベルでのインクルード要求として認識されます。すなわち、
+     その直後に現れるトークンをファイル名として新たなストリームを開き、
+     そのストリームを入力として、`EOF' に到達するまで読み込まれます。
+     新たなストリームの `EOF' に到達した時点で `close()' が呼び出され、
+     入力は元の入力ストリームに戻されます。ソースリクエストは任意のレベル
+     の深さまでスタックしてかまいません。
+
+`debug'
+     このメンバ変数が数値で、かつ`1' またはそれ以上の値の場合、 `shlex'
+     インスタンスは動作に関する冗長な進捗報告を出力
+     します。この出力を使いたいなら、モジュールのソースコードを読めば
+     詳細を学ぶことができます。
+
+`lineno'
+     ソース行番号 (遭遇した改行の数に 1 を加えたもの) です。
+
+`token'
+     トークンバッファです。例外を捕捉した際にこの値を調べると便利なことが
+     あります。
+
+`eof'
+     ファイルの終端を決定するのに使われるトークンです。非 POSIX
+     モードでは 空文字列 (`''') 、POSIX モードでは `None' が入ります。
+
+
+File: python-lib-jp.info,  Node: 解析規則,  Prev: shlex オブジェクト,  Up: shlex
+
+解析規則
+--------
+
+非 POSIX モードで動作中の `shlex' は以下の規則に従おうとします。
+
+   * ワード内の引用符を認識しない (`Do"Not"Separate' は単一ワード
+     `Do"Not"Separate' として解析されます)
+
+   * エスケープ文字を認識しない
+
+   * 引用符で囲まれた文字列は、引用符内の全ての文字リテラルを保持する
+
+   * 閉じ引用符でワードを区切る (`"Do"Separate' は、`"Do"' と
+     `Separate' であると解析されます)
+
+   * `whitespace_split' が `False' の場合、wordchar、 whitespace または
+     quote として宣言されていない全ての文字を、単一の
+     文字トークンとして返す。`True' の場合、`shlex' は空白文
+     字でのみ単語を区切る。
+
+   * 空文字列 (`''') で `EOF' を送出する
+
+   * 引用符に囲んであっても、空文字列を解析しない
+
+POSIX モードで動作中の `shlex' は以下の解析規則に従おうとします。
+
+   * 引用符を取り除き、引用符で単語を分解しない (`"Do"Not"Separate"'
+     は単一ワード  `DoNotSeparate' として解析されます)
+
+   * 引用符で囲まれないエスケープ文字群 (`\' など)
+     は直後に続く文字のリテラル値を保持する
+
+   * `escapedquotes' でない引用符文字 (`'' など) で囲
+     まれている全ての文字のリテラル値を保持する
+
+   * 引用符に囲まれた `escapedquotes' に含まれる文字 (`"' など)
+     は、`escape' に含まれる文字を除き、
+     全ての文字のリテラル値を保持する。エスケープ文字群は使用中の引用符、
+     または、そのエスケープ文字自身が直後にある場合のみ、特殊な機能を保
+     持する。他の場合にはエスケープ文字は普通の文字とみなされる。
+
+   * `None' で `EOF' を送出する
+
+   * 引用符に囲まれた空文字列 (`''') を許す
+
+
+File: python-lib-jp.info,  Node: 汎用オペレーティングシステムサービス,  Next: オプションのオペレーティングシステムサービス,  Prev: 各種サービス,  Up: Top
+
+汎用オペレーティングシステムサービス
+************************************
+
+本章に記述されたモジュールは、ファイルの取り扱いや時間計測のような(ほ
+ぼ)すべてのオペレーティングシステムで利用可能な機能にインターフェー
+スを提供します。これらのインターフェースは、UNIXもしくはCのインター
+フェースを基に作られますが、ほとんどの他のシステムで同様に利用可能です。
+概要を以下に記述します。
+
+* Menu:
+
+* os::
+* ospath::
+* dircache::
+* stat::
+* statcache::
+* statvfs::
+* filecmp::
+* popen2::
+* datetime::
+* time::
+* sched::
+* mutex::
+* getpass::
+* curses::
+* cursestextpad::
+* curseswrapper::
+* cursesascii::
+* cursespanel::
+* getopt::
+* optparse::
+* tempfile::
+* errno::
+* glob::
+* fnmatch::
+* shutil::
+* locale::
+* gettext::
+* logging::
+

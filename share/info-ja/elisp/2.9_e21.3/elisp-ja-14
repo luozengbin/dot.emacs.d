@@ -1,0 +1,1841 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Subroutines of Visiting, Prev: Visiting Functions, Up: Visiting Files
+
+訪問するためのサブルーティン
+----------------------------
+
+関数`find-file-noselect'は、ユーザーのLispコードでも有用な2つの重要なサ
+ブルーティン、`create-file-buffer'と`after-find-file'を使います。本節で
+はそれらの使い方を説明します。
+
+ -- Function: create-file-buffer FILENAME
+     この関数は、FILENAMEを訪問するのに適するように命名した
+     バッファを作成しそれを返す。
+     （ディレクトリを除外した）FILENAMEが使用中の名前でなければ、
+     それを名前とする。
+     さもなければ、未使用の名前を得るために`<2>'などの文字列を付加する。
+     *Note Creating Buffers::も参照。
+
+     *注意：*` ' `create-file-buffer'は、新たなバッファをファイルに対応
+     付け*ない*し、当該バッファを選択しない。デフォルトのメジャーモード
+     も使わない。
+
+          (create-file-buffer "foo")
+               => #<buffer foo>
+          (create-file-buffer "foo")
+               => #<buffer foo<2>>
+          (create-file-buffer "foo")
+               => #<buffer foo<3>>
+
+     この関数は`find-file-noselect'で使われる。この関数は
+     `generate-new-buffer'（*Note Creating Buffers::）を使う。
+
+ -- Function: after-find-file &optional ERROR WARN
+     この関数は、バッファのメジャーモードを設定し、ローカル変数を解析す
+     る（*Note Auto Major Mode::）。`find-file-noselect'やデフォルトの
+     復元処理関数（*Note Reverting::）から呼ばれる。
+
+     ディレクトリはあるのにファイルが存在しないためにファイルの読み込み
+     がエラーになった場合には、呼び出し側はERRORの値として`nil'以外を渡
+     すこと。その場合、`after-find-file'は警告`(New File)'を表示する。
+     より重大なエラーの場合には、`after-find-file'を呼び出すべきでない。
+
+     WARNが`nil'以外であると、自動保存ファイルが存在しそれが訪問したファ
+     イルより新しい場合には、この関数は警告を発する。
+
+     `after-find-file'が最後に行うことは、リスト`find-file-hooks'内のす
+     べての関数を呼び出すことである。
+
+
+
+File: elisp-ja, Node: Saving Buffers, Next: File Locks, Prev: Visiting Files
+
+バッファの保存
+==============
+
+Emacsでファイルを編集するときには、ファイルを訪問したバッファを実際には
+扱っています。つまり、ファイルの内容はバッファにコピーされ、そのコピー
+を編集しているのです。バッファを変更しても、当該バッファを"保存"（save）
+するまで、つまり、バッファの内容をファイルへコピーするまでは、ファイル
+を変更しません。
+
+ -- コマンド: save-buffer &optional BACKUP-OPTION
+     この関数は、最後に訪問／保存してからカレントバッファが変更されてい
+     れば、カレントバッファの内容を訪問しているファイルへ保存する。
+
+     `save-buffer'は、バックアップの作成に責任がある。通常、
+     BACKUP-OPTIONは`nil'であり、`save-buffer'は、ファイルを訪問してか
+     ら最初に保存するときにのみバックアップファイルを作成する。
+     BACKUP-OPTIONが別の値であると、別の場面でもバックアップファイルを
+     作成することを指示する。
+
+        * 引数が1つか3つの`C-u'を反映した4か64であると、関数
+          `save-buffer'は、バッファをつぎに保存したときにファイルの現在
+          の版をバックアップするように印を付ける。
+
+        * 引数が2つか3つの`C-u'を反映した16か64であると、`save-buffer'
+          は、保存するまえに無条件にファイルのまえの版をバックアップす
+          る。
+
+ -- コマンド: save-some-buffers &optional SAVE-SILENTLY-P EXITING
+     このコマンドは、ファイルを訪問している変更されたバッファを保存する。
+     通常、各バッファについてユーザーに問い合わせる。しかし、
+     SAVE-SILENTLY-Pが`nil'以外であると、ユーザーに問い合わせずにファイ
+     ルを訪問しているバッファをすべて保存する。
+
+     省略可能な引数EXITINGが`nil'以外であると、この関数は、ファイルを訪
+     問していないある種のバッファを保存する機会も与える。
+     `buffer-offer-save'のバッファローカルな値が`nil'以外のバッファが対
+     象となる。（ユーザーがこれらのバッファの1つを保存するように答える
+     と、ファイル名を指定するように聞いてくる。）関数
+     `save-buffers-kill-emacs'は、この引数に`nil'以外の値を渡す。
+
+ -- コマンド: write-file FILENAME
+     この関数は、カレントバッファをファイルFILENAMEに保存し、当該ファイ
+     ルを訪問しているバッファとし、さらに未変更という印を付ける。続いて、
+     バッファ名を一意にするために必要ならば`<2>'のような文字列を付加し
+     て、バッファをFILENAMEに基づいた名前に改名する。この処理のほとんど
+     は、`set-visited-file-name'（*Note Buffer File Name::）と
+     `save-buffer'を呼び出して行う。
+
+バッファを保存すると、いくつかのフックを実行します。また、書式変換
+（*Note Format Conversion::）を行い、テキスト属性を『注記』
+（annotations）（*Note Saving Properties::）に保存することもあります。
+
+ -- Variable: write-file-hooks
+     この変数の値は、バッファを訪問しているファイルに書き出すまえに呼ば
+     れる関数のリストである。それらの1つが`nil'以外を返すと、すでにファ
+     イルに書き出したとみなして残りの関数を呼び出さず、ファイルに書き出
+     すための通常のコードも実行しない。
+
+     `write-file-hooks'の関数が`nil'以外を返すときには、その関数には
+     （必要ならば）バックアップファイルを作成する責任がある。そのために
+     はつぎのコードを実行する。
+
+          (or buffer-backed-up (backup-buffer))
+
+     `backup-buffer'が返したファイルモードの値を保存しておき、
+     読者が書くファイルのモードにその値を使いたい場合がある。
+     `save-buffer'は通常そのようにする。
+
+     `write-file-hooks'のフック関数は、（必要ならば）データの符号化にも
+     責任がある。適切なコーディングシステム（*Note Lisp and Coding
+     Systems::）を選び、符号化（*Note Explicit Encoding::）を行い、使用
+     したコーディングシステムを`last-coding-system-used'に設定する
+     （*Note Encoding and I/O::）。
+
+     この変数をバッファローカルにはしないこと。バッファ固有のフック関数
+     を指定するには、かわりに`write-contents-hooks'を使う。
+
+     これはノーマルフックではないが、
+     `add-hook'と`remove-hook'でリストを扱える。
+     *Note Hooks::。
+
+ -- Variable: local-write-file-hooks
+     これは`write-file-hooks'のように働くが、特定のバッファにバッファロー
+     カルにするように意図してあり、ファイル名に関するフックやバッファ内
+     容を得た方法に関するフックとして使われる。
+
+     変数は恒久的にバッファローカルと印が付いているので、メジャーモード
+     を変更してもバッファローカルな値は変更されない。これは、『ファイル』
+     の内容を特別な方法で読み込み、対応した方法でデータを保存するフック
+     を設定するようなパッケージには便利である。
+
+ -- Variable: write-contents-hooks
+     この変数は`write-file-hooks'のように働くが、ファイルの場所に関する
+     フックではなく、ファイルの内容に関するフックであると意図されている。
+     そのようなフックは、この変数のバッファローカルな束縛としてメジャー
+     モードが通常設定する。
+
+     この変数に設定すると自動的にバッファローカルになる。このフックに要
+     素を追加するために`add-hooks'を使うときには、引数LOCALに`nil'以外
+     を指定し*ない*こと。この変数はバッファローカル*のみ*であるからであ
+     る。
+
+ -- Variable: after-save-hook
+     このノーマルフックは、バッファを訪問したファイルに保存し終えてから
+     実行される。このフックの用途の1つは高速ロック（fast-lock）モードで
+     ある。このフックを使って強調表示情報をキャッシュファイルに保存する。
+
+ -- Variable: file-precious-flag
+     この変数が`nil'以外ならば、`save-buffer'は保存処理中の入出力エラー
+     に備えて対処する。つまり、目的の名前のファイルにではなく一時的な名
+     前の新規ファイルに書き出し、エラーがないことを確認してから目的の名
+     前に改名する。これにより、不正なファイルに起因する問題からディスク
+     容量の不足といった問題を回避できる。
+
+     副作用として、バックアップも必然的にコピーして行う。*Note Rename
+     or Copy::。それと同時に、大事な（precious）ファイルとして保存する
+     と、読者が保存したファイルと別のファイル名とのあいだのハードリンク
+     をつねに切ってしまう。
+
+     特定のバッファではこの変数に`nil'以外のバッファローカルな値を指定
+     するモードもある。
+
+ -- User Option: require-final-newline
+     この変数は、改行で終ら*ない*ファイルを書き出すかどうかを決定する。
+     この変数の値が`t'であると、`save-buffer'は、保存するバッファが改行
+     で終っていないと黙ってファイルの末尾に改行を追加する。この変数の値
+     が`t'ではない`nil'以外であると、`save-buffer'は、必要な場面では改
+     行を追加するかどうかユーザーに問い合わせる。
+
+     この変数の値が`nil'であると、`save-buffer'は改行を追加しない。デフォ
+     ルト値は`nil'であるが、特定のバッファでは`t'に設定するメジャーモー
+     ドもある。
+
+関数`set-visited-file-name'（*Note Buffer File Name::）も参照してくださ
+い。
+
+
+
+File: elisp-ja, Node: Reading from Files, Next: File Locks, Prev: Saving Buffers
+
+ファイルの読み込み
+==================
+
+関数`insert-file-contents'を使ってディスクからファイルをバッファへコピー
+できます。ユーザーレベルのコマンド`insert-file'はマークを設定するので
+Lispプログラムでは使わないでください。
+
+ -- Function: insert-file-contents FILENAME &optional VISIT BEG END REPLACE
+     この関数は、ファイルFILENAMEの内容をカレントバッファの
+     ポイントのうしろに挿入する。
+     絶対ファイル名と挿入したデータの長さから成るリストを返す。
+     FILENAMEが読み込めるファイルの名前でないと、エラーを通知する。
+
+     関数`insert-file-contents'は、
+     ファイルの内容を定義済みのファイルの書式と比較し、
+     必要ならばファイルの内容を変換する。
+     *Note Format Conversion::。
+     リスト`after-insert-file-functions'の関数も呼び出す。
+     *Note Saving Properties::を参照。
+
+     VISITが`nil'以外であると、この関数はバッファを未変更と印を付け、ファ
+     イルFILENAMEを訪問しているバッファとなるようにバッファのさまざまな
+     部分を設定する。これには、バッファが訪問しているファイルの名前、ファ
+     イル更新時刻を含む。この機能は`find-file-noselect'で使われており、
+     読者自身が使うことはないであろう。
+
+     BEGとENDが`nil'以外であると、それらは挿入すべきファイルの部分を指
+     定する整数であること。この場合、VISITは`nil'であること。たとえば、
+
+          (insert-file-contents filename nil 0 500)
+
+     はファイルの最初の500文字を挿入する。
+
+     引数REPLACEが`nil'以外であると、バッファの内容（実際には参照可能な
+     部分のみ）をファイルの内容で置き換えることを意味する。これは、単純
+     にバッファの内容を削除してからファイル全体を挿入するより好ましい。
+     なぜなら、（1）マーカ位置を保存できる場合がある、（2）アンドゥリス
+     トにほとんどデータを入れない、からである。
+
+     REPLACEとVISITが`nil'である限り、`insert-file-contents'で（FIFOや
+     入出力装置などの）特別なファイルを読むことも可能である。
+
+ -- Function: insert-file-contents-literally FILENAME &optional VISIT BEG END REPLACE
+     この関数は`insert-file-contents'のように動作するが、
+     書式を変換しない（*Note Format Conversion::）、
+     文字コードを変換しない（*Note Coding Systems::）、
+     `find-file-hooks'を実行しない、自動的に解凍しないなどが異なる。
+
+別のプログラムが読めるようにファイル名を別のプロセスに渡すには、
+関数`file-local-copy'を使います。
+*Note Magic File Names::を参照してください。
+
+
+
+File: elisp-ja, Node: Writing to Files, Next: File Locks, Prev: Saving Buffers
+
+ファイルへの書き出し
+====================
+
+関数`append-to-file'や`write-region'を使って、バッファの内容やその一部
+をディスク上のファイルへ直接書き出せます。訪問しているファイルには、こ
+れらの関数で書き出さないでください。訪問の機構に混乱をきたすことがあり
+ます。
+
+ -- コマンド: append-to-file START END FILENAME
+     この関数は、カレントバッファのSTARTからENDで区切られる領域の内容を
+     ファイルFILENAMEの末尾に追加する。当該ファイルが存在しなければ作成
+     する。この関数は`nil'を返す。
+
+     書き込めないファイルをFILENAMEに指定したり、
+     ファイルを作成できないディレクトリ上の存在しないファイルを
+     FILENAMEに指定するとエラーを通知する。
+
+ -- コマンド: write-region START END FILENAME &optional APPEND VISIT CONFIRM
+     この関数は、カレントバッファのSTARTからENDで区切られる領域の内容を
+     FILENAMEで指定したファイルに書き出す。
+
+     STARTが文字列であると、`write-region'はバッファのテキストではなく
+     その文字列を書いたり追加する。
+
+     APPENDが`nil'以外であると、指定したテキストを既存ファイル（があれ
+     ば）の内容に追加する。
+
+     CONFIRMが`nil'以外であると、
+     FILENAMEが既存ファイルの名前であると
+     `write-region'は確認を求める。
+
+     VISITが`t'であると、Emacsはバッファとファイルの対応を確立する。つ
+     まり、バッファはそのファイルを訪問していることになる。さらに、カレ
+     ントバッファの最終ファイル更新時刻をFILENAMEの更新時刻にし、バッファ
+     には未変更と印を付ける。この機能は`save-buffer'が使っているが、読
+     者自身が使うことはないであろう。
+
+     VISITが文字列であると、訪問するファイルの名前を指定する。このよう
+     にして、データを1つのファイル（FILENAME）に書き出す一方で、バッファ
+     は別のファイル（VISIT）を訪問していると設定できる。引数VISITはエコー
+     領域のメッセージに使われ、ファイルのロックにも使われる。VISITは
+     `buffer-file-name'に保存される。この機能は`file-precious-flag'の実
+     装に使われているが、読者は、なにをしているか理解できない限り、この
+     機能を使わないこと。
+
+     関数`write-region'は、書き出すデータを
+     `buffer-file-format'で指定される適切なファイル書式に変換する。
+     *Note Format Conversion::。
+     さらに、リスト`write-region-annotate-functions'の関数も呼び出す。
+     *Note Saving Properties::を参照。
+
+     通常、`write-region'はエコー領域にメッセージ`Wrote FILENAME'を表示
+     する。VISITが`t'でも`nil'でも文字列でもないと、このメッセージは表
+     示しない。この機能は、ユーザーが知る必要のない内部目的にファイルを
+     使うプログラムに有用である。
+
+ -- Macro: with-temp-file FILE BODY...
+     マクロ`with-temp-file'は、一時的なバッファをカレントバッファとして
+     フォームBODYを評価する。
+     そして最後にバッファの内容をファイルFILEに書き出す。
+     終了すると一時的なバッファを削除し、
+     フォーム`with-temp-file'のまえにカレントバッファであったバッファに戻る。
+     BODYの最後のフォームの値を返す。
+
+     `throw'やエラーによる異常終了（*Note Nonlocal Exits::）であっても
+     カレントバッファに戻る。
+
+     *Note Current Buffer::の`with-temp-buffer'も参照。
+
+
+
+File: elisp-ja, Node: File Locks, Next: Information about Files, Prev: Saving Buffers
+
+ファイルロック
+==============
+
+2人のユーザーが同時に同じファイルを編集すると、互いに干渉し合います。
+Emacsは、ファイルが変更されると"ファイルロック"（file lock）を記録する
+ことで、このような状況が発生しないように努めます。すると、Emacsは別の
+Emacsがロックしているファイルを訪問したバッファを変更しようとする最初の
+試みを検出でき、ユーザーにどうすべきかを問い合わせます。
+
+複数の計算機がファイルシステムを共有している場合には、
+ファイルロックには完全な信頼性はありません。
+ファイルロックが働かないと、
+2人のユーザーが同時に変更する可能性がありますが、
+それでも、Emacsは2番目に保存したユーザーに警告できます。
+また、ディスク上で変更されたファイルを訪問しているバッファの変更を
+検出することで、同時編集のある場面を捕捉できます。
+*Note Modification Time::を参照してください。
+
+ -- Function: file-locked-p FILENAME
+     ファイルFILENAMEがロックされていなければ、この関数は`nil'を返す。
+     このEmacsプロセスがロックしているときには`t'を返す。他のEmacsがロッ
+     クしている場合には、ロックしているユーザーの名前を返す。
+
+          (file-locked-p "foo")
+               => nil
+
+ -- Function: lock-buffer &optional FILENAME
+     この関数は、カレントバッファが変更されていればファイルFILENAMEをロッ
+     クする。引数FILENAMEのデフォルトは、カレントバッファで訪問している
+     ファイルである。カレントバッファがファイルを訪問していなかったり、
+     未変更ならばなにもしない。
+
+ -- Function: unlock-buffer
+     この関数は、バッファが変更されていれば、カレントバッファで訪問して
+     いるファイルのロックを解除する。バッファが未変更ならばファイルをロッ
+     クしていないはずであり、この関数はなにもしない。カレントバッファが
+     ファイルを訪問していなければ、やはりなにもしない。
+
+ -- Function: ask-user-about-lock FILE OTHER-USER
+     この関数は、別のユーザーOTHER-USERがロックしているファイルFILEをユー
+     ザーが変更しようとしたときに呼び出される。この関数のデフォルトの定
+     義は、ユーザーになにをすべきか問い合わせることである。この関数の戻
+     り値がEmacsのつぎの動作を決定する。
+
+        * 値が`t'であると、ファイルのロックを取得することを意味する。す
+          ると、このユーザーはファイルを編集でき、別のユーザー
+          OTHER-USERはロックを失う。
+
+        * 値が`nil'であると、ロックを無視してとにかくユーザーにファイル
+          の編集を許す。
+
+        * この関数はエラー`file-locked'を通知する。この場合、ユーザーが
+          行おうとしていた変更は行われない。
+
+          このエラーのエラーメッセージはつぎのようである。
+
+               error--> File is locked: FILE OTHER-USER
+
+          ここで、`file'はファイル名であり、
+          OTHER-USERはそのファイルをロックしているユーザー名である。
+
+     読者は、関数`ask-user-about-lock'を別の方法で決定する読者独自のも
+     のに置き換えてもよい。通常の定義に対応したコードは`userlock.el'に
+     ある。
+
+
+
+File: elisp-ja, Node: Information about Files, Next: Changing Files, Prev: File Locks
+
+ファイルに関する情報
+====================
+
+本節に述べる関数はすべて、ファイル名を表す文字列に作用します。すべての
+関数の名前は単語`file'で始まり、それらの引数は、特に断らないかぎり、既
+存のファイルやディレクトリである必要があります。
+
+* Menu:
+
+* Testing Accessibility::   Is a given file readable?  Writable?
+* Kinds of Files::          Is it a directory?  A symbolic link?
+* Truenames::		    Eliminating symbolic links from a file name.
+* File Attributes::         How large is it?  Any other names?  Etc.
+
+
+
+File: elisp-ja, Node: Testing Accessibility, Next: Truenames, Prev: Information about Files, Up: Information about Files
+
+参照可能性の検査
+----------------
+
+これらの関数は、特別な方法でファイル参照のパーミッションを検査します。
+
+ -- Function: file-exists-p FILENAME
+     ファイルFILENAMEが存在すれば、この関数は`t'を返す。これは必ずしも
+     ファイルを読めることは意味せず、単にファイルの属性を調べられるだけ
+     である。（UNIXでは、ファイルが存在し、かつ、それを収めたディレクト
+     リに対する実行パーミッションがあれば、ファイル自体のパーミッション
+     に関係なくこのようになる。）
+
+     ファイルが存在しなかったり、ファイルの属性を探す権限がなければ、こ
+     の関数は`nil'を返す。
+
+ -- Function: file-readable-p FILENAME
+     ファイルFILENAMEが存在しそれを読むことができるならば、この関数は
+     `t'を返す。さもなければ`nil'を返す。
+
+          (file-readable-p "files.texi")
+               => t
+          (file-exists-p "/usr/spool/mqueue")
+               => t
+          (file-readable-p "/usr/spool/mqueue")
+               => nil
+
+ -- Function: file-executable-p FILENAME
+     ファイルFILENAMEが存在しそれを実行できるならば、この関数は`t'を返
+     す。さもなければ`nil'を返す。ファイルがディレクトリである場合、実
+     行パーミッションは、ディレクトリ内のファイルの存在やその属性を検査
+     でき、それらのファイルのモードが許せばオープンできることを意味する。
+
+ -- Function: file-writable-p FILENAME
+     ファイルFILENAMEに書き出したり作成できるならば、この関数は`t'を返
+     し、さもなければ`nil'を返す。ファイルに書き出せるのは、ファイルが
+     存在し書ける場合である。作成できるのは、ファイルは存在しないが指定
+     したディレクトリが存在しそのディレクトリに書ける場合である。
+
+     以下の3番目の例では、`foo'の親ディレクトリが存在しないので、たとえ
+     ディレクトリを作成できるとしても`foo'は書けない。
+
+          (file-writable-p "~/foo")
+               => t
+          (file-writable-p "/foo")
+               => nil
+          (file-writable-p "~/no-such-dir/foo")
+               => nil
+
+ -- Function: file-accessible-directory-p DIRNAME
+     ディレクトリDIRNAMEの既存ファイルをオープンするパーミッションがあれば、
+     この関数は`t'を返す。
+     さもなければ（あるいは当該ディレクトリが存在しなければ）`nil'を返す。
+     DIRNAMEの値はディレクトリ名である。
+
+     例：` 'つぎの例では、
+
+          (file-accessible-directory-p "/foo")
+               => nil
+
+     から、`/foo/'内のファイルを読もうとするとエラーになると推論できる。
+
+ -- Function: access-file FILENAME STRING
+     この関数は、ファイルFILENAMEを読むためにオープンし、クローズしてか
+     ら`nil'を返す。しかし、オープンに失敗するとSTRINGをエラーメッセー
+     ジのテキストとしたエラーを通知する。
+
+ -- Function: file-ownership-preserved-p FILENAME
+     もしファイルFILENAMEを削除して改めて作成してもファイルの所有者が変
+     更されなければ、この関数は`t'を返す。
+
+ -- Function: file-newer-than-file-p FILENAME1 FILENAME2
+     ファイルFILENAME1がFILENAME2より新しければ、
+     この関数は`t'を返す。
+     FILENAME1が存在しなければ`nil'を返す。
+     FILENAME2が存在しなければ`t'を返す。
+
+     以下の例で、ファイル`aug-19'は19日に書かれ、ファイル`aug-20'は20日
+     に書かれ、ファイル`no-file'は存在しないと仮定する。
+
+          (file-newer-than-file-p "aug-19" "aug-20")
+               => nil
+          (file-newer-than-file-p "aug-20" "aug-19")
+               => t
+          (file-newer-than-file-p "aug-19" "no-file")
+               => t
+          (file-newer-than-file-p "no-file" "aug-19")
+               => nil
+
+     `file-attributes'を使って、
+     2つの数から成るリストとしてファイルの最終更新時刻を取得できる。
+     *Note File Attributes::。
+
+
+
+File: elisp-ja, Node: Kinds of Files, Next: Truenames, Prev: Information about Files, Up: Information about Files
+
+ファイルの種類の区別
+--------------------
+
+本節ではさまざまな種類のファイル、つまり、ディレクトリ、シンボリックリ
+ンク、普通のファイルを区別する方法を説明します。
+
+ -- Function: file-symlink-p FILENAME
+     ファイルFILENAMEがシンボリックリンクであると、関数
+     `file-symlink-p'は当該リンクが指すファイルの名前を返す。これは、テ
+     キストファイル、ディレクトリ、別のシンボリックリンク、存在しないファ
+     イルの名前のいずれかである。
+
+     ファイルFILENAMEがシンボリックリンクでない
+     （あるいは当該ファイルが存在しない）場合、
+     `file-symlink-p'は`nil'を返す。
+
+          (file-symlink-p "foo")
+               => nil
+          (file-symlink-p "sym-link")
+               => "foo"
+          (file-symlink-p "sym-link2")
+               => "sym-link"
+          (file-symlink-p "/bin")
+               => "/pub/bin"
+
+
+ -- Function: file-directory-p FILENAME
+     ファイルFILENAMEが既存ディレクトリの名前であると`t'を返し、さもな
+     ければ`nil'を返す。
+
+          (file-directory-p "~rms")
+               => t
+          (file-directory-p "~rms/lewis/files.texi")
+               => nil
+          (file-directory-p "~rms/lewis/no-such-file")
+               => nil
+          (file-directory-p "$HOME")
+               => nil
+          (file-directory-p
+           (substitute-in-file-name "$HOME"))
+               => t
+
+ -- Function: file-regular-p FILENAME
+     ファイルFILENAMEが存在しそれが普通のファイル（ディレクトリでもシン
+     ボリックリンクでも名前付きパイプでも端末でもその他の入出力装置でも
+     ない）であれば、この関数は`t'を返す。
+
+
+
+File: elisp-ja, Node: Truenames, Prev: Information about Files, Up: Information about Files
+
+実名
+----
+
+ファイルの"実名"（truename）とは、シンボリックリンクをすべて辿り尽くし
+てから、要素として現れる`.' や`..' を簡略化して得られる名前です。厳密に
+いえば、ファイルが一意の実名を持つ必要はありません。ファイルの異なる実
+名の個数は、当該ファイルに対するハードリンクの個数に等しいのです。それ
+でも、実名はシンボリックリンクによる名前の変動を取り除くため、実名は有
+用です。
+
+ -- Function: file-truename FILENAME
+     関数`file-truename'はファイルFILENAMEの実名を返す。これはシンボリッ
+     クリンクをすべて辿り尽くして得られる名前である。引数は絶対ファイル
+     名であること。
+
+関連情報については、*Note Buffer File Name::。
+
+
+
+File: elisp-ja, Node: File Attributes, Prev: Truenames, Up: Information about Files
+
+ファイルに関する他の情報
+------------------------
+
+本節では、ファイルの内容以外の詳しい情報を得るための関数を説明します。
+この情報には、参照パーミッションを制御するモードビット、所有者とグルー
+プの番号、名前の個数、iノード番号、サイズ、参照時刻と更新時刻が含まれま
+す。
+
+ -- Function: file-modes FILENAME
+     この関数はFILENAMEのモードビットを整数で返す。モードビットはファイ
+     ルのパーミッションとも呼ばれ、UNIX流の参照制御を指定する。最下位ビッ
+     トが1であると、当該ファイルはすべてのユーザーが実行でき、2番目の下
+     位ビットが1であると、当該ファイルはすべてのユーザーが書けるといっ
+     た具合である。
+
+     戻り値の最大値は4095（8進数7777）であり、これは、だれもが読み／書
+     き／実行でき、所有者とグループの両者にビットSUIDが設定してあり、ス
+     ティッキービットも設定されていることを意味する。
+
+          (file-modes "~/junk/diffs")
+               => 492               ; 10進整数
+          (format "%o" 492)
+               => "754"             ; 8進数に変換
+
+          (set-file-modes "~/junk/diffs" 438)
+               => nil
+
+          (format "%o" 438)
+               => "666"             ; 8進数に変換
+
+          % ls -l diffs
+            -rw-rw-rw-  1 lewis 0 3063 Oct 30 16:00 diffs
+
+ -- Function: file-nlinks FILENAME
+     この関数は、ファイルFILENAMEの名前（つまりハードリンク）の個数を返
+     す。ファイルが存在しなければ、この関数は`nil'を返す。シンボリック
+     リンクはそれが指すファイルの名前とはみなさないので、シンボリックリ
+     ンクはこの関数には効果を持たない。
+
+          % ls -l foo*
+          -rw-rw-rw-  2 rms       4 Aug 19 01:27 foo
+          -rw-rw-rw-  2 rms       4 Aug 19 01:27 foo1
+
+          (file-nlinks "foo")
+               => 2
+          (file-nlinks "doesnt-exist")
+               => nil
+
+ -- Function: file-attributes FILENAME
+     この関数はファイルFILENAMEの属性のリストを返す。オープンできないファ
+     イルを指定すると`nil'を返す。
+
+     リストの要素は順につぎのとおりである。
+
+       0. ディレクトリは`t'、シンボリックリンクは（それが指す名前の）文
+          字列、テキストファイルは`nil'である。
+
+       1. ファイルの名前の個数。別の名前、つまり、ハードリンクは関数
+          `add-name-to-file'（*Note Changing Files::）を使って作成する。
+
+       2. ファイルのUID（所有者番号）。
+
+       3. ファイルのGID（グループ番号）。
+
+       4. 2つの整数から成るリストとしての最終参照時刻。
+          最初の整数は時刻の上位16ビットであり、2番目は下位16ビット。
+          （これは`current-time'の値と同様。
+          *Note Time of Day::を参照。）
+
+       5. 2つの整数から成るリストとしての最終更新時刻（上記と同様）。
+
+       6. 2つの整数から成るリストとしての最終状態更新時刻（上記と同様）。
+
+       7. バイト単位でのファイルのサイズ。
+
+       8. `ls -l'と同様のファイルのモードを表す10文字の文字列。
+
+       9. もしファイルを削除して再度作成した場合にファイルのGID（グルー
+          プ番号）が変わる場合には`t'。さもなければ`nil'。
+
+      10. ファイルのiノード番号。可能ならばこれは整数である。iノード番
+          号がEmacs Lispの整数として表現できないほど大きな場合、値は
+          `(HIGH . LOW)'の形である。ただし、LOWは下位16ビットである。
+
+      11. ファイルが置いてあるファイルシステムのファイルシステム番号。
+          この要素とファイルのiノード番号により、システム上の任意の2つ
+          のファイルを区別するために十分な情報を与える。つまり、2つのファ
+          イルが同じ値のこれらの番号を持つことはない。
+
+     たとえば、`files.texi'のファイル属性はつぎのようである。
+
+          (file-attributes "files.texi")
+               =>  (nil 1 2235 75
+                    (8489 20284)
+                    (8489 20284)
+                    (8489 20285)
+                    14906 "-rw-rw-rw-"
+                    nil 129500 -32252)
+
+     この意味はつぎのとおりである。
+
+     `nil'
+          ディレクトリでもシンボリックリンクでもない。
+
+     `1'
+          唯一の名前（カレントディレクトリで`files.texi'）を持つ。
+
+     `2235'
+          UID（ユーザー番号）2235のユーザーが所有している。
+
+     `75'
+          GID（グループ番号）75のグループに属する。
+
+     `(8489 20284)'
+          最後に参照されたのは8月19日00時09分である。
+
+     `(8489 20284)'
+          最後に更新されたのは8月19日00時09分である。
+
+     `(8489 20285)'
+          最後にこのiノードを変更したのは8月19日00時09分である。
+
+     `14906'
+          長さは14906バイトである。
+
+     `"-rw-rw-rw-"'
+          モードは、所有者／グループ／その他は読み書きできる。
+
+     `nil'
+          再度作成してもGID（グループ番号）は保存される。
+
+     `129500'
+          iノード番号は129500。
+     `-32252'
+          ファイルシステム番号は-32252。
+
+
+
+File: elisp-ja, Node: Changing Files, Next: File Names, Prev: Information about Files
+
+ファイルの名前と属性の変更
+==========================
+
+本節の関数は、ファイルを改名／コピー／削除／リンクしたり、ファイルのモー
+ドを設定するためのものです。
+
+引数NEWNAMEをとる関数では、NEWNAMEで指定したファイルが既存の場合、関数
+の動作は引数OK-IF-ALREADY-EXISTSの値に依存します。
+
+   * OK-IF-ALREADY-EXISTSが`nil'であると、エラー`file-already-exists'を
+     通知する。
+
+   * OK-IF-ALREADY-EXISTSが数であると、確認を必要とする。
+
+   * OK-IF-ALREADY-EXISTSがそれ以外の値であると、確認せずに古いファイル
+     を置き換える。
+
+ -- Function: add-name-to-file OLDNAME NEWNAME &optional OK-IF-ALREADY-EXISTS
+     この関数は、OLDNAMEで指定したファイルに追加の名前NEWNAMEを与える。
+     つまり、NEWNAMEはOLDNAMEへの新たな『ハードリンク』になる。
+
+     つぎの例では、2つのファイル`foo'と`foo3'がある。
+
+          % ls -li fo*
+          81908 -rw-rw-rw-  1 rms       29 Aug 18 20:32 foo
+          84302 -rw-rw-rw-  1 rms       24 Aug 18 20:31 foo3
+
+     `add-name-to-file'を呼んでハードリンクを作成し、ファイル一覧を表示
+     し直す。1つのファイルに2つの名前`foo'と`foo2'があることがわかる。
+
+          (add-name-to-file "foo" "foo2")
+               => nil
+
+          % ls -li fo*
+          81908 -rw-rw-rw-  2 rms       29 Aug 18 20:32 foo
+          81908 -rw-rw-rw-  2 rms       29 Aug 18 20:32 foo2
+          84302 -rw-rw-rw-  1 rms       24 Aug 18 20:31 foo3
+
+     最後につぎの式を評価し
+
+          (add-name-to-file "foo" "foo3" t)
+
+     ファイル一覧を表示し直す。今度は、1つのファイルに3つの名前`foo'、
+     `foo2'、`foo3'がある。古い`foo3'の内容は失われている。
+
+          (add-name-to-file "foo1" "foo3")
+               => nil
+
+          % ls -li fo*
+          81908 -rw-rw-rw-  3 rms       29 Aug 18 20:32 foo
+          81908 -rw-rw-rw-  3 rms       29 Aug 18 20:32 foo2
+          81908 -rw-rw-rw-  3 rms       29 Aug 18 20:32 foo3
+
+     1つのファイルに複数の名前を許さないオペレーティングシステムでは、
+     この関数は意味がない。
+
+     *Note File Attributes::の`file-nlinks'も参照。
+
+ -- コマンド: rename-file FILENAME NEWNAME &optional OK-IF-ALREADY-EXISTS
+     このコマンドは、ファイルFILENAMEをNEWNAMEと改名する。
+
+     FILENAMEにFILENAME以外の名前があれば、それらの名前は存在し続ける。
+     実際、`add-name-to-file'で名前NEWNAMEを追加してからFILENAMEを削除
+     すると、一時的な中間状態があることを除けば、改名と同じ効果がある。
+
+     対話的に呼び出されると、この関数はミニバッファでFILENAMEとNEWNAME
+     を聞く。また、NEWNAMEが既存であると確認を求める。
+
+ -- コマンド: copy-file OLDNAME NEWNAME &optional OK-IF-EXISTS TIME
+     このコマンドはファイルOLDNAMEをNEWNAMEへコピーする。
+     OLDNAMEが存在しないとエラーを通知する。
+
+     TIMEが`nil'以外であると、この関数は新たなファイルに古いファイルと
+     同じ最終更新時刻を与える。（これは特定のオペレーティングシステムで
+     のみ動作する。）時刻設定でエラーがあると、`copy-file'はエラー
+     `file-date-error'を通知する。
+
+     対話的に呼び出されると、この関数はミニバッファでOLDNAMEとNEWNAMEを
+     聞く。また、NEWNAMEが既存であると確認を求める。
+
+ -- コマンド: delete-file FILENAME
+     このコマンドは、シェルコマンド`rm FILENAME'と同様にファイル
+     FILENAMEを削除する。ファイルに複数の名前があると、他の名前では存在
+     し続ける。
+
+     ファイルが存在しなかったり削除できないと、エラー`file-error'の適切
+     な種類が通知される。（UNIXでは、ファイルを収めたディレクトリに書け
+     ると当該ファイルは削除可能である。）
+
+     *Note Create/Delete Dirs::の`delete-directory'も参照。
+
+ -- コマンド: make-symbolic-link FILENAME NEWNAME &optional OK-IF-EXISTS
+     このコマンドは、FILENAMEに対するシンボリックリンクNEWNAMEを作成す
+     る。これはシェルコマンド`ln -s FILENAME NEWNAME'と同じである。
+
+     対話的に呼び出されると、この関数はミニバッファでFILENAMEとNEWNAME
+     を聞く。また、NEWNAMEが既存であると確認を求める。
+
+ -- Function: define-logical-name NAME STRING
+     この関数は論理名NAMEに値STRINGを定義する。VMSでのみ使える。
+
+ -- Function: set-file-modes FILENAME MODE
+     この関数はFILENAMEのモードビットを
+     MODE（整数であること）と設定する。
+     MODEの下位12ビットのみを使う。
+
+ -- Function: set-default-file-modes MODE
+     この関数は、Emacsやそのサブプロセスが作成する新規ファイルのデフォ
+     ルトのファイルモードを設定する。Emacsが作成する各ファイルは最初こ
+     のモードになる。UNIXでは、デフォルトのモードは『umask』の値の1の補
+     数である。
+
+     引数MODEは整数であること。ほとんどのシステムでは、MODEの下位9ビッ
+     トのみが意味を持つ。
+
+     既存ファイルの変更を保存することはファイルの作成とはみなさないため、
+     ファイルのモードは変わらず、デフォルトのファイルモードを使わない。
+
+ -- Function: default-file-modes
+     この関数は、現在のデフォルトのファイルモードの値を返す。
+
+MS-DOSでは、『実行可能』ファイルモードビットのようなものはありません。
+そのためEmacsは、`.com'、`.bat'、`.exe'のいずれかで終る名前のファイルを
+実行可能であるとみなします。これは、`file-modes'や`file-attributes'が返
+す値に反映されます。
+
+
+
+File: elisp-ja, Node: File Names, Next: Contents of Directories, Prev: Changing Files
+
+ファイル名
+==========
+
+他の場面と同様にEmacsでは、一般にファイルはその名前で参照します。Emacs
+ではファイル名は文字列で表します。ファイルを操作する関数はすべてファイ
+ル名引数を仮定します。
+
+ファイル自体の操作に加えて、Emacs Lispプログラムはファイルの名前そのも
+のを操作する必要があります。つまり、ファイル名を分解したり、関連するファ
+イル名を作成するためにその一部を使います。本節ではファイル名を操作する
+方法を説明します。
+
+本節の関数は実際にはファイルを参照しませんから、既存のファイルやディレ
+クトリを表さないファイル名を操作できます。
+
+VMSでは、これらの関数はすべて、VMSのファイル名構文とUNIXの構文の両方を
+理解します。つまり、標準LispライブラリはUNIX構文でファイル名を指定でき、
+変更せずにVMS上で正しく動作します。MS-DOSやMS-Windowsでは、これらの関数
+は、UNIX構文に加えてMS-DOSやMS-Windowsのファイル名構文を理解します。
+
+* Menu:
+
+* File Name Components::  The directory part of a file name, and the rest.
+* Directory Names::       A directory's name as a directory
+                            is different from its name as a file.
+* Relative File Names::   Some file names are relative to a current directory.
+* File Name Expansion::   Converting relative file names to absolute ones.
+* Unique File Names::     Generating names for temporary files.
+* File Name Completion::  Finding the completions for a given file name.
+* Standard File Names::   If your package uses a fixed file name,
+                            how to handle various operating systems simply.
+
+
+
+File: elisp-ja, Node: File Name Components, Next: Relative File Names, Prev: File Names, Up: File Names
+
+ファイル名の構成要素
+--------------------
+
+オペレーティングシステムは、一連のファイルをディレクトリにまとめます。
+ファイルを指定するには、ディレクトリと当該ディレクトリ内のファイルの名
+前を指定する必要があります。そのためEmacsは、ファイル名には2つの部分、
+ディレクトリ名"（directory name）部分と"非ディレクトリ名
+（nondirectory name）部分（つまり"ディレクトリ内のファイル名"）があると
+みなします。どちらかの部分は空でもかまいません。これらの2つの部分を連結
+するともとのファイル名になります。
+
+UNIXでは、ディレクトリ部分は最後のスラッシュまでを含んだ部分であり、非
+ディレクトリ部分は残りの部分です。VMSの構文規則は複雑です。
+
+ある種の目的のために、非ディレクトリ部分をさらに名前だけの部分と"版番号
+（version number）に分けます。UNIXでは、バックアップファイルだけにそれ
+らの名前に版番号があります。VMSでは各ファイルに版番号がありますが、ほと
+んどの場合、Emacsで実際に使うファイル名では版番号を省略します。そのため、
+Emacsで版番号が見えるのは多くの場合ディレクトリ一覧です。
+
+ -- Function: file-name-directory FILENAME
+     この関数はFILENAMEのディレクトリ部分（ディレクトリ部分がなければ
+     `nil'）を返す。UNIXでは、この関数はスラッシュで終る文字列を返す。
+     VMSでは、`:'、`]'、`>'のいずれかで終る文字列を返す。
+
+          (file-name-directory "lewis/foo")  ; UNIXの例
+               => "lewis/"
+          (file-name-directory "foo")        ; UNIXの例
+               => nil
+          (file-name-directory "[X]FOO.TMP") ; VMSの例
+               => "[X]"
+
+ -- Function: file-name-nondirectory FILENAME
+     この関数はFILENAMEの非ディレクトリ部分を返す。
+
+          (file-name-nondirectory "lewis/foo")
+               => "foo"
+          (file-name-nondirectory "foo")
+               => "foo"
+          ;; つぎの例はVMSでのみ正確である
+          (file-name-nondirectory "[X]FOO.TMP")
+               => "FOO.TMP"
+
+ -- Function: file-name-sans-versions FILENAME
+     この関数は、FILENAMEから版番号、バックアップ版番号、末尾のティルダ
+     をすべて削除したものを返す。
+
+          (file-name-sans-versions "~rms/foo.~1~")
+               => "~rms/foo"
+          (file-name-sans-versions "~rms/foo~")
+               => "~rms/foo"
+          (file-name-sans-versions "~rms/foo")
+               => "~rms/foo"
+          ;; つぎの例はVMSでのみ正確である
+          (file-name-sans-versions "foo;23")
+               => "foo"
+
+ -- Function: file-name-sans-extension FILENAME
+     この関数は、FILENAMEからあれば『拡張子』を除いたものを返す。ファイ
+     ル名の拡張子とは、名前の最後の部分にある`.'で始まる部分である。た
+     とえばつぎのとおりである。
+
+          (file-name-sans-extension "foo.lose.c")
+               => "foo.lose"
+          (file-name-sans-extension "big.hack/foo")
+               => "big.hack/foo"
+
+
+
+File: elisp-ja, Node: Directory Names, Next: Relative File Names, Prev: File Name Components, Up: File Names
+
+ディレクトリ名
+--------------
+
+"ディレクトリ名"（directory name）とはディレクトリの名前です。ディレク
+トリはファイルの一種であり、ファイル名を持ちますが、それはディレクトリ
+名に関連付けられますが同一ではありません。（これはUNIXの通常の用語と同
+じではない。）同じものに対するこれらの異なる2つの名前は、構文の変換で関
+連付けます。UNIXではこれは簡単であり、ディレクトリ名はスラッシュで終り
+ますが、ファイルとしてのディレクトリの名前にはスラッシュはありません。
+VMSでは、関係はより複雑です。
+
+ディレクトリ名とそのファイルとしての名前との違いはわずかですが重大です。
+Emacsの変数や関数引数がディレクトリ名と記述されているときには、ディレク
+トリのファイルとしての名前は受け付けません。
+
+つぎの2つの関数はディレクトリ名とファイルとしての名前を相互に変換します。
+これらは、`$HOME'などの環境変数置換や
+`~'や`..'などの構造にはなにも特別なことはしません。
+
+ -- Function: file-name-as-directory FILENAME
+     この関数は、オペレーティングシステムがディレクトリ名と解釈する表現
+     で表したFILENAMEの文字列を返す。UNIXでは、文字列に（最後にスラッシュ
+     がなければ）スラッシュを付加することを意味する。VMSでは、
+     `[X]Y.DIR.1'の形の文字列を`[X.Y]'の形に変換する。
+
+          (file-name-as-directory "~rms/lewis")
+               => "~rms/lewis/"
+
+ -- Function: directory-file-name DIRNAME
+     この関数は、オペレーティングシステムがファイルの名前と解釈する表現
+     で表したDIRNAMEの文字列を返す。UNIXでは、文字列の最後のスラッシュ
+     を取り除くことを意味する。VMSでは、`[X.Y]'の形の文字列を
+     `[X]Y.DIR.1'の形に変換する。
+
+          (directory-file-name "~lewis/")
+               => "~lewis"
+
+シンボリックリンクを介して通常参照されるディレクトリにはディレクトリ名
+の省略形が有用です。ユーザーはリンクの名前をディレクトリの『名前』とし
+ばしばみなし、ディレクトリの『本当の』名前を見るのをわずらわしく思うこ
+とがあります。リンク名を『本当の』名前の省略形と定義しておくと、Emacsは
+ユーザーに省略形を表示します。
+
+ -- Variable: directory-abbrev-alist
+     変数`directory-abbrev-alist'は、ディレクトリに使う省略形の連想リス
+     トを保持する。各要素は`(FROM . TO)'の形であり、ディレクトリ名に
+     FROMが現れるとこれをTOに置き換えることを指示する。文字列FROMは実際
+     には正規表現であり、つねに`^'で始まること。関数
+     `abbreviate-file-name'がこれらの置換を行う。
+
+     ファイル`site-init.el'でこの変数に設定し、読者のサイトに適した省略
+     形を記述できる。
+
+     ファイルシステム`/home/fsf'などをシンボリック名`/fsf'で通常参照す
+     るシステムの例をつぎに示す。
+
+          (("^/home/fsf" . "/fsf")
+           ("^/home/gp" . "/gp")
+           ("^/home/gd" . "/gd"))
+
+ディレクトリ名をその省略形に変換するには、つぎの関数を使います。
+
+ -- Function: abbreviate-file-name DIRNAME
+     この関数は、`directory-abbrev-alist'の省略形を引数に適用し、ユーザー
+     のホームディレクトリを`~'に置き換える。
+
+
+
+File: elisp-ja, Node: Relative File Names, Next: File Name Expansion, Prev: File Name Components, Up: File Names
+
+ファイルの絶対名と相対名
+------------------------
+
+ファイルシステム内のすべてのディレクトリは、ルートディレクトリから始ま
+る木を形作ります。ファイル名では、木のルートから始まるすべてのディレク
+トリ名を指定できて、これを"絶対"（absolute）ファイル名と呼びます。ある
+いは、デフォルトディレクトリを基準に木の中でのファイルの位置を指定する
+こともでき、これを"相対"（relative）ファイル名と呼びます。UNIXでは、絶
+対ファイル名はスラッシュかティルダ（`~'）で始まり、相対ファイル名はそれ
+らでは始まりません。VMSでの規則は複雑です。
+
+ -- Function: file-name-absolute-p FILENAME
+     この関数は、ファイルFILENAMEが絶対ファイル名であれば`t'を返し、さ
+     もなければ`nil'を返す。VMS上では、この関数はUNIXの構文とVMSの構文
+     の両方を理解する。
+
+          (file-name-absolute-p "~rms/foo")
+               => t
+          (file-name-absolute-p "rms/foo")
+               => nil
+          (file-name-absolute-p "/user/rms/foo")
+               => t
+
+
+
+File: elisp-ja, Node: File Name Expansion, Next: Unique File Names, Prev: Relative File Names, Up: File Names
+
+ファイル名を展開する関数
+------------------------
+
+ファイル名の"展開"（expansion）とは、相対ファイル名を絶対ファイル名に変
+換することです。これはデフォルトディレクトリを基準に行うので、展開すべ
+きファイル名に加えて、デフォルトディレクトリの名前も指定する必要があり
+ます。また、展開では、`./'や`NAME/../'のような冗長部分を取り除いてファ
+イル名を単純にします。
+
+ -- Function: expand-file-name FILENAME &optional DIRECTORY
+     この関数はFILENAMEを絶対ファイル名に変換する。DIRECTORYが与えられ
+     ると、FILENAMEが相対ファイル名であれば、デフォルトディレクトリを基
+     準にする。（DIRECTORYの値そのものは絶対ディレクトリ名であること。
+     `~'で始まってもよい。）さもなければ、バッファの
+     `default-directory'の値を使う。たとえばつぎのとおり。
+
+          (expand-file-name "foo")
+               => "/xcssun/users/rms/lewis/foo"
+          (expand-file-name "../foo")
+               => "/xcssun/users/rms/foo"
+          (expand-file-name "foo" "/usr/spool/")
+               => "/usr/spool/foo"
+          (expand-file-name "$HOME/foo")
+               => "/xcssun/users/rms/lewis/$HOME/foo"
+
+     `.'や`..'を含むファイル名は、それらの正則な形に単純化する。
+
+          (expand-file-name "bar/../foo")
+               => "/xcssun/users/rms/lewis/foo"
+
+     `expand-file-name'は環境変数を展開*しない*ことに注意。
+     `substitute-in-file-name'だけがそれを行う。
+
+ -- Function: file-relative-name FILENAME DIRECTORY
+     この関数は展開の逆操作を行う。
+     つまり、DIRECTORYを基準に解釈すると
+     FILENAMEと等価になる相対名を返す。
+
+     絶対ファイル名が装置名で始まるシステムもある。そのようなシステムで
+     は、DIRECTORYとFILENAMEが2つの異なる装置名で始まると、FILENAMEに等
+     価なDIRECTORYを基準にした相対名はない。そのような場合、
+     `file-relative-name'は絶対名の形でFILENAMEを返す。
+
+          (file-relative-name "/foo/bar" "/foo/")
+               => "bar"
+          (file-relative-name "/foo/bar" "/hack/")
+               => "/foo/bar"
+
+ -- Variable: default-directory
+     このバッファローカルな変数の値は、カレントバッファのデフォルトディ
+     レクトリである。これは絶対ディレクトリ名であること。`~'で始まって
+     もよい。この変数は各バッファにおいてバッファローカルである。
+
+     `expand-file-name'は、その第2引数が`nil'であるとデフォルトディレク
+     トリを使う。
+
+     UNIXでは、この値はつねにスラッシュで終る文字列である。
+
+          default-directory
+               => "/user/lewis/manual/"
+
+ -- Function: substitute-in-file-name FILENAME
+     この関数は、FILENAME内の環境変数の参照を
+     環境変数の値で置き換える。
+     UNIXのシェルの構文規則に従って、
+     `$'は環境変数の値に置換するための接頭辞である。
+
+     環境変数名は、`$'に続く（下線を含む）英数字の列である。`$'のつぎの
+     文字が`{'であると、対応する`}'までが変数名である。
+
+     ここでは、環境変数`HOME'はユーザーのホームディレクトリ名
+     `/xcssun/users/rms'を保持していると仮定する。
+
+          (substitute-in-file-name "$HOME/foo")
+               => "/xcssun/users/rms/foo"
+
+     置換後、`/'のつぎに`~'か`/'が現れると、
+     `/'までの部分をすべて取り除く。
+
+          (substitute-in-file-name "bar/~/foo")
+               => "~/foo"
+          (substitute-in-file-name "/usr/local/$HOME/foo")
+               => "/xcssun/users/rms/foo"
+               ;; `/usr/local/' has been discarded.
+
+     VMSでは、`$'による置換は行わないため、この関数は冗長部分を取り除く
+     以外にはなにも行わない。
+
+
+
+File: elisp-ja, Node: Unique File Names, Next: File Name Completion, Prev: File Name Expansion, Up: File Names
+
+一意なファイル名の生成
+----------------------
+
+一時的なファイルに書く必要があるプログラムもあります。そのようなファイ
+ル向けの名前を作る通常の方法はつぎのとおりです。
+
+     (make-temp-name
+      (expand-file-name NAME-OF-APPLICATION
+                        temporary-file-directory))
+
+`make-temp-name'の仕事は、異なる2人のユーザーや異なる2つのジョブがまっ
+たく同じファイル名を使わないようにすることです。この例では、変数
+`temporary-file-directory'を使って一時的なファイルを置く場所を決めてい
+ます。すべてのEmacs Lispプログラムでは、すべての一時的なファイル向けの
+ディレクトリを指定する一意な方法をユーザーに提供するために、この目的に
+は`temporary-file-directory'を使うべきです。
+
+ -- Function: make-temp-name STRING
+     この関数は、一意なファイル名として使える文字列を生成する。名前は
+     STRINGで始まり、各Emacsジョブごとに異なる数を含む。
+
+          (make-temp-name "/tmp/foo")
+               => "/tmp/foo232J6v"
+
+     同じEmacsで動作している異なるライブラリのあいだで衝突しないように、
+     `make-temp-name'を使う各Lispプログラムでは、独自のSTRINGを使うべき
+     である。STRINGの末尾に付加される数は、異なるEmacsジョブで動いてい
+     る同じアプリケーションを区別する。文字を余計に追加することで、1つ
+     のEmacsジョブであっても異なる名前の個数を非常に多くできる。
+
+ -- Variable: temporary-file-directory
+     この変数は、一時的なファイルを作成するためのディレクトリ名を指定す
+     る。その値はディレクトリ名（*Note Directory Names::）であるべきだ
+     が、Lispプログラムにとっては、その値がディレクトリのファイルとして
+     の名前であっても処理できるほうがよい。この値を`expand-file-name'の
+     第2引数に使うと、そのようにできる。
+
+     デフォルト値は、読者のオペレーティングシステムにおいて合理的な方法
+     で決定される。GNUとUNIXシステムでは、環境変数`TMP'や`TMPDIR'を基に
+     する。
+
+     読者が一時的なファイル名を選ぶために`make-temp-name'を使わない場合
+     であっても、一時的なファイル名を置くディレクトリを決めるためにこの
+     変数を使うべきである。
+
+
+
+File: elisp-ja, Node: File Name Completion, Next: Standard File Names, Prev: Unique File Names, Up: File Names
+
+ファイル名の補完
+----------------
+
+本節では、ファイル名の補完向けの低レベルのサブルーティンについて述べま
+す。他の補完関数については、*Note Completion::を参照してください。
+
+ -- Function: file-name-all-completions PARTIAL-FILENAME DIRECTORY
+     この関数は、ディレクトリDIRECTORYにおいてPARTIAL-FILENAMEで始まる
+     名前のファイルに対するすべての補完候補から成るリストを返す。候補の
+     順番はディレクトリ内でのファイルの順番であり、それは予測できず有用
+     な情報はなにもない。
+
+     引数PARTIAL-FILENAMEは、ディレクトリ部分やスラッシュをいっさい含ま
+     ないファイル名であること。DIRECTORYが絶対名でないと、カレントバッ
+     ファのデフォルトディレクトリをDIRECTORYのまえに補う。
+
+     つぎの例で、カレントデフォルトディレクトリは`~rms/lewis'であり、
+     `f'で始まる名前のファイルは、
+     `foo'、`file~'、`file.c'、`file.c.~1~'、
+     `file.c.~2~'の5つであると仮定する。
+
+          (file-name-all-completions "f" "")
+               => ("foo" "file~" "file.c.~2~"
+                          "file.c.~1~" "file.c")
+
+          (file-name-all-completions "fo" "")
+               => ("foo")
+
+ -- Function: file-name-completion FILENAME DIRECTORY
+     この関数は、ディレクトリDIRECTORYにおいてファイル名FILENAMEを補完
+     する。ディレクトリDIRECTORYにおいてFILENAMEで始まるすべてのファイ
+     ル名に共通な最長の文字列を返す。
+
+     FILENAMEで始まるものがたった1つであり完全に一致すると、
+     この関数は`t'を返す。
+     ディレクトリDIRECTORYにFILENAMEで始まる名前がないと
+     `nil'を返す。
+
+     つぎの例で、カレントデフォルトディレクトリには
+     `f'で始まる名前のファイルは、
+     `foo'、`file~'、`file.c'、`file.c.~1~'、
+     `file.c.~2~'の5つであると仮定する。
+
+          (file-name-completion "fi" "")
+               => "file"
+
+          (file-name-completion "file.c.~1" "")
+               => "file.c.~1~"
+
+          (file-name-completion "file.c.~1~" "")
+               => t
+
+          (file-name-completion "file.c.~3" "")
+               => nil
+
+ -- User Option: completion-ignored-extensions
+     `file-name-completion'は、このリスト内のいずれかの文字列で終る名前
+     のファイルを通常無視する。補完候補すべてがこれらの接頭辞の1つで終
+     る場合や、補完候補すべてを含んだバッファが表示されている場合には無
+     視しない。
+
+     典型的な値はつぎのとおりである。
+
+          completion-ignored-extensions
+               => (".o" ".elc" "~" ".dvi")
+
+
+
+File: elisp-ja, Node: Standard File Names, Prev: File Name Completion, Up: File Names
+
+標準ファイル名
+--------------
+
+Lispプログラムで使われるほとんどのファイル名は、ユーザーが入力したもの
+です。しかし、Lispプログラムでは、特定目的の標準ファイル名を指定する必
+要がある場合があります。典型的には、各ユーザーごとのカスタマイズ情報を
+保持するものです。たとえば、省略形の定義は（デフォルトでは）ファイル
+`~/.abbrev_defs'に保存されます。パッケージ`completion'は、補完情報をファ
+イル`~/.completions'に保存します。これらは、Emacsで特定目的に使われる多
+くの標準ファイル名のうちの2つです。
+
+さまざまなのオペレーティングシステムには、正しいファイル名やユーザーの
+プロフィールデータに使うファイル名に独自の慣習があります。標準ファイル
+名を使用するファイルを読み込むLispプログラムでは、各システムごとに当該
+システムに適したファイル名を使うべきです。関数
+`convert-standard-filename'は、これを簡単にします。
+
+ -- Function: convert-standard-filename FILENAME
+     この関数は、ファイル名FILENAMEを使用しているオペレーティングシステ
+     ムの慣習に従うように変換し、新たな文字列として結果を返す。
+
+Lispプログラムにおいて標準ファイル名を指定する推奨方法は、GNUとUNIXシス
+テムの慣習に従った名前を選ぶことです。つまり、ピリオドで始まる非ディレ
+クトリ部分を選び、それを直接使うかわりに`convert-standard-filename'に渡
+します。パッケージ`completion'からの例をつぎに示します。
+
+     (defvar save-completions-file-name
+             (convert-standard-filename "~/.completions")
+       "*The file name to save completions to.")
+
+GNUとUNIXシステム、および、他のいくつかのシステムでは、
+`convert-standard-filename'は引数を未変更で返します。別のシステムでは、
+システムの慣習に従うように名前を変更します。
+
+たとえば、MS-DOSではこの関数は、先頭の`.'を`_'に、
+`.'がどこにもなければ名前の途中の`_'を`.'に、
+8文字目のうしろに`.'がなければ`.'を挿入し、
+`.'以降の3文字よりうしろを切り詰めるなどを行います。
+（これ以外にも変更する。）
+したがって、`.abbrev_defs'は`_abbrev.def'となり、
+`.completions'は`_complet.ion'となります。
+
+
+
+File: elisp-ja, Node: Contents of Directories, Next: Create/Delete Dirs, Prev: File Names
+
+ディレクトリの内容
+==================
+
+ディレクトリは、さまざまな名前で入れた別のファイルを収めているファイル
+の一種です。ディレクトリは、ファイルシステムの機能です。
+
+Emacsは、ディレクトリ内のファイル名をLispのリストとして一覧にしたり、シェ
+ルコマンド`ls'を使ってバッファに名前を表示できます。後者の場合、コマン
+ド`ls'に渡したオプションに応じて、各ファイルに関する情報も表示できます。
+
+ -- Function: directory-files DIRECTORY &optional FULL-NAME MATCH-REGEXP NOSORT
+     この関数は、ディレクトリDIRECTORY内のファイルの名前から成るリスト
+     を返す。デフォルトでは、リストはアルファベット順になる。
+
+     FULL-NAMEが`nil'以外であると、関数はファイルの絶対ファイル名を返す。
+     さもなければ、指定したディレクトリに対する相対名を返す。
+
+     MATCH-REGEXPが`nil'以外であると、この関数は正規表現MATCH-REGEXPに
+     一致するファイル名のみを返す。つまり、他の名前のファイルはリストか
+     ら除かれる。
+
+     NOSORTが`nil'以外であると、`directory-files'はリストをソートしない
+     ので、ファイル名の順番に規則はない。処理速度を最大にしてファイルの
+     処理順序に拘らないならば、これを用いる。処理順序がユーザーに見える
+     場合には、ソートしたほうがユーザーは幸せであろう。
+
+          (directory-files "~lewis")
+               => ("#foo#" "#foo.el#" "." ".."
+                   "dired-mods.el" "files.texi"
+                   "files.texi.~1~")
+
+     DIRECTORYが読めないディレクトリの名前であるとエラーを通知する。
+
+ -- Function: file-name-all-versions FILE DIRNAME
+     この関数は、ディレクトリDIRNAME内のFILEという名前のファイルのすべ
+     ての版から成るリストを返す。
+
+ -- Function: insert-directory FILE SWITCHES &optional WILDCARD FULL-DIRECTORY-P
+     この関数は、`ls'にSWITCHESを渡して表示したディレクトリFILEの一覧を
+     （カレントバッファに）挿入する。ポイントは挿入したテキストのうしろ
+     に置かれる。
+
+     引数FILEは、ディレクトリ名であるか
+     ワイルドカードを含んだファイル指定である。
+     WILDCARDが`nil'以外であると、
+     FILEをワイルドカードを含むファイル指定として扱う。
+
+     FULL-DIRECTORY-Pが`nil'以外であると、ディレクトリ一覧はディレクト
+     リの全内容を表すと仮定することを意味する。FILEがディレクトリであり
+     SWITCHESに`-d'を含まない場合には、`t'を指定すべきである。（`ls'の
+     オプション`-d'は、ディレクトリの内容ではなく、ファイルとしてのディ
+     レクトリ自身を表示することを意味する。）
+
+     この関数は、変数`insert-directory-program'で指定される名前のディレ
+     クトリ表示プログラムを実行して動作する。WILDCARDが`nil'以外である
+     と、ワイルドカードを展開するために`shell-file-name'で指定されるシェ
+     ルを実行する。
+
+ -- Variable: insert-directory-program
+     この変数の値は、関数`insert-directory'でディレクトリ一覧を生成する
+     ために実行するプログラムである。
+
+
+
+File: elisp-ja, Node: Create/Delete Dirs, Next: Magic File Names, Prev: Contents of Directories
+
+ディレクトリの作成と削除
+========================
+
+Emacs Lispのほとんどのファイル操作関数は、ディレクトリであるファイルに
+使うとエラーになります。たとえば、`delete-file'ではディレクトリを削除で
+きません。これらの特別な関数はディレクトリを作成したり削除するためのも
+のです。
+
+ -- Function: make-directory DIRNAME
+     この関数はDIRNAMEという名前のディレクトリを作る。
+
+ -- Function: delete-directory DIRNAME
+     この関数は、ディレクトリDIRNAMEを削除する。関数`delete-file'は、ディ
+     レクトリであるファイルには使えない。ディレクトリには
+     `delete-directory'を使う必要がある。ディレクトリ内にファイルがある
+     と、`delete-directory'はエラーを通知する。
+
+
+
+File: elisp-ja, Node: Magic File Names, Next: Format Conversion, Prev: Create/Delete Dirs
+
+ファイル名を『マジック』にする
+==============================
+
+特定のファイル名を特別に扱うことができます。これをそれらの名前を"マジッ
+ク"（magic）にするといいます。この機能の主な用途はリモートファイル名
+（*Note リモートファイル: (emacs)Remote Files.）を実装することです。
+
+マジックファイル名の種類を定義するには、名前のクラス（正規表現に一致す
+るものすべて）を定義する正規表現と、それに一致するファイルに対する
+Emacsの基本ファイル操作を実装するハンドラを指定する必要があります。
+
+変数`file-name-handler-alist'は、ハンドラと当該ハンドラの適用を決定する
+正規表現からなるリストを保持します。各要素の形はつぎのとおりです。
+
+     (REGEXP . HANDLER)
+
+Emacsのすべてのファイル操作基本関数とファイル名変換基本関数は、指定され
+た名前を`file-name-handler-alist'に対して検査します。ファイル名が
+REGEXPに一致すると、基本関数はHANDLERを呼び出して当該ファイルを処理しま
+す。
+
+HANDLERに与える最初の引数は基本関数の名前です。残りの引数は当該操作に渡
+されるべき引数です。（それらの引数の最初のものは典型的にはファイル名自
+身である。）たとえば、つぎのようにした場合、
+
+     (file-exists-p FILENAME)
+
+FILENAMEにハンドラHANDLERがあると、
+HANDLERはつぎのように呼び出されます。
+
+     (funcall HANDLER 'file-exists-p FILENAME)
+
+つぎは、マジックファイル名のハンドラが処理すべき操作です。
+
+`add-name-to-file'、`copy-file'、`delete-directory'、
+`delete-file'、
+`diff-latest-backup-file'、
+`directory-file-name'、
+`directory-files'、
+`dired-call-process'、
+`dired-compress-file'、`dired-uncache'、
+`expand-file-name'、
+`file-accessible-directory-p'、
+`file-attributes'、
+`file-directory-p'、
+`file-executable-p'、`file-exists-p'、
+`file-local-copy'、
+`file-modes'、`file-name-all-completions'，
+`file-name-as-directory'、
+`file-name-completion'、
+`file-name-directory'、
+`file-name-nondirectory'、
+`file-name-sans-versions'、`file-newer-than-file-p'、
+`file-ownership-preserved-p'、
+`file-readable-p'、`file-regular-p'、`file-symlink-p'、
+`file-truename'、`file-writable-p'、
+`find-backup-file-name'、
+`get-file-buffer'、
+`insert-directory'、
+`insert-file-contents'、
+`load', `make-directory'、
+`make-symbolic-link'、`rename-file'、`set-file-modes'、
+`set-visited-file-modtime'、`shell-command'、
+`unhandled-file-name-directory'、
+`vc-registered'、
+`verify-visited-file-modtime'、
+`write-region'。
+
+`insert-file-contents'に対するハンドラは、引数VISITが`nil'以外であると
+きには`(set-buffer-modified-p nil)'を使ってバッファの変更フラグをクリア
+する必要が典型的にはあります。
+
+ハンドラ関数は、上のすべての操作、ならびに、将来追加されるものを扱える
+必要があります。これらの操作すべてをハンドラ自身で実装する必要はありま
+せん。特定の操作について特別なことを行う必要がなければ、『通常どおりに』
+操作を処理するために基本関数を再起動できます。ハンドラが認識できない操
+作については、基本関数を再起動するべきです。1つの方法はつぎのとおりです。
+
+     (defun my-file-handler (operation &rest args)
+       ;; まず、特別に扱う必要がある操作かどうか検査する
+       (cond ((eq operation 'insert-file-contents) ...)
+             ((eq operation 'write-region) ...)
+             ...
+             ;; 知らない操作を扱う
+             (t (let ((inhibit-file-name-handlers
+                       (cons 'my-file-handler
+                             (and (eq inhibit-file-name-operation operation)
+                                  inhibit-file-name-handlers)))
+                      (inhibit-file-name-operation operation))
+                  (apply operation args)))))
+
+ハンドラ関数で、指定された操作についてはEmacsの通常の基本関数を呼び出す
+と決定したときには、基本関数から同じハンドラが再度呼ばれて無限再帰にな
+ることを防ぐ必要があります。上の例は、変数`inhibit-file-name-handlers'
+と`inhibit-file-name-operation'を使ってこれを行う方法を示すものです。そ
+れらを上に示したとおりに使うように注意してください。複数のハンドラがあっ
+たり、2つのファイルを扱う操作において各ファイルにハンドラがある場合には、
+この詳細は重要です。
+
+ -- Variable: inhibit-file-name-handlers
+     この変数は、特定操作については現在適用を禁止されているハンドラのリ
+     ストを保持する。
+
+ -- Variable: inhibit-file-name-operation
+     特定のハンドラにおいて現在禁止されている操作。
+
+ -- Function: find-file-name-handler FILE OPERATION
+     この関数はファイル名FILEに対するハンドラ関数を返す。ハンドラがなけ
+     れば`nil'を返す。引数OPERATIONは、ファイルに対して適用する操作であ
+     ること。つまり、ハンドラを呼び出すときに第1引数として渡される値。
+     当該操作は`inhibit-file-name-operation'と比較する必要がある。
+
+ -- Function: file-local-copy FILENAME
+     この関数は、ファイルFILENAMEがマジックでない普通のファイルでなければ、
+     FILENAMEをマジックでない普通のファイルにコピーする。
+
+     FILENAMEが、Emacsの外側のプログラムからは直接読んだり書けないマジッ
+     クファイル名であると、この関数は普通のファイルにコピーしてそのファ
+     イルの名前を返す。
+
+     FILENAMEが普通のファイル名でマジックでなければ、この関数はなにもせ
+     ずに`nil'を返す。
+
+ -- Function: unhandled-file-name-directory FILENAME
+     この関数は、マジックではないディレクトリの名前を返す。FILENAMEがマ
+     ジックでなければ、FILENAMEのディレクトリ部分を使う。マジックファイ
+     ル名であると、ファイル名ハンドラを起動し、当該ハンドラがどんな値を
+     返すか決定する。
+
+     これは実行中のサブプロセスに有用である。各サブプロセスには、カレン
+     トディレクトリとしてマジックでないディレクトリが必要であり、この関
+     数はそれを扱うのによい方法である。
+
+
+
+File: elisp-ja, Node: Format Conversion, Prev: Magic File Names
+
+ファイル書式変換
+================
+
+変数`format-alist'は、Emacsバッファ内のデータ（テキスト、テキスト属性、
+その他の情報）をファイル内でテキスト表現する方法を記述した"ファイル書式
+（file format）のリストを定義します。Emacsはファイルを読み書きするとき
+に必要ならば書式変換を行います。
+
+ -- Variable: format-alist
+     このリストは、各ファイル書式の定義を含んだリストである。
+
+各書式定義はつぎの形のリストです。
+
+     (NAME DOC-STRING REGEXP FROM-FN TO-FN MODIFY MODE-FN)
+
+書式定義の各要素の意味はつぎのとおりです。
+
+NAME
+     当該書式の名前。
+
+DOC-STRING
+     当該書式の説明文字列。
+
+REGEXP
+     当該書式で表現されたファイルを認識するために使用する正規表現。
+
+FROM-FN
+     当該書式のデータを復号化（ファイル内のデータをEmacsの通常のデータ
+     表現へ変換）するためのシェルコマンドか関数。
+
+     シェルコマンドは文字列で表現し、Emacsは変換を行うために当該コマン
+     ドをフィルタとして実行する。
+
+     FROM-FNが関数であると、
+     バッファの変換すべき部分を指定するBEGINとENDの2つの引数で
+     呼ばれる。
+     当該関数はその場で編集してテキストを変換すること。
+     これによりテキストの長さが変わる可能性があるので、
+     FROM-FNは変更部分の末尾位置を返すこと。
+
+     FROM-FNの責任の1つは、ファイルの先頭がREGEXPで始まらないように保証
+     することである。さもないと、再度呼び出される可能性がある。
+
+TO-FN
+     当該書式にデータを符号化するためのシェルコマンドか関数。つまり、
+     Emacsの通常のデータ表現を当該書式に変換する。
+
+     TO-FNが文字列であるとそれはシェルコマンドであり、Emacsは変換を行う
+     ために当該コマンドをフィルタとして実行する。
+
+     TO-FNが関数であると、バッファの変換すべき部分を指定するBEGINとEND
+     の2つの引数で呼ばれる。変換を行うには2つの方法がある。
+
+        * その場でバッファを編集する。この場合、TO-FNは変更したテキスト
+          範囲の終了位置を返すこと。
+
+        * 注記のリストを返す。このリストは、`(POSITION . STRING)'の形の
+          要素から成り、POSITIONは書き出すべきテキスト内での相対位置を
+          指定する整数、STRINGはそこに追加すべき注記である。TO-FNがリス
+          トを返すときには、リストはPOSITIONの順にソートしてあること。
+
+          `write-region'がバッファからファイルへ実際に書き出すとき、指
+          定された注記を対応する位置に埋め込む。これらすべては、バッファ
+          を変更せずに行われる。
+
+MODIFY
+     フラグであり、符号化関数がバッファを変更する場合には`t'、注記のリ
+     ストを返す場合には`nil'である。
+
+MODE
+     当該書式から変換されたファイルを訪問後に呼び出されるモード関数。
+
+関数`insert-file-contents'は、指定されたファイルを読み込むときにファイ
+ル書式を自動的に認識します。ファイルの先頭のテキストを書式定義の正規表
+現に対して検査して、一致がみつかれば当該書式の復号化関数を呼び出します。
+そして、既知の書式について再度調べ直します。適用できる書式がなくなるま
+で検査し続けます。
+
+関数`find-file-noselect'やこれを使うコマンドでファイルを訪問すると、
+（`insert-file-contents'を呼び出すので）同様に変換を行います。さらに、
+この関数は、復号した各書式についてモード関数を呼び出します。バッファロー
+カルな変数`buffer-file-format'に書式名のリストを保存します。
+
+ -- Variable: buffer-file-format
+     この変数は、訪問したファイルの書式を記述している。より正確には、カ
+     レントバッファのファイルを訪問する過程で復号したファイル書式名のリ
+     ストである。この変数は、すべてのバッファにおいてつねにバッファロー
+     カルである。
+
+`write-region'がデータをファイルに書き出すときには、まず、
+`buffer-file-format'で指定された書式の符号化関数をリストに現れる順に呼
+び出します。
+
+ -- コマンド: format-write-file FILE FORMAT
+     このコマンドは、カレントバッファの内容を書式FORMATにてファイル
+     FILEに書き出す。さらに、当該書式をバッファを将来保存するときのデフォ
+     ルトとする。引数FORMATは、書式名のリストである。
+
+ -- コマンド: format-find-file FILE FORMAT
+     このコマンドは、ファイルFILEを探し、それを書式FORMATに従って変換す
+     る。さらに、当該書式をバッファをのちに保存するときのデフォルトとす
+     る。
+
+     引数FORMATは、書式名のリストである。
+     FORMATが`nil'であると、変換を行わない。
+     対話的に呼び出した場合、
+     FORMATに`nil'を指定するにはRETのみを打つ。
+
+ -- コマンド: format-insert-file FILE FORMAT &optional BEG END
+     このコマンドは、ファイルFILEの内容を書式FORMATに従って変換して挿入
+     する。BEGとENDが`nil'以外であると、それらは、
+     `insert-file-contents'（*Note Reading from Files::）と同様に、読み
+     込むべきファイルの部分を指定する。
+
+     戻り値は、`insert-file-contents'が返す値に似ており、絶対ファイル名
+     と挿入データの（変換後の）長さのリストである。
+
+     引数FORMATは、書式名のリストである。
+     FORMATが`nil'であると、変換を行わない。
+     対話的に呼び出した場合、
+     FORMATに`nil'を指定するにはRETのみを打つ。
+
+ -- Variable: auto-save-file-format
+     この変数は、自動保存に対して使用する書式を指定する。その値は、
+     `buffer-file-format'の値のように、書式名のリストであるが、
+     `buffer-file-format'のかわりに自動保存ファイルを書くために使われる。
+     この変数は、すべてのバッファにおいてつねにバッファローカルである。
+
+
+
+File: elisp-ja, Node: Backups and Auto-Saving, Next: Buffers, Prev: Files, Up: Top
+
+バックアップと自動保存 *(2003/10/30)*
+*************************************
+
+バックアップファイルと自動保存ファイルは、クラッシュやユーザー自身の誤
+りからEmacsがユーザーを保護するための2つの方式です。自動保存により、現
+在の編集セッションにおいて、まえの時点でのテキストを確保します。バック
+アップファイルにより、現在のセッション以前のファイル内容を確保します。
+
+* Menu:
+
+* Backup Files::   How backup files are made; how their names are chosen.
+* Auto-Saving::    How auto-save files are made; how their names are chosen.
+* Reverting::      `revert-buffer', and how to customize what it does.
+
+
+
+File: elisp-ja, Node: Backup Files, Next: Auto-Saving, Prev: Backups and Auto-Saving, Up: Backups and Auto-Saving
+
+バックアップファイル *(2003/10/30)*
+===================================
+
+"バックアップファイル"（backup file）とは、読者が編集中のファイルの古い
+内容のコピーです。バッファを訪問しているファイルに初めて保存するときに、
+Emacsはバックアップファイルを作成します。通常これは、バックアップファイ
+ルは現在の編集セッションよりまえのファイルの内容を保持することを意味し
+ます。バックアップファイルの内容は、通常、それが作られると変更されませ
+ん。
+
+訪問したファイルを新たな名前に改名することで通常バックアップは作られま
+す。訪問したファイルをコピーしてバックアップファイルを作るように指示す
+ることもできます。どちらを選ぶかによって、複数の名前を持つファイルでは
+違いがでます。また、編集したファイルの所有者が元所有者と同じであるか、
+それとも編集したユーザーが所有者になるかにも影響します。
+
+デフォルトでは、Emacsは各編集ファイルに1つのバックアップファイルを作り
+ます。番号付きのバックアップファイルを作るように指示することもでき、そ
+うすると、新たなバックアップファイルごとに新たな名前が付きます。古い番
+号付きバックアップファイルは必要なくなれば削除できますし、Emacsがそれら
+を自動的に削除することも可能です。
+
+* Menu:
+
+* Making Backups::     How Emacs makes backup files, and when.
+* Rename or Copy::     Two alternatives: renaming the old file or copying it.
+* Numbered Backups::   Keeping multiple backups for each source file.
+* Backup Names::       How backup file names are computed; customization.
+
+
+
+File: elisp-ja, Node: Making Backups, Next: Rename or Copy, Prev: Backup Files, Up: Backup Files
+
+バックアップファイルの作成 *(2003/10/30)*
+-----------------------------------------
+
+ -- Function: backup-buffer
+     この関数は、必要ならば、カレントバッファで訪問しているファイルのバッ
+     クアップを作成する。バッファを初めて保存するまえに`save-buffer'が
+     この関数を呼び出す。
+
+ -- Variable: buffer-backed-up
+     このバッファローカルな変数は、
+     当該バッファのもとで当該バッファのファイルの
+     バックアップを作成済みかどうかを表す。
+     `nil'以外であれば、バックアップファイルは作成済みであることを表す。
+     さもなければ、（バックアップがオンになっていれば）つぎに保存するときに
+     ファイルのバックアップを作成するべきであることを表す。
+     これは恒久的にバッファローカルであり、
+     `kill-all-local-variables'によって変更されない。
+
+ -- User Option: make-backup-files
+     この変数は、バックアップファイルを作成するかどうかを決定する。
+     `nil'以外であると、`backup-inhibited'が`nil'ならば（下記参照）
+     Emacsは初めて保存するときに各ファイルのバックアップを作成する。
+
+     つぎの例は、rmailのバッファでのみ変数`make-backup-files'を変更する
+     方法である。この変数を`nil'にすると、Emacsはそれらのファイルのバッ
+     クアップを作成しなくなり、ディスクスペースの節約になる。（このコー
+     ドを読者の設定ファイルに入れてもよい。）
+
+          (add-hook 'rmail-mode-hook
+                    (function (lambda ()
+                                (make-local-variable
+                                 'make-backup-files)
+                                (setq make-backup-files nil))))
+
+ -- Variable: backup-enable-predicate
+     この変数の値は、ファイルをバックアップすべきかどうかを決定するため
+     に特定の場面で呼び出される関数である。当該関数は、調べるべきファイ
+     ルの名前を引数にとる。当該関数が`nil'を返すと、当該ファイルのバッ
+     クアップは禁止である。さもなければ、本節の他の変数が、バックアップ
+     するかどうかやバックアップ方法を指定する。
+
+     この変数のデフォルト値は`normal-backup-enable-predicate'であり、
+     `temporary-file-directory' や`small-temporary-file-directory' にあ
+     るファイルを確認し、バックアップを行う。
+
+ -- Variable: backup-inhibited
+     この変数が`nil'以外であると、バックアップを禁止する。この変数は、
+     訪問したファイルの名前に対する`backup-enable-predicate'の検査結果
+     を記録している。訪問したファイルに基づいてバックアップを禁止する他
+     の機構でもこの変数を使える。たとえば、VCはこの変数に`nil'以外を設
+     定し、版管理システムで管理されているファイルに対してバックアップの
+     作成を禁止する。
+
+     これは恒久的にバッファローカルであり、メジャーモードを変更しても値
+     は失われない。メジャーモードはこの変数に設定するべきではなく、かわ
+     りに、`make-backup-files'に設定するべきである。
+
+ -- Variable: backup-directory-alist
+     これはファイル名の正規表現とバックアップディレクトリの連想リストで
+     ある。それぞれの要素は以下のようになる。
+          (REGEXP . DIRECTORY)
+
+     REGEXPに一致した名前を持つファイルのバックアップはDIRECTORYに保存
+     される。DIRECTORYが相対パスか絶対パスである。絶対パスであれば、あ
+     るREGEXPに一致したファイルのバックアップはすべて同じディレクトリに
+     できる。そして、そのバックアップファイルの名前は衝突を防ぐために、
+     ディレクトリの区切り文字を`!'に変えたフルパスになる。この方法はファ
+     イルシステムがファイル名を短縮して与える場合にはうまく動作しないだ
+     ろう。
+
+     すべてのバックアップが1つのディレクトリにできるようにするには、
+     `"."'と適切なディレクトリのペアを持つ連想リストであればよい。
+
+     この変数が`nil'かファイル名に一致しなかった場合には、バックアップ
+     ファイルは元ファイルと同じディレクトリにできる。
+
+     この変数は、MS-DOSのように長いファイル名に対応していないシステムで
+     は無視される。
+
+ -- Variable: make-backup-file-name-function
+     この変数の値は関数名である。この関数はバックアップファイル名を作る
+     関数であり、デフォルト関数 `make-backup-file-name' のかわりに使わ
+     れる。nilであれば、`make-backup-file-name' と同じことになる。
+
+     ある種のファイルでは特別な処理ができるように、この変数はバッファロー
+     カルになっている。もしこれを設定した場合には、
+     `backup-file-name-p' や `file-name-sans-versions' の変更も必要とな
+     る場合がある。
+
+
+
+

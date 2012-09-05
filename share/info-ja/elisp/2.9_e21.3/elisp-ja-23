@@ -1,0 +1,2130 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja  Node: Sexp Diary Entries-Footnotes, Up: Sexp Diary Entries
+
+(1) omer：過ぎ越しの祝い（Passover）の二日目から七週の祭
+（Shabuoth）の前日までの49日間
+
+
+
+File: elisp-ja, Node: Appt Customizing, Prev: Sexp Diary Entries, Up: Calendar
+
+約束の警告表示のカスタマイズ
+============================
+
+Emacsにどのように約束の警告表示を行わせ、どの程度前から行わせるかは、つ
+ぎの変数に設定することで正確に指定できます。
+
+`appt-message-warning-time'
+     約束の警告表示を開始する時間を分で表したもの。デフォルトは10分であ
+     る。
+`appt-audible'
+     これが`nil'以外であると、Emacsは約束の警告表示として端末のベルを鳴
+     らす。デフォルトは`t'。
+`appt-visible'
+     これが`nil'以外であると、Emacsは約束のメッセージをエコー領域に表示
+     する。デフォルトは`t'。
+`appt-display-mode-line'
+     これが`nil'以外であると、Emacsは約束までの残り分数をモード行に表示
+     する。デフォルトは`t'。
+`appt-msg-window'
+     これが`nil'以外であると、Emacsは約束のメッセージを別のウィンドウに
+     表示する。デフォルトは`t'。
+`appt-disp-window-function'
+     この変数は、約束のメッセージを表示するウィンドウを作るための関数を
+     保持する。
+`appt-delete-window-function'
+     この変数は、時間が過ぎたら約束のメッセージを表示したウィンドウを削
+     除するための関数を保持する。
+`appt-display-duration'
+     約束のメッセージを表示する秒数。デフォルトは5秒である。
+
+
+File: elisp-ja, Node: System Interface, Next: Tips, Prev: Calendar, Up: Top
+
+オペレーティングシステムとのインターフェイス
+********************************************
+
+本章は、Emacsの起動と終了、オペレーティングシステムの環境に収められた値
+の参照方法、端末入出力とフロー制御についてです。
+
+関連情報については*Note Building Emacs::。
+また、端末やスクリーンに関係する
+オペレーティングシステムの状態情報については、
+*Note Display::も参照してください。
+
+* Menu:
+
+* Starting Up::         Customizing Emacs start-up processing.
+* Getting Out::         How exiting works (permanent or temporary).
+* System Environment::  Distinguish the name and kind of system.
+* User Identification:: Finding the name and user id of the user.
+* Time of Day::		Getting the current time.
+* Time Conversion::     Converting a time from numeric form to a string, or
+                          to calendrical data (or vice versa).
+* Timers::		Setting a timer to call a function at a certain time.
+* Terminal Input::      Recording terminal input for debugging.
+* Terminal Output::     Recording terminal output for debugging.
+* Special Keysyms::     Defining system-specific key symbols for X windows.
+* Flow Control::        How to turn output flow control on or off.
+* Batch Mode::          Running Emacs without terminal interaction.
+
+
+
+File: elisp-ja, Node: Starting Up, Next: Getting Out, Prev: System Interface, Up: System Interface
+
+Emacsの始動
+===========
+
+本節では、Emacsが起動時になにを行うか、および、それらをカスタマイズする
+方法について述べます。
+
+* Menu:
+
+* Start-up Summary::        Sequence of actions Emacs performs at start-up.
+* Init File::               Details on reading the init file (`.emacs').
+* Terminal-Specific::       How the terminal-specific Lisp file is read.
+* Command Line Arguments::  How command line arguments are processed,
+                              and how you can customize them.
+
+
+
+File: elisp-ja, Node: Start-up Summary, Next: Init File, Prev: Starting Up, Up: Starting Up
+
+概要：始動時の動作手順
+----------------------
+
+Emacsが始動したときに行う（`startup.el'での）処理の順序はつぎのとおりで
+す。
+
+  1. `load-path'にある各ディレクトリファイルにおいて
+     `subdirs.el'という名前のファイルを実行することで
+     `load-path'にサブディレクトリを追加する。
+
+  2. `LANG'などの環境変数で要求されていれば、言語環境と端末のコーディン
+     グシステムを設定する。
+
+  3. ウィンドウシステムを使用している場合には、そのウィンドウシステム向
+     けの初期化ライブラリをロードする。そのライブラリ名は
+     `term/WINDOWSYSTEM-win.el'である。
+
+  4. 初期化オプションを処理する。（初期化オプションの一部は、これより初
+     期の段階で扱われる。）
+
+  5. 必要ならば、ウィンドウフレームとフェイスを初期化する。
+
+  6. ノーマルフック`before-init-hook'を実行する。
+
+  7. オプション`-no-site-file'が指定されていなければ、ライブラリ
+     `site-start'をロードする。このライブラリの名前は普通は
+     `site-start.el'である。
+
+  8. コマンド行で`-q'や`-batch'が指定されていなければ、ファイル
+     `~/.emacs'をロードする。オプション`-u'で、`~'のかわりに用いるホー
+     ムディレクトリを持つ他のユーザー名を指定できる。
+
+  9. `inhibit-default-init'が`nil'以外でなければ、ライブラリ`default'を
+     ロードする。（コマンド行で`-q'を指定したり、`-batch'モードでは、こ
+     れを行わない。）ライブラリのファイル名は普通は`default.el'である。
+
+ 10. ノーマルフック`after-init-hook'を実行する。
+
+ 11. バッファ`*scratch*'がカレントバッファであり
+     基本（fundamental）モードであるならば、
+     `initial-major-mode'に従ってメジャーモードを設定する。
+
+ 12. バッチモードやウィンドウシステムを用いていなければ、あれば端末固有
+     のLispファイルが存在するならロードする。
+
+ 13. `inhibit-startup-echo-area-message'で抑制していなければ、初期メッ
+     セージをエコー領域に表示する。
+
+ 14. コマンド行の引数を処理する。
+
+ 15. `term-setup-hook'を実行する。
+
+ 16. 初期化ファイルの指定に従って
+     選択されているフレームのパラメータを修正する
+     `frame-notice-user-settings'を呼び出す。
+
+ 17. `window-setup-hook'を実行する。
+     *Note Window Systems::。
+
+ 18. 未処理のコマンド行引数（上の数手順）がなく、
+     `inhibit-startup-message'の値が`nil'であり、バッファが空であれば、
+     コピーレフト／無保証／基本的な利用情報を表示する。
+
+ -- User Option: inhibit-startup-message
+     この変数は、（無保証などの）初期の始動メッセージを禁止する。これが
+     `nil'以外であるとメッセージを表示しない。
+
+     始動メッセージの内容に十分慣れたら、読者個人の初期化ファイルで設定
+     できるようにこの変数がある。新規ユーザーが受け取るはずである情報を
+     隠してしまうため、新規ユーザーの初期化ファイルや複数のユーザーに影
+     響するような方法でこの変数に設定しないこと。
+
+ -- User Option: inhibit-startup-echo-area-message
+     この変数は、エコー領域に表示する始動メッセージを制御する。個人のファ
+     イル`.emacs'につぎのフォームを追加することでエコー領域の始動メッセー
+     ジを抑制できる。
+
+          (setq inhibit-startup-echo-area-message
+                "YOUR-LOGIN-NAME")
+
+     Emacsは、読者のファイル`.emacs'で上に示した式を明示的に検査する。
+     読者のログイン名はLisp文字列定数として式に現れる必要がある。
+     `inhibit-startup-echo-area-message'に同じ値を設定する別の方法では、
+     始動メッセージを禁止できない。
+
+     このように、望むならば自身のためにメッセージを簡単に禁止できるが、
+     読者の`.emacs'をむやみにコピーしても、他人に対してはメッセージを禁
+     止できない。
+
+
+
+File: elisp-ja, Node: Init File, Next: Terminal-Specific, Prev: Start-up Summary, Up: Starting Up
+
+初期化ファイル：`.emacs'
+------------------------
+
+読者がEmacsを始動すると、Emacsは読者のホームディレクトリから
+ファイル`.emacs'を普通はロードしようとします。
+このファイルが存在すれば、これにはLispコードを入れておく必要があります。
+コマンド行オプション`-q'と`-u'は、
+初期化ファイルの使い方に影響します。
+`-q'は初期化ファイルをロードしないように指示し、
+`-u'は読者の初期化ファイルのかわりに指定したユーザーの初期化ファイルを
+ロードするように指示します。
+*Note Emacsの起動と終了: (emacs)Entering Emacs。
+
+"デフォルトの初期化ファイル"をサイトごとに持てます。これは`default.el'
+という名前のライブラリです。Emacsは、ライブラリを探索する標準パスからファ
+イル`default.el'を探します（*Note How Programs Do Loading::）。Emacsの
+配布には、このファイルは付属していません。ローカルなカスタマイズのため
+にサイトで用意します。バッチモードや`-q'を指定してある場合を除いて、デ
+フォルトの初期化ファイルが存在すると、読者がEmacsを始動するたびにそれを
+ロードします。しかし、存在するなら、個人の初期化ファイルをさきにロード
+します。そこで`inhibit-default-init'に`nil'以外の値を設定してあると、
+Emacsはそのあとファイル`default.el'をロードしません。
+
+サイトごとのカスタマイズ向けの別のファイルは`site-start.el'です。Emacs
+はユーザーの初期化ファイルをロードする*まえ*にこのファイルをロードしま
+す。このファイルのロードを禁止するにはオプション`-no-site-file'を使いま
+す。
+
+ -- Variable: site-run-file
+     この変数は、ユーザーの初期化ファイルよりさきにロードするべきサイト
+     ごとのカスタマイズファイルを指定する。普通の値は`"site-start"'であ
+     る。実際に効果があるようにこれを変更する唯一の方法は、Emacsをダン
+     プするまえに行うことである。
+
+読者のファイル`.emacs'に大量のコードがある場合には、`SOMETHING.el'とい
+う名前の別のファイルへコピーして、それをバイトコンパイルし（*Note Byte
+Compilation::）、読者のファイル`.emacs'では、`load'（*Note Loading::）
+でそのファイルをロードするようにします。
+
+読者のファイル`.emacs'でよく使われるであろう
+さまざまなカスタマイズを行う方法の例については、
+*Note 初期化ファイルの例: (emacs)Init Examples。
+
+ -- User Option: inhibit-default-init
+     この変数は、読者のEmacsセッションにおいては、デフォルトの初期化ラ
+     イブラリファイルをロードしないようにする。その値が`nil'以外である
+     とデフォルトライブラリをロードしない。デフォルト値は`nil'である。
+
+ -- Variable: before-init-hook
+     すべての初期化ファイル（ユーザーの初期化ファイル、`default.el'と／
+     あるいは`site-start.el'）をロードする直前に一度だけ実行するノーマ
+     ルフック。（実際の効果があるようにこれを変更する唯一の方法は、
+     Emacsをダンプするまえに行うことである。）
+
+ -- Variable: after-init-hook
+     すべての初期化ファイル（ユーザーの初期化ファイル、`default.el'と／
+     あるいは`site-start.el'）をロード直後、端末固有の初期化のまえに一
+     度だけ実行するノーマルフック。
+
+
+
+File: elisp-ja, Node: Terminal-Specific, Next: Command Line Arguments, Prev: Init File, Up: Starting Up
+
+端末固有の初期化
+----------------
+
+端末の各種類ごとに、Emacsがその種類の端末で動作するときに
+Emacsがロードする専用Lispライブラリを持てます。
+ライブラリ名は、変数`term-file-prefix'の値と
+端末種類を連結して作ります。
+通常、`term-file-prefix'の値は`"term/"'であり、
+これを変更することは勧めません。
+Emacsは通常どおり、`load-path'のディレクトリ群において
+`.elc'と`.el'の接尾辞でファイルを探します。
+
+端末固有ライブラリの普通の機能は、
+Emacsが識別可能なキー列を送るように特別なキーを設定することです。
+端末のすべてのファンクションキーがtermcapに入っていない場合には、
+`function-key-map'を設定したり追加する必要もあります。
+
+端末種類の名前にハイフンが含まれる場合、ライブラリ名を選ぶうえでは、最
+初のハイフンよりまえの名前の部分が有効です。したがって、`aaa-48'と
+`aaa-30-rv'のどちらもライブラリ`term/aaa'を使います。必要ならば、ライブ
+ラリでは`(getenv "TERM")'を評価することで端末種類の完全な名前を得ること
+ができます。
+
+読者のファイル`.emacs'で変数`term-file-prefix'に`nil'を設定すると、端末
+固有ライブラリをロードしないようにできます。この機能は、読者独自のカス
+タマイズを試すときに有用です。
+
+変数`term-setup-hook'に設定すれば、
+端末固有ライブラリの特定の動作に優先できます。
+これは、読者のファイル`.emacs'と端末固有ライブラリの両者を
+ロードしたあとの初期化後にEmacsが実行するノーマルフックです。
+端末専用ライブラリがない端末向けの初期化を定義するために
+この変数を使えます。
+*Note Hooks::。
+
+ -- Variable: term-file-prefix
+     変数`term-file-prefix'が`nil'以外であると、Emacsは、つぎのように端
+     末固有の初期化ファイルをロードする。
+
+          (load (concat term-file-prefix (getenv "TERM")))
+
+     端末固有の初期化ファイルをロードしたくない場合には、
+     読者のファイル`.emacs'で
+     変数`term-file-prefix'に`nil'を設定する。
+     それには、読者のファイル`.emacs'に
+     `(setq term-file-prefix nil)'を入れる。
+
+ -- Variable: term-setup-hook
+     この変数は、読者のファイル`.emacs'、（あれば）デフォルトの初期化ファ
+     イル、端末固有のLispファイルをロードしたあとにEmacsが実行するノー
+     マルフックである。
+
+     端末固有ファイルの定義に優先するために`term-setup-hook'を使える。
+
+関連する機能については、
+*Note Window Systems::の`window-setup-hook'を参照してください。
+
+
+
+File: elisp-ja, Node: Command Line Arguments, Prev: Terminal-Specific, Up: Starting Up
+
+コマンド行引数
+--------------
+
+Emacsを始動するときにコマンド行引数を使ってさまざまな動作を要求できます。
+一日に一度より多くEmacsを始動する必要はないでしょうし、しばしばEmacsセッ
+ションをそれより長く動かし続けるでしょうから、コマンド行引数はほとんど
+使いません。実際、コマンド行引数を使う癖は避けたほうがよいです。そのよ
+うな癖をつけると、Emacsを必要以上に終了したり再始動するからです。これら
+のオプションは2つの理由で存在します。（別のプログラムから起動される）他
+のエディタと互換性があるようにするのと、シェルスクリプトから特定のLisp
+プログラムを実行できるようにするためです。
+
+本節では、Emacsがコマンド行引数を処理する方法と、それらをカスタマイズす
+る方法について述べます。
+
+
+ -- Function: command-line
+     この関数は、Emacsを呼び出すときに指定されたコマンド行引数を解析し
+     て処理し、ユーザーのファイル`.emacs'をロードし始動メッセージを表示
+     する。
+
+ -- Variable: command-line-processed
+     この変数の値は、コマンド行引数を一度処理し終えると`t'である。
+
+     `dump-emacs'を呼んでEmacsを再ダンプするときには、この変数に`nil'を
+     設定すれば、新たにダンプしたEmacsでコマンド行引数を処理するように
+     できる。
+
+ -- Variable: command-switch-alist
+     この変数の値は、ユーザー定義のコマンド行オプションの連想リストであ
+     る。この変数は、読者が要素を追加できるように存在する。
+
+     "コマンド行オプション"（command line option）は、つぎの形のコマン
+     ド行の引数である。
+
+          -OPTION
+
+     `command-switch-alist'の要素はつぎの形である。
+
+          (OPTION . HANDLER-FUNCTION)
+
+     HANDLER-FUNCTIONは、オプションOPTIONを処理するために呼ばれ、オプショ
+     ン名を唯一の引数として受け取る。
+
+     コマンド行のオプションには引数が続く場合もある。そのような場合、
+     HANDLER-FUNCTIONは変数`command-line-args-left'からすべての残りのコ
+     マンド行引数を調べることができる。（コマンド行引数全体のリストは
+     `command-line-args'にある。）
+
+     コマンド行引数は、ファイル`startup.el'の
+     関数`command-line-1'が解析する。
+     *Note コマンド行引数: (emacs)Command Argumentsも参照。
+
+ -- Variable: command-line-args
+     この変数の値は、Emacsに渡されたコマンド行引数のリストである。
+
+ -- Variable: command-line-functions
+     この変数の値は、認識できないコマンド行引数を処理する関数のリストで
+     ある。つぎに処理する引数に特別な意味がないと、このリストの関数を
+     `nil'以外の値を返すまで現れる順に呼び出す。
+
+     これらの関数は引数なしで呼び出される。これらの関数では、呼び出し時
+     に束縛される変数`argi'を介して対象となるコマンド行引数を参照できる。
+     （いま対象となっている引数を除く）残りの引数は変数
+     `command-line-args-left'にある。
+
+     関数が`argi'を認識して処理したときには、その引数を処理したことを表
+     すために`nil'以外の値を返すこと。後続の引数の一部も処理した場合に
+     は、`command-line-args-left'からそれらを削除することで処理したこと
+     を示せる。
+
+     これらの関数すべてが`nil'を返すと、訪問するファイル名として引数を
+     用いる。
+
+
+
+File: elisp-ja, Node: Getting Out, Next: System Environment, Prev: Starting Up, Up: System Interface
+
+Emacsから抜ける
+===============
+
+Emacsから抜けるには2つの方法があります。Emacsを終了するためにEmacsジョ
+ブをキルするか、あとでEmacsを継続できるように休止します。実用上は、ログ
+アウトするとき以外にはEmacsをほとんど終了しないでしょう。Emacsを休止す
+るほうが一般的です。
+
+* Menu:
+
+* Killing Emacs::        Exiting Emacs irreversibly.
+* Suspending Emacs::     Exiting Emacs reversibly.
+
+
+
+File: elisp-ja, Node: Killing Emacs, Next: Suspending Emacs, Prev: Getting Out, Up: Getting Out
+
+Emacsの終了
+-----------
+
+Emacsを終了するとは、Emacsプロセスの実行を終らせることを意味します。親
+プロセスが普通は制御を取り戻します。Emacsを終了するための下位の基本関数
+は`kill-emacs'です。
+
+ -- Function: kill-emacs &optional EXIT-DATA
+     この関数は、Emacsプロセスを終了しEmacsを終える。
+
+     EXIT-DATAが整数であると、Emacsプロセスの終了状態として使われる。
+     （これは主にバッチ処理で有用である。
+     *Note Batch Mode::を参照。）
+
+     EXIT-DATAが文字列であると、その内容を端末入力バッファへ詰め込み、
+     シェル（やつぎに入力を読むプログラム）がそれらを読み取れるようにす
+     る。
+
+保存済みのファイルを除くEmacsプロセス内のすべての情報は、Emacsを終了す
+ると失われます。Emacsを不注意に終了すると多くの作業を失うことになるので、
+保存する必要があるバッファがあったり動作中のサブプロセスがあると、
+Emacsは確認を求めます。これは関数`save-buffers-kill-emacs'が行います。
+
+ -- Variable: kill-emacs-query-functions
+     標準的な問い合わせをしたあとで、`save-buffers-kill-emacs'は、リス
+     ト`kill-emacs-query-functions'内の関数を現れる順に引数なしで呼び出
+     す。これらの関数では、ユーザーにさらなる確認を求めることができる。
+     これらのどれかが`nil'を返すと、Emacsは終了しない。
+
+ -- Variable: kill-emacs-hook
+     この変数はノーマルフックである。`save-buffers-kill-emacs'がファイ
+     ルをすべて保存し確認し終えると、このフックの関数群を実行する。
+
+
+
+File: elisp-ja, Node: Suspending Emacs, Prev: Getting Out, Up: Getting Out
+
+Emacsの休止
+-----------
+
+"Emacsを休止する"とは、Emacsを一時的に停止し、普通はシェルである親プロ
+セスに制御を戻すことです。これにより、あとで同じEmacsプロセスで、つまり、
+同じバッファ群、同じキルリング、同じアンドゥ履歴などで編集を再開できま
+す。Emacsを再開するには、親シェルにおいてほとんどの場合`fg'などの適切な
+コマンドを使います。
+
+ジョブの休止を扱えないオペレーティングシステムもあります。そのようなシ
+ステムでは、『休止』はEmacsのサブプロセスとして一時的に新たなシェルを実
+際には作成します。そのシェルを終了するとEmacsに戻ります。
+
+ウィンドウシステムを使っている場合には、Emacsジョブを再開する親プロセス
+がいないかもしれませんし、別のウィンドウへ移動すれば別のジョブへ入力で
+きますから、Emacsの休止は有用ではありません。したがって、Emacsがウィン
+ドウシステムを使っている場合には、休止できません。
+
+ -- Function: suspend-emacs STRING
+     この関数は、Emacsを休止し、親プロセスへ制御を戻す。
+     親プロセスがEmacsを再開した場合にのみ、
+     `suspend-emacs'はLisp内の呼び出し側へ`nil'を返す。
+
+     STRINGが`nil'以外であると、Emacsの親シェルが端末入力として読めるよ
+     うにその文字群を送る。親シェルはSTRINGの文字群を表示せず、その結果
+     のみが現れる。
+
+     休止するまえに、`suspend-emacs'はノーマルフック`suspend-hook'を実
+     行する。
+
+     ユーザーがEmacsを再開すると、`suspend-emacs'は
+     ノーマルフック`suspend-resume-hook'を実行する。
+     *Note Hooks::。
+
+     再開後のつぎの再表示では、変数`no-redraw-on-reenter'が`nil'ならば
+     スクリーン全体を再描画する。（*Note Refresh Screen::）。
+
+     つぎの例では、Emacsを休止しても`pwd'は表示されないことに注意。しか
+     し、シェルはそれを読み取って実行する。
+
+          (suspend-emacs)
+               => nil
+
+          (add-hook 'suspend-hook
+                    (function (lambda ()
+                                (or (y-or-n-p
+                                      "Really suspend? ")
+                                    (error "Suspend cancelled")))))
+               => (lambda nil
+                    (or (y-or-n-p "Really suspend? ")
+                        (error "Suspend cancelled")))
+          (add-hook 'suspend-resume-hook
+                    (function (lambda () (message "Resumed!"))))
+               => (lambda nil (message "Resumed!"))
+          (suspend-emacs "pwd")
+               => nil
+          ---------- Buffer: Minibuffer ----------
+          Really suspend? y
+          ---------- Buffer: Minibuffer ----------
+
+          ---------- Parent Shell ----------
+          lewis@slug[23] % /user/lewis/manual
+          lewis@slug[24] % fg
+
+          ---------- Echo Area ----------
+          Resumed!
+
+ -- Variable: suspend-hook
+     この変数は、休止するまえに実行されるノーマルフックである。
+
+ -- Variable: suspend-resume-hook
+     この変数は、再開後に実行されるノーマルフックである。
+
+
+
+File: elisp-ja, Node: System Environment, Next: User Identification, Prev: Getting Out, Up: System Interface
+
+オペレーティングシステム環境
+============================
+
+Emacsでは、さまざまな関数を介してオペレーティングシステム環境の変数を参
+照できます。これらの変数には、システムの名前、ユーザーの識別番号UIDなど
+が含まれます。
+
+ -- Variable: system-configuration
+     この変数は、読者のシステムのハードウェア／ソフトウェア構成に対する
+     GNUの構成名を文字列で保持している。
+     この文字列の一部分を検査する簡便な方法は
+     `string-match'を使うことである。
+
+ -- Variable: system-type
+     この変数の値は、Emacsが動作しているオペレーティングシステムの種類
+     を表すシンボルである。つぎに可能な値の一覧を示す。
+
+     `alpha-vms'
+          Alphaマシン上のVMS。
+
+     `aix-v3'
+          AIX。
+
+     `berkeley-unix'
+          バークレーBSD。
+
+     `dgux'
+          データジェネラルDGUXオペレーティングシステム。
+
+     `gnu'
+          （HURDかMachから成るGNUカーネルを使っている）GNUシステム。
+
+     `gnu/linux'
+          GNU/Linuxシステム。つまり、Linuxカーネルを用いたGNUシステムの
+          変種。（これらのシステムは人々が『Linux』と呼ぶものの1つであ
+          るが、Linxuは実際にはカーネルのみであり、システム全体ではな
+          い。）
+
+     `hpux'
+          ヒューレットパッカードHPUXオペレーティングシステム。
+
+     `irix'
+          シリコングラフィックスIrixシステム。
+
+     `ms-dos'
+          マイクロソフトMS-DOS『オペレーティングシステム』。
+
+     `next-mach'
+          NeXTのMachベースのシステム。
+
+     `rtu'
+          マスコンプRTU、UCBユニバース。
+
+     `unisoft-unix'
+          ユニソフトUniPlus。
+
+     `usg-unix-v'
+          AT&T System V。
+
+     `vax-vms'
+          VAX VMS。
+
+     `windows-nt'
+          マイクロソフトWindows NT。
+
+     `xenix'
+          SCO Xenix 386。
+
+     絶対に必要でない限り、細分類のために新たなシンボルを追加したくない！` '
+     実際、将来にはこれらのいくつかを削除することを願っている。
+     オペレーティングシステムの違いを区別するには、
+     `system-configuration'を使うことを勧める。
+
+ -- Function: system-name
+     この関数は読者が使っているマシンの名前を返す。
+          (system-name)
+               => "www.gnu.org"
+
+シンボル`system-name'は、関数としても変数としても使えます。実際、関数と
+しては、変数`system-name'が現在保持している値を返します。したがって、
+Emacsが読者のシステム名に関して混乱している場合には、変数`system-name'
+に設定できます。変数はフレームタイトルの作成にも有用です（*Note Frame
+Titles::）。
+
+ -- Variable: mail-host-address
+     この変数が`nil'以外であると、`system-name'のかわりに
+     電子メイルアドレスの生成に使われる。
+     たとえば、`user-mail-address'のデフォルト値の作成に使われる。
+     *Note User Identification::。
+     （これはEmacsの始動時に行われるため、
+     Emacsをダンプしたときの値が実際に使われる値である。
+     *Note Building Emacs::）。
+
+ -- Function: getenv VAR
+     この関数は、環境変数VARの値を文字列で返す。Emacs内部では、環境変数
+     の値はLisp変数`process-environment'に保持されている。
+
+          (getenv "USER")
+               => "lewis"
+
+          lewis@slug[10] % printenv
+          PATH=.:/user/lewis/bin:/usr/bin:/usr/local/bin
+          USER=lewis
+          TERM=ibmapa16
+          SHELL=/bin/csh
+          HOME=/user/lewis
+
+ -- コマンド: setenv VARIABLE VALUE
+     このコマンドは、環境変数VARIABLEに値VALUEを設定する。どちらの引数
+     も文字列である。この関数は`process-environment'を修正することで動
+     作する。この変数を`let'で束縛しても十分に実用的である。
+
+ -- Variable: process-environment
+     この変数は、各要素が1つの環境変数を記述する文字列のリストである。
+     関数`getenv'と`setenv'は、この変数を用いて動作する。
+
+          process-environment
+          => ("l=/usr/stanford/lib/gnuemacs/lisp"
+              "PATH=.:/user/lewis/bin:/usr/class:/nfsusr/local/bin"
+              "USER=lewis"
+              "TERM=ibmapa16"
+              "SHELL=/bin/csh"
+              "HOME=/user/lewis")
+
+ -- Variable: path-separator
+     この変数は、（環境変数などで）探索パスを区切る文字を指定する文字列
+     を保持する。UNIXとGNUシステムではその値は`":"'であり、MS-DOSと
+     Widows NTでは`";"'である。
+
+ -- Variable: invocation-name
+     この変数は、起動したEmacsのプログラム名を保持する。値は文字列であ
+     り、ディレクトリ名は含まない。
+
+ -- Variable: invocation-directory
+     この変数は、起動したEmacsの実行形式のディレクトリを保持する。ディ
+     レクトリを判別できない場合には`nil'である。
+
+ -- Variable: installation-directory
+     `nil'以外であると、サブディレクトリ`lib-src'と`etc'を探すためのディ
+     レクトリである。Emacsがこれらのディレクトリを標準のインストールディ
+     レクトリでみつけられなくてもEmacsの実行形式になんらかの意味で関連
+     するディレクトリでみつけられれば、`nil'以外である。
+
+ -- Function: load-average &optional USE-FLOAT
+     この関数は、1分間／5分間／15分間のロードアベレッジ（負荷平均）をリ
+     ストで返す。
+
+     デフォルトでは、これらの値は、動作しようとしてるプロセスの平均個数
+     を表すシステムのロードアベレッジを100倍した整数である。USE-FLOATが
+     `nil'以外であると、100倍しない浮動小数点数で返す。
+
+          (load-average)
+               => (169 48 36)
+          (load-average t)
+               => (1.69 0.48 0.36)
+
+          lewis@rocky[5] % uptime
+           11:55am  up 1 day, 19:37,  3 users,
+           load average: 1.69, 0.48, 0.36
+
+ -- Function: emacs-pid
+     この関数は、Emacsプロセスのプロセス番号IDを返す。
+
+ -- Variable: tty-erase-char
+     この変数は、Emacsが始動するまえにシステムの端末ドライバが選んでい
+     た消去文字を保持する。
+
+ -- Function: setprv PRIVILEGE-NAME &optional SETP GETPRV
+     この関数は、（UNIX上には存在しない）VMS基本操作を設定／再設定する。
+     最初の引数は文字列で表した基本操作の名前である。第2引数SETPは`t'か
+     `nil'であり、基本操作をオンにするかオフにするかを表す。デフォルト
+     は`nil'である。関数は、成功すれば`t'を返し、さもなければ`nil'を返
+     す。
+
+     第3引数GETPRVが`nil'以外であると、
+     `setprv'は基本操作を変更しないが、
+     その基本操作が現在オンであるかオフであるかを表す
+     `t'か`nil'を返す。
+
+
+
+File: elisp-ja, Node: User Identification, Next: Time of Day, Prev: System Environment, Up: System Interface
+
+ユーザーの識別
+==============
+
+ -- Variable: init-file-user
+     この変数は、Emacsが使用すべきユーザー初期化ファイルを指定する。あ
+     るいは、そのようなものがなければ`nil'である。この値は、`-q'や`-u
+     USER'のコマンド行オプションを反映する。
+
+     カスタマイズファイルや他の種類のユーザープロフィールをロードする
+     Lispパッケージは、それらを探す場所を判断するためにこの変数に従うこ
+     と。この変数のユーザー名のカスタマイズをロードするべきである。
+     `init-file-user'が`nil'であるとオプション`-q'が使われたことを意味
+     し、Lispパッケージはいかなるカスタマイズファイルやユーザープロフィー
+     ルもロードしないこと。
+
+ -- Variable: user-mail-address
+     これは、Emacsを使用しているユーザーの通常の電子メイルアドレスを保
+     持する。Emacsは通常、読者の初期化ファイルを読み取ったあと、この変
+     数が未設定であるとデフォルト値を設定する。したがって、デフォルト値
+     を使いたくない場合には、読者のファイル`~/.emacs'で別の値に設定でき
+     る。
+
+ -- Function: user-login-name &optional UID
+     UIDを指定しないと、この関数はログインしたユーザー名を返す。環境変
+     数`LOGNAME'が設定されていればその値を使う。さもなければ、環境変数
+     `USER'が設定されていればその値を使う。さもなければ、実UIDではなく
+     実効UIDに基づいた値である。
+
+     UIDを指定すると、値は（整数である）UIDに対応するユーザー名である。
+
+          (user-login-name)
+               => "lewis"
+
+ -- Function: user-real-login-name
+     この関数は、Emacsの実UIDに対応するユーザー名を返す。これは、実効
+     UIDや環境変数`LOGNAME'と`USER'を無視する。
+
+ -- Function: user-full-name &optional UID
+     この関数は、ログインしたユーザーの氏名を返す。あるいは、環境変数
+     `NAME'が設定してあればその値を返す。
+
+          (user-full-name)
+               => "Bil Lewis"
+
+     UIDが`nil'以外であると、それは整数のユーザー番号か文字列のログイン
+     名であること。すると、`user-full-name'は、そのユーザー番号かログイ
+     ン名に対応するユーザーの氏名を返す。
+
+シンボル`user-login-name'、`user-real-login-name'、`user-full-name'は、
+関数でもある変数です。関数としては、その変数が保持する値と同じ値を返し
+ます。これらの変数により、関数として返す値を指定しておくことでEmacsを
+『ごまかせ』ます。これらの変数は、フレームタイトルの作成にも有用です
+（*Note Frame Titles::）。
+
+ -- Function: user-real-uid
+     この関数は、ユーザーの実UIDを返す。
+
+          (user-real-uid)
+               => 19
+
+ -- Function: user-uid
+     この関数は、ユーザーの実効UIDを返す。
+
+
+
+File: elisp-ja, Node: Time of Day, Next: Time Conversion, Prev: User Identification, Up: System Interface
+
+時刻
+====
+
+本節では、現在時刻と時刻帯（タイムゾーン）を調べる方法を説明します。
+
+ -- Function: current-time-string &optional TIME-VALUE
+     この関数は、人間向けの文字列で現在時刻と日付を返す。文字列の書式は
+     不変であり、各部分の文字数はつねに同じなので、各部分を取り出すのに
+     `substring'を使っても問題ない。将来、文字列の末尾に追加情報を付加
+     することもあるので、文字列の末尾からではなく先頭から文字を数えるほ
+     うがよい。
+
+     引数TIME-VALUEを指定すると、
+     それは現在時刻のかわりに書式付けする時刻を指定する。
+     引数は、最初の2つの要素が整数であるリストであること。
+     したがって、`current-time'（下記参照）や
+     `file-attributes'（*Note File Attributes::）で得た時刻を使える。
+
+          (current-time-string)
+               => "Wed Oct 14 22:21:05 1987"
+
+ -- Function: current-time
+     この関数は、システムの時刻の値を3つの整数のリスト`(HIGH LOW
+     MICROSEC)'で返す。整数HIGHとLOWを組み合わせると1970年1月1日0:00か
+     らの経過秒数を与える。つまり、経過秒数は
+     HIGH * 2**16 + LOWである。
+
+     第3要素MICROSECは、現在の秒内のミリ秒を表す（返す時間精度が秒のシ
+     ステムでは0）。
+
+     最初の2つの要素は、関数`file-attributes'で得られる
+     ファイルに関する時刻の値と比較できる。
+     *Note File Attributes::。
+
+ -- Function: current-time-zone &optional TIME-VALUE
+     この関数は、ユーザーの地域の時刻帯を記述するリストを返す。
+
+     値は、`(OFFSET NAME)'の形である。ここで、OFFSETはUTC (1) (*Note
+     Time of Day-Footnotes::) に対して進んでいる（グリニッジの東）秒数
+     を与える整数である。第2要素NAMEは、その時刻帯の名称を与える文字列
+     である。夏時間制が始まったり終ると、どちらの要素も変わる。時刻帯に
+     は季節の時刻調整はないとユーザーが指定すると、どちらの値も定数であ
+     る。
+
+     値を計算するために必要な情報をオペレーティングシステムから得られな
+     いとリストのどちらの要素も`nil'である。
+
+     引数TIME-VALUEを指定すると、
+     現在時刻のかわりに分析すべき時刻を指定する。
+     引数は、2つの整数を収めたコンスセルであるか、
+     最初の2つの要素が整数であるリストであること。
+     したがって、`current-time'（上記参照）や
+     `file-attributes'（*Note File Attributes::）で得た時刻を使える。
+
+
+File: elisp-ja  Node: Time of Day-Footnotes, Up: Time of Day
+
+(1) 【訳注】協定世界時。旧グリニッジ標準時に相当。
+
+
+
+File: elisp-ja, Node: Time Conversion, Next: Timers, Prev: Time of Day, Up: System Interface
+
+時刻の変換
+==========
+
+これらの関数は、時刻の値（2つか3つの整数から成るリスト）を
+文字列や日時情報に変換します。
+日時情報を時刻の値に変換する関数もあります。
+時刻の値は、関数`current-time'（*Note Time of Day::）や
+`file-attributes'（*Note File Attributes::）で得られます。
+
+多くのオペレーティングシステムでは、時刻の値を32ビットに制限しています。
+これらのシステムでは、典型的には協定世界時1901年12月13日20:45:52から
+2038年1月19日03:14:07までしか表現できません。しかし、より大きな時刻の値
+を扱い、より広い範囲の過去から未来を表現できるシステムもあります。
+
+時刻変換関数は、グレゴリオ暦を導入するまえであってもつねにグレゴリオ暦
+を使います。紀元前1年からの経過年数を数え、通常のグレゴリオ暦のように0
+年を飛ばしません。たとえば、-37年は、グレゴリオ暦紀元前38年を表します。
+
+ -- Function: format-time-string FORMAT-STRING TIME
+     この関数は、TIMEをFORMAT-STRINGに従って文字列に変換する。
+     引数FORMAT-STRINGには、時刻のさまざまな部分で置き換えられる
+     `%'列を含んでよい。
+     `%'列の意味を以下に示す。
+
+     `%a'
+          曜日の省略名を表す。
+     `%A'
+          曜日の（省略しない）名称を表す。
+     `%b'
+          月の省略名を表す。
+     `%B'
+          月の（省略しない）名称を表す。
+     `%c'
+          `%x %X'の同義語。
+     `%C'
+          これにはローケル固有の意味がある。デフォルトのローケル（`C'）
+          では、`%A, %B %e, %Y'と等価。
+     `%d'
+          ゼロでパディングした月内の日。
+     `%D'
+          `%m/%d/%y'の同義語。
+     `%e'
+          空白でパディングした月内の日。
+     `%h'
+          `%b'の同義語。
+     `%H'
+          時（00-23）を表す。
+     `%I'
+          時（00-12）を表す。
+     `%j'
+          年内の日（001-366）を表す。
+     `%k'
+          空白でパディングした時（0-23）を表す。
+     `%l'
+          空白でパディングした時（0-12）を表す。
+     `%m'
+          月（01-12）を表す。
+     `%M'
+          分（00-59）を表す。
+     `%n'
+          改行を表す。
+     `%p'
+          `AM'か`PM'の適切なほうを表す。
+     `%r'
+          `%I:%M:%S %p'の同義語。
+     `%R'
+          `%H:%M'の同義語。
+     `%S'
+          秒（00-60）を表す。
+     `%t'
+          タブ文字を表す。
+     `%T'
+          `%H:%M:%S'の同義語。
+     `%U'
+          日曜日を週の始まりと仮定した年内の週（01-52）を表す。
+     `%w'
+          数字で表した曜日（0-6）。日曜日を0とする。
+     `%W'
+          月曜日を週の始まりと仮定した年内の週（01-52）を表す。
+     `%x'
+          これにはローケル固有の意味がある。デフォルトのローケル（`C'）
+          では、`%D'と等価。
+     `%X'
+          これにはローケル固有の意味がある。デフォルトのローケル（`C'）
+          では、`%T'と等価。
+     `%y'
+          年の下2桁（00-99）を表す。
+     `%Y'
+          100年単位の年を表す。
+     `%Z'
+          時刻帯の省略名を表す。
+
+     これらの`%'列には、桁数やパディングの種類も指定できる。`printf'と
+     同様に動作し、`%'列のあいだに桁数を数字で指定する。桁数を`0'で始め
+     るとゼロでパディングすることを意味する。桁数を`_'で始めると空白で
+     パディングすることを意味する。
+
+     たとえば、`%S'は分内の秒数を指定し、
+     `%03S'はゼロでパディングして3桁にすることを意味し、
+     `%_3S'は空白でパディングして3桁にすることを意味する。
+     `%S'は普通はパディングして2桁にするため、
+     `%3S'だけであるとゼロでパディングする。
+
+ -- Function: decode-time TIME
+     この関数は、時刻の値を日時情報に変換する。戻り値は、つぎの9要素の
+     リストである。
+
+          (SECONDS MINUTES HOUR DAY MONTH YEAR DOW DST ZONE)
+
+     各要素の意味はつぎのとおりである。
+
+     SEC
+          0から59の整数で表した分内の秒数。
+     MINUTE
+          0から59の整数で表した時内の分数。
+     HOUR
+          0から23の整数で表した日内の時。
+     DAY
+          1から31の整数で表した月内の日。
+     MONTH
+          1から12の整数で表した年内の月。
+     YEAR
+          年。典型的には1900より大きい。
+     DOW
+          日曜日を0とした0から6の整数で表した曜日。
+     DST
+          夏時間制が有効であると`t'、さもなければ`nil'。
+     ZONE
+          グリニッジから東周りではかった時刻帯を表す秒数。
+
+     Common Lispに関した注意：` ' Common Lispでは、DOWとZONEの意味が異
+     なる。
+
+ -- Function: encode-time SECONDS MINUTES HOUR DAY MONTH YEAR &optional ...ZONE
+     この関数は`decode-time'の逆である。7項目から成る日時情報を時刻の値
+     に変換する。引数の意味については、上記`decode-time'の一覧を参照。
+
+     100未満の年は普通の年として扱う。
+     それらを1900年代として扱いたい場合には、
+     `encode-time'を呼び出すまえに修正しておくこと。
+
+     省略可能な引数ZONEのデフォルトは、現在の時刻帯とその夏時間制の規則
+     である。指定する場合には、（`current-time-zone'で得られるような）
+     リストであるか、環境変数`TZ'と同じ形式の文字列であるか、
+     （`decode-time'で得られるような）整数であること。指定した時刻帯は、
+     夏時間の補正をせずに使われる。
+
+     `encode-time'に7引数より多く渡すと、始めの6つをSECONDSからYEARまで
+     に、最後の引数をZONEに使い、そのあいだの引数は無視する。この機能は、
+     `decode-time'が返したリストの要素をつぎのようにして`encode-time'の
+     引数に使うことを可能にする。
+
+          (apply 'encode-time (decode-time ...))
+
+     引数SEC、MINUTE、HOUR、DAY、MONTHの値が範囲外になるようにすると単
+     純な日時演算を行える。たとえば、0日はその月のまえの日を意味する。
+
+     オペレーティングは可能な時刻の値の範囲を制限する。その範囲を越える
+     時刻を符号化しようとするとエラーになる。
+
+
+
+File: elisp-ja, Node: Timers, Next: Terminal Input, Prev: Time Conversion, Up: System Interface
+
+遅延実行のためのタイマ
+======================
+
+未来のある時刻に関数を呼び出したり、
+ある一定期間なにもしないでいたら関数を呼び出すために
+"タイマ"を設定できます。
+
+Emacsは、Lispプログラムの任意の箇所ではタイマを実行できません。サブプロ
+セスからの出力を受け取るときにだけタイマを実行できます。つまり、待つこ
+とが*可能*な`sit-for'や`read-event'などの基本関数の内側や（入力を）待っ
+ているあいだに実行できます。したがって、Emacsが忙しいとタイマの実行が遅
+れることがあります。しかし、Emacsが暇ならば、タイマの実行はとても正確で
+す。
+
+ -- Function: run-at-time TIME REPEAT FUNCTION &rest ARGS
+     この関数は、時刻TIMEに引数ARGSで関数FUNCTIONを呼び出すように予約す
+     る。引数FUNCTIONはのちに呼び出される関数であり、引数ARGSはそれを呼
+     び出すときに与える引数である。時刻TIMEは文字列で指定する。
+
+     絶対時刻をさまざまな書式で指定できる。この関数は、よく使われる日時
+     の書式を受け付けるように努める。正しい書式にはつぎの2つを含む。
+
+          YEAR-MONTH-DAY HOUR:MIN:SEC TIMEZONE
+
+          HOUR:MIN:SEC TIMEZONE MONTH/DAY/YEAR
+
+     ここで、どちらの例のフィールドもすべて数である。
+     `current-time-string'が返す書式、および、他の書式も許される。
+
+     相対時刻を指定するには、単位を伴った数字を使う。たとえばつぎのとお
+     り。
+
+     `1 min'
+          今から1分後。
+     `1 min 5 sec'
+          今から65秒後。
+     `1 min 2 sec 3 hour 4 day 5 week 6 fortnight 7 month 8 year'
+          今からちょうど103ヵ月、123日、10862秒後。 (1) (*Note
+          Timers-Footnotes::)
+
+     TIMEが数（整数か浮動小数点数）であれば、秒単位の相対時刻を指定する。
+
+     引数REPEATは、呼び出しをどの程度頻繁に繰り返すかを指定する。
+     REPEATが`nil'であると、繰り返さずに
+     時刻TIMEに関数FUNCTIONを一度だけ呼び出す。
+     REPEATが数であると、繰り返し間隔を秒単位で指定する。
+
+     ほとんどの場合、*最初*の呼び出しではREPEATの効果はなく、TIMEだけが
+     時刻を指定する。1つ例外があり、TIMEが`t'であると、時刻がREPEATの整
+     数倍であるとタイマを実行する。これは`display-time'のような関数に有
+     用である。
+
+     関数`run-at-time'は、予約した未来の特定の動作を識別するタイマを返
+     す。この値は、`cancel-timer'（下記参照）の呼び出しに使える。
+
+ -- Macro: with-timeout (SECONDS TIMEOUT-FORMS...) BODY...
+     BODYを実行するが、SECONDS秒でその実行を諦める。時間が切れるまえに
+     BODYが終了すると`with-timeout'はBODYの最後のフォームの値を返す。し
+     かし、時間が切れるとBODYの実行を取り止め、`with-timeout'は
+     TIMEOUT-FORMSをすべて実行し、それらの最後の値を返す。
+
+     このマクロは、SECONDS秒後に動作するタイマを設定することで動作する。
+     その時間内にBODYが終了すれば、タイマを取り消す。
+     タイマが実際に動作するとBODYの実行を終了させてから、
+     TIMEOUT-FORMSを実行する。
+
+     プログラムから待つことが可能な基本関数を呼び出したときにのみ、
+     タイマはLispプログラム内で実行可能なため、
+     `with-timeout'はBODYの計算途中では
+     BODYの実行を停止できない。
+     それらが待つことが可能な基本関数の1つを呼び出したときにのみ停止できる。
+     したがって、長い計算を行わない入力を待つようなBODYに
+     `with-timeout'を使う。
+
+関数`y-or-n-p-with-timeout'は、
+応答を長く待ちすぎないようにタイマを使った単純な例です。
+*Note Yes-or-No Queries::。
+
+ -- Function: run-with-idle-timer SECS REPEAT FUNCTION &rest ARGS
+     EmacsがSECS秒間なにもしないときに実行するタイマを設定する。
+     SECSの値は整数でも浮動小数点数でもよい。
+
+     REPEATが`nil'であると、これ以降にはじめてEmacsが十分長い期間なにも
+     しないでいると、タイマを一度だけ実行する。しばしばREPEATは`nil'以
+     外であり、EmacsがSECS秒なにもしないでいる*たびに* タイマを実行する
+     ことを意味する。
+
+     関数`run-with-idle-timer'は、
+     `cancel-timer'（下記参照）の呼び出しに使えるタイマの値を返す。
+
+Emacsがユーザー入力を待ち始めると『アイドル状態』になり、なにか入力がく
+るまでアイドル状態のままです。5秒間のアイドル状態で動作するタイマがあっ
+たとすると、Emacsがアイドルになってから約5秒後にそのタイマが実行されま
+す。しかしREPEATが真（`nil'以外）であったとしても、そのタイマはEmacsが
+アイドル状態であり続ける限りは再実行されません。アイドル状態の期間は単
+調に増加するので、再度5秒後には戻りません。
+
+Emacsがアイドル状態のときにはさまざまなことを行います。ガベッジコレクショ
+ン、自動保存、サブプロセスからのデータの処理です。しかし、アイドル状態
+中のこれらの動作はアイドルタイマに干渉しません。アイドル状態の時間を0に
+しないからです。600秒に設定されたアイドルタイマは、最後のユーザーコマン
+ドを終了してから10分後に実行されます。たとえその10分間に、サブプロセス
+の出力を何千回も受け取ろうが、ガベッジコレクションや自動保存を行ったと
+してもです。
+
+ユーザーが入力を与えると、その入力を実行中はEmacsは非アイドル状態です。
+そして再度アイドル状態になり、繰り返すように設定されたアイドルタイマを
+1つずつそれ以降に実行します。
+
+ -- Function: cancel-timer TIMER
+     タイマTIMERの予約を取り消す。TIMERは、以前に`run-at-time'や
+     `run-with-idle-timer'が返した値であること。これは、`run-at-time'の
+     呼び出しの効果を取り消し、その時刻になってもなにも特別なことは起こ
+     らない。
+
+
+File: elisp-ja  Node: Timers-Footnotes, Up: Timers
+
+(1) 【訳注】fortnightは2週間のこと。
+
+
+
+File: elisp-ja, Node: Terminal Input, Next: Terminal Output, Prev: Timers, Up: System Interface
+
+端末入力
+========
+
+本節では、端末入力を記録したり処理する関数や変数について述べます。関連
+する関数については*Note Display::を参照してください。
+
+* Menu:
+
+* Input Modes::		Options for how input is processed.
+* Translating Input::   Low level conversion of some characters or events
+			  into others.
+* Recording Input::	Saving histories of recent or all input events.
+
+
+
+File: elisp-ja, Node: Input Modes, Next: Translating Input, Prev: Terminal Input, Up: Terminal Input
+
+入力方式
+--------
+
+ -- Function: set-input-mode INTERRUPT FLOW META QUIT-CHAR
+     この関数は、キーボード入力を読み取るモードを設定する。INTERRUPTが
+     `nil'以外であると、Emacsは入力割り込みを用いる。`nil'であると、
+     CBREAKモードを用いる。デフォルトの設定はシステムに依存する。この指
+     定に関わらずつねにCBREAKモードを用いるシステムもある。
+
+     EmacsがXと直接通信しているときは、通信方法が割り込みであると承知し
+     ているとこの引数を無視して割り込みを使う。
+
+     FLOWが`nil'以外であると、
+     Emacsは端末出力にフロー制御XON/XOFF（`C-q'、`C-s'）を用いる。
+     CBREAKモード以外ではこれの効果はない。
+     *Note Flow Control::。
+
+     引数METAは、文字コードが127を越える入力文字の扱い方を制御する。
+     METAが`t'であると、8ビット目が立っている文字をメタ文字に変換する。
+     METAが`nil'であると、8ビット目を無視する。パリティビットを用いる端
+     末では、これが必要である。METAが`t'でも`nil'でもないと、Emacsは入
+     力した8ビットすべてを無変更で使う。8ビット文字集合を使う端末には、
+     これがよい。
+
+     QUIT-CHARが`nil'以外であると、
+     中断に使用する文字を指定する。
+     通常、この文字は`C-g'である。
+     *Note Quitting::。
+
+関数`current-input-mode'は、Emacsが現在使用している入力モードの設定を返
+します。
+
+ -- Function: current-input-mode
+     この関数は、キーボード入力を読み取るための現在のモードを返す。
+     `set-input-mode'の引数に対応する`(INTERRUPT FLOW META QUIT)'の形の
+     リストを返す。各要素の意味はつぎのとおりである。
+     INTERRUPT
+          `nil'以外であると、Emacsは割り込み駆動の入力を用いている。
+          `nil'であると、EmacsはCBREAKモードを用いている。
+     FLOW
+          `nil'以外であると、Emacsは端末出力にフロー制御
+          XON/XOFF（`C-q'、`C-s'）を用いている。この値は、INTERRUPTが
+          `nil'の場合にのみ意味を持つ。
+     META
+          Emacsが入力文字の8ビット目をメタビットとして扱うときには`t'で
+          ある。Emacsが各入力文字の8ビット目をつねに0にするときには`t'
+          である。さもなければ、Emacsは文字コードとして8ビットすべてを
+          使っている。
+     QUIT
+          現在Emacsが中断に使っている文字であり、普通は`C-g'である。
+
+
+
+File: elisp-ja, Node: Translating Input, Next: Recording Input, Prev: Input Modes, Up: Terminal Input
+
+入力イベントの変換
+------------------
+
+本節では、入力イベントをキー列の一部になるまえに別の入力イベントに変換
+する機能について述べます。これらの機能は、ここに述べる順に各イベントに
+適用されます。つまり、各イベントはまず`extra-keyboard-modifiers'に従っ
+て修正され、つぎに（適切ならば）`keyboard-translate-table'を介して変換
+され、最後に指定されているキーボードコーディングシステムで復号化されま
+す。キー列の一部として読み取られるイベントであると、読み取られるキー列
+に追加され、それを含む部分キー列をまず`function-key-map'で検査してから、
+つぎに`key-translation-map'で検査します。
+
+ -- Variable: extra-keyboard-modifiers
+     この変数は、Lispプログラムがキーボード上の修飾キーを『押す』ことが
+     できるようにする。
+
+     1
+          SHIFTキー。
+     2
+          LOCKキー。
+     4
+          CTLキー。
+     8
+          METAキー。
+
+     ユーザーがキーボードのキーを打つたびに、ビットマスクで指定した修飾
+     キーが押し下げられているかのようにキーを修正する。
+
+     ウィンドウシステムを使っているときには、プログラムは任意の修飾キー
+     を『押す』ことができる。さもなければ、CTLとMETAのキーのみを仮想的
+     に押すことができる。
+
+ -- Variable: keyboard-translate-table
+     この変数は、キーボード文字の変換表である。これにより、コマンドのバ
+     インディングを変更せずに、キーボードのキー配置を変更できる。その値
+     は普通は文字テーブルであるか、あるいは、`nil'である。
+
+     `keyboard-translate-table'が文字テーブルであると、キーボードから読
+     み取った各文字をこの文字テーブルで探す。みつけた値が`nil'以外であ
+     ると、実際の入力文字のかわりにその値を使う。
+
+     つぎの例では、`keyboard-translate-table'に文字テーブルを設定する。
+     そして、文字`C-s'と`C-\'、`C-q'と`C-^'を入れ換える。これ以降、
+     `C-\'を打つと`C-s'を打った効果があり、その逆もそうである。（この話
+     題に関しては詳しくは、*Note Flow Control::。）
+
+          (defun evade-flow-control ()
+            "Replace C-s with C-\ and C-q with C-^."
+            (interactive)
+            (setq keyboard-translate-table
+                  (make-char-table 'keyboard-translate-table nil))
+            ;; C-sとC-\を入れ換える
+            (aset keyboard-translate-table ?\034 ?\^s)
+            (aset keyboard-translate-table ?\^s ?\034)
+            ;; C-qとC-^を入れ換える
+            (aset keyboard-translate-table ?\036 ?\^q)
+            (aset keyboard-translate-table ?\^q ?\036))
+
+     この変換は、端末から読み取った文字に最初に行われる変換である。
+     `recent-keys'のような記録機能やドリブルファイルは、変換後の文字を
+     記録する。
+
+ -- Function: keyboard-translate FROM TO
+     この関数は、文字コードFROMを文字コードTOに変換するように
+     `keyboard-translate-table'を変更する。必要ならばキーボード変換表を
+     作成する。
+
+残りの変換機能は、読み取ったキー列の部分列を変換します。
+それらは`read-key-sequence'に実装されていて、
+`read-event'で読む入力には効果はありません。
+
+ -- Variable: function-key-map
+     この変数は、普通の文字端末上のファンクションキーが送出する文字の列
+     を記述したキーマップを保持する。このキーマップは他のキーマップと同
+     じ構造であるが、使い方が異なる。キー列のバインディングではなく、読
+     み取りつつあるキー列を変換する方法を指定する。
+
+     `function-key-map'がキー列Kを
+     ベクトルVに『バインド』すると、
+     キー列の*どこに*Kが現れても、
+     Vのイベントで置き換える。
+
+     たとえば、端末VT100は、キーパッドのキーPF1を押すと`ESC O P'を送出
+     する。したがって、Emacsではこの列を1つのイベント`pf1'に変換したい。
+     VT100を使っているときに`function-key-map'において`ESC O P'を
+     `[pf1]'に『バインド』すれば、これを行える。
+
+     つまり、`C-c PF1'を打つと文字の列`C-c ESC O P'が送出される。のちに
+     関数`read-key-sequence'がこれを`C-c PF1'に戻し、ベクトル`[?\C-c
+     pf1]'を返す。
+
+     マイナモード／ローカル／グローバルのキーマップに矛盾するような
+     `function-key-map'内の項目は無視される。この意図は、ファンクション
+     キーが送出する文字の列にはそれ独自のキーバインディングがあるべきで
+     はなく、もしあったとしても、もとの定義を優先することである。
+
+     `function-key-map'の値は、
+     端末のterminfoやtermcapの情報に従って自動的に普通は設定されるが、
+     端末固有のLispファイルの助けが必要な場合もある。
+     Emacsには、一般的な多くの端末向けの端末固有ファイルがある。
+     それらの主目的は、terminfoやtermcapから推定できないものを
+     `function-key-map'に定義することである。
+     *Note Terminal-Specific::。
+
+ -- Variable: key-translation-map
+     この変数は、`function-key-map'と同様に
+     入力イベントを別の入力イベントへ変換するために用いる別のキーマップである。
+     `function-key-map'とは2つの意味で異なる。
+
+        * `key-translation-map'は、
+          `function-key-map'の変換後に使われる。
+          `function-key-map'による変換結果を使う。
+
+        * `key-translation-map'は、実際のキーバインディングに優先する。
+          たとえば、`key-translation-map'で`C-x f'にバインディングがあ
+          ると、グローバルマップに`C-x f'のバインディングがあったとして
+          も変換結果が効果を持つ。
+
+     `key-translation-map'の意図は、`self-insert-command'に普通はバイン
+     ドされる通常の文字を含めてユーザー向けに文字集合を別の文字集合に対
+     応付けられるようにすることである。
+
+キーの『変換として』キー列のかわりに関数を用いると、`function-key-map'
+や`key-translation-map'は単なる配置替え以上のことに使えます。その関数で
+当該キーの変換を計算するのです。
+
+キー変換関数は1つの引数を受け取ります。その引数は、`read-key-sequence'
+で指定されたプロンプトか、エディタコマンドループがキー列を読み取ってい
+る場合には`nil'です。多くの場合、プロンプトの値は無視できます。
+
+関数自身が入力を読むときには、後続のイベントを変更することもできます。
+たとえば、後続の文字をハイパー文字にする`C-c h'の定義はつぎのようになり
+ます。
+
+     (defun hyperify (prompt)
+       (let ((e (read-event)))
+         (vector (if (numberp e)
+                     (logior (lsh 1 24) e)
+                   (if (memq 'hyper (event-modifiers e))
+                       e
+                     (add-event-modifier "H-" e))))))
+
+     (defun add-event-modifier (string e)
+       (let ((symbol (if (symbolp e) e (car e))))
+         (setq symbol (intern (concat string
+                                      (symbol-name symbol))))
+         (if (symbolp e)
+             symbol
+           (cons symbol (cdr e)))))
+
+     (define-key function-key-map "\C-ch" 'hyperify)
+
+`set-keyboard-coding-system'を用いたキーボード文字集合の復号化を有効に
+しているときには、上に述べた変換を終えてから復号化を行います。*Note
+Specifying Coding Systems::。Emacsの将来の版では、他の変換のまえに復号
+化を行うでしょう。
+
+
+
+File: elisp-ja, Node: Recording Input, Prev: Translating Input, Up: Terminal Input
+
+入力を記録する
+--------------
+
+ -- Function: recent-keys
+     この関数は、キーボードやマウスからの最近の100個の入力イベントを収
+     めたベクトルを返す。キー列として使われたかどうかに関わらず、すべて
+     のイベントを含む。したがって、キーボードマクロで生成したイベントを
+     数えずに最後の100個のイベントをつねに得ることになる。（キーボード
+     マクロで生成したイベントを省くのは、それらはデバッグにはあまり役立
+     たないからである。キーボードマクロを起動したイベントが見えれば十分
+     なはずである。）
+
+ -- コマンド: open-dribble-file FILENAME
+     この関数は、FILENAMEという名前の"ドリブルファイル" （dribble file）
+     をオープンする。ドリブルファイルをオープンしていると、（キーボード
+     マクロを除く）キーボードやマウスからの各入力イベントをそのファイル
+     に書き出す。文字でないイベントは、その表示表現を`<...>'で囲って表
+     す。
+
+     ドリブルファイルをクローズするには、引数に`nil'を指定してこの関数
+     を呼び出す。
+
+     この関数は、バグ報告のためにEmacsのバグを引き起こす入力を記録する
+     ために普通は使う。
+
+          (open-dribble-file "~/dribble")
+               => nil
+
+関数`open-termscript'（*Note Terminal Output::）も参照してください。
+
+
+
+File: elisp-ja, Node: Terminal Output, Next: Special Keysyms, Prev: Terminal Input, Up: System Interface
+
+端末出力
+========
+
+端末出力関数は、端末に出力を送ったり、端末へ送った出力を記録します。変
+数`baud-rate'は、Emacsが考えている端末の出力速度を表します。
+
+ -- Variable: baud-rate
+     この変数の値は、Emacsが関知する端末の出力速度である。この変数に設
+     定しても実際のデータ転送速度を変更しないが、その値はパディングなど
+     の計算に用いられる。また、ウィンドウシステムを使っている場合であっ
+     ても、スクリーンのどの部分をスクロールするか、あるいは、再描画する
+     かの決定に影響する。（このような決定を調整する方法を与えるために、
+     ウィンドウシステムには真の『出力速度』はないがこのように設計した。）
+
+     値の単位はボー（baud）である。
+
+ネットワーク経由で使い、ネットワークの異なる部分が異なる速度で動いてい
+るときには、Emacsが返す値はローカル端末で使っている場合の値と異なるかも
+しれません。リモートマシンへの通信速度でローカル端末と通信するネットワー
+クプロトコルもあり、そのような場合、Emacsや他のプログラムは正しい値を得
+られます。その他の場合では正しい値を得られません。Emacsの値がまちがって
+いるときには、あまり最適でない決定をくだすでしょう。この問題を修正する
+には、`baud-rate'に設定します。
+
+ -- Function: baud-rate
+     この廃れた関数は、変数`baud-rate'の値を返す。
+
+ -- Function: send-string-to-terminal STRING
+     この関数は、なにも変更せずに文字列STRINGを端末へ送る。
+     STRING内のコントロール文字は、端末に依存する効果を持つ。
+
+     この関数の1つの用途は、ファンクションキーの定義をダウンロード可能
+     な端末のファンクションキーを定義することである。たとえば、ファンク
+     ションキー4を（文字の列`C-u C-f'を計算機に送って）4文字進めると定
+     義にするには、特定の端末ではつぎのようにする。
+
+          (send-string-to-terminal "\eF4\^U\^F")
+               => nil
+
+ -- コマンド: open-termscript FILENAME
+     この関数は、Emacsが端末へ送出するすべての文字を記録する"タームスク
+     リプトファイル"（termscript file）をオープンするために使う。関数は
+     `nil'を返す。タームスクリプトファイルは、Emacsがスクリーンを乱して
+     しまう問題、誤ったtermcap定義やEmacsの実際のバグではない端末の望ま
+     しくない設定の問題を調べるのに有用である。どのような文字の列が実際
+     に出力されるか確信できれば、それらが使用中のtermcapのどの定義に対
+     応するか調べられる。
+
+     *Note Terminal Input::の`open-dribble-file'も参照。
+
+          (open-termscript "../junk/termscript")
+               => nil
+
+
+
+File: elisp-ja, Node: Special Keysyms, Next: Flow Control, Prev: Terminal Output, Up: System Interface
+
+システム固有のX11のキーシンボル
+===============================
+
+システム固有のX11のキーシンボル（keysym）を定義するには、変数
+`system-key-alist'に設定します。
+
+ -- Variable: system-key-alist
+     この変数の値は、各要素がシステム固有の各キーシンボルに対応する連想
+     リストであること。要素は`(CODE . SYMBOL)'の形である。ここで、CODE
+     は（『提供業者固有の』ビット
+     -2**28を
+     含まない）数値のキーシンボルコードであり、
+     SYMBOLはファンクションキーの名前である。
+
+     たとえば、`(168 . mute-acute)'は、数値コードが
+     -2**28
+     + 168 であるHP Xサーバーが使うシステム固有キーを定義する。
+
+     実際に使用しているXサーバーのキーシンボルと衝突しなければ、他のXサー
+     バー向けのキーシンボルを連想リストから省かなくても問題ない。
+
+     変数は現在の端末につねにローカルであり、
+     バッファローカルにはなりえない。
+     *Note Multiple Displays::。
+
+
+
+File: elisp-ja, Node: Flow Control, Next: Batch Mode, Prev: Special Keysyms, Up: System Interface
+
+フロー制御
+==========
+
+本節では、
+『Emacsがなぜコマンド文字集合の中からフロー制御文字を使うのか？』という
+質問に答えたいと思います。
+この話題に関する別の視点については、
+配布に含まれるファイル`emacs/INSTALL'の中の
+フロー制御に関する記述を読んでください。
+termcapの定義とDECの端末集線器については、
+`emacs/etc/TERMS'を参照してください。
+
+ある時期には、ほとんどの端末ではフロー制御を行っておらず、`C-s'と`C-q'
+をフロー制御に用いるものもありませんでした。したがって、コマンド文字と
+して`C-s'と`C-q'を選ぶことは自然であり議論の余地はありませんでした。キー
+に割り付けるべきコマンドがたくさんあったので、ほとんどすべてのASCIIコン
+トロール文字に意味を与えました。
+
+のちに、フロー制御にこれらの文字を必要とする端末が導入されたのです。そ
+れらはフルスクリーンエディタ向きの端末ではなかったので、Emacsの保守陣は
+それらを無視しました。後年、`C-s'と`C-q'によるフロー制御が端末で広く使
+われるようになりましたが、当時はそれはオプションでした。Emacsユーザーの
+多くはフロー制御をオフにして、フロー制御のために無意味なキーバインディ
+ングに替えようとはしなかったのです。
+
+Emacsと端末や集線器の製造業者のどちらの使い方が『正しい』でしょう？` '
+この問に簡単な答えはありません。
+
+`C-s'と`C-q'で引き起こされる問題を解消するのに
+気が進まないのは、`C-s'と`C-q'であることに理由がないからです。
+文字ストリームに透過な別の（実用上一般的ではないが）
+フロー制御技術があります。
+さらに、それらをフロー制御に使うのは正式な規格ではありません。
+興味深いことですが、（1970年ころの）紙テープパンチャ付きの
+テレタイプモデル33では、計算機からパンチャをオン／オフするために
+`C-s'と`C-q'を送っていました！
+
+ウィンドウシステムやPC端末エミュレータが文字端末を置き換えるようになり
+フロー制御の問題は徐々に解消しつつあります。しばらくは、読者が望むなら
+Emacsはフロー制御をオンにする手軽な方法を提供します。関数
+`enable-flow-control'を呼び出すのです。
+
+ -- コマンド: enable-flow-control
+     この関数は、出力のフロー制御に`C-s'と`C-q'を
+     使うようにするとともに、`keyboard-translate-table'
+     （*Note Translating Input::）を用いて
+     `C-\'と`C-^'をそれらのかわりに使えるようにする。
+
+読者のファイル`.emacs'で関数`enable-flow-control-on'を使えば、特定の種
+類の端末で自動的にフロー制御をオンにできます。
+
+ -- Function: enable-flow-control-on &rest TERMTYPES
+     この関数は、端末の種類がTERMTYPESの1つであると、フロー制御をオンに
+     し`C-\'と`C-^'をかわりに使う。たとえば、つぎのように使う。
+
+          (enable-flow-control-on "vt200" "vt300" "vt101" "vt131")
+
+`enable-flow-control'が行う処理はつぎのとおりです。
+
+  1. `(set-input-mode nil t)'で端末入力をCBREAKモードに設定し、オペレー
+     ティングシステムにフロー制御を行うように指示する。
+
+  2. `C-\'と`C-^'を`C-s'と`C-q'に変換するように
+     `keyboard-translate-table'を設定する。
+     非常に下位レベルであることを除けば、
+     Emacsは`C-s'や`C-q'を打ったと考えるので、
+     たとえ他のコマンドに対しても`C-\'や`C-^'を打ったとしても
+     実質的には`C-s'や`C-q'を打ったことになる。
+     *Note Translating Input::。
+
+端末側がフロー制御文字を発行するのであれば、
+カーネルのフロー制御処理をオンにすれば、
+その端末に対する普通のパディングより少なくしても動作するはずです。
+termcapの定義をカスタマイズしてパディング量を減らします。
+あるいは、`baud-rate'に小さめの値を設定すると、
+パディングの必要量の計算にEmacsは低い速度を使います。
+*Note Terminal Output::。
+
+
+
+File: elisp-ja, Node: Batch Mode, Prev: Flow Control, Up: System Interface
+
+バッチモード
+============
+
+コマンド行オプション`-batch'は、Emacsを非対話的に実行します。このモード
+では、Emacsは端末からコマンドを読まず、端末のモードを変更せず、スクリー
+ンに出力もしません。これは、実行するLispプログラムを指定できるようにす
+るためです。それが終るとEmacsも終了します。実行すべきプログラムは、
+FILEという名前のライブラリをロードする`-l FILE'、および、引数なしで関数
+FUNCTIONを呼び出す`-f FUNCTION'で指定します。
+
+バッチモードでは、ストリームとして`t'を指定した`message'や`prin1'などで
+エコー領域に表示されるLispプログラムの出力は、Emacsの標準エラー記述子へ
+出力されます。したがって、Emacsは非対話的なアプリケーションプログラムの
+ようにふるまいます。（コマンドの表示などのEmacs自身がエコー領域に出力す
+るものは完全に抑制される。）
+
+ -- Variable: noninteractive
+     この変数は、Emacsがバッチモードで動作していると`nil'以外である。
+
+
+
+
+
+
+
+
+File: elisp-ja, Node: Antinews, Next: Mac OS, Prev: X Resources, Up: Top
+
+Emacs 20 Antinews *(2003/10/30)*
+********************************
+
+Emacs 20 Antinewsの翻訳
+(http://www.sodan.org/~knagano/emacs/emacs21-emacs20-antinews-j.html)
+を参考に翻訳しています。上記文書の翻訳をされた方に深く感謝します。
+
+時代に逆行する皆さんへ、Emacsヴァージョン20.4へのダウングレード情報をお
+届けします。Emacs 21のさまざまな機能が省かれたことによる単純さをお楽し
+みください。後述する節では、Emacs 20.3へダウングレードするための情報を
+お届けします。
+
+* Menu:
+
+* Antinews Emacs 20::
+* Antinews Emacs 203::
+
+
+
+File: elisp-ja, Node: Antinews Emacs 20, Next: Antinews Emacs 203, Prev: Antinews, Up: Antinews
+
+Old Lisp Features in Emacs 20 *(2003/10/30)*
+============================================
+
+   * マクロの `push' と `pop' は削除されました。`dolist' と
+     `dotimes'も同様です。
+
+   * Emacsは画像を表示しません。(Emacsがはテキストを編集するためのもの
+     ですので、)画像もマージンもツールバーも表示しません。
+
+   * テキストプロパティの`display'は特別な意味を持たなくなりました。こ
+     のため、自分でコードを書かない限り、特別な効果はありませんので、Lispプ
+     ログラムで自由に利用できます。ところで、画像を表示しないのであれば、
+     `display' なんてテキストプロパティは必要なのかい？
+
+   * テキストプロパティの `field' はもはや特別な意味を持たなくなりまし
+     た。バッファはもはや「領域」には分割されません(「領域」で情報を分
+     けると意図しない動作をしてしまいますから)。
+
+     コメント：テキストプロパティにfieldが追加されたそう
+     な。例えば、M-x shellでプロンプトにfieldを設定しておけば、
+     入力されたコマンドかプロンプトかが判断できるので、
+     `C-a'などの挙動を制御できるわけです。
+
+   * フェイスの属性がシンプルになりました。`:family'や`:height'、
+     `:width'、`:weight'、`:slant'はなくなり、フォント名や太字、斜体字
+     かどうかの指定になりました。
+
+     フェイスの`:overline'や`:strike-through'、`:box'といった属性も削除
+     されました。下線は常にテキストと同じ色になりました。他の色を使うな
+     んて悪趣味ですよ。
+
+     属性の単純化と合わせて、`set-face-attribute' や`face-attribute' も
+     削除しました。フェイスの属性は`face-font' などの関数で得ることがで
+     きますし、`set-face-font' で値を変更することもできます(これらの関
+     数はEmacs 21で利用できますが、それほど便利ではありませんでした)。
+
+   * 標準のフェイスである `scroll-bar'、`menu'、`border'、`cursor' や
+     `mouse' は削除されました。フェイスでメニューなどの色を変えたりする
+     のは、むしろ奇妙な方法ですので、あるべきではないのです。フレームの
+     境界やカーソル、マウスカーソルの色を変えるには、
+     `set-border-color'、`set-cursor-color' や`set-mouse-color' が利用
+     できます。メニューの色はXのリソースを利用できます。
+
+   * もはやテキスト端末では色や他のフェイス属性を表示できません。したがっ
+     て、端末がフェイスを表示できるかどうかを心配する必要はないのです。
+
+   * ビープ音以外には音を鳴らす機能はありません。そのため、Emacsはあな
+     たの平穏と静寂を乱しません。
+
+   * タイ語などでは、いくつかの文字は重ね合わせて作られた画像として表示
+     します。Emacs20でこのような言語の合成文字を表示する方法は複雑で練
+     られていません。恥ずかしいのでこれくらいの説明にしておきます。
+
+   * `delete-and-extract-region' (リージョン内のテキストをカットする関
+     数)は削除されました。テキストを得るのには`buffer-substring'が使え
+     ますし、削除するのには`delete-region' が利用できます。
+
+   * 正規表現は`[:alpha:]'(アルファベットを表す)のようなPOSIX使用の文字
+     をサポートしていません。これにより、すべての文字は同じように表現さ
+     れます。
+
+   * ハッシュテーブルは削除されました。連想リストを利用します。
+
+   * Lispプリンタは循環構造を検出や出力をしません。とにかくLispリーダは循環
+     構造を再現できないので、それでいいのです。しかし、循環構造を出力できる
+     `cust-print.el' というライブラリはあります。
+
+   * EmacsはX toolkitのツールバーを使わずに、Emacs自身で実現します。そ
+     して、常にフレームの前景色は背景色を使います。そのため、スクロール
+     バーに異なる色を指定することはできません。
+
+   * 単純にするために、すべてのASCII文字は同じ高さと幅を持ちます(中国語
+     のようにある種の文字は常にASCIIの2倍の幅になります)。すべての文字
+     は同じように作られ表示されるのです。
+
+   * Emacsのウィンドウサイズを変更でき、あるウィンドウでのサイズ変更は
+     他のすべてのウィンドウに影響します。Windowsでは
+     `window-size-fixed'を利用できなくなりました。
+
+   * `intern-soft'はシンボルを引数として受け取らなくなりました。
+
+   * `bitmap-spec-p'は`pixmap-spec-p'に名前を変更しました。この変更を調
+     べることでEmacsのヘルプシステムを使う練習になります。
+
+   * ツールチップは通常のフレームを使って処理されます。
+
+   * モードラインの部分はマウスには反応しません。しかし、マウスによるコ
+     マンドの一部は利用できます。
+
+   * Windowsはヘッダを表示できません。逆にモードラインは消すことはでき
+     ません。
+
+   * メニューの区切りとして点線のみを利用できます。
+
+   * 縦方向の断片的なスクロールは存在しません。
+
+   * 関数 `format' や `message' はテキストプロパティを無視します。
+
+   * `propertize'(文字列にテキストプロパティを付けて返す関数)は存在しません。
+     `set-text-properties'を用います。
+
+   * 色はウィンドウシステムでのみサポートされ、テキスト端末ではサポート
+     されません。テキスト端末の色に関連する関数は不要になりましたので、
+     削除しました。
+
+   * 関数 `color-values'や`color-defined-p'、`defined-colors' はそれぞ
+     れ `x-color-values'、`x-color-defined-p'、`x-defined-colors' に名
+     前が変わりました。
+
+   * ウィンドウは固定された幅や高さにすることはできません。Emacsは必要
+     な時、すべてのウィンドウのサイズを調整します。
+
+   * プロパティの `before-string' や `after-string' の値として使われる
+     文字はシングルコラムとして表示される文字を含まなければいけません。
+     タブや改行などの制御文字だと変な結果になるでしょう。
+
+   * ミニバッファのプロンプトは実はミニバッファの内容には表れません。プ
+     ロンプトはミニバッファウィンドウに特別な方法で表示しているのです。
+
+     コメント：ミニバッファでC-aを行うと、プロンプトの後にカーソルが移
+     動します。Emacs 21では左カーソルでこれより前に行くことができます。
+     単なる文字なわけですから、当然ですね。しかし、Emacs 20.4では不可能
+     です。これは、単なる文字ではないのでプロンプト以降のみしか触ること
+     ができないのです。
+
+   * `write-region'の排他的に開く機能は削除されました。このため、7番目の引数が
+     `nil' でない場合は、ユーザに確認を求めます。
+
+   * `buffer-size'のオプション引数は削除され、常にカレントバッファの文
+     字数を返します。
+
+   * `assq-delete-all' は削除されました。
+
+   * `:set-after'はもはや`defcustom'にはありません。
+
+   * `small-temporary-file-directory'は特別な意味を持たなくなりました。
+     これで`temporary-file-directory'というたった一つの変数のみで一時ファ
+     イルを作るディレクトリを指定できます。しかし、Emacsのすべての機能
+     がその変数を利用するわけではありません。あるものは環境変数`TMP'を
+     使うでしょうし、あるものは環境変数`TMPDIR'を使うでしょう。
+
+   * `save-some-buffers'の2番目の引数PREDが `nil' でなければ、正確にど
+     のような値であるかは問題にならない。とにかく`nil'でないならば、
+     `t'と同じことになり、ファイルでないバッファも保存する。
+
+   * `inhibit-modification-hooks'は特別な意味を持たなくなりました。
+
+   * `fontification-functions'は削除されました。
+     `window-scroll-functions'のような他のフックを使うことで、同じよう
+     な処理を行うことができます。
+
+   * `redisplay-dont-pause'は特別な意味を持たなくなりました。
+
+   * `calendar-move-hook' は削除されました。
+
+   * {move-to-column}は2番目の引数が`nil'でなければ、`t'として扱います。
+
+
+
+File: elisp-ja, Node: Antinews Emacs 203, Prev: Antinews Emacs 20, Up: Antinews
+
+Old Lisp Features in Emacs 20.3 *(2003/10/30)*
+==============================================
+
+ここではEmacs 20.3で削除される機能を紹介しましょう。
+
+これらはLisp言語自身の変更です。
+
+   * `line-beginning-position' と `line-end-position'は削除されました。
+
+   * `directory-files-and-attributes'、`file-attributes-lessp'、
+     `file-expand-wildcards' は削除されました。
+
+   * `decode-coding-region' と `encode-coding-region'は後で役立つように
+     テキストプロパティをそのまま残します(もっともめったに役立たないで
+     すけど)。
+
+   * `position-bytes' と `byte-to-position' は削除されました。
+
+   * `with-output-to-temp-buffer'で作られる一時バッファは書き込み可能で
+     す。Fundamental mode以外にしなければヘルプモードになります。
+
+   * `sref'はINDEXを文字数ではなくバイト数として解釈します。そして、
+     `char-bytes'は文字通り文字が占めるバイト数を返します。
+
+   * `process-running-child-p' は削除されました。
+
+   * `interrupt-process' とそれと似た関数は2番目の引数が`lambda'であれ
+     ば特別なことはしません。
+
+   * `define-prefix-command'は2つの引数だけを受け取ります。
+
+   * `read-char'、`read-event'、`read-char-exclusive'の2番目の引数の意
+     味がこれまでとは逆になります。引数が`nil'であれば、現在の入力方法
+     を用います。
+
+   * `with-temp-message'は削除されました。
+
+   * `clear-this-command-keys' は削除されました。
+
+   * `gap-position' と `gap-size'は削除されました。
+
+   * `modify-face'で引数が`(nil)'であっても特別な意味は持ちません。
+
+   * base64の変換用関数は削除されました。
+
+   * `find-file'やそれを利用したような関数でワイルドカードを利用できな
+     くなしました。
+
+   * `file-attributes'はファイルサイズを返します。これは、整数に収まる
+     なら整数になります。収まらないと浮動小数点になります。
+
+
+
+File: elisp-ja, Node: Tips, Next: GNU Emacs Internals, Prev: System Interface, Up: Top
+
+ヒントと慣習
+************
+
+本章では、Emacs Lispの機能についてさらに述べることはしません。かわりに、
+前章までに述べてきた機能を効率よく使うための助言やEmacs Lispプログラマ
+が従うべき慣習について述べます。
+
+* Menu:
+
+* Coding Conventions::        Conventions for clean and robust programs.
+* Compilation Tips::          Making compiled code run fast.
+* Documentation Tips::        Writing readable documentation strings.
+* Comment Tips::	      Conventions for writing comments.
+* Library Headers::           Standard headers for library packages.
+
+
+
+File: elisp-ja, Node: Coding Conventions, Next: Compilation Tips, Prev: Tips, Up: Tips
+
+Emacs Lispのコーディングの慣習
+==============================
+
+ここでは、読者が広く使われることを意図したEmacs Lispコードを書く場合に
+従うべき慣習について述べます。
+
+   * すべてのグローバル変数は同じ名前空間を共有し、すべての関数も別の名
+     前空間を共有するため、読者のプログラムを別のLispプログラムと区別す
+     るための短い単語を選ぶべきである。そして、すべてのグローバル変数、
+     定数、関数の名前を選んでおいた接頭辞で始めるように注意する。
+
+     Emacs Lispでは基本関数ではないがLispの伝統的な基本関数の名前にさえも
+     この勧告は適用される。
+     たとえ`copy-list'にさえもである。
+     信じるかどうかは別にして、
+     `copy-list'のもっともらしい定義方法は複数ある。
+     安全であるためには、読者の接頭辞を付けて
+     `foo-copy-list'や`mylib-copy-list'のような名前にする。
+
+     読者が、`twiddle-files'のような特定の名前でEmacsに追加すべき関数を
+     書いた場合には、読者のプログラムではその名前で呼ばないようにする。
+     読者のプログラムでは`mylib-twiddle-files'としておき、Emacsに名前を
+     追加するように提案するメイルを`bug-gnu-emacs@gnu.org'へ送る。われ
+     われがそのようにすることを決定したときには、名前をとても簡単に変更
+     できる。
+
+     1つの接頭辞では不十分な場合には、意味がある限りは、2つか3つの共通
+     する別の接頭辞を読者のパッケージで使ってもよい。
+
+     接頭辞とシンボル名の残りの部分とはハイフン`-'で分ける。これは
+     Emacs自身やほとんどのEmacs Lispプログラムと一貫性がある。
+
+   * プログラムに少なくとも複数の入り口がある場合には、各ライブラリプロ
+     グラムに`provide'の呼び出しがあるとしばしば有用である。
+
+   * 別のライブラリプログラムをあらかじめロードしておく必要があるファイ
+     ルでは、ファイルの先頭のコマンドにそのように記述しておくこと。さら
+     に、必要なものが確実にロードされておくように`require'を使う。
+
+   * 別のファイルBARで定義されるマクロを
+     ファイルFOOで使っている場合には、
+     FOOでそのマクロを始めて使うまえにFOOにつぎの式があること。
+
+          (eval-when-compile (require 'BAR))
+
+     （さらに、`require'が働くように、
+     ライブラリBARには`(provide 'BAR)'があること。）
+     この式により、FOOをバイトコンパイルするときに
+     BARをロードすることになる。
+     さもないと、必要なマクロをロードせずにFOOをコンパイルする危険を侵し、
+     正しく動作しないコンパイル済みコードを生成することになる。
+     *Note Compiling Macros::。
+
+     `eval-when-compile'を使うことで、
+     FOOのコンパイル済みの版を*使う*ときには
+     BARをロードしない。
+
+   * メジャーモードを定義するときには、
+     メジャーモードの慣習に従うこと。
+     *Note Major Mode Conventions::。
+
+   * マイナモードを定義するときには、
+     マイナモードの慣習に従うこと。
+     *Note Minor Mode Conventions::。
+
+   * 関数の目的が特定の条件を満たすかどうかを報告するのであれば、その関
+     数には`p'で終る名前を付ける。名前が1単語である場合には`p'だけを付
+     加する。複数の単語であれば`-p'を付加する。たとえば、`framep'や
+     `frame-live-p'である。
+
+   * 真偽の条件を記録するユーザーオプション変数には、
+     `-flag'で終る名前を付ける。
+
+   * 読者のメジャーモードでは、`C-c LETTER'をキーとして定義しないこと。
+     これらのキー列はユーザー向けに予約済みである。それら*だけ*がユーザー
+     向けに予約されたキー列であり、それらを禁止しないこと。
+
+     かわりに、`C-c'のあとにコントロール文字か数字文字か特定の句読点文
+     字が続くキー列を定義する。これらのキー列は、メジャーモード用に予約
+     してある。
+
+     Emacsのすべてのモードをこの慣習に従うように変換するのはたいへんな
+     作業量であった。この慣習を捨てさるとその作業をむだにしてしまい、ユー
+     ザーにも不便である。
+
+   * `C-c'のあとに`{'、`}'、`<'、`>'、`:'、`;'のいずれかが続くキー列も
+     メジャーモード用に予約してある。
+
+   * `C-c'のあとにこれら以外の句読点文字が続くキー列は、マイナモード用
+     に割り当ててある。これらをメジャーモードで使うことは絶対禁止ではな
+     いが、これらを使うと、メジャーモードのバインディングがマイナモード
+     でときどき隠されてしまう。
+
+   * 修飾キーを使わないファンクションキーF5からF9は、ユーザーが定義する
+     ように予約してある。
+
+   * （`C-c'を含む）任意のプレフィックス文字に続く`C-h'をバインドしない
+     こと。`C-h'をバインドしなければ、これは自動的にプレフィックス文字
+     のサブコマンド一覧を表示するヘルプ文字になる。
+
+   * ESCに続くESC以外には、ESCで終るキー列をバインドしないこと。（つま
+     り、`ESC ESC'で終るキー列をバインドするのはよい。）
+
+     この規則の理由は、任意の文脈においてESCに対するプレフィックスでな
+     いバインディングがあることで、エスケープシーケンスをその文脈におけ
+     るファンクションキーと認識することを防げる。
+
+   * ユーザーが出入りできる一時的なモードや状態のように働くものでは、
+     脱出手段として`ESC ESC'や
+     `ESC ESC ESC'を定義する。
+
+     Emacsの普通のコマンドを受け付ける状態、、あるいは、より一般的には
+     ESCに続けてファンクションキーや矢印キーが意味を持つ可能性がある任
+     意の状態では、ESCに続くエスケープシーケンスの認識を妨げる`ESC
+     ESC'を定義するべきではない。そのような状態では、脱出手段として
+     `ESC ESC ESC'を定義する。さもなければ脱出手段として`ESC ESC'を定義
+     する。
+
+   * アプリケーションでは、シフトキーを押し下げたボタン1関連のマウスイ
+     ベントをバインドすべきではない。これらのイベントには、`S-mouse-1'、
+     `M-S-mouse-1'、`C-S-mouse-1'などが含まれる。これらはユーザー向けに
+     予約してある。
+
+   * 読み出し専用のテキスト向けの特別なメジャーモードでは、普通、
+     `mouse-2'とRETをテキスト内のある種の参照を辿るように再定義するべき
+     である。dired、info、コンパイル（compilation）、出現（occur）など
+     のモードはこのように再定義している。
+
+   * Emacsの普通のふるまいを変更するようなパッケージでは、その機能をオ
+     ン／オフするコマンドを含めるとよい。その機能をオン／オフする
+     `WHATEVER-mode'という名前のコマンドを用意し、自動ロード（*Note
+     Autoload::）するようにする。パッケージをロードしただけでは見ために
+     は効果がない、つまり、その機能をオンにしないようにパッケージを設計
+     すること。ユーザーはコマンドを起動してその機能をオンにする。
+
+   * Emacsの基本関数の別名を定義することは悪い考えである。そのかわりに
+     標準の名前を使う。
+
+   * Emacsの基本関数を再定義（あるいはアドバイス）することは謹むべきで
+     ある。特定のプログラムに対しては正しく動作するであろうが、他のプロ
+     グラムがその結果どうなるかはわからない。
+
+   * Emacsの標準の関数やライブラリプログラムを置き換えるようなファイル
+     では、そのファイルの先頭の目立つコメントにどの関数を置き換え元のふ
+     るまいとの相違点を記述すること。
+
+   * 読者のEmacs Lispのソースファイルの名前は13文字以下にすること。こう
+     すると、ファイルをコンパイルしても、コンパイル済みのファイル名は
+     14文字以下になり、どんな種類のUNIXシステムにも収まるだけの短さであ
+     る。
+
+   * プログラムでは`next-line'や`previous-line'を使わないこと。
+     ほとんどの場合、`forward-line'のほうがより便利であり、
+     予測可能で堅牢でもある。
+     *Note Text Lines::。
+
+   * マークを設定することが読者のプログラムの意図した機能の一部でなければ、
+     マークを設定する関数は呼び出さないこと。
+     マークはユーザーレベルの機能であり、
+     ユーザーの便宜のために値を指定する以外には、
+     マークを変更するのは正しくない。
+     *Note The Mark::。
+
+     特に、以下のいずれの関数も使わないこと。
+
+        * `beginning-of-buffer', `end-of-buffer'
+        * `replace-string', `replace-regexp'
+
+     対話的なユーザー向けの他の機能を必要とせずに単にポイントを移動した
+     り特定の文字列を置換するには、これらの関数は1行か2行の単純なLispコー
+     ドで置き換えられる。
+
+   * ベクトルを使う特別な理由がない限りは、ベクトルではなくリストを使う。
+     Lispには、ベクトルに対するよりもリストを操作する機能のほうが多くあ
+     り、リストを扱うほうが普通はより簡便である。
+
+     （リストだけが許す）要素を挿入したり削除する必要がないのであれば、
+     ある程度のサイズがあり（先頭から末尾に向けての探索ではなく）ランダ
+     ムに参照する表にはベクトルのほうが適している。
+
+   * エコー領域にメッセージを表示する推奨方法は、
+     `princ'ではなく関数`message'を使うことである。
+     *Note The Echo Area::。
+
+   * エラー条件に出会ったときには、
+     関数`error'（あるいは`signal'）を呼び出す。
+     関数`error'は戻ってこない。
+     *Note Signaling Errors::。
+
+     エラーを報告するために、
+     `message'、`throw'、`sleep-for'、`beep'は使わないこと。
+
+   * エラーメッセージは大英文字で始め、ピリオドで終えないこと。
+
+   * 実行に時間を要する多くのコマンドでは、
+     開始時には`Operating...'のメッセージを表示し、
+     終了時にはそれを`Operating...done'と変える。
+     これらのメッセージの形を同じにしておくこと。
+     `...'の周りに空白は*なく*、末尾にピリオドも*ない*。
+
+   * 再帰編集の使用は避けるように努めること。
+     そのかわりにrmailのコマンド`e'のようにする。
+     つまり、古いローカルキーマップに戻るためのコマンドを収めた
+     新しいローカルキーマップを使う。
+     あるいは、コマンド`edit-options'のようにする。
+     別のバッファに切り替え、戻るのはユーザーに任せる。
+     *Note Recursive Editing::。
+
+   * 変数名を`*'で始めたり終える慣習があるシステムもある。Emacs Lispで
+     はこの慣習を使わないので、読者のプログラムでも使わないこと。
+     （Emacsでは、特別な目的のバッファにのみそのような名前を使う。）す
+     べてのライブラリで同じ慣習を使うと、ユーザーにはEmacsがより整合し
+     て見える。
+
+   * 自由変数には`defvar'の定義を追加して、コンパイル時の未定義な自由変
+     数に対する警告を避けるように努めること。
+
+     ある関数で変数を束縛しその変数を別の関数で使ったり設定すると、その
+     変数を定義しない限りコンパイラは後者の関数について警告を出す。しか
+     し、しばしばこれらの変数は短い名前で、Lispパッケージでそのような変
+     数名を定義すべきかどうか明らかでない。したがって、そのような変数の
+     名前は、読者のパッケージの他の関数や変数に使っている接頭辞で始まる
+     名前に改名すべきである。
+
+   * デフォルトの字下げパラメータを使って、各関数を
+     `C-M-q'（`indent-sexp'）で字下げすること。
+
+   * 閉じ括弧だけの行にする癖をつけないこと。Lispプログラマはこれに当惑
+     する。たまには、閉じ括弧が多数個連続するときにそれらを1つか2つの塊
+     に分けることは意味がある。
+
+   * コピーを配布する場合には、ファイルに著作権表示を入れること。つぎの
+     ような文面を使う。
+
+          ;; Copyright (C) YEAR NAME
+
+          ;; This program is free software; you can redistribute it and/or
+          ;; modify it under the terms of the GNU General Public License as
+          ;; published by the Free Software Foundation; either version 2 of
+          ;; the License, or (at your option) any later version.
+
+          ;; This program is distributed in the hope that it will be
+          ;; useful, but WITHOUT ANY WARRANTY; without even the implied
+          ;; warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+          ;; PURPOSE.  See the GNU General Public License for more details.
+
+          ;; You should have received a copy of the GNU General Public
+          ;; License along with this program; if not, write to the Free
+          ;; Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+          ;; MA 02111-1307 USA
+
+     読者がフリーソフトウェアファウンデーションに著作権を委譲する契約を
+     結んでいるときには、NAMEとして`Free Software Foundation, Inc.'を使
+     う。さもなければ読者自身の名前を使う。
+
+
+

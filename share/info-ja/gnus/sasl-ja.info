@@ -1,0 +1,296 @@
+Info file: sasl-ja.info,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `sasl-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* SASL-ja: (sasl-ja).           The Emacs SASL library (Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+このファイルは Emacs SASL ライブラリーを説明します。
+
+Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
+Copyright (C) 2000 Daiki Ueno.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.2 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".
+
+この文書を、フリーソフトウェア財団発行の GNU フリー文書利用許諾契約書第
+1.2 版またはそれ以降の版が定める条件の下で複製、配布、あるいは変更する
+ことを許可します。変更不可部分、表表紙テキストおよび裏表紙テキストは指
+定しません。この利用許諾契約書の複写は「GNU フリー文書利用許諾契約書」
+という章に含まれています。
+
+
+
+
+File: sasl-ja.info, Node: Top, Next: Overview, Prev: (dir), Up: (dir)
+
+Emacs SASL
+**********
+
+このマニュアルは Emacs SASL ライブラリーを説明します。
+
+異なるプロトコルを使うアプリケーション間で、複数の認証メカニズムを共有
+するための共通インターフェースです。
+
+* Menu:
+
+* Overview::                    Emacs SASL ライブラリーとは
+* How to use::                  アプリケーションに認証サポートを追加する
+* Data types::
+* Back end drivers::            独自のドライバーを書く
+* Index::
+* Function Index::
+* Variable Index::
+
+
+
+File: sasl-ja.info, Node: Overview, Next: How to use, Prev: Top, Up: Top
+
+大要
+****
+
+SASL は "Simple Authentication and Security Layer" の略です。標準は
+RFC2222 に文書化されています。これは、さまざまなアプリケーション・プロ
+トコルに、認証サポートを追加するための簡単な手段を提供します。
+
+このライブラリーの最上位のインターフェースは、Java SASL Application
+Program Interface によって触発されました。それは、抽象化した一連の認証
+メカニズムのドライバーを定義します。
+
+バックエンドのドライバーは、なるべく認証メカニズムに密接していることを
+目指しています。どこにある追加の設定情報にも、この実装からアクセスする
+ことができます。
+
+
+
+File: sasl-ja.info, Node: How to use, Next: Data types, Prev: Overview, Up: Top
+
+使い方
+******
+
+(まだ書かれていません)。
+
+Emacs SASL ライブラリーを使うには、アプリケーション・プログラムの最初で、
+以下の式を評価して下さい。
+
+     (require 'sasl)
+
+実行時にのみ sasl.el が存在していることを検査したいならば、代わりに必要
+な関数の autoload の設定を並べておいても構いません。
+
+
+
+File: sasl-ja.info, Node: Data types, Next: Back end drivers, Prev: How to use, Up: Top
+
+データの型
+**********
+
+ネゴシエートされたセキュリティー層の伝送に使われる三つのデータの型とし
+て、メカニズム、クライアント・パラメーター、および認証ステップがありま
+す。
+
+* Menu:
+
+* Mechanisms::
+* Clients::
+* Steps::
+
+
+
+File: sasl-ja.info, Node: Mechanisms, Next: Clients, Prev: Data types, Up: Data types
+
+メカニズム
+==========
+
+メカニズム (`sasl-mechanism' オブジェクト) が、SASL 認証メカニズムのド
+ライバーのスキームです。
+
+ -- Variable: sasl-mechanisms
+     メカニズム名のリスト。
+
+ -- Function: sasl-find-mechanism MECHANISMS
+     適切なメカニズムを取得します。
+     この関数は MECHANISMS と `sasl-mechanisms' を比較して、適切
+     な `sasl-mechanism' オブジェクトを返します。
+
+          (let ((sasl-mechanisms '("CRAM-MD5" "DIGEST-MD5")))
+            (setq mechanism (sasl-find-mechanism server-supported-mechanisms)))
+
+ -- Function: sasl-mechanism-name MECHANISM
+     メカニズムの名前を文字列で返します。
+
+認証メカニズムのドライバー (*Note Back end drivers::) を書きたければ、
+`sasl-make-mechanism' を使い、`sasl-mechanisms' および
+`sasl-mechanism-alist' を正しく変更して下さい。
+
+ -- Function: sasl-make-mechanism NAME STEPS
+     `sasl-mechanism' オブジェクトを割り当てます。
+     この関数は二つのパラメーター、すなわちメカニズムの名前、および認証するた
+     めの関数のリストを受け取ります。
+
+          (defconst sasl-anonymous-steps
+            '(identity                            ; 最初は応答無し
+              sasl-anonymous-response))
+
+          (put 'sasl-anonymous 'sasl-mechanism
+               (sasl-make-mechanism "ANONYMOUS" sasl-anonymous-steps))
+
+
+
+File: sasl-ja.info, Node: Clients, Next: Steps, Prev: Mechanisms, Up: Data types
+
+クライアント
+============
+
+クライアント (`sasl-client' オブジェクト) は四つのパラメーター、すなわ
+ちメカニズム、ユーザー名、サービス名、およびサーバー名によって初期化さ
+れます。
+
+ -- Function: sasl-make-client MECHANISM NAME SERVICE SERVER
+     `sasl-client' オブジェクトを用意します。
+
+ -- Function: sasl-client-mechanism CLIENT
+     クライアントのメカニズム (`sasl-mechanism' オブジェクト) を返しま
+     す。
+
+ -- Function: sasl-client-name CLIENT
+     クライアントの認証名を文字列で返します。
+
+ -- Function: sasl-client-service CLIENT
+     クライアントのサービス名を文字列で返します。
+
+ -- Function: sasl-client-server CLIENT
+     クライアントのサーバー名を文字列で返します。
+
+属性の設定を追加したい場合は、`sasl-client-set-property' を使って下さい。
+
+ -- Function: sasl-client-set-property CLIENT PROPERTY VALUE
+     与えられた属性およびその値をクライアントに追加します。
+
+ -- Function: sasl-client-property CLIENT PROPERTY
+     クライントの属性の値を返します。
+
+ -- Function: sasl-client-set-properties CLIENT PLIST
+     クライアントの属性を破壊的に設定します。
+     第二引数は新しいプロパティー・リスト (plist) です。
+
+ -- Function: sasl-client-properties CLIENT
+     クライアントの設定のプロパティー・リストを、まるごと返します。
+
+
+
+File: sasl-ja.info, Node: Steps, Prev: Clients, Up: Data types
+
+ステップ
+========
+
+ステップ (`sasl-step' オブジェクト) は認証「ステップ」の抽象化です。そ
+れは、応答の値と次回の認証処理の入り口を保持します (後者はアクセスでき
+ません)。
+
+ -- Function: sasl-step-data STEP
+     STEP が保持するデータを文字列で返します。
+
+ -- Function: sasl-step-set-data STEP DATA
+     STEP に DATA の文字列を格納します。
+
+最初の応答を得るには、第二引数を `nil' にして関数 `sasl-next-step' を呼
+ばなければなりません。
+
+     (setq name (sasl-mechanism-name mechanism))
+
+この段階で、SASL の認証プロトコルの交換を開始するコマンドを送ることがで
+きます。例です。
+
+     (process-send-string
+      process
+      (if (sasl-step-data step)              ; 最初の応答
+          (format "AUTH %s %s\r\n"
+                  name (base64-encode-string (sasl-step-data step) t))
+        (format "AUTH %s\r\n" name)))
+
+認証処理を続けるために行なわなければならないことは、連続して
+`sasl-next-step' を呼ぶことです。
+
+ -- Function: sasl-next-step CLIENT STEP
+     認証ステップを実行します。
+     最初は STEP を `nil' に設定しなければなりません。
+
+
+
+File: sasl-ja.info, Node: Back end drivers, Next: Index, Prev: Data types, Up: Top
+
+バックエンド・ドライバー
+************************
+
+(まだ書かれていません)。
+
+
+
+File: sasl-ja.info, Node: Index, Next: Function Index, Prev: Back end drivers, Up: Top
+
+Index
+*****
+
+* Menu:
+
+
+
+
+File: sasl-ja.info, Node: Function Index, Next: Variable Index, Prev: Index, Up: Top
+
+Function Index
+**************
+
+* Menu:
+
+* sasl-client-mechanism:        Clients.                (line  15)
+* sasl-client-name:             Clients.                (line  19)
+* sasl-client-properties:       Clients.                (line  40)
+* sasl-client-property:         Clients.                (line  33)
+* sasl-client-server:           Clients.                (line  25)
+* sasl-client-service:          Clients.                (line  22)
+* sasl-client-set-properties:   Clients.                (line  36)
+* sasl-client-set-property:     Clients.                (line  30)
+* sasl-find-mechanism:          Mechanisms.             (line  14)
+* sasl-make-client:             Clients.                (line  12)
+* sasl-make-mechanism:          Mechanisms.             (line  29)
+* sasl-mechanism-name:          Mechanisms.             (line  22)
+* sasl-next-step:               Steps.                  (line  36)
+* sasl-step-data:               Steps.                  (line  12)
+* sasl-step-set-data:           Steps.                  (line  15)
+
+
+
+File: sasl-ja.info, Node: Variable Index, Prev: Function Index, Up: Top
+
+Variable Index
+**************
+
+* Menu:
+
+* sasl-mechanisms:              Mechanisms.             (line  11)
+
+Tag table:
+Node: Top962
+Node: Overview1372
+Node: How to use1782
+Node: Data types2047
+Node: Mechanisms2280
+Node: Clients3409
+Node: Steps4422
+Node: Back end drivers5284
+Node: Index5425
+Node: Function Index5539
+Node: Variable Index6674
+
+End tag table

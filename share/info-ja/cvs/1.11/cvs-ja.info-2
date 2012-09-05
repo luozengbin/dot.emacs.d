@@ -1,0 +1,2264 @@
+-*- coding: utf-8 -*-
+START-INFO-DIR-ENTRY
+* CVS-JA: (cvs-ja).        Concurrent Versions System (Japanese)
+END-INFO-DIR-ENTRY
+
+   Copyright (C) 1992, 1993 Signum Support AB Copyright (C) 1993, 1994
+Free Software Foundation, Inc.  Copyright (C) 1995-1999 Makoto Hiroyasu
+Copyright (C) 1999 Yoshiki Hayashi
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the entire resulting derived work is distributed under the terms
+of a permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Free Software Foundation.
+
+
+File: cvs-ja.info,  Node: Module options,  Next: Module program options,  Prev: Excluding directories,  Up: modules
+
+C.1.5 モジュールのオプション
+----------------------------
+
+標準モジュールとアンドモジュールのどちらもオプションを含むことができ、
+それはモジュールの追加情報を提供します。
+
+`-d NAME'
+     作業ディレクトリの名前をモジュール名とは別のものにします。
+
+`-e PROG'
+     モジュールのファイルが export されたときに常に実行されるプログラム
+     PROG を指定します。PROG は単独の引数、モジュール名と共に実
+     行されます。
+
+`-i PROG'
+     モジュールのファイルが格納されたときに常に実行されるプログラム
+     PROG を指定します。PROG はソースリポジトリの影響を受けるディ
+     レクトリのフルパス名である唯一の引数と共に実行されます。
+     `commitinfo', `loginfo', `veryfymsg' ファイルは格納時に
+     プログラムを呼ぶ他の方法を提供します。
+
+`-o PROG'
+     ファイルのモジュールが取り出されたときに常に実行されるプログラム
+     PROG を指定します。PROG は単独の引数、モジュール名と共に実
+     行されます。
+
+`-s STATUS'
+     モジュールに状態を割当てます。モジュールファイルが `cvs checkout
+     -s'
+     で印字されると、モジュールが主モジュール状態に従って並び換えられ、
+     それからモジュール名に従って並び換えられます。このオプションは他に意味
+     はありません。状態以外のいくつかのことにこのオプションを使うことができ
+     ます: 例えば、このモジュールに責任のある人の一覧などです。
+
+`-t PROG'
+     モジュールのファイルが `rtag' でタグ付けされたときに常に実行され
+     るプログラム PROG を指定します。PROG は2つの引数と共に実行
+     されます: モジュール名と `rtag' に指定されたタグ名です。 `tag'
+     が行われたときは実行されません。一般的に、taginfo の方が良
+     い解決法です (*note user-defined logging::)。
+
+`-u PROG'
+     取り出されたモジュールの最上位のディレクトリで `cvs' が行なわれた
+     ときに常に実行されるプログラム PROTG を指定します。PROG は
+     単独の引数、このモジュールのソースリポジトリのフルパスとともに実行され
+     ます。
+
+   "プログラムオション" プログラムがどのように実行されているのかを見る
+ために *Note Module program options:: も参照した方が良いでしょう。
+
+
+File: cvs-ja.info,  Node: Module program options,  Prev: Module options,  Up: modules
+
+C.1.6 modules ファイルの "プログラムオプション" のプログラムがどのように実行されるか
+------------------------------------------------------------------------------------
+
+checkout, rtag, export ではプログラムはサーバ側が基で、以下のものが適
+用されます:-
+
+   遠隔接続方法 (pserver, ext など) を使っているときは、CVS はこのプログ
+ラムをサーバ上で一時ディレクトリから実行します。プログラムはパス上で検
+索されます。
+
+   "ローカル接続" 使っているときは (ローカルや、遠隔の NFS ファイルシス
+テムを使用しているとき、すなわちリポジトリがパスのみに設定されていると
+き)、プログラムはもし見つかれば新しく取り出されたディレクトリから実行
+され、そうでない場合は代わりにパスが検索されます。
+
+commit と update プログラムはローカルが基で、以下のように実行されます:-
+
+   プログラムは常にローカルで実行されます。これらのオプションが
+modules管 理ファイルで更新された場合は再びディレクトリを checkout
+する必要があり ます。ファイル CVS/Checkin.prog はオプション `-i' が
+modules ファイル で設定されており、ファイル CVS/Update.prog は同様に
+`-u' が設定されて
+います。プログラムは常にクライアント側の取り出されたコピーの最上位から
+実行されます。これも、プログラムはまず取り出されたコピー上を探し、それ
+からパスを使って検索されます。
+
+   commit と update はローカルリポジトリ接続を使っているとき _のみ_
+に動作することにも注意してください--pserver や他の遠隔 CVS からソース
+が取り出されているときは、そのファイルは単純に作成されません。
+
+   プログラムは全て操作がちゃんと終了した後に実行されます。
+
+
+File: cvs-ja.info,  Node: Wrappers,  Next: commit files,  Prev: modules,  Up: Administrative files
+
+C.2 cvswrappers ファイル
+========================
+
+Wrapper とは操作中のファイル名に基づいて設定を制御することを可能にする
+CVS の機能のことです。設定は、バイナリ・ファイルには `-k' で、
+マージできないテキスト・ファイルには `-m' です。
+
+   また、非バイナリ・ファイルを更新するときの
+マージ方針について記述するオプション `-m' があります。 `MERGE' は CVS
+が通常用いる方法です:
+ファイルをマージしようとすることを意味します。`COPY' は `cvs update'
+はファイルのマージを拒否するという意味で、`-kb' でバイナ
+リとして指定されたファイルにもそうなります (ただし、バイナリとして指定
+されていれば、`-m 'COPY'' を指定する必要はありません。 CVS
+は使用者に2つのバージョンのファイルを提供し、必要な変更を挿入する
+ために使用者が CVS の外の機構を使用することを要求します。 *警告*: CVS
+1.9 以前では `COPY' を使わないでくださ い--それらのバージョンの CVS
+はあるバージョンを別の物の上にコピー
+し、以前の内容を消し去ってしまいます。 Wrapper オプション `-m'
+は更新時のマージ方針にのみ影響し、 ファイルの格納方法には影響しません。
+バイナリ・ファイルの詳細は *Note Binary files:: 参照。
+
+   管理用ファイル `cvswrappers' の基本的な書式:
+
+     ワイルドカード    [オプション 値][オプション 値]...
+
+     利用できるオプションを以下に挙げます。
+     -m                マージ方針              値: MERGE か COPY
+     -k                キーワード展開          値: 置換モード
+
+     値は以下のように単引用符で囲みます。
+
+   例えば、`.exe' で終わるファイルをバイナリとして扱いながら、
+ディレクトリを取り入れます:
+
+     cvs import -I ! -W "*.exe -k 'b'" first-dir vendortag reltag
+
+
+File: cvs-ja.info,  Node: commit files,  Next: commitinfo,  Prev: Wrappers,  Up: Administrative files
+
+C.3 格納を支援するファイル
+==========================
+
+ファイル `modules' 中の `-i' フラグは、
+ファイルが格納された時に特定のプログラムを実行するのに用いられます
+(*note modules::)。 この節で説明するファイルは、
+ファイルの格納時にプログラムを実行するための、
+より柔軟な方法を提供します。
+
+   格納時に実行できるプログラムは三種類に分けられます。
+これらのプログラムはリポジトリ中のファイルに記述されます。
+次に示すのは、
+ファイル名と、対応するプログラムに必要な機能を示したものです。
+
+`commitinfo'
+     ここに記述されるプログラムは、
+     格納が許されるかどうか判断する責任を持ちます。
+     このプログラムが正常終了しなければ、 格納が中止されます。
+
+`verifymsg'
+     指定されたプログラムはログメッセージを評価するために使用され、それは全
+     ての要求部分を備えているかを検証するかもしれません。これはログメッセー
+     ジの雛型を保持することのできる `rcsinfo' ファイルと組合せて使うと
+     とても役に立ちます (*note rcsinfo::)。
+
+`editinfo'
+     ここに記述されるプログラムは、
+     ログ・メッセージを編集するのに用いられ、
+     全ての要求される項目が含まれるかどうか可能な限り確かめます。
+     ログ・メッセージの雛型を記述する `rcsinfo' ファイルと
+     組み合せることで、より便利になります (*note rcsinfo::)。(旧式)
+
+`loginfo'
+     ここに記述されるプログラムは、 格納が完了した時点で呼び出されます。
+     ログ・メッセージと追加情報とを受け取り、ファイルに格納するか、
+     特定の人物にメールとして出すか、またはニュース・グループに投稿するとか、
+     または... あなたの想像力だけがその制限です。
+
+* Menu:
+
+* syntax::                      共通の構文
+
+
+File: cvs-ja.info,  Node: syntax,  Up: commit files
+
+C.3.1 共通の構文
+----------------
+
+`commitinfo', `loginfo', `rcsinfo', `editinfo', `verifymsg',
+などのような管理ファイルには共通の書式があります。
+各ファイルの目的は後述します。 ここでは共通の構文について説明します。
+
+   各行は次の要素から構成されます:
+   * 正規表現。これは GNU emacs で使われる構文の基本正規表現です。
+
+   * 項目間の空白--一つ以上のスペース又はタブです。
+
+   * ファイル名又はコマンド行の形式。
+
+空白行は無視されます。 また `#'
+という文字で始まる行は註釈行として扱われます。
+残念ながら、長い行を複数行に分割することは_できません_。
+
+   リポジトリの中のディレクトリに合致した最初の正規表現が使用されます。
+行の残りの部分は、ファイル名もしくはコマンド行として適切に使用されます。
+
+
+File: cvs-ja.info,  Node: commitinfo,  Next: verifymsg,  Prev: commit files,  Up: Administrative files
+
+C.4 管理用ファイル commitinfo
+=============================
+
+`cvs commit' を実行する直前に必ず実行したいプログラムを、 ファイル
+`commitinfo' に記述します。
+修正、追加、削除されたファイルを格納しても良いかどうか、
+このプログラムを用いて格納前に判断します。
+例えば、変更されたファイルがあなたのサイトの
+コーディング・スタイルの標準に従っているか確かめることもできます。
+
+   前に書いたように、`commitinfo' の各行は、第一項の正規表現、
+残りの部分のコマンド行形式から構成されます。 コマンド行の部分には、
+プログラム名と適切な数の引数とを記述することができます。
+また実行の際には、リポジトリのフルパスと 格納しようとするファイル名
+(追加, 削除, 修正されたファイル名) がコマンド行の最後に与えられます。
+
+リポジトリ中のディレクトリと正規表現とが合致する最初の行が実行されます。
+そしてコマンドが非零で終了した場合は、格納が中止されます。
+
+   第一項が `DEFAULT' である行の記述は、リポジトリ名が
+ファイル中のどの正規表現にも合致しない場合に適用されます。
+
+   第一項が `ALL' である行全てが、 最初に合致した正規表現または
+`DEFAULT' に加えて適用されます。
+
+   注意: CVS が別のマシンのリポジトリを利用している場合、 `commitinfo'
+に記述された行は、 クライアント側ではなく_別のマシン_ (サーバ)
+側で実行されます (*note Remote repositories::)。
+
+
+File: cvs-ja.info,  Node: verifymsg,  Next: editinfo,  Prev: commitinfo,  Up: Administrative files
+
+C.5 ログメッセージの検証
+========================
+
+一旦ログメッセージを入力すると、bug ID などの特定の内容を調べるために
+そのメッセージを評価することができます。ログメッセージを検証するための
+プログラムを指定するために `verifymsg' ファイルを使用することがで
+きます。このプログラムは入力されたメッセージに必要なフィールドがあるか
+どうかを調べる簡単なスプリプトでも良いでしょう。
+
+   `verifymsg' ファイルは、ログメッセージの雛型を指定するために使う
+ことのできる `rcsinfo' ファイルと一緒に使用されたときにとても役に
+立つことが多いです。
+
+   `verifymsg' ファイルは正規表現とコマンド行の雛型から成ります。雛
+型はプログラム名を含んでいなければならず、任意の数の引数を取ることがで
+きます。現在のログメッセージ雛型ファイルへのフルパスが雛型の最後に追加
+されます。
+
+   一つ注意しなければならないのは、`ALL' キーワードは使えないという
+ことです。一行以上合致した場合、最初のものが使われます。これはディレク
+トリで既定の検証スクリプトを指定して、サブディレクトリで上書きするとき
+に役に立ちます。
+
+   リポジトリ名がこのファイルのどの正規表現にも合致しなければ、
+`DEFAULT' が指定されていると、それが使用されます。
+
+   検証スクリプトが非零の値で終了すれば、格納は中止されます。
+
+検証スクリプトはログメセージを変更できないことに注意してください。単に
+受け入れるか拒否するかのどちらかです。
+
+   以下は、`verifymsg' ファイルのちょっとしたばかげた例と、それに対
+応する `rcsinfo' ファイル、ログメッセージの雛型と検証スクリプトで
+す。まず、ログメッセージの雛型です。常に bug-id 番号をログメッセージの
+最初の行に記録します。ログメッセージの残りのテキストは自由に書いたもの
+です。以下の雛型ファイルは `/usr/cvssupport/tc.template' にありま す。
+
+     BugId:
+
+   スクリプト `/usr/cvssupoort/bugid.verify' はログメッセージの評価
+に使われます。
+
+     #!/bin/sh
+     #
+     #       bugid.verify filename
+     #
+     #  Verify that the log message contains a valid bugid
+     #  on the first line.
+     #
+     if head -1 < $1 | grep '^BugId:[ ]*[0-9][0-9]*$' > /dev/null; then
+         exit 0
+     else
+         echo "No BugId found."
+         exit 1
+     fi
+
+   `verifymsg' ファイルには以下の行があります:
+
+     ^tc     /usr/cvssupport/bugid.verify
+
+   `rcsinfo' ファイルには以下の行があります:
+
+     ^tc     /usr/cvssupport/tc.template
+
+
+File: cvs-ja.info,  Node: editinfo,  Next: loginfo,  Prev: verifymsg,  Up: Administrative files
+
+C.6 Editinfo
+============
+
+_注意:_ `editinfo' 機能は旧式になっています。ログメッセージ
+の既定のエディタを設定するためには、`EDITOR' 環境変数 (*note
+Environment variables::) か `-e' 広域オプション (*note Global
+options::) を使用してください。ログメッセージを評価する ための
+`verifymsg' 機能を使うための情報は *Note verifymsg:: を参照
+してください。
+
+   いつも同じ形式でログ・メッセージを記録したい場合に、
+ログ・メッセージを編集するプログラムを `editinfo' に
+指定することができます。 指定するプログラムは、
+ログ・メッセージを必ず一定のスタイルに保つ特別製エディタや、
+エディタを呼び出して、入力されたメッセージが必要項目を
+満たすかどうか確認する簡単なシェル・スクリプトでも良いでしょう。
+
+   合致する行が `editinfo' になかった場合、 環境変数 `$CVSEDITOR'
+に指定されたエディタを使用します。
+この環境変数が設定されていない場合には、 環境変数 `$EDITOR'
+に指定されたエディタを代わりにします。
+そしてこの環境変数も設定されていない場合は、
+既定のものが使われます。*Note Committing your changes:: 参照。
+
+   `rcsinfo' にログ・メッセージの雛型を指定すると、 より効果的に
+`editinfo' を利用できるでしょう。
+
+   `editinfo' の各行は、第一項の正規表現、
+残りの部分のコマンド行形式から構成されます。 コマンド行の部分には、
+プログラム名と適切な数の引数とを記述することができます。
+また実行の際には、ログ・メッセージの雛型へのフルパス
+がコマンド行の最後に与えられます。
+
+   `ALL' が利用できないことに注意して下さい。
+合致する行が複数あった場合は、最初の行が実行されます。
+これは、モジュールの編集スクリプトが設定されていて、
+サブディレクトリでは別のものを使用したい場合を考慮しています。
+
+   第一項が `DEFAULT' である行の記述は、リポジトリ名が
+ファイル中のどの正規表現にも合致しない場合に適用されます。
+
+   編集スクリプトが非零で終了した場合は、格納が中止されます。
+
+   注意: CVS が別のマシンのリポジトリを利用している場合や、 `cvs
+commit' の `-m' または `-F' オプションを 使用した場合、`editinfo'
+は参照されません。 この問題を解決する良い方法は今のところありません。
+代わりに `verifymsg' を使ってください。
+
+* Menu:
+
+* editinfo example::            editinfo 記述例
+
+
+File: cvs-ja.info,  Node: editinfo example,  Up: editinfo
+
+C.6.1 editinfo 記述例
+---------------------
+
+次に、ちょっとアホくさい `editinfo' の使用例を、 対応する
+`rcsinfo'、ログ・メッセージの雛型、
+エディタ・スクリプトと併わせて紹介します。
+まずログ・メッセージの雛型ですが、
+最初の行に必ずバグ番号を記録するように促し、
+残りは自由に記述してもらいます。 この雛型は
+`/usr/cvssupport/tc.template' に置くことにします。
+
+     BugId:
+
+   ログ・メッセージを編集するため、 次のスクリプト
+`/usr/cvssupport/bugid.edit' を使用します。
+
+     #!/bin/sh
+     #
+     #       bugid.edit filename
+     #
+     #  Call $EDITOR on FILENAME, and verify that the
+     #  resulting file contains a valid bugid on the first
+     #  line.
+     if [ "x$EDITOR" = "x" ]; then EDITOR=vi; fi
+     if [ "x$CVSEDITOR" = "x" ]; then CVSEDITOR=$EDITOR; fi
+     $CVSEDITOR $1
+     until head -1|grep '^BugId:[ ]*[0-9][0-9]*$' < $1
+     do  echo -n  "No BugId found.  Edit again? ([y]/n)"
+         read ans
+         case ${ans} in
+             n*) exit 1;;
+         esac
+         $CVSEDITOR $1
+     done
+
+   ファイル `editinfo' には次の行を記述します:
+
+     ^tc     /usr/cvssupport/bugid.edit
+
+   ファイル `rcsinfo' には次の行を記述します:
+
+     ^tc     /usr/cvssupport/tc.template
+
+
+File: cvs-ja.info,  Node: loginfo,  Next: rcsinfo,  Prev: editinfo,  Up: Administrative files
+
+C.7 管理用ファイル loginfo
+==========================
+
+`loginfo' を用いて、 `cvs commit' によるログ情報の送り先を管理します。
+各行の第一項には正規表現が記述され、
+行の残りの部分はフィルタでなくてはいけません。
+変更を加えたディレクトリを `$CVSROOT' からの相対パスで表わしたものと、
+各行の正規表現が合致するかどうか試されます。 合致した場合は、
+その行の残りの部分であるフィルタ・プログラムの標準入力に、
+ログ情報を与えます。
+
+   第一項が `DEFAULT' である行の記述は、リポジトリ名が
+ファイル中のどの正規表現にも合致しない場合に適用されます。
+
+   第一項が `ALL' である行全てが、 最初に合致した正規表現または
+`DEFAULT' に加えて適用されます。
+
+   正規表現が合致する最初の行が実行されます。
+
+   ファイル `loginfo' の構文についての記述は *Note commit files::.
+
+使用者はフィルタの一部としてフォーマット文字列を指定できます。文字列は
+`%' の後に空白か、単独のフォーマット文字、もしくは分離器 `{' と `}'
+に囲まれたいくつかのフォーマット文字が続いた物 です。フォーマット文字は:
+
+s
+     ファイル名
+
+V
+     古いバージョン番号 (格納前)
+
+v
+     新しいバージョン番号 (格納後)
+
+フォーマット文字列に現れた他の全ての文字は空のフィールドに展開されます
+(フィールドを分離するコンマはまだ提供されされています。)
+
+   例えば、有効なフォーマット文字列は `%', `%s', `%{s}', `%{sVv}'
+などです。
+
+出力は空白で区切られた語からなる文字列になります。下位互換のために、最
+初の語はリポジトリのサブディレクトリになります。残りの語はフォーマット
+文字列で要求された情報をコンマで分けたリストです。例えば、
+`/u/src/master/yoyodyne/tc' がリポジトリで `%{sVv}' がフォー
+マット文字列、3つのファイル(ChangeLog, Makefile, foo.c) が
+修正されていると、出力は:
+
+     yoyodyne/tc ChangeLog,1.1,1.2 Makefile,1.3,1.4 foo.c,1.12,1.13
+
+   別の例として、`%{}' ではリポジトリ名のみが作成されます。
+
+   注意: CVS が別のマシンのリポジトリを利用している場合、 `loginfo'
+はクライアント側ではなく、_別のマシン_ (サーバ) 側で実行されます (*note
+Remote repositories::)。
+
+* Menu:
+
+* loginfo example::             loginfo 記述例
+* Keeping a checked out copy::  格納毎にディレクトリを更新
+
+
+File: cvs-ja.info,  Node: loginfo example,  Next: Keeping a checked out copy,  Up: loginfo
+
+C.7.1 loginfo 記述例
+--------------------
+
+ここで示す `loginfo' ファイルと付属のシェル・スクリプトは、
+格納時に次のような動作をします。 まず全てのログ・メッセージを
+`$CVSROOT/CVSROOT/commitlog' に追記します。 次に全ての管理用ファイル
+(`CVSROOT' 内) の 格納時のログを `/usr/adm/cvsroot-log' に追記します。
+`prog1' ディクトリへの格納は ceder にメールで送られます。
+
+     ALL             /usr/local/bin/cvs-log $CVSROOT/CVSROOT/commitlog $USER
+     ^CVSROOT        /usr/local/bin/cvs-log /usr/adm/cvsroot-log
+     ^prog1          Mail -s %s ceder
+
+   シェル・スクリプト `/usr/local/bin/cvs-log' の内容:
+
+     #!/bin/sh
+     (echo "------------------------------------------------------";
+      echo -n $2"  ";
+      date;
+      echo;
+      cat) >> $1
+
+
+File: cvs-ja.info,  Node: Keeping a checked out copy,  Prev: loginfo example,  Up: loginfo
+
+C.7.2 取得済のコピーを最新に保つ
+--------------------------------
+
+あるディレクトリがリポジトリで管理されている場合、
+そのディレクトリを常に最新にしておきたい事があるでしょう。
+例えば、他の開発者が最新ソースを改めて取得せずに参照したい場合や、 CVS
+で保守されたウェブ・サイトのファイルを 格納毎に更新したい場合などです。
+
+   これを実現するため、 `cvs update' を実行するように `loginfo'
+を設定します。 しかし単純に設定するとロックの問題が発生するので、 `cvs
+update' をバックグラウンドで実行する必要があります。 Unix
+での例を以下に示します (実際は一行です):
+
+     ^cyclic-pages		(date; cat; (sleep 2; cd /u/www/local-docs;
+      cvs -q update -d) &) >> $CVSROOT/CVSROOT/updatelog 2>&1
+
+   リポジトリ中の `cyclic-pages' で始まるディレクトリに
+ファイルが格納された時、 取得済みのディレクトリ `/u/www/local-docs'
+を更新します。
+
+
+File: cvs-ja.info,  Node: rcsinfo,  Next: cvsignore,  Prev: loginfo,  Up: Administrative files
+
+C.8 管理用ファイル rcsinfo
+==========================
+
+`rcsinfo' には、格納時にログ・メッセージを
+書き込むための書式を指定します。`rcsinfo' の 構文は `verifymsg',
+`commitinfo', `loginfo' とほぼ同じです。*Note syntax::.
+しかし他のファイルと異なり、 第二項はコマンド行形式では_ありません_。
+正規表現の次の部分は、ログ・メッセージの雛型を記した
+ファイルへのフルパス名でなくてはいけません。
+
+   第一項が `DEFAULT' である行の記述は、リポジトリ名が
+ファイル中のどの正規表現にも合致しない場合に適用されます。
+
+   第一項が `ALL' である行全てが、 最初に合致した正規表現または
+`DEFAULT' に加えて適用されます。
+
+ログ・メッセージの雛型は、ログ・メッセージの既定値として用いられます。
+しかし、`cvs commit -m MESSAGE' や `cvs commit -f FILE'
+によってログ・メッセージを指定した場合、 こちらが優先されます。
+
+   `rcsinfo' ファイルの記述例は *Note verifymsg::.
+
+   CVS が別のマシンのリポジトリを利用している場合、
+最初に作業ディレクトリを取り出した時に `rcsinfo' に
+記述されていた雛型が使用され、以後変更されません。 `rcsinfo'
+や雛型を変更した場合には、
+新たに作業ディレクトリを取り出す必要があります。
+
+
+File: cvs-ja.info,  Node: cvsignore,  Next: checkoutlist,  Prev: rcsinfo,  Up: Administrative files
+
+C.9 cvsignore でファイルを無視する
+==================================
+
+作業コピーの中に、いつも決まった名前のファイルがあるけれど、 CVS
+の管理下には置きたくないという場合がよくあります。
+例えば、ソースのコンパイル時に生成される
+オブジェクト・ファイルなどです。 `cvs update' を実行した場合には通常、
+これらのファイル各々に対して、 知らないファイルがあったと出力されます
+(*note update output::)。
+
+   CVS は、`update', `import', `release'
+の実行時に無視すべきファイルのリストを (sh(1) のファイル名形式で)
+保持します このリストは、以下の方法で構築されます。
+
+   * リストは以下のファイル名形式で初期化されます: これらは、CVS
+     の管理に関するものの他、 他のソース管理システムと共通のもの、
+     一般的なパッチ・ファイル名、オブジェクト・ファイル、
+     書庫ファイル、エディタのバックアップ・ファイル、
+     他のユーティリティの通常の生成ファイル名等から構成されます。
+     現在、既定で無視されるファイル名形式のリストを以下に挙げます:
+
+              RCS     SCCS    CVS     CVS.adm
+              RCSLOG  cvslog.*
+              tags    TAGS
+              .make.state     .nse_depinfo
+              *~      #*      .#*     ,*      _$*     *$
+              *.old   *.bak   *.BAK   *.orig  *.rej   .del-*
+              *.a     *.olb   *.o     *.obj   *.so    *.exe
+              *.Z     *.elc   *.ln
+              core
+
+   * リポジトリ毎のリスト `$CVSROOT/CVSROOT/cvsignore' が存在すれば、
+     その内容がリストに付加されます。
+
+   * 使用者毎のリスト `.cvsignore' が
+     あなたのホーム・ディレクトリに存在すれば、
+     その内容がリストに付加されます。
+
+   * 環境変数 `$CVSIGNORE' の内容全てがリストに付加されます。
+
+   * `-I' オプションによって CVS に与えられた内容が、
+     リストに付加されます。
+
+   * 作業ディレクトリを一通り見て `.cvsignore' があれば、
+     その内容をリストに付加します。 `.cvsignore' 内の形式は、
+     それが含まれるディレクトリのみで有効であり、
+     サブディレクトリに対しては効果を持ちません。
+
+   上記五つのファイル内で単感嘆符 (`!') を記述すると、
+無視するファイルのリストが空になります。 これは、通常は CVS
+に無視されるファイルを、 リポジトリに格納したい場合に使用します。
+
+   `cvs import' に `-I !' を指定すると、全てを持ち込み、それは
+素朴な配布や他の余分なファイルがないこと知られているソースから持ち込ん
+でいるときにして欲しいことです。しかし、上の規則を見ると、玉にきずがあ
+るのがわかると思います。もし配布に `.cvsignore' ファイルがあると、
+そのファイルの形式は `-I !' が指定されたとしても実行されます。唯
+一の対策は持ち込むために、`.cvsigonre' ファイルを消去することです。
+これはやっかいなので、将来は `-I !' はそれぞれのディレクトリの
+`.cvsignore' ファイルを上書きするように修正されるかもしれません。
+
+無視をするファイルの構文は、空白で分けられたファイル名の一覧からなるそ
+れぞれの行が続いたものであることに注意してください。これは空白のある
+ファイル名を指定する綺麗な方法を提供しませんが、`foo bar' という
+名前のファイルに合致させるために `foo?bar' のような対策を使うこと
+ができます (`fooxbar' などにも合致します)。また、現在は註釈を指定
+する方法が無いことにも注意してください。
+
+
+File: cvs-ja.info,  Node: checkoutlist,  Next: history file,  Prev: cvsignore,  Up: Administrative files
+
+C.10 checkoutlist ファイル
+==========================
+
+CVS を使って自分自身のファイルを `CVSROOT' ディレクトリに維
+持することは役に立つかもしれません。例えば、`logcommit.pl' という
+スクリプトがあり、それは以下の行を `commitinfo' 管理ファイルに含
+めることにより実行するとしましょう:
+
+     ALL $CVSROOT/CVSROOT/logcommit.pl
+
+   CVS で `logcommit.pl' を維持するためには、以下の行を `checkoutlist'
+管理ファイルに追加します:
+
+     logcommit.pl
+
+   `checkoutlist' の形式は、一行につき CVS を使って維持したいそ
+れぞれのファイルのファイル名を書いたものです。
+
+   このように `checkoutlist' を設定した後で、そこに一覧として挙げら
+れているファイルは CVS の元からの管理ファイルと同じように機能しま
+す。例えば、そのファイルの一つを格納するときは、次のようなメッセージを
+得るでしょう:
+
+     cvs commit: Rebuilding administrative file database
+
+   そして、`CVSROOT' ディレクトリに取り出されているコピーも更新され
+ます。
+
+   `passed' (*note Password authentication server::) を `checkoutlist'
+に載せるうことはセキュリティに関する理由により
+推奨されないことに注意してください。
+
+   `checkoutlist' で提供されるよりも一般的な文脈で取り出したコピーを
+維持するための情報は、*Note Keeping a checked out copy:: を参照してくだ
+さい。
+
+
+File: cvs-ja.info,  Node: history file,  Next: Variables,  Prev: checkoutlist,  Up: Administrative files
+
+C.11 ファイル history
+=====================
+
+ファイル `$CVSROOT/CVSROOT/history' は、 `history'
+コマンドのためにログ情報を記録します (*note history::)。
+ログを記録したい場合には、このファイルを作成する必要があります。 `cvs
+init' でリポジトリを準備すると、 自動的に作成されます (*note Creating a
+repository::)。
+
+   `history' ファイルの書式を説明したものは、 CVS
+ソース・コード内の註釈しかありません。 CVS
+の将来のリリースで書式が変更されるかも知れないので、 このファイルは必ず
+`cvs history' を通して利用して下さい。
+
+
+File: cvs-ja.info,  Node: Variables,  Next: config,  Prev: history file,  Up: Administrative files
+
+C.12 管理用ファイルにおける変数展開
+===================================
+
+管理用ファイルを記述するときに、CVS の動作環境についての
+色々な情報を利用したい場合があると思います。
+ここでは、その実現方法を幾つか紹介します。
+
+   CVS を実行した人物のホーム・ディレクトリを (環境変数 `HOME' から)
+参照するには、 `/' または行端の直前に `~' を記述します。 同様に USER
+のホーム・ディレクトリは、 `~USER' と記述します。
+これらの変数はサーバ側で展開されるため、`pserver' (*note Password
+authenticated::) を用いる場合には正しく展開されません。 この場合、CVS
+を実行する人物が動作を変更できるように、 ユーザ変数 (下記参照)
+を用いると良いでしょう。
+
+   CVS 内部の情報を参照したい場合もあると思います。 CVS の内部変数は
+`${VARIABLE}' という書式で参照できます。 この VARIABLE は文字で始まり、
+アルファベットと `_' から構成されます。 VARIABLE
+に続く文字がアルファベットや `_' でない場合は、 `{' と `}'
+とを省略しても構いません。 参照可能な CVS
+の内部変数には次のようなものがあります:
+
+`CVSROOT'
+     CVS が使用中のルート・ディレクトリを示します。
+     ルート・ディレクトリの指定方法は、*Note Repository::.
+
+`RCSBIN'
+     CVS 1.9.18 以前では、これは CVS が RCS プログラムを探す
+     場所を指定していました。CVS はもう RCS プログラムを実行しま
+     せんので、今はこの内部変数を指定するとエラーになります。
+
+`CVSEDITOR'
+`VISUAL'
+`EDITOR'
+     これらは CVS が使用するエディタを示し、 全て同じ値に展開されます。
+     指定方法の説明は、*Note Global options::.
+
+`USER'
+     CVS を実行する人物の (CVS サーバでの) 名前に展開されます。
+
+   ユーザ変数を用いれば、CVS を実行する人物が、
+管理用ファイルで用いる値を自由に設定できます。 ユーザ変数は、管理用ファイルに
+`${=VARIABLE}' と記述します。 ユーザ変数の設定は、CVS の広域オプション
+`-s' に、 引数 `VARIABLE=VALUE' を続けます。 このオプションは `.cvsrc'
+に記述しておくと良いでしょう (*note ~/.cvsrc::)。
+
+   例として、実験用ディレクトリを管理用ファイルから参照するため、
+ユーザ変数 `TESTDIR' を用います。それから、以下のように CVS を起動し、
+
+     cvs -s TESTDIR=/work/local/tests
+
+管理ファイルに `sh ${=TESTDIR}/runtests' と書いてあれば、文字列 は `sh
+/work/local/tests/runtests' に展開されます。
+
+   `$' が上記以外の解釈を受けることはありません。 また `$'
+自身を表現する別の方法も用意されてないため、 `$'
+という文字を引用することはできません。
+
+
+File: cvs-ja.info,  Node: config,  Prev: Variables,  Up: Administrative files
+
+C.13 The CVSROOT/config configuration file
+==========================================
+
+管理ファイル `config' は CVS の振舞いに影響するいろいろな雑
+多な設定を書きます。構文は他の管理ファイルと少し違います。変数は展開さ
+れません。`#' で始まる行は註釈と解釈されます。
+他の行はキーワード、`='、値からなります。この構文は厳密であること
+に注意してください。余分な空白やタブは使えません。
+
+   現在定義されているキーワードは:
+
+`RCSBIN=BINDIR'
+     CVS 1.9.12 から 1.9.18 まで、この設定は BINDIR ディレクトリ にある
+     RCS プログラムを探すように CVS に教えるために使われて
+     いました。現在のバージョンの CVS は RCS プログラムを実行しま
+     せん。互換性のためのこの設定は可能になってますが、何も起こりません。
+
+`SystemAuth=VALUE'
+     VALUE が `yes' であれば、pserver は使用者を調べるときに、
+     `CVSROOT/passwd' に見つからなければ、システムのデータベースを調べ
+     にいきます。`no' であれば、全ての使用者は `CVSROOT/passwd'
+     に存在している必要があります。既定値は `yes' です。pserver につい
+     ては、*Note Password authenticated:: を参照してください。
+
+`PreservePermissions=VALUE'
+     リポジトリでの、特別なデバイスファイル、シンボリック・リンク、ファイル
+     仕様許可、所有権に関する機能を使用可にします。既定値は `no' です。
+     このキーワード使用の完全な意味は *Note Special Files::.
+
+`TopLevelAdmin=VALUE'
+     `checkout' コマンドが取り出されたディレクトリ中に作成される `CVS'
+     に加えて、新しい作業ディレクトリの最上位にも `CVS' ディ
+     レクトリを作成するように修正します。既定値は `no' です。
+
+     このオプションは、取り出されたサブディレクトリではなく、最上位のディレ
+     クトリで多くのコマンドを実行するときに便利です。そこに作成される
+     `CVS' ディレクトリにより、それぞれのコマンドに `CVSROOT' を
+     指定する必要がなくなります。`CVS/Template' ファイルの場所も提供し
+     ます (*note Working directory storage::)。
+
+`LockDir=DIRECTORY'
+     CVS ロックファイルをリポジトリ中のディレクトリでなく、DIRECTORY
+     に置きます。これは使用者にリポジトリから読み込みをさせたいけれど、リポ
+     ジトリには書き込み許可を与えたくなく、DIRECTORY ディレクトリのみ
+     に書き込み許可を与えたいときに便利です。DIRECTORY は作成する必要
+     がありますが、必要ならば CVS は DIRECTORY のサブディレクトリを作
+     成します。CVS のロックに関する情報は *Note Concurrency::
+     を参照してくだ さい。
+
+     LockDir オプションを使用可にする前に、CVS 1.9
+     やそれ以前のもののコピー
+     を追跡して消去したことを確認してください。そのようなバージョンは
+     LockDir
+     をサポートしていませんし、それをサポートしていないというエラー
+     を出すこともありません。結果として、もしこのようなことが起こってしまえ
+     ば、CVS
+     の何人かの使用者はある場所にロックを置き、他は別の場所に置くと
+     いうことになり、リポジトリが壊れてしまう可能性があります。CVS 1.10
+     は LockDir をサポートしていませんが、LockDir
+     が使用されているリポジトリで 実行されると警告を印字します。
+
+
+File: cvs-ja.info,  Node: Environment variables,  Next: Compatibility,  Prev: Administrative files,  Up: Top
+
+Appendix D CVS に影響する全ての環境変数
+***************************************
+
+これは、CVS に影響する全ての環境変数の 完全なリストです。
+
+`$CVSIGNORE'
+     CVS が無視するファイル名を、 空白で区切ったリストです。*Note
+     cvsignore::.
+
+`$CVSWRAPPERS'
+     CVS が wrapper として扱うファイル名形式を
+     空白で区切ったリストです。*Note Wrappers::.
+
+`$CVSREAD'
+     この変数が設定されていると、 `checkout' と `update'
+     により作成される作業コピーが、 強制的に読み込み専用となります。
+     設定しなければ、作業ファイルの修正許可が与えられます。
+
+`$CVSUMASK'
+     リポジトリのファイルの使用許可を制御します。*Note File
+     permissions:: を 参照してください。
+
+`$CVSROOT'
+     (RCS のファイルが置かれる) CVS
+     のリポジトリのルート・ディレクトリを、
+     絶対パスで指定しなければいけません。 CVS
+     の大部分のコマンドを実行するときに、 この情報が利用されます。
+     `$CVSROOT' が設定されていない場合や、
+     他のものを優先させたい場合には、 コマンド行で `cvs -d cvsroot
+     cvs_command...' としてリポジトリを指定することができます。
+     一旦作業ディレクトリを取り出した後は、 CVS が適切なリポジトリを
+     (`CVS/Root' に) 記録します。
+     従って、最初に作業ディレクトリを取り出す時を除いて、
+     通常はこの値に注意する必要はありません。
+
+`$EDITOR'
+`$CVSEDITOR'
+`$VISUAL'
+     格納時のログ・メッセージを記録する際に、使用するプログラムを指定します。
+     `$CVSEDITOR' は `$EDITOR' よりも優先されます。 *Note Committing
+     your changes:: を参照してください。
+
+`$PATH'
+     `$RCSBIN' が設定されておらず、 CVS
+     にパス名が埋め込まれていない場合、
+     使用する全てのプログラムを捜す時に `$PATH' が使用されます。
+
+`$HOME'
+
+`$HOMEPATH'
+
+`$HOMEDRIVE'
+     これを使用して、`.cvsrc' やそのような他のファイルが置かれたディレ
+     クトリを捜します。Unix では、CVS は `HOME' だけを調べます。
+     Windows NT では、システムは `HOMEDRIVE' を例えば `d:' に、
+     `HOMEPATH' を例えば `\joe' に設定します。Windows 95 ではおそ
+     らく自分自身で `HOMEDRIVE'と `HOMEPATH' を設定する必要がある
+     でしょう。
+
+`$CVS_RSH'
+     接続経路に `:ext:' が指定された時、 CVS
+     が接続に使用する外部プログラムを 指定します。*note Connecting via
+     rsh::。
+
+`$CVS_SERVER'
+     RSH を用いたクライアント/サーバ・モードで、
+     別のマシンのリポジトリを利用する時に使用されます。 RSH
+     を用いて別のマシンのリポジトリを利用する時に、
+     サーバ側で起動するプログラムの名前を指定します。 既定値は `cvs'
+     です。*note Connecting via rsh::。
+
+`$CVS_PASSFILE'
+     クライアント/サーバ・モードで、 `cvs login SERVER'
+     が実行された時に使用されます。 既定値は `$HOME/.cvspass' です。
+     *note Password authentication client::。
+
+`$CVS_CLIENT_PORT'
+     ケルベロスを用いたクライアント/サーバ・モードで
+     使用されます。*note Kerberos authenticated::。
+
+`$CVS_RCMD_PORT'
+     クライアント/サーバ・モードで使用されます。
+     これを設定した場合、サーバの RCMD デーモンを利用する時に、
+     ここで指定したポート番号が使用されます。 (現在 UNIX
+     クライアントでは使用されません)。
+
+`$CVS_CLIENT_LOG'
+     クライアント/サーバ・モードの不具合を探して修正するためだけに使用されます。
+     これを設定した場合、 サーバに送られた全てが ``$CVS_CLIENT_LOG'.in'
+     に記録され、 サーバから送られた全てが ``$CVS_CLIENT_LOG'.out' に
+     記録されます。
+
+`$CVS_SERVER_SLEEP'
+     クライアント/サーバ・モードの不具合を探して修正するためだけに使用されます。
+     これを設定して、子プロセスを起動する前に指定した秒数を待ち、
+     デバッガを応答させます。
+
+`$CVS_IGNORE_REMOTE_ROOT'
+     CVS 1.10 以前では、この変数を設定すると、`-d' 広域オプション
+     が指定されているときに `CVS/Root' を上書きするのを抑制することが
+     できました。後のバージョンの CVS は `CVS/Root' を再書き込み
+     しませんので、`CVS_IGNORE_REMOTE_ROOT' は効果はありません。
+
+`$COMSPEC'
+     OS/2 だけで使用されます。コマンド解釈プログラムを指定します。
+     既定値は CMD.EXE です。
+
+`$TMPDIR'
+`$TMP'
+`$TEMP'
+     一時ファイルが置かれるディレクトリを指定します。 CVS サーバは
+     `TMPDIR' を使用します。 この指定方法は、*Note Global options::
+     参照。 CVS には、(システムが提供する `_tmpnam' 関数経由で) 常に
+     `/tmp' を使用する部分があります。
+
+     Windows NT では (システムが提供する `_tempnam' 関数経由で)、 `TMP'
+     が使用されます。
+
+     CVS のクライアントが用いる `patch' プログラムは、 `TMPDIR'
+     を使用します。 設定されていない場合、(少なくとも GNU patch 2.1 は)
+     `/tmp' を使用します。 サーバとクライアントの両方共が CVS 1.9.10
+     以降を実行しているなら、 CVS は外部の `patch'
+     プログラムを呼び出しません。
+
+
+File: cvs-ja.info,  Node: Compatibility,  Next: Troubleshooting,  Prev: Environment variables,  Up: Top
+
+Appendix E CVS のバージョン間の互換性
+*************************************
+
+リポジトリの形式は CVS 1.3 から互換です。CVS 1.6 以前を使っ
+ていて、オプションの開発者間通信機能を使いたいときは、*Note Watches
+Compatibility:: を参照してください。
+
+   作業ディレクトリ形式は CVS 1.5 から互換です。CVS 1.3 と CVS 1.5
+の間で変更されました。CVS 1.3 で取り出されたディレク トリで CVS 1.5
+か、それより新しいものを実行すると、CVS はそ れを変換しますが、CVS 1.3
+に戻るためには、新しい作業ディレクトリ を CVS 1.3
+で取り出す必要があります。
+
+   遠隔プロトコルは CVS 1.5 から相互作用可能ですが、それ以前では無理
+です (1.5 が遠隔プロトコルのある最初の公的リリースですが、古いバージョ
+ンがまだあたりをうろついているかもしれません)。しかし、多くの場合、新
+しい機能とバグ修正の利点を得るためにクライアントとサーバの両方を更新す
+る必要があります。
+
+
+File: cvs-ja.info,  Node: Troubleshooting,  Next: Credits,  Prev: Compatibility,  Up: Top
+
+Appendix F 問題の解決
+*********************
+
+CVS の使用に問題があれば、この付録が役立つかもしれません。特定の
+エラーメッセージが出ているなら、そのメッセージをアルファベット順に探す
+ことができます。そうでない場合は、他の問題の章を眺めて説明されているか
+どうかを知ることができます。
+
+* Menu:
+
+* Error messages::              CVS のエラーの部分的一覧
+* Connection::                  CVS サーバへの接続での問題
+* Other problems::              エラーメッセージで既に挙げられていない問題
+
+
+File: cvs-ja.info,  Node: Error messages,  Next: Connection,  Up: Troubleshooting
+
+F.1 エラーメッセージの部分的一覧
+================================
+
+これは CVS で起こるかもしれないエラー・メッセージの部分的な一覧で
+す。完全な一覧ではありません--CVS はたくさん、たくさんのエラー・
+メッセージを印字する能力があり、しばしば一部分はオペレーティング・シス
+テムにより提供されます。しかし、ここでの意図はよくあるもの、混乱する可
+能性のあるエラー・メッセージの、両方もしくはどちらかにあてはまるものの
+一覧を挙げることです。
+
+   メッセージはアルファベット順ですが、`cvs update: ' のような前置き
+の文章は順番にするときには省かれています。
+
+   この一覧は古いバージョンの CVS で印字されるメッセージがある場合も
+あります (使用者は特定の時にどのバージョンの CVS を使用しているか
+を必ずしも知らないというのが理由の一つです)。
+
+`cvs COMMAND: authorization failed: server HOST rejected access'
+     これは pserver
+     のサーバに接続しようとして、それが特定の理由を教えるこ
+     となく認証を拒否することを選んだときの一般的な反応です。指定された使用
+     者名とパスワードが正しいことと、指定された `CVSROOT' が
+     `inetd.conf' の `--allow-root' で使用可になっているこを確認
+     してください。
+
+`FILE:LINE: Assertion 'TEXT' failed'
+     システムによってこのメッセージの正確な形式は異なります。これは CVS
+     のバグを示し、*Note BUGS:: で説明されているように扱うことができ
+     ます。
+
+`cvs COMMAND: conflict: removed FILE was modified by second party'
+     このメッセージは、あなたがファイルを消去し、誰か別の人がそれを修正した
+     ということを示します。衝突を解消するために、まず `cvs add FILE'
+     を実行します。それが望まれていれば、他の人々の修正を見てま
+     だそれを消したいかどうかを決定します。消したくなければ、ここで止めます。
+     消去したければ、 `cvs remove FILE' を実行して、削除を格納し ます。
+
+`cannot change permissions on temporary directory'
+          Operation not permitted
+     このメッセージは、Red Hat Linux 3.0.3 と 4.1
+     でクライアント/サーバのテ
+     スト一式を実行しているときいに、再現不可能な方法でときどき発生しました。
+     我々は何がそれを起こしたのか、また linux
+     (もしくは、このマシンそのもの!)
+     に特有かどうかも分かりません。他の unix
+     でも問題が発生した場合は、おそ らく `Operation not permitted' は
+     `Not owner' や当のシステム が unix の `EPERM'
+     エラーで使用している他のものになっているでしょ
+     う。追加の情報があれば、*Note BUGS::
+     で説明されているように我々に知らせ てください。もし CVS
+     を使用していてこのエラーを経験したときは、そ
+     れを発生させた操作をもう一度繰り返すとちゃんと動作するでしょう。
+
+`cvs [server aborted]: Cannot check out files into the repository itself'
+     このメッセージの明らかな原因は (特にクライアント/サーバでない CVS
+     のときは)、CVS のルートが例えば `/usr/local/cvsroot' で、
+     `/usr/local/cvsroot/test' のようなサブディレクトリにファイルを取
+     り出そうとしたことです。しかしながら、サーバの一時ディレクトリがルート
+     のサブディレクトリに設定されている (これも許可されていません)
+     というよ
+     り微妙な場合もあります。これが問題の原因であるなら、一時ディレクトリを
+     別のところに設定してください。例えば、`/var/tmp' に。一時ディレク
+     トリの設定のしかたは、*Note Environment variables:: の `TMPDIR' を
+     参照してください。
+
+`cannot open CVS/Entries for reading: No such file or directory'
+     これは一般的に CVS の内部エラーを示し、他の CVS のバグと同様
+     に扱うことがきます (*note
+     BUGS::)。たいていの場合、対策があります--正
+     確な方法は状況に依りますが、おそらく見付け出すことができるでしょう。
+
+`cvs [init aborted]: cannot open CVS/Root: No such file or directory'
+     このメッセージは無害です。もし他のエラーと一緒にでなければ、操作は成功
+     しています。現在のバージョンの CVS では出ないはずですが、CVS 1.9
+     以前のために説明されています。
+
+`cvs [checkout aborted]: cannot rename file FILE to CVS/,,FILE: Invalid argument'
+     このメッセージは Solaris 2.5 上での CVS 1.9
+     でときどき発生することが報
+     告されています。原因は不明です。原因についてさらに知っていれば、
+     *Note BUGS:: で説明されているように我々に知らせてください。
+
+`cvs [COMMAND aborted]: cannot start server via rcmd'
+     この残念ながらあまり詳しくないメッセージは、CVS のクライアントを
+     実行していてサーバとの接続に問題があったときに CVS 1.9 が印字しま
+     す。現在のバージョンの CVS はもっと詳しいエラーメッセージを印字す
+     るようになっています。クライアントを実行しようとはしていないのにこのメッ
+     セージが出たときは、おそらく *Note Repository::
+     で説明されている方法で `:local:' を指定することを忘れたのでしょう。
+
+`ci: FILE,v: bad diff output line: Binary files - and /tmp/T2a22651 differ'
+     CVS 1.9 以前は RCS が正しくインストールされていないときにバイナリ
+     ファイルを格納しようとしたときにこのメッセージを印字します。RCS
+     の配布とともに取得している指示をもう一度読んで、CVS 配布の INSTALL
+     ファイルを読んでください。代替法として、RCS を経由し
+     ないで自分自身でファイルを格納する現在のバージョンの CVS に変更す
+     ることもできます。
+
+`cvs checkout: could not check out FILE'
+     CVS 1.9 では、これは `co' プログラム (RCS プログラムの一部で す)
+     が失敗の値を返したということです。他のエラーメッセージがその前にあ
+     るはずですが、別のエラーメッセージなしに発生することも確認されており、
+     原因はよくわかっていません。現在のバージョンの CVS は `co' を実行
+     しないので、このメッセージが別のエラーメッセージとともに現れなければ、
+     それは間違いなく CVS のバグです (*note BUGS::)。
+
+`cvs [update aborted]: unexpected EOF reading FILE,v'
+     `EOF in key in RCS file' を参照。
+
+`cvs [login aborted]: could not find out home directory'
+     これはホームデレクトリの位置を特定するために CVS
+     が使用する環境変数を 設定する必要があるということです。*Note
+     Environment variables:: の `HOME', `HOMEDRIVE', `HOMEPATH'
+     の議論を参照してくださ い。
+
+`cvs update: could not merge revision REV of FILE: No such file or directory'
+     CVS 1.9 以前は `rcsmerge' プログラムを見つけるときに問題が発生し
+     たときにこのメッセージを印字します。それが `PATH' にあることを確
+     認するか、外部 `rcsmerge' プログラムを必要としない現在のバージョ
+     ンの CVS に更新してください。
+
+`cvs [update aborted]: could not patch FILE: No such file or directory'
+     これは `patch' プログラムの探索に問題があったということです。それ
+     が `PATH' 上にあるとを確認してください。メッセージの外観とは違っ
+     て、FILE を見つけるかどうかについて言っているのでは_ない_こ
+     とに注意してください。クライアントとサーバが現在のバージョンの CVS
+     を実行しているなら、外部 patch プログラムは必要ではなく、この
+     メッセージを見ることはないでしょう。しかし、クライアントかサーバが
+     CVS 1.9 を実行していれば、`patch' が必要です。
+
+`cvs update: could not patch FILE; will refetch'
+     これは、何らかの理由により、クライアントはサーバが送った patch
+     を適用
+     できなかったということです。メッセージは心配するようなものではありませ
+     ん。これは、patch
+     の適用ができなかったというのはちょっと作業を遅らせる だけで、CVS
+     が実行することには影響しないからです。
+
+`dying gasps from SERVER unexpected'
+     CVS 1.9.18 以前のサーバにはこれを発生する既知のバグがあります。私
+     は、`-t' 広域オプションを使用しているときに再現可能です。もし興味
+     があれば、それは Andy Piper の1997年11月4日の src/filesubr.c
+     への変更
+     で修正されました。このメッセージが出たときは、おそらく失敗した操作をた
+     だもう一度試すことができます。また、この原因に関して情報を発見したなら、
+     *Note BUGS:: に書かれているように我々に知らせてください。
+
+`end of file from server (consult above messages if any)'
+     このメッセージの一番多い原因は、外部 `rsh' プログラムを使用してい
+     て、それがエラーを出して終了するというものです。この場合 `rsh'
+     プログラムは、上のメッセージの前にメッセージを印字しているはずです。
+     CVS のクライアントとサーバの設定の情報は *Note Remote
+     repositories:: を参照してください。
+
+`cvs commit: Executing 'mkmodules''
+     これはリポジトリが CVS 1.8 より前のバージョンの CVS で設定さ
+     れているということです。CVS 1.8 以降を使っていると、上記のメッセー
+     ジの前に以下のものがでます。
+
+          cvs commit: Rebuilding administrative file database
+
+     両方のメッセージが表示されれば、データベースは2回再構築されていて、こ
+     れは不必要ですが、無害です。重複を避けたくて、CVS 1.7 以前を使っ
+     ていないなら、`modules' ファイルにある全ての `-i mkmodules'
+     を消してください。`modules' ファイルの情報は *Note modules:: を参照
+     してください。
+
+`missing author'
+     普通これは使用者名が空の RCS
+     ファイルを作成したときに発生します。CVS は、間違って author
+     部分に値のない不正な RCS ファイルを作成します。解
+     決策は、使用者名が空でないことを確認して、RCS
+     フィルを再作成することで す。
+
+`*PANIC* administration files missing'
+     これは普通は CVS という名前のディレクトリがあるけれど、CVS が CVS
+     ディ レクトリに置く管理ファイルがないということです。もし問題が
+     CVS 以外の 何らかの機構で CVS
+     ディレクトリを作ったというものであれば、CVS 以外の
+     名前を使ってください。もしそうでなければ、それは CVS
+     のバグを示してい ます (*note BUGS::)。
+
+`rcs error: Unknown option: -x,v/'
+     このメッセージの後には RCS の使用法のメッセージが続きます。それは
+     古いバージョンの RCS (おそらくオペレーティングシステムと共に提供
+     されたものでしょう) があるということです。CVS は RCS バージョン 5
+     以降でのみ動作します。
+
+`cvs [server aborted]: received broken pipe signal'
+     これは、CVS かそれが実行されているシステムの追跡が困難なバグ (良
+     く判っていません--我々はまだ追いかけていません!)
+     により発生するようで す。CVS
+     コマンドが完了した後でのみ発生するようで、メッセージは無
+     視できます。しかしながら、その原因に関する情報を発見したなら、
+     *Note BUGS:: で説明されているように我々に知らせてください。
+
+`Too many arguments!'
+     このメッセージは普通は CVS のソース配布の `contrib' ディレク
+     トリにある `log.pl' スクリプトにより印字されます。CVS のバー
+     ジョンには、`log.pl' が既定の CVS インストールに含まれている
+     ものもあります。`log.pl' スクリプトは `loginfo' 管理ファイル
+     から呼ばれます。`loginfo' で渡されている引数があなたのバージョン
+     の `log.pl' が期待するものとあっているか調べてください。特に、 CVS
+     1.3 以前の `log.pl' はログファイルを引数として期待します が、CVS
+     1.5 以降の `log.pl' はログファイルは `-f' オプ
+     ションで指定されることを期待します。もちろん、`log.pl' が必要でな
+     ければ、`loginfo' 中で註釈にして、使用しないようにすることができ
+     ます。
+
+`cvs [login aborted]: unrecognized auth response from SERVER'
+     このメッセージは普通はサーバが適切に設定されていないことを意味します。
+     例えば、`inetd.conf' が存在しない cvs 実行ファイルを指していると
+     きです。これをデバッグするためには、inetd が書くログファイル
+     (`/var/log/messages' やあなたのシステムの inetd が使うその他のも
+     の) を見つけてください。詳細は *Note Connection:: と *Note
+     Password authentication server:: 参照。
+
+`cvs commit: Up-to-date check failed for `FILE''
+     これはあなたが最後に `cvs update' を実行した後に誰かが変更を格納
+     したということです。ですから、`cvs commit' を継続する前に `cvs
+     update' をする必要があります。CVS はあなたのした変更と他の人
+     がした変更をマージします。衝突が発見されなれば、`M cacErrCodes.h'
+     のように報告され、`cvs commit' を実行する準備が整っています。もし
+     衝突が発見されれば、その由を印字し、`C cacErrCodes.h' と報告され、
+     手で衝突を解消する必要があります。この過程の詳細は *Note Conflicts
+     example:: を参照してください。
+
+`Usage:	diff3 [-exEX3 [-i | -m] [-L label1 -L label3]] file1 file2 file3'
+          Only one of [exEX3] allowed
+     これは `diff3' と `rcsmerge' のインストールに問題があること
+     を示しています。特に `rcsmerge' は GNU diff3 を探すようにコンパイ
+     ルされているけれど、代わりに unix の diff3
+     が使われています。一番簡単 な解決法は外部の `rcsmerge' や `diff3'
+     プログラムに頼らない 現在のバージョンの CVS に更新することです。
+
+`warning: unrecognized response `TEXT' from cvs server'
+     もし TEXT が有効な応答 (`ok' のようなもの) で、続きに余分な
+     キャリッジリターンがあると
+     (多くのシステムではこれはメッセージの2番目
+     の部分が1番目の部分を上書きします)、おそらく、既定では透過的なデータス
+     トリームを提供しない、多くの unix でない rsh のバージョンで
+     `:ext:' 接続方法を使用としているのでしょう。その様な場合はたぶん
+     `:ext:' の代わりに `:server:' を試みるのが良いでしょう。 TEXT
+     が何か他のものなら、CVS サーバに問題があることを表します。 CVS
+     サーバを設定するための指示を見てインストールを再度確認してください。
+
+`cvs commit: [TIME] waiting for USER's lock in DIRECTORY'
+     これは普通のメッセージであり、エラーではありません。詳細は *Note
+     Concurrency:: 参照。
+
+`cvs commit: warning: editor session failed'
+     これは CVS が使用しているエディタが非零の値で終了したということで
+     す。vi
+     のバージョンにはファイルの編集に問題がなかったときでさえそうす
+     るものがあります。もしそうなら、環境変数 `CVSEDITOR' を以下のよう
+     な小さなスクリプトを指すようにしてください:
+
+          #!/bin/sh
+          vi $*
+          exit 0
+
+
+
+File: cvs-ja.info,  Node: Connection,  Next: Other problems,  Prev: Error messages,  Up: Troubleshooting
+
+F.2 CVS サーバに接続をしようとするときの問題
+============================================
+
+この章は CVS サーバに接続しようとしたときに問題が起こったときに何
+をすれば良いかということを書いています。 Windows で CVS コマンド
+ライン・クライアントを実行しているなら、まず CVS 1.9.12 以降に更
+新してください。以前のバージョンのエラー報告は、問題がどうであったかに
+ついて、ほとんど情報を提供しません。クライアントが Windows でなければ、
+CVS 1.9 は問題ありません。
+
+問題を追いかけるためにエラー・メッセージが十分でなければ、次の手段は使
+用している接続方法によってかなり異なります。
+
+`:ext:'
+     コマンド行からの rsh プログラムの実行を試してください。例えば: "rsh
+     servername cvs -v" は CVS のバージョン情報を印字します。もしこれ
+     が動作しなければ、CVS の問題を気にする前にそれを修正する必要があ
+     ります。
+
+`:server:'
+     この接続方法を使用するためにコマンド行の rsh
+     プログラムは必要ではあり ませんが、rsh
+     プログラムがあれば、デバッグ道具として役に立つでしょう。: ext:
+     のところの指示に従ってください。
+
+`:pserver:'
+     良いデバッグ道具は "telnet servername 2401"
+     です。接続後、任意のテキス ト (例えば、"foo" リターン)。CVS
+     が正しく動作していれば、以下のよ うに反応するはずです。
+
+          cvs [pserver aborted]: bad auth protocol start: foo
+
+     これの動作に失敗すれば、inetd
+     が正しく動作しているか確認してください。 `inetd.conf' での起動を
+     cvs の代わりに echo プログラムに変更して ください。例えば:
+
+          2401  stream  tcp  nowait  root /bin/echo echo hello
+
+     その変更をして、inetd
+     に設定ファイルを再読み込みするように指示した後で は、"telnet
+     servername 2401" はテキスト hello を表示して、サーバが接続
+     を切るはずです。これが動作しなければ、CVS の問題を気にする前にそ
+     れを修正してください。
+
+     AIX システムでは、システムにポート 2401
+     を使おうとするプログラムがあり ます。これは、ポート 2401 は CVS
+     での使用に登録されているという点 で AIX
+     の問題です。この問題を解決するために AIX のパッチがあるというこ
+     とを聞いたことがあります。
+
+     他の良いデバッグツールは inetd に `-d' (debugging) オプションを付
+     けることです。詳しい情報はシステムの説明文書を調べてください。
+
+     接続はできているようですが、次のようなエラーが出る場合は:
+
+          cvs server: cannot open /root/.cvsignore: Permission denied
+          cvs [server aborted]: can't chdir(/root): Permission denied
+
+     `inetd.conf' で `-f' を指定しなかったか、inetd により実行さ
+     れているプログラムの `HOME' 環境変数をシステムが設定しているとい
+     うことです。後者の場合は、 inetd に `HOME' を未設定にして CVS
+     を実行するシェルスクリプトを実行させるようにするか、CVS
+     を純粋な環境で実行するために `env' を使うことができます。
+
+
+File: cvs-ja.info,  Node: Other problems,  Prev: Connection,  Up: Troubleshooting
+
+F.3 他のよくある問題
+====================
+
+これは上の分類には合わない問題の一覧です。順番には特に意味はありません。
+
+   * Windows で、CVS コマンドを実行したときに30秒くらいの遅れがあると
+     きは、ホームディレクトリが例えば `C:/' に設定されているということ
+     かもしれません (*Note Environment variables::の `HOMEDRIVE' と
+     `HOMEPATH' 参照)。 CVS はホームディレクトリがスラッシュで終わらな
+     いことを期待しています。例えば、`C:' や `C:\cvcs' です。
+
+   * CVS 1.9.18 以前を実行していて、*Note Conflicts example:: で説明され
+     ているように、`cvs update' が衝突を発見し、マージを試みたけれど、
+     衝突があることを報告しなかったら、RCS の古いバージョンが存在しま
+     す。一番簡単な解決は、おそらく外部 RCS プログラムを使用しない現在
+     のバージョンの CVS に変更することです。
+
+
+File: cvs-ja.info,  Node: Credits,  Next: BUGS,  Prev: Troubleshooting,  Up: Top
+
+Appendix G Credits
+******************
+
+当時 Cygnus Support にいた Roland Pesch <roland@wrs.com> は CVS 1.3
+とともに頒布されたマニュアルを書きました。
+記述の多くは、彼の文章から受け継いでいます。
+また彼にこのマニュアルの初期の草稿を読んでもらい、
+多くのアイディアと訂正を頂きました。
+
+   メーリング・リスト `info-cvs' も時には有益でした。
+私は以下の人物が行なった投稿による情報を含めました: David G. Grubbs
+<dgg@think.com>.
+
+   RCS の man からいくつか文章を引用しています。
+
+   David G. Grubbs 氏による CVS FAQ は、 有用な素地を与えてくれました。
+FAQ はもうメンテナンスされていませんが、 このマニュアルが (少くとも CVS
+の使用方法の文書化に関して)、 その後継に最も近いものでしょう。
+
+   また、次に挙げる人物が、私の誤りを訂正してくれました:
+
+     Roxanne Brunskill <rbrunski@datap.ca>,
+     Kathy Dyer <dyer@phoenix.ocf.llnl.gov>,
+     Karl Pingle <pingle@acuson.com>,
+     Thomas A Peterson <tap@src.honeywell.com>,
+     Inge Wallin <ingwa@signum.se>,
+     Dirk Koschuetzki <koschuet@fmi.uni-passau.de>,
+     Michael Brown <brown@wi.extrel.com>.
+
+ここの貢献者の一覧は包括的なものであはありません。このマニュアルへの貢
+献者のより完全な一覧は CVS のソース配布のファイル `doc/ChangeLog'
+を見てください。
+
+
+File: cvs-ja.info,  Node: BUGS,  Next: Translation,  Prev: Credits,  Up: Top
+
+Appendix H CVS かこのマニュアルのバグに対処する
+***********************************************
+
+CVS もこのマニュアルも完璧ではなく、また永遠にそうならないでしょ
+う。CVS を使用していて問題にぶつかったり、バグを見つけたと思った
+りしたときは、いろいろな方法があります。また、マニュアルにはっきりしな
+いところがあれば、マニュアルのバグと考えられますので、これらの問題も
+CVS 自身の問題と同様に行動をするに値します。
+
+   *
+     報告したバグを誰かに修正して欲しい場合は、代金と交換にしてくれる会社が
+     あります。そのような会社は2つあります:
+
+          Signum Support AB
+          Box 2044
+          S-580 02  Linkoping
+          Sweden
+          Email: info@signum.se
+          Phone: +46 (0)13 - 21 46 00
+          Fax:   +46 (0)13 - 21 47 00
+          http://www.signum.se/
+
+          Cyclic Software
+          United States of America
+          http://www.cyclic.com/
+          info@cyclic.com
+
+   * CVS をオペレーティング・システムのベンダーやフリーウェアの CD-ROM
+     のベンダーのような配布者から取得していれば、配布者がサポー
+     トを提供しているかどうかを知りたいでしょう。しばしば、サポートしなかっ
+     たり、最小限のサポートしか提供しないかもしれませんが、それは配布者によっ
+     て異なります。
+
+   *
+     もし十分な技能と時間があれば、バグを自分自身で修正しようと思うでしょう。
+     その修正を将来の CVS のリリース含めたいときは、CVS のソース
+     配布にあるファイル HACKING を見てください。修正の提出方法に関する
+     たくさんの情報があります。
+
+   *
+     ネット上に助けになるリソースがあるかもしれません。以下の2つは開始する
+     良い場所です:
+
+          http://www.cyclic.com
+          http://www.loria.fr/~molli/cvs-index.html
+
+     もし非常にやる気になれば、ネット上での情報を増やすと感謝される可能性が
+     高いでしょう。例えば、標準の CVS 配布が Windows 95 について作業を
+     する前に、CVS を Windows 95 で実行するための説明とパッチのあるウェ
+     ブページがあり、色々な人がその題がメーリングリストやニュースグループで
+     出る度にそのページを知らせることで手助けをしていました。
+
+     訳註: 日本語のウェブページは以下のものが良いでしょう。
+
+          http://www.cyclic.com/cvs/lang-jp.html
+          http://www-vox.dj.kit.ac.jp/nishi/cvs/cvs.html
+
+   * バグを `bug-cvs' に報告することもできます。誰かがあなたのバグ報告
+     に対して何かをしようと思うかもしれないし、思わないかもしれない、という
+     ことに注意してください--もし解決策が必要なら、上の方法のどれかを考慮
+     してください。ですが、おそらく人々は特に大変な結果になるバグと、簡単に
+     修正できるバグの両方、もしくはどちらかに該当するもに関心があるでしょう。
+     また、バグの本質と他の関係する情報を明確にすることで可能性を高めるこが
+     できます。バグを報告するためには `bug-cvs@gnu.org' に email を送
+     ります。`bug-cvs' へ送ったものは GNU Public License の条件の
+     下で配布されるかもしれないことに注意してください。もしこれを好まなけれ
+     ば、送らないでください。普通は、メールを `bug-cvs' ではなく、 CVS
+     の管理者に直接送ることの正当性はありません。そのようなバグ報
+     告に関心のある管理者は `bug-cvs' を読んできます。また、バグ報告を
+     他のメーリングリストやニュースグループに送ることは `bug-cvs' へ送
+     る代わりには_ならない_ということにも注意してださい。CVS のバ
+     グをどの場所でも好きなところで議論するのは良いことですが、
+     `bug-cvs' 以外に送られたバグ報告を管理者の誰かが読んでいるとは限
+     りません。
+
+結構頻繁に、既知のバグの一覧や特定のバグが知られたものかどうかの一覧が
+あるかどうかを尋ねられます。CVS のソース配布の BUGS ファイル
+は既知のバグのリストの一つですが、必ずしも包括的なものであろうとはして
+いません。おそらく、既知のバグの包括的な、詳細な一覧は存在することはな
+いでしょう。
+
+
+File: cvs-ja.info,  Node: Translation,  Next: Index,  Prev: BUGS,  Up: Top
+
+Appendix I 日本語訳について
+***************************
+
+この CVS のマニュアルは、 CVS 1.11 に付属していた、 `cvs.texinfo'
+を日本語訳したものです。
+文書の構造やノード名等は(この節を除いて)そのまま使用しており、
+文章は自分に可能な限り忠実に訳しています。
+修正案、訂正等がありましたら、なるべく廣保まで御連絡下さい。
+
+                                  廣保 誠 <hiroyasu@iedc.mke.mei.co.jp>
+
+訳者からの謝辞
+--------------
+
+大阪大学の西田圭介さんが、引地夫妻に問い合わせてこの文書の
+配布条件の推奨訳を入手したり、一部の下訳を送ってくれたりしました。 また
+CVS について日本語で情報交換するためのメーリング・
+リストを立ち上げました。現在このメーリング・リストは
+京都工芸繊維大学の西本卓也さんが引き継いでいます。 詳細は
+`http://www-vox.dj.kit.ac.jp/nishi/cvs/cvs.html' を参照して下さい。CVS
+1.9 から CVS 1.11 への更新は 林芳樹 <t90553@mail.ecc.u-tokyo.ac.jp>
+が行いました。
+
+日本語訳の配布条件
+------------------
+
+この文書を修正・再配布する場合には、 原英文の配布条件に従って下さい。
+以下に許諾文の参考訳を付けます。
+
+   Copyright (C) 1992, 1993 Signum Support AB Copyright (C) 1993, 1994
+Free Software Foundation, Inc.
+
+   上記の著作権表示と本許可告知が
+すべての写しに前もって載せられている場合にのみ、
+本マニュアルをそのまま複写し配布することを許可します。
+
+本マニュアルの修正版の複写と配布は、修正版全体が本許可告知と同一の条件の
+もとに配布される場合にのみ許可します。
+
+   本マニュアルの外国語 (英語以外の言語) への翻訳版の複写と配布は、
+上記の修正版の場合に準じますが、 本許可告知は Free Software Foundation
+の許可を得た 翻訳でなければなりません。
+
+
+File: cvs-ja.info,  Node: Index,  Prev: Translation,  Up: Top
+
+Index
+*****
+
+ [index ]
+* Menu:
+
+* !, in modules file:                    Excluding directories.
+                                                              (line   6)
+* #cvs.lock, removing:                   Concurrency.         (line  11)
+* #cvs.lock, technical details:          Locks.               (line   6)
+* #cvs.rfl, and backups:                 Backing up.          (line  10)
+* #cvs.rfl, removing:                    Concurrency.         (line  11)
+* #cvs.rfl, technical details:           Locks.               (line   6)
+* #cvs.tfl:                              Locks.               (line  14)
+* #cvs.wfl, removing:                    Concurrency.         (line  11)
+* #cvs.wfl, technical details:           Locks.               (line   6)
+* &, in modules file:                    Ampersand modules.   (line   6)
+* -a, in modules file:                   Alias modules.       (line   6)
+* -d, in modules file:                   Module options.      (line   9)
+* -e, in modules file <1>:               Module options.      (line  12)
+* -e, in modules file:                   Module program options.
+                                                              (line   6)
+* -i, in modules file <1>:               Module options.      (line  17)
+* -i, in modules file:                   Module program options.
+                                                              (line   6)
+* -j (merging branches):                 Merging a branch.    (line   6)
+* -j (merging branches), and keyword substitution: Merging and keywords.
+                                                              (line   6)
+* -k (keyword substitution):             Substitution modes.  (line   6)
+* -kk, to avoid conflicts during a merge: Merging and keywords.
+                                                              (line   6)
+* -o, in modules file <1>:               Module program options.
+                                                              (line   6)
+* -o, in modules file:                   Module options.      (line  24)
+* -s, in modules file:                   Module options.      (line  29)
+* -t, in modules file <1>:               Module program options.
+                                                              (line   6)
+* -t, in modules file:                   Module options.      (line  37)
+* -u, in modules file <1>:               Module options.      (line  44)
+* -u, in modules file:                   Module program options.
+                                                              (line   6)
+* .# files:                              update output.       (line  47)
+* .bashrc, setting CVSROOT in:           Specifying a repository.
+                                                              (line  12)
+* .cshrc, setting CVSROOT in:            Specifying a repository.
+                                                              (line  12)
+* .cvsrc file:                           ~/.cvsrc.            (line   6)
+* .profile, setting CVSROOT in:          Specifying a repository.
+                                                              (line  12)
+* .tcshrc, setting CVSROOT in:           Specifying a repository.
+                                                              (line  12)
+* /usr/local/cvsroot, as example repository: Repository.      (line   6)
+* :ext:, setting up:                     Connecting via rsh.  (line  32)
+* :ext:, troubleshooting:                Connection.          (line  16)
+* :fork:, setting up:                    Connecting via fork. (line   6)
+* :gserver:, setting up:                 GSSAPI authenticated.
+                                                              (line   6)
+* :kserver:, setting up:                 Kerberos authenticated.
+                                                              (line   6)
+* :local:, setting up:                   Repository.          (line  20)
+* :pserver:, setting up:                 Password authentication client.
+                                                              (line   6)
+* :pserver:, troubleshooting:            Connection.          (line  28)
+* :server:, setting up:                  Connecting via rsh.  (line  32)
+* :server:, troubleshooting:             Connection.          (line  22)
+* <<<<<<<:                               Conflicts example.   (line  97)
+* =======:                               Conflicts example.   (line  97)
+* >>>>>>>:                               Conflicts example.   (line  97)
+* __ files (VMS):                        update output.       (line  47)
+* Abandoning work:                       Editing files.       (line  38)
+* Access a branch:                       Accessing branches.  (line   6)
+* add (subcommand):                      Adding files.        (line  29)
+* Adding a tag:                          Tags.                (line  46)
+* Adding files:                          Adding files.        (line   6)
+* Admin (subcommand):                    admin.               (line   6)
+* Administrative files (intro):          Intro administrative files.
+                                                              (line   6)
+* Administrative files (reference):      Administrative files.
+                                                              (line   6)
+* Administrative files, editing them:    Intro administrative files.
+                                                              (line  38)
+* Alias modules:                         Alias modules.       (line   6)
+* ALL in commitinfo:                     commitinfo.          (line  25)
+* Ampersand modules:                     Ampersand modules.   (line   6)
+* annotate (subcommand):                 annotate.            (line   6)
+* Atomic transactions, lack of:          Concurrency.         (line  30)
+* Attic:                                 Attic.               (line   6)
+* Authenticated client, using:           Password authentication client.
+                                                              (line   6)
+* Authenticating server, setting up:     Password authentication server.
+                                                              (line  10)
+* Authentication, stream:                Global options.      (line  13)
+* Author keyword:                        Keyword list.        (line   8)
+* Automatically ignored files:           cvsignore.           (line  24)
+* Avoiding editor invocation:            Common options.      (line 117)
+* Backing up, repository:                Backing up.          (line   6)
+* Base directory, in CVS directory:      Working directory storage.
+                                                              (line 182)
+* BASE, as reserved tag name:            Tags.                (line  26)
+* BASE, special tag:                     Common options.      (line 156)
+* Baserev file, in CVS directory:        Working directory storage.
+                                                              (line 187)
+* Baserev.tmp file, in CVS directory:    Working directory storage.
+                                                              (line 195)
+* Bill of materials:                     Builds.              (line  24)
+* Binary files:                          Binary files.        (line   6)
+* Branch merge example:                  Merging a branch.    (line  13)
+* Branch number <1>:                     Revision numbers.    (line   6)
+* Branch number:                         Branches and revisions.
+                                                              (line   6)
+* Branch, accessing:                     Accessing branches.  (line   6)
+* Branch, check out:                     Accessing branches.  (line   6)
+* Branch, creating a:                    Creating a branch.   (line   6)
+* Branch, identifying:                   Accessing branches.  (line   6)
+* Branch, retrieving:                    Accessing branches.  (line   6)
+* Branch, vendor-:                       Tracking sources.    (line  10)
+* Branches motivation:                   Branches motivation. (line   6)
+* Branches, copying changes between:     Branching and merging.
+                                                              (line   6)
+* Branches, sticky:                      Accessing branches.  (line  33)
+* Branching:                             Branching and merging.
+                                                              (line   6)
+* Bringing a file up to date:            Updating a file.     (line   6)
+* Bugs in this manual or CVS:            BUGS.                (line   6)
+* Bugs, reporting:                       BUGS.                (line  12)
+* Builds:                                Builds.              (line   6)
+* Changes, copying between branches:     Branching and merging.
+                                                              (line   6)
+* Changing a log message:                admin options.       (line  76)
+* Check out a branch:                    Accessing branches.  (line   6)
+* Checked out copy, keeping:             Keeping a checked out copy.
+                                                              (line   6)
+* Checkin program:                       Module options.      (line  17)
+* Checkin.prog file, in CVS directory:   Working directory storage.
+                                                              (line 166)
+* Checking commits:                      commitinfo.          (line   6)
+* Checking out source:                   Getting the source.  (line   6)
+* checkout (subcommand):                 checkout.            (line   6)
+* Checkout program:                      Module options.      (line  24)
+* Checkout, as term for getting ready to edit: Editing files. (line   6)
+* Checkout, example:                     Getting the source.  (line   6)
+* checkoutlist:                          checkoutlist.        (line   6)
+* Choosing, reserved or unreserved checkouts: Choosing a model.
+                                                              (line   6)
+* Cleaning up:                           Cleaning up.         (line   6)
+* Client/Server Operation:               Remote repositories. (line   6)
+* co (subcommand):                       checkout.            (line   6)
+* Command reference:                     Invoking CVS.        (line   6)
+* Command structure:                     Structure.           (line   6)
+* Comment leader:                        admin options.       (line  28)
+* commit (subcommand):                   commit.              (line   6)
+* Commit files:                          commit files.        (line   6)
+* Commit, when to:                       When to commit.      (line   6)
+* Commitinfo:                            commitinfo.          (line   6)
+* Committing changes:                    Committing your changes.
+                                                              (line   6)
+* Common options:                        Common options.      (line   6)
+* Common syntax of info files:           syntax.              (line   6)
+* Compatibility, between CVS versions:   Compatibility.       (line   6)
+* Compression <1>:                       Invoking CVS.        (line  82)
+* Compression:                           Global options.      (line 118)
+* COMSPEC, environment variable:         Environment variables.
+                                                              (line 106)
+* config, in CVSROOT:                    config.              (line   6)
+* Conflict markers:                      Conflicts example.   (line  97)
+* Conflict resolution:                   Conflicts example.   (line 102)
+* Conflicts (merge example):             Conflicts example.   (line  68)
+* Contributors (CVS program):            What is CVS?.        (line  31)
+* Contributors (manual):                 Credits.             (line   6)
+* Copying a repository:                  Moving a repository. (line   6)
+* Copying changes:                       Branching and merging.
+                                                              (line   6)
+* Correcting a log message:              admin options.       (line  76)
+* Creating a branch:                     Creating a branch.   (line   6)
+* Creating a project:                    Starting a new project.
+                                                              (line   6)
+* Creating a repository:                 Creating a repository.
+                                                              (line   6)
+* Credits (CVS program):                 What is CVS?.        (line  31)
+* Credits (manual):                      Credits.             (line   6)
+* CVS 1.6, and watches:                  Watches Compatibility.
+                                                              (line   6)
+* CVS command structure:                 Structure.           (line   6)
+* CVS directory, in repository:          CVS in repository.   (line   6)
+* CVS directory, in working directory:   Working directory storage.
+                                                              (line   6)
+* CVS passwd file:                       Password authentication server.
+                                                              (line  48)
+* CVS, history of:                       What is CVS?.        (line  31)
+* CVS, introduction to:                  What is CVS?.        (line   6)
+* CVS, versions of:                      Compatibility.       (line   6)
+* CVS/Base directory:                    Working directory storage.
+                                                              (line 182)
+* CVS/Baserev file:                      Working directory storage.
+                                                              (line 187)
+* CVS/Baserev.tmp file:                  Working directory storage.
+                                                              (line 195)
+* CVS/Checkin.prog file:                 Working directory storage.
+                                                              (line 166)
+* CVS/Entries file:                      Working directory storage.
+                                                              (line  59)
+* CVS/Entries.Backup file:               Working directory storage.
+                                                              (line 144)
+* CVS/Entries.Log file:                  Working directory storage.
+                                                              (line 123)
+* CVS/Entries.Static file:               Working directory storage.
+                                                              (line 149)
+* CVS/Notify file:                       Working directory storage.
+                                                              (line 171)
+* CVS/Notify.tmp file:                   Working directory storage.
+                                                              (line 176)
+* CVS/Repository file:                   Working directory storage.
+                                                              (line  32)
+* CVS/Root file:                         Specifying a repository.
+                                                              (line  25)
+* CVS/Tag file:                          Working directory storage.
+                                                              (line 157)
+* CVS/Template file:                     Working directory storage.
+                                                              (line 201)
+* CVS/Update.prog file:                  Working directory storage.
+                                                              (line 166)
+* CVS_CLIENT_LOG, environment variable:  Environment variables.
+                                                              (line  89)
+* CVS_CLIENT_PORT:                       Kerberos authenticated.
+                                                              (line  30)
+* CVS_IGNORE_REMOTE_ROOT, environment variable: Environment variables.
+                                                              (line 100)
+* CVS_PASSFILE, environment variable:    Password authentication client.
+                                                              (line  38)
+* CVS_RCMD_PORT, environment variable:   Environment variables.
+                                                              (line  83)
+* CVS_RSH, environment variable:         Environment variables.
+                                                              (line  62)
+* CVS_SERVER, and :fork::                Connecting via fork. (line  22)
+* CVS_SERVER, environment variable:      Connecting via rsh.  (line  21)
+* CVS_SERVER_SLEEP, environment variable: Environment variables.
+                                                              (line  95)
+* cvsadmin:                              admin.               (line  17)
+* CVSEDITOR, environment variable:       Committing your changes.
+                                                              (line   6)
+* CVSEDITOR, internal variable:          Variables.           (line  35)
+* cvsignore (admin file), global:        cvsignore.           (line   6)
+* CVSIGNORE, environment variable:       Environment variables.
+                                                              (line   8)
+* CVSREAD, environment variable:         Environment variables.
+                                                              (line  16)
+* CVSREAD, overriding:                   Global options.      (line 101)
+* cvsroot:                               Repository.          (line   6)
+* CVSROOT (file):                        Administrative files.
+                                                              (line   6)
+* CVSROOT, environment variable:         Specifying a repository.
+                                                              (line  12)
+* CVSROOT, internal variable:            Variables.           (line  26)
+* CVSROOT, module name:                  Intro administrative files.
+                                                              (line   6)
+* CVSROOT, multiple repositories:        Multiple repositories.
+                                                              (line   6)
+* CVSROOT, overriding:                   Global options.      (line  33)
+* CVSROOT, storage of files:             CVSROOT storage.     (line   6)
+* CVSROOT/config:                        config.              (line   6)
+* CVSUMASK, environment variable:        File permissions.    (line  29)
+* cvswrappers (admin file):              Wrappers.            (line   6)
+* CVSWRAPPERS, environment variable <1>: Environment variables.
+                                                              (line  12)
+* CVSWRAPPERS, environment variable:     Wrappers.            (line   6)
+* Cyclic Software:                       BUGS.                (line  16)
+* Date keyword:                          Keyword list.        (line  11)
+* Dates:                                 Common options.      (line  19)
+* Dead state:                            Attic.               (line  17)
+* Decimal revision number:               Revision numbers.    (line   6)
+* DEFAULT in commitinfo:                 commitinfo.          (line  22)
+* DEFAULT in editinfo:                   editinfo.            (line  41)
+* DEFAULT in verifymsg:                  verifymsg.           (line  26)
+* Defining a module:                     Defining the module. (line   6)
+* Defining modules (intro):              Intro administrative files.
+                                                              (line   6)
+* Defining modules (reference manual):   modules.             (line   6)
+* Deleting files:                        Removing files.      (line   6)
+* Deleting revisions:                    admin options.       (line 100)
+* Deleting sticky tags:                  Sticky tags.         (line  30)
+* Deleting tags:                         Modifying tags.      (line  17)
+* Descending directories:                Recursive behavior.  (line   6)
+* Device nodes:                          Special Files.       (line   6)
+* Diff:                                  Viewing differences. (line   6)
+* diff (subcommand):                     diff.                (line   6)
+* Differences, merging:                  Merging two revisions.
+                                                              (line   6)
+* Directories, moving:                   Moving directories.  (line   6)
+* Directories, removing:                 Removing directories.
+                                                              (line   6)
+* Directory, descending:                 Recursive behavior.  (line   6)
+* Disjoint repositories:                 Multiple repositories.
+                                                              (line   6)
+* Distributing log messages:             loginfo.             (line   6)
+* driver.c (merge example):              Conflicts example.   (line   6)
+* edit (subcommand):                     Editing files.       (line  14)
+* editinfo (admin file):                 editinfo.            (line   6)
+* Editing administrative files:          Intro administrative files.
+                                                              (line  38)
+* Editing the modules file:              Defining the module. (line   6)
+* Editor, avoiding invocation of:        Common options.      (line 117)
+* EDITOR, environment variable:          Committing your changes.
+                                                              (line   6)
+* EDITOR, internal variable:             Variables.           (line  37)
+* EDITOR, overriding:                    Global options.      (line  37)
+* Editor, specifying per module:         editinfo.            (line   6)
+* editors (subcommand):                  Watch information.   (line  13)
+* emerge:                                Conflicts example.   (line 140)
+* encryption:                            Global options.      (line 108)
+* Entries file, in CVS directory:        Working directory storage.
+                                                              (line  59)
+* Entries.Backup file, in CVS directory: Working directory storage.
+                                                              (line 144)
+* Entries.Log file, in CVS directory:    Working directory storage.
+                                                              (line 123)
+* Entries.Static file, in CVS directory: Working directory storage.
+                                                              (line 149)
+* Environment variables:                 Environment variables.
+                                                              (line   6)
+* Errors, reporting:                     BUGS.                (line  12)
+* Example of a work-session:             A sample session.    (line   6)
+* Example of merge:                      Conflicts example.   (line   6)
+* Example, branch merge:                 Merging a branch.    (line  13)
+* Excluding directories, in modules file: Excluding directories.
+                                                              (line   6)
+* Exit status, of commitinfo:            commitinfo.          (line  19)
+* Exit status, of CVS:                   Exit status.         (line   6)
+* Exit status, of editor:                Error messages.      (line 254)
+* Exit status, of taginfo:               user-defined logging.
+                                                              (line  20)
+* Exit status, of verifymsg:             verifymsg.           (line  29)
+* export (subcommand):                   export.              (line   6)
+* Export program:                        Module options.      (line  12)
+* Fetching source:                       Getting the source.  (line   6)
+* File had conflicts on merge:           File status.         (line  42)
+* File locking:                          Multiple developers. (line   6)
+* File permissions, general:             File permissions.    (line   6)
+* File permissions, Windows-specific:    Windows permissions. (line   6)
+* File status:                           File status.         (line   6)
+* Files, moving:                         Moving files.        (line   6)
+* Files, reference manual:               Administrative files.
+                                                              (line   6)
+* Fixing a log message:                  admin options.       (line  76)
+* Forcing a tag match:                   Common options.      (line  70)
+* fork, access method:                   Connecting via fork. (line   6)
+* Form for log message:                  rcsinfo.             (line   6)
+* Format of CVS commands:                Structure.           (line   6)
+* Getting started:                       A sample session.    (line   6)
+* Getting the source:                    Getting the source.  (line   6)
+* Global cvsignore:                      cvsignore.           (line   6)
+* Global options:                        Global options.      (line   6)
+* Group:                                 File permissions.    (line   6)
+* GSSAPI:                                GSSAPI authenticated.
+                                                              (line   6)
+* Gzip <1>:                              Global options.      (line 118)
+* Gzip:                                  Invoking CVS.        (line  82)
+* Hard links:                            Special Files.       (line   6)
+* HEAD, as reserved tag name:            Tags.                (line  26)
+* HEAD, special tag:                     Common options.      (line 156)
+* Header keyword:                        Keyword list.        (line  14)
+* history (subcommand):                  history.             (line   6)
+* History browsing:                      History browsing.    (line   6)
+* History file:                          history file.        (line   6)
+* History files:                         Repository files.    (line  68)
+* History of CVS:                        What is CVS?.        (line  31)
+* HOME, environment variable:            Environment variables.
+                                                              (line  50)
+* HOMEDRIVE, environment variable:       Environment variables.
+                                                              (line  53)
+* HOMEPATH, environment variable:        Environment variables.
+                                                              (line  51)
+* Id keyword:                            Keyword list.        (line  20)
+* Ident (shell command):                 Using keywords.      (line  18)
+* Identifying a branch:                  Accessing branches.  (line   6)
+* Identifying files:                     Keyword substitution.
+                                                              (line   6)
+* Ignored files:                         cvsignore.           (line  24)
+* Ignoring files:                        cvsignore.           (line   6)
+* import (subcommand):                   import.              (line   6)
+* Importing files:                       From files.          (line   6)
+* Importing files, from other version control systems: From other version control systems.
+                                                              (line   6)
+* Importing modules:                     First import.        (line   6)
+* Index:                                 Index.               (line   6)
+* Info files (syntax):                   syntax.              (line   6)
+* Informing others:                      Informing others.    (line   6)
+* init (subcommand):                     Creating a repository.
+                                                              (line  27)
+* Installed images (VMS):                File permissions.    (line  54)
+* Internal variables:                    Variables.           (line   6)
+* Introduction to CVS:                   What is CVS?.        (line   6)
+* Invoking CVS:                          Invoking CVS.        (line   6)
+* Isolation:                             History browsing.    (line   6)
+* Join:                                  Merging a branch.    (line  11)
+* Keeping a checked out copy:            Keeping a checked out copy.
+                                                              (line   6)
+* Kerberos, using :gserver::             GSSAPI authenticated.
+                                                              (line   6)
+* Kerberos, using :kserver::             Kerberos authenticated.
+                                                              (line   6)
+* Kerberos, using kerberized rsh:        Connecting via rsh.  (line  32)
+* Keyword expansion:                     Keyword substitution.
+                                                              (line   6)
+* Keyword List:                          Keyword list.        (line   6)
+* Keyword substitution:                  Keyword substitution.
+                                                              (line   6)
+* Keyword substitution, and merging:     Merging and keywords.
+                                                              (line   6)
+* keyword substitution, changing modes:  Substitution modes.  (line   6)
+* Kflag:                                 Substitution modes.  (line   6)
+* kinit:                                 Kerberos authenticated.
+                                                              (line  35)
+* Known bugs in this manual or CVS:      BUGS.                (line  78)
+* Layout of repository:                  Repository.          (line   6)
+* Left-hand options:                     Global options.      (line   6)
+* Linear development:                    Revision numbers.    (line   6)
+* Link, symbolic, importing:             import output.       (line  24)
+* List, mailing list:                    What is CVS?.        (line  46)
+* Locally Added:                         File status.         (line  19)
+* Locally Modified:                      File status.         (line  16)
+* Locally Removed:                       File status.         (line  23)
+* LockDir, in CVSROOT/config:            config.              (line  43)
+* Locker keyword:                        Keyword list.        (line  29)
+* Locking files:                         Multiple developers. (line   6)
+* Locks, cvs, and backups:               Backing up.          (line  10)
+* Locks, cvs, introduction:              Concurrency.         (line   6)
+* Locks, cvs, technical details:         Locks.               (line   6)
+* log (subcommand):                      log.                 (line   6)
+* Log information, saving:               history file.        (line   6)
+* Log keyword:                           Keyword list.        (line  34)
+* Log message entry:                     Committing your changes.
+                                                              (line   6)
+* Log message template:                  rcsinfo.             (line   6)
+* Log message, correcting:               admin options.       (line  76)
+* Log message, verifying:                verifymsg.           (line   6)
+* Log messages:                          loginfo.             (line   6)
+* Log messages, editing:                 editinfo.            (line   6)
+* Login (subcommand):                    Password authentication client.
+                                                              (line   6)
+* loginfo (admin file):                  loginfo.             (line   6)
+* Logout (subcommand):                   Password authentication client.
+                                                              (line  62)
+* Mail, automatic mail on commit:        Informing others.    (line   6)
+* Mailing list:                          What is CVS?.        (line  46)
+* Mailing log messages:                  loginfo.             (line   6)
+* Main trunk and branches:               Branching and merging.
+                                                              (line   6)
+* make:                                  Builds.              (line   6)
+* Many repositories:                     Multiple repositories.
+                                                              (line   6)
+* Markers, conflict:                     Conflicts example.   (line  97)
+* Merge, an example:                     Conflicts example.   (line   6)
+* Merge, branch example:                 Merging a branch.    (line  13)
+* Merging:                               Branching and merging.
+                                                              (line   6)
+* Merging a branch:                      Merging a branch.    (line   6)
+* Merging a file:                        Updating a file.     (line   6)
+* Merging two revisions:                 Merging two revisions.
+                                                              (line   6)
+* Merging, and keyword substitution:     Merging and keywords.
+                                                              (line   6)
+* mkmodules:                             Error messages.      (line 157)
+* Modifications, copying between branches: Branching and merging.
+                                                              (line   6)
+* Module status:                         Module options.      (line  29)
+* Module, defining:                      Defining the module. (line   6)
+* Modules (admin file):                  modules.             (line   6)
+* Modules file:                          Intro administrative files.
+                                                              (line   6)
+* Modules file program options:          Module program options.
+                                                              (line   6)
+* Modules file, changing:                Defining the module. (line   6)
+* modules.db:                            CVSROOT storage.     (line  25)
+* modules.dir:                           CVSROOT storage.     (line  25)
+* modules.pag:                           CVSROOT storage.     (line  25)
+* Motivation for branches:               Branches motivation. (line   6)
+* Moving a repository:                   Moving a repository. (line   6)
+* Moving directories:                    Moving directories.  (line   6)
+* Moving files:                          Moving files.        (line   6)
+* Moving tags:                           Modifying tags.      (line  24)
+* Multiple developers:                   Multiple developers. (line   6)
+* Multiple repositories:                 Multiple repositories.
+                                                              (line   6)
+* Name keyword:                          Keyword list.        (line  24)
+* Name, symbolic (tag):                  Tags.                (line  26)
+* Needs Checkout:                        File status.         (line  27)
+* Needs Merge:                           File status.         (line  38)
+* Needs Patch:                           File status.         (line  33)
+* Newsgroups:                            What is CVS?.        (line  46)
+* notify (admin file):                   Getting Notified.    (line  52)
+* Notify file, in CVS directory:         Working directory storage.
+                                                              (line 171)
+* Notify.tmp file, in CVS directory:     Working directory storage.
+                                                              (line 176)
+* Number, branch <1>:                    Revision numbers.    (line   6)
+* Number, branch:                        Branches and revisions.
+                                                              (line   6)
+* Number, revision-:                     Revision numbers.    (line   6)
+* Option defaults:                       ~/.cvsrc.            (line   6)
+* Options, global:                       Global options.      (line   6)
+* Options, in modules file:              Module options.      (line   6)
+* Outdating revisions:                   admin options.       (line 100)
+* Overlap:                               Updating a file.     (line  23)
+* Overriding CVSREAD:                    Global options.      (line 101)
+* Overriding CVSROOT:                    Global options.      (line  33)
+* Overriding EDITOR:                     Global options.      (line  37)
+* Overriding RCSBIN:                     Global options.      (line  21)
+* Overriding TMPDIR:                     Global options.      (line  27)
+* Overview:                              Overview.            (line   6)
+* Ownership, saving in CVS:              Special Files.       (line   6)
+* Parallel repositories:                 Multiple repositories.
+                                                              (line   6)
+* passwd (admin file):                   Password authentication server.
+                                                              (line  48)
+* Password client, using:                Password authentication client.
+                                                              (line   6)
+* Password server, setting up:           Password authentication server.
+                                                              (line  10)
+* PATH, environment variable:            Environment variables.
+                                                              (line  45)
+* Per-directory sticky tags/dates:       Working directory storage.
+                                                              (line 157)
+* Per-module editor:                     editinfo.            (line   6)
+* Permissions, general:                  File permissions.    (line   6)
+* Permissions, saving in CVS:            Special Files.       (line   6)
+* Permissions, Windows-specific:         Windows permissions. (line   6)
+* Policy:                                When to commit.      (line   6)
+* Precommit checking:                    commitinfo.          (line   6)
+* PreservePermissions, in CVSROOT/config: config.             (line  27)
+* pserver (subcommand):                  Password authentication server.
+                                                              (line  10)
+* PVCS, importing files from:            From other version control systems.
+                                                              (line  49)
+* RCS history files:                     Repository files.    (line  68)
+* RCS revision numbers:                  Tags.                (line  11)
+* RCS, importing files from:             From other version control systems.
+                                                              (line  11)
+* RCS-style locking:                     Multiple developers. (line   6)
+* RCSBIN, in CVSROOT/config:             config.              (line  14)
+* RCSBIN, internal variable:             Variables.           (line  30)
+* RCSBIN, overriding:                    Global options.      (line  21)
+* RCSfile keyword:                       Keyword list.        (line  58)
+* rcsinfo (admin file):                  rcsinfo.             (line   6)
+* rdiff (subcommand):                    rdiff.               (line   6)
+* Read-only files, and -r:               Global options.      (line  81)
+* Read-only files, and CVSREAD:          Environment variables.
+                                                              (line  16)
+* Read-only files, and watches:          Setting a watch.     (line  10)
+* Read-only files, in repository:        File permissions.    (line   6)
+* Read-only mode:                        Global options.      (line  63)
+* Read-only repository access:           Read-only access.    (line   6)
+* readers (admin file):                  Read-only access.    (line   6)
+* Recursive (directory descending):      Recursive behavior.  (line   6)
+* Reference manual (files):              Administrative files.
+                                                              (line   6)
+* Reference manual for variables:        Environment variables.
+                                                              (line   6)
+* Reference, commands:                   Invoking CVS.        (line   6)
+* Regular expression syntax:             syntax.              (line  10)
+* Regular modules:                       Regular modules.     (line   6)
+* release (subcommand):                  release.             (line   6)
+* Releases, revisions and versions:      Versions revisions releases.
+                                                              (line   6)
+* Releasing your working copy:           Cleaning up.         (line   6)
+* Remote repositories:                   Remote repositories. (line   6)
+* Remove (subcommand):                   Removing files.      (line  36)
+* Removing a change:                     Merging two revisions.
+                                                              (line  10)
+* Removing directories:                  Removing directories.
+                                                              (line   6)
+* Removing files:                        Removing files.      (line   6)
+* Removing tags:                         Modifying tags.      (line  17)
+* Removing your working copy:            Cleaning up.         (line   6)
+* Renaming directories:                  Moving directories.  (line   6)
+* Renaming files:                        Moving files.        (line   6)
+* Renaming tags:                         Modifying tags.      (line  32)
+* Replacing a log message:               admin options.       (line  76)
+* Reporting bugs:                        BUGS.                (line  12)
+* Repositories, multiple:                Multiple repositories.
+                                                              (line   6)
+* Repositories, remote:                  Remote repositories. (line   6)
+* Repository (intro):                    Repository.          (line   6)
+* Repository file, in CVS directory:     Working directory storage.
+                                                              (line  32)
+* Repository, backing up:                Backing up.          (line   6)
+* Repository, example:                   Repository.          (line   6)
+* Repository, how data is stored:        Repository storage.  (line   6)
+* Repository, moving:                    Moving a repository. (line   6)
+* Repository, setting up:                Creating a repository.
+                                                              (line   6)
+* Reserved checkouts:                    Multiple developers. (line   6)
+* Resetting sticky tags:                 Sticky tags.         (line  30)
+* Resolving a conflict:                  Conflicts example.   (line 102)
+* Restoring old version of removed file: Merging two revisions.
+                                                              (line  21)
+* Resurrecting old version of dead file: Merging two revisions.
+                                                              (line  21)
+* Retrieve a branch:                     Accessing branches.  (line   6)
+* Retrieving an old revision using tags: Tags.                (line  87)
+* Reverting to repository version:       Editing files.       (line  38)
+* Revision keyword:                      Keyword list.        (line  61)
+* Revision management:                   Revision management. (line   6)
+* Revision numbers:                      Revision numbers.    (line   6)
+* Revision numbers (branches):           Branches and revisions.
+                                                              (line   6)
+* Revision tree:                         Revision numbers.    (line   6)
+* Revision tree, making branches:        Branching and merging.
+                                                              (line   6)
+* Revisions, merging differences between: Merging two revisions.
+                                                              (line   6)
+* Revisions, versions and releases:      Versions revisions releases.
+                                                              (line   6)
+* Right-hand options:                    Common options.      (line   6)
+* Root file, in CVS directory:           Specifying a repository.
+                                                              (line  25)
+* rsh:                                   Connecting via rsh.  (line   6)
+* rsh replacements (Kerberized, SSH, &c): Connecting via rsh. (line  32)
+* rtag (subcommand):                     Tagging by date/tag. (line   6)
+* rtag, creating a branch using:         Creating a branch.   (line   6)
+* Saving space:                          admin options.       (line 100)
+* SCCS, importing files from:            From other version control systems.
+                                                              (line  39)
+* Security:                              File permissions.    (line   6)
+* Security, GSSAPI:                      GSSAPI authenticated.
+                                                              (line   6)
+* Security, kerberos:                    Kerberos authenticated.
+                                                              (line   6)
+* Security, of pserver:                  Password authentication security.
+                                                              (line   6)
+* Security, setuid:                      File permissions.    (line  54)
+* Server, CVS:                           Remote repositories. (line   6)
+* Server, temporary directories:         Server temporary directory.
+                                                              (line   6)
+* Setgid:                                File permissions.    (line  54)
+* Setting up a repository:               Creating a repository.
+                                                              (line   6)
+* Setuid:                                File permissions.    (line  54)
+* Signum Support:                        BUGS.                (line  16)
+* Source keyword:                        Keyword list.        (line  64)
+* Source, getting CVS source:            What is CVS?.        (line  39)
+* Source, getting from CVS:              Getting the source.  (line   6)
+* Special files:                         Special Files.       (line   6)
+* Specifying dates:                      Common options.      (line  19)
+* Spreading information:                 Informing others.    (line   6)
+* SSH (rsh replacement):                 Connecting via rsh.  (line  32)
+* Starting a project with CVS:           Starting a new project.
+                                                              (line   6)
+* State keyword:                         Keyword list.        (line  67)
+* Status of a file:                      File status.         (line   6)
+* Status of a module:                    Module options.      (line  29)
+* Sticky date:                           Sticky tags.         (line  35)
+* Sticky tags:                           Sticky tags.         (line   6)
+* Sticky tags, resetting:                Sticky tags.         (line  30)
+* Sticky tags/dates, per-directory:      Working directory storage.
+                                                              (line 157)
+* Storing log messages:                  loginfo.             (line   6)
+* Stream authentication:                 Global options.      (line  13)
+* Structure:                             Structure.           (line   6)
+* Subdirectories:                        Recursive behavior.  (line   6)
+* Support, getting CVS support:          BUGS.                (line  16)
+* Symbolic link, importing:              import output.       (line  24)
+* Symbolic links:                        Special Files.       (line   6)
+* Symbolic name (tag):                   Tags.                (line  26)
+* Syntax of info files:                  syntax.              (line   6)
+* SystemAuth, in CVSROOT/config:         config.              (line  20)
+* tag (subcommand):                      Tagging the working directory.
+                                                              (line   6)
+* Tag file, in CVS directory:            Working directory storage.
+                                                              (line 157)
+* Tag program:                           Module options.      (line  37)
+* tag, command, introduction:            Tags.                (line  26)
+* tag, creating a branch using:          Creating a branch.   (line   6)
+* Tag, example:                          Tags.                (line  46)
+* Tag, retrieving old revisions:         Tags.                (line  87)
+* Tag, symbolic name:                    Tags.                (line  26)
+* taginfo:                               user-defined logging.
+                                                              (line  20)
+* Tags:                                  Tags.                (line   6)
+* Tags, deleting:                        Modifying tags.      (line  17)
+* Tags, moving:                          Modifying tags.      (line  24)
+* Tags, renaming:                        Modifying tags.      (line  32)
+* Tags, sticky:                          Sticky tags.         (line   6)
+* tc, Trivial Compiler (example):        A sample session.    (line   6)
+* Team of developers:                    Multiple developers. (line   6)
+* TEMP, environment variable:            Environment variables.
+                                                              (line 112)
+* Template file, in CVS directory:       Working directory storage.
+                                                              (line 201)
+* Template for log message:              rcsinfo.             (line   6)
+* Temporary directories, and server:     Server temporary directory.
+                                                              (line   6)
+* Temporary files, location of:          Environment variables.
+                                                              (line 113)
+* Third-party sources:                   Tracking sources.    (line   6)
+* Time:                                  Common options.      (line  19)
+* Timezone, in input:                    Common options.      (line  32)
+* Timezone, in output:                   log.                 (line  18)
+* TMP, environment variable:             Environment variables.
+                                                              (line 111)
+* TMPDIR, environment variable:          Environment variables.
+                                                              (line 110)
+* TMPDIR, overriding:                    Global options.      (line  27)
+* TopLevelAdmin, in CVSROOT/config:      config.              (line  32)
+* Trace:                                 Global options.      (line  90)
+* Traceability:                          History browsing.    (line   6)
+* Tracking sources:                      Tracking sources.    (line   6)
+* Transactions, atomic, lack of:         Concurrency.         (line  30)
+* Trivial Compiler (example):            A sample session.    (line   6)
+* Typical repository:                    Repository.          (line   6)
+* Umask, for repository files:           File permissions.    (line  29)
+* Undoing a change:                      Merging two revisions.
+                                                              (line  10)
+* unedit (subcommand):                   Editing files.       (line  38)
+* Unknown:                               File status.         (line  47)
+* Unreserved checkouts:                  Multiple developers. (line   6)
+* Up-to-date:                            File status.         (line  11)
+* update (subcommand):                   update.              (line   6)
+* Update program:                        Module options.      (line  44)
+* Update, introduction:                  Updating a file.     (line   6)
+* update, to display file status:        File status.         (line  69)
+* Update.prog file, in CVS directory:    Working directory storage.
+                                                              (line 166)
+* Updating a file:                       Updating a file.     (line   6)
+* User aliases:                          Password authentication server.
+                                                              (line  77)
+* User variables:                        Variables.           (line  44)
+* USER, internal variable:               Variables.           (line  41)
+* users (admin file):                    Getting Notified.    (line  66)
+* Variables:                             Variables.           (line   6)
+* Vendor:                                Tracking sources.    (line  10)
+* Vendor branch:                         Tracking sources.    (line  10)
+* verifymsg (admin file):                verifymsg.           (line   6)
+* Versions, of CVS:                      Compatibility.       (line   6)
+* Versions, revisions and releases:      Versions revisions releases.
+                                                              (line   6)
+* Viewing differences:                   Viewing differences. (line   6)
+* VISUAL, environment variable:          Committing your changes.
+                                                              (line  24)
+* VISUAL, internal variable:             Variables.           (line  36)
+* watch add (subcommand):                Getting Notified.    (line  12)
+* watch off (subcommand):                Setting a watch.     (line  26)
+* watch on (subcommand):                 Setting a watch.     (line   9)
+* watch remove (subcommand):             Getting Notified.    (line  46)
+* watchers (subcommand):                 Watch information.   (line   6)
+* Watches:                               Watches.             (line   6)
+* Wdiff (import example):                First import.        (line  21)
+* Web pages, maintaining with CVS:       Keeping a checked out copy.
+                                                              (line   6)
+* What (shell command):                  Using keywords.      (line  31)
+* What branches are good for:            Branches motivation. (line   6)
+* What is CVS not?:                      What is CVS not?.    (line   6)
+* What is CVS?:                          What is CVS?.        (line   6)
+* When to commit:                        When to commit.      (line   6)
+* Windows, and permissions:              Windows permissions. (line   6)
+* Work-session, example of:              A sample session.    (line   6)
+* Working copy:                          Multiple developers. (line   6)
+* Working copy, removing:                Cleaning up.         (line   6)
+* Wrappers:                              Wrappers.            (line   6)
+* writers (admin file):                  Read-only access.    (line   6)
+* Zone, time, in input:                  Common options.      (line  32)
+* Zone, time, in output:                 log.                 (line  18)
+
+

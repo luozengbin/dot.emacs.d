@@ -1,0 +1,643 @@
+'\" t
+.\" Copyright (c) 1996 Andries Brouwer <aeb@cwi.nl>, Mon Oct 31 22:13:04 1996
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" This is combined from many sources.
+.\" For Linux, the definitive source is of course console.c.
+.\" About vt100-like escape sequences in general there are
+.\" the ISO 6429 and ISO 2022 norms, the descriptions of
+.\" an actual vt100, and the xterm docs (ctlseqs.ms).
+.\" Substantial portions of this text are derived from a write-up
+.\" by Eric S. Raymond <esr@thyrsus.com>.
+.\"
+.\" Tiny correction, aeb, 961107.
+.\"
+.\" 2006-05-27, Several corrections - Thomas E. Dickey
+.\"
+.\" Japanese Version Copyright (c) 1996,1997,1998
+.\"         ISHIKAWA Mutsumi, TAKAHASHI Mutsuji
+.\"                                    all rights reserved.
+.\" Translated Mon Jul 21 03:12:45 JST 1997
+.\"         by ISHIKAWA Mutsumi <ishikawa@linux.or.jp>
+.\"		and TAKAHASHI Mutsuji <muz@ilp.iijnet.or.jp>
+.\"
+.\" Japanese Version Modified Mon Jan 12 03:29:14 JST 1998
+.\"	by ISHIKAWA Mutsumi <ishikawa@linux.or.jp>
+.\" Updated Wed Jan  9 JST 2001 by Kentaro Shirakata <argrath@ub32.org>
+.\" Updated Sun Jul 23 JST 2006 by Kentaro Shirakata <argrath@ub32.org>
+.\" Updated Tue Jul 22 JST 2008 by Kentaro Shirakata <argrath@ub32.org>
+.\"
+.\" WORD:	private mode	ãƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰
+.\"
+.TH CONSOLE_CODES 4 2011-09-15 "Linux" "Linux Programmer's Manual"
+.SH åå‰
+console_codes \- Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®õ€”ˆ‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€‹”‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒ«
+ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹
+.SH èŒ¯õ€‘˜Ž
+Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®¯ VT102 ã¨ ECMA-48/ISO6429/ANSI X3.64 è…´õ€•©œõ€®‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®®
+ã‚æ³£ƒ–ã‚ç¥‰ƒƒãƒˆãõ€®€ã‚õ€®ƒõ€Œ²ƒè‹¥ƒ‘ãƒõ€‘Œƒƒãƒˆã‚„æ–‡çµ–—é›†åˆãõ€”ˆƒžãƒƒãƒ”ãƒæ½Ÿ‚é•õ€Žõ€Œ²‚’ç´Š‰æ›çœ¼™ã‚‹
+ãƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’åŠ ãˆãõ€ˆš®ŸèŒ–…ã•ã‚Œãõ€ˆ˜„ã‚‹ã€‚
+ç¯ãƒ¤¸‹ãõ€”ï¼›ãÑõ€•¦€ç½˜Ÿèƒç´”® ECMA-48 ãéšœŸã¯ DEC ãõ€”ˆƒ‹ãƒè‹¥ƒâ‰ªƒ‹ã‚õ€•¦‚¹(DECãÑƒ§‹ãéšœ‚ŒãåŒ»¾Œè€…)ã‚’
+2 ç•õ€Ž”›õ€”ˆõ€”‹¡ãõ€³¨˜ã™ã€‚
+ãƒ‹ãƒè‹¥ƒâ‰ªƒ‹ã‚õ€•¦‚é´»õ€”ˆõ€Ž„ã‚‚ãõ€”ˆ¯ ECMA-48 ãÑ‚‚ VT102 ãÑ‚‚ãõ€Ž„ã‚‚ãõ€”ˆÑ‚ã‚‹ã€‚
+.LP
+ã™ãé´»õ€ˆ˜õ€”Š‡é˜ªŠ›ç¯œç½õ€’ªŒè…Ÿ‚ãï½ƒõ€ˆ˜€çµŽŸéš›ãõ€°åŒ»­—ã™ã‚‹ãŸã‚ãõ€±–‡çµ–—ãõ€”ˆ‚é´»ƒˆãƒõ€Žƒè‹¥ƒ ãŒ
+ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®ƒ‰ãƒõ€Œ²‚ã‚ƒƒãƒè‹¥õ€°±Šã„ãŸæ™‚ã€æœ€åˆãõ€³¡Œãõ€Ž‚ã‚Œã‚‹ãõ€”ˆŒã€å‡õ€ˆœ†ç”õ€‹”‚æ½Ÿƒè‹¥ƒ‰ã‹ã‚‰
+ååŒ»­—ç”õ€‹”õ€”ˆ‚æ½Ÿƒè‹¥ƒ‰ãå¾õ€”Š¤‰æ›ãÑ‚ã‚‹ã€‚
+.LP
+ã‚‚ã—ã€ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®Œ UTF-8 ãƒâ‰ªƒè‹¥ƒ‰ãõ€Ž‚‰ã€å…ãƒ£ï½ƒõ€ˆ›ãƒ£Ÿãƒã‚ã‚ƒƒˆ(byte)ã¯
+16 ãƒ“ãƒƒãƒˆã® Unicode ãõ€²µ„ãç¡«‹ãõ€ˆ˜‚‰ã‚Œã‚‹ã€‚ãã†ãÑõ€Ž‘ã‚Œãé•€ãã‚Œãžã‚Œã®
+ãƒã‚ã‚ƒƒˆãõ€•ªæ†œœõ€‹”®(å„ãƒã‚ã‚ƒƒˆã‚’ Unicode ãõ€”Š€ã‚ƒõ€°¤‰æ›ã™ã‚‹)ãƒžãƒƒãƒ”ãƒæ½Ÿ‚é•ƒ†ãƒè‹¥ƒ–ãƒõ€®«
+ç·‡“ãï½ƒõ€ˆš¤‰æ›ã•ã‚Œã‚‹ã€‚ã“ã‚Œãõ€´–â‰ª—ãõ€ˆ˜õ€•§¸‹ãõ€”ˆ‚õ€’ªƒï½ƒƒõ€Œ²‚õ€•¦‚å¸¥ƒè‹¥‚ç¥‰ƒƒãƒˆ(Charcter Sets)
+è†€€ã‚’å‚ç…Ñõ€”ˆ“ãõ€‹”€‚
+.LP
+é€šçµ½å¾€Unicode ãõ€”Š€ã‚ƒõ€•¦ƒ•ã‚õ€Œ²ƒæ½Ÿƒˆã‚ã‚ƒƒæ½Ÿƒ‡ãƒƒã‚õ€•¦‚¹(font index) ãõ€°¤‰æ›ã•ã‚Œã€
+ãƒ“ãƒ‡ã‚õ€Žƒï¼œƒâ‰ªƒõ€Žõ€³“„ãˆã‚‰ã‚Œã‚‹ã€‚ãã—ã¦(ãƒ“ãƒ‡ã‚ª ROM ç­õ€’ªõ€³¦‹ç¯˜ã‘ã‚‰ã‚Œã‚‹)
+çµ²ä¸Š¿œã™ã‚‹ã‚é•ƒõ€Žƒ•(glyph)ãŒç”è„‚â‰ªõ€²æ†—‚Œã‚‹ã€‚
+Unicode ã‚’ç”õ€‹”„ã‚‹ãõ€‹”€(PC ç¯‹’æ›ç½˜Ÿãõ€”â”ƒèˆãÑ¯) 512 ãõ€”Œ•é•õ€Žï½ƒŸ
+ã‚é•ƒõ€Žƒ•ã‚’åŒæ™‚ãõ€°ˆõ€Œ¶”õ€‹”Ñã‚‹ã‚ˆã†ãõ€®õ€Ž‚‹ã€‚
+.LP
+çæ†œœõ€‹”® Unicode ãõ€”Š€ã‚ƒŒã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ãÑ‚ã‚‹ã‹ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’
+å‡õ€ˆœ†ã—ãõ€ˆ˜„ã‚‹æ™‚ãõ€®õ€•¦€ããõ€”Š€ã‚ƒõ€•ª‰åŠ«ˆãƒ£õ€±‰å®´‚ã‚Œã‚‹ã€‚
+ãƒ•ã‚õ€Œ²ƒæ½Ÿƒˆãõ€”ˆ‚ã‚ƒƒæ½Ÿƒ‡ãƒƒã‚õ€•¦‚é´»õ€°¤‰æ›ã•ã‚Œãõ€ˆ˜‚é•ƒõ€Žƒ•ãõ€‹”—ãõ€ˆï¼›è…“å†´•ã‚Œã‚‹ç¯ï½ƒ‚ã‚Šãõ€®€ã‚õ€®ƒè‹¥‚ç´”ƒõ€®®
+è…±ç³¸‹•ã‚„ããõ€”‰»–ãõ€”ˆ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±©Ÿèƒç´”‚’çµŽŸèŒµŒã•ã›ã‚‹ã€‚
+è…æ½Ÿ—ã„ã“ãõ€‹”õ€•¦€ç·‡Œè´é•õ€”ˆ€ŒLINUX ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®€ãõ€”ˆ‚ç¥‰‚õ€•¦‚æ¿€ƒÑƒæ½Ÿ‚’å‚ç…Ñõ€”ˆ“ãõ€‹”€‚
+.LP
+ç­€èˆõ€‘Œõ€²õ€Žºæœõ€®‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ½Ÿƒè‹¥ƒ‰ã‚’ãƒ—ãƒõ€’ª‚é•ƒõ€Œ²ƒ ç­õ€’ªõ€²›è´‹ï½¥è˜è´é•™ã‚‹ãõ€”ˆ¯
+è‰õ€•¦„ã“ãõ€‹”Ñõ€•¦õ€Ž„ã€‚
+LinuxãÑõ€•¦€è…´õ€•©œõ€®õ€®Šã„ãõ€ˆš®Ÿçæ†œõˆ•«ƒç´”õ€Ž““ç¯œãõ€”ˆƒ‡ãƒè‹¥‚å¸¥ƒ™ãƒè‹¥‚é´»Ñ‚ã‚‹
+.BR terminfo (5)
+ã‚’ã‚æ³£ƒãƒè‹¥ƒˆã—ãõ€ˆ˜„ã‚‹ã€‚
+ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’ã‚ã–ã‚ã–å…ãƒ¥Š›ã™ã‚‹ã‚ˆã‚Šã‚‚ã€ãç¥‰õ€‹”‚“ãõ€Œ²õ€”Š ç¿«ˆ
+terminfo ãõ€”‹ƒ…å å®´‚’å‚ç…Ñ™ã‚‹
+.BR ncurses (3),
+.BR tput (1),
+ã‚„
+.BR reset (1)
+ãõ€Žõ€Œ²õ€”ˆ‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ½Ÿƒõ€Œ²‚ã‚ƒƒ–ãƒõ€Œ²ƒõ€Ž‚„ãƒõ€ˆ˜ƒè‹¥ƒ†ã‚ï½ƒƒõ€Žƒ†ã‚ï½ƒƒè‹¥‚’ç¯å¸¥„ãŸã„ãõ€‹—€ã†ãÑ‚ã‚ã†ã€‚
+.SS "Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒ«"
+ã“ãõ€”Œ« ãÑ¯ Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®õ€®Šã„ãõ€ˆœ‰å·®Šãõ€Ž“©Ÿèƒ½(ãã‚ƒéšœ‚Šã€çæ†œœõ€‹”õ€”ˆ‚õ€®ƒè‹¥‚ç´”ƒõ€¯½è‡€õ€”ˆ«
+æ–‡çµ–—ãõ€”ˆ‚ã‚ƒƒï¼œƒè‹¥‚å¾‚’ååŒ»­—ã™ã‚‹ç¯ãƒ¥¤–ãõ€”ˆ“ã¨)ã‚’èŽŽæ¿€“ã•ã›ã‚‹å…õ€‹”õ€ˆ˜õ€”ˆ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ã¨
+ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€®ã‚ƒ„ãõ€ˆå”‡ãé´»‚‹ã€‚
+.PP
+.B "ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—"
+.sp
+ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ãõ€‹”õ€•¦€(ãƒžãƒƒãƒ”ãƒæ½Ÿ‚é•ƒ†ãƒè‹¥ƒ–ãƒõ€®õ€®‚ˆã‚‹ç´Š‰æ›å‰ãõ€”ˆ‚æ½Ÿƒè‹¥ƒ‰ãŒ)
+00 (NUL), 07 (BEL), 08 (BS), 09 (HT), 0a (LF), 0b (VT),
+0c (FF), 0d (CR), 0e (SO), 0f (SI), 18 (CAN), 1a (SUB),
+1b (ESC), 7f (DEL) ã® 14 ãõ€”ˆ‚æ½Ÿƒè‹¥ƒ‰ãõ€”ˆ†ãï¼œõ€”ˆõ€Œ²‚Œã‹ãÑ‚ã‚‹æ–‡çµ–—ãÑ‚ã‚‹ã€‚
+"ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—èŒµõ€‹˜ãš(display control characters)"ãƒâ‰ªƒè‹¥ƒ‰(ç·‡Œè´°)ã‚’
+èõ€’¬®šã™ã‚‹ãõ€‹”€07, 09, 0b, 18, 1a, 7f ã‚’ã‚é•ƒõ€Žƒ•ãõ€‹”—ãõ€ˆï¼›è…“å†´™ã‚‹ã“ãõ€‹”ŒãÑã‚‹ã€‚
+ç­€æ–é´»€ UTF-8 ãƒâ‰ªƒè‹¥ƒ‰ãÑõ€•¦€00-1f ãõ€”Š…õ€‹”õ€ˆ˜õ€”ˆ‚æ½Ÿƒè‹¥ƒ‰ãõ€•¦€ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—èŒµõ€‹˜ãš
+ãƒâ‰ªƒè‹¥ƒ‰ãŒæŒ‡çµŽšã•ã‚ŒãŸå ç¿«ˆãÑ‚‚ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ãõ€‹”—ãõ€ˆ›‰å®´‚ã‚Œã‚‹ã€‚
+.PP
+ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ãŒã‚ã‚‹æ™‚ãõ€®õ€•¦€ãã‚Œãõ€•¦™ãã«(ãŸãõ€‹”ˆã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»®
+é€”ç­õ€’ªÑ‚‚)çµŽŸèŒµŒã•ã‚Œã€ç è´‹£„ã•ã‚Œã‚‹ã€‚ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€•©õ€Šãõ€”‹–‡çµ–—ã‹ã‚‰è†“šã‘ã‚‰ã‚Œã‚‹
+(ã—ã‹ã—ã€ESC ãõ€•©–é•—ã„ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’ç´®‹ã‚ã‚‹ãõ€”ˆÑ€
+å‰ãõ€”Œµ‚ç¯‹†ã—ãõ€ˆ˜„ãõ€Ž„ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Œç­õ€’­õ€‘©ã•ã‚Œã‚‹åõˆ•«ƒé†‡€ÑŒã‚ã‚‹ã€‚
+ã•ã‚‰ãõ€®€CAN ã¨ SUB ãõ€•¦õ€Œ²‚“ãõ€Ž‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚‚ç­õ€’­õ€‘©ã™ã‚‹)ã€‚
+èŒ¯ã‚ã‚‰ã‚Œãõ€ˆ˜„ã‚‹ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ãõ€•¦€BEL, BS, HT, LF, VT, FF, CR, SO, SI,
+CAN, SUB, ESC, DEL, CSI ãÑ‚ã‚‹ã€‚ã“ã‚Œã‚‰ãõ€•©œŸç·‡…ãõ€Œ²Šã‚Šãõ€”Š‹•ç¯œã‚’ã™ã‚‹:
+.HP
+BEL (0x07, \fB^G\fP) ãõ€•¦ƒ“ãƒè‹¥ƒ—éŸæ½Ÿ‚’è–çœ¼‚‰ã™;
+.HP
+BS (0x08, \fB^H\fP) ãõ€•¦ƒãƒƒã‚õ€•¦‚é´»ƒšãƒè‹¥‚¹
+(ãŸã ã—ã€èŒµŒé õ€’ªõ€•«¶Šãˆãõ€Ž„);
+.HP
+HT (0x09, \fB^I\fP) ãõ€•©õ€Šãõ€”ˆ‚å¸¥ƒ–ã‚é´»ƒˆãƒƒãƒ—(tab stop)ãæ‚ŸÐ©å‹•ã™ã‚‹ã€ãã“ã‹ã‚‰èŒµŒæœõ€®éšœÑ«
+ã‚å¸¥ƒ–ã‚é´»ƒˆãƒƒãƒ—ãŒç„ï¼œ„å ç¿«ˆãõ€•«¡Œãõ€”Œµ‚ã‚Šãõ€²Ð©å‹•ã™ã‚‹;
+.HP
+LF (0x0A, \fB^J\fP), VT (0x0B, \fB^K\fP), FF (0x0C, \fB^L\fP) ã“ã‚Œã‚‰ãõ€•¨…õ€‹”¦
+ãƒõ€Œ²‚ã‚ƒƒæ½Ÿƒ•ã‚ï½ƒƒè‹¥ƒ‰(linefeed)ã‚’ç­Žãˆã‚‹;
+LF/NL (ãƒ‹ãƒãƒ£ƒè‹¥ƒõ€Œ²‚ã‚ƒƒæ½Ÿƒâ‰ªƒè‹¥ƒ‰(new line mode))ãŒã‚ç¥‰ƒƒãƒˆã•ã‚Œãõ€ˆ˜„ã‚Œã°
+ã‚õ€’ªƒï½ƒƒõ€Žƒƒã‚å¾ƒõ€Ž‚å¸¥ƒè‹¥ƒæ½Ÿ‚‚ã‚â‰ª‚õ€•¦ƒ†ã‚ï½ƒƒ–ãõ€®™ã‚‹;
+.HP
+CR (0x0D, \fB^M\fP) ãõ€•¦‚õ€’ªƒï½ƒƒõ€Žƒƒã‚å¾ƒõ€Ž‚å¸¥ƒè‹¥ƒæ½Ÿ‚’ç­Žãˆã‚‹;
+.HP
+SO (0x0E, \fB^N\fP) ã¯ G1 æ–‡çµ–—é›†åˆã‚’ã‚â‰ª‚õ€•¦ƒ†ã‚ï½ƒƒ–ãõ€®™ã‚‹ã€‚
+.HP
+SI (0x0F, \fB^O\fP) ã¯ G0 æ–‡çµ–—é›†åˆã‚’ã‚â‰ª‚õ€•¦ƒ†ã‚ï½ƒƒ–ãõ€®™ã‚‹;
+.HP
+CAN (0x18, \fB^X\fP) ã¨ SUB (0x1A, \fB^Z\fP) ãõ€•¦‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’ç­õ€’­–õ€’ª™ã‚‹;
+.HP
+ESC (0x1B, \fB^[\fP) ãõ€•¦‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’ç´®‹ã‚ã‚‹ã€‚
+.HP
+DEL (0x7F) ãõ€•ª„âˆ´¦–ã•ã‚Œã‚‹;
+.HP
+CSI (0x9B) ã¯ ESC [ ãõ€‹˜­‰ç®´ï¼œ€‚
+.PP
+.B "ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Ñ‚ã‚‹ãŒ CSI ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Ñõ€Ž„ã‚‚ã®"
+.sp
+.TS
+l l l.
+ESC c	RIS	ãƒõ€Ž‚ç¥‰ƒƒãƒˆã€‚
+ESC D	IND	ãƒõ€Œ²‚ã‚ƒƒæ½Ÿƒ•ã‚ï½ƒƒè‹¥ƒ‰ã€‚
+ESC E	NEL	ãƒ‹ãƒãƒ£ƒè‹¥ƒõ€Œ²‚ã‚ƒƒæ½Ÿ€‚
+ESC H	HTS	çæ†œœõ€‹”õ€”‹¡ãõ€”‰½è‡€õ€”ˆõ€®‚å¸¥ƒ–ã‚é´»ƒˆãƒƒãƒ—ã‚’èõ€’¬®šã™ã‚‹ã€‚
+ESC M	RI	é€†ãƒõ€Œ²‚ã‚ƒƒæ½Ÿƒ•ã‚ï½ƒƒè‹¥ƒ‰
+ESC Z	DECID	T{
+DECå›å ºœ‰ãõ€”­˜åˆãƒ§”õ€‹”€‚ã‚õ€®ƒè‹¥ƒãƒõ€®õ€•©–‡çµ–—åˆ— ESC [ ? 6 c ã‚’è´”ã™ã€‚
+ã“ã‚Œãõ€•ªõ€Žºæœõ€®ŒVT102ãÑ‚ã‚‹ã“ãõ€‹”‚’æ„å‘æ½Ÿ™ã‚‹ã€‚
+T}
+ESC 7	DECSC	T{
+çæ†œœõ€‹”õ€”ŒŠå€¶…‹(ã‚õ€®ƒè‹¥‚ç´”ƒõ€®õ€”Šå©šç½”™ã€çµ®žæ€Ñ€G0, G1 ãÑ…ãšã—ãõ€ˆ˜„ã‚‹
+æ–‡çµ–—é›†åˆ)ã‚’ã‚ç¥‰ƒè‹¥ƒ–ã™ã‚‹ã€‚
+T}
+ESC 8	DECRC	æœ€ç·‡Œã« ESC 7 ãÑ‚ç¥‰ƒè‹¥ƒ–ã—ãŸçŠå€¶…‹ã‚’ç·‡õ€Œ´éµã•ã›ã‚‹ã€‚
+ESC [	CSI	ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’çµ¨Žå…ãƒ£™ã‚‹ã€‚
+ESC %		ã‚õ€’ªƒï½ƒƒõ€Œ²‚õ€•¦‚å¸¥ƒè‹¥‚ç¥‰ƒƒãƒˆã‚’éå¾¡Šžã™ã‚‹ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’é–‹ç´®‹ã™ã‚‹ã€‚
+ESC % @		\0\0\0 ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆ(ISO 646 / ISO 8859-1)ã‚’éå¾¡Šžã™ã‚‹ã€‚
+ESC % G		\0\0\0 UTF-8 ã‚’éå¾¡Šžã™ã‚‹ã€‚
+ESC % 8		\0\0\0 UTF-8 ã‚’éå¾¡Šžã™ã‚‹(æ—Ñƒ¼)ã€‚
+ESC # 8	DECALN	DEC ãõ€”ˆ‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ´»õ€¬æ•çœ¼ƒ†ã‚é´»ƒˆ \- ã‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ½Ÿ‚’ E ã§
+		ã†ã‚ã‚‹ã€‚
+ESC (		G0 æ–‡çµ–—é›†åˆã‚’çµŽšè‡‚õ€Œ²™ã‚‹ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’é–‹ç´®‹ã™ã‚‹ã€‚
+ESC ( B		\0\0\0 ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆ(ISO 8859-1 ãƒžãƒƒãƒ”ãƒæ½Ÿ‚°)ã‚’éå¾¡Šžã™ã‚‹ã€‚
+ESC ( 0		\0\0\0 VT100 ã‚é•ƒõ€Œ²ƒ•ã‚ï½ƒ‚õ€•¦‚é´»ƒžãƒƒãƒ”ãƒæ½Ÿ‚é•‚’éå¾¡Šžã™ã‚‹ã€‚
+ESC ( U		\0\0\0 ãƒŒãƒõ€®ƒžãƒƒãƒ”ãƒæ½Ÿ‚é•‚’éå¾¡Šžã™ã‚‹ \- ã‚õ€’ªƒï½ƒƒõ€Œ²‚õ€•¦‚¿ ROM ã‹ã‚‰
+		\0\0\0 ç›è´‹ï½¥ãƒžãƒƒãƒ”ãƒæ½Ÿ‚é•™ã‚‹ã€‚
+ESC ( K		\0\0\0 ãƒõ€ˆ˜ƒè‹¥‚åŸƒå¼±®šè‡‚õ€Œ²õ€”ˆƒžãƒƒãƒ”ãƒæ½Ÿ‚é•‚’éå¾¡Šžã™ã‚‹ \- ããõ€”ˆƒžãƒƒãƒ—
+		\0\0\0 ã¯ \fBmapscrn\fP(8) ãƒõ€ˆ˜ƒè‹¥ƒ†ã‚ï½ƒƒõ€Žƒ†ã‚ï½ƒƒè‹¥õ€®‚ˆãï½ƒõ€ˆ˜ƒõ€’ªƒ¼
+		\0\0\0 ãƒ‰ã•ã‚Œã‚‹ã€‚
+ESC )		G1 ã‚’çµŽšè‡‚õ€Œ²™ã‚‹ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’é–‹ç´®‹ã™ã‚‹ã€‚
+		(ã™ãÑõ€³å”‡ãé´»Ÿã‚ˆã†ã« B, 0, U, K ãõ€”ˆõ€Œ²‚Œã‹ãŒç½¨ï¼œõ€²¶šã)
+ESC >	DECPNM	æ•åŒ»€ã‚ƒ‚õ€’ªƒè‹¥ƒ‘ãƒƒãƒ‰ãƒâ‰ªƒè‹¥ƒ‰(numeric keypad mode)ã‚’
+		ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC =	DECPAM	ã‚â‰ªƒ—ãƒõ€Ž‚å®´ƒè‹¥‚æ¿€ƒÑƒæ½Ÿ‚õ€’ªƒè‹¥ƒ‘ãƒƒãƒ‰ãƒâ‰ªƒè‹¥ƒ‰(application keypad
+		mode) ã‚’ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC ]	OSC	T{
+("Operating system command"ãõ€”ˆ“ãõ€‹” ã‚ã†)
+ESC ] P \fInrrggbb\fP: æœ€ç·‡Œã® P ãõ€”ˆ‚ãõ€‹”® 7 ãã‚ƒ® 16 é€æˆ‘•é•‚’
+ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€‹”—ã¦ :-( ãƒ‘ãƒõ€‘Œƒƒãƒˆã‚’ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ã“ã“ãÑ€\fIn\fPãõ€•«‰² (0-15)ã€\fIrrggbb\fPãõ€•«æ°—/è†©‘/é’ãõ€”Š€¤
+(0-255)ã‚’æ„å‘æ½Ÿ™ã‚‹ã€‚
+ESC ] R: ãƒ‘ãƒõ€‘Œƒƒãƒˆã‚’ãƒõ€Ž‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+T}
+.TE
+.PP
+.B "ECMA-48 CSI ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹"
+.sp
+CSI (ãéšœŸã¯ ESC [ ) ãõ€”ˆ‚ãõ€‹”õ€®€æœ€ç´ŠÑ§ NPAR (16) å€‹ãõ€”ˆ‚ç¥‰ƒŸã‚æ½Ÿƒõ€’ªƒæ½ŸÑƒŒé˜ªˆ‡ã‚‰ã‚ŒãŸ
+10 é€æˆ‘•é•õ€”ˆƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Œè†“šãã€‚
+è…¥å†´Ñ‚ã‚‹ã‹ãã“ãõ€®õ€Ž„ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥¯ 0 ãõ€‹”•ã‚Œã‚‹ã€‚
+ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€”Š‰ãõ€®õ€•¦èšŠõ€‹”ã‚ƒõ€”ˆ‚õ€•¦‚õ€‹”‚é´»ƒãƒÑƒæ½Ÿƒžãƒè‹¥‚õ€•¦Œãã‚ƒã“ãõ€‹”Œã‚ã‚‹ã€‚
+.PP
+ã—ã‹ã—ã€CSI [ (ãéšœŸã¯ ESC [ [ ) ãõ€”Š¾ŒãÑõ€•¦€ç­€æ–‡çµ–—ãŒèŒ¯õ€’ªéšœ‚Œã€ã“ãõ€”ˆ™ãé´»õ€ˆ˜®
+ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Œç„âˆ´¦–ã•ã‚Œã‚‹(è€ã™ã‚‹ãõ€®ƒ•ã‚ï¼œƒæ½Ÿ‚õ€•¦‚æ¿€ƒÑƒæ½Ÿ‚õ€’ªƒè‹¥õ€”ˆ‚õ€‹”‚æ½Ÿƒè‹¥¯
+ç„âˆ´¦–ã•ã‚Œã‚‹ãõ€‹”„ã†ã“ãõ€‹”Ñ‚ã‚‹)ã€‚
+.PP
+CSI ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€”Š‹•ç¯œãõ€•¦€ããõ€”‹œ€ç·‡Œãõ€”‹–‡çµ–—ãõ€®‚ˆãï½ƒõ€ˆ›æµ¦ãéšœ‚‹ã€‚
+.TS
+l l l l.
+@	ICH	æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”Œõ€Œ‰ç™é†‡–‡çµ–—ã‚’æŒæ°´…ãƒ£™ã‚‹ã€‚
+A	CUU	æŒ‡è…“å†´•ã‚ŒãŸæ•é• ã‘ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’ç­Šæ–åŠ«‘ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+B	CUD	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”¡Œã ã‘ç­‹æ–åŠ«‘ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+C	CUF	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”‹¡ã ã‘ååŠ»õ€²Ð©å‹•ã™ã‚‹ã€‚
+D	CUB	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”‹¡ã ã‘ç¶õ€ˆ˜õ€²Ð©å‹•ã™ã‚‹ã€‚
+E	CNL	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”¡Œã ã‘ç­‹ãõ€”Œõ€• 1 ç½…ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+F	CPL	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”¡Œã ã‘ç­Šãõ€”Œõ€• 1 ç½…ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+G	CHA	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’çæ†œœõ€‹”õ€”¡Œãõ€”‹Œ‡è…“å†´•ã‚ŒãŸç½…ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+H	CUP	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸèŒµŒã€ç½…(1,1ã‚’åŽŸç‚é´»õ€‹”™ã‚‹)ã«
+		è…±ç³¸‹•ã™ã‚‹ã€‚
+J	ED	ãƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚ƒõ€”‹¶ˆåï½»(ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆ: ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‹ã‚‰ãƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚ƒ®
+		æœ€ç·‡Œãéšœ§)ã€‚
+		ESC [ 1 J: æœ€åˆã‹ã‚‰ã‚õ€®ƒè‹¥‚ç´”ƒõ€®éšœÑõ€”‹¶ˆåï½»ã€‚
+		ESC [ 2 J: ãƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚……õ€‹•½“ãõ€”‹¶ˆåï½»ã€‚
+		ESC [ 3 J: ã‚é´»‚õ€•¦ƒõ€’ªƒè‹¥ƒõ€®ƒãƒƒãƒ•ã‚ï¼œ‚‚åõ€®‚ãŸãƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚……õ€‹•½“ã®
+		           ç¾”ˆåï½» (Linux 3.0 ç¯ãƒ©™)ã€‚
+.\" ESC [ 3 J: commit f8df13e0a901fe55631fed66562369b4dba40f8b
+K	EL	èŒµŒãõ€”‹¶ˆåï½»(ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆ: ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‹ã‚‰èŒµŒæœõ€®éšœ§)ã€‚
+		ESC [ 1 K: èŒµŒé õ€’ª‹ã‚‰ã‚õ€®ƒè‹¥‚ç´”ƒõ€®éšœÑõ€”‹¶ˆåï½»ã€‚
+		ESC [ 2 K: èŒµŒå…õ€‹•½“ãõ€”‹¶ˆåï½»ã€‚
+L	IL	æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”Œõ€Œ‰èŒµŒã‚’æŒæ°´…ãƒ£™ã‚‹ã€‚
+M	DL	æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”¡Œã‚’å‰Šé™ã‚ƒ™ã‚‹ã€‚
+P	DCH	çæ†œœõ€‹”õ€”¡Œã‹ã‚‰æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”‹–‡çµ–—ã‚’å‰Šé™ã‚ƒ™ã‚‹ã€‚
+X	ECH	çæ†œœõ€‹”õ€”¡Œã‹ã‚‰æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”‹–‡çµ–—ã‚’ç¾”ˆåï½»ã™ã‚‹ã€‚
+a	HPR	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸæ•é•õ€”‹¡ã ã‘ååŠ»õ€²Ð©å‹•ã™ã‚‹ã€‚
+c	DA	ESC [ ? 6 c ã‚’è´”ã™: "è…±ã¯VT102ãÑ™"(ãõ€‹”„ã†ã“ã¨)ã€‚
+d	VPA	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸèŒµŒãõ€”Œæ†œœõ€‹”õ€”‹¡ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+e	VPR	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸèŒµŒæ•é• ã‘ç­‹ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+f	HVP	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’æŒ‡è…“å†´•ã‚ŒãŸèŒµŒã€ç½…ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+g	TBC	ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€Ž—ãõ€”‹™‚: çæ†œœõ€‹•½è‡€õ€”ˆõ€”ˆ‚å¸¥ƒ–ã‚é´»ƒˆãƒƒãƒ—ã‚’å‰Šé™ã‚ƒ™ã‚‹ã€‚
+		ESC [ 3 g: ã™ãé´»õ€ˆ˜õ€”ˆ‚å¸¥ƒ–ã‚é´»ƒˆãƒƒãƒ—ã‚’å‰Šé™ã‚ƒ™ã‚‹ã€‚
+h	SM	ãƒâ‰ªƒè‹¥ƒ‰ãõ€”ˆ‚ç¥‰ƒƒãƒˆ(ç·‡Œè´°)ã€‚
+l	RM	ãƒâ‰ªƒè‹¥ƒ‰ãõ€”ˆƒõ€Ž‚ç¥‰ƒƒãƒˆ(ç·‡Œè´°)ã€‚
+m	SGR	çµ®žæ€Ñõ€”ˆ‚ç¥‰ƒƒãƒˆ(ç·‡Œè´°)ã€‚
+n	DSR	çŠå€¶…‹ãõ€”Š æ€¨‘Š(ç·‡Œè´°)ã€‚
+q	DECLL	ã‚õ€’ªƒè‹¥ƒœãƒè‹¥ƒ‰ã® LED ã‚’ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+		ESC [ 0 q: ã™ãé´»õ€ˆ˜® LED ã‚’ç¾”ˆã™ã€‚
+		ESC [ 1 q: ã‚é´»‚õ€•¦ƒõ€’ªƒè‹¥ƒõ€®ƒõ€’ªƒƒã‚¯ LED ã‚’ç‚åˆõ€•¦€‚
+		ESC [ 2 q: ãƒŠãƒæ½Ÿƒãƒè‹¥ƒõ€’ªƒƒã‚¯ LED ã‚’ç‚åˆõ€•¦€‚
+		ESC [ 3 q: ã‚õ€’ªƒï½ƒƒ”ã‚å¸¥ƒõ€®ƒõ€’ªƒƒã‚¯ LED ã‚’ç‚åˆõ€•¦€‚
+r	DECSTBM	ã‚é´»‚õ€•¦ƒõ€’ªƒè‹¥ƒõ€®õ€”Œ¯„å›èšŠõ€”ˆ‚ç¥‰ƒƒãƒˆ; ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€•§¸€ç•õ€Ž‘¸Šãõ€”¡Œã¨
+		ç­€ç•õ€Ž‘¸‹ãõ€”¡Œã€‚
+s	?	ã‚õ€®ƒè‹¥‚ç´”ƒõ€¯½è‡€õ€”ˆõ€”‰¿çµ–˜ã€‚
+u	?	ã‚õ€®ƒè‹¥‚ç´”ƒõ€¯½è‡€õ€”ˆõ€”Šå¥¨çµ½é•€‚
+\`	HPA	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’çæ†œœõ€‹”õ€”¡Œãõ€”‹Œ‡è…“å†´•ã‚ŒãŸç½…ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+.TE
+.PP
+.B "ECMA-48 ã‚é•ƒõ€Œ²ƒ•ã‚ï½ƒ‚õ€•¦‚é´»ƒõ€‘Œƒæ½Ÿƒ‡ã‚ï½ƒ‚æ¿€ƒÑƒ³(Graphics Rendition)ãõ€”â”ƒçµŽš"
+.sp
+ECMA-48 SGR ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹ ESC [ <ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚¿> m ãõ€•«ï¼›è…“é˜ª±žæ€Ñ‚’èõ€’¬®šã™ã‚‹ã€‚
+ã‚ç¥‰ƒŸã‚æ½Ÿƒõ€’ªƒæ½ŸÑƒŒé˜ªˆ‡ã‚‹ã“ãõ€‹”Ñ€åŒã˜ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Ñ„ããã‚ƒ‹ãõ€”Š±žæ€Ñ‚’èõ€’¬®šãÑã‚‹ã€‚
+è…¥å†´ƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚¿(ã‚ç¥‰ƒŸã‚æ½Ÿƒõ€’ªƒæ½Ÿ‹æ–‡çµ–—åˆ—é–‹ç´®‹æ–‡çµ–—ã‹æ–‡çµ–—åˆ—è…Ÿ‚è…´õ€•©–‡çµ–—ãõ€”Ž–“)ãõ€•¦‚è‹¥ƒõ€’ªõ€‹™Ð’é‡ˆã•ã‚Œã‚‹ã€‚
+.TS
+l l.
+ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚¿	è…Ÿæžœ
+0	ã™ãé´»õ€ˆ˜õ€”Š±žæ€Ñ‚’ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€®ƒõ€Ž‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+1	ãƒœãƒè‹¥ƒõ€®ƒ‰(bold)ã‚’ã‚ç¥‰ƒƒãƒˆã€‚
+2	ãƒãƒè‹¥ƒ•ãƒ–ãƒõ€Œ²‚ã‚ƒƒˆ(half-bright)(ã‚õ€®ƒõ€Œ²ƒè‹¥ƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚ƒÑõ€•«‰èšŠÑ‚æ’®ç”¨)ã‚’
+	ã‚ç¥‰ƒƒãƒˆã€‚
+4	T{
+ç­‹è†©š(underscore)ã‚’ã‚ç¥‰ƒƒãƒˆ(ã‚õ€®ƒõ€Œ²ƒè‹¥ƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚ƒÑõ€•«‰èšŠÑ‚æ’®ç”¨)ã€‚
+(ãƒ‡ã‚ï½ƒƒ ã‚„ç­‹è†©šã‚’ç¯ï½‡”õ€‹”™ã‚‹ãõ€”ˆõ€¯æˆŽã‚ã‚Œã‚‹è‰èšŠ¯ ESC ] ... ãõ€®‚ˆã‚Šã‚ç¥‰ƒƒãƒˆ)
+T}
+5	ç‚å·»…(blink)ã‚’ã‚ç¥‰ƒƒãƒˆã€‚
+7	åèµâˆµï¼›è…“º(reverce video)ã‚’ã‚ç¥‰ƒƒãƒˆã€‚
+10	T{
+éå¾¡Šžã—ãŸãƒžãƒƒãƒ”ãƒæ½Ÿ‚é•€ãƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚ƒ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®ƒ•ãƒõ€Œ²‚°(display
+control flag)ã€ãƒˆã‚é•ƒõ€®ƒï¼œ‚å¸¥ƒ•ãƒõ€Œ²‚°(toggle meta flag)ã‚’ãƒõ€Ž‚ç¥‰ƒƒãƒˆã™ã‚‹
+(ECMA-48ãÑ¯"primary font"ãõ€‹–‘è‹¥‚“ãÑ„ã‚‹)ã€‚
+T}
+11	T{
+ãƒŒãƒõ€®ƒžãƒƒãƒ”ãƒæ½Ÿ‚é•‚’éå¾¡Šžã€ãƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚ƒ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®ƒ•ãƒõ€Œ²‚é•‚’ã‚ç¥‰ƒƒãƒˆã€
+ãƒˆã‚é•ƒõ€®ƒï¼œ‚å¸¥ƒ•ãƒõ€Œ²‚é•‚’ãƒõ€Ž‚ç¥‰ƒƒãƒˆã™ã‚‹
+(ECMA-48 ãÑ¯"first alternate font"ãõ€‹–‘è‹¥‚“ãÑ„ã‚‹)ã€‚
+T}
+12	T{
+ãƒŒãƒõ€®ƒžãƒƒãƒ”ãƒæ½Ÿ‚é•‚’éå¾¡Šžã€ãƒ‡ã‚ï½ƒ‚é´»ƒ—ãƒõ€‘Œ‚ã‚ƒ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®ƒ•ãƒõ€Œ²‚é•€
+ãƒˆã‚é•ƒõ€®ƒï¼œ‚å¸¥ƒ•ãƒõ€Œ²‚é•‚’ã‚ç¥‰ƒƒãƒˆã™ã‚‹
+(ECMA-48 ãÑ¯ "second alternate font" ãõ€‹–‘è‹¥‚“ãÑ„ã‚‹)ã€‚
+ãƒˆã‚é•ƒõ€®ƒï¼œ‚å¸¥ƒ•ãƒõ€Œ²‚é•ŒãŸãï½ƒõ€ˆ˜„ã‚‹ãõ€‹”€
+ãƒžãƒƒãƒ”ãƒæ½Ÿ‚é•ƒ†ãƒè‹¥ƒ–ãƒõ€®õ€®‚ˆã‚‹ç´Š‰æ›ã‚’ã™ã‚‹å‰ãõ€®€ãƒã‚ã‚ƒƒˆãõ€”‰¸Šç¯ã®1ãƒ“ãƒƒãƒˆãŒ
+ãƒˆã‚é•ƒõ€®•ã‚Œã‚‹ã€‚
+T}
+21	é€šçµ½å¾õ€”¼ç¶ºõ€ˆ˜õ€®‚ç¥‰ƒƒãƒˆ(ECMA-48 ãÑ¯ "doubly underlined" ãõ€‹–‘è‹¥‚“ãÑ„ã‚‹)ã€‚
+22	é€šçµ½å¾õ€”¼ç¶ºõ€ˆ˜õ€®‚ç¥‰ƒƒãƒˆã€‚
+24	ç­‹è†©šã‚õ€Žƒ•ã€‚
+25	ç‚å·»…ã‚õ€Žƒ•ã€‚
+27	åèµâˆµï¼›è…“å†´‚õ€Žƒ•ã€‚
+30	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰(foreground)ã‚’è—¥’ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+31	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’èŽŽã‚ƒõ€®‚ç¥‰ƒƒãƒˆã€‚
+32	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’è†©‘ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+33	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’èŒåŸõ€®‚ç¥‰ƒƒãƒˆã€‚
+34	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’é’ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+35	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ãƒžã‚è‹¥ƒæ½Ÿƒ€ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+36	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ã‚æ¿€‚â‰ªƒæ½Ÿõ€®‚ç¥‰ƒƒãƒˆã€‚
+37	ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ç™ç´”õ€®‚ç¥‰ƒƒãƒˆã€‚
+38	ç­‹è†©šèŒµõ€‹˜ãšãõ€³â”ƒçµŽšã—ã€ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€®‚ç¥‰ƒƒãƒˆã€‚
+39	ç­‹è†©šèŒµõ€‹˜ãšã‚’èŒ¹ï½‰™ã‚ƒ—ã€ãƒ•ã‚õ€Œ²‚â‰ª‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€®‚ç¥‰ƒƒãƒˆã€‚
+40	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰(background)ã‚’è—¥’ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+41	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’èŽŽã‚ƒõ€®‚ç¥‰ƒƒãƒˆã€‚
+42	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’è†©‘ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+43	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’èŒåŸõ€®‚ç¥‰ƒƒãƒˆã€‚
+44	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’é’ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+45	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ãƒžã‚è‹¥ƒæ½Ÿƒ€ãõ€®‚ç¥‰ƒƒãƒˆã€‚
+46	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ã‚æ¿€‚â‰ªƒæ½Ÿõ€®‚ç¥‰ƒƒãƒˆã€‚
+47	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ç™ç´”õ€®‚ç¥‰ƒƒãƒˆã€‚
+49	ãƒãƒƒã‚õ€•¦‚é•ƒõ€Œ²‚õ€ˆ˜ƒæ½Ÿƒ‰ã‚’ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€®‚ç¥‰ƒƒãƒˆã€‚
+.TE
+.PP
+.B "ECMA-48 ãƒâ‰ªƒè‹¥ƒ‰ã‚é´»‚ã‚ƒƒƒãƒ(Mode Switches)"
+.TP
+ESC [ 3 h
+DECCRM (ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãÑõ€•¦‚õ€Žƒ•): ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ã‚’èŒµõ€‹˜ãšã™ã‚‹ã€‚
+.TP
+ESC [ 4 h
+DECIM (ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãÑõ€•¦‚õ€Žƒ•): æŒæ°´…ãƒ£ƒâ‰ªƒè‹¥ƒ‰ãõ€®™ã‚‹ã€‚
+.TP
+ESC [ 20 h
+LF/NL (ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãÑõ€•¦‚õ€Žƒ•): LF, VT, FFã‚’ã‚õ€‹”‚æ½Ÿƒè‹¥—ãŸã‚ãõ€‹™‡õ€Ž’‹•çš„ CR ã‚’ãã‚ƒ‘ã‚‹ã€‚
+.\"
+.PP
+.B "ECMA-48 çŠå€¶…‹ãƒõ€Žƒãƒè‹¥ƒˆã‚æ½Ÿƒžãƒæ½Ÿƒ‰(Status Report Commands)"
+.\"
+.TP
+ESC [ 5 n
+ãƒ‡ãƒã‚ã‚ƒ‚åˆŠå€¶…‹ãõ€”ˆƒõ€Žƒãƒè‹¥ƒˆ(DSR): è´”ç¯‹‹ã¯ ESC [ 0 n (è…´õ€•©œ« OK).
+.TP
+ESC [ 6 n
+ã‚õ€®ƒè‹¥‚ç´”ƒõ€¯½è‡€õ€”ˆõ€”ˆƒõ€Žƒãƒè‹¥ƒˆ(CPR): è´”ç¯‹‹ã¯ ESC [ \fIy\fP ; \fIx\fP Rã€
+\fIx,y\fP ãõ€•¦‚õ€®ƒè‹¥‚ç´”ƒõ€®õ€”‰½è‡€õ€”ˆ‚’ã‚ã‚‰ã‚ã™ã€‚
+.\"
+.PP
+.B "DEC ãƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰ (DECSET/DECRST) ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹"
+.sp
+.\"
+ã“ã‚Œã‚‰ã¯ ECMA-48 ãÑõ€•«¨˜è´é••ã‚Œãõ€ˆ˜„ãõ€Ž„ã€‚ã“ã“ãÑõ€•¦€ã‚ç¥‰ƒƒãƒˆãƒâ‰ªƒè‹¥ƒ‰
+ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹ (Set Mode sequences)ã‚’è˜èŽ ‰ã™ã‚‹; æœ€ç·‡Œã® \(aqh\(aq ã‚’ \(aql\(aq ã«
+è‡€õ€”ˆæ›ãˆã‚‹ãõ€‹”ƒõ€Ž‚ç¥‰ƒƒãƒˆãƒâ‰ªƒè‹¥ƒ‰ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹(Reset Mode sequences)ãõ€®õ€Ž‚‹ã€‚
+.TP
+ESC [ ? 1 h
+DECCKM (ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ•): ã‚ç¥‰ƒƒãƒˆã•ã‚ŒãŸæ™‚ãõ€®õ€•¦‚õ€®ƒè‹¥‚ç´”ƒõ€®‚õ€’ªƒè‹¥¯ ESC [ ãÑõ€•¦õ€Ž
+ESC O ã‚’å‰ãõ€®ã‚ƒ‘ãõ€ˆž€ã‚‹ã€‚
+.TP
+ESC [ ? 3 h
+DECCOLM (ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ• = 80 ç½…): 80/132 ãõ€”‹¡ãƒâ‰ªƒè‹¥ƒ‰åˆ‡æ›å¸¥ˆã€‚
+ãƒ‰ãƒõ€Œ²‚ã‚ƒƒãƒè‹¥õ€”ˆ‚ç´”ƒè‹¥‚é´»õ€”‹çµµé‡ˆãõ€®õ€•¦€ã“ã‚Œã ã‘ãÑõ€•¨åˆ†ãÑõ€Ž
+.BR resizecons (8)
+ãõ€”ˆ‚ˆã†ãõ€Žƒõ€ˆ˜ƒè‹¥‚åŸƒè‹¥ƒâ‰ªƒè‹¥ƒ‰ãõ€”ˆƒõ€ˆ˜ƒè‹¥ƒ†ã‚ï½ƒƒõ€Žƒ†ã‚ï½ƒƒè‹¥Ñ€ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®ƒ“ãƒ‡ã‚õ€Ž‚õ€®ƒè‹¥ƒ‰ã®
+ãƒãƒè‹¥ƒ‰ã‚õ€ˆ˜‚Ñ‚â‰ªƒõ€‘Œ‚å¾‚é´»‚å¸¥‚’ç´Š‰ãˆã‚‹ç¶½…è€ãŒã‚ã‚‹ãõ€‹—›å¾‹ã‚Œãõ€ˆ˜„ã‚‹ã€‚
+.TP
+ESC [ ? 5 h
+DECSCNM (ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ•): åèµâˆµï¼›è…“å†´ƒâ‰ªƒè‹¥ƒ‰ãõ€”ˆ‚ç¥‰ƒƒãƒˆã€‚
+.TP
+ESC [ ? 6 h
+DECOM(ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ•): ã‚ç¥‰ƒƒãƒˆã•ã‚ŒãŸæ™‚ãõ€®õ€•¦€ã‚õ€®ƒè‹¥‚ç´”ƒõ€®õ€”ˆ‚â‰ªƒ‰ãƒõ€‘Œƒƒã‚æ¿€ƒæ½Ÿ‚é•Œã€
+ã‚é´»‚õ€•¦ƒõ€’ªƒè‹¥ƒõ€²¯„å›èšŠõ€”Šçªªç­Šéš…ã‹ã‚‰ãõ€”Œ›å¾Œõ€•ç¯è‡€õ€”ˆõ€®õ€Ž‚‹ã€‚
+.TP
+ESC [ ? 7 h
+DECAWM(ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ³): ã‚õ€Žƒè‹¥ƒˆãƒõ€Œ²ƒƒãƒ—ã‚’èõ€’¬®šã€‚ã“ãõ€”ˆƒâ‰ªƒè‹¥ƒ‰ãõ€”‹™‚ãõ€•¦€80 ç½…
+(DECCOLM ãŒã‚õ€Žƒæ½Ÿõ€”ˆõ€‹”ã¯ 132 ç½…)ã‚’èŽ‡…ãˆãŸã‚é•ƒõ€Œ²ƒ•ã‚ï½ƒƒƒã‚õ€•¦‚õ€’ªƒï½ƒƒõ€Œ²‚õ€•¦‚å¸¥õ€•¦€
+ç¶£æ¡ˆå¥š„ãõ€±õ€Šãõ€”¡Œãõ€”Š…ˆé õ€’ªõ€±Š˜ã‚Šè´”ã•ã‚Œãõ€ˆï¼›è…“å†´•ã‚Œã‚‹ã€‚
+.TP
+ESC [ ? 8 h
+DECARM(ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ³): ã‚õ€’ªƒè‹¥ƒœãƒè‹¥ƒ‰ãõ€”ˆ‚õ€Žƒè‹¥ƒˆãƒõ€Žƒ”ãƒè‹¥ƒˆã‚’ã‚õ€Žƒæ½Ÿõ€®‚ç¥‰ƒƒãƒˆã€‚
+.TP
+ESC [ ? 9 h
+X10 ãƒžã‚õ€ˆ˜‚é´»ƒõ€Žƒãƒè‹¥ƒˆ(ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ•): ãƒõ€Žƒãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰ã‚’ 1 ãõ€®‚ç¥‰ƒƒãƒˆ(ãéšœŸãõ€•¦€
+0 ãõ€®ƒõ€Ž‚ç¥‰ƒƒãƒˆ)\(emç·‡Œè´°
+.TP
+ESC [ ? 25 h
+DECTECM (ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ³): ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’åõˆ•«¦–(visible)ãõ€®™ã‚‹ã€‚
+.TP
+ESC [ ? 1000 h
+X11 ãƒžã‚õ€ˆ˜‚é´»ƒõ€Žƒãƒè‹¥ƒˆ(ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆãõ€•¦‚õ€Žƒ•): ãƒõ€Žƒãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰ã‚’ 2 ãõ€®‚ç¥‰ƒƒãƒˆ(ãéšœŸãõ€•¦€
+0ãõ€®ƒõ€Ž‚ç¥‰ƒƒãƒˆ)\(emç·‡Œè´°
+.\"
+.PP
+.B "Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®ƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆ CSI ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹"
+.sp
+.\"
+ç¯ãƒ¤¸‹ãõ€”ˆ‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»¯ ECMA-48 ãõ€”ˆ‚‚ãõ€”ˆÑ‚‚æœõ€‘ãƒ£® VT102 ãõ€”ˆ‚‚ãõ€”ˆÑ‚‚ãÑ‚‚ãõ€Žã€
+Linuxã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®ƒ‰ãƒõ€Œ²‚ã‚ƒƒãƒè‹¥õ€°›å ºœ‰ãõ€Ž‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Ñ‚ã‚‹ã€‚è‰èšŠ¯ SGR ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥§
+èŒµõ€‹˜æ†—•ã‚Œã‚‹: 0 = è—¥’, 1= èŽŽ¤, 2 = è†©‘, 3 = èŒ¶, 4 = é’, 5 = ãƒžã‚è‹¥ƒæ½Ÿ‚¿,
+6 = ã‚æ¿€‚â‰ªƒ³, 7 = ç™½
+.TS
+l l.
+ESC [ 1 ; \fIn\fP ]	ç­‹è†©šãõ€”‰èšŠ‚’\fIn\fP ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC [ 2 ; \fIn\fP ]	ãƒ‡ã‚ï½ƒƒ ãõ€”‰èšŠ‚’\fIn\fP ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC [ 8 ]       	çæ†œœõ€‹”õ€”‰èšŠõ€”ˆƒšã‚â‰ª‚’ãƒ‡ãƒ•ã‚õ€Œ²ƒõ€®ƒˆçµ®žæ€Ñõ€®™ã‚‹ã€‚
+ESC [ 9 ; \fIn\fP ]	ã‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ½Ÿƒ–ãƒõ€Œ²ƒæ½Ÿ‚¯(screen blank)ãõ€”ˆ‚å¸¥‚ã‚ƒƒ ã‚â‰ª‚õ€ˆ˜ƒˆ
+	ã‚’ \fIn\fP åˆ†ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC [ 10 ; \fIn\fP ]	ãƒ™ãƒõ€®õ€”Š‘õ€‹—æ™¦æ•°(Hz)ã‚’ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC [ 11 ; \fIn\fP ]	ãƒ™ãƒõ€®õ€”Žæ…¨ãï½ƒõ€ˆ˜„ã‚‹æ™‚é–“(msec)ã‚’ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC [ 12 ; \fIn\fP ]	æŒ‡çµŽšãõ€”ˆ‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®‚’å‰éâ‰ªõ€±Œãï½ƒõ€ˆ˜ã‚‹ã€‚
+ESC [ 13 ]      	ã‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ½Ÿ‚’ã‚â‰ªƒæ½Ÿƒ–ãƒõ€Œ²ƒæ½Ÿ‚¯(Unblank)ã™ã‚‹ã€‚
+ESC [ 14 ]      	VESAé›ç´™ºåœç½©â‰ª‚ã‚ƒƒæ½Ÿ‚å¸¥ƒè‹¥ƒãƒ«(VESA powerdown
+	interval)ã‚’ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+.TE
+.SS æ–‡çµ–—é›†åˆ
+ã‚õ€®ƒè‹¥ƒãƒõ€®õ€•¦€ãƒã‚ã‚ƒƒˆåˆ—ã‹ã‚‰ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ‹¬õ€ååž©õ€”Š¤‰æ›ã‚’ 4 ã¤
+çŸãƒ£ï½ƒõ€ˆ˜„ã‚‹ã€‚
+4 ãã‚ƒõ€”Š¤‰æ›ãƒ†ãƒè‹¥ƒ–ãƒõ€®õ€‹”õ€•¦€a) Latin1 \-> PC,  b) VT100 graphics \-> PC,
+c) PC \-> PC, d) ãƒõ€ˆ˜ƒè‹¥‚åŸƒå¼±®šè‡‚©, ãÑ‚ã‚‹ã€‚
+.PP
+G0 ã¨ G1 ãõ€‹–‘è‹¥é•‚Œã‚‹ç¯‹Œãã‚ƒõ€”‹–‡çµ–—é›†åˆãŒã‚ã‚Šã€ããõ€”ˆ†ãï¼ž¸€ãã‚ƒŒçæ†œœõ€‹”®
+æ–‡çµ–—é›†åˆãÑ‚ã‚‹(åˆæœŸå€ã‚ƒ¯ G0 )ã€‚
+\fB^N\fP ã‚’ã‚å¸¥‚ã‚ƒƒ—ã™ã‚‹ã¨ G1 ãŒ \fB^O\fP ã‚’å…ãƒ¥Š›ã™ã‚‹ã¨ G0 ãŒçæ†œœõ€‹”õ€”‹–‡çµ–—é›†åˆãõ€®õ€Ž‚‹ã€‚
+.PP
+ç´Š‰æ•° G0 ã¨ G1 ãõ€•¨¤‰æ›ãƒ†ãƒè‹¥ƒ–ãƒõ€®‚’æŒ‡ã—ãõ€ˆ˜Šã‚Šã€ãƒõ€ˆ˜ƒè‹¥‚åŸƒè‹¥õ€®‚ˆã‚Šç´Š‰æ›çœ¼Ñã‚‹ã€‚
+æœ€åˆãõ€•¦ã‚Œãžã‚Œãƒ†ãƒè‹¥ƒ–ãƒ« a) ã¨ ãƒ†ãƒè‹¥ƒ–ãƒ« b) ã‚’æŒ‡ã—ãõ€ˆ˜„ã‚‹ã€‚
+ESC ( B ã€ ESC ( 0 ã€ ESC ( U ã€ ESC ( K ãõ€”ˆã‚Œãžã‚Œãõ€”ˆ‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€®‚ˆã‚Šã€
+G0 ãŒç´Š‰æ›ãƒ†ãƒè‹¥ƒ–ãƒ« a)ã€ b)ã€ c)ã€ d) ã‚’æŒ‡ã™ã‚ˆã†ãõ€®õ€Ž‚‹ã€‚
+ãéšœŸã€ESC ) B ã€ ESC ) 0 ã€ ESC ) U ã€ ESC ) K ãõ€”ˆã‚Œãžã‚Œãõ€”ˆ‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹
+ãõ€®‚ˆã‚Šã€G1 ãŒç´Š‰æ›ãƒ†ãƒè‹¥ƒ–ãƒ«  a)ã€ b)ã€ c)ã€ d) ã‚’æŒ‡ã™ã‚ˆã†ãõ€®õ€Ž‚‹ã€‚
+.PP
+ESC c ãõ€”ˆ‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€•ªõ€Žºæœõ€®‚’ãƒõ€Ž‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚ã‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ½ŸŒã‚ãï¼œ‚ƒããï¼œ‚ƒãõ€®õ€Žï½ƒŸ
+æ™‚ãõ€®ã†ã™ã‚‹ã“ãõ€‹”Œç¶½…è€ãÑ‚ã‚‹ã€‚ã‚ˆãã‚â‰ªƒ‰ãƒã‚ã‚ƒ‚é´»•ã‚Œã‚‹ "echo ^V^O" ã¯ G0
+ã‚’çæ†œœõ€‹”õ€”‹–‡çµ–—é›†åˆãõ€®™ã‚‹ã ã‘ãÑ‚ã‚Šã€G0 ãŒãƒ†ãƒè‹¥ƒ–ãƒ« a) ã‚’æŒ‡ã—ãõ€ˆ˜„ã‚‹ãõ€‹”„ã†
+ç¯†èè‹¥õ€•¦õ€Ž„ã€‚
+ã„ããã‚ƒ‹ãõ€”ˆƒ‡ã‚ï½ƒ‚é´»ƒˆãƒõ€Žƒ“ãƒãƒ£ƒè‹¥‚æ¿€ƒÑƒæ½Ÿõ€®õ€•¦€
+.BR reset (1)
+ãõ€‹”„ã†ãƒ—ãƒõ€’ª‚é•ƒõ€Œ²ƒ ãŒåõ€®éšœ‚Œã‚‹ãŒã€ã“ã‚Œãõ€•¦Ÿã  "echo ^[c" ã‚’çµŽŸèŒµŒã™ã‚‹ã‚‚ãõ€”ˆÑ‚ã‚‹ã€‚
+ã‚‚ã—ã€ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®® terminfo ã‚õ€‹”ƒæ½Ÿƒˆãƒõ€Žƒè‹¥Œç½©ï½ƒ—ã„(ã‹ã¤ rs1=\\Ec ãõ€”ˆ‚õ€‹”ƒæ½Ÿƒˆãƒõ€Žƒè‹¥Œ
+ã‚ã‚‹)ãõ€Ž‚‰ãé•€"tput reset"ãÑ‚‚åŒã˜åŠå·žœãŒã‚ã‚‹ã€‚
+.PP
+ãƒõ€ˆ˜ƒè‹¥‚åŸƒå¼±®šè‡‚õ€Œ²õ€”ˆƒžãƒƒãƒ”ãƒæ½Ÿ‚é•ƒ†ãƒè‹¥ƒ–ãƒõ€®¯
+.BR mapscrn (8)
+ã‚’ç¯å¸¥ï½ƒõ€ˆš®šè‡‚õ€Œ²Ñã‚‹ã€‚
+ãƒžãƒƒãƒ”ãƒæ½Ÿ‚é•õ€”Œµæžœã€ã‚æ¿€ƒæ½Ÿƒœãƒ« c ãŒååŒ»­—ã•ã‚Œã‚‹ãõ€‹”‚æ¿€ƒæ½Ÿƒœãƒ« s = map[c] ãŒ
+ãƒ“ãƒ‡ã‚õ€Žƒï¼œƒâ‰ªƒõ€Žõ€´€ã‚‰ã‚Œã‚‹ã€‚s ãõ€°õ€•ç¶½œã™ã‚‹ãƒ“ãƒƒãƒˆãƒžãƒƒãƒ—ãõ€•¦‚õ€’ªƒï½ƒƒõ€Œ²‚õ€•¦‚å¸¥ƒ¼ ROM ãõ€®‚ã‚Šã€
+.BR setfont (8)
+ãõ€®‚ˆã‚Šç´Š‰æ›ç¿«õˆ•«ƒç´”Ñ‚ã‚‹ã€‚
+.SS ãƒžã‚õ€ˆ˜‚é´»ƒˆãƒõ€Œ²ƒƒã‚õ€’ªƒæ½Ÿ‚°
+ãƒžã‚õ€ˆ˜‚é´»ƒˆãƒõ€Œ²ƒƒã‚õ€’ªƒæ½Ÿ‚äº•©Ÿèƒç´”õ€•¦€
+.BR xterm (1)-ç¯‹’æ›ã®
+ãƒžã‚õ€ˆ˜‚é´»‚é´»ƒ†ãƒè‹¥‚å¸¥‚é´»ƒõ€Žƒãƒè‹¥ƒˆ(mouse
+status reports)ã‚’è´”ã•ã›ã‚‹ãŸã‚ãõ€”ˆ‚‚ãõ€”ˆÑ‚ã‚‹ã€‚
+ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®ƒ‰ãƒõ€Œ²‚ã‚ƒƒãƒè‹¥õ€•¦ƒžã‚õ€ˆ˜‚é´»õ€”ˆƒ‡ãƒã‚ã‚ƒ‚é´»‚„è…®õ€”Ž¡žãõ€®ã‚ƒ„ãõ€ˆœŸãƒ£‚‹æ–å·³•ãŒ
+ãõ€Ž„ãõ€”ˆÑ€ç¯õ€”‹ƒæ½Ÿ‚å¸¥ƒè‹¥ƒŸãƒŠãƒõ€®ƒ‰ãƒõ€Œ²‚ã‚ƒƒãƒè‹¥Œãƒžã‚õ€ˆ˜‚å·›è´‹–é•® ioctl ã‚’å—ã‘å–ãï½ƒŸæ™‚ã ã‘ã€
+ãƒžã‚õ€ˆ˜‚é´»‚é´»ƒ†ãƒè‹¥‚å¸¥‚é´»ƒõ€Žƒãƒè‹¥ƒˆãŒã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®õ€”Š…ãƒ¥Š›ã‚é´»ƒˆãƒõ€Žƒè‹¥ƒ ãõ€´€ã‚‰ã‚Œã‚‹ã€‚
+ã“ã® ioctl ãõ€•¦€
+.BR gpm (8)
+ãƒ‡ãƒè‹¥ƒâ‰ªƒæ½Ÿõ€”ˆ‚ˆã†ãõ€Žƒžã‚õ€ˆ˜‚åŠ«õ€•ç¶½œãõ€”ˆƒõ€ˆ˜ƒè‹¥‚åŸƒè‹¥ƒâ‰ªƒè‹¥ƒ‰
+ã‚â‰ªƒ—ãƒõ€Ž‚å®´ƒè‹¥‚æ¿€ƒÑƒæ½ŸŒç™æ¦Š”Ÿã—ãõ€Ž‘ã‚Œãé•õ€Ž‚‰ãõ€Ž„ã€‚
+.PP
+\fBxterm\fP(1) ãõ€®‚ˆãï½ƒõ€ˆœ”Ÿæˆã•ã‚Œã‚‹å…õ€‹”õ€ˆ˜õ€”ˆƒžã‚õ€ˆ˜‚å£•ç”³èŽŠï¼œ‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€”ˆŸã‚ã®
+ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€•¦€æ•åŒ»€ã‚ƒ‚’ \fIvalue\fP+040 ãõ€”ˆ‚ˆã†ãõ€²õ€ååž¸Œ–ã—ã€ç­€ãã‚ƒõ€”‹–‡çµ–—ãõ€‹”—ã¦
+ã‚ã‚‰ã‚ã™ã€‚
+ç®´‹ãˆãé•€\(aq!\(aq ã¯ 1 ãõ€®õ€Ž‚‹ã€‚ã‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒå–å©šç½”™ã¯ 1 ã‚’ãƒ™ãƒè‹¥‚é´»õ€®™ã‚‹ã€‚
+.PP
+X10 ç¯‹’æ›ãƒâ‰ªƒè‹¥ƒ‰ãÑõ€•¦€ãƒœã‚å¸¥ƒæ½ŸŒæŠè‹¥•ã‚ŒãŸæ™‚ãõ€®ƒžã‚õ€ˆ˜‚é´»õ€”‰½è‡€õ€”ˆõ€‹—Šè‹¥•ã‚ŒãŸãƒžã‚õ€ˆ˜‚é´»®
+ãƒœã‚å¸¥ƒæ½Ÿõ€‹”‚’ã‚õ€‹”ƒæ½Ÿ‚æ½Ÿƒè‹¥ƒ‰ã—ãŸã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’é€ã‚‹ã€‚
+ã“ãõ€”‹©Ÿèƒç´”¯ ESC [ ? 9 h ã‚’é€ã‚‹ãõ€‹—œ‰åŠé´»õ€®õ€Ž‚Š ESC [ ? 9 l ãõ€®‚ˆã‚Šç„â‰¦Šé´»õ€®õ€Ž‚‹ã€‚
+ãƒœã‚å¸¥ƒæ½ŸŒæŠè‹¥•ã‚Œã‚‹ã¨ \fBxterm\fP(1) ã¯ ESC [ M \fIbxy\fP (ã® 6 æ–‡çµ–—)ã‚’é€ã‚‹ã€‚
+ã“ã“ã§ \fIb\fP ã¯ button\-1, \fIx\fP ã¨ \fIy\fP ã¯ ãƒžã‚õ€ˆ˜‚é´»Œãƒœã‚å¸¥ƒæ½ŸŒæŠè‹¥•ã‚ŒãŸ
+æ™‚ã® x ã¨ y ç¶ºÑ„¨™ãÑ‚ã‚‹ã€‚
+ã“ãõ€”ˆ‚æ½Ÿƒè‹¥ƒ‰ãõ€•¦‚õ€®ƒè‹¥ƒãƒõ€®Œç™æ¦Š”Ÿã™ã‚‹ãõ€”ˆõ€‹–Œã˜ã‚æ½Ÿƒè‹¥ƒ‰ãÑ‚ã‚‹ã€‚
+.PP
+ãƒŽãƒè‹¥ƒžãƒõ€®ƒˆãƒõ€Œ²ƒƒã‚õ€’ªƒæ½Ÿ‚é•ƒâ‰ªƒè‹¥ƒ‰(Normal tracking mode)(Linux 2.0.24 ãÑ¯
+çµŽŸèŒ–…ã•ã‚Œãõ€ˆ˜„ãõ€Ž„)ãÑõ€•¦€ç­â‰§–é´»õ€”ˆƒœã‚å¸¥ƒæ½ŸŒæŠè‹¥•ã‚ŒãŸã‹é›â‰ª•ã‚ŒãŸæ™‚ã«
+ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»Œé€ã‚‰ã‚Œã‚‹ã€‚
+ãƒâ‰ªƒ‡ã‚ï½ƒƒ•ã‚ï¼œ‚ã‚ƒ‚â‰ªõ€”‹ƒ…å å®´‚‚ç­€è†©’ãõ€´€ã‚‰ã‚Œã‚‹ã€‚
+ã“ãõ€”‹©Ÿèƒç´”õ€•¦€ESC [ ? 1000 h ã‚’é€ã‚‹ãõ€‹—œ‰åŠé´»õ€®õ€Ž‚Š ESC [ ? 1000 l ãÑ…„â‰¦Šé´»õ€®õ€Ž‚‹ã€‚
+ãƒœã‚å¸¥ƒæ½ŸŒæŠè‹¥•ã‚Œã‚‹ã‹é›â‰ª•ã‚Œã‚‹ã‹ã—ãŸæ™‚ãõ€®õ€•¦€\fBxterm\fP(1) ã¯ ESC [ M
+\fIbxy\fP ã‚’é€ã‚‹ã€‚
+\fIb\fP ãõ€”‰½Žä½ã®2ãƒ“ãƒƒãƒˆãõ€®õ€•¦ƒœã‚å¸¥ƒæ°ƒ…å å®´Œã‚õ€‹”ƒæ½Ÿ‚æ½Ÿƒè‹¥ƒ‰ã•ã‚Œã‚‹:
+0=MB1 ãŒæŠè‹¥•ã‚ŒãŸ, 1=MB2 ãŒæŠè‹¥•ã‚ŒãŸ, 2=MB3 ãŒæŠè‹¥•ã‚ŒãŸ, 3=é›â‰ª•ã‚ŒãŸã€‚
+è•­˜ç¯ãõ€”ˆƒ“ãƒƒãƒˆãõ€®õ€•¦€ãƒœã‚å¸¥ƒæ½ŸŒæŠè‹¥•ã‚ŒãŸæ™‚ãõ€®õ€Œ²õ€”ˆƒâ‰ªƒ‡ã‚ï½ƒƒ•ã‚ï¼œ‚ã‚ƒ‚â‰ªŒãƒ€ã‚õ€ˆ˜ƒæ½Ÿ—ãõ€ˆ˜„ãŸã‹ãŒ
+ã‚õ€‹”ƒæ½Ÿ‚æ½Ÿƒè‹¥ƒ‰ã•ã‚Œã‚‹: 4=Shift, 8=Meta, 16=Controlã€‚
+ãã—ãõ€ˆ˜€ç­Šç¯ãõ€‹•¸‹ç¯ãƒ“ãƒƒãƒˆãŒåŠ è†Š—ã•ã‚Œã‚‹ã€‚
+ã“ã“ãÑ‚‚ \fIx\fP ã¨ \fIy\fP ãõ€•¦€ãƒžã‚õ€ˆ˜‚é´»‚ã‚ƒƒ™ãƒæ½ŸƒˆãŒèŽŽæ¿€“ãï½ƒŸæ™‚ã®
+x ã¨ y ç¶ºÑ„¨™ãÑ‚ã‚Šã€ç¶õ€ˆ™¸Šãõ€”Žš…ãŒ(1,1)ãÑ‚ã‚‹ã€‚
+.SS ç¯–ãõ€”ˆ‚å¸¥ƒè‹¥ƒŸãƒŠãƒõ€®õ€‹”õ€”‹¯”èŽ ƒ
+ç´Ššããõ€”Œ•é•õ€Ž‚‹ã‚å¸¥ƒè‹¥ƒŸãƒŠãƒõ€®‚å¸¥‚ã‚ƒƒ—ãŒã€Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®õ€”ˆ‚ˆã†ãõ€®€"VT100ç¯‹’æ›"ã‚’
+åç®™—ãï½ƒõ€ˆ˜„ã‚‹ã€‚
+ã“ã“ãÑõ€•¦€Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®¨ 2 ãã‚ƒõ€”‹œ€ã‚‚é‡è€ãõ€Ž‚å¸¥ƒè‹¥ƒŸãƒŠãƒõ€®Ñ‚ã‚‹
+DEC VT102 ã¨
+.BR xterm (1)
+ãõ€‹”õ€”Ž•ã„ãõ€®ã‚ƒ„ãõ€ˆå”‡ãé´»‚‹ã€‚
+.\"
+.PP
+.B ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ãõ€”Š–ã‚Šæ‰å®´„
+.sp
+VT102 ãõ€•§æœ­ç­‹ãõ€”ˆ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ã‚‚èŒ¯èŒ˜˜ã™ã‚‹:
+.HP
+NUL (0x00) ãõ€•ª„âˆ´¦–ã•ã‚Œã‚‹;
+.HP
+ENQ (0x05) ãõ€•¦‚â‰ªƒæ½Ÿ‚æ³£ƒè‹¥ƒãƒƒã‚õ€•¦ƒï¼œƒƒã‚ç¥‰ƒè‹¥‚¸(answerback message)ã‚’ç™æ¦Š”Ÿã™ã‚‹;
+.HP
+DC1 (0x11, \fB^Q\fP, XON) ãõ€•¬€ç¯†ï¼œ‚’å†é–‹ã™ã‚‹;
+.HP
+DC3 (0x13, \fB^S\fP, XOFF) ã¯ VT100 ã« XOFF ã¨ XON ç¯ãƒ¥¤–ãõ€”ˆ‚æ½Ÿƒè‹¥ƒ‰ã‚’ç„âˆ´¦–(ãã—ã¦
+é€ç¯†ï¼œõ€”Šœç½©¢)ã‚’èŽŽæ¿€“ã•ã›ã‚‹ã€‚
+.LP
+tty ãƒ‰ãƒõ€Œ²‚ã‚ƒƒãƒè‹¥õ€®‚ˆã‚Š VT100 ãõ€¯å®¤ãŸ DC1/DC3 å‡õ€ˆœ†ã‚’ãÑã‚‹ã€‚
+.LP
+.BR xterm (1)
+(VT100 ãƒâ‰ªƒè‹¥ƒ‰)ã¯ BEL, BS, HT, LF, VT, FF, CR, SO, SI, ESC ã®
+ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€±–‡çµ–—ã‚’èŒ¯èŒ˜˜ã™ã‚‹ã€‚
+.\"
+.PP
+.B ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹
+.sp
+Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®Ñƒ®ŸèŒ–…ã•ã‚Œãõ€ˆ˜„ãõ€Ž„ VT100 ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€•§æœ­ç­‹ãõ€”Ž€šã‚Š:
+.TS
+l l l.
+ESC N	SS2	ã‚æ¿€ƒæ½Ÿ‚é•ƒõ€®‚æ¿€ƒ•ãƒˆ 2
+		(ç½¨ï¼œõ€”‹–‡çµ–—ã ã‘ G2 æ–‡çµ–—é›†åˆã‚’éå¾¡Šžã™ã‚‹)ã€‚
+ESC O	SS3	ã‚æ¿€ƒæ½Ÿ‚é•ƒõ€®‚æ¿€ƒ•ãƒˆ 3
+		(ç½¨ï¼œõ€”‹–‡çµ–—ã ã‘ G3 æ–‡çµ–—é›†åˆã‚’éå¾¡Šžã™ã‚‹)ã€‚
+ESC P	DCS	ãƒ‡ãƒã‚ã‚ƒ‚åŠ«ˆä¹å‹æ–‡çµ–—åˆ— (ESC \\ ãÑ…µ‚ã‚ã‚‹)
+ESC X	SOS	æ–‡çµ–—åˆ—ãõ€”Š§‹ãéšœ‚Šã€‚
+ESC ^	PM	ãƒ—ãƒõ€Œ²‚ã‚ƒƒã‚æ¿€ƒè‹¥ƒï¼œƒƒã‚ç¥‰ƒè‹¥‚¸(ESC \\ ãÑ…µ‚ã‚ã‚‹)ã€‚
+ESC \\	ST	æ–‡çµ–—åˆ—ãõ€”Œµ‚è…´õ€•©–‡çµ–—ã€‚
+ESC * ...		G2 æ–‡çµ–—é›†åˆã‚’æŒ‡çµŽšã™ã‚‹ã€‚
+ESC + ...		G3 æ–‡çµ–—é›†åˆã‚’æŒ‡çµŽšã™ã‚‹ã€‚
+.TE
+.PP
+.BR xterm (1)
+(VT100 ãƒâ‰ªƒè‹¥ƒ‰)ã¯ ESC c, ESC # 8, ESC >, ESC =,
+ESC D, ESC E, ESC H, ESC M, ESC N, ESC O, ESC P ... ESC \\,
+ESC Z ã‚’èŒ¯èŒ˜˜ã™ã‚‹("ã‚ãŸã—ãõ€•¬«˜è†ˆ‰ãƒ“ãƒ‡ã‚õ€Ž‚õ€Žƒ—ã‚æ¿€ƒÑƒå‰²»˜ãã® VT100 ãÑ™"ãõ€‹”„ã†
+æ„å‘æ½Ÿ§ ESC [ ? 1 ; 2 c ãõ€‹™¿”è†ˆ”ã™ã‚‹)ã€ESC ^ ... ESC \\ ãõ€•§¸Šè´é•õ€‹–Œã˜æ„å‘æ½Ÿ‚’
+ã‚ã‚‰ã‚ã™ã€‚ESC (, ESC ), ESC *, ESC + ãõ€²¶šã 0, A, B ã‚’ DEC ç‰å·®Šæ–‡çµ–—ã¨
+ã—ãõ€ˆš—ã‘ã€ãã‚Œãžã‚Œãƒõ€Œ²‚ã‚ƒƒæ½Ÿƒ‰ãƒõ€’ªƒè‹¥‚ã‚ƒƒæ½Ÿ‚°(line drawing) ãõ€”ˆ‚ç¥‰ƒƒãƒˆã€UKã€
+US-ASCII ã‚’ã‚ã‚‰ã‚ã™ã€‚
+.PP
+ãƒõ€ˆ˜ƒè‹¥‚åŸƒè‹¥¯ \fBxterm\fP(1) ãŒ VT220 ç‰å·œ‰ãõ€”ˆ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»«
+åç¶½œã™ã‚‹ã‚ˆã†ãõ€³â”ƒçµŽšãÑã€ãéšœŸèõ€’¬®šãõ€‹–ˆæœŸåŒ–ãõ€”ˆ•ã‚Œã‹ãŸãõ€®‚ˆãï½ƒ¦
+è‡õ€Ž’ˆ†è‡õ€Ž•æ˜†ã‚’ VT52, VT100 ãõ€Žõ€Œ²õ€‹™ªèŒ˜˜ã™ã‚‹ã€‚
+.PP
+xterm ãõ€•¦€ç‰åŠ«®šãõ€”ˆƒõ€Ž‚ç´”ƒè‹¥‚é´»õ€”â”ƒçµŽšãõ€”ˆŸã‚ã« ESC ] (OSC) ã‚’å—ã‘ç¯˜ã‘ã‚‹ã€‚
+ECMA-48 ãõ€”‹–‡çµ–—åˆ—è…Ÿ‚è…´õ€•©–‡çµ–— (ST) ãõ€°Š ãˆãõ€ˆ˜€
+\fBxterm\fP(1) ã¯ BEL ã‚’ OSC æ–‡çµ–—åˆ—ã‚’è…Ÿ‚è…´õ€•¦™ã‚‹ã‚‚ãõ€”ˆõ€‹”—ãõ€ˆš—ã‘ç¯˜ã‘ã‚‹ã€‚
+ç¯ãƒ¤¸‹ã¯ \fBxterm\fP(1) ãŒèŒ¯èŒ˜˜ã™ã‚‹ OSC ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€”‰¸€éƒõ€‹”Ñ‚ã‚‹ã€‚
+.TS
+l l.
+ESC ] 0 ; \fItxt\fP ST	ã‚â‰ª‚ã‚ƒ‚æ½Ÿƒå–ãõ€‹”‚õ€ˆ˜‚ã‚ƒƒæ½Ÿƒ‰ã‚õ€ˆ˜‚å¸¥‚ã‚ƒƒˆãƒõ€®‚’ \fItxt\fP ã«
+	ã‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC ] 1 ; \fItxt\fP ST	ã‚â‰ª‚ã‚ƒ‚æ½Ÿƒå–ã‚’ \fItxt\fP ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC ] 2 ; \fItxt\fP ST	ã‚õ€ˆ˜‚ã‚ƒƒæ½Ÿƒ‰ã‚õ€ˆ˜‚å¸¥‚ã‚ƒƒˆãƒõ€®‚’ \fItxt\fP ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC ] 4 ; \fInum\fP; \fItxt\fP ST	ANSI è‰² \fInum\fP ã‚’ \fItxt\fP ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC ] 10 ; \fI\fItxt\fP\fP ST	å‹•çš„ãƒ†ã‚õ€’ª‚é´»ƒˆè‰èšŠ‚’ \fItxt\fP ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+ESC ] 4 6 ; \fIname\fP ST	ãƒã‚Ñƒæ½Ÿ‚å¾ƒõ€’ª‚é•ƒ•ã‚ï¼œ‚ã‚ƒƒõ€®‚’ \fIname\fP ãõ€°¤‰æ›çœ¼™ã‚‹(é€šçµ½å¾¯
+	ã‚æ½Ÿƒæ½Ÿƒ‘ã‚ã‚ƒƒõ€±™‚ã‚õ€Žƒ—ã‚æ¿€ƒÑƒæ½Ÿõ€®‚ˆã‚Šç„â‰¦Šé´»õ€®õ€Žï½ƒõ€ˆ˜„ã‚‹)ã€‚
+ESC ] 5 0 ; \fIfn\fP ST	ãƒ•ã‚õ€Œ²ƒæ½Ÿƒˆã‚’ \fIfn\fP ãõ€®‚ç¥‰ƒƒãƒˆã™ã‚‹ã€‚
+.TE
+.PP
+ç¯ãƒ¤¸‹ãõ€”ˆ‚‚ãõ€”ˆõ€•¦€çµ¨‘ã—é•ãï½ƒŸæ„å‘æ½Ÿõ€®õ€‹”‚‰ã‚Œã‚‹
+(ã‚ˆã‚Šç´Ššããõ€”ŒŠå€¶…‹ã‚’ç¯†çµ–˜ã—ã€ã‚ˆã‚Š VT100/VT220 ãõ€³¿‘ã„ãæ³£‚‹ãéšœ„ã‚’ã™ã‚‹):
+.LP
+.TS
+l l l.
+ESC 7  DECSC	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®õ€”‰¿çµ–˜ã€‚
+ESC 8  DECRC	ã‚õ€®ƒè‹¥‚ç´”ƒõ€®õ€”Šå¥¨å…ƒã€‚
+.TE
+.PP
+ãéšœŸã€ç½¨ï¼œõ€”ˆ‚‚ãõ€”ˆ‚‚èŒ¯èŒ˜˜ã™ã‚‹:
+.TS
+l l l.
+ESC F		ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚’ã‚é´»‚õ€•¦ƒõ€Žƒè‹¥ƒæ½Ÿõ€”Šçªªç­‹ãõ€²Ð©å‹•ã™ã‚‹ã€‚
+		(\fBxterm\fP(1) ã® \fBhpLowerleftBugCompat\fPãƒõ€Ž‚ç´”ƒè‹¥‚é´»õ€®‚ˆã‚Šæœ‰åŠé´»õ€Ž“™‚)
+ESC l		(HP ã‚å¸¥ƒè‹¥ƒŸãƒŠãƒõ€±¯Žã«)ãƒï¼œƒâ‰ªƒõ€Žƒõ€’ªƒƒã‚õ€•¦€‚
+		ã‚õ€®ƒè‹¥‚ç´”ƒõ€®‚ˆã‚Šç­Šãõ€”ˆƒï¼œƒâ‰ªƒõ€Ž‚’ãƒõ€’ªƒƒã‚õ€•¦™ã‚‹ã€‚
+ESC m		(HP ã‚å¸¥ƒè‹¥ƒŸãƒŠãƒõ€±¯Žã«)ãƒï¼œƒâ‰ªƒõ€Žƒõ€’ªƒƒã‚õ€•¦‚’èŒ¹ï½‰™ã‚ƒ™ã‚‹ã€‚
+ESC n	LS2	G2 æ–‡çµ–—é›†åˆãõ€”Š‘è‹¥å–‡å†´—ã€‚
+ESC o	LS3	G3 æ–‡çµ–—é›†åˆãõ€”Š‘è‹¥å–‡å†´—ã€‚
+ESC |	LS3R	G3 æ–‡çµ–—é›†åˆã‚’ GR ãõ€‹”—ãõ€ˆš‘è‹¥å–‡å†´™ã€‚
+ESC }	LS2R	G2 æ–‡çµ–—é›†åˆã‚’ GR ãõ€‹”—ãõ€ˆš‘è‹¥å–‡å†´™ã€‚
+ESC ~	LS1R	G1 æ–‡çµ–—é›†åˆã‚’ GR ãõ€‹”—ãõ€ˆš‘è‹¥å–‡å†´™ã€‚
+.TE
+.PP
+ãéšœŸ ESC % ã‚’èŒ¯èŒ˜˜ã—ã€Linux ã‚æ½Ÿƒæ½Ÿ‚ç´”ƒè‹¥ƒõ€®‚ˆã‚Šæ›çœ¼õ€°®Œå…õ€‹”ª UTF-8 çµŽŸèŒ–…ã‚’æç®´›ã™ã‚‹ã€‚
+.\"
+.PP
+.B "CSI ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹"
+.sp
+X11R5 ç”æŽ©ãƒ£õ€”ˆ‚ˆã†ãõ€Ž€åõˆ…œ„ãƒãƒè‹¥‚å¾ƒÑƒæ½Ÿ® \fBxterm\fP(1) ãõ€•¦ƒ–ãƒõ€Žƒæ½Ÿ‚¯ SGR ã‚’
+ãƒœãƒè‹¥ƒõ€®ƒ‰ SGR ãõ€‹”—ãõ€ˆÐ’é‡ˆã™ã‚‹ã€‚
+1995 ç¶›çœ¼® XFree86 3.1.2A ãõ€”ˆ‚ˆã†ãõ€Ž€ANSI ã‚õ€®ƒõ€Œ²ƒè‹¥ŒçµŽŸèŒ–…ã•ã‚ŒãŸã€ã‚ˆã‚Šæ–é•—ã„
+ãƒãƒè‹¥‚å¾ƒÑƒæ½ŸÑõ€•¦€ãƒ–ãƒõ€Žƒæ½Ÿ‚õ€•¨±žæ€Ñ‚’è‰èšŠõ€‹”—ãõ€ˆï¼›è…“å†´™ã‚‹ã“ãõ€‹”õ€®‚ˆãï½ƒõ€ˆ˜“ã‚Œã‚’
+æ”åŠ«–„ã—ãõ€ˆ˜„ã‚‹ã€‚
+æœ€è´‘ãõ€”ˆƒãƒè‹¥‚å¾ƒÑƒæ½Ÿ® xterm ãõ€•¦ƒ–ãƒõ€Žƒæ½Ÿ‚¯ SGR ã‚’ãƒ†ã‚õ€’ª‚é´»ƒˆã‚’ãƒ–ãƒõ€Žƒæ½Ÿ‚õ€•¦•ã›ã‚‹ã“ãõ€‹”§
+çµŽŸèŒ–…ã—ã€ã•ã‚‰ãõ€®éšœŸã€SGR èŒµõ€‹˜ãšãõ€”‰æ’®æ›ç‚Š¡ˆãõ€‹”—ãõ€ˆ‰ä¿„»˜ããõ€”ˆƒ†ã‚õ€’ª‚é´»ƒˆã‚‚åˆõ€Œ¶”õ€‹”Ñã‚‹ã€‚
+Stock X11R6 ç‰ˆãÑõ€•¦€XFree86 xterm ãŒè…Ÿ„ãæ°´…ãƒ£‚Œã‚‰ã‚ŒãŸ X11R6.8 ãƒõ€Žƒõ€Žƒè‹¥‚é´»éšœ§
+è‰ç”»â”ƒçµŽš SGR ã‚’èŒ¯èŒ˜˜ã—ãõ€Ž‹ãï½ƒŸã€‚
+Linux ãŒèŒ¯èŒ˜˜ã™ã‚‹ç¯–ãõ€”ˆ™ãé´»õ€ˆ˜® ECMA-48 CSI ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»¯
+.I xterm
+ãÑ‚‚èŒ¯èŒ˜˜ã•ã‚Œã‚‹ãŒã€\fBxterm\fP(1) ã¯ Linux ãŒèŒ¯èŒ˜˜ã—ãõ€Ž„
+ã„ããã‚ƒ‹ã® ECMA-48 ã¨ DEC ãõ€”ˆ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚‚çµŽŸèŒ–…ã—ãõ€ˆ˜„ã‚‹ã€‚
+.PP
+\fBxterm\fP(1) ãõ€•§¸Šè´é•õ€”ˆ™ãé´»õ€ˆ˜® DEC ãƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰ãõ€”ˆ‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’èŒ¯èŒ˜˜ã™ã‚‹ãŒã€
+Linux ãƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰ãõ€”ˆ‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€•¦õ€Œ²‚Œã‚‚èŒ¯èŒ˜˜ã—ãõ€Ž„ã€‚
+\fBxterm\fP(1) è‡õ€Ž•æ˜†ãõ€”ˆƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€´–â‰ª—ãõ€ˆ˜õ€”õ€‘·èŒ«–ãõ€•¦€
+X é…çµ½ƒãõ€‹”õ€‹”‚‚ãõ€°…ãƒ¦‰‹åõˆ•«ƒç´”ª Edward Moy, Stephen Gildea,Thomas E. Dickey ãõ€®‚ˆã‚‹
+\fIXterm Control Sequences\fP
+ãƒ‰ã‚õ€’ªƒãƒ£ƒï¼œƒæ½Ÿƒˆã‚’å‚ç…Ñ•ã‚ŒãŸã„ã€‚
+ã“ãõ€”ˆƒ‰ã‚õ€’ªƒãƒ£ƒï¼œƒæ½Ÿƒˆãõ€•¦€è†‚â‰§½”ãõ€Ž‚‚ãõ€”ˆÑ‚ã‚‹ãŒã€ã“ãõ€”ˆƒžãƒ‹ãƒãƒ£‚â‰ªƒõ€®ƒšãƒè‹¥‚å¾‚ˆã‚Š
+éãƒ£‹ãõ€´•æ¿€„ã‚‚ãõ€”ˆÑ‚ã‚‹ã€‚
+ç¶›å²©æ’®é †ãõ€”‹¦‚è€æ½Ÿõ€‹”—ãõ€ˆ˜õ€•¦€
+.PP
+.in +4n
+http://invisible-island.net/xterm/xterm.log.html
+.in
+.PP
+ãõ€®¯ xterm ãõ€”Š¤‰æ›çœ¼õ€”õ€Œ‚è†£é•Œã‚ã‚‹ã€‚
+.PP
+\fIvttest\fP ã¯
+.PP
+.in +4n
+http://invisible-island.net/vttest/
+.in
+.PP
+ãÑƒ…ãƒ¦‰‹ãÑã€ã“ã‚Œã‚‰ãõ€”ˆ‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€”Š¤šããõ€´–â‰ª™ã‚‹ãƒ‡ãƒâ‰ª‚’èŒµŒã†ã€‚
+\fBxterm\fP(1) ã‚ç´”ƒè‹¥‚æ‹·…çµ½ƒãƒ‘ãƒƒã‚å®´ƒè‹¥‚å¾õ€®¯
+ããõ€”‰»–ãõ€”‹©Ÿèƒç´”‚’çµ–õ€ˆ˜åŸ“ãõ€‹”Œå‡å ºãƒ£‚‹ã‚æ³£ƒæ½Ÿƒ—ãƒõ€®‚é´»‚õ€•¦ƒõ€Žƒ—ãƒˆãŒå…ãƒ£ï½ƒõ€ˆ˜„ã‚‹ã€‚
+.SH ç¾ˆõ€‹—„
+ESC 8 (DECRC) ã¯ ESC % ãÑƒ¤‰æ›çœ¼•ã‚ŒãŸæ–‡çµ–—é›†åˆã‚’ç·‡õ€Œ´…ƒã™ã‚‹ã“ãõ€‹”õ€•¦Ñãõ€Ž„ã€‚
+.SH ãƒã‚°
+2.0.23 ãÑ¯ CSI ãŒç´•Šã‚Œãõ€ˆ˜„ãõ€ˆ˜€ã‚õ€‹”‚é´»‚å®´ƒè‹¥ƒ—ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚å‰›è³¢ã® NUL ãŒ
+ç„âˆ´¦–ã•ã‚Œãõ€Ž„ã€‚
+.PP
+åõˆ…œ„ãƒãƒè‹¥‚å¾ƒÑƒ³(2.0 ç¯ãƒ©™)ãõ€”ˆ‚õ€®ƒè‹¥ƒãƒõ€®õ€®õ€•¦€8 ãƒ“ãƒƒãƒˆåˆä¹å‹ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’èŒ¹ï½‰‡ˆã™ã‚‹ã€‚
+ã“ã‚Œã‚‰ã® "C1 ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒ«" ã¯ ESC [, ESC ] ãŠã‚ˆãå–Œç½•˜ãõ€Ž’ˆä¹å‹ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚¹
+èŽŽæ¡‹•çµ–ã‚’è‡€õ€”ˆæ›ãˆã‚‹ãŸã‚ã« 128 ã‹ã‚‰ 159 ãõ€”ˆ‚æ½Ÿƒè‹¥ƒ‰ã‚’ç¯å¸¥†ã€‚
+æ–é•—ã„ã‚õ€®ƒè‹¥ƒãƒõ€®Ñ¯ (UTF-8 çµ²ä¸Š¿œãõ€”Š¤‰æ›è´‹™‚ãõ€³¦‹èç´”õ€‹”•ã‚ŒãŸã‹ç´•Šã‚ŒãŸãŸã‚ã«)
+çµ²å¾¡–õ€’ª—ãõ€ˆ˜„ã‚‹ãŒã€çµŽŸèŒ–…ãõ€•§¸çµŽŒå…õ€‹”Ñ‚æ‹­é è‹¥Ñãõ€Ž„ã‚‚ãõ€”ˆõ€‹™©•ç®´ï¼œ•ã‚Œãõ€ˆ˜„ã‚‹ã€‚
+.PP
+Linux "ãƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰" ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»¯ ECMA-48 ãõ€”ˆƒ—ãƒõ€Œ²‚ã‚ƒƒ™ãƒè‹¥ƒˆãƒâ‰ªƒè‹¥ƒ‰
+ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€”ˆƒõ€®ƒè‹¥ƒõ€®õ€°¾“ãï½ƒõ€ˆ˜„ãõ€Ž„ã€‚
+ç‰é´»õ€®€ ] ãÑ…µ‚ã‚ã‚‹ã‚‚ãõ€”ˆõ€•©¨™ç¾£–è…Ÿ‚è…´õ€•©–‡çµ–—ã‚’ç¯å¸¥ˆãõ€Ž„ã€‚
+OSC(ãƒ‘ãƒõ€‘Œƒƒãƒˆèõ€’¬®š)ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€•¨ã‡ããõ€Ž’•é¦¹ŒãŒã‚ã‚‹ã€‚
+\fBxterm\fP(1) ãõ€•¦“ã‚Œã‚’æ–‡çµ–—åˆ—è…Ÿ‚è…´õ€•©–‡çµ–— (ST) ãŒç¶½…è€ãõ€Ž‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»¨
+èŒ¹ï½‰‡ˆã™ã‚‹ã‹ã‚‚ã—ã‚Œãõ€Ž„ã‹ã‚‰ãÑ‚ã‚‹ã€‚
+(ç­ç½©ï½ƒõ€Ž‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»õ€Žõ€”ˆ§)ç„âˆ´¦–ã•ã‚Œã‚‹ \fBsetterm\fP(1) ã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»¨
+é•ã„ã€ãƒ‘ãƒõ€‘Œƒƒãƒˆã‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»¯ \fBxterm\fP(1) ã‚’ãƒãƒæ½Ÿ‚é••ã›ã‚‹ã‹ã‚‚ã—ã‚Œãõ€Ž„
+(ã—ã‹ã—ãƒõ€Ž‚å¸¥ƒè‹¥ƒæ½Ÿ‚õ€’ªƒè‹¥‚’æŠè‹¥™ã“ãõ€‹”Ñƒ›žç·‡õ€Œ²Ñã‚‹)ã€‚
+Linux ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’ãƒãƒè‹¥ƒ‰ã‚æ½Ÿƒè‹¥ƒ‰ã—ãõ€ˆ˜„ã‚‹ã‚â‰ªƒ—ãƒõ€Ž‚å®´ƒè‹¥‚æ¿€ƒÑƒæ½Ÿ«
+éõ€Œ´¿œã•ã›ã‚‹ãõ€®õ€•¦€\fBxterm\fP(1) ãƒõ€Ž‚ç´”ƒè‹¥‚é´»® \fBbrokenLinuxOSC\fP ã‚’
+çœŸ (true) ãõ€³â”ƒçµŽšã™ã‚‹ã€‚
+.PP
+ã“ãõ€”ˆƒ‰ã‚õ€’ªƒãƒ£ƒï¼œƒæ½Ÿƒˆãõ€”Šõˆ…œ„ãƒãƒè‹¥‚å¾ƒÑƒæ½ŸÑõ€•¦€Linux ãŒ ECMA-48 ãõ€”‰¸åõˆ•«¦–ãƒ†ã‚õ€’ª‚é´»ƒˆã®
+ã‚æ½Ÿƒæ½Ÿƒˆãƒõ€’ªƒè‹¥ƒõ€®‚æ¿€ƒè‹¥‚å®´ƒæ½Ÿ‚é´»‚’èŒ¯èŒ˜˜ã™ã‚‹ã‹ãõ€”ˆ‚ˆã†ãõ€±›å¾‹ã‚Œãõ€ˆ˜„ãŸã€‚
+ã“ã‚Œãõ€•ª„âˆ´¦–ã•ã‚Œã‚‹ã€‚
+.SH é–âˆ«€ï½‰ …ç›®
+.BR console (4),
+.BR console_ioctl (4),
+.BR charsets (7)

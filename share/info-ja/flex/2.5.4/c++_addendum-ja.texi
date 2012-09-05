@@ -1,0 +1,256 @@
+@c Copyright (C) 1999 Kazuhisa Ichikawa
+@c This is part of the Flex manual, as published by ASCII
+@ignore
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission notice
+identical to this one except for the removal of this paragraph (this
+paragraph not being relevant to the printed manual).
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Free Software Foundation.
+@end ignore
+
+@c @node Flex and C++ (Flex 2.5),  , Another Example of Flex and Bison, Interfacing to Flex
+@section FlexとC++（Flex 2.5の補足情報）
+@cindex  C++とFlexのインターフェイス
+
+Flex 2.5では、
+Flexに対するC++インターフェイスが提供されています。
+
+@findex @code{lex.yy.cc}
+FlexのC++インターフェイスを使うためには、
+Flex実行時に@samp{-+}オプションを指定するか、
+スキャナ定義ファイルの中で@samp{%option c++}を指定する必要があります。
+これにより、
+C++のスキャナ・クラスを実装する@file{lex.yy.cc}というファイルが生成されます。
+
+@file{lex.yy.cc}は、
+Flexが提供する@file{FlexLexer.h}をインクルードします。
+この@file{FlexLexer.h}の中に、
+C++スキャナ・クラスの実装に利用される２つのC++クラス
+（@code{FlexLexer}と@code{yyFlexLexer}）
+が定義されています。
+
+@*
+@noindent
+@findex @code{FlexLexer}
+@code{FlexLexer}は、
+C++スキャナ・クラスが実装すべきインターフェイスを構成する抽象仮想関数を定義するクラスです。
+
+@code{FlexLexer}の持つメンバを以下に示します。
+
+@itemize
+@table @code
+@vindex @code{yytext}、@code{FlexLexer}
+@item char* yytext
+最後に認識された文字列（トークン）を保持します。
+
+@vindex @code{yyleng}、@code{FlexLexer}
+@item int yyleng
+最後に認識された文字列（トークン）の長さを保持します。
+
+@vindex @code{yylineno}、@code{FlexLexer}
+@item int yylineno
+@samp{%option yylineno}が指定されている場合は、
+入力された行数を保持します。
+それ以外の場合は、
+固定値1を持ちます。
+
+@vindex @code{yy_flex_debug}、@code{FlexLexer}
+@item int yy_flex_debug
+この値がゼロ以外の場合、
+C++スキャナはデバッグ出力を行います。
+@end table
+@end itemize
+
+次に、
+@code{FlexLexer}の持つメンバ関数のうち、
+抽象仮想関数ではないものを以下に示します。
+
+@itemize
+@table @code
+@findex @code{YYText()}、@code{FlexLexer}
+@item const char* YYText()
+メンバ@code{yytext}の値を返します。
+
+@findex @code{YYLeng()}、@code{FlexLexer}
+@item int YYLeng()
+メンバ@code{yyleng}の値を返します。
+
+@findex @code{yylex()}、@code{FlexLexer}
+@item int yylex(istream* @var{new_in}, ostream* @var{new_out} = 0)
+@var{new_in}と@var{new_out}を引数に指定して、
+メンバ関数@code{switch_streams()}を呼び出した後、
+メンバ関数@code{int yylex(void)}を呼び出します。
+
+@findex @code{lineno()}、@code{FlexLexer}
+@item int lineno() const
+メンバ@code{yylineno}の値を返します。
+
+@findex @code{debug()}、@code{FlexLexer}
+@item int debug() const
+メンバ@code{yy_flex_debug}の値を返します。
+
+@findex @code{set_debug()}、@code{FlexLexer}
+@item void set_debug(int @var{flag})
+@var{flag}をメンバ@code{yy_flex_debug}に代入します。
+@ignore
+@c 以下の脚注を入れると XEmacs 20.4 の 'texinfo-format-buffer' で
+@c エラーが発生する。要調査。
+@footnote{Flexの仕様では、
+Flexの起動時に@samp{-d}オプションを指定するか、
+スキャナ定義ファイルの中に@samp{%option debug}を指定すると、
+スキャナ実行時にデバッグ情報が出力されることになっていますが、
+Flex 2.5.4でC++スキャナを生成した場合は、
+いずれの方法でもデバッグ情報は出力されません。
+デバッグ情報を出力するためには、
+C++プログラムから明示的にこの@code{set_debug()}メンバ関数を、
+引数にゼロ以外の値を指定して呼び出す必要があります。}
+@end ignore
+@end table
+@end itemize
+
+次に、
+@code{FlexLexer}の持つ抽象仮想メンバ関数を列挙します。
+
+@findex @code{yy_switch_to_buffer()}、@code{FlexLexer}
+@findex @code{yy_create_buffer()}、@code{FlexLexer}
+@findex @code{yy_delete_buffer()}、@code{FlexLexer}
+@findex @code{yyrestart()}、@code{FlexLexer}
+@findex @code{yylex()}、@code{FlexLexer}
+@findex @code{switch_streams()}、@code{FlexLexer}
+@example
+void yy_switch_to_buffer(struct yy_buffer_state* new_buffer)
+struct yy_buffer_state* yy_create_buffer(istream* s, int size)
+void yy_delete_buffer(struct yy_buffer_state* b)
+void yyrestart(istream* s)
+int yylex()
+void switch_streams(istream* new_in = 0, ostream* new_out = 0)
+@end example
+
+最初の５つのメンバ関数は、
+FlexのCインターフェイスにおける同名の関数と同等の機能を実現します。
+Cインターフェイスでは、
+@code{FILE*}となっていた引数の型が、
+@code{istream*}となっている点に注意してください。
+最後の@code{switch_streams()}は、
+入出力ストリームの切り替えを行います。
+これらの抽象仮想メンバ関数の定義は、
+サブクラス@code{yyFlexLexer}において与えられ、
+そのコードは@file{lex.yy.cc}の中に生成されます。
+
+@*
+@noindent
+@findex @code{yyFlexLexer}
+@findex @code{yyFlexLexer::yylex()}@r{、詳細}
+@code{yyFlexLexer}は、
+@code{FlexLexer}のサブクラスです。
+デフォルトの状態では、
+@code{yyFlexLexer}のインスタンスを生成して、
+@code{yylex()}メンバ関数を呼び出すことによって、
+スキャナの処理が実行されます。
+以下に例を示します。
+
+@example
+@group
+int main( int /* argc */, char** /* argv */ )
+    @{
+    FlexLexer* lexer = new yyFlexLexer;
+    while(lexer->yylex() != 0)
+        ;
+    return 0;
+    @}
+@end group
+@end example
+
+これは、
+Cインターフェイスにおける、
+以下のコードに対応します。
+
+@example
+@group
+int main( int /* argc */, char** /* argv */ )
+    @{
+    yylex();
+    return 0;
+    @}
+@end group
+@end example
+
+スキャナ定義ファイルの中に@samp{%option yyclass="@var{classname"}}を指定すると、
+@file{lex.yy.cc}に@code{@var{classname}::yylex()}が生成されます。
+クラス@var{classname}を@code{yyFlexLexer}のサブクラスとして定義することによって、
+@var{classname}のインスタンスを使ってスキャン処理を実行することができます。
+クラス@var{classname}を定義する際、
+以下に示す、
+@code{yyFlexLexer}の持つ@code{protected}メンバ関数を再定義することによって、
+スキャナの振る舞いを変更することができます。
+
+@itemize
+@table @code
+@findex @code{yyFlexLexer::LexerInput()}@r{、詳細}
+@findex @code{LexerInput()}、@code{yyFlexLexer}
+@item int LexerInput(char* @var{buf}, int @var{max_size})
+これを再定義することによって、
+スキャナの入力処理を変更することができます。
+最大@var{max_size}バイトの文字を入力して@var{buf}の指す領域にセットし、
+実際に入力したバイト数を戻り値とします。
+入力を対話的に扱う場合と扱わない場合で、
+処理内容を変更する必要がある場合は、
+@code{#ifdef YY_INTERACTIVE}を使います。
+
+@findex @code{yyFlexLexer::LexerOutput()}@r{、詳細}
+@findex @code{LexerOutput()}、@code{yyFlexLexer}
+@item void LexerOutput(const char* @var{buf}, int @var{size})
+これを再定義することによって、
+スキャナの出力処理を変更することができます。
+@var{buf}の指す領域にある@var{size}バイトの文字を出力します。
+
+@findex @code{yyFlexLexer::LexerError()}@r{、詳細}
+@findex @code{LexerError()}、@code{yyFlexLexer}
+@item void LexerError(const char* @var{msg})
+これを再定義することによって、
+エラー・メッセージの出力処理を変更することができます。
+エラー・メッセージは、
+引数@var{msg}で渡されます。
+@end table
+@end itemize
+
+@*
+@noindent
+スキャン処理に関わるすべてのコンテキスト情報は、
+@code{yyFlexLexer}のインスタンスの内部に閉じています。
+このことは、
+C++スキャナ・クラスを使うことによって、
+再入可能なスキャナを生成することが可能であることを意味しています。
+
+複数のC++スキャナ・クラスを生成して、
+１つの実行プログラムにリンクすることも可能です。
+これを行うには、
+Flex起動時に@samp{-P@var{prefix}}オプションを指定するか、
+スキャナ定義ファイルの中に@samp{%option prefix="@var{prefix}"}を指定することによって、
+@code{yyFlexLexer}の名前を@samp{@var{prefix}FlexLexer}に変更します。
+@code{@var{prefix}FlexLexer}クラスを使うソース・ファイルの中では、
+以下のようにして@file{FlexLexer.h}をインクルードすることによって、
+@code{@var{prefix}FlexLexer}
+（実際には@code{yyFlexLexer}）
+の定義を参照する必要があります。
+
+@example
+@group
+#undef yyFlexLexer
+#define yyFlexLexer @var{prefix}FlexLexer
+#include <FlexLexer.h>
+@end group
+@end example

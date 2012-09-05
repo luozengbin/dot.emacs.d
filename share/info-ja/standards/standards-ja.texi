@@ -1,0 +1,3036 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename standards-ja.info
+@settitle GNUコーディング・スタンダード
+@c This date is automagically updated when you save this file:
+@set lastupdate November 18, 1998
+@c %**end of header
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* Standards: (standards-ja).     GNUコーディング・スタンダード
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@c @setchapternewpage odd
+@setchapternewpage off
+
+@c This is used by a cross ref in make-stds.texi
+@set CODESTD  1
+@iftex
+@set CHAPTER 章
+@end iftex
+@ifinfo
+@set CHAPTER 節
+@end ifinfo
+
+@ifinfo
+GNU Coding Standards
+Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+@end ignore
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Free Software Foundation.
+@end ifinfo
+
+@titlepage
+@title GNUコーディング・スタンダード
+@author Richard Stallman (原著)
+@author OKUJI Yoshinori (翻訳)
+@author last updated @value{lastupdate}
+@page
+
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1992, 1993, 1994, 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Free Software Foundation.
+@end titlepage
+
+@ifinfo
+@node Top, Preface, (dir), (dir)
+@top Version
+
+Last updated @value{lastupdate}.
+@end ifinfo
+
+@menu
+* Preface::                     GNUコーディング・スタンダードについて
+* Legal Issues::                フリーソフトウェアを自由に保つ
+* Design Advice::               一般的なプログラムのデザイン
+* Program Behavior::            全てのプログラムの振る舞い
+* Writing C::                   Cの一番良い使い方
+* Documentation::               プログラムの文書化
+* Managing Releases::           リリースの過程
+@end menu
+
+@node Preface
+@chapter GNUコーディング・スタンダードについて
+
+GNUコーディング・スタンダードはRichard Stallmanと他のGNU Projectのボラ
+ンティア達によって書かれた。彼らの目的はGNUシステムをきれいで、一貫性
+のある、インストールの容易なシステムにすることである。この文書は、移植
+性に優れ、頑丈で、信頼性あるプログラムを書くためのガイドとして読むこと
+もできる。Cで書かれたプログラムに焦点を当てるが、規則や原理の多くは他
+のプログラミング言語の場合でも有効である。規則は、ある方法で書く理由を
+しばしば記述してある。
+
+この文書に対する訂正や助言は@email{gnu@@gnu.org}に送ってほしい
+@footnote{訳注: この日本語訳は奥地秀則が行っている。日本語訳に対する訂正
+や助言は@email{okuji@@kuicr.kyoto-u.ac.jp}に送ってほしい。}。 助言をする
+場合、そのための新たな用語を入れていただきたい。我々の時間は限られている
+からだ。我々は@file{standards.texi}か@file{make-stds.texi}ファイルに対す
+る、context diffを好むが、もしそれらのファイルを持っていないなら、いずれ
+にせよメールしてほしい。
+
+GNUコーディング・スタンダードのこのリリースは、最近では
+@value{lastupdate}に更新された。
+
+@node Legal Issues
+@chapter フリーソフトウェアを自由に保つ
+
+この@value{CHAPTER}では、
+GNUソフトウェアを邪魔されないように保つための方法について議論している。
+
+@menu
+* Reading Non-Free Code::       独占的プログラムの参照
+* Contributions::               貢献の受け取り
+@end menu
+
+@node Reading Non-Free Code
+@section 独占的プログラムの参照
+
+どんなところでも、GNUに関する作業のためや、作業中に、Unixのソースコー
+ドを参照してはいけない！ (他の独占的プログラムについても。)
+
+もしUnixプログラムの内部の曖昧な記憶を持っているなら、このことは、その
+イミテーションを書くことができない、とは言っていないが、そのイミテー
+ションを内部的に違った行で構成するようにしなさい。なぜなら、こうするこ
+とで、Unixバージョンの細部とあなたの結果とを、無関係で似ていないものに
+する傾向があるからだ。
+
+例えば、Unixユーティリティは普通、メモリ使用量を最小化するように最適化
+されている。もしあなたが代わりにスピードを追い求めれば、あなたのプログ
+ラムはかなり異なるものになるだろう。stdioを使わずに、入力ファイル全体
+をコアに置き、それを検査してよい。Unixプログラムより最近に見付かった、
+より賢いアルゴリズムを使いなさい。一時ファイルの利用を省きなさい。
+二度やらず一回のパスでやりなさい (我々はこれをアセンブラで行った)。
+
+あるいは、逆に、スピードではなく単純さを強めなさい。アプリケーションに
+よっては、今日のコンピュータのスピードでは、より単純なアルゴリズムが適
+切である。
+
+あるいは一般性を求めなさい。例えば、Unixプログラムはよく静的なテーブル
+や固定長の文字列を使っているが、それは制限を課していることになる。代わ
+りに動的な確保を行いなさい。あなたのプログラムを入力ファイルのNULや他
+の変な文字を扱えるようにしなさい。拡張性のためにプログラミング言語を加
+え、その言語でプログラムの一部を記述しなさい。
+
+あるいは、プログラムのいくらかを独立して利用できるライブラリにしなさい。
+あるいは、いつメモリを解放するか正確にトラッキングせずに、簡単なガーベ
+ージ・コレクタを使うか、obstacksのような新しいGNUの機能を利用しなさい。
+
+
+@node Contributions
+@section 貢献の受け取り
+
+もしあなたが作業しているプログラムが、Free Software Foundationによる著
+作権を持っているなら、誰か他の人がそのプログラムに加えるコードを送って
+きたとき、我々はそれを使うのに法的な文書を必要とする。ちょうど、我々が
+初めにあなたに文書に署名するよう頼むときのように。プログラムに明解で
+ない寄与をする人は、我々がそのプログラムにはっきりした所有権を付ける
+ために、@emph{誰でもみな}何らかの類いの法的な文書に署名しなければならない。
+中心となった作者だけでは十分ではないのだ。
+
+だから、他の人からの貢献を加える前に、我々に訊いてほしい。そうすると、
+我々はその文書を手に入れられるよう計らうことができる。そして、その貢献
+を実際に使う前に、署名された文書を受け取ったことをあなたに伝えるまで
+待ちなさい。
+
+これはプログラムをリリースする前と後の両方に当てはまる。もしバグを潰す
+ための差分を受け取り、それが顕著な変更を行うなら、我々はその変更のため
+の法的な文書を必要とする。
+
+これはコメントや解説ファイルにも当てはまる。著作権法のため、コメントと
+コードは単なるテキストである。著作権はあらゆる種類のテキストに適用され
+るので、我々は全ての種類に対して法的な文書を必要とする。
+
+法的な文書を請求するのが面倒だということは知っている。それは我々にとっ
+ても面倒なことなのだ。しかし、もしあなたが待たなければ、不利な立場に向
+かっていることになる。例えば、その貢献者が雇った人間が著作権放棄の文書
+に署名したがらなかったとしたら？あなたはそのコードを再び取り除かなくて
+はならないかもしれない！
+
+あちこちの数行の変更には対しては、文書を必要としない。それらは著作権の目
+的からは重要でないからだ。また、もし受け取った提案が発想であって、使用
+する本当のコードでないなら、文書を必要としない。例えば、誰かがある実装
+を送ったが、あなたが同じ発想の異なる実装を書いたなら、文書を受け取る必
+要はない。
+
+まさしく最悪なのは、他の貢献者を我々に伝えるのを忘れた場合だ。我々は、
+結果として、いつか法廷で非常に決まり悪い思いをするかもしれない。
+
+我々はプログラムの管理者にもっと詳細な情報を持っている。もし、GNUのた
+めのプログラムを(リリースされているかどうかに拘らず)実際に管理する段階
+に達したら、コピーを請求していただきたい。
+
+@node Design Advice
+@chapter 一般的なプログラムのデザイン
+
+この@value{CHAPTER}では、
+プログラムを設計するときに気を付けるべき話題をいくつか議論する。
+
+@menu
+* Compatibility::               他の実装との互換性
+* Using Extensions::            標準的でない機能の使用
+* ANSI C::                      ANSI Cの機能の使用
+* Source Language::             C以外の言語の使用
+@end menu
+
+@node Compatibility
+@section 他の実装との互換性
+
+ときには例外もあるが、GNU用のユーティリティプログラムやライブラリは、
+バークレーUnixの上位互換であるべきで、@sc{ansi} Cがその振る舞いを規定
+しているなら、@sc{ansi} Cの上位互換に、@sc{posix}がその振る舞いを規定
+していれば、@sc{posix}の上位互換であるべきだ。
+
+もしこれらの標準が矛盾していたら、それぞれに対し互換モードを提供する
+と便利だ。
+
+@sc{ansi} Cや@sc{posix}はたくさんの拡張を禁じている。拡張をどんな風に
+行っても構わない、そうして、それを使わないための、@samp{--ansi}とか
+@samp{--posix}とか@samp{--compatible}オプションを含めなさい。
+しかしながら、その拡張が実際のプログラムやスクリプトをおかしくする、
+十分な可能性があるなら、それは本当のところ上位互換ではない。そのインタ
+ーフェースを再設計してみなさい。
+
+多くのGNUプログラムは、環境変数@code{POSIXLY_CORRECT}が定義されている
+と(例え、それは空の値と定義されていても)、@sc{posix}と抵触する拡張を
+行わない。適切であれば、あなたのプログラムをこの変数を認識するように
+してください。
+
+ある機能が(プログラムやコマンド・ファイルではなく)ユーザだけに使われ、
+かつ、それがUnixでは貧弱なものなら、それをまるで違った、もっと良いもの
+に完全に置き換えてしまってよい。(例えば、@code{vi}はEmacsと置き換えら
+れている。) しかし互換機能も提供するのが良い。(フリーな@code{vi}クローン
+があるので、我々はそれを提供する。)
+
+バークレーUnixにはない、便利な機能の追加は歓迎である。
+
+@node Using Extensions
+@section 標準的でない機能の使用
+
+すでに存在する、たくさんのGNUの機能は、相当するUnixの機能以上の便利な
+拡張を数多くサポートしている。あなたのプログラムを実装する中でそれらの
+拡張を使用するかどうかは難しい問題だ。
+
+一方、その拡張を使用することで、より美しいプログラムを作ることができる。
+他方、他のGNUツールが手に入らなかったら、人々はそのプログラムを構築で
+きないだろう。このために、そのプログラムはより少ないマシンでしか動かな
+くなるだろう。
+
+いくつかの拡張によって、代わりのものも提供するのが容易であるかもしれな
+い。例えば、``キーワード'' @code{INLINE}を定義し、コンパイラによって、
+@code{inline}か中身のないマクロに展開させることができる。
+
+一般的に言って、おそらく、拡張を使わずに平易に書けるならそれらを使わな
+いのが最善で、大きく改善されるなら拡張を使うのが最善だ。
+
+この規則の例外は、非常にたくさんのシステムで走る、(Emacsのような)大き
+くて完成されているプログラムだ。そのようなプログラムでは、GNUの拡張の
+使用によって、上手く行かなくなってしまうだろう。
+
+別の例外は、コンパイル過程の一部として使われるプログラムだ。GNUコンパ
+イル環境の機能を立ち上げるために、他のコンパイラによってコンパイルされ
+なければならないものはどんなものでも。もしこれらがGNUコンパイラを必要
+としていると、すでにインストール済みでない限り、それらをコンパイルする
+ことは誰にもできない。これは良くないだろう。
+
+@node ANSI C
+@section @sc{ansi} Cと@sc{ansi}以前のC
+
+決して@sc{ansi} Cの ``trigraph'' 機能@footnote{訳注: 何それ？}を使っては
+ならない。
+
+@sc{ansi} Cは、今ではもう@sc{ansi} Cの機能を使う(それゆえnon-@sc{ansi}
+コンパイラでは動かない)新しいプログラムを書いていいぐらい広まっている。
+そして、もしプログラムがすでに@sc{ansi} Cで書かれているなら、それを
+non-@sc{ansi}コンパイラをサポートするよう変換する必要はない。
+
+しかしながら、ほとんどのプログラムではnon-@sc{ansi}コンパイラをサポー
+トするのは容易だから、プログラムを書くときにはそうするよう心掛けてもよ
+いだろう。@sc{ansi}プロトタイプ形式での関数定義、
+
+@example
+int
+foo (int x, int y)
+@dots{}
+@end example
+
+@noindent
+を書く代わりに、このような@sc{ansi}以前の形式で定義を書きなさい。
+
+@example
+int
+foo (x, y)
+     int x, y;
+@dots{}
+@end example
+
+@noindent
+そして、引数のプロトタイプを特定するのに、別に宣言しなさい。
+
+@example
+int foo (int, int);
+@end example
+
+いずれにせよ、その関数を呼ぶ全てのファイルで@sc{ansi} Cプロトタイプの恩恵
+を得るためには、あるヘッダファイル内でそのような宣言を必要とする。
+そして、それを一度書いてしまえば、@sc{ansi}以前の形式で関数定義を書く
+ことによって失うものは何もない。
+
+もしあなたがnon-@sc{ansi} Cを知らないなら、それを勉強する必要はない。
+@sc{ansi} Cで書けばいい。
+
+@node Source Language
+@section C以外の言語の使用
+
+C以外の言語の使用は標準的でない機能を使うようなものだ。ユーザは問題を
+引き起こすだろう。例えGCCが他の言語をサポートしていても、ユーザは、
+あなたのプログラムの構築するために、その他の言語のコンパイラをインスト
+ールしなければならないことを不便に感じるかもしれない。例えば、あなた
+のプログラムをC++で書いたら、人々はあなたのプログラムをコンパイルす
+るためにC++コンパイラをインストールしなければならないだろう。このよ
+うに、Cで書く方が良いのだ。しかし他の言語を使う欠点がない状況が3つあ
+る。
+
+@itemize @bullet
+@item
+その言語用のインタープリタをあなたのプログラムが含んでいるなら、他の言
+語を使っていい。
+
+例えば、あなたのプログラムがGUILEとリンクしているなら、そのプログラム
+の一部をSchemeやGUILEがサポートする他の言語で書いても良い。
+
+@item
+その言語と一緒に使われることを特に意図しているツールでは、他の言語を
+使って良い。
+
+そのツールを構築したい人々は、その他の言語をいずれにせよインストールしてい
+る人々だけだろうから、これで構わないのだ。
+
+@item
+もしそのアプリケーションが狭い集団に対して関心があるなら、おそらく
+そのアプリケーションのインストールが不便かどうかなど重要ではない。
+@end itemize
+
+CはC++や他のコンパイル用言語以上の利点を持っている。より多くの人々がC
+を知っている。だから、プログラムがCで書かれていると、それを読んだり変
+更したりするのが、より多くの人々にとって容易だろう。
+
+@node Program Behavior
+@chapter 全てのプログラムの振る舞い
+
+この@value{CHAPTER}では、頑丈なソフトウェアの書き方を記述する。また、
+エラーメッセージや、コマンドラインのインターフェース、ライブラリの挙動
+の、汎用的な標準についても記述する。
+
+@menu
+* Semantics::                   頑丈なプログラムの作成
+* Libraries::                   ライブラリの挙動
+* Errors::                      エラーメッセージの書式
+* User Interfaces::             コマンドラインのインターフェースの標準
+* Option Table::                長いオプションの表
+* Memory Usage::                メモリの必要性をいつ、いかに注意するか
+@end menu
+
+@node Semantics
+@section 頑丈なプログラムの作成
+
+動的に全てのデータ構造を確保することによって、ファイル名、行、ファイル、
+シンボルを含む、@emph{いかなる}データ構造の長さや数についても、勝手な
+制限を避けなさい。
+ほとんどのUnixユーティリティでは、``長い行は黙って切り詰める''。
+これはGNUユーティリティでは許容できない。
+
+ファイルを読むユーティリティはNUL文字や、@emph{0177以上のコードを持つ
+文字を含む}あらゆる他の印字できない文字も、落とすべきではない。
+唯一意味のある例外は、そういった文字を扱えない、ある種のプリンタへのイ
+ンターフェースを特別に意図したユーティリティだろう。
+可能な限りいつでも、UTF-8やその他のエンコーディングを使って、
+多バイト文字を表すバイト列を適切に扱えるようにしなさい。
+
+エラーを無視したいと思っているのでなければ、あらゆるシステムコールのエ
+ラーを確認しなさい。失敗したシステムコールから発生する@emph{あらゆる}
+エラーメッセージに、もしあればファイルの名前とそのユーティリティの名前
+だけでなく、(@code{perror}や同等のものから得られる)システムエラー文字
+列を含めなさい。単なる``cannot open foo.c''や``stat failed''は十分でな
+い。
+
+@code{malloc}や@code{realloc}のすべての呼び出しを、ゼロを返したかどう
+か確認しなさい。例えそのブロックをもっと小さくしようとしていても、
+@code{realloc}の確認をしなさい。2の階乗にブロックサイズを丸めるシステム
+では、@code{realloc}はもっと小さい領域を要求する場合に異なるブロックを
+得ることがある。
+
+Unixでは、@code{realloc}がゼロを返す場合、記憶領域を破壊してしまう。
+GNU @code{realloc}はこのバグを持たない。失敗すると、元のブロックは変更
+されない。そのバグは直っているとみなしても構わない。もしあなたのプログ
+ラムをUnix上で走らせたくて、こういう損失を避けたいなら、GNU @code{malloc}
+を使うことができる。
+
+@code{free}は解放されたブロックの中身を変えてしまうと考えなければなら
+ない。そのブロックの値を取り出したかったら、必ず@code{free}を呼ぶ前に
+取り出さなくてはならない。
+
+もし@code{malloc}が対話的でないプログラムで失敗したら、それを致命的な
+エラーにしなさい。対話的なプログラム(ユーザからコマンドを呼んでくるも
+の)では、そのコマンドを中止して、コマンド読み込みループから返るのがよ
+り良い。こうすると、そのユーザは仮想メモリを解放するために他のプロセス
+を殺して、再びそのコマンドを試すことができる。
+
+もし引数の文法が上手く行かなくなるわけでないなら、引数の解読に
+@code{getopt_long}を使いなさい。
+
+静的な記憶領域がプログラムの実行中に書き込まれるためであるとき、それを
+初期化するための、明示的なCのコードを使いなさい。変更されないデータに
+対する、Cの初期化付き宣言を残しておきなさい。
+@c ADR: why?
+
+(ファイルディレクトリや、utmp、カーネルメモリの配置のような)Unixのデー
+タ構造を見えにくくする、低水準のインターフェースを避けるよう努めなさい。
+これらは互換性を失いがちだからだ。もしあるディレクトリの全ファイルを見
+付ける必要があるなら、@code{readdir}や他の高水準のインターフェースを使
+いなさい。これらはGNUによって互換性を持ってサポートされるだろう。
+
+好ましいシグナルハンドリングの機能はBSD流の@code{signal}と
+@sc{posix} @code{sigaction}関数である。別にあるUSGの@code{signal}は
+劣った設計だ。
+
+今日では、@sc{posix}シグナル関数の使用がプログラムを移植しやすくする
+一番簡単な方法かもしれない。@code{signal}を使うと、GNU libc version 1
+を使うGNU/Linuxシステム上でBSDの振る舞いを得るために、@file{signal.h}
+ではなく@file{bsd/signal.h}をincludeすべきだ。@code{signal}がUSGの振る
+舞いしか持たないシステムをサポートするか、あるいは、それらを諦めてしま
+うかはあなた次第だ。
+
+``あり得ない''状態を検出するエラーチェックでは、単に中止しなさい。メッ
+セージを出力する意味は普通ない。これらのチェックはバグの存在を示している。
+そのバグを直したい人なら誰でも、そのソースコードを読み、デバッガを走ら
+せないといけないだろう。だから、そのソースにコメントでその問題を説明し
+なさい。関係のあるデータは変数の中で、それはデバッガで検査するのは容易
+だろう。だから、それらをどこか他の位置に移す意味はない。
+
+プログラムの終了状態として、エラーのカウントを使ってはならない。
+@emph{これは上手く行かない}。なぜなら、終了状態の値は(0から255までの)
+8ビットに制限されているからだ。そのプログラムが一回走る間に256のエラー
+が起きるかもしれない。もし終了状態として256を返そうとすると、親プロセ
+スはその状態として0を見ることになり、そのプログラムが成功したかのよう
+に見えるだろう。
+
+もし一時ファイルを作るなら、@code{TMPDIR}環境変数を確認しなさい。この
+変数が定義されていれば、@file{/tmp}ではなく、指定されたディレクトリを
+使いなさい。
+
+@node Libraries
+@section ライブラリの挙動
+
+ライブラリ関数を再入可能にするよう努力しなさい。それらが動的な記憶領域
+の確保を必要とするなら、少なくとも@code{malloc}自体は別として、再入
+不能を避けるよう努力しなさい。
+
+名前がぶつかるのを避けるために、ライブラリ用の名前付けの取り決めがある。
+
+二文字以上の長さで、そのライブラリ用の接頭辞を決めなさい。外部に見せる
+関数と変数の名前すべてに、この接頭辞を付けるべきだ。さらに、どの特定のラ
+イブラリ・メンバーでも、これらのうち一つだけが入っているべきだ。これは通
+常それぞれを別のソースファイルに置くことを意味する。
+
+二つの外部シンボルが常に一緒に使われ、片方を使ってもう片方を使わない
+ような意味のあるプログラムがあり得ないようなときには、例外となる。それ
+らは両方とも同じファイルに入れられる。
+
+ユーザにエントリ・ポイントとして記述されない外部シンボルは、@samp{_}で
+始まる名前を持つべきだ。それらはまた、他のライブラリと衝突するのを防ぐ
+ために、そのライブラリのために選ばれた接頭辞を含むべきだ。これらは、好
+むなら、ユーザのエントリ・ポイントと同じファイルの中に含めても良い。
+
+静的な関数や変数は好きなように使って良く、どんな名前付け規則にも当ては
+まらなくていい。
+
+@node Errors
+@section エラーメッセージの書式
+
+コンパイラからのエラーメッセージは次のようであるべきだ。
+
+@example
+@var{source-file-name}:@var{lineno}: @var{message}
+@end example
+
+適切なソースファイルがあるときには、
+他の対話的でないプログラムからのエラーメッセージは次のようであるべきだ。
+
+@example
+@var{program}:@var{source-file-name}:@var{lineno}: @var{message}
+@end example
+
+@noindent
+関連のあるソースファイルがないときには、次のようだ。
+
+@example
+@var{program}: @var{message}
+@end example
+
+@noindent
+
+対話的なプログラム(端末からコマンドを読んでいるもの)では、エラーメッセ
+ージにプログラム名を含めない方が良い。どのプログラムが走っているかを示
+す場所は、プロンプトか、スクリーンのレイアウトだ。(同じプログラムが端
+末以外のソースから入力を受け取って走るとき、それは対話的ではなく、対話
+的でない形式を使ってエラーメッセージを出力するのが一番良いだろう。)
+
+文字列@var{message}は、プログラム名やファイル名に続くときには、大文字
+で始めるべきではない。また、ピリオドで終わるべきではない。
+
+対話的なプログラムからのエラーメッセージや使い方のメッセージのような他
+のメッセージは大文字で始めるべきだ。しかしピリオドで終わるべきではない。
+
+@node User Interfaces
+@section コマンドラインのインターフェースの標準
+
+ユーティリティの挙動をそれを起動した名前に依存させないでください。あ
+るユーティリティに別の名前をリンクすることは、ときどき有用で、そのこと
+で何をやるのかを換えるべきでない。
+
+代わりに、動作時のオプションか、コンパイルするときのスィッチか、両方を
+別の挙動を選択するために使いなさい。
+
+同様に、プログラムの挙動をそれが使う出力デバイスの種類に依存しないよう
+にしてください。デバイス独立はシステム設計の重要な原理だ。単に誰かがと
+きどきオプションを打ち込むのを省略することに妥協してはならない。(端末
+を使うときのエラーメッセージの文法を変化させるのは構わない。なぜなら、
+それは人々が依存していない別な問題だからだ。)
+
+もし出力が端末に向かうときある挙動が最も有用で、出力がファイルかパイプ
+なら他の挙動が最も有用なら、端末への出力で有用な挙動をデフォルトにして、
+他の挙動のオプションを持つのが通常一番良い。
+
+互換性のために、出力デバイスの種類に依存するプログラムを必要とする。
+もし@code{ls}や@code{sh}が、あらゆるユーザが期待する方法で働かなかった
+ら、それはひどいだろう。これらの場合のうちいくつかでは、出力デバイスの
+種類に依存しない、より好ましい別バージョンを我々は補う。例えば、
+@code{ls}にとても似ているが、デフォルトの出力形式が常に複数欄形式であ
+る、@code{dir}プログラムを提供する。
+
+プログラムのコマンドライン・オプションを@sc{posix}のガイドラインに従わ
+せるのは良い考えだ。これを行う一番簡単な方法は、それらを解析するのに
+@code{getopt}を使うことだ。@code{getopt}のGNUバージョンは、特別な引数
+@samp{--}が使われなければ、通常オプションが引数のどこにあっても良いこ
+とに注意しなさい。これは@sc{posix}が規定していることではない。GNUの拡
+張だ。
+
+一文字のUnix形式オプションと等価な長い名前のオプションを定義してくださ
+い。我々はこの方法でGNUをよりユーザに親しみやすいものにしたいと思って
+いる。これはGNUの関数@code{getopt_log}を使えば簡単だ。
+
+長い名前のオプションの利点の一つはどのプログラムでも一貫したものにでき
+るからだ。例えば、ユーザは``verbose''オプションを持つどのGNUプログラム
+もそれが正確に@samp{--verbose}と綴られると期待することができるべきだ。
+この不変性を成すために、あなたのプログラムのオプション名を選ぶとき、共
+通の長いオプション名の表を見なさい (@pxref{Option Table})。
+
+普通の引数として与えられるファイル名が入力ファイルだけにするのは普通良い
+考えだ。どんな出力ファイルでも(願わくは@samp{-o}や@samp{--output}のよう
+な)オプションによって指定されるだろう。互換性のために普通の引数として出
+力ファイル名を許す場合でも、それを指定する他の方法としてオプションを与え
+てみなさい。これはGNUユーティリティの一貫性を増し、そしてユーザが覚える
+べき独自性を減らすであろう。
+
+あらゆるプログラムは次の二つの標準的なオプションをサポートすべきだ。
+@samp{--version}と@samp{--help}だ。
+
+@table @code
+@item --version
+このオプションはそのプログラムに、その名前、バージョン、出所と法的な状態
+に関する情報を、すべて標準出力に出させ、そして成功状態で終了させるべきだ。
+他のオプションや引数はこれが現れたら無視されるべきで、そのプログラムはそ
+の通常の機能を行うべきではない。
+
+最初の行をプログラムが解析しやすくする。そのバージョン・ナンバーを最後の
+スペースの後に始める。加えて、このプログラムの正しい名前を次の形式で含め
+る。
+
+@example
+GNU Emacs 19.30
+@end example
+
+@noindent
+プログラム名は固定文字列であるべきだ。それを@code{argv[0]}から計算しては
+@emph{いけない}。その考えは、そのファイル名ではなく、そのプログラムの標
+準的、あるいは、正統な名前を表明することである。コマンドを@code{PATH}か
+ら見付けることで、正確なファイル名を見付け出す他の方法があるのだ。
+
+もしプログラムが大きいパッケージの補助的な部分なら、次のようにそのプログ
+ラム名を括弧の中で記述しなさい。
+
+@example
+emacsserver (GNU Emacs) 19.30
+@end example
+
+@noindent
+もしそのパッケージがこのプログラムのバージョン・ナンバーとは違うバージョ
+ン・ナンバーを持っているなら、閉じ括弧の直前にそのパッケージのバージョン・
+ナンバーを記述して良い。
+
+もしこのプログラムを含むパッケージとは別に配布されるライブラリのバージョ
+ン・ナンバーを記述@strong{したい}のなら、記述したいそれぞれのライブラ
+リ毎に行を追加して、バージョン情報を出力することで、そうして良い。それら
+の行に最初の行と同じ形式を使いなさい。
+
+そのプログラムが使うライブラリ全てを、``単に完全であるためだけに''記述し
+ないでください。---そうすると、たくさんの役に立たない乱雑さを生み出して
+しまうだろう。あなたがデバッグをするのに非常に重要であると実際に見出し
+た場合にだけ、ライブラリのバージョン・ナンバーを記述してください。
+
+バージョン・ナンバーの行の後の、次の行は著作権通知であるべきだ。二つ以上の
+著作権通知が必要なら、それぞれ別の行に入れなさい。
+
+次は、そのプログラムがフリーソフトウェアであり、ユーザは自由に複製したり、
+ある条件でそれを改変して良いという、簡単な記述が続くべきだ。もしそのプロ
+グラムがGNU GPLによって保護されているなら、ここでそう言いなさい。また、
+法に認められる範囲に対し、無保証であることを書きなさい。
+
+名誉を与える方法として、そのプログラムの主要な作者の名簿を出力して終わら
+せて構わない。
+
+これらの規則に従う出力の例を示そう。
+
+@smallexample
+GNU Emacs 19.34.5
+Copyright (C) 1996 Free Software Foundation, Inc.
+GNU Emacs comes with NO WARRANTY,
+to the extent permitted by law.
+You may redistribute copies of GNU Emacs
+under the terms of the GNU General Public License.
+For more information about these matters,
+see the files named COPYING.
+@end smallexample
+
+これをあなたのプログラムに一致させるべきだ。当然、適切な年、著作権者、プ
+ログラムの名前、そして、配布条件の言及を入れ、必要に応じて残りの言葉遣い
+を換えるべきだ。
+
+この著作権通知は変更がなされた一番最近の年を記述するだけでいい。---以前
+のバージョンの変更に対して年を列挙する必要はない。もし不便なら、プログラ
+ムの名前をこの通知の中で記述しなくて良い。最初の行に現れているから。
+
+@item --help
+このオプションはそのプログラムをどのように起動するかを、標準出力上に、簡
+単な解説を出力し、成功終了すべきだ。他のオプションや引数はこれが現れたら
+無視すべきで、そのプログラムはその通常の機能を行うべきではない。
+
+@samp{--help}オプションの出力の最後の辺りで、バグ報告をどこにメールする
+かを表す行があるべきだ。こういう書式を持つ。
+
+@example
+Report bugs to @var{mailing-address}.
+@end example
+@end table
+
+@node Option Table
+@section 長いオプションの表
+
+GNUプログラムによって使われる長いオプションの表をここで示す。きっと不完
+全ではあるが、新しいプログラムが互換性を持ちたいであろうオプションをすべ
+て列挙するつもりだ。もしこの表にまだない名前を使うなら、それらの表と、そ
+れらの意味を@email{gnu@@gnu.org}に送ってください。我々がこの表を更新でき
+るので@footnote{訳注: ここには訳するほど難解な事はないはずなので、原文の
+まま。}。
+
+@c Please leave newlines between items in this table; it's much easier
+@c to update when it isn't completely squashed together and unreadable.
+@c When there is more than one short option for a long option name, put
+@c a semicolon between the lists of the programs that use them, not a
+@c period.   --friedman
+
+@table @samp
+@item after-date
+@samp{-N} in @code{tar}.
+
+@item all
+@samp{-a} in @code{du}, @code{ls}, @code{nm}, @code{stty}, @code{uname},
+and @code{unexpand}.
+
+@item all-text
+@samp{-a} in @code{diff}.
+
+@item almost-all
+@samp{-A} in @code{ls}.
+
+@item append
+@samp{-a} in @code{etags}, @code{tee}, @code{time};
+@samp{-r} in @code{tar}.
+
+@item archive
+@samp{-a} in @code{cp}.
+
+@item archive-name
+@samp{-n} in @code{shar}.
+
+@item arglength
+@samp{-l} in @code{m4}.
+
+@item ascii
+@samp{-a} in @code{diff}.
+
+@item assign
+@samp{-v} in @code{gawk}.
+
+@item assume-new
+@samp{-W} in Make.
+
+@item assume-old
+@samp{-o} in Make.
+
+@item auto-check
+@samp{-a} in @code{recode}.
+
+@item auto-pager
+@samp{-a} in @code{wdiff}.
+
+@item auto-reference
+@samp{-A} in @code{ptx}.
+
+@item avoid-wraps
+@samp{-n} in @code{wdiff}.
+
+@item background
+For server programs, run in the background.
+
+@item backward-search
+@samp{-B} in @code{ctags}.
+
+@item basename
+@samp{-f} in @code{shar}.
+
+@item batch
+Used in GDB.
+
+@item baud
+Used in GDB.
+
+@item before
+@samp{-b} in @code{tac}.
+
+@item binary
+@samp{-b} in @code{cpio} and @code{diff}.
+
+@item bits-per-code
+@samp{-b} in @code{shar}.
+
+@item block-size
+Used in @code{cpio} and @code{tar}.
+
+@item blocks
+@samp{-b} in @code{head} and @code{tail}.
+
+@item break-file
+@samp{-b} in @code{ptx}.
+
+@item brief
+Used in various programs to make output shorter.
+
+@item bytes
+@samp{-c} in @code{head}, @code{split}, and @code{tail}.
+
+@item c@t{++}
+@samp{-C} in @code{etags}.
+
+@item catenate
+@samp{-A} in @code{tar}.
+
+@item cd
+Used in various programs to specify the directory to use.
+
+@item changes
+@samp{-c} in @code{chgrp} and @code{chown}.
+
+@item classify
+@samp{-F} in @code{ls}.
+
+@item colons
+@samp{-c} in @code{recode}.
+
+@item command
+@samp{-c} in @code{su};
+@samp{-x} in GDB.
+
+@item compare
+@samp{-d} in @code{tar}.
+
+@item compat
+Used in @code{gawk}.
+
+@item compress
+@samp{-Z} in @code{tar} and @code{shar}.
+
+@item concatenate
+@samp{-A} in @code{tar}.
+
+@item confirmation
+@samp{-w} in @code{tar}.
+
+@item context
+Used in @code{diff}.
+
+@item copyleft
+@samp{-W copyleft} in @code{gawk}.
+
+@item copyright
+@samp{-C} in @code{ptx}, @code{recode}, and @code{wdiff};
+@samp{-W copyright} in @code{gawk}.
+
+@item core
+Used in GDB.
+
+@item count
+@samp{-q} in @code{who}.
+
+@item count-links
+@samp{-l} in @code{du}.
+
+@item create
+Used in @code{tar} and @code{cpio}.
+
+@item cut-mark
+@samp{-c} in @code{shar}.
+
+@item cxref
+@samp{-x} in @code{ctags}.
+
+@item date
+@samp{-d} in @code{touch}.
+
+@item debug
+@samp{-d} in Make and @code{m4};
+@samp{-t} in Bison.
+
+@item define
+@samp{-D} in @code{m4}.
+
+@item defines
+@samp{-d} in Bison and @code{ctags}.
+
+@item delete
+@samp{-D} in @code{tar}.
+
+@item dereference
+@samp{-L} in @code{chgrp}, @code{chown}, @code{cpio}, @code{du},
+@code{ls}, and @code{tar}.
+
+@item dereference-args
+@samp{-D} in @code{du}.
+
+@item diacritics
+@samp{-d} in @code{recode}.
+
+@item dictionary-order
+@samp{-d} in @code{look}.
+
+@item diff
+@samp{-d} in @code{tar}.
+
+@item digits
+@samp{-n} in @code{csplit}.
+
+@item directory
+Specify the directory to use, in various programs.  In @code{ls}, it
+means to show directories themselves rather than their contents.  In
+@code{rm} and @code{ln}, it means to not treat links to directories
+specially.
+
+@item discard-all
+@samp{-x} in @code{strip}.
+
+@item discard-locals
+@samp{-X} in @code{strip}.
+
+@item dry-run
+@samp{-n} in Make.
+
+@item ed
+@samp{-e} in @code{diff}.
+
+@item elide-empty-files
+@samp{-z} in @code{csplit}.
+
+@item end-delete
+@samp{-x} in @code{wdiff}.
+
+@item end-insert
+@samp{-z} in @code{wdiff}.
+
+@item entire-new-file
+@samp{-N} in @code{diff}.
+
+@item environment-overrides
+@samp{-e} in Make.
+
+@item eof
+@samp{-e} in @code{xargs}.
+
+@item epoch
+Used in GDB.
+
+@item error-limit
+Used in @code{makeinfo}.
+
+@item error-output
+@samp{-o} in @code{m4}.
+
+@item escape
+@samp{-b} in @code{ls}.
+
+@item exclude-from
+@samp{-X} in @code{tar}.
+
+@item exec
+Used in GDB.
+
+@item exit
+@samp{-x} in @code{xargs}.
+
+@item exit-0
+@samp{-e} in @code{unshar}.
+
+@item expand-tabs
+@samp{-t} in @code{diff}.
+
+@item expression
+@samp{-e} in @code{sed}.
+
+@item extern-only
+@samp{-g} in @code{nm}.
+
+@item extract
+@samp{-i} in @code{cpio};
+@samp{-x} in @code{tar}.
+
+@item faces
+@samp{-f} in @code{finger}.
+
+@item fast
+@samp{-f} in @code{su}.
+
+@item fatal-warnings
+@samp{-E} in @code{m4}.
+
+@item file
+@samp{-f} in @code{info}, @code{gawk}, Make, @code{mt}, and @code{tar};
+@samp{-n} in @code{sed};
+@samp{-r} in @code{touch}.
+
+@item field-separator
+@samp{-F} in @code{gawk}.
+
+@item file-prefix
+@samp{-b} in Bison.
+
+@item file-type
+@samp{-F} in @code{ls}.
+
+@item files-from
+@samp{-T} in @code{tar}.
+
+@item fill-column
+Used in @code{makeinfo}.
+
+@item flag-truncation
+@samp{-F} in @code{ptx}.
+
+@item fixed-output-files
+@samp{-y} in Bison.
+
+@item follow
+@samp{-f} in @code{tail}.
+
+@item footnote-style
+Used in @code{makeinfo}.
+
+@item force
+@samp{-f} in @code{cp}, @code{ln}, @code{mv}, and @code{rm}.
+
+@item force-prefix
+@samp{-F} in @code{shar}.
+
+@item foreground
+For server programs, run in the foreground;
+in other words, don't do anything special to run the server
+in the background.
+
+@item format
+Used in @code{ls}, @code{time}, and @code{ptx}.
+
+@item freeze-state
+@samp{-F} in @code{m4}.
+
+@item fullname
+Used in GDB.
+
+@item gap-size
+@samp{-g} in @code{ptx}.
+
+@item get
+@samp{-x} in @code{tar}.
+
+@item graphic
+@samp{-i} in @code{ul}.
+
+@item graphics
+@samp{-g} in @code{recode}.
+
+@item group
+@samp{-g} in @code{install}.
+
+@item gzip
+@samp{-z} in @code{tar} and @code{shar}.
+
+@item hashsize
+@samp{-H} in @code{m4}.
+
+@item header
+@samp{-h} in @code{objdump} and @code{recode}
+
+@item heading
+@samp{-H} in @code{who}.
+
+@item help
+Used to ask for brief usage information.
+
+@item here-delimiter
+@samp{-d} in @code{shar}.
+
+@item hide-control-chars
+@samp{-q} in @code{ls}.
+
+@item idle
+@samp{-u} in @code{who}.
+
+@item ifdef
+@samp{-D} in @code{diff}.
+
+@item ignore
+@samp{-I} in @code{ls};
+@samp{-x} in @code{recode}.
+
+@item ignore-all-space
+@samp{-w} in @code{diff}.
+
+@item ignore-backups
+@samp{-B} in @code{ls}.
+
+@item ignore-blank-lines
+@samp{-B} in @code{diff}.
+
+@item ignore-case
+@samp{-f} in @code{look} and @code{ptx};
+@samp{-i} in @code{diff} and @code{wdiff}.
+
+@item ignore-errors
+@samp{-i} in Make.
+
+@item ignore-file
+@samp{-i} in @code{ptx}.
+
+@item ignore-indentation
+@samp{-I} in @code{etags}.
+
+@item ignore-init-file
+@samp{-f} in Oleo.
+
+@item ignore-interrupts
+@samp{-i} in @code{tee}.
+
+@item ignore-matching-lines
+@samp{-I} in @code{diff}.
+
+@item ignore-space-change
+@samp{-b} in @code{diff}.
+
+@item ignore-zeros
+@samp{-i} in @code{tar}.
+
+@item include
+@samp{-i} in @code{etags};
+@samp{-I} in @code{m4}.
+
+@item include-dir
+@samp{-I} in Make.
+
+@item incremental
+@samp{-G} in @code{tar}.
+
+@item info
+@samp{-i}, @samp{-l}, and @samp{-m} in Finger.
+
+@item initial
+@samp{-i} in @code{expand}.
+
+@item initial-tab
+@samp{-T} in @code{diff}.
+
+@item inode
+@samp{-i} in @code{ls}.
+
+@item interactive
+@samp{-i} in @code{cp}, @code{ln}, @code{mv}, @code{rm};
+@samp{-e} in @code{m4};
+@samp{-p} in @code{xargs};
+@samp{-w} in @code{tar}.
+
+@item intermix-type
+@samp{-p} in @code{shar}.
+
+@item jobs
+@samp{-j} in Make.
+
+@item just-print
+@samp{-n} in Make.
+
+@item keep-going
+@samp{-k} in Make.
+
+@item keep-files
+@samp{-k} in @code{csplit}.
+
+@item kilobytes
+@samp{-k} in @code{du} and @code{ls}.
+
+@item language
+@samp{-l} in @code{etags}.
+
+@item less-mode
+@samp{-l} in @code{wdiff}.
+
+@item level-for-gzip
+@samp{-g} in @code{shar}.
+
+@item line-bytes
+@samp{-C} in @code{split}.
+
+@item lines
+Used in @code{split}, @code{head}, and @code{tail}.
+
+@item link
+@samp{-l} in @code{cpio}.
+
+@item lint
+@itemx lint-old
+Used in @code{gawk}.
+
+@item list
+@samp{-t} in @code{cpio};
+@samp{-l} in @code{recode}.
+
+@item list
+@samp{-t} in @code{tar}.
+
+@item literal
+@samp{-N} in @code{ls}.
+
+@item load-average
+@samp{-l} in Make.
+
+@item login
+Used in @code{su}.
+
+@item machine
+No listing of which programs already use this;
+someone should check to
+see if any actually do, and tell @email{gnu@@gnu.org}.
+
+@item macro-name
+@samp{-M} in @code{ptx}.
+
+@item mail
+@samp{-m} in @code{hello} and @code{uname}.
+
+@item make-directories
+@samp{-d} in @code{cpio}.
+
+@item makefile
+@samp{-f} in Make.
+
+@item mapped
+Used in GDB.
+
+@item max-args
+@samp{-n} in @code{xargs}.
+
+@item max-chars
+@samp{-n} in @code{xargs}.
+
+@item max-lines
+@samp{-l} in @code{xargs}.
+
+@item max-load
+@samp{-l} in Make.
+
+@item max-procs
+@samp{-P} in @code{xargs}.
+
+@item mesg
+@samp{-T} in @code{who}.
+
+@item message
+@samp{-T} in @code{who}.
+
+@item minimal
+@samp{-d} in @code{diff}.
+
+@item mixed-uuencode
+@samp{-M} in @code{shar}.
+
+@item mode
+@samp{-m} in @code{install}, @code{mkdir}, and @code{mkfifo}.
+
+@item modification-time
+@samp{-m} in @code{tar}.
+
+@item multi-volume
+@samp{-M} in @code{tar}.
+
+@item name-prefix
+@samp{-a} in Bison.
+
+@item nesting-limit
+@samp{-L} in @code{m4}.
+
+@item net-headers
+@samp{-a} in @code{shar}.
+
+@item new-file
+@samp{-W} in Make.
+
+@item no-builtin-rules
+@samp{-r} in Make.
+
+@item no-character-count
+@samp{-w} in @code{shar}.
+
+@item no-check-existing
+@samp{-x} in @code{shar}.
+
+@item no-common
+@samp{-3} in @code{wdiff}.
+
+@item no-create
+@samp{-c} in @code{touch}.
+
+@item no-defines
+@samp{-D} in @code{etags}.
+
+@item no-deleted
+@samp{-1} in @code{wdiff}.
+
+@item no-dereference
+@samp{-d} in @code{cp}.
+
+@item no-inserted
+@samp{-2} in @code{wdiff}.
+
+@item no-keep-going
+@samp{-S} in Make.
+
+@item no-lines
+@samp{-l} in Bison.
+
+@item no-piping
+@samp{-P} in @code{shar}.
+
+@item no-prof
+@samp{-e} in @code{gprof}.
+
+@item no-regex
+@samp{-R} in @code{etags}.
+
+@item no-sort
+@samp{-p} in @code{nm}.
+
+@item no-split
+Used in @code{makeinfo}.
+
+@item no-static
+@samp{-a} in @code{gprof}.
+
+@item no-time
+@samp{-E} in @code{gprof}.
+
+@item no-timestamp
+@samp{-m} in @code{shar}.
+
+@item no-validate
+Used in @code{makeinfo}.
+
+@item no-wait
+Used in @code{emacsclient}.
+
+@item no-warn
+Used in various programs to inhibit warnings.
+
+@item node
+@samp{-n} in @code{info}.
+
+@item nodename
+@samp{-n} in @code{uname}.
+
+@item nonmatching
+@samp{-f} in @code{cpio}.
+
+@item nstuff
+@samp{-n} in @code{objdump}.
+
+@item null
+@samp{-0} in @code{xargs}.
+
+@item number
+@samp{-n} in @code{cat}.
+
+@item number-nonblank
+@samp{-b} in @code{cat}.
+
+@item numeric-sort
+@samp{-n} in @code{nm}.
+
+@item numeric-uid-gid
+@samp{-n} in @code{cpio} and @code{ls}.
+
+@item nx
+Used in GDB.
+
+@item old-archive
+@samp{-o} in @code{tar}.
+
+@item old-file
+@samp{-o} in Make.
+
+@item one-file-system
+@samp{-l} in @code{tar}, @code{cp}, and @code{du}.
+
+@item only-file
+@samp{-o} in @code{ptx}.
+
+@item only-prof
+@samp{-f} in @code{gprof}.
+
+@item only-time
+@samp{-F} in @code{gprof}.
+
+@item output
+In various programs, specify the output file name.
+
+@item output-prefix
+@samp{-o} in @code{shar}.
+
+@item override
+@samp{-o} in @code{rm}.
+
+@item overwrite
+@samp{-c} in @code{unshar}.
+
+@item owner
+@samp{-o} in @code{install}.
+
+@item paginate
+@samp{-l} in @code{diff}.
+
+@item paragraph-indent
+Used in @code{makeinfo}.
+
+@item parents
+@samp{-p} in @code{mkdir} and @code{rmdir}.
+
+@item pass-all
+@samp{-p} in @code{ul}.
+
+@item pass-through
+@samp{-p} in @code{cpio}.
+
+@item port
+@samp{-P} in @code{finger}.
+
+@item portability
+@samp{-c} in @code{cpio} and @code{tar}.
+
+@item posix
+Used in @code{gawk}.
+
+@item prefix-builtins
+@samp{-P} in @code{m4}.
+
+@item prefix
+@samp{-f} in @code{csplit}.
+
+@item preserve
+Used in @code{tar} and @code{cp}.
+
+@item preserve-environment
+@samp{-p} in @code{su}.
+
+@item preserve-modification-time
+@samp{-m} in @code{cpio}.
+
+@item preserve-order
+@samp{-s} in @code{tar}.
+
+@item preserve-permissions
+@samp{-p} in @code{tar}.
+
+@item print
+@samp{-l} in @code{diff}.
+
+@item print-chars
+@samp{-L} in @code{cmp}.
+
+@item print-data-base
+@samp{-p} in Make.
+
+@item print-directory
+@samp{-w} in Make.
+
+@item print-file-name
+@samp{-o} in @code{nm}.
+
+@item print-symdefs
+@samp{-s} in @code{nm}.
+
+@item printer
+@samp{-p} in @code{wdiff}.
+
+@item prompt
+@samp{-p} in @code{ed}.
+
+@item query-user
+@samp{-X} in @code{shar}.
+
+@item question
+@samp{-q} in Make.
+
+@item quiet
+Used in many programs to inhibit the usual output.  @strong{Note:} every
+program accepting @samp{--quiet} should accept @samp{--silent} as a
+synonym.
+
+@item quiet-unshar
+@samp{-Q} in @code{shar}
+
+@item quote-name
+@samp{-Q} in @code{ls}.
+
+@item rcs
+@samp{-n} in @code{diff}.
+
+@item re-interval
+Used in @code{gawk}.
+
+@item read-full-blocks
+@samp{-B} in @code{tar}.
+
+@item readnow
+Used in GDB.
+
+@item recon
+@samp{-n} in Make.
+
+@item record-number
+@samp{-R} in @code{tar}.
+
+@item recursive
+Used in @code{chgrp}, @code{chown}, @code{cp}, @code{ls}, @code{diff},
+and @code{rm}.
+
+@item reference-limit
+Used in @code{makeinfo}.
+
+@item references
+@samp{-r} in @code{ptx}.
+
+@item regex
+@samp{-r} in @code{tac} and @code{etags}.
+
+@item release
+@samp{-r} in @code{uname}.
+
+@item reload-state
+@samp{-R} in @code{m4}.
+
+@item relocation
+@samp{-r} in @code{objdump}.
+
+@item rename
+@samp{-r} in @code{cpio}.
+
+@item replace
+@samp{-i} in @code{xargs}.
+
+@item report-identical-files
+@samp{-s} in @code{diff}.
+
+@item reset-access-time
+@samp{-a} in @code{cpio}.
+
+@item reverse
+@samp{-r} in @code{ls} and @code{nm}.
+
+@item reversed-ed
+@samp{-f} in @code{diff}.
+
+@item right-side-defs
+@samp{-R} in @code{ptx}.
+
+@item same-order
+@samp{-s} in @code{tar}.
+
+@item same-permissions
+@samp{-p} in @code{tar}.
+
+@item save
+@samp{-g} in @code{stty}.
+
+@item se
+Used in GDB.
+
+@item sentence-regexp
+@samp{-S} in @code{ptx}.
+
+@item separate-dirs
+@samp{-S} in @code{du}.
+
+@item separator
+@samp{-s} in @code{tac}.
+
+@item sequence
+Used by @code{recode} to chose files or pipes for sequencing passes.
+
+@item shell
+@samp{-s} in @code{su}.
+
+@item show-all
+@samp{-A} in @code{cat}.
+
+@item show-c-function
+@samp{-p} in @code{diff}.
+
+@item show-ends
+@samp{-E} in @code{cat}.
+
+@item show-function-line
+@samp{-F} in @code{diff}.
+
+@item show-tabs
+@samp{-T} in @code{cat}.
+
+@item silent
+Used in many programs to inhibit the usual output.
+@strong{Note:} every program accepting
+@samp{--silent} should accept @samp{--quiet} as a synonym.
+
+@item size
+@samp{-s} in @code{ls}.
+
+@item socket
+Specify a file descriptor for a network server to use for its socket,
+instead of opening and binding a new socket.  This provides a way to
+run, in a nonpriveledged process, a server that normally needs a
+reserved port number.
+
+@item sort
+Used in @code{ls}.
+
+@item source
+@samp{-W source} in @code{gawk}.
+
+@item sparse
+@samp{-S} in @code{tar}.
+
+@item speed-large-files
+@samp{-H} in @code{diff}.
+
+@item split-at
+@samp{-E} in @code{unshar}.
+
+@item split-size-limit
+@samp{-L} in @code{shar}.
+
+@item squeeze-blank
+@samp{-s} in @code{cat}.
+
+@item start-delete
+@samp{-w} in @code{wdiff}.
+
+@item start-insert
+@samp{-y} in @code{wdiff}.
+
+@item starting-file
+Used in @code{tar} and @code{diff} to specify which file within
+a directory to start processing with.
+
+@item statistics
+@samp{-s} in @code{wdiff}.
+
+@item stdin-file-list
+@samp{-S} in @code{shar}.
+
+@item stop
+@samp{-S} in Make.
+
+@item strict
+@samp{-s} in @code{recode}.
+
+@item strip
+@samp{-s} in @code{install}.
+
+@item strip-all
+@samp{-s} in @code{strip}.
+
+@item strip-debug
+@samp{-S} in @code{strip}.
+
+@item submitter
+@samp{-s} in @code{shar}.
+
+@item suffix
+@samp{-S} in @code{cp}, @code{ln}, @code{mv}.
+
+@item suffix-format
+@samp{-b} in @code{csplit}.
+
+@item sum
+@samp{-s} in @code{gprof}.
+
+@item summarize
+@samp{-s} in @code{du}.
+
+@item symbolic
+@samp{-s} in @code{ln}.
+
+@item symbols
+Used in GDB and @code{objdump}.
+
+@item synclines
+@samp{-s} in @code{m4}.
+
+@item sysname
+@samp{-s} in @code{uname}.
+
+@item tabs
+@samp{-t} in @code{expand} and @code{unexpand}.
+
+@item tabsize
+@samp{-T} in @code{ls}.
+
+@item terminal
+@samp{-T} in @code{tput} and @code{ul}.
+@samp{-t} in @code{wdiff}.
+
+@item text
+@samp{-a} in @code{diff}.
+
+@item text-files
+@samp{-T} in @code{shar}.
+
+@item time
+Used in @code{ls} and @code{touch}.
+
+@item to-stdout
+@samp{-O} in @code{tar}.
+
+@item total
+@samp{-c} in @code{du}.
+
+@item touch
+@samp{-t} in Make, @code{ranlib}, and @code{recode}.
+
+@item trace
+@samp{-t} in @code{m4}.
+
+@item traditional
+@samp{-t} in @code{hello};
+@samp{-W traditional} in @code{gawk};
+@samp{-G} in @code{ed}, @code{m4}, and @code{ptx}.
+
+@item tty
+Used in GDB.
+
+@item typedefs
+@samp{-t} in @code{ctags}.
+
+@item typedefs-and-c++
+@samp{-T} in @code{ctags}.
+
+@item typeset-mode
+@samp{-t} in @code{ptx}.
+
+@item uncompress
+@samp{-z} in @code{tar}.
+
+@item unconditional
+@samp{-u} in @code{cpio}.
+
+@item undefine
+@samp{-U} in @code{m4}.
+
+@item undefined-only
+@samp{-u} in @code{nm}.
+
+@item update
+@samp{-u} in @code{cp}, @code{ctags}, @code{mv}, @code{tar}.
+
+@item usage
+Used in @code{gawk}; same as @samp{--help}.
+
+@item uuencode
+@samp{-B} in @code{shar}.
+
+@item vanilla-operation
+@samp{-V} in @code{shar}.
+
+@item verbose
+Print more information about progress.  Many programs support this.
+
+@item verify
+@samp{-W} in @code{tar}.
+
+@item version
+Print the version number.
+
+@item version-control
+@samp{-V} in @code{cp}, @code{ln}, @code{mv}.
+
+@item vgrind
+@samp{-v} in @code{ctags}.
+
+@item volume
+@samp{-V} in @code{tar}.
+
+@item what-if
+@samp{-W} in Make.
+
+@item whole-size-limit
+@samp{-l} in @code{shar}.
+
+@item width
+@samp{-w} in @code{ls} and @code{ptx}.
+
+@item word-regexp
+@samp{-W} in @code{ptx}.
+
+@item writable
+@samp{-T} in @code{who}.
+
+@item zeros
+@samp{-z} in @code{gprof}.
+@end table
+
+@node Memory Usage
+@section メモリの使用
+
+概して、たった数メガしかメモリを使わないなら、メモリの使用を減らす努力を
+行うことに悩まないように。例えば、数メガ以上のファイルを扱うことが他の
+事情で実際的でなかったら、それらを処理するのに入力ファイル全体をコアに読
+み込むことは理に適っている。
+
+しかしながら、普通に非常に大きいファイルを扱うことのある、@code{cat}や
+@code{tail}のようなプログラムにとって、それが処理できるファイルの大きさ
+を人為的に制限する手法の使用は避けることが重要だ。もしプログラムが行毎に
+働き、ユーザが提供する任意の入力ファイルが与えられるならば、一行だけをメ
+モリに保持するべきだ。なぜなら、これは大して難しくなく、全て一度にコアに
+入るよりも大きいファイルを扱えることをユーザが望むだろうからだ。
+
+もしあなたのプログラムが複雑なデータ構造を作るなら、単にコアにそれを作っ
+て、もし@code{malloc}がゼロを返したら致命的なエラーにしてしまいなさい。
+
+@node Writing C
+@chapter Cの一番良い使い方
+
+この@value{CHAPTER}では、GNUソフトウェアを書くときの一番良いC言語の使い
+方について助言を与える。
+
+@menu
+* Formatting::                  あなたのソースコードの書式
+* Comments::                    あなたの仕事のコメント
+* Syntactic Conventions::       Cの構成のきれいな利用
+* Names::                       変数と関数の名前付け
+* System Portability::          異なるオペレーティング・システム間の移植性
+* CPU Portability::             様々なCPUの種類のサポート
+* System Functions::            ``標準''ライブラリ関数の移植性
+* Internationalization::        国際化の手法
+* Mmap::                        @code{mmap}の安全な使い方
+@end menu
+
+@node Formatting
+@section あなたのソースコードの書式
+
+C関数の本体を開始する開き大括弧をゼロ列目に置き、他の開き大括弧や開き丸
+括弧や開き角括弧をゼロ列目に置かないようにするのは重要だ。いくつかのツー
+ルは、C関数の始まりを探すのに、ゼロ列目の開き大括弧を捜す。これらのツー
+ルはそういう風にフォーマットされていないコードでは上手く動かないだろう。
+
+関数定義で、関数の名前がゼロ列目で始まっていることも重要だ。人々はこれの
+おかげで関数定義を探すのが楽になり、あるツールがそれらを認識するのも楽に
+なるかもしれない。こうして、適切な書式は次のようになる。
+
+@example
+static char *
+concat (s1, s2)        /* Name starts in column zero here */
+     char *s1, *s2;
+@{                     /* Open brace in column zero here */
+  @dots{}
+@}
+@end example
+
+@noindent
+あるいは、もし@sc{ansi} Cを使いたいなら、次のように定義をフォーマットす
+る。
+
+@example
+static char *
+concat (char *s1, char *s2)
+@{
+  @dots{}
+@}
+@end example
+
+@sc{ansi} Cでは、もし引数が上手く一行に収まらないなら、次のようにそれを
+分ける。
+
+@example
+int
+lots_of_args (int an_integer, long a_long, short a_short,
+              double a_double, float a_float)
+@dots{}
+@end example
+
+関数の本体では、次のようにフォーマットされたコードを好んでいる。
+
+@example
+if (x < foo (y, z))
+  haha = bar[4] + 5;
+else
+  @{
+    while (z)
+      @{
+        haha += foo (z, z);
+        z--;
+      @}
+    return ++x + bar ();
+  @}
+@end example
+
+我々は開き丸括弧の前とコンマの後にスペースがあるとプログラムを読むのがよ
+り簡単であることを見出している。とりわけコンマの後は。
+
+式を複数行に分けるとき、演算子の後ではなく、それの前で分ける。こうするの
+が正しいやり方だ。
+
+@example
+if (foo_this_is_long && bar > win (x, y, z)
+    && remaining_condition)
+@end example
+
+字下げが同じところで、異なる優先度の二つの演算子を持たないようにしなさい。
+例えば、こう書いてはいけない。
+
+@example
+mode = (inmode[j] == VOIDmode
+        || GET_MODE_SIZE (outmode[j]) > GET_MODE_SIZE (inmode[j])
+       ? outmode[j] : inmode[j]);
+@end example
+
+代わりに、字下げが入れ子を表すよう、余分な丸括弧を使う。
+
+@example
+mode = ((inmode[j] == VOIDmode
+         || (GET_MODE_SIZE (outmode[j]) > GET_MODE_SIZE (inmode[j])))
+        ? outmode[j] : inmode[j]);
+@end example
+
+Emacsがそのコードを適切に字下げするよう、余分な丸括弧を入れなさい。例え
+ば、次の字下げは手でやるといい感じだが、Emacsは台なしにしてしまう。
+
+@example
+v = rup->ru_utime.tv_sec*1000 + rup->ru_utime.tv_usec/1000
+    + rup->ru_stime.tv_sec*1000 + rup->ru_stime.tv_usec/1000;
+@end example
+
+でも開き括弧一組を加えると問題は解決する。
+
+@example
+v = (rup->ru_utime.tv_sec*1000 + rup->ru_utime.tv_usec/1000
+     + rup->ru_stime.tv_sec*1000 + rup->ru_stime.tv_usec/1000);
+@end example
+
+do-while文は次のようにフォーマットする。
+
+@example
+do
+  @{
+    a = foo (a);
+  @}
+while (a > 0);
+@end example
+
+フォームフィード文字 (control-L) を使って、プログラムを(関数の中ではなく)
+論理的な位置でページに分割してほしい。ページがどれぐらいの長さかなんて問
+題じゃない。印刷されるページに合わせなくていいのだから。フォームフィード
+は行の中にそれ自身だけを置くべきだ。
+
+
+@node Comments
+@section あなたの仕事のコメント
+
+どんなプログラムでもそれが何なのか簡単に表すコメントで始まるべきだ。例:
+@samp{fmt - filter for simple filling of text}.
+
+英語は全ての国のほとんど全てのプログラマが読むことのできる唯一の言語なの
+で、GNUプログラムでは英語でコメントを書いてほしい。もしあなたが英語を上
+手く書けないなら、出来るだけ上手く英語でコメントを書き、他の人々にそれら
+を書き直すのを手伝ってくれるよう頼んでください。もし英語でコメントを書く
+ことができないなら、一緒に仕事してくれる誰かを探して、あなたのコメントを
+英語に翻訳してもらってください。
+
+それぞれの関数に、その関数が何をやり、どういう引数を受け取り、引数のあり
+得る値が何を意味し、そして何に使われるのかを表すコメントを書いてください。
+もしCの型が習慣的なやり型で使われるなら、Cの引数宣言の意味をくどくどと複
+製する必要はない。もしその利用が(実際には文字列の最初ではなく、二文字目
+のアドレスである@code{char *}型の引数のような)標準的でないものだったら、
+あるいは、(改行を含む文字列は動作保証されない、というような)期待される方
+法では働かない値があり得るなら、そう書くのを忘れないようにしなさい。
+
+また、もしあるなら、返り値の意味を説明しなさい。
+
+Emacsのセンテンス・コマンド(sentence command)が働くように、コメントの行
+の最後の後に二つのスペースを置いてください。また、完全な文を書き、最初の
+単語を大文字で書いてください。もし小文字の識別子が文の最初に来たら、それ
+を大文字で書いてはいけない! 綴りを変えると違う識別子になる。もし小文字で
+文を始めるのが好きじゃないなら、文を違うように書きなさい(例えば、``The
+identifier lower-case is @dots{}'')。
+
+関数の上のコメントは、引数の値について言うときにその引数の名前を使えば、
+ずっとはっきりする。変数名それ自体は小文字であるべきだが、変数そのもので
+はなく、その値について言っているときには大文字で書きなさい。従って、``an
+inode''よりも、``the inode number NODE_NUM''である。
+
+普通コメントに関数の名前を再び言うことに意味はない。なぜなら、読者は自分で
+それを見ることができるからだ。関数自身がスクリーンの一番下からはみ出てし
+まうぐらいコメントが長いときは例外かもしれない。
+
+静的な変数それぞれにも、次のようにコメントがあるべきだ。
+
+@example
+/* Nonzero means truncate lines in the display;
+   zero means continue them.  */
+int truncate_lines;
+@end example
+
+すべての@samp{#endif}に、入れ子になっていない(たった数行の)短い条件分岐
+の場合を除いて、コメントを付けるべきだ。そのコメントには、
+@emph{その意味を含めて}、終了する条件分岐の状態を記すべきだ。
+@samp{#else}はその条件と続くコードの@emph{意味}を記述するコメントを持つ
+べきだ。例えば、
+
+@example
+@group
+#ifdef foo
+  @dots{}
+#else /* not foo */
+  @dots{}
+#endif /* not foo */
+@end group
+@group
+#ifdef foo
+  @dots{}
+#endif /* foo */
+@end group
+@end example
+
+@noindent
+しかし、対照的に、@samp{#ifndef}では次のようなコメントを書く。
+
+@example
+@group
+#ifndef foo
+  @dots{}
+#else /* foo */
+  @dots{}
+#endif /* foo */
+@end group
+@group
+#ifndef foo
+  @dots{}
+#endif /* not foo */
+@end group
+@end example
+
+@node Syntactic Conventions
+@section Cの構成のきれいな利用
+
+関数への全ての引数を明示的に宣言してください。それらが単に@code{int}だか
+らという理由で省いていけない。
+
+外部関数とソースファイルの後ろに現れる関数の宣言は、ファイルの先頭の近く
+一箇所か、ヘッダファイルの中に書くべきだ。関数の中に@code{extern}宣言を
+置いてはいけない。
+
+以前、一つの関数内で繰り返し繰り返し異なる値のために(@code{tem}のような
+名前で)同じ局所変数を使うのが普通のやり方だった。こうする代わりに、別の
+目的毎に別の局所変数を宣言し、意味のある名前を付ける方がより良い。これで
+プログラムがより理解しやすくなるだけでなく、良いコンパイラの最適化を促進
+するのである。また、局所変数の宣言をそれぞれ、それを全て使用する一番小さ
+い領域に入れることができる。こうすると、プログラムがさらにきれいになるの
+だ。
+
+大域識別子を隠す局所変数や引数を使ってはならない。
+
+複数行に及ぶ一つの宣言で複数の変数を宣言してはいけない。代わりに、それぞ
+れ行で新しく宣言を始めなさい。例えば、こうする代わりに、
+
+@example
+@group
+int    foo,
+       bar;
+@end group
+@end example
+
+@noindent
+こう書くか、
+
+@example
+int foo, bar;
+@end example
+
+@noindent
+あるいは、こうする。
+
+@example
+int foo;
+int bar;
+@end example
+
+@noindent
+(もしそれらが大域変数なら、いずれにせよその前にコメントを付けるべきだ。)
+
+他の@code{if}文に入れ子になる@code{if}-@code{else}文があるとき、必ずその
+@code{if}-@code{else}の周りに大括弧を付ける。従って、次のように決して書
+いてはならない。
+
+@example
+if (foo)
+  if (bar)
+    win ();
+  else
+    lose ();
+@end example
+
+@noindent
+常に次のようにする。
+
+@example
+if (foo)
+  @{
+    if (bar)
+      win ();
+    else
+      lose ();
+  @}
+@end example
+
+もし@code{else}文の中に入れ子になる@code{if}文があれば、次のように、
+@code{then}部分をその前の@code{then}部分のように字下げして一行に
+@code{else if}を書くか、
+
+@example
+if (foo)
+  @dots{}
+else if (bar)
+  @dots{}
+@end example
+
+@noindent
+あるいは、次のように大括弧の中に入れ子の@code{if}を書く。
+
+@example
+if (foo)
+  @dots{}
+else
+  @{
+    if (bar)
+      @dots{}
+  @}
+@end example
+
+同じ宣言で、構造体のタグや変数、typedefを一緒に宣言してはならない。代わ
+りに、構造体のタグを別に宣言して、それから変数やtypedefを宣言する。
+
+@code{if}条件文内で代入しないようにしなさい。例えば、こう書いてはいけ
+ない。
+
+@example
+if ((foo = (char *) malloc (sizeof *foo)) == 0)
+  fatal ("virtual memory exhausted");
+@end example
+
+@noindent
+代わりに、こう書く。
+
+@example
+foo = (char *) malloc (sizeof *foo);
+if (foo == 0)
+  fatal ("virtual memory exhausted");
+@end example
+
+@code{lint}をおとなしくするのに、プログラムを見苦しくしてはならない。
+@code{void}へのキャストを入れないでください。キャストなしのゼロは、可変
+引数の関数を呼ぶときを除くと、ヌル・ポインタ定数として全く結構である。
+
+@node  Names
+@section 変数と関数の名前付け
+
+プログラムの大域的な変数や関数の名前はコメントのように働く。だから、簡潔
+な名前を選ばないように。---代わりに、その変数や関数の意味について役に立
+つ情報を与える名前を探しなさい。GNUプログラムでは、名前は他のコメント
+と同様英語であるべきである。
+
+局所変数の名前はもっと短くていい。なぜなら、それらは一つの文脈の中でだけ
+使われ、そこでは(たぶん)コメントがそれらの目的を説明している。
+
+ある名前の単語を分けるのに、Emacsの単語コマンドがその中で使えるように、
+アンダースコアを使ってください。小文字にしておきなさい。大文字をマクロや
+@code{enum}定数や一定の取り決めに従う接頭辞のために取っておきなさい。
+
+例えば、@code{ignore_space_change_flag}のような名前を使うべきだ。
+@code{iCantReadThis}のような名前を使ってはいけない。
+
+コマンドラインのオプションが指定されたかどうかを示す変数は、オプションの
+文字ではなく、オプションの意味にちなんだ名前を付けるべきだ。コメントがオ
+プションの正確な意味とその文字の両方を記述すべきだ。例えば、
+
+@example
+@group
+/* Ignore changes in horizontal whitespace (-b).  */
+int ignore_space_change_flag;
+@end group
+@end example
+
+一定の整数値に名前を定義したいとき、@samp{#define}よりも@code{enum}を使
+いなさい。GDBは列挙定数について知っている。
+
+古いSystem Vシステムで不必要な問題を引き起こさないよう、14文字以下のファ
+イル名を使いなさい。これを試験するのに@code{doschk}というプログラムを使
+うことができる。@code{doschk}はまた、MS-DOSファイルシステムにファイルが
+置かれたとしたら、名前が衝突する可能性を試験する。---注意してもしなくて
+も構わないものだ。
+
+@node System Portability
+@section システム間の移植性
+
+Unixの世界では、``移植性''は異なるUnixバージョンに移植することを言ってい
+る。GNUプログラムにとって、この種の移植性は望ましいが、最も重要ではない。
+
+GNUソフトウェアの主要な目的は、GNUカーネルの上で走り、GNU Cコンパイラで
+コンパイルされ、様々な@sc{cpu}上で動くことだ。異なる@sc{cpu}上のGNUシス
+テム間の多様性の量と種類は、今日のLinuxに基づくGNUシステムやBSDシステム
+間の多様性と比較できる程度であろう。だから、絶対に必要な移植性の種類
+はかなり限られている。
+
+しかしたくさんのユーザがGNUソフトウェアをGNUでないUnixやUnix-likeシス
+テムで走らせている。だから、さまざまなUnix-likeシステムをサポートするこ
+とが望ましい。最も重要ではないけれど。
+
+ほとんどのUnix-likeシステムへの移植性を得る一番簡単な方法はAutoconfを使
+うことだ。あなたのプログラムがAutoconfが提供できる以上にホスト・プラット
+ホームに関する情報を知る必要があることはあまりない。単にそういう情報を必
+要とするプログラムの大部分はすでに書かれているから。
+
+準内部的データベース(例えば、ディレクトリ)のフォーマットを使わないように
+しなさい。もっと高水準の方法(@code{readdir})があるときは。
+
+MSDOS、Windows、Macintosh、VMS、MVSのような、Unixに似てないシステムにつ
+いて言うと、それらをサポートするのは普通しない方がいいぐらい大変な仕事だ。
+
+計画されているGNUカーネルはまだ出来てないが、GNU Cライブラリのマニュアル
+を見ることで、それが提供するであろう機能がどれなのか分かる。GNUカーネル
+はMachに基づいているから、Machの機能も利用できるだろう。しかしながら、
+Machの機能を使用すると、おそらくあなたのプログラムを今日デバッグする困難
+に見舞われるだろう@footnote{訳注: 今日デバッグするってどういうこと？ 原文:
+However, if you use Mach features, you'll probably have
+trouble debugging your program today.}。
+
+@node CPU Portability
+@section CPU間の移植性
+GNUシステムでさえ、@sc{cpu}タイプ間の違いのせいで異なってしまうだろう。---
+例えば、バイト順序や境界の必要性の違いなどだ。こういう違うを扱うことは絶
+対に不可欠だ。しかし、@code{int}が32ビットより小さい可能性を扱うために努
+力してはいけない。GNUでは16ビットのマシンはサポートしない。
+
+@code{int}オブジェクトのアドレスがまたその一番下のバイトのアドレスである
+とみなしてはいけない。これはビッグ・エンディアンのマシンでは誤りだ。だか
+ら、次の間違いをしてはいけない。
+
+@example
+int c;
+@dots{}
+while ((c = getchar()) != EOF)
+  write(file_descriptor, &c, 1);
+@end example
+
+関数を呼ぶとき、さまざまな型のポインタ間やポインタと整数間での違いを心配
+する必要はない。ほとんどのマシンでは、いずれにせよ違いはない。違いのある
+わずかなマシンについて言うと、それらの全てが@sc{ansi} Cをサポートしてい
+るので、それらのシステム上でそのコードが動くように、(@sc{ansi} Cでだけ使
+われるように条件付けされた)プロトタイプを使うことができる。
+
+ある場合には、整数とポインタの引数を無差別に同じ関数へ渡し、いかなるシス
+テムでもプロトタイプを使わないでも構わない。例えば、多くのGNUプログラム
+は@code{printf}やその類いに引数をどんどん渡すエラー報告関数を持っている。
+
+@example
+error (s, a1, a2, a3)
+     char *s;
+     int a1, a2, a3;
+@{
+  fprintf (stderr, "error: ");
+  fprintf (stderr, s, a1, a2, a3);
+@}
+@end example
+
+@noindent
+実際、これは全てのマシンで動作し、他の``正しい''やり方よりずっと単純だ。
+そのような関数に対してプロトタイプを使うことを@emph{しない}ように。
+
+しかしながら、本当に必要としているのでないなら、ポインタを整数にキャスト
+しないようにしなさい。これらの仮定は実に移植性を減らしており、ほとんどの
+プログラムでは簡単に避けられる。ポインタから整数にキャストすることが不可
+欠な ---アドレスだけでなく型情報をあるワードに収めるLispインタープリタ、の
+ような--- 場合には、そうして構わないが、異なるワードサイズを扱う明示的な
+準備をしなくてはならないだろう。
+
+@node System Functions
+@section システム関数の呼び出し
+
+Cの実装は十分に違う。@sc{ansi} Cは非互換性を減らすが、無くなりはしない。
+その一方では、多くのユーザがGNUソフトウェアを@sc{ansi}以前のコンパイラで
+コンパイルしたがる。この章では、移植性を不必要に失くさないよう、標準Cラ
+イブラリ関数をどれぐらいたくさん、あるいは、少なく使うか、推奨する方法を
+見せる。
+
+@itemize @bullet
+@item
+@code{sprintf}の値を使ってはいけない。あるシステムでは書かれた文字の数を
+返し、すべてのシステムでそうだというわけではない。
+
+@item
+@code{main}は@code{int}型を返すと宣言するべきだ。それは@code{exit}を呼ぶ
+か、整数状態コードを返すことによって終了するべきだ。決して未定義の値を返
+すことができないようにしなさい。
+
+@item
+システム関数を明示的に宣言してはならない。
+
+あるシステムでは、システム関数の宣言はほとんどが間違っている。衝突を最小
+化するために、システム関数を宣言するのをシステムのヘッダファイルに任せな
+さい。もしヘッダが関数を宣言しなければ、宣言せずに置いておきなさい。
+
+関数を宣言せずに使うのはきれいじゃないように見えるかもしれないが、実際に
+はこれが本当に起こるシステム上の、ほとんどのシステムライブラリ関数に対し
+て上手く働く。対照的に、現実の宣言は頻繁に現実の衝突を引き起こしている。
+
+@item
+もしシステム関数を宣言しなければならないなら、引数の型を指定してはいけな
+い。@sc{ansi}プロトタイプではなく、古い形式の宣言を使いなさい。関数を特
+定すればするほど、衝突しがちになる。
+
+@item
+特に、無条件に@code{malloc}や@code{realloc}を宣言してはいけない。
+
+ほとんどのGNUプログラムは、慣習的に@code{xmalloc}や@code{xrealloc}と名付
+けられる関数の中で、たった一回だけそれらを使用する。これらの関数はそれぞ
+れ@code{malloc}や@code{realloc}を呼び、結果を確認する。
+
+@code{xmalloc}や@code{xrealloc}はあなたのプログラムで定義されるので、型
+の衝突の危険性なしに他のファイルにそれらを宣言できる。
+
+ほとんどのシステム上で、@code{int}はポインタと同じ長さだ。それゆえ、
+@code{malloc}や@code{realloc}の呼び出しは上手く動く。数少ない例外的なシ
+ステム(ほとんどは64ビット・マシン)では、@code{malloc}や@code{realloc}の
+@strong{条件付き}宣言を使うか、これらの宣言をそれらのシステムに特化した
+設定ファイルに置くことができる。
+
+@item
+文字列関数は特別な扱いが必要だ。いくつかのUnixシステムは@file{string.h}
+というヘッダファイルを持っている。他では@file{strings.h}を持っている。どっ
+ちのファイル名も可搬性がない。できることは二つある。どっちのファイルをイ
+ンクルードするかAutoconfで見付け出すか、どっちもインクルードしないかだ。
+
+@item
+文字列のファイルをどっちもインクルードしないなら、普通の方法ではヘッダファ
+イルから文字列関数の宣言を得ることができない。
+
+このことは、あなたが思うよりも問題を起こさない。多くのシステムがまだサポー
+トしていないので、いずれにせよ、新しい@sc{ansi}文字列関数は避ける
+べきだ。使って良い文字列関数は次の通りだ。
+
+@example
+strcpy   strncpy   strcat   strncat
+strlen   strcmp    strncmp
+strchr   strrchr
+@end example
+
+複製や連結の関数は、それらの値を使わない限り、宣言なしで上手く働く。宣言
+なしにそれらの値を使うと、ポインタの大きさが@code{int}の大きさと違うシス
+テムや、おそらく他の場合に失敗する。それらの値を使うのを避けるのはささい
+なことだから、そうしなさい。
+
+比較の関数や@code{strlen}は、ほとんどのシステムで、おそらくGNUソフトウェ
+アが動くすべてのシステムで、宣言なしに上手く働く。少数のシステムで
+@strong{条件付きで}それらを宣言することが必要だと気付くかもしれない。
+
+検索関数は@code{char *}を返すと宣言されなければならない。幸運にも、それ
+らが返すデータ型には多様性がない。しかしそれらの名前には多様性がある。あ
+るシステムでは、それらの関数に@code{index}と@code{rindex}という名前を付
+けている。他のシステムでは、@code{strchr}と@code{strrchr}という名前を使
+う。あるシステムは両方の名前をサポートするが、どっちも全てのシステムで働
+くわけではない。
+
+片方の組の名前を取り出し、プログラム中でそれを使うべきだ。(今日では、新
+しいプログラムには@code{strchr}と@code{strrchr}を選ぶのがより良い。それ
+らは標準の@sc{ansi}名だから。) それらの名前を両方とも@code{char *}を返す
+関数として宣言しなさい。それらの名前をサポートしないシステムでは、他方の
+組のことばをマクロとして定義しなさい。例えば、@code{strchr}と
+@code{strrchr}の名前を通して使いたいなら、ファイルの始め(あるいはヘッダ
+に)次のように書いておく。
+
+@example
+#ifndef HAVE_STRCHR
+#define strchr index
+#endif
+#ifndef HAVE_STRRCHR
+#define strrchr rindex
+#endif
+
+char *strchr ();
+char *strrchr ();
+@end example
+@end itemize
+
+ここでは、@code{HAVE_STRCHR}と@code{HAVE_STRRCHR}が対応する関数が存在す
+るシステムでは定義されるマクロだとみなしている。それらを適切に定義する一
+つのやり方はAutoconfを使うことだ。
+
+@node Internationalization
+@section 国際化
+
+GNUはあるプログラムのメッセージを様々な言語に翻訳するのを容易にするGNU
+gettextと呼ばれるライブラリを持っている。あらゆるプログラムでこのライブ
+ラリを使うべきだ。メッセージがプログラムに現れるとき、それらに英語を使い
+なさい。そして、それらを他の言語に翻訳するための方法をgettextで提供しな
+さい。
+
+GNU gettextの使用は翻訳が必要かもしれない、それぞれの文字列の周りに
+@code{gettext}マクロの呼び出しを付けることを含む ---次のように。
+
+@example
+printf (gettext ("Processing file `%s'..."));
+@end example
+
+@noindent
+こうすると、GNU gettextが文字列@code{"Processing file `%s'..."}を翻訳さ
+れたバージョンで置き換えられる。
+
+一度プログラムがgettextを使うことになったら、翻訳が必要な新しい文字列を
+加えるとき、@code{gettext}への呼び出しを書く地点を作ってください。
+
+あるパッケージでのGNU gettextの使用は、そのパッケージに対して@dfn{テキス
+ト領域名}を指定することを含む。テキスト領域名はこのパッケージの翻訳を他
+のパッケージの翻訳と分離するのに使われる。通常、テキスト領域名はパッケー
+ジの名前と同じであるべきだ ---例えば、GNU file utilityのために
+@samp{fileutils}が使われる。
+
+gettextが上手く働くようにするために、単語や文の構造に仮定を設けるコード
+を書かないようにしなさい。文の正確なテキストがデータによって変わるのよう
+にしたいとき、条件付けられた単語や句を単一の文脈構成に押し込むよりも、そ
+れぞれ完全な文を含む二つ以上の文字列定数を使いなさい。
+
+これがやるべきではないものの例だ。
+
+@example
+printf ("%d file%s processed", nfiles,
+        nfiles != 1 ? "s" : "");
+@end example
+
+@noindent
+この例の問題は複数形が`s'を加えることで行われると仮定していることだ。も
+し書式文字列にgettextを適用するなら、次のように、メッセージが異なる単語
+を使うことができるが、
+
+@example
+printf (gettext ("%d file%s processed"), nfiles,
+        nfiles != 1 ? "s" : "");
+@end example
+
+@noindent
+複数形が`s'を使うようになお強制されている。これがより良い方法だ。
+
+@example
+printf ((nfiles != 1 ? "%d files processed"
+         : "%d file processed"),
+        nfiles);
+@end example
+
+@noindent
+このやり方で、二つの文字列それぞれに独立してgettextを適用できる。
+
+@example
+printf ((nfiles != 1 ? gettext ("%d files processed")
+         : gettext ("%d file processed")),
+        nfiles);
+@end example
+
+@noindent
+こうすると、``file''という単語の複数形を作る、いかなる方法でも実現でき、
+``processed''に対して、単語が一致しないといけない言語を扱うこともできる。
+
+同じような問題は次のコードで文脈の構造の水準で現れる。
+
+@example
+printf ("#  Implicit rule search has%s been done.\n",
+        f->tried_implicit ? "" : " not");
+@end example
+
+@noindent
+このコードに@code{gettext}呼び出しを与えても、すべての言語で正しい結果を
+得られるわけではない。なぜなら、いくつかの言語で否定は文中に一つよりもた
+くさんの場所で単語を加える必要があるからだ。対照的に、@code{gettext}呼び
+出しの追加は、もしそのコードが次のように始まるなら、簡単に行える。
+
+@example
+printf (f->tried_implicit
+        ? "#  Implicit rule search has been done.\n",
+        : "#  Implicit rule search has not been done.\n");
+@end example
+
+@node Mmap
+@section Mmap
+
+@code{mmap}がすべてのファイルに働くとも、すべてのファイルで失敗するとも、
+みなしてはいけない。一部のファイルでは上手く行き、他では駄目かもしれない。
+
+@code{mmap}を使う適切な方法は、使いたい特定のファイルで試してみることだ。
+---そして、もし@code{mmap}が働かなかったら、@code{read}や@code{write}を
+使う他の方法で作業することに頼りなさい。
+
+この用心が必要である理由はGNUカーネル(HURD)はユーザが拡張可能なファイル
+システムを提供することで、そこではたくさんの異なる種類の``普通のファイル''
+があり得る。それらの多くは@code{mmap}をサポートするが、いくつかはしない。
+プログラムをすべてのそういうファイルを扱えるようにすることは重要だ。
+
+@node Documentation
+@chapter プログラムの文書化
+
+@menu
+* GNU Manuals::                 適切なマニュアルの執筆
+* Manual Structure Details::    特定の構造の慣習
+* NEWS File::                   NEWSファイル補足マニュアル
+* Change Logs::                 変更の記録
+* Man Pages::                   manページは二番目だ。
+* Reading other Manuals::       どれほど他のマニュアルから学ぶことができるか。
+@end menu
+
+@node GNU Manuals
+@section GNUマニュアル
+
+GNUシステムの一部を文書にする好ましい方法はTexinfo整形言語
+でマニュアルを書くことだ。Texinfoのマニュアルを、ハードコピーか、
+@code{info}やEmacsのInfoサブシステム(@kbd{C-h i})を使って利用できるオン
+ラインのバージョンで見なさい。
+
+プログラマはしばしば、彼らが知っている実装の構造に従う文書を構成するのが
+最も自然だと感じる。しかしこの構造はそのプログラムの使い方を説明するには
+必ずしも良いとは言えない。それはユーザには関係がなく、ユーザを混乱させる
+かもしれない。
+
+段落の文から別々のマニュアルに論題を分類することまで、あらゆる水準で、文
+書を構成する正しい方法は、それを読むときにユーザが心に抱くであろう概念や
+疑問に従う。ときどきこの考えの構造は文書化されるソフトウェアの実装の構造
+と一致する。---でもしばしばそれらは異なる。しばしば良い文書を執筆するた
+めに学ぶ一番重要な部分は、実装のように文書を構成していて、もっと良い別の
+構成について考えるときに気付くことを学ぶことだ。
+
+例えば、GNUシステムのそれぞれのプログラムはおそらく一つのマニュアルに記
+述されるべきだ。しかしこれはそれぞれのプログラムがそれ自身のマニュアルに
+文書化されるべきであることを意味していない。このことはユーザが理解するの
+を助ける構造よりもむしろ、その実装の構造に従っているだろう。
+
+代わりに、それぞれのマニュアルは密接な@emph{論題}を包含するべきだ。例え
+ば、@code{diff}のマニュアルと@code{diff3}のマニュアルの代わりに、
+@code{cmp}だけでなく、これらのプログラム両方も包含する、``ファイルの比較''
+のマニュアルが一つある。それらのプログラムを一緒に文書にすることで、全体
+の主題をよりすっきりさせることができる。
+
+プログラムを論じるマニュアルはそのプログラムのコマンドライン・オプション
+全てとそのコマンド全てを記述すべきだ。それはそれらの使用例を与えるべきだ。
+しかしマニュアルを機能の列挙として構成してはならない。代わりに、副題によっ
+て、論理的に構成しなさい。プログラムが行う仕事について考えるときにユーザ
+が尋ねるであろう質問を提出しなさい。
+
+概して、GNUマニュアルは指導書と参考書の両方に役に立つべきだ。それはInfo
+によりそれぞれの論題に対する便利な手段のために、そして(付録は別として)通読
+するために作り上げられるべきだ。GNUマニュアルは始めから通して読む初心者
+への良い紹介を行うべきで、ハッカーが欲しがる詳細のすべてを与えるべきでも
+ある。
+
+そのことは最初に思われるほど難しくない。それぞれの章をその論題の論理的な
+分類として整理しなさい。しかしその節を整頓して、それらのテキストを執筆し
+なさい。その章を通読することが意味を為すように。その著書を章に構成すると
+きや、節を段落に構成するとき、同様にしなさい。その標語は、@emph{それぞれ
+の地点で、先行するテキストによって上げられた最も基本的で最も重要な話題を
+提出しなさい}、だ。
+
+必要なら、マニュアルの最初に、純粋に指導的で、主題の基礎を包含する、余分
+な章を入れなさい。これらは初心者がマニュアルの残りを理解するための枠組み
+を提供する。Bisonのマニュアルはこれの使い方の良い例を提供する。
+
+GNUの文書を書き方の手本としてUnixのmanページを使ってはいけない。それらの
+ほとんどは簡潔で、構成が悪く、根底にある概念について不適切な説明を与えて
+いる。(もちろん例外はある。) またUnixのmanページはGNUマニュアルで使用す
+るものとは異なる、特有の構成を使用する。
+
+Unixの文書で使われる``pathname''という用語を使わないでください。代わりに
+``file name''(二語)を使いなさい。``path''という用語は検索パスに対しての
+み使用し、それはファイル名のリストだ。
+
+コンピュータ・プログラムへの間違った入力を表すのに、``illegal''という用
+語を使わないでください。このためには``invalid''を使い、``illegal''という
+用語は違法のために確保してください。
+
+@node Manual Structure Details
+@section マニュアルの構造の詳細
+
+マニュアルの表紙は、そのマニュアルで記述されるプログラムやパッケージのバー
+ジョンを述べるべきだ。マニュアルの一番上の節もまたこの情報を含むべきだ。
+もしマニュアルがプログラムより頻繁に、あるいは、無関係に変更されているな
+ら、それらの場所の両方で、そのマニュアルのバージョン・ナンバーを記述しな
+さい。
+
+そのマニュアルで記述されるそれぞれのプログラムは、@samp{@var{program}
+Invocation}とか@samp{Invoking @var{program}}と名付けられた節を持つべきだ。
+この節は(もしあれば、その副節と共に)そのプログラムのコマンドラインの引数
+とそれの走らせ方(人々がmanページで探し求める情報の類い)を記すべきだ。そ
+のプログラムが使う、すべてのオプションと引数のテンプレートを含む
+@samp{@@example}で始めなさい。
+
+あるいは、項目の名前が上の様式の一つに合う表に項目を書きなさい。これ
+は、その節の本当の名前とは関係なしに、この目的のための節として、項目が指
+し示す節を識別する@footnote{訳注: 自分でも何書いてるのか意味不明。訂正乞
+う。原文:
+Alternatively, put a menu item in some menu whose item name fits one of
+the above patterns.  This identifies the node which that item points to
+as the node for this purpose, regardless of the node's actual name.}。
+
+プログラム名を指定し、そのマニュアルのこれの部分だけを素早く読むための自
+動的な機能があるだろう。
+
+もし一つのマニュアルがいくつかのプログラムを記述するなら、それぞれのプロ
+グラムを記述する節を持つべきだ。
+
+@node NEWS File
+@section NEWSファイル
+
+マニュアルに加えて、パッケージは言及するに値するユーザに見える変更の
+一覧を含む@file{NEWS}と名付けられたファイルを持つべきだ。新しいリリー
+ス毎に、そのファイルの前に項目を加え、それらが属するバージョンを同定しな
+さい。古い項目を捨てないように。新しい項目の後へ、そのファイルの中に残し
+ておきなさい。こうして、以前のどのバージョンからアップグレードするユーザ
+でも何が新しいのかを見ることができる。
+
+もし@file{NEWS}ファイルが非常に長くなれば、古い項目をいくらか
+@file{ONEWS}という名前のファイルに移し、ユーザがそのファイルを参照するた
+めに最後に覚え書きを書いておきなさい。
+
+@node Change Logs
+@section 変更履歴
+
+変更履歴にプログラムのソースファイルに行われた変更を全て記述し続けなさい。
+これの目的は将来バグを発見する人々がそのバグを入れた変更が分かるようにす
+ることだ。しばしば新しいバグは最近何が変わったのかを見ることで発見され得
+る。さらに重要なことに、変更履歴は矛盾する概念がいかに起きそれらが誰
+に起因するのかということについての履歴を与えてくれるので、プログラムの
+異なる部分間での概念的な矛盾を失くすことに役立つことができるのだ。
+
+@menu
+* Change Log Concepts::         
+* Style of Change Logs::        
+* Simple Changes::              
+* Conditional Changes::         
+@end menu
+
+@node Change Log Concepts
+@subsection 変更履歴の概念
+
+変更履歴を、もっと前のバージョンが現在のバージョンとどう違うかを説明する、
+概念な``復元一覧表''として考えることができる。人々は現在のバージョンを見
+ることができる。彼らは何がその中にあるのかを言うのに変更履歴を必要としな
+い。変更履歴から欲しいものはもっと前のバージョンがどう違ったのかに関する、
+すっきりした説明だ。
+
+変更履歴ファイルは通常@file{ChangeLog}と呼ばれ、ディレクトリ全体を包含す
+る。それぞれのディレクトリはそれ自身の変更履歴を持って良いし、あるディレ
+クトリはその親ディレクトリの変更履歴を使って良い。---それはあなたに任さ
+れる。
+
+他のやり方は変更履歴をRCSやCVSのようなバージョン管理システムで記録するこ
+とだ。これは自動的に@file{ChangeLog}ファイルに変換される。
+
+変更の目的全部やそれらが一緒にどう働くのかを記述する必要性はない。もし変
+更が説明を必要とすると考えるなら、おそらくその通りだ。それを説明してくだ
+さい。---しかしコードのコメントに説明を入れてください。そこは人々がその
+コードを見るときはいつでも見るところだろう。例えば、関数を加えるとき、
+``New function''は変更履歴には十分だ。なぜなら、それが何をするのか説明す
+るために、関数定義の前にコメントがあるはずだからだ。
+
+しかしながら、ときどき変更の組の全体の目的を記述する一行を書くのが有用だ。
+
+@file{ChangeLog}に項目を加える一番簡単な方法はEmacsのコマンド、@kbd{M-x
+add-change-log-entry}を使うことだ。項目はアスタリスク、変更されたファイ
+ルの名前、そして変更された関数、変数、それ以外のものの名前を丸括弧の中に
+含むべきだ。その後にコロンを付ける。そしてその関数や変数に行った変更を記
+述しなさい。
+
+@node Style of Change Logs
+@subsection 変更履歴の形式
+
+ここに変更履歴の項目の例をいくつか挙げる。
+
+@example
+* register.el (insert-register): Return nil.
+(jump-to-register): Likewise.
+
+* sort.el (sort-subr): Return nil.
+
+* tex-mode.el (tex-bibtex-file, tex-file, tex-region):
+Restart the tex shell if process is gone or stopped.
+(tex-shell-running): New function.
+
+* expr.c (store_one_arg): Round size up for move_block_to_reg.
+(expand_call): Round up when emitting USE insns.
+* stmt.c (assign_parms): Round size up for move_block_from_reg.
+@end example
+
+変更された関数や変数を略さずに名前を付けることが重要だ。関数や変数の名前
+を略していけない。そして、それらをくっ付けてはいけない。その後の管理者は
+しばしばある関数に属する変更履歴の項目を全部見付けるのに、関数名で検索す
+るだろう。もしその名前を略していると、彼らは検索するときそれを見付けられ
+ないだろう。
+
+例えば、ある人々は@samp{* register.el (@{insert,jump-to@}-register)}と書
+くことで、関数名の集まりを略する傾向がある。これは良くない考えだ。
+@code{jump-to-register}や@code{insert-register}の検索はその項目を見付け
+ないだろうから。
+
+無関係な変更履歴の項目を空行で分けなさい。二つの項目が一緒に働き、同じ変
+更部分を表しているとき、それらの間に空行を入れてはいけない。そして、続い
+ている項目が同じファイルにあるとき、そのファイル名とアスタリスクを省いて
+良い。
+
+@node Simple Changes
+@subsection 単純な変更
+
+ある単純な類いの変更は変更履歴にやたら詳細に記す必要はない。
+
+単純なやり方で関数の呼び出し順序を変更し、その関数の呼び出し元を全て
+変更するとき、変更した呼び出し元全てに個々の項目を作る必要はない。単に
+呼ばれる関数の項目に``All callers changed''と書きなさい。
+
+@example
+* keyboard.c (Fcommand_execute): New arg SPECIAL.
+All callers changed.
+@end example
+
+コメントや解説の文字列だけを変更するとき、関数に言及せずに、そのファイル
+の項目を書けば十分だ。単なる``Doc fixes''だけで変更履歴には十分だ。
+
+解説ファイルのための変更履歴の項目は作る必要はない。これは解説は直すのが
+困難であるバグに影響しないからだ。解説は正確に設計されたやり方で相互作用
+するに違いない部分から成り立っているわけではない。誤りを正すために、間違っ
+た経過の履歴を知る必要はない。その解説が言っていることと、そのプログラム
+が実際に働く方法を比較すれば十分だ。
+
+@node Conditional Changes
+@subsection 条件文の履歴
+
+Cのプログラムはしばしばコンパイル時の@code{#if}条件文を含む。たくさんの
+変更は条件文だ。ときどき条件文に全体的に含まれている新しい定義を加える。
+変更履歴にその変更が適用されるのがどれか条件を示すことは非常に役に立つ。
+
+条件付きの変更を示す我々の慣習は条件の名前の周りに角括弧を使うことだ。
+
+ここで、条件付きだが、それに付随する関数や実体の名前を持たない変更を記述
+する、簡単な例を挙げる。
+
+@example
+* xterm.c [SOLARIS2]: Include string.h.
+@end example
+
+ここで全部条件付きである新しい定義を記述する項目を挙げる。
+@code{FRAME_WINDOW_P}というマクロに対するこの新しい定義は
+@code{HAVE_X_WINDOWS}が定義されているときだけ使われる。
+
+@example
+* frame.h [HAVE_X_WINDOWS] (FRAME_WINDOW_P): Macro defined.
+@end example
+
+ここに、全体として定義は無条件だが、変更自体は@samp{#ifdef
+HAVE_LIBNCURSES}条件に含まれる、@code{init_display}という関数内での変更
+に対する項目を挙げる。
+
+@example
+* dispnew.c (init_display) [HAVE_LIBNCURSES]: If X, call tgetent.
+@end example
+
+ここであるマクロが定義され@emph{ない}ときだけ影響を持つ変更の項目を挙げる。
+
+@example
+(gethostname) [!HAVE_SOCKETS]: Replace with winsock version.
+@end example
+
+@node Man Pages
+@section manページ
+
+GNUプロジェクトでは、manページは副次的だ。あらゆるGNUプログラムがmanペー
+ジを持つことは必要でないか期待されていない。しかし一部は持っている。あな
+たのプログラムにmanページを含めるかどうかはあなたの選択である。
+
+この決定をするとき、manページをサポートするにはそのプログラムが変更
+される時毎に継続的な努力が必要であることを考えなさい。そのmanページに費
+す時間はもっと有用な作業から奪われる時間なのだ。
+
+ほとんど変更しない簡単なプログラムでは、manページの更新はちょっとした作
+業かもしれない。そして、もし持っていれば、manページを含めない理由はほと
+んどない。
+
+多量に変更する大きなプログラムでは、manページの更新は相当な重荷かもしれ
+ない。もしユーザがmanページを寄付すると申し出たら、この贈り物は受け取る
+のに高くつくと考えるかもしれない。同じ人がそれを維持する全責任を負うと合
+意しなければ、そのmanページを拒否することがより良いかもしれない。---完全
+にそれから手を洗えるように。もしこの有志が後にその作業をするのをやめたら、
+自分でそれを取り上げなければならないと感じてはいけない。誰か他の人がその
+manページを更新すると合意するまで、配布物からそれを引込めるのがより良い
+かもしれない。
+
+プログラムをほんの少ししか変更しないとき、manページは更新せずに役に立つ
+状態に保たれるぐらい不一致は少ないと感じるかもしれない。そうなら、それを
+維持しておらず、Texinfoマニュアルがもっと信頼できることを説明する目に付
+く覚え書きをmanページの最初の方に書いておきなさい。その覚え書きはTexinfo
+文書を呼び出す方法を表すべきだ。
+
+@node Reading other Manuals
+@section 他のマニュアルを読む
+
+あなたが解説しているプログラムを記述する、自由でない書籍や解説ファイルが
+あるかもしれない。
+
+単に新しい代数の教科書の著者が代数に関する他の本を読むことができるように、
+これらの文書を参考文献として使って構わない。どのノンフィクションの書籍の
+大部分も事実から出来ていて、この場合、あるプログラムがどう動くかについて
+の事実で、これらの事実はその主題で書いているすべての人にとって必ず同じで
+ある。しかし、すでにある自由でない解説文から、あなたの概要の構成、言葉遣
+い、表や例を複製しないように気を付けなさい。自由な解説文から複製すること
+は構わないかもしれない。個々の場合についてFSFに確認してください。
+
+@node Managing Releases
+@chapter リリースの過程
+
+リリースを行うことは、単にあなたのソースファイルをtarファイルに束ねてFTP
+に置くだけ以上のことである。あなたのソフトウェアを様々なシステムで走るよ
+うに設定できるように作り上げるべきだ。あなたのMakefileは以下で述べるGNU
+標準に従うべきだし、あなたのディレクトリ設計も以下で記述されるGNU標準に
+従うべきだ。そうすることで、あなたのパッケージを全てのGNUソフトウェアの
+より大きな骨組みに組み込むことが簡単になる。
+
+@menu
+* Configuration::               設定がいかに働くべきか
+* Makefile Conventions::	Makefileの取り決め
+* Releases::                    リリースを行う
+@end menu
+
+@node Configuration
+@section 設定がいかに働くべきか
+
+各GNU配布物は@code{configure}という名前のシェル・スクリプトと一緒に配ら
+れるべきだ。このスクリプトにはそのプログラムをコンパイルしたいマシンやシス
+テムの種類を表す引数を与えられる。
+
+@code{configure}スクリプトはコンパイルに効果を与えられるように設定オプショ
+ンを記録しなければならない。
+
+これを行う一つの方法は、@file{config.h}のような標準的な名前から、選んだ
+システム用の適切な設定ファイルにリンクすることだ。これによって、人々はま
+ず設定しないとプログラムを構築できなくなるだろう。
+
+@code{configure}が設定できる他の方法はMakefileを編集することだ。こうする
+なら、配布物は@file{Makefile}と名付けらたファイルを含むべきでは@emph{ない}。
+代わりに、編集に使われる入力を含む@file{Makefile.in}というファイルを入れ
+るべきだ。またもう一度、これはまず設定をしてないとプログラムを構築できな
+いようになるようにする。
+
+もし@code{configure}が@file{Makefile}に書き込むなら、@file{Makefile}は、
+@code{configure}が再び走り、最後に行ったのと同じ設定を作り上げる、
+@file{Makefile}と名付けられたターゲットを持つべきだ。@code{configure}が
+読むファイルは@file{Makefile}の依存関係として列挙されているべきだ。
+
+@code{configure}スクリプトからの出力であるファイルはすべて、それらが
+@code{configure}を使って自動的に生成されたことを説明するコメントを先頭に
+持っているべきだ。これによって、ユーザはそれらを手動で編集しようと考えな
+くなるだろう。
+
+@code{configure}スクリプトは、プログラムが最後に設定されたときに指定され
+た設定オプションを記述する、@file{config.status}という名前のファイルを書
+くべきである。このファイルはもし走ると同じ設定を再生成するシェル・スク
+リプトであるべきだ。
+
+@code{configure}スクリプトは、(もし現在のディレクトリでなければ)ソー
+スが見付かるディレクトリを指定するための@samp{--srcdir=@var{dirname}}と
+いう形式にオプションを受け取るべきだ。こうすると、プログラムを別ディレク
+トリで構築することが可能なり、実際のソース・ディレクトリは変更されないよ
+うにできる。
+
+もしユーザが@samp{--srcdir}を指定しなければ、@code{configure}はソースが
+見付かるかどうか見るのに、@file{.}と@file{..}の両方を確認するべきだ。も
+しこれらの場所の一つでソースが見付かったら、そこからソースを使うべきだ。
+そうでなければ、ソースが見付けられないと報告し、ゼロでない状態で終了する
+べきだ。
+
+普通@samp{--srcdir}をサポートする簡単な方法はMakefileの@code{VPATH}の定
+義を編集することによる。これを可能にするために、@code{configure}は
+Makefileに正確に指定されたディレクトリの値を持つ@code{srcdir}という名
+前の変数を加えることができる。
+
+@code{configure}スクリプトはまたそのプログラムを構築するシステムの種類を
+指定する引数を受け取るべきである。この引数は次のようであるべきだ。
+
+@example
+@var{cpu}-@var{company}-@var{system}
+@end example
+
+例えば、Sun 3は@samp{m68k-sun-sunos4.1}だ。
+
+@code{configure}スクリプトは、マシンを表す方法として、全てのもっともらし
+い他の方法を解読できる必要がある。だから、@samp{sun3-sunos4.1}は正しい別
+名だろう。多くのプログラムでは、@samp{vax-dec-ultrix}は
+@samp{vax-dec-bsd}の別名だろう。単にUltrixと@sc{BSD}の違いはほとんど気付
+かない程度だからだが、少数のプログラムはそれらを区別する必要があるかもし
+れない。
+@c Real 4.4BSD now runs on some Suns.
+
+サブルーチンとして使える、システムの種類を有効にし別名を正規化する、
+@file{config.sub}と呼ばれるシェル・スクリプトがある。
+
+他のオプションで、そのマシンにあるソフトウェアやハードウェアをもっと詳細
+に指定して良いし、パッケージの付加的な部分を入れたり、外したりして良い。
+
+@table @samp
+@item --enable-@var{feature}@r{[}=@var{parameter}@r{]}
+@var{feature}と呼ばれる付加的なユーザ水準の機能を構築しインストールする
+よう、パッケージを設定する。これで、ユーザはどの付加的な機能を入れるか選
+択することができる。付加的な@var{parameter}に@samp{no}を与えれば、もしデ
+フォルトでは構築されるなら、@var{feature}を除くべきだ。
+
+どの@samp{--enable}オプションも@strong{決して}ある機能を他と置き換えるべ
+きではない。どの@samp{--enable}オプションも決してある有用な挙動を他の有
+用な挙動の代わりにするべきではない。@samp{--enable}の唯一の適切な使用は
+そのプログラムの一部を構築するか除くかの質問に対してだけだ。
+
+@item --with-@var{package}
+@c @r{[}=@var{parameter}@r{]}
+パッケージ@var{package}がインストールされるだろうから、このパッケージが
+@var{package}と一緒に働くように設定する。
+
+@c  Giving an optional @var{parameter} of
+@c @samp{no} should omit @var{package}, if it is used by default.
+
+@var{package}の可能な値には、@samp{gnu-as}(あるいは@samp{gas})、
+@samp{gnu-ld}、@samp{gnu-libc}、@samp{gdb}、@samp{x}、そして、
+@samp{x-toolkit}がある。
+
+@samp{--with}オプションをあるファイルを見付けるためにファイル名を指定す
+るのに使ってはいけない。こういう使い方は@samp{--with}オプションの目的か
+ら外れている。
+
+@item --nfp
+ターゲット・マシンは浮動小数点プロセッサを持っていない。
+
+@item --gas
+ターゲット・マシンのアセンブラはGAS、つまり、GNUアセンブラである。これは
+もはや使われていない。ユーザは代わりに@samp{--with-gnu-as}を使うべきだ。
+
+@item --x
+ターゲット・マシンはX Window Systemをインストールしている。これはもはや
+使われていない。ユーザは代わりに@samp{--with-x}を使うべきだ。
+@end table
+
+全ての@code{configure}スクリプトはこれらの``詳細な''オプションをすべて受
+け入れるべきだ。それらが手もとの特定のパッケージに違いを作るかどうかにか
+かわらず。特に、それらは@samp{--with-}や@samp{--enable-}で始まるどんなオ
+プションでも受け入れるべきだ。これはユーザがオプション一組で一度にGNUソー
+ス・ツリー全体を設定できるするためだ。
+
+@samp{--with-}や@samp{--enable-}の部類が狭いことに気付くだろう。それらは
+あなたが考えるようなオプションの類いに役目を果たさ@strong{ない}。このこ
+とは計画的なのだ。我々はGNUソフトウェアで可能な設定オプションを制限した
+いのだ。我々はGNUプログラムに特異な設定オプションを持たせたくない。
+
+コンパイルの過程の一部を行うパッケージはクロス・コンパイルをサポートする
+かもしれない。そういう場合、そのプログラムのホストとターゲットのマシンは
+異なるかもしれない。@code{configure}スクリプトは通常指定されたシステムの
+種類がホストとターゲットの両方だとして扱うべきだ。こうして、それが走るの
+と同じ種類のマシンで動くプログラムを作り出す。
+
+クロス・コンパイラ、クロス・アセンブラ、あるいはあなたが持つどんなもので
+も、構築する方法は、@code{configure}を走らせるときに
+@samp{--host=@var{hosttype}}というオプションを指定する。これはターゲッ
+ト・システムの種類を変えないでホスト・システムを指定する。@var{hosttype}
+の文法は上で述べたのと同じである@footnote{訳注: 嘘八百。この場合、
+@samp{--target=@var{hosttype}}を指定する。逆にホストの方を変えるとターゲッ
+トも変わる。詳しくはAutoconfのマニュアルを見よ。}。
+
+クロス・コンパイラを開始するには、それが走るホスト以外のマシンでコンパイ
+ルすることが必要である。コンパイルされるパッケージは、あなたがそれらをコ
+ンパイルするシステムがホストとは異なる場合、設定を指定するために、
+@samp{--build=@var{hosttype}}という設定オプションを受け取る@footnote{訳
+注: 原文のitはいまいち何を意味しているのか分からないが、内容から推測する
+に多分クロス・コンパイルされるパッケージかと思う。}。
+
+クロス作業は意味がないプログラムは、@samp{--host}オプションを受け取る必
+要はない。なぜなら、クロス作業のためにオペレーティング・システム全体を設
+定することは意味のあることではないからだ。
+
+プログラムの中には自動的に自分自身を設定する方法を持っているものがある。
+あなたのプログラムがこうするように作られていると、あなたの
+@code{configure}スクリプトはその引数のほとんどを無視して良い。
+
+@comment The makefile standards are in a separate file that is also
+@comment included by make.texinfo.  Done by roland@gnu.ai.mit.edu on 1/6/93.
+@comment For this document, turn chapters into sections, etc.
+@lowersections
+@include make-stds-ja.texi
+@raisesections
+
+@node Releases
+@section リリースを行う
+
+@code{Foo version 69.96}の配布物を@file{foo-69.96.tar.gz}という名前で
+gzipされたtarファイルにまとめなさい。それは@file{foo-69.96}という名前の
+サブディレクトリに展開されるべきだ。
+
+そのプログラムの構築やインストールは配布物に含まれるどのファイルも決して
+変更するべきではない。これは、どんな方法でもプログラムの一部を作るファイル
+は全て、@dfn{ソースファイル}と@dfn{ソースでないファイル}に分類されていな
+ければならないことを意味する。ソースファイルは人間によって書かれ、自動的
+には決して変更されない。ソースでないファイルはMakefileの管理の下に、プロ
+グラムによってソースファイルから生成される。
+
+配布物は、パッケージの名前とそれが何をするのか一般的な記述を与える、
+@file{README}という名前のファイルを含むべきだ。また、もしあるなら、パッ
+ケージの一番上にあるサブディレクトリそれぞれの目的を説明するのも良い。
+@file{README}ファイルはパッケージのバージョン・ナンバーを記述するか、そ
+れが見付かるパッケージ内の場所を参照するべきだ。
+
+@file{README}ファイルは@file{INSTALL}というファイルを参照すべきだ。それ
+はインストールのやり方の説明を含むべきだ。
+
+@file{README}ファイルはまた著作物の条件を含むファイルを参照するべきだ。
+もし使われていれば、GNU GPLは@file{COPYING}と呼ばれるファイルにあるべき
+だ。もしGNU LGPLが使われているなら、それは@file{COPYING.LIB}と呼ばれるファ
+イルにあるべきだ。
+
+当然ソースファイルは全部配布物になければならない。ソースでないファイ
+ルを配布物に入れても構わない。もしそれらが最新状態でマシンに依存しておら
+ず、配布物は通常それらを変更することがあり得ないのなら。我々は普通Bison、
+@code{lex}、@TeX{}、そして@code{makeinfo}によって生成されたソースでない
+ファイルを含めている。これは、ユーザがインストールしたいパッケージではど
+れでもインストールできるので、我々の配布物間での不必要な依存関係を避ける
+のに役立っている。
+
+プログラムを構築したりインストールすることによって実際に変更されるかもし
+れないソースでないファイルは、@strong{絶対に}配布物に入れるべきではない。
+だからもしソースでないファイルを配布するなら、新しい配布物を作るとき、そ
+れらを常に最新にしておきなさい。
+
+配布物が展開するディレクトリは(どのサブディレクトリも)全て誰でも書き込み
+可能にしておきなさい(8進数モードの777)。これは、tarアーカイブのファイル
+の所有者と許可を保存する、@code{tar}の古いバージョンがそのユーザが特権的
+でない場合でも全てのファイルを展開できるようにするためだ。
+
+配布物の全てのファイルは誰でも読み込み可能にしておきなさい。
+
+配布物の中にファイル名が14文字より長いものがないようにしておきなさい。同
+様に、そのプログラムを構築することによって出来るファイルはどれも14文字よ
+り長い名前を持たないようにするべきだ。これの理由は一部のシステムは
+@sc{posix}標準の馬鹿げた解釈に固執し、過去にやっていたように長い名前を切
+り詰めるよりも開くことを拒んでいるからだ。
+
+配布物それ自体にシンボリック・リンクを含めてはいけない。tarファイルがシ
+ンボリック・リンクを含むなら、人々はシンボリック・リンクをサポートしない
+システム上ではそれを展開することさえできない。また、異なるディレクトリで
+一つのファイルに複数の名前を使ってはいけない。なぜなら、あるファイルシス
+テムはこれを扱えないし、このことは配布物を展開できなくするからだ。
+
+全てのファイル名がMS-DOS上で重ならないようにしてみなさい。MS-DOSでの名前
+は8文字以下から成り立ち、付加的にピリオドと3文字以下の文字がくっつく。
+MS-DOSは余分な文字をピリオドの前と後両方で切り詰めるだろう。だから、
+@file{foobarhacker.c}と@file{foobarhacker.o}は曖昧でない。それらは
+@file{foobarha.c}と@file{foobarha.o}に切り詰められ、それらは区別できる。
+
+あなたの配布物に@file{*.texinfo}や@file{*.texi}ファイルの出力を試験する
+のに使った@file{texinfo.tex}のコピーを入れなさい。
+
+同様に、もしあなたのプログラムがregex、getopt、obstack、あるいはtermcap
+のような小さなGNUソフトウェア・パッケージを使うなら、配布物にそれらを含
+めなさい。それらを省くと、その配布ファイルはちょっと小さくなるが、他のファ
+イルをどうやって手に入れるか分からないユーザにいくらか不便になるという犠
+牲を払うことになる。
+
+@contents
+
+@bye

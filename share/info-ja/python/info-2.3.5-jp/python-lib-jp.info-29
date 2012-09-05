@@ -1,0 +1,1249 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: urllib,  Next: urllib2,  Prev: cgitb,  Up: インターネットプロトコルとその支援
+
+URL による任意のリソースへのアクセス
+====================================
+
+URL による任意のネットワークリソースへのアクセス (socket が必要です)。
+
+このモジュールはワールドワイドウェブ (World Wide Web) を介してデータを
+取り寄せるための高レベルのインタフェースを提供する。特に、関数
+`urlopen()' は組み込み関数 `open()' と同様に動作し、
+ファイル名の代わりにファイルユニバーサルリソースロケータ (URL) を
+指定することができます。いくつかの制限はあります -- URL は読み出し
+専用でしか開けませんし、seek 操作を行うことはできません。
+
+このモジュールでは、以下の public な関数を定義します。
+
+`urlopen(url[, data[, proxies]])'
+     URL で表されるネットワーク上のオブジェクトを読み込み用に開きます。
+     URL がスキーム識別子を持たないか、スキーム識別子が `file:'
+     である場合、ローカルシステムのファイルが (広範囲の改行サポート
+     なしで) 開かれます。それ以外の場合は
+     ネットワーク上のどこかにあるサーバへのソケットを開きます。
+     接続を作ることができないか、サーバがエラーコードを返した場合、
+     例外 `IOError' が送出されます。全ての処理がうまくいけば、
+     ファイル類似のオブジェクトが返されます。このオブジェクトは以下の
+     メソッド:  `read()' 、 `readline()' 、 `readlines()' 、 `fileno()'
+     、 `close()' 、 `info()' そして `geturl()' をサポートします。
+     また、イテレータプロトコルも正しくサポートしています。 注意:
+     `read()'の引数を省略または負の値を指定しても、データスト
+     リームの最後まで読みこむ訳ではありません。ソケットからすべてのストリーム
+     を読み込んだことを決定する一般的な方法は存在しません。
+
+     `info()' および `geturl()' メソッドを除き、
+     これらのメソッドはファイルオブジェクトと同じインタフェースを持って
+     います -- このマニュアルの *Note ファイルオブジェクト::
+     セクションを 参照してください。
+     (ですが、このオブジェクトは組み込みのファイル
+     オブジェクトではないので、まれに真の組み込みファイルオブジェクトが
+     必要な場所では使うことができません)
+
+     `info()' メソッドは開いた URL に関連付けられたメタ情報 を含む
+     `mimetools.Message' クラスのインスタンスを返します。 URL
+     へのアクセスメソッドが HTTP である場合、メタ情報中の
+     ヘッダ情報はサーバが HTML ページを返すときに先頭に付加するヘッダ
+     情報です (Content-Length および Content-Type を含みます) 。
+     アクセスメソッドが FTP の場合、ファイル取得リクエストに応答
+     してサーバがファイルの長さを返したときには (これは現在では普通に
+     なりましたが) Content-Length ヘッダがメタ情報に含められます。
+     Content-type ヘッダは MIME タイプが推測可能なときにメタ情報に
+     含められます。アクセスメソッドがローカルファイルの場合、
+     返されるヘッダ情報にはファイルの最終更新日時を表す Date エントリ、
+     ファイルのサイズを示す Content-Length エントリ、そして推測される
+     ファイル形式の Content-Type エントリが含まれます。 `mimetools'
+     モジュールを 参照してください。
+
+     `geturl()' メソッドはページの実際の URL を返します。場合に
+     よっては、HTTP サーバはクライアントの要求を他の URL に振り向け
+     (redirect 、リダイレクト  ) します。 関数 `urlopen()'
+     はユーザに対してリダイレクトを透過的に
+     行いますが、呼び出し側にとってクライアントがどの URL にリダイレクト
+     されたかを知りたいときがあります。`geturl()' メソッドを
+     使うと、このリダイレクトされた URL を取得できます。
+
+     URL に `http:' スキーム識別子を使う場合、DATA 引数を 与えて `POST'
+     形式のリクエストを行うことができます (通常リクエストの 形式は
+     `GET' です)。引数 DATA は標準の
+     `application/x-www-form-urlencoded' 形式でなければなりません;
+     以下の `urlencode()' 関数を参照してください。
+
+     `urlopen()' 関数は認証を必要としないプロキシ (proxy) に対して
+     透過的に動作します。UNIX または Windows 環境では、 Python を起動
+     する前に、環境変数 `http_proxy'、 `ftp_proxy' 、および
+     `gopher_proxy' にそれぞれのプロキシサーバを指定する URL を
+     設定してください。 例えば (`%' はコマンドプロンプトです):
+
+          % http_proxy="http://www.someproxy.com:3128"
+          % export http_proxy
+          % python
+          ...
+
+     Windows
+     環境では、プロキシを指定する環境変数が設定されていない場合、
+     プロキシの設定値はレジストリの Internet Settings セクションから取得
+     されます。
+
+     Macintosh 環境では、`urlopen()' は 「インターネットの設定」
+     (Internet  Config) からプロキシ情報を取得します。
+
+     別の方法として、オプション引数 PROXIES を使って明示的にプロキシを
+     設定することができます。この引数はスキーム名をプロキシの URL
+     にマップする
+     辞書型のオブジェクトでなくてはなりません。空の辞書を指定するとプロキシを
+     使いません。`None' (デフォルトの値です) を指定すると、上で述べた
+     ように環境変数で指定されたプロキシ設定を使います。例えば:
+
+          # http://www.someproxy.com:3128 を http プロキシに使う
+          proxies = proxies={'http': 'http://www.someproxy.com:3128'}
+          filehandle = urllib.urlopen(some_url, proxies=proxies)
+          # プロキシを使わない
+          filehandle = urllib.urlopen(some_url, proxies={})
+          # 環境変数からプロキシを使う - 両方の表記とも同じ意味です。
+          filehandle = urllib.urlopen(some_url, proxies=None)
+          filehandle = urllib.urlopen(some_url)
+
+     (訳注:
+     上記と矛盾する内容です。おそらく旧バージョンのドキュメントです)
+     関数 `urlopen()' は明示的なプロキシ指定をサポートしていません。
+     環境変数のプロキシ設定を上書きしたい場合には `URLopener' を使う
+     か、`FancyURLopener' などのサブクラスを使ってください。
+
+     認証を必要とするプロキシは現在のところサポートされていません。
+     これは実装上の制限 (implementation limitation) と考えています。
+
+     _Changed in Python version 2.3_
+
+`urlretrieve(url[, filename[, reporthook[, data]]])'
+     URL
+     で表されるネットワーク上のオブジェクトを、必要に応じてローカルな
+     ファイルにコピーします。URL がローカルなファイルを指定していたり、
+     オブジェクトのコピーが正しくキャッシュされていれば、そのオブジェクトは
+     コピーされません。タプル `(FILENAME, HEADERS)' を 返し、FILENAME
+     はローカルで見つかったオブジェクトに対する ファイル名で、HEADERS
+     は `urlopen()' が返した (おそらくキャッシュされているリモートの)
+     オブジェクトに `info()' を適用して得られるものになります。
+     `urlopen()' と同じ例外を送出します。
+
+     2
+     つめの引数がある場合、オブジェクトのコピー先となるファイルの位置を
+     指定します (もしなければ、ファイルの場所は一時ファイル (tmpfile) の
+     置き場になり、名前は適当につけられます)。 3
+     つめの引数がある場合、ネットワークとの接続が確立された際に一度
+     呼び出され、以降データのブロックが読み出されるたびに呼び出されるフック
+     関数 (hook function) を指定します。フック関数には 3
+     つの引数が渡され ます;
+     これまで転送されたブロック数のカウント、バイト単位で表された
+     ブロックサイズ、ファイルの総サイズです。3 つ目のファイルの総サイズ
+     は、ファイル取得の際の応答時にファイルサイズを返さない古い FTP
+     サーバ では `-1' になります。
+
+     URL が `http:' スキーム識別子を使っていた場合、オプション 引数
+     DATA を与えることで `POST' リクエストを行うよう
+     指定することができます (通常リクエストの形式は `GET' です)。 DATA
+     引数は標準の `application/x-www-form-urlencoded'
+     形式でなくてはなりません; 以下の `urlencode()' 関数を参照して
+     ください。
+
+`_urlopener'
+     パブリック関数 `urlopen()' および `urlretrieve()' は
+     `FancyURLopener' クラスのインスタンスを生成します。
+     インスタンスは要求された動作に応じて使用されます。
+     この機能をオーバライドするために、プログラマは `URLopener' または
+     `FancyURLopener' のサブクラスを作り、そのクラスから
+     生成したインスタンスを変数 `urllib._urlopener' に代入した
+     後、呼び出したい関数を呼ぶことができます。
+     例えば、アプリケーションが `URLopener' が定義しているのとは
+     異なった `User-Agent' ヘッダを指定したい場合があるかも
+     しれません。この機能は以下のコードで実現できます:
+
+          import urllib
+          
+          class AppURLopener(urllib.FancyURLopener):
+              def __init__(self, *args):
+                  self.version = "App/1.7"
+                  urllib.FancyURLopener.__init__(self, *args)
+          
+          urllib._urlopener = AppURLopener()
+
+
+`urlcleanup()'
+     以前の `urlretrieve()' で生成された可能性のあるキャッシュを
+     消去します。
+
+`quote(string[, safe])'
+     STRING に含まれる特殊文字を `%xx' エスケープで置換
+     （quote）します。 アルファベット、数字、および文字 `_.-' は quote
+     処理 を行いません。オプションのパラメタ SAFE は quote 処理しない
+     追加の文字を指定します -- デフォルトの値は `'/'' です。
+
+     例: `quote('/~{}connolly/')' は `'/%7econnolly/'' になります。
+
+`quote_plus(string[, safe])'
+     `quote()' と似ていますが、加えて空白文字をプラス記号 ("+") に
+     置き換えます。これは HTML フォームの値を quote 処理する際に
+     必要な機能です。もとの文字列におけるプラス記号は SAFE に含まれて
+     いない限りエスケープ置換されます。上と同様に、SAFE の
+     デフォルトの値は `'/'' です。
+
+`unquote(string)'
+     `%xx' エスケープをエスケープが表す 1 文字に置き換えます。
+
+     例: `unquote('/%7Econnolly/')' は `'/~{}connolly/'' になります。
+
+`unquote_plus(string)'
+     `unquote()' と似ていますが、加えてプラス記号を空白文字に置き換
+     えます。これは quote 処理された HTML
+     フォームの値を元に戻すのに必要な 機能です。
+
+`urlencode(query[, doseq])'
+     マップ型オブジェクト、または 2 つの要素をもったタプルからなる配列
+     を、 "URL にエンコードされた (url-encoded)" に変換して、 上述の
+     `urlopen()' のオプション引数 DATA に適した
+     形式にします。この関数はフォームのフィールド値でできた辞書を
+     `POST' 型のリクエストに渡すときに便利です。 返される文字列は
+     `KEY=VALUE' のペアを `&' で区切った配列で、KEY と VALUE
+     の双方は上の `quote_plus()' で quote 処理されます。
+     オプションのパラメタ DOSEQ が与えられていて、その評価結果が真
+     であった場合、配列 DOSEQ の個々の要素について `KEY=VALUE'
+     のペアが生成されます。 2 つの要素をもったタプルからなる配列が引数
+     QUERY として使われた 場合、各タプルの最初の値が key で、2
+     番目の値が value になります。
+     このときエンコードされた文字列中のパラメタの順番は配列中のタプルの順番
+     と同じになります。 `cgi' モジュールでは、関数 `parse_qs()' および
+     `parse_qsl()' を提供しており、クエリ文字列を解析して Python
+     のデータ構造にするのに利用できます。
+
+`pathname2url(path)'
+     ローカルシステムにおける記法で表されたパス名 PATH を、URL に
+     おけるパス部分の形式に変換します。この関数は完全な URL
+     を生成するわけ ではありません。返される値は常に `quote()' を使って
+     quote 処理 されたものになります。
+
+`url2pathname(path)'
+     URL のパスの部分 PATH をエンコードされた URL の形式からローカル
+     システムにおけるパス記法に変換します。この関数は PATH をデコード
+     するために `unquote()' を使います。
+
+`URLopener([proxies[, **x509]])'
+     URL をオープンし、読み出すためのクラスの基礎クラス (base
+     class)です。 `http:' 、 `ftp:' 、`gopher:' または `file:'
+     以外のスキームを使ったオブジェクトのオープンをサポートしたいのでない
+     かぎり、`FancyURLopener' を使おうと思うことになるでしょう。
+
+     デフォルトでは、 `URLopener' クラスは `User-Agent' ヘッダとして
+     `urllib/VVV' を送信します。ここで VVV は `urllib'
+     のバージョン番号です。アプリケーションで独自の `User-Agent'
+     ヘッダを送信したい場合は、`URLopener' かまたは `FancyURLopener'
+     のサブクラスを作成し、`open()'
+     メソッドを呼び出す前にインスタンス属性 `version' を適切な
+     文字列値に設定することで行うことができます。
+
+     オプションのパラメタ PROXIES はスキーム名をプロキシの URL に
+     マップする辞書でなくてはなりません。空の辞書はプロキシ機能を完全に
+     オフにします。デフォルトの値は `None' で、この場合、 `urlopen()'
+     の定義で述べたように、プロキシを設定する環境変数が
+     存在するならそれを使います。
+
+     追加のキーワードパラメタは X509 に集められますが、これは `https:'
+     スキームによる認証に使われます。キーワード引数 KEY_FILE および
+     CERT_FILE がサポートされています。 実際に `https:' 形式の URL
+     からリソースを取得するには両方の 引数が必要です。
+
+`FancyURLopener(...)'
+     `FancyURLopener' は `URLopener' のサブクラスで、 以下の HTTP
+     レスポンスコード: 301、302、303、 307、および 401
+     を取り扱う機能を提供します。 レスポンスコード 30x に対しては、
+     `Location' ヘッダを使って実際の URL を取得します。
+     レスポンスコード 401 (認証が要求されていることを示す) に対しては、
+     ベーシック認証 (basic HTTP authintication) が行われます。
+     レスポンスコード 30x に対しては、最大で MAXTRIES
+     属性に指定された数だけ再帰呼び出しを行うように
+     なっています。この値はデフォルトで 10 です。
+
+     _Note:_ RFC 2616 によると、 POST 要求に対する 301 および 302
+     応答はユーザの承認無しに自動的にリダイレクトしてはなりません。
+     実際は、これらの応答に対して自動リダイレクトを許すブラウザでは
+     POST を GET に変更しており、`urllib' でもこの動作を 再現します。
+
+     コンストラクタに与えるパラメタは `URLopener' と同じです。
+
+     _Note:_ 基本的な HTTP 認証を行う際、 `FancyURLopener'
+     インスタンスは `prompt_user_passwd()'
+     メソッドを呼び出します。このメソッドは
+     デフォルトでは実行を制御している端末上で認証に必要な情報を要求する
+     ように実装されています。必要ならば、このクラスのサブクラスにおいて
+     より適切な動作をサポートするために `prompt_user_passwd()'
+     メソッドをオーバライドしてもかまいません。
+
+制限:
+
+   * 現在のところ、以下のプロトコルだけがサポートされています: HTTP、
+     (バージョン 0.9 および 1.0)、 Gopher (Gopher-+ を除く)、 FTP、
+     およびローカルファイル。
+
+   * `urlretrieve()' のキャッシュ機能は、有効期限ヘッダ (Expiration
+     time header) を正しく処理できるようにハックするための
+     時間を取れるまで、無効にしてあります。
+
+   * ある URL がキャッシュにあるかどうか調べるような関数があればと思って
+     います。。
+
+   * 後方互換性のため、 URL がローカルシステム上のファイルを指している
+     ように見えるにも関わらずファイルを開くことができなければ、 URL は
+     FTP プロトコルを使って再解釈されます。この機能は時として混乱を招く
+     エラーメッセージを引き起こします。
+
+   * 関数 `urlopen()' および `urlretrieve()' は、
+     ネットワーク接続が確立されるまでの間、一定でない長さの遅延を引き起こす
+     ことがあります。このことは、これらの関数を使ってインタラクティブな
+     Web
+     クライアントを構築するのはスレッドなしには難しいことを意味します。
+
+   * `urlopen()' または `urlretrieve()' が返すデータは
+     サーバが返す生のデータです。このデータはバイナリデータ (例えば画像
+     データ) 、生テキスト (plain text)、または (例えば) HTML
+     でもかまいません。HTTP  プロトコルはリプライ ヘッダ (reply header)
+     にデータのタイプに関する情報を返します。 タイプは `Content-Type'
+     ヘッダを見ることで推測できます。
+
+     Gopher  プロトコルでは、データのタイプに 関する情報は URL
+     にエンコードされます; これを展開することは簡単
+     ではありません。返されたデータが HTML であれば、 `htmllib'
+     を使ってパースすることが できます。
+
+   * このモジュールは認証を必要とするプロキシをサポートしません。
+     将来実装されるかもしれません。
+
+   * `urllib' モジュールは URL 文字列を解釈したり構築したりする
+     (ドキュメント化されていない) ルーチンを含んでいますが、URL
+     を操作するためのインタフェースとしては、 `urlparse'
+     モジュールをお勧めします。
+
+
+* Menu:
+
+* URLopener オブジェクト::
+* Urllib Examples::
+
+
+File: python-lib-jp.info,  Node: URLopener オブジェクト,  Next: Urllib Examples,  Prev: urllib,  Up: urllib
+
+URLopener オブジェクト
+----------------------
+
+`URLopener' および `FancyURLopener' クラスのオブジェクトは
+以下の属性を持っています。
+
+`open(fullurl[, data])'
+     適切なプロトコルを使って FULLURL を開きます。このメソッドは
+     キャッシュとプロキシ情報を設定し、その後適切な open
+     メソッドを入力引数
+     つきで呼び出します。認識できないスキームが与えられた場合、
+     `open_unknown()' が呼び出されます。 DATA 引数は `urlopen()' の引数
+     DATA と同じ意味を持っています。
+
+`open_unknown(fullurl[, data])'
+     オーバライド可能な、未知のタイプの URL
+     を開くためのインタフェースです。
+
+`retrieve(url[, filename[, reporthook[, data]]])'
+     URL のコンテンツを取得し、FILENAME に書き込みます。
+     返り値はタプルで、ローカルシステムにおけるファイル名と、
+     応答ヘッダ (URL がリモートを指している場合)  または `None' (URL
+     がローカルを指している場合) からなります。呼び出し側の処理は
+     その後 FILENAME を開いて内容を読み出さなくてはなりません。
+     FILENAME が与えられており、かつ URL がローカルシステム上の
+     ファイルを示しているばあい、入力ファイル名が返されます。URL が
+     ローカルのファイルを示しておらず、かつ FILENAME が与えられて
+     いない場合、ファイル名は入力 URL
+     の最後のパス構成要素につけられた拡張子と 同じ拡張子を
+     `tempfile.mktemp()' につけたものになります。 REPORTHOOK
+     を与える場合、この変数は 3 つの数値パラメタを受け取る
+     関数でなくてはなりません。この関数はデータの塊 (chunk)
+     がネットワークから 読み込まれるたびに呼び出されます。ローカルの
+     URL を与えた場合 REPORTHOOK は無視されます。
+
+     URL が `http:' スキーム識別子を使っている場合、オプションの 引数
+     DATA を与えて `POST' リクエストを行うよう指定できます
+     (通常のリクエストの形式は `GET' です) 。 引数 DATA は標準の
+     `application/x-www-form-urlencoded' 形式でなくてはなりません; 上の
+     `urlencode()' を参照して下さい。
+
+`version'
+     URL をオープンするオブジェクトのユーザエージェントを指定する
+     変数です。`urllib' を特定のユーザエージェントであると
+     サーバに通知するには、サブクラスの中でこの値をクラス変数として
+     値を設定するか、コンストラクタの中でベースクラスを呼び出す前に
+     値を設定してください。
+
+`FancyURLopener' クラスはオーバライド可能な追加のメソッドを提供
+しており、適切な振る舞いをさせることができます:
+
+`prompt_user_passwd(host, realm)'
+     指定されたセキュリティ領域 (security realm)
+     下にある与えられたホスト
+     において、ユーザ認証に必要な情報を返すための関数です。この関数が
+     返す値は `(USER, PASSWORD)' 、からなるタプルなくて
+     はなりません。値はベーシック認証 (basic authentication)
+     で使われます。
+
+     このクラスでの実装では、端末に情報を入力するようプロンプトを出します;
+     ローカルの環境において適切な形で対話型モデルを使うには、このメソッドを
+     オーバライドしなければなりません。
+
+
+File: python-lib-jp.info,  Node: Urllib Examples,  Prev: URLopener オブジェクト,  Up: urllib
+
+使用例
+------
+
+以下は `GET' メソッドを使ってパラメタを含む URL を取得するセッション
+の例です:
+
+     >>> import urllib
+     >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+     >>> f = urllib.urlopen("http://www.musi-cal.com/cgi-bin/query?%s" % params)
+     >>> print f.read()
+
+以下は `POST' メソッドを代わりに使った例です:
+
+     >>> import urllib
+     >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+     >>> f = urllib.urlopen("http://www.musi-cal.com/cgi-bin/query", params)
+     >>> print f.read()
+
+以下の例では、環境変数による設定内容に対して上書きする形で HTTP
+プロキシを 明示的に設定しています:
+
+     >>> import urllib
+     >>> proxies = {'http': 'http://proxy.example.com:8080/'}
+     >>> opener = urllib.FancyURLopener(proxies)
+     >>> f = opener.open("http://www.python.org")
+     >>> f.read()
+
+以下の例では、環境変数による設定内容に対して上書きする形で、まったく
+プロキシを使わないよう設定しています:
+
+     >>> import urllib
+     >>> opener = urllib.FancyURLopener({})
+     >>> f = opener.open("http://www.python.org/")
+     >>> f.read()
+
+
+File: python-lib-jp.info,  Node: urllib2,  Next: httplib,  Prev: urllib,  Up: インターネットプロトコルとその支援
+
+URL を開くための拡張可能なライブラリ
+====================================
+
+様々なプロトコルで URL を開くための拡張可能なライブラリ
+
+`urllib2' モジュールは基本的な認証、暗号化認証、リダイレクション
+その他の介在する複雑なアクセス環境において (大抵は HTTP で) URL
+を開くための関数とクラスを定義します。
+
+`urllib2' モジュールでは以下の関数を定義しています:
+
+`urlopen(url[, data])'
+     URL URL を開きます。URL は文字列でも `Request'
+     オブジェクトでもかまいません (現時点では、コードの中で引数が本当に
+     `Request' クラスのインスタンスまたは `Request' のサブクラス
+     のインスタンスであるかどうかがチェックされます)。
+
+     DATA は文字列で、サーバに送信する追加のデータを指定します。 HTTP
+     リクエストは DATA をサポートする唯一のリクエスト形式
+     ですが、ここでは DATA は例えば `urllib.urlencode()' が返すような
+     `application/x-www-form-urlencoded' 形式で
+     エンコードされたバッファでなくてはなりません。
+
+     この関数は以下の 2
+     つのメソッドを持つファイル類似のオブジェクトを返します:
+
+        * `geturl()' -- 取得されたリソースの URL を返します。
+
+        * `info()' -- 取得されたページのメタ情報を辞書形式の
+          オブジェクトで返します。
+
+     エラーが発生した場合 `URLError' を送出します。
+
+`install_opener(opener)'
+     標準で URL を開くオブジェクトとして `OpenerDirector' のインスタンス
+     をインストールします。このコードは引数が本当に `OpenerDirector'
+     のインスタンスであるかどうかはチェックしないので、適切なインタフェース
+     を持ったクラスは何でも動作します。
+
+`build_opener([handler, ...])'
+     与えられた順番に URL ハンドラを連鎖させる `OpenerDirector'
+     のインスタンスを返します。HANDLER は `BaseHandler' または
+     `BaseHandler' のサブクラスのインスタンスのどちらか です
+     (どちらの場合も、コンストラクトは引数無しで呼び出せるように
+     なっていなければなりません) 。以下のクラス:
+
+     `ProxyHandler', `UnknownHandler', `HTTPHandler',
+     `HTTPDefaultErrorHandler', `HTTPRedirectHandler', `FTPHandler',
+     `FileHandler'
+
+     については、そのクラスの
+     インスタンスか、そのサブクラスのインスタンスが HANDLER
+     に含まれていない限り、HANDLER よりも先に連鎖します。
+
+     Python が SSL をサポートするように設定してインストールされている
+     場合 (`socket.ssl()' が存在する場合) 、 `HTTPSHandler'
+     も追加されます。
+
+     Python 2.3 からは、`BaseHandler' サブクラスでも `handler_order'
+     メンバ変数を変更して、ハンドラリスト
+     内での場所を変更できるようになりました。 現在全てのハンドラの
+     `handler_oder' は `500' ですが、 例外として `ProxyHandler' では
+     `100' になっています。
+
+状況に応じて、以下の例外が送出されます:
+
+`URLError'
+     ハンドラが何らかの問題に遭遇した場合、この例外 (またはこの例外から
+     導出された例外)を送出します。この例外は `IOError'
+     のサブクラスです。
+
+`HTTPError'
+     `URLError' のサブクラスです。このオブジェクトは例外でない
+     ファイル類似のオブジェクトとして返り値に使うことができます
+     (`urlopen()' が返すのと同じものです)。この機能は、例えば
+     サーバからの認証リクエストのように、変わった HTTP エラーを処理する
+     のに役立ちます。
+
+`GopherError'
+     `URLError' のサブクラスです。この例外は Gopher ハンドラに
+     よって送出されます。
+
+以下のクラスが提供されています:
+
+`Request(url[, data[, headers]])'
+     このクラスは URL リクエストを抽象化したものです。
+
+     URL は有効な URL を指す文字列でなくてはなりません。 DATA
+     の詳細については `add_data()' の記述を見てください。 HEADERS
+     は辞書でなくてはなりません。 この辞書は `add_header()'
+     を辞書のキーおよび値を引数として呼び出した時と
+     同じように扱われます。
+
+`OpenerDirector()'
+     `OpenerDirector' クラスは、`BaseHandler' の連鎖的に 呼び出して URL
+     を開きます。このクラスはハンドラをどのように連鎖
+     させるか、またどのようにエラーをリカバリするかを管理します。
+
+`BaseHandler()'
+     このクラスはハンドラ連鎖に登録される全てのハンドラがベースとしている
+     クラスです -
+     このクラスでは登録のための単純なメカニズムだけを扱います。
+
+`HTTPDefaultErrorHandler()'
+     HTTP エラー応答のための標準のハンドラを定義します;
+     全てのレスポンスに 対して、例外 `HTTPError' を送出します。
+
+`HTTPRedirectHandler()'
+     リダイレクションを扱うクラスです。
+
+`ProxyHandler([proxies])'
+     このクラスはプロキシを通過してリクエストを送らせます。 引数
+     PROXIES を与える場合、プロトコル名からプロキシの URL
+     へ対応付ける辞書でなくてはなりません。
+     標準では、プロキシのリストを環境変数 PROTOCOL_proxy
+     から読み出します。
+
+`HTTPPasswordMgr()'
+     `(REALM, URI) -> (USER, PASSWORD)'
+     の対応付けデータベースを保持します。
+
+`HTTPPasswordMgrWithDefaultRealm()'
+     `(REALM, URI) -> (USER, PASSWORD)'
+     の対応付けデータベースを保持します。 レルム `None'
+     はその他諸々のレルムを表し、他のレルムが
+     該当しない場合に検索されます。
+
+`AbstractBasicAuthHandler([password_mgr])'
+     このクラスはHTTP 認証を補助するための混ぜ込みクラス (mixin class)
+     です。 遠隔ホストとプロキシの両方に対応しています。 PASSWORD_MGR
+     を与える場合、`HTTPPasswordMgr' と互換性が なければなりません;
+     互換性のためにサポートしなければならないインタフェースについての
+     情報はセクション~*Note HTTPPasswordMgr オブジェクト::
+     を参照してください。
+
+`HTTPBasicAuthHandler([password_mgr])'
+     遠隔ホストとの間での認証を扱います。 PASSWORD_MGR
+     を与える場合、`HTTPPasswordMgr' と互換性が なければなりません;
+     互換性のためにサポートしなければならないインタフェースについての
+     情報はセクション~*Note HTTPPasswordMgr オブジェクト::
+     を参照してください。
+
+`ProxyBasicAuthHandler([password_mgr])'
+     プロキシとの間での認証を扱います。 PASSWORD_MGR
+     を与える場合、`HTTPPasswordMgr' と互換性が なければなりません;
+     互換性のためにサポートしなければならないインタフェースについての
+     情報はセクション~*Note HTTPPasswordMgr オブジェクト::
+     を参照してください。
+
+`AbstractDigestAuthHandler([password_mgr])'
+     このクラスはHTTP 認証を補助するための混ぜ込みクラス (mixin class)
+     です。 遠隔ホストとプロキシの両方に対応しています。 PASSWORD_MGR
+     を与える場合、`HTTPPasswordMgr' と互換性が なければなりません;
+     互換性のためにサポートしなければならないインタフェースについての
+     情報はセクション~*Note HTTPPasswordMgr オブジェクト::
+     を参照してください。
+
+`HTTPDigestAuthHandler([password_mgr])'
+     遠隔ホストとの間での認証を扱います。 PASSWORD_MGR
+     を与える場合、`HTTPPasswordMgr' と互換性が なければなりません;
+     互換性のためにサポートしなければならないインタフェースについての
+     情報はセクション~*Note HTTPPasswordMgr オブジェクト::
+     を参照してください。
+
+`ProxyDigestAuthHandler([password_mgr])'
+     プロキシとの間での認証を扱います。 PASSWORD_MGR
+     を与える場合、`HTTPPasswordMgr' と互換性が なければなりません;
+     互換性のためにサポートしなければならないインタフェースについての
+     情報はセクション~*Note HTTPPasswordMgr オブジェクト::
+     を参照してください。
+
+`HTTPHandler()'
+     HTTP の URL を開きます。
+
+`HTTPSHandler()'
+     HTTPS の URL を開きます。
+
+`FileHandler()'
+     ローカルファイルを開きます。
+
+`FTPHandler()'
+     FTP の URL を開きます。
+
+`CacheFTPHandler()'
+     FTP の URL を開きます。遅延を最小限にするために、開かれている FTP
+     接続に対するキャッシュを保持します。
+
+`GopherHandler()'
+     gopher の URL を開きます。
+
+`UnknownHandler()'
+     その他諸々のためのクラスで、未知のプロトコルの URL を開きます。
+
+* Menu:
+
+* Request オブジェクト::
+* OpenerDirector オブジェクト::
+* BaseHandler オブジェクト::
+* HTTPRedirectHandler オブジェクト::
+* ProxyHandler オブジェクト::
+* HTTPPasswordMgr オブジェクト::
+* AbstractBasicAuthHandler オブジェクト::
+* HTTPBasicAuthHandler オブジェクト::
+* ProxyBasicAuthHandler オブジェクト::
+* AbstractDigestAuthHandler オブジェクト::
+* HTTPDigestAuthHandler オブジェクト::
+* ProxyDigestAuthHandler オブジェクト::
+* HTTPHandler オブジェクト::
+* HTTPSHandler オブジェクト::
+* FileHandler オブジェクト::
+* FTPHandler オブジェクト::
+* CacheFTPHandler オブジェクト::
+* GopherHandler オブジェクト::
+* UnknownHandler オブジェクト::
+* 例 11::
+
+
+File: python-lib-jp.info,  Node: Request オブジェクト,  Next: OpenerDirector オブジェクト,  Prev: urllib2,  Up: urllib2
+
+Request オブジェクト
+--------------------
+
+以下のメソッドは `Request' の全ての公開インタフェースを記述します。
+従ってサブクラスではこれら全てのメソッドをオーバライドしなければなりません。
+
+`add_data(data)'
+     `Request' のデータを DATA に設定します。この値は HTTP
+     ハンドラ以外のハンドラでは無視されます。HTTP ハンドラでは、データは
+     `application/x-www-form-encoded' でエンコードされたバッファ
+     でなくてはなりません。このメソッドを使うとリクエストの形式が `GET'
+     `POST' に変更されます。
+
+`get_method()'
+     HTTP リクエストメソッドを示す文字列を返します。このメソッドは HTTP
+     リクエストだけに対して意味があり、現状では常に ("GET", "POST")
+     のうちのいずれかの値をとります。
+
+`has_data()'
+     インスタンスが `None' でないデータを持つかどうかを返します。
+
+`get_data()'
+     インスタンスのデータを返します。
+
+`add_header(key, val)'
+     リクエストに新たなヘッダを追加します。ヘッダは HTTP ハンドラ以外の
+     ハンドラでは無視されます。HTTP
+     ハンドラでは、引数はサーバに送信される
+     ヘッダのリストに追加されます。同じ名前を持つヘッダを 2 つ以上持つ
+     ことはできず、KEY の衝突が生じた場合、後で追加したヘッダが前に
+     追加したヘッダを上書きします。現時点では、この機能は HTTP の機能を
+     損ねることはありません。というのは、複数回呼び出したときに意味を
+     持つようなヘッダには、どれもただ一つのヘッダを使って同じ機能を果たす
+     ための (ヘッダ特有の) 方法があるからです。
+
+`get_full_url()'
+     コンストラクタで与えられた URL を返します。
+
+`get_type()'
+     URL のタイプ -- いわゆるスキーム (scheme) -- を返します。
+
+`get_host()'
+     接続を行う先のホスト名を返します。
+
+`get_selector()'
+     セレクタ -- サーバに送られる URL の一部分 -- を返します。
+
+`set_proxy(host, type)'
+     リクエストがプロキシサーバを経由するように準備します。 HOST および
+     TYPE はインスタンスのもとの設定と置き換えられ
+     ます。インスタンスのセレクタはコンストラクタに与えたもともとの URL
+     に なります。
+
+
+File: python-lib-jp.info,  Node: OpenerDirector オブジェクト,  Next: BaseHandler オブジェクト,  Prev: Request オブジェクト,  Up: urllib2
+
+OpenerDirector オブジェクト
+---------------------------
+
+`OpenerDirector' インスタンスは以下のメソッドを持っています:
+
+`add_handler(handler)'
+     HANDLER は `BaseHandler' のインスタンスでなければ
+     なりません。以下のメソッドを使った検索が行われ、URL
+     を取り扱うことが 可能なハンドラの連鎖が追加されます。
+
+        * `PROTOCOL_open()' -- ハンドラが PROTOCOL の URL
+          を開く方法を知っているかどうかを 調べます。
+
+        * `PROTOCOL_error_TYPE()' -- ハンドラが PROTOCOL から返される
+          TYPE エラーの扱い方を知っているかどうかを調べます。
+
+
+`close()'
+     循環参照を明示的にやめさせて、全てのハンドラを削除します。
+     `OpenerDirector' は登録されているハンドラを参照する必要があり、
+     ハンドラは自分を呼び出す `OpenerDirector' を参照する必要が
+     あるため、循環参照が生まれます。最近のバージョンの Python では
+     循環参照を修正しますが、たまに明示的に循環参照をやめさせた方が
+     よいことがあります。
+
+`open(url[, data])'
+     与えられた URL (リクエストオブジェクトでも文字列でも かまいません)
+     を開きます。オプションとして DATA を与えることが できます。
+     引数、返り値、および送出される例外は `urlopen()' と同じ です
+     (`urlopen()' の場合、標準でインストールされている `OpenerDirector'
+     の `open()' メソッドを呼び出します) 。
+
+`error(proto[, arg[, ...]])'
+     与えられたプロトコルにおけるエラーを処理します。このメソッドは
+     与えられたプロトコルにおける登録済みのエラーハンドラを
+     (プロトコル固有の) 引数で呼び出します。 HTTP プロトコルは特殊な
+     ケースで、特定のエラーハンドラを選び出すのに HTTP レスポンスコード
+     を使います; ハンドラクラスの `http_error_*()' メソッドを
+     参照してください。
+
+     返り値および送出される例外は `urlopen()' と同じものです。
+
+
+File: python-lib-jp.info,  Node: BaseHandler オブジェクト,  Next: HTTPRedirectHandler オブジェクト,  Prev: OpenerDirector オブジェクト,  Up: urllib2
+
+BaseHandler オブジェクト
+------------------------
+
+`BaseHandler' オブジェクトは直接的に役に立つ 2 つのメソッド
+と、その他として導出クラスで使われることを想定したメソッドを
+提供します。以下は直接的に使うためのメソッドです:
+
+`add_parent(director)'
+     親オブジェクトとして、`director' を追加します。
+
+`close()'
+     全ての親オブジェクトを削除します。
+
+以下のメンバおよびメソッドは `BaseHandler' から導出された
+クラスでのみ使われます:
+
+`parent'
+     有効な `OpenerDirector' です。この値は違うプロトコルを 使って URL
+     を開く場合やエラーを処理する際に使われます。
+
+`default_open(req)'
+     このメソッドは `BaseHandler' では定義されて _いません_。
+     しかし、全ての URL をキャッチさせたいなら、サブクラスで定義する
+     必要があります。
+
+     このメソッドが定義されていた場合、`OpenerDirector' から
+     呼び出されます。このメソッドは `OpenerDirector' の メソッド
+     `open()' が返す値について記述されているようなファイル類似の
+     オブジェクトか、`None' を返さなくてはなりません。
+     このメソッドが送出する例外は、真に例外的なことが起きない限り、
+     `URLError' を送出しなければなりません (例えば、 `MemoryError' を
+     `URLError' をマップしては いけません)。
+
+     このメソッドはプロトコル固有のオープンメソッドが呼び出される前に
+     呼び出されます。
+
+`PROTOCOL_open(req)'
+     このメソッドは `BaseHandler' では定義されて _いません_。
+     しかしプロトコルの指定された URL をキャッチしたいなら、サブクラスで
+     定義する必要があります。
+
+     このメソッドが定義されていた場合、`OpenerDirector' から
+     呼び出されます。戻り値は `default_open' と同じでなければ
+     なりません。
+
+`unknown_open(req)'
+     このメソッドは `BaseHandler' では定義されて _いません_。 しかし
+     URL を開くための特定のハンドラが登録されていないような URL を
+     キャッチしたいなら、サブクラスで定義する必要があります。
+
+     このメソッドが定義されていた場合、`OpenerDirector' から
+     呼び出されます。戻り値は `default_open' と同じでなければ
+     なりません。
+
+`http_error_default(req, fp, code, msg, hdrs)'
+     このメソッドは `BaseHandler' では定義されて _いません_。
+     しかしその他の処理されなかった HTTP
+     エラーを処理する機能をもたせたいなら、
+     サブクラスで定義する必要があります。このメソッドはエラーに遭遇した
+     `OpenerDirector' から自動的に呼び出されます。その他の状況では
+     普通呼び出すべきではありません。
+
+     REQ は `Request' オブジェクトで、 FP は HTTP
+     エラー本体を読み出せるようなファイル類似のオブジェクトに
+     なります。CODE は 3 桁の 10 進数からなるエラーコードで、 MSG
+     ユーザ向けのエラーコード解説です。HDRS は
+     エラー応答のヘッダをマップしたオブジェクトです。
+
+     返される値および送出される例外は `urlopen()' と同じ
+     ものでなければなりません。
+
+`http_error_NNN(req, fp, code, msg, hdrs)'
+     NNN は 3 桁の 10 進数からなる HTTP エラーコードでなくては
+     なりません。このメソッドも `BaseHandler' では定義されていませんが、
+     サブクラスのインスタンスで定義されていた場合、エラーコード NNN の
+     HTTP エラーが発生した際に呼び出されます。
+
+     特定の HTTP
+     エラーに対する処理を行うためには、このメソッドをサブクラスで
+     オーバライドする必要があります。
+
+     引数、返される値、および送出される例外は `http_error_default()'
+     と同じものでなければなりません。
+
+
+File: python-lib-jp.info,  Node: HTTPRedirectHandler オブジェクト,  Next: ProxyHandler オブジェクト,  Prev: BaseHandler オブジェクト,  Up: urllib2
+
+HTTPRedirectHandler オブジェクト
+--------------------------------
+
+_Note:_ HTTP リダイレクトによっては、このモジュールのクライアントコード
+側での処理を必要とします。その場合、 `HTTPError' が送出されます。
+様々なリダイレクトコードの厳密な意味に関する詳細は RFC 2616 を
+参照してください。
+
+`redirect_request(req, fp, code, msg, hdrs)'
+     リダイレクトの通知に応じて、 `Request' または `None'
+     を返します。このメソッドは `http_error_30*()' メソッドに
+     おいて、リダイレクトの通知をサーバから受信した際に、
+     デフォルトの実装として呼び出されます。
+     リダイレクトを起こす場合、新たな `Request' を生成して、
+     `http_error_30*()' がリダイレクトを実行できるようにします。
+     そうでない場合、他の `Handler' のいずれにもこの URL を
+     処理させたくなければ `HTTPError' を送出し、
+     リダイレクト処理を行うことはできないが他の `Handler'
+     なら可能かもしれない場合には `None' を返します。
+
+     _Notice:_ このメソッドのデフォルトの実装は、RFC 2616
+     に厳密に従ったものでは ありません。 RFC 2616 では、`POST'
+     リクエストに対する 301 および 302 応答が、
+     ユーザの承認なく自動的にリダイレクトされてはならないと述べています。
+     現実には、ブラウザは POST を `GET' に変更することで、これらの
+     応答に対して自動的にリダイレクトを行えるようにしています。
+     デフォルトの実装でも、この挙動を再現しています。
+
+
+`http_error_301(req, fp, code, msg, hdrs)'
+     `Location:' URL にリダイレクトします。このメソッドは HTTP における
+     `moved permanently' レスポンスを取得した際に 親オブジェクトとなる
+     `OpenerDirector' によって呼び出されます。
+
+`http_error_302(req, fp, code, msg, hdrs)'
+     `http_error_301()' と同じですが、`found' レスポンスに対して
+     呼び出されます。
+
+`http_error_303(req, fp, code, msg, hdrs)'
+     `http_error_301()' と同じですが、`see other' レスポンスに対して
+     呼び出されます。
+
+`http_error_307(req, fp, code, msg, hdrs)'
+     `http_error_301()' と同じですが、`temporary redirect'
+     レスポンスに対して呼び出されます。
+
+
+File: python-lib-jp.info,  Node: ProxyHandler オブジェクト,  Next: HTTPPasswordMgr オブジェクト,  Prev: HTTPRedirectHandler オブジェクト,  Up: urllib2
+
+ProxyHandler オブジェクト
+-------------------------
+
+`PROTOCOL_open(request)'
+     `ProxyHandler' は、 コンストラクタで与えた辞書 PROXIES
+     にプロキシが設定されている ような PROTOCOL 全てについて、メソッド
+     `PROTOCOL_open()' を持つことになります。 このメソッドは
+     `request.set_proxy()' を呼び出して、
+     リクエストがプロキシを通過できるように修正します。その後
+     連鎖するハンドラの中から次のハンドラを呼び出して実際に
+     プロトコルを実行します。
+
+
+File: python-lib-jp.info,  Node: HTTPPasswordMgr オブジェクト,  Next: AbstractBasicAuthHandler オブジェクト,  Prev: ProxyHandler オブジェクト,  Up: urllib2
+
+HTTPPasswordMgr オブジェクト
+----------------------------
+
+以下のメソッドは `HTTPPasswordMgr' および
+`HTTPPasswordMgrWithDefaultRealm' オブジェクトで利用できます。
+
+`add_password(realm, uri, user, passwd)'
+     URI は単一の URI でも複数の URI からなる配列でもかまいません。
+     REALM 、USER および PASSWD は文字列でなくてはなりません。
+     このメソッドによって、REALM と与えられた URI の上位 URI に対して
+     `(USER, PASSWD)' が認証トークンとして使われるようになります。
+
+`find_user_password(realm, authuri)'
+     与えられたレルムおよび URI に対するユーザ名またはパスワードがあれば
+     それを取得します。該当するユーザ名／パスワードが存在しない場合、
+     このメソッドは `(None, None)' を返します。
+
+     `HTTPPasswordMgrWithDefaultRealm' オブジェクトでは、与えられた
+     REALM に対して該当するユーザ名/パスワードが存在しない場合、 レルム
+     `None' が検索されます。
+
+
+File: python-lib-jp.info,  Node: AbstractBasicAuthHandler オブジェクト,  Next: HTTPBasicAuthHandler オブジェクト,  Prev: HTTPPasswordMgr オブジェクト,  Up: urllib2
+
+AbstractBasicAuthHandler オブジェクト
+-------------------------------------
+
+`handle_authentication_request(authreq, host, req, headers)'
+     ユーザ名／パスワードを取得し、再度サーバへのリクエストを試みることで、
+     サーバからの認証リクエストを処理します。 AUTHREQ
+     はリクエストにおいてレルムに関する情報が含まれている
+     ヘッダの名前、HOST は認証を行う対象のホスト名、REQ は (失敗した)
+     `Request' オブジェクト、そして HEADERS は
+     エラーヘッダでなくてはなりません。
+
+
+File: python-lib-jp.info,  Node: HTTPBasicAuthHandler オブジェクト,  Next: ProxyBasicAuthHandler オブジェクト,  Prev: AbstractBasicAuthHandler オブジェクト,  Up: urllib2
+
+HTTPBasicAuthHandler オブジェクト
+---------------------------------
+
+`http_error_401(req, fp, code,  msg, hdrs)'
+     認証情報がある場合、認証情報付きで再度リクエストを試みます。
+
+
+File: python-lib-jp.info,  Node: ProxyBasicAuthHandler オブジェクト,  Next: AbstractDigestAuthHandler オブジェクト,  Prev: HTTPBasicAuthHandler オブジェクト,  Up: urllib2
+
+ProxyBasicAuthHandler オブジェクト
+----------------------------------
+
+`http_error_407(req, fp, code,  msg, hdrs)'
+     認証情報がある場合、認証情報付きで再度リクエストを試みます。
+
+
+File: python-lib-jp.info,  Node: AbstractDigestAuthHandler オブジェクト,  Next: HTTPDigestAuthHandler オブジェクト,  Prev: ProxyBasicAuthHandler オブジェクト,  Up: urllib2
+
+AbstractDigestAuthHandler オブジェクト
+--------------------------------------
+
+`handle_authentication_request(authreq, host, req, headers)'
+     AUTHREQ はリクエストにおいてレルムに関する情報が含まれている
+     ヘッダの名前、HOST は認証を行う対象のホスト名、REQ は (失敗した)
+     `Request' オブジェクト、そして HEADERS は
+     エラーヘッダでなくてはなりません。
+
+
+File: python-lib-jp.info,  Node: HTTPDigestAuthHandler オブジェクト,  Next: ProxyDigestAuthHandler オブジェクト,  Prev: AbstractDigestAuthHandler オブジェクト,  Up: urllib2
+
+HTTPDigestAuthHandler オブジェクト
+----------------------------------
+
+`http_error_401(req, fp, code,  msg, hdrs)'
+     認証情報がある場合、認証情報付きで再度リクエストを試みます。
+
+
+File: python-lib-jp.info,  Node: ProxyDigestAuthHandler オブジェクト,  Next: HTTPHandler オブジェクト,  Prev: HTTPDigestAuthHandler オブジェクト,  Up: urllib2
+
+ProxyDigestAuthHandler オブジェクト
+-----------------------------------
+
+`http_error_407(req, fp, code,  msg, hdrs)'
+     認証情報がある場合、認証情報付きで再度リクエストを試みます。
+
+
+File: python-lib-jp.info,  Node: HTTPHandler オブジェクト,  Next: HTTPSHandler オブジェクト,  Prev: ProxyDigestAuthHandler オブジェクト,  Up: urllib2
+
+HTTPHandler オブジェクト
+------------------------
+
+`http_open(req)'
+     HTTP リクエストを送ります。`REQ.has_data()' に応じて、 GET または
+     POST のどちらでも送ることができます。
+
+
+File: python-lib-jp.info,  Node: HTTPSHandler オブジェクト,  Next: FileHandler オブジェクト,  Prev: HTTPHandler オブジェクト,  Up: urllib2
+
+HTTPSHandler オブジェクト
+-------------------------
+
+`https_open(req)'
+     HTTPS リクエストを送ります。`REQ.has_data()' に応じて、 GET または
+     POST のどちらでも送ることができます。
+
+
+File: python-lib-jp.info,  Node: FileHandler オブジェクト,  Next: FTPHandler オブジェクト,  Prev: HTTPSHandler オブジェクト,  Up: urllib2
+
+FileHandler オブジェクト
+------------------------
+
+`file_open(req)'
+     ホスト名がない場合、またはホスト名が `'localhost'' の場合に
+     ファイルをローカルでオープンします。そうでない場合、プロトコルを
+     `ftp' に切り替え、`parent' を使って再度オープンを 試みます。
+
+
+File: python-lib-jp.info,  Node: FTPHandler オブジェクト,  Next: CacheFTPHandler オブジェクト,  Prev: FileHandler オブジェクト,  Up: urllib2
+
+FTPHandler オブジェクト
+-----------------------
+
+`ftp_open(req)'
+     REQ で表されるファイルを FTP 越しにオープンします。
+     ログインは常に空のユーザネームおよびパスワードで行われます。
+
+
+File: python-lib-jp.info,  Node: CacheFTPHandler オブジェクト,  Next: GopherHandler オブジェクト,  Prev: FTPHandler オブジェクト,  Up: urllib2
+
+CacheFTPHandler オブジェクト
+----------------------------
+
+`CacheFTPHandler' オブジェクトは `FTPHandler' オブジェクトに
+以下のメソッドを追加したものです:
+
+`setTimeout(t)'
+     接続のタイムアウトを T 秒に設定します。
+
+`setMaxConns(m)'
+     キャッシュ付き接続の最大接続数を M に設定します。
+
+
+File: python-lib-jp.info,  Node: GopherHandler オブジェクト,  Next: UnknownHandler オブジェクト,  Prev: CacheFTPHandler オブジェクト,  Up: urllib2
+
+GopherHandler オブジェクト
+--------------------------
+
+`gopher_open(req)'
+     REQ で表される gopher 上のリソースをオープンします。
+
+
+File: python-lib-jp.info,  Node: UnknownHandler オブジェクト,  Next: 例 11,  Prev: GopherHandler オブジェクト,  Up: urllib2
+
+UnknownHandler オブジェクト
+---------------------------
+
+`unknown_open()'
+     例外 `URLError' を送出します。
+
+
+File: python-lib-jp.info,  Node: 例 11,  Prev: UnknownHandler オブジェクト,  Up: urllib2
+
+例
+--
+
+以下の例では、 python.org のメインページを取得して、その最初の 100
+バイト分を表示します:
+
+     >>> import urllib2
+     >>> f = urllib2.urlopen('http://www.python.org/')
+     >>> print f.read(100)
+     <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+     <?xml-stylesheet href="./css/ht2html
+
+今度は CGI の標準入力にデータストリームを送信し、CGI が返すデータ
+を読み出します:
+
+     >>> import urllib2
+     >>> req = urllib2.Request(url='https://localhost/cgi-bin/test.cgi',
+     ...                       data='This data is passed to stdin of the CGI')
+     >>> f = urllib2.urlopen(req)
+     >>> print f.read()
+     Got Data: "This data is passed to stdin of the CGI"
+
+上の例で使われているサンプルの CGI は以下のようになっています:
+
+     #!/usr/bin/env python
+     import sys
+     data = sys.stdin.read()
+     print 'Content-type: text-plain\n\nGot Data: "%s"' % data
+
+
+File: python-lib-jp.info,  Node: httplib,  Next: ftplib,  Prev: urllib2,  Up: インターネットプロトコルとその支援
+
+HTTP プロトコルクライアント
+===========================
+
+HTTP および HTTPS プロトコルのクライアント (ソケットを必要とします) 。
+
+このモジュールでは HTTP および HTTPS プロトコルのクライアント側
+を実装しているクラスを定義しています。このモジュールは通常直接
+使われることはありません -- モジュール `urllib'  は HTTP や HTTPS を
+使う URL を扱うためにこのモジュールを使います。 _Note:_ HTTPS
+のサポートは `socket' モジュールが SSL を
+サポートするようにコンパイルされている場合のみ利用できます。
+
+このモジュールで定義されている定数は以下の通りです:
+
+`HTTP_PORT'
+     HTTP プロトコルの標準のポート (通常は `80') です。
+
+`HTTPS_PORT'
+     HTTPS プロトコルの標準のポート (通常は `443') です。
+
+このモジュールでは以下のクラスを提供しています:
+
+`HTTPConnection(host[, port])'
+     `HTTPConnection' インスタンスは、HTTP サーバとの一回の
+     トランザクションを表現します。インスタンスの生成はホスト名と
+     オプションのポート番号を与えて行います。ポート番号が与えられ
+     なかった場合、ホスト名文字列が `HOST:PORT'
+     の形式であれば、ホスト名からポート番号を導き、そうでない
+     場合には標準の HTTP ポート番号 (80) が使われます。例えば、
+     以下の呼び出しは全て同じサーバの同じポートに接続するインスタンス
+     を生成します:
+
+          >>> h1 = httplib.HTTPConnection('www.cwi.nl')
+          >>> h2 = httplib.HTTPConnection('www.cwi.nl:80')
+          >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80)
+
+
+`HTTPSConnection(host[, port, key_file, cert_file])'
+     `HTTPConnection' のサブクラスで、セキュアなサーバと 通信するために
+     SSL を使います。標準のポート番号は `443' です。
+     KEY_FILEには、秘密鍵を格納したPEM形式ファイルのファイル名を指定します。CERT_FILEには、PEM形式の証明書チェーンファイルを指定します。
+
+     _この関数は証明書の検査を行いません！_
+
+必要に応じて以下の例外が送出されます:
+
+`HTTPException'
+     このモジュールにおける他の例外クラスの基底クラスです。 `Exception'
+     のサブクラスです。
+
+`NotConnected'
+     `HTTPException' サブクラスです。
+
+`InvalidURL'
+     `HTTPException' のサブクラスで、ポート番号が与えられて
+     いるが、その値が数字でなかったり空のオブジェクトの場合に送出
+     されます。
+
+`UnknownProtocol'
+     `HTTPException' のサブクラスです。
+
+`UnknownTransferEncoding'
+     `HTTPException' のサブクラスです。
+
+`IllegalKeywordArgument'
+     `HTTPException' のサブクラスです。
+
+`UnimplementedFileMode'
+     `HTTPException' のサブクラスです。
+
+`IncompleteRead'
+     `HTTPException' のサブクラスです。
+
+`ImproperConnectionState'
+     `HTTPException' のサブクラスです。
+
+`CannotSendRequest'
+     `ImproperConnectionState' のサブクラスです。
+
+`CannotSendHeader'
+     `ImproperConnectionState' のサブクラスです。
+
+`ResponseNotReady'
+     `ImproperConnectionState' のサブクラスです。
+
+`BadStatusLine'
+     `HTTPException' のサブクラスです。 サーバが理解できない HTTP
+     状態コードで応答した場合に送出されます。
+
+* Menu:
+
+* HTTPConnection オブジェクト::
+* HTTPResponse オブジェクト::
+* 例 12::
+
+
+File: python-lib-jp.info,  Node: HTTPConnection オブジェクト,  Next: HTTPResponse オブジェクト,  Prev: httplib,  Up: httplib
+
+HTTPConnection オブジェクト
+---------------------------
+
+`HTTPConnection' インスタンスは以下のメソッドを持ちます:
+
+`request(method, url[, body[, headers]])'
+     このメソッドは、 HTTP 要求メソッド METHOD およびセレクタ URL
+     を使って、要求をサーバに送ります。BODY 引数が存在する場合、
+     ヘッダが終了した後に送信する文字列データでなければなりません。
+     ヘッダの Content-Length は自動的に正しい値に設定されます。 HEADERS
+     引数は要求と同時に送信される拡張 HTTP ヘッダの内容からなる
+     マップ型でなくてはなりません。
+
+`getresponse()'
+     サーバに対して HTTP
+     要求を送り出した後に呼び出されなければりません。
+     要求に対する応答を取得します。`HTTPResponse' インスタンスを
+     返します。
+
+`set_debuglevel(level)'
+     デバッグレベル (印字されるデバッグ出力の量) を設定します。
+     標準のデバッグレベルは `0' で、デバッグ出力を全く印字 しません。
+
+`connect()'
+     オブジェクトを生成するときに指定したサーバに接続します。
+
+`close()'
+     サーバへの接続を閉じます。
+
+`send(data)'
+     サーバにデータを送ります。このメソッドは `endheaders()'
+     が呼び出された直後で、かつ `getreply()' が呼び出される
+     前に使わなければなりません。
+
+`putrequest(request, selector)'
+     サーバへの接続が確立したら、最初にこのメソッドを呼び出さなくては
+     なりません。このメソッドは REQUEST 文字列、SELECTOR 文字列、
+     そして HTTP バージョン (`HTTP/1.1') からなる一行を送信します。
+
+`putheader(header, argument[, ...])'
+     RFC 822 形式のヘッダをサーバに送ります。この処理では、HEADER、
+     コロンとスペース、そして最初の引数からなる 1 行をサーバに送ります。
+     追加の引数が与えられている場合、各々の行がタブと引数からなる連続した行が
+     送られます。
+
+`endheaders()'
+     サーバに食う行を送り、ヘッダ部が終了したことを通知します。
+

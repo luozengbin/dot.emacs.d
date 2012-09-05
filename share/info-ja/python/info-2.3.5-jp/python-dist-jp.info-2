@@ -1,0 +1,921 @@
+This is python-dist-jp.info, produced by makeinfo version 4.5 from
+python-dist-jp.texi.
+
+
+File: python-dist-jp.info,  Node: ビルド済み配布物を作成する,  Next: パッケージインデクスに登録する,  Prev: ソースコード配布物を作成する,  Up: Top
+
+ビルド済み配布物を作成する
+**************************
+
+"ビルド済み配布物" とは、おそらく皆さんが通常 "バイナリパッケージ" とか
+"インストーラ" (背景にしている知識によって違います) と考えて
+いるものです。とはいえ、配布物が必然的にバイナリ形式になるわけでは
+ありません。配布物には、 Python ソースコード、かつ/またはバイトコード
+が入るからです; また、我々はパッケージという呼び方もしません。 すでに
+Python の用語として使っているからです (また、 "インストーラ"
+という言葉は Windows 特有の用語です *Mac 族もこの用語 使っていたっけ?*)
+
+ビルド済み配布物は、モジュール配布物をインストール作業者にとって
+できるだけ簡単な状況にする方法です: ビルド済み配布物は、RPM ベースの
+Linux システムユーザにとってはバイナリ RPM 、Windows ユーザに
+とっては実行可能なインストーラ、 Debian ベースの Linux システム では
+Debian パッケージ、などといった具合です。
+当然のことながら、一人の人間が世の中にある全てのプラットフォーム用
+にビルド済み配布物を作成できるわけではありません。そこで、 Distutils
+の設計は。開発者が自分の専門分野 -- コードを書き、ソース配布物
+を作成する -- に集中できる一方で、_パッケージ作成者 (packager)_
+と呼ばれる、開発者とエンドユーザとの中間に位置する人々が
+ソースコード配布物を多くのプラットフォームにおけるビルド済み配布物
+に変換できるようになっています。
+
+もちろん、モジュール開発者自身がパッケージ作成者かもしれません; また、
+パッケージを作成するのはオリジナルの作成者が利用できないプラットフォームに
+アクセスできるような "外部の" ボランティアかもしれませんし、
+ソース配布物を定期的に取り込んで、アクセスできるかぎりの
+プラットフォーム向けにビルド済み配布物を生成するソフトウェアかも
+しれません。作業を行うのが誰であれ、パッケージ作成者は setup
+スクリプトを利用し、 `bdist' コマンドファミリを使って
+ビルド済み配布物を作成します。
+
+単純な例として、Distutils ソースツリーから以下のコマンドを
+実行したとします:
+
+     python setup.py bdist
+
+すると、Distutils はモジュール配布物 (ここでは Distutils 自体) を
+ビルドし、"偽の (fake)" インストールを (`build' ディレクトリで)
+行います。そして現在のプラットフォームにおける標準の形式でビルド済み
+配布物を生成します。デフォルトのビルド済み形式とは、UNIXでは "ダム
+(dumb)" の tar ファイルで、 Windows ではシンプルな実行形式の
+インストーラになります。(tar ファイルは、特定の場所に手作業で解凍
+しないと動作しないので、 "ダム: 賢くない" 形式とみなします。)
+
+従って、 UNIX システムで上記のコマンドを実行すると、
+`Distutils-1.0.`PLAT'.tar.gz' を作成します; この tarball
+を正しい場所で解凍すると、ちょうどソース配布物を ダウンロードして
+`python setup.py install' を実行したのと 同じように、正しい場所に
+Distutils がインストールされます。 ("正しい場所 (right place)"
+とは、ファイルシステムのルート下か、 Python の `PREFIX'
+ディレクトリ下で、これは `bdist_dumb' に指定するコマンドで変わります;
+デフォルトの設定では、`PREFIX' からの相対パスにインストール
+されるダム配布物が得られます。)
+
+言うまでもなく、 pure Python 配布物の場合なら、 `python setup.py
+install' するのに比べて大して簡単になったとは 言えません--しかし、非
+pure 配布物で、コンパイルの必要な拡張
+モジュールを含む場合、拡張モジュールを利用できるか否かという大きな
+違いになりえます。 また、 RPM パッケージや Windows
+用の実行形式インストーラのような "スマートな"
+ビルド済み配布物を作成しておけば、たとえ拡張モジュール
+が一切入っていなくてもユーザにとっては便利になります。
+
+`bdist' コマンドには、 `--formats' オプション があります。これは
+`sdist' コマンドの場合に似ていて、
+生成したいビルド済み配布物の形式を選択できます: 例えば、
+
+     python setup.py bdist --format=zip
+
+とすると、UNIX システムでは、 `Distutils-1.0.`PLAT'.zip' を作成します--
+先にも述べたように、Distutils をインストールするには、
+このアーカイブ形式をルートディレクトリ下で展開します。
+
+ビルド済み配布物として利用できる形式を以下に示します:
+形式                     説明                     注記
+------                   -----                    -----
+gztar                    gzip 圧縮された tar      (1),(3)
+                         ファイル (`.tar.gz')     
+ztar                     compress 圧縮された tar  (3)
+                         ファイル (`.tar.Z')      
+tar                      tar ファイル (`.tar')    (3)
+zip                      zip ファイル (`.zip')    (4)
+rpm                      RPM 形式                 (5)
+pkgtool                  Solaris `pkgtool' 形式   
+sdux                     HP-UX `swinstall' 形式   
+wininst                  Windows                  (2),(4)
+                         用の自己展開形式 ZIP     
+                         ファイル                 
+
+注記:
+`(1)'
+     UNIXでのデフォルト形式です
+
+`(2)'
+     Windows でのデフォルト形式です *to-do!*
+
+`(3)'
+     外部ユーティリティが必要です: `tar' と、 `gzip' または `bzip2'
+     または `compress' のいずれか
+
+`(4)'
+     外部ユーティリティの `zip' か、`zipfile' モジュール (Python~1.6
+     からは標準 Python ライブラリの一部になって います) が必要です
+
+`(5)'
+     外部ユーティリティの `rpm'、バージョン 3.0.4 以上が必要です
+     (バージョンを調べるには、 `rpm --version' とします)
+
+`bdist' コマンドを使うとき、必ず `--formats'
+オプションを使わなければならないわけではありません;
+自分の使いたい形式をダイレクトに実装しているコマンドも使えます。
+こうした `bdist' "サブコマンド (sub-command)" は、
+実際には類似のいくつかの形式を生成できます; 例えば、 `bdist_dumb'
+コマンドは、全ての "ダム" アーカイブ形式 (`tar', `ztar', `gztar',
+および `zip') を 作成できますし、`bdist_rpm' はバイナリ RPM とソース
+RPM の 両方を生成できます。`bdist' サブコマンドと、それぞれが
+生成する形式を以下に示します:
+コマンド                             形式
+------                               -----
+bdist_dumb                           tar, ztar, gztar, zip
+bdist_rpm                            rpm, srpm
+bdist_wininst                        wininst
+
+`bdist_*' コマンドについては、以下の節で詳しく述べます。
+
+* Menu:
+
+* ダム形式のビルド済み配布物を作成する::
+* RPM パッケージを作成する::
+* Windows インストーラを作成する::
+
+
+File: python-dist-jp.info,  Node: ダム形式のビルド済み配布物を作成する,  Next: RPM パッケージを作成する,  Prev: ビルド済み配布物を作成する,  Up: ビルド済み配布物を作成する
+
+ダム形式のビルド済み配布物を作成する
+====================================
+
+*絶対パスと相対パスのパッケージについて述べる必要があるんだけど、
+その前に実装しなくちゃね！*
+
+
+File: python-dist-jp.info,  Node: RPM パッケージを作成する,  Next: Windows インストーラを作成する,  Prev: ダム形式のビルド済み配布物を作成する,  Up: ビルド済み配布物を作成する
+
+RPM パッケージを作成する
+========================
+
+RPM 形式は、Red Hat, SuSE, Mandrake といった、多くの一般的な Linux
+ディストリビューションで使われています。普段使っているのがこれらの
+環境のいずれか (またはその他の RPM ベースの Linux
+ディストリビューション) なら、同じディストリビューションを使っている
+他のユーザ用に RPM パッケージを作成するのはとるに足らないことでしょう。
+一方、モジュール配布物の複雑さや、 Linux ディストリビューション間の
+違いにもよりますが、他の RPM ベースのディストリビューションでも動作
+するような RPM を作成できるかもしれません。
+
+通常、モジュール配布物の RPM を作成するには、`bdist_rpm'
+コマンドを使います:
+
+     python setup.py bdist_rpm
+
+あるいは、`bdist' コマンドを `--format' オプション付きで使います:
+
+     python setup.py bdist --formats=rpm
+
+前者の場合、 RPM 特有のオプションを指定できます; 後者の場合、
+一度の実行で複数の形式を指定できます。両方同時にやりたければ、
+それぞれの形式について各コマンドごとにオプション付きで `bdist_*'
+コマンドを並べます:
+
+     python setup.py bdist_rpm --packager="John Doe <jdoe@python.net>" \
+                     bdist_wininst --target_version="2.0"
+
+Distutils が setup スクリプトで制御されているのとほとんど同じく、 RPM
+パッケージの作成は、 `.spec' で制御されています。 RPM
+の作成を簡便に解決するため、`bdist_rpm' コマンドでは 通常、 setup
+スクリプトに与えた情報とコマンドライン、そして Distutils
+設定ファイルに基づいて `.spec' ファイルを作成します。 `.spec'
+ファイルの様々なオプションやセクション情報は、 以下のようにして setup
+スクリプトから取り出されます:
+RPM `.spec'                          Distutils setup
+ファイルのオプションまたはセクション スクリプト内のオプション
+------                               -----
+Name                                 `name'
+Summary (preamble 内)                `description'
+Version                              `version'
+Vendor                               `author' と `author_email', または
+                                     \& `maintainer' と
+                                     `maintainer_email'
+Copyright                            `licence'
+Url                                  `url'
+%description (セクション)            `long_description'
+
+また、`.spec' ファイル内の多くのオプションは、 setup スクリプト
+中に対応するオプションがありません。これらのほとんどは、以下に示す
+`bdist_rpm' コマンドのオプションで扱えます:
+RPM `.spec'              `bdist_rpm' オプション   デフォルト値
+ファイルのオプションまたはセクション                         
+------                   -----                    -----
+Release                  `release'                "1"
+Group                    `group'                  "Development/Libraries"
+Vendor                   `vendor'                 (上記参照)
+Packager                 `packager'               (none)
+Provides                 `provides'               (none)
+Requires                 `requires'               (none)
+Conflicts                `conflicts'              (none)
+Obsoletes                `obsoletes'              (none)
+Distribution             `distribution_name'      (none)
+BuildRequires            `build_requires'         (none)
+Icon                     `icon'                   (none)
+
+言うまでもなく、こうしたオプションをコマンドラインで指定するのは
+面倒だし、エラーの元になりますから、普通は `setup.cfg' に
+書いておくのがベストです -- ~*Note setup 設定ファイル setup
+configuration file を書く:: 節を参照してください。 沢山の Python
+モジュール配布物を配布したりパッケージ化したりしている
+のなら、配布物全部に当てはまるオプションを個人用の Distutils 設定
+ファイル (`~/.pydistutils.cfg') に入れられます。
+
+バイナリ形式の RPM パッケージを作成する際には三つの段階があり、
+Distutils はこれら全ての段階を自動的に処理します:
+  1. RPM パッケージの内容を記述する `.spec' ファイルを作成します
+     (`.spec' ファイルは setup スクリプトに似たファイルです; 実際、
+     setup スクリプトのほとんどの情報が `.spec' ファイルから
+     引き揚げられます)
+
+  2. ソース RPM を作成します
+
+  3. "バイナリ (binary)" RPM を生成します (モジュール配布物に Python
+     拡張モジュールが入っているか否かで、バイナリコードが
+     含まれることも含まれないこともあります)
+     通常、RPM は最後の二つのステップをまとめて行います; Distutils
+を使うと、普通は三つのステップ全てをまとめて行います。
+
+望むなら、これらの三つのステップを分割できます。`bdist_rpm' コマンドに
+`--spec-only' を指定すれば、単に `.spec' を作成して終了します;
+この場合、`.spec' ファイルは "配布物ディレクトリ (distribution
+directory)"-- 通常は `dist/' に作成されますが、 `--dist-dir'
+オプションで変更することもできます。(通常、 `.spec' ファイルは
+"ビルドツリー (build tree)"、すなわち `build_rpm'
+が作成する一時ディレクトリの中から引き揚げられます。)
+
+*この機能はまだ実装されていません--必要なの?!* 自作の `.spec'
+ファイルを `--spec-file' オプションで 指定することもできます;
+`--spec-only' と併せて利用すれば、 `.spec'
+ファイルを手作業でカスタマイズする機会が生まれます:
+
+     > python setup.py bdist_rpm --spec-only
+     # ... dist/FooBar-1.0.spec を編集
+     > python setup.py bdist_rpm --spec-file=dist/FooBar-1.0.spec
+
+(とはいえ、`.spec' の内容をカスタマイズしたいのなら、 標準の
+`bdist_rpm' を上書きして、自分の思い通りに `.spec'
+ファイルを書かせる方がおそらくましでしょう。)
+
+
+File: python-dist-jp.info,  Node: Windows インストーラを作成する,  Prev: RPM パッケージを作成する,  Up: ビルド済み配布物を作成する
+
+Windows インストーラを作成する
+==============================
+
+実行可能なインストーラは、Windows 環境ではごく自然なバイナリ配布形式
+です。インストーラは結構なグラフィカルユーザインタフェースを表示して、
+モジュール配布物に関するいくつかの情報を setup スクリプト内のメタデータ
+から取り出して示し、ユーザがいくつかのオプションを選んだり、インストール
+を決行するか取りやめるか選んだりできるようにします。
+
+メタデータは setup スクリプトから取り出されるので、Windows インストーラ
+の作成は至って簡単で、以下を実行するだけです:
+
+     python setup.py bdist_wininst
+
+あるいは、`bdist' コマンドを `--formats' オプション付きで実行します:
+
+     python setup.py bdist --formats=wininst
+
+(pure Python モジュールとパッケージだけの入った) pure モジュール
+配布物の場合、作成されるインストーラは実行バージョンに依存しない
+形式になり、 `foo-1.0.win32.exe' のような名前になります。 pure
+モジュールの Windows インストーラは UNIX や MacOS
+といったプラットフォームでも作成できます。
+
+非 pure 配布物の場合、拡張モジュールは Windows プラットフォーム上
+だけで作成でき、Python のバージョンに依存したインストーラになります。
+インストーラのファイル名もバージョン依存性を反映して、
+`foo-1.0.win32-py2.0.exe' のような形式になります。
+従って、サポートしたい全てのバージョンの Python に対して、
+別々のインストーラを作成しなければなりません。
+
+インストーラは、ターゲットとなるシステムにインストールを実行 した後、
+pure モジュールを通常 (normal) モードと最適化 (optimizing)
+モードでコンパイルしようと試みます。何らかの理由があってコンパイル
+させたくなければ、`bdist_wininst' コマンドを `--no-target-compile'
+かつ/または `--no-target-optimize' オプション付きで実行します。
+
+デフォルトでは、インストーラは実行時にクールな "Python Powered"
+ロゴを表示しますが、自作のビットマップ画像も指定できます。 画像は
+Windows の `.bmp' ファイル形式でなくてはならず、 `--bitmap'
+オプションで指定します。
+
+インストーラを起動すると、デスクトップの背景ウィンドウ上にでっかい
+タイトルも表示します。タイトルは配布物の名前とバージョン番号から
+作成します。`--title' オプションを使えば、
+タイトルを別のテキストに変更できます。
+
+インストーラファイルは "配布物ディレクトリ (distribution directory)" --
+通常は `dist/' に作成されますが、`--dist-dir'
+オプションで指定することもできます。
+
+* Menu:
+
+* インストール後実行スクリプト postinstallation script::
+
+
+File: python-dist-jp.info,  Node: インストール後実行スクリプト postinstallation script,  Prev: Windows インストーラを作成する,  Up: Windows インストーラを作成する
+
+インストール後実行スクリプト (postinstallation script)
+------------------------------------------------------
+
+Python 2.3 からは、インストール実行後スクリプトを `--install-script'
+オプションで指定できるように
+なりました。スクリプトはディレクトリを含まないベースネーム (basename)
+で指定しなければならず、スクリプトファイル名は setup 関数の scripts
+引数中に挙げられていなければなりません。
+
+指定したスクリプトは、インストール時、ターゲットとなるシステム上で
+全てのファイルがコピーされた後に実行されます。このとき argv[1] を
+"-install" に設定します。また、アンインストール時には、
+ファイルを削除する前に argv[1] を "-remove" に設定して 実行します。
+
+Windows インストーラでは、インストールスクリプトは埋め込みで実行
+され、全ての出力 (sys.stdout、 sys.stderr) はバッファにリダイレクト
+され、スクリプトの終了後に GUI 上に表示されます。
+
+インストール後実行スクリプトでは、インストール/アンインストール
+のコンテキストで特に有用な機能をいくつか使えます。
+
+     directory_created(pathname)
+     file_created(pathname)
+
+これらの関数は、インストール後実行スクリプトがディレクトリやファイル
+を作成した際に呼び出さなければなりません。この関数はアンインストーラ
+に作成されたパス名を登録し、配布物をアンインストールする際にファイルが
+消されるようにします。安全を期すために、ディレクトリは空の時にのみ
+削除されます。
+
+     get_special_folder_path(csidl_string)
+
+この関数は、「スタートメニュー」や「デスクトップ」といった、 Windows
+における特殊なフォルダ位置を取得する際に使えます。
+この関数はフォルダのフルパスを返します。 'csidl_string' は
+以下の文字列のいずれかでなければなりません:
+
+     "CSIDL_APPDATA"
+     
+     "CSIDL_COMMON_STARTMENU"
+     "CSIDL_STARTMENU"
+     
+     "CSIDL_COMMON_DESKTOPDIRECTORY"
+     "CSIDL_DESKTOPDIRECTORY"
+     
+     "CSIDL_COMMON_STARTUP"
+     "CSIDL_STARTUP"
+     
+     "CSIDL_COMMON_PROGRAMS"
+     "CSIDL_PROGRAMS"
+     
+     "CSIDL_FONTS"
+
+該当するフォルダを取得できなかった場合、 OSError が送出されます。
+
+どの種類のフォルダを取得できるかは、特定の Windows のバージョン
+ごとに異なります。また、おそらく設定によっても異なるでしょう。
+詳細については、 `SHGetSpecialFolderPath' 関数に関する Microsoft の
+ドキュメントを参照してください。
+
+     create_shortcut(target, description, filename[, arguments[,
+                     workdir[, iconpath[, iconindex]]]])
+
+この関数はショートカットを作成します。 TARGET
+はショートカットによって起動されるプログラムへのパスです。 DESCRIPTION
+はショートカットに対する説明です。 FILENAME
+はユーザから見えるショートカットの名前です。
+コマンドライン引数があれば、ARGUMENTS に指定します。 WORKDIR
+はプログラムの作業ディレクトリです。 ICONPATH
+はショートカットのためのアイコンが入ったファイルで、 ICONINDEX
+はファイル ICONPATH 中のアイコンへのインデクス
+です。これについても、詳しくは`IShellLink' インタフェースに 関する
+Microsoft の ドキュメントを参照してください。
+
+
+File: python-dist-jp.info,  Node: パッケージインデクスに登録する,  Next: 例,  Prev: ビルド済み配布物を作成する,  Up: Top
+
+パッケージインデクスに登録する
+******************************
+
+Python パッケージインデクス (Python Package Index, PyPI) は、 distutils
+でパッケージ化された配布物に関するメタデータを保持
+しています。配布物のメタデータをインデクスに提出するには、 Distutils
+のコマンド `register' を使います。 `register' は以下のように起動します:
+
+     python setup.py register
+
+Distutils は以下のようなプロンプトを出します:
+
+     running register
+     We need to know who you are, so please choose either:
+      1. use your existing login,
+      2. register as a new user,
+      3. have the server generate a new password for you (and email it to you), or
+      4. quit
+     Your selection [default 1]:
+
+注意: ユーザ名とパスワードをローカルの計算機に保存しておくと、
+このメニューは表示されません。
+
+まだ PyPI に登録したことがなければ、まず登録する必要があります。
+この場合選択肢 2 番を選び、リクエストされた詳細情報を入力して
+ゆきます。詳細情報を提出し終えると、登録情報の承認を行うための
+メールを受け取るはずです。
+
+すでに登録を行ったことがあれば、選択肢 1 を選べます。この選択肢を
+選ぶと、PyPI ユーザ名とパスワードを入力するよう促され、 `register'
+がメタデータをインデクスに自動的に提出します。
+
+配布物の様々なバージョンについて、好きなだけインデクスへの提出
+を行ってかまいません。特定のバージョンに関するメタデータを
+入れ替えたければ、再度提出を行えば、インデクス上のデータが
+更新されます。
+
+PyPI は提出された配布物の (名前、バージョン) の各組み合わせについて
+記録を保持しています。ある配布物名について最初に情報を提出したユーザが、
+その配布物名のオーナ (owner) になります。オーナは `register'
+コマンドか、web インタフェースを介して変更を提出できます。
+オーナは他のユーザをオーナやメンテナとして指名できます。
+メンテナはパッケージ情報を編集できますが、他の人をオーナやメンテナに
+指名することはできません。
+
+デフォルトでは、 PyPI はあるパッケージについて全てのバージョンを
+表示します。特定のバージョンを非表示にしたければ、パッケージの Hidden
+プロパティを yes に設定します。この値は web インタフェース
+で編集しなければなりません。
+
+
+File: python-dist-jp.info,  Node: 例,  Next: リファレンスマニュアル,  Prev: パッケージインデクスに登録する,  Up: Top
+
+例
+**
+
+* Menu:
+
+* pure Python 配布物 モジュール形式::
+* pure Python 配布物 パッケージ形式::
+* 単体の拡張モジュール::
+
+
+File: python-dist-jp.info,  Node: pure Python 配布物 モジュール形式,  Next: pure Python 配布物 パッケージ形式,  Prev: 例,  Up: 例
+
+pure Python 配布物 (モジュール形式)
+===================================
+
+単に二つのモジュール、特定のパッケージに属しないモジュールを
+配布するだけなら、setup スクリプト中で `py_modules'
+オプションを使って個別に指定できます。
+
+もっとも単純なケースでは、二つのファイル: setup スクリプト自体と、
+配布したい単一のモジュール、この例では `foo.py' について
+考えなければなりません:
+
+     <root>/
+             setup.py
+             foo.py
+
+(この節の全ての図において、 `<root>' は配布物ルートディレクトリ
+を参照します。) この状況を扱うための最小の setup スクリプトは
+以下のようになります:
+
+     from distutils.core import setup
+     setup(name = "foo", version = "1.0",
+           py_modules = ["foo"])
+
+配布物の名前は `name' オプションで個々に指定し、配布される
+モジュールの一つと配布物を同じ名前にする必要はないことに注意して
+ください (とはいえ、この命名方法はよいならわしでしょう)。
+ただし、配布物名はファイル名を作成するときに使われるので、
+文字、数字、アンダースコア、ハイフンだけで構成しなければなりません。
+
+`py_modules' はリストなので、もちろん複数のモジュールを
+指定できます。例えば、モジュール `foo' と `bar' を
+配布しようとしているのなら、 setup スクリプトは以下のようになります:
+
+     <root>/
+             setup.py
+             foo.py
+             bar.py
+
+また、セットアップスクリプトは以下のようになります．
+
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           py_modules = ["foo", "bar"])
+
+モジュールのソースファイルは他のディレクトリに置けますが、
+そうしなければならないようなモジュールを沢山持っているのなら、
+モジュールを個別に列挙するよりもパッケージを指定した方が 簡単でしょう。
+
+
+File: python-dist-jp.info,  Node: pure Python 配布物 パッケージ形式,  Next: 単体の拡張モジュール,  Prev: pure Python 配布物 モジュール形式,  Up: 例
+
+pure Python 配布物 (パッケージ形式)
+===================================
+
+二つ以上のモジュールを配布する場合、とりわけ二つのパッケージに
+分かれている場合、おそらく個々のモジュールよりもパッケージ全体を
+指定する方が簡単です。たとえモジュールがパッケージ内に入っていなくても
+状況は同じで、その場合はルートパッケージにモジュールが入っていると
+Distutils に教えることができ、他のパッケージと同様にうまく処理されます
+(ただし、`__init__.py' があってはなりません)。
+
+最後の例で挙げた setup スクリプトは、
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           packages = [""])
+
+のようにも書けます (空文字はルートパッケージを意味します)
+
+これら二つのファイルをサブディレクトリ下に移動しておいて、
+インストール先はルートパッケージのままにしておきたい、例えば:
+
+     <root>/
+             setup.py
+             src/      foo.py
+                       bar.py
+
+のような場合には、パッケージ名にはルートパッケージをそのまま
+指定しておきますが、ルートパッケージに置くソースファイルが
+どこにあるかを Distutils に教えなければなりません:
+
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           package_dir = {"": "src"},
+           packages = [""])
+
+もっと典型的なケースでは、複数のモジュールを同じパッケージ
+(またはサブパッケージ) に入れて配布しようと思うでしょう。 例えば、`foo'
+と `bar' モジュールがパッケージ `foobar'
+に属する場合、ソースツリーをレイアウトする
+一案として、以下が考えられます。
+
+     <root>/
+             setup.py
+             foobar/
+                      __init__.py
+                      foo.py
+                      bar.py
+
+実際、 Distutils ではこれをデフォルトのレイアウトとして想定して
+いて、setup スクリプトを書く際にも最小限の作業しか必要ありません:
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           packages = ["foobar"])
+
+モジュールを入れるディレクトリをパッケージの名前にしたくない
+場合、ここでも `package_dir' オプションを使う必要があります。
+例えば、パッケージ `foobar' のモジュールが `src' に 入っているとします:
+
+     <root>/
+             setup.py
+             src/
+                      __init__.py
+                      foo.py
+                      bar.py
+
+適切な setup スクリプトは、
+
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           package_dir = {"foobar" : "src"},
+           packages = ["foobar"])
+
+のようになるでしょう。
+
+また、メインパッケージ内のモジュールを配布物ルート下に
+置くことがあるかもしれません:
+
+     <root>/
+             setup.py
+             __init__.py
+             foo.py
+             bar.py
+
+この場合、 setup スクリプトは
+
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           package_dir = {"foobar" : ""},
+           packages = ["foobar"])
+
+のようになるでしょう。 (空文字列も現在のディレクトリを表します。)
+
+サブパッケージがある場合、`packages' で
+明示的に列挙しなければなりませんが、`package_dir'
+はサブパッケージへのパスを自動的に展開します。 (別の言い方をすれば、
+Distutils はソースツリーを_走査せず_、 どのディレクトリが Python
+パッケージに相当するのかを `__init__.py' files.
+を探して調べようとします。)
+このようにして、デフォルトのレイアウトはサブパッケージ形式に
+展開されます:
+
+     <root>/
+             setup.py
+             foobar/
+                      __init__.py
+                      foo.py
+                      bar.py
+                      subfoo/
+                                __init__.py
+                                blah.py
+
+対応する setup スクリプトは以下のようになります。
+
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           packages = ["foobar", "foobar.subfoo"])
+
+(ここでも、`package_dir' を空文字列にすると現在のディレクトリ
+を表します。)
+
+
+File: python-dist-jp.info,  Node: 単体の拡張モジュール,  Prev: pure Python 配布物 パッケージ形式,  Up: 例
+
+単体の拡張モジュール
+====================
+
+拡張モジュールは、`ext_modules' オプションを使って指定します。
+`package_dir' は、拡張モジュールのソースファイルをどこで
+探すかには影響しません; pure Python モジュールのソースのみに影響します。
+もっとも単純なケースでは、単一の C ソースファイルで書かれた単一の拡張
+モジュールは:
+
+     <root>/
+             setup.py
+             foo.c
+
+になります。
+
+`foo' 拡張をルートパッケージ下に所属させたい場合、 setup スクリプトは
+
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           ext_modules = [Extension("foo", ["foo.c"])])
+
+になります。
+
+同じソースツリーレイアウトで、この拡張モジュールを `foopkg'
+の下に置き、拡張モジュールの名前を変えるには:
+
+     from distutils.core import setup
+     setup(name = "foobar", version = "1.0",
+           ext_modules = [Extension("foopkg.foo", ["foo.c"])])
+
+のようにします。
+
+
+File: python-dist-jp.info,  Node: リファレンスマニュアル,  Next: distutilssysconfig,  Prev: 例,  Up: Top
+
+リファレンスマニュアル
+**********************
+
+* Menu:
+
+* モジュールをインストールする  install コマンド群::
+* ソースコード配布物を作成する  sdist command::
+
+
+File: python-dist-jp.info,  Node: モジュールをインストールする install コマンド群,  Next: ソースコード配布物を作成する sdist command,  Prev: リファレンスマニュアル,  Up: リファレンスマニュアル
+
+モジュールをインストールする:  `install' コマンド群
+===================================================
+
+`install' コマンドは最初にビルドコマンドを実行済みに
+しておいてから、サブコマンド `install_lib' を実行します。
+`install_data' and `install_scripts'.
+
+* Menu:
+
+* install_data::
+* install_scripts::
+
+
+File: python-dist-jp.info,  Node: install_data,  Next: install_scripts,  Prev: モジュールをインストールする install コマンド群,  Up: モジュールをインストールする install コマンド群
+
+`install_data'
+--------------
+
+このコマンドは配布物中に提供されている全てのデータファイルを
+インストールします。
+
+
+File: python-dist-jp.info,  Node: install_scripts,  Prev: install_data,  Up: モジュールをインストールする install コマンド群
+
+`install_scripts'
+-----------------
+
+このコマンドは配布物中の全ての (Python) スクリプトをインストール
+します。
+
+
+File: python-dist-jp.info,  Node: ソースコード配布物を作成する sdist command,  Prev: モジュールをインストールする install コマンド群,  Up: リファレンスマニュアル
+
+ソースコード配布物を作成する:  `sdist' command
+==============================================
+
+*これは上から断片的に移動した文章です: 脈絡を与える必要あり！*
+
+マニフェストテンプレート関連のコマンドを以下に示します:
+コマンド                             説明
+------                               -----
+include PAT1 PAT2 ...                列挙されたパターンのいずれかにマッチする全てのファイルを
+                                     対象に含めます
+exclude PAT1 PAT2 ...                列挙されたパターンのいずれかにマッチする全てのファイルを
+                                     対象から除外します
+recursive-include DIR PAT1 PAT2 ...  DIR
+                                     下にある、列挙されたパターンのいずれかにマッチ
+                                     する全てのファイルを対象に含めます
+recursive-exclude DIR PAT1 PAT2 ...  DIR
+                                     下にある、列挙されたパターンのいずれかにマッチ
+                                     する全てのファイルを対象から除外します
+global-include PAT1 PAT2 ...         ソースツリー下にある、列挙されたパターンのいずれかにマッチ
+                                     する全てのファイルを対象に含めます
+global-exclude PAT1 PAT2 ...         ソースツリー下にある、列挙されたパターンのいずれかにマッチ
+                                     する全てのファイルを対象から除外します
+prune DIR                            DIR 下の全てのファイルを除外します
+graft DIR                            DIR 下の全てのファイルを含めます
+
+ここでいうパターンとは、UNIX式の "glob" パターンです: `*'
+は全ての正規なファイル名文字列に一致し、`?' は
+正規なファイル名文字一字に一致します。また、 `[RANGE]' は、RANGE の範囲
+(例えば、 `a=z'、`a-zA-Z'、 `a-f0-9_.')
+内にある、任意の文字にマッチします。 "正規なファイル名文字"
+の定義は、プラットフォームごとに特有の ものです: UNIX
+ではスラッシュ以外の全ての文字です: Windows
+では、バックラッシュとコロン以外です: MacOS ではコロン以外です。
+
+*Windows と MacOS はまだサポートされていません*
+
+
+File: python-dist-jp.info,  Node: distutilssysconfig,  Next: 日本語訳について,  Prev: リファレンスマニュアル,  Up: Top
+
+システム設定情報
+****************
+
+Python インタプリタの設定情報に対する低水準の アクセス手段。
+
+`distutils.sysconfig' モジュールでは、 Python の低水準の
+設定情報へのアクセス手段を提供しています。
+どの設定情報変数にアクセスできるかは、プラットフォームと設定自体に
+大きく左右されます。また、特定の変数は、使っている Python の
+バージョンに対するビルドプロセスに左右されます; こうした変数は、 UNIX
+システムでは、`Makefile' や Python と一緒にインストール
+される設定ヘッダから探し出されます。 設定ファイルのヘッダは、2.2
+以降のバージョンでは `pyconfig.h' 、それ以前のバージョンでは `config.h'
+です。
+
+他にも、`distutils' パッケージの別の部分を操作
+する上で便利な関数がいくつか提供されています。
+
+`PREFIX'
+     `os.path.normpath(sys.prefix)' の結果です。
+
+`EXEC_PREFIX'
+     `os.path.normpath(sys.exec_prefix)' の結果です。
+
+`get_config_var(name)'
+     ある一つの設定変数に対する値を返します。
+     `get_config_vars().get(NAME)' と同じです。
+
+`get_config_vars(...)'
+     定義されている変数のセットを返します。引数を指定しなければ、
+     設定変数名を変数の値に対応付けるマップ型を返します。
+     引数を指定する場合、引数の各値は文字列でなければならず、戻り値は
+     引数に関連付けられた各設定変数の値からなる配列になります。
+     引数に指定した名前の設定変数に値がない場合、その変数値には `None'
+     が入ります。
+
+`get_config_h_filename()'
+     設定ヘッダのフルパス名を返します。 UNIXの場合、このヘッダファイルは
+     `configure' スクリプトによって生成されるヘッダファイル名です;
+     他のプラットフォームでは、ヘッダは Python ソース配布物中で直接
+     与えられています。ファイルはプラットフォーム固有のテキストファイル
+     です。
+
+`get_makefile_filename()'
+     Python をビルドする際に用いる `Makefile' のフルパスを返します。
+     UNIXの場合、このファイルは `configure' スクリプトによって
+     生成されます; 他のプラットフォームでは、この関数の返す値の
+     意味は様々です。有意なファイル名を返す場合、ファイルは
+     プラットフォーム固有のテキストファイル形式です。 この関数は POSIX
+     プラットフォームでのみ有用です。
+
+`get_python_inc([plat_specific[, prefix]])'
+     C
+     インクルードファイルディレクトリについて、一般的なディレクトリ名か、
+     プラットフォーム依存のディレクトリ名のいずれかを返します。
+     PLAT_SPECIFIC が真であれば、プラットフォーム依存の
+     インクルードディレクトリ名を返します; PLAT_SPECIFIC が偽か、
+     省略された場合には、プラットフォームに依存しないディレクトリを
+     返します。 PREFIX が指定されていれば、`PREFIX'
+     の代わりに用いられます。また、 PLAT_SPECIFIC が真の場合、
+     `EXEC_PREFIX' の代わりに用いられます。
+
+`get_python_lib([plat_specific[, standard_lib[, prefix]]])'
+     ライブラリディレクトリについて、一般的なディレクトリ名か、
+     プラットフォーム依存のディレクトリ名のいずれかを返します。
+     PLAT_SPECIFIC が真であれば、プラットフォーム依存の
+     ライブラリディレクトリ名を返します; PLAT_SPECIFIC が偽か、
+     省略された場合には、プラットフォームに依存しないディレクトリを
+     返します。PREFIX が指定されていれば、`PREFIX'
+     の代わりに用いられます。また、 PLAT_SPECIFIC が真の場合、
+     `EXEC_PREFIX' の代わりに用いられます。 STANDARD_LIB
+     が真であれば、サードパーティ製の拡張モジュール
+     をインストールするディレクトリの代わりに、標準ライブラリのディレクトリ
+     を返します。
+
+以下の関数は、`distutils' パッケージ内の使用だけを 前提にしています。
+
+`customize_compiler(compiler)'
+     `distutils.ccompiler.CCompiler' インスタンスに対して、
+     プラットフォーム固有のカスタマイズを行います。
+
+     この関数は現在のところ、UNIX だけで必要ですが、将来の互換性を
+     考慮して一貫して常に呼び出されます。この関数は様々な UNIX の
+     変種ごとに異なる情報や、Python の`Makefile' に書かれた情報
+     をインスタンスに挿入します。この情報には、選択されたコンパイラや
+     コンパイラ/リンカのオプション、そして共有オブジェクトを扱うために
+     リンカに指定する拡張子が含まれます。
+
+この関数はもっと特殊用途向けで、Python 自体のビルドプロセスで
+しか使われません。
+
+`set_python_build()'
+     `distutils.sysconfig' モジュールに、モジュールが Python の
+     ビルドプロセスの一部として使われることを知らせます。これによって、
+     ファイルコピー先を示す相対位置が大幅に変更され、インストール済みの
+     Python ではなく、ビルド作業領域にファイルが置かれるようになります。
+
+
+File: python-dist-jp.info,  Node: 日本語訳について,  Next: Function-Method-Variable Index,  Prev: distutilssysconfig,  Up: Top
+
+日本語訳について
+****************
+
+* Menu:
+
+* このドキュメントについて::
+* 翻訳者::
+
+
+File: python-dist-jp.info,  Node: このドキュメントについて,  Next: 翻訳者,  Prev: 日本語訳について,  Up: 日本語訳について
+
+このドキュメントについて
+========================
+
+この文書は、Pythonドキュメント翻訳プロジェクトによる Distributing
+Python Modules の日本語訳版です。日本語訳に対する質問や提案などが
+ありましたら、Pythonドキュメント翻訳プロジェクトのメーリングリスト
+
+<http://www.python.jp/mailman/listinfo/python-doc-jp>
+
+または、プロジェクトのバグ管理ページ
+
+<http://sourceforge.jp/tracker/?atid=116&group_id=11&func=browse>
+
+までご報告ください。
+
+
+File: python-dist-jp.info,  Node: 翻訳者,  Prev: このドキュメントについて,  Up: 日本語訳について
+
+翻訳者
+======
+
+2.3.3 和訳 Yasushi Masuda (March 12, 2004)\ 2.3.4 差分 Yasushi Masuda
+(September 20, 2004)\ 2.3.5 (差分なし): (April 20, 2005)
+
+
+File: python-dist-jp.info,  Node: Function-Method-Variable Index,  Next: Miscellaneous Index,  Prev: 日本語訳について,  Up: Top
+
+Function, Method, and Variable Index
+************************************
+
+* Menu:
+
+* customize_compiler:                    distutilssysconfig.
+* EXEC_PREFIX:                           distutilssysconfig.
+* get_config_h_filename:                 distutilssysconfig.
+* get_config_var:                        distutilssysconfig.
+* get_config_vars:                       distutilssysconfig.
+* get_makefile_filename:                 distutilssysconfig.
+* get_python_inc:                        distutilssysconfig.
+* get_python_lib:                        distutilssysconfig.
+* PREFIX:                                distutilssysconfig.
+* set_python_build:                      distutilssysconfig.
+
+
+File: python-dist-jp.info,  Node: Miscellaneous Index,  Prev: Function-Method-Variable Index,  Up: Top
+
+Miscellaneous Index
+*******************
+
+* Menu:
+
+* distutils.sysconfig:                   distutilssysconfig.
+
+

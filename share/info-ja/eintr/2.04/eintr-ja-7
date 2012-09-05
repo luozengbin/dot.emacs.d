@@ -1,0 +1,1952 @@
+Info file: eintr-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-lisp-intro.texi.patched'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELisp-Intro-ja: (eintr-ja).       Emacs-Lisp入門ガイド
+END-INFO-DIR-ENTRY
+
+
+これはプログラマではない人のための `Emacs Lisp プログラミング' 解説書で
+ある．
+
+Edition 2.04, 2001 Dec 17
+
+Copyright (C) 1990, '91, '92, '93, '94, '95, '97, 2001 Free Software
+Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Section being the Preface, with the Front-Cover Texts being
+no Front-Cover Texts, and with the Back-Cover Texts being no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File: eintr-ja, Node: recursive-graph-body-print, Next: Printed Axes, Prev: graph-body-print, Up: Readying a Graph
+
+関数`recursive-graph-body-print' *(2004/08/10)*
+===============================================
+
+関数`graph-body-print'は、再帰的に書くこともできる。再帰では、2つの部分
+に分ける。グラフの最大の高さなどの一度だけ探す必要がある変数の値を決め
+るための`let'式を使った外側の「呼び出し側関数（wrapper）」と、グラフを
+書くために再帰的に呼び出される内側の関数である。
+
+「呼び出し側関数」は簡単である。
+
+     (defun recursive-graph-body-print (numbers-list)
+       "Print a bar graph of the NUMBERS-LIST.
+     The numbers-list consists of the Y-axis values."
+       (let ((height (apply 'max numbers-list))
+             (symbol-width (length graph-blank))
+             from-position)
+         (recursive-graph-body-print-internal
+          numbers-list
+          height
+          symbol-width)))
+
+再帰関数は少々込み入っている。
+これには4つの部分がある。
+「再帰条件」、コラムを書くコード、再帰呼び出し、「次段式」である。
+「再帰条件」は`if'式であり、`numbers-list'に要素が
+残っているかどうかを調べる。
+そうならば、書くコードを使って1つのコラムを書き、自身を再度呼び出す。
+関数が自身を再度呼び出す場合には、「次段式」で短くした
+`numbers-list'の値を使う。
+
+     (defun recursive-graph-body-print-internal
+       (numbers-list height symbol-width)
+       "Print a bar graph.
+     Used within recursive-graph-body-print function."
+
+       (if numbers-list
+           (progn
+             (setq from-position (point))
+             (insert-rectangle
+              (column-of-graph height (car numbers-list)))
+             (goto-char from-position)
+             (forward-char symbol-width)
+             (sit-for 0)     ; コラムごとにグラフを描く
+             (recursive-graph-body-print-internal
+              (cdr numbers-list) height symbol-width))))
+
+インストールしてから試してみよう。たとえばつぎのようにする。
+
+     (recursive-graph-body-print '(3 2 5 6 7 5 3 4 6 4 3 2 1))
+
+`recursive-graph-body-print'はつぎのような出力をする。
+
+                     *
+                    **   *
+                   ****  *
+                   **** ***
+                 * *********
+                 ************
+                 *************
+
+これら2つの関数、`graph-body-print'や`recursive-graph-body-print'のいず
+れも、グラフの本体を作る。
+
+
+
+File: eintr-ja, Node: Printed Axes, Next: Line Graph Exercise, Prev: recursive-graph-body-print, Up: Readying a Graph
+
+軸表示の必要性 *(2004/08/10)*
+=============================
+
+グラフを読み取るためには、グラフの軸が必要である。一度だけならば、
+Emacsのピクチャーモードを使って、手で軸を描くのも合理的であろう。しかし、
+グラフ描画関数は何回も使われる。
+
+このため、基本の関数`print-graph-body'を拡張して、
+水平軸と垂直軸のラベルを自動的に描くようにした。
+ラベル表示関数には新しいことがらはないので、のちほど付録で説明する。
+*Note Full Graph::。
+
+
+
+File: eintr-ja, Node: Line Graph Exercise, Prev: Printed Axes, Up: Readying a Graph
+
+演習問題
+========
+
+折線グラフを描くグラフ表示関数を書いてみよ。
+
+
+
+File: eintr-ja, Node: Emacs Initialization, Next: Debugging, Prev: Readying a Graph, Up: Top
+
+個人用ファイル`.emacs' *(2004/08/10)*
+*************************************
+
+「Emacsを好きになるにはEmacsが好きである必要はない」。この矛盾するよう
+な言葉は、GNU Emacsの秘密である。「箱から取り出した」ままのEmacsは、汎
+用のツールである。Emacsを使うほとんどの人は、満足のいくようにカスタマイ
+ズする。
+
+GNU Emacsは、ほとんどEmacs Lispで書かれている。つまり、Emacs Lispの式を
+書けば、Emacsを修正したり拡張できるのである。
+
+* Menu:
+
+* Default Configuration::
+* Site-wide Init::              You can write site-wide init files.
+* defcustom::                   Emacs will write code for you.
+* Beginning a .emacs File::     How to write a `.emacs file'.
+* Text and Auto-fill::          Automatically wrap lines.
+* Mail Aliases::                Use abbreviations for email addresses.
+* Indent Tabs Mode::            Don't use tabs with TeX
+* Keybindings::                 Create some personal keybindings.
+* Keymaps::                     More about key binding.
+* Loading Files::               Load (i.e., evaluate) files automatically.
+* Autoload::                    Make functions available.
+* Simple Extension::            Define a function; bind it to a key.
+* X11 Colors::                  Colors in version 19 in X.
+* Miscellaneous::
+* Mode Line::                   How to customize your mode line.
+
+
+
+File: eintr-ja, Node: Default Configuration, Next: Site-wide Init, Prev: Emacs Initialization, Up: Emacs Initialization
+
+Emacs のデフォルト設定
+======================
+
+Emacsのデフォルトの設定に満足する人もいる。Emacsは、Cのファイルを編集す
+るとCモードで、Fortranのファイルを編集するとFortanモードで、普通のファ
+イルを編集すると基本（Fundamental）モードで始まる。誰がEmacsを使おうと
+しているのかわからない場合には、これらはすべて意味があることである。普
+通のファイルで何をしたいか予測できる人がいるだろうか？　Cのコードを編集
+するときにはCモードが正しいデフォルトであるように、基本モードはそのよう
+なファイルに対する正しいデフォルトである。しかし、読者自身がEmacsを使う
+場合には、Emacsをカスタマイズすることに意味がある。
+
+たとえば、筆者は特定のファイル以外では基本モードを好み、Textモードを好
+む。そのために、Emacsをカスタマイズして、筆者に適するようにする。
+
+`~/.emacs'ファイルを書くことで、Emacsをカスタマイズしたり拡張できる。こ
+れはあなた個人の初期化ファイルである．内容は Emacs Lisp で書かれ，
+Emacsに何をすべきかを伝える (1) (*Note Default
+Configuration-Footnotes::)
+
+`~/.emacs' ファイルには Emacs Lisp コードが含まれる．コードを書く
+には，自分自身で書くか，コードを書くために Emacs の `customize'
+機能を使う．自分自身で書いた式と Customize で自動的に書かれた式は
+`.emacs' ファイルにまとめることができる．
+
+(私自身はいくつかのものを除けば，自分で書くのが好きだ．特にフォントはコ
+マンド `customize' を使って操作するのが簡単だ．私は2つの方法を組み合わ
+せている)
+
+この章のほとんどは自分自身で書くためのものである．`.emacs' ファイルにつ
+いて詳しいことは *Note The Init File: (emacs)Init File や *Note The
+Init File: (elisp)Init Fileを参照ください．
+
+
+File: eintr-ja  Node: Default Configuration-Footnotes, Up: Default Configuration
+
+(1) `~/.emacs' に `.el' を追加して，`~/.emacs.el' ファイ
+ルを使うかもしれない．過去，`~/.emacs.el' のようなファイルは禁止さ
+れていたが，今はできる．このことは Emacs Lisp ファイルの名前付けの慣習
+にも矛盾しない．古い書式であれば入力を省略できる．
+
+
+
+File: eintr-ja, Node: Site-wide Init, Next: defcustom, Prev: Emacs Initialization, Up: Emacs Initialization
+
+サイト全体の初期化ファイル
+==========================
+
+個人用の初期化ファイルに加えて、Emacsはサイト全体のさまざまな初期化ファ
+イルを自動的にロードする。これらは個人用の`~/.emacs'ファイルと同じ形式
+であるが、誰もがロードするものである。
+
+サイト全体の2つの初期化ファイル、`site-load.el'と`site-init.el'は、
+もっとも一般的に使われるEmacsの「ダンプ版」を
+作成するときにEmacsにロードされる
+（ダンプ版Emacsは、素早くロードできる。
+しかし、いったんファイルをロードしてダンプすると、
+変更をロードし直したり再度ダンプし直さない限り、その変更は反映されない。
+ファイル`INSTALL'や
+*Note Building Emacs: (elisp)Building Emacs）。
+
+Emacsを起動するたびに、サイト全体の3つの初期化ファイルが自動的にロード
+される。これらは、個人の`.emacs'ファイルをロードする*まえ*にロードされ
+る`site-start.el'と、個人の`.emacs'ファイルをロードした*あと*にロードさ
+れる`default.el'と端末タイプファイルである。
+
+個人の`.emacs'ファイル内の設定や定義は、
+ファイル`site-start.el'内の重複する設定や定義を上書きする。
+しかし、`default.el'や端末タイプファイルでの設定や定義は、
+個人の`.emacs'ファイルでの設定や定義を上書きする
+（端末タイプファイルの干渉を防ぐには、
+`term-file-prefix'に`nil'を設定する。
+*Note Simple Extension::）。
+
+ディストリビューションに含まれるファイル`INSTALL'には、ファイル
+`site-init.el'と`site-load.el'に関する説明がある。
+
+ファイル`loadup.el'、`startup.el'、`loaddefs.el'は、ファイルのロードを
+制御する。これらのファイルは、Emacsディストリビューションのディレクトリ
+`lisp'にあり、見ておく価値がある。
+
+ファイル`loaddefs.el'には、個人の`.emacs'ファイルやサイト全体の初期化ファ
+イルに何を書くべきかについて多くの有用な助言がある。
+
+
+
+File: eintr-ja, Node: defcustom, Next: Beginning a .emacs File, Prev: Site-wide Init, Up: Emacs Initialization
+
+`defcustom' を使って変数を定義 *(2004/08/10)*
+=============================================
+
+`defcustom'を使って変数を定義すると，値を設定するために Emacs の
+`customize' 機能を使うことができる．(`customize' は関数定義には利用でき
+ない．しかし，`defuns' を `.emacs' ファイルに書くことはできる．
+`.emacs' にはどんな Lisp 式でも書くことができる)
+
+`customize' 機能はスペシャルフォーム `defcustom' に依存する．ユーザが設
+定する変数には `defvar' や `setq' も利用できるが，スペシャルフォーム
+`defcustom' はこのような処理のために設計されている．
+
+`defcustom' の最初の3つの引数を書く時には，`defvar' の知識をそのまま利
+用できる．`defcustom' の最初の引数は変数の名前である．2 番目は変数の初
+期値(変数が定義されていないか，値が設定されていない時に使われる)である．
+3番目はドキュメントである．
+
+`defcustom'の4番目と続く引数はタイプとオプションを定義する．これらは
+`defvar' にはない．(これらの引数はオプションである)
+
+これらの各引数は値が続くキーワードからなる．各キーワードは文字
+`:' で始まる．
+
+例えば，カスタマイズできるユーザ変数である `text-mode-hook' は以下のよ
+うに定義されている．
+
+     (defcustom text-mode-hook nil
+       "Normal hook run when entering Text mode and many related modes."
+       :type 'hook
+       :options '(turn-on-auto-fill flyspell-mode)
+       :group 'data)
+
+変数の名前は `text-mode-hook' である．デフォルト値はなく，ドキュメント
+はこの変数が何をするかを述べている．
+
+キーワード `:type' は Emacs に `text-mode-hook' にどのようなデータが設
+定されるべきなのか，カスタマイズの画面で値をどのように表示すべきかを示
+している．
+
+キーワード `:options' は変数の値として簡単に設定できるように提案するリ
+ストである．現在は `:options' は フックでのみ利用できる．このリストは提
+案しかしない．排他的なものではないので，他の値でも自由に設定できる．キー
+ワード `:options' で設定しておくと，ユーザが簡単に選択できるようにチェッ
+クボックスなどを表示する．
+
+最後に，キーワード `:group' は Emacs のカスタマイズコマンドにこの変数が
+どのグループに位置するかを伝える．
+
+詳細については， *Note Writing Customization Definitions:
+(elisp)Customization を参照ください．
+
+`text-mode-hook' を例として考えよう．
+
+この変数をカスタマイズする方法は2つある．カスタマイズのコマンドを使うこ
+とと，適当な式を自分で書くことだ．
+
+カスタマイズを使うには，以下を入力する
+
+     M-x customize
+
+そして，"data"と呼ばれるファイル編集に関連したグループを探し，そのグルー
+プに入る．Text Mode Hook はそのグループの先頭にある．クリックすることで，
+さまざまなオプションに値を設定することができる．以下のボタン上でクリッ
+クした後に，
+
+     Save for Future Sessions
+
+Emacsは `.emacs' ファイルに式を書くだろう．実際には以下のようになる．
+
+     (custom-set-variables
+       ;; custom-set-variables was added by Custom --
+       ;;                           don't edit or cut/paste it!
+       ;; Your init file should contain only one such instance.
+      '(text-mode-hook (quote (turn-on-auto-fill text-mode-hook-identify))))
+
+(関数 `text-mode-hook-identify' はバッファが Text モードであれば
+`toggle-text-mode-auto-fill' に Texi モードであることを知らせる)
+
+警告されても，式の編集や切取り，ペーストはできるかもしれない．私はいつ
+もしている．警告の目的は自分がしていることを認識していない人をびっくり
+させることなので，うかつにエラーは発生させない．
+
+`custom-set-variables' は `setq' とはいくらか異なっている．違いについて
+全く述べていなうが，著者は `custom-set-variables' を`.emacs' ファイルで
+修正している．この変更は合理的だし，問題はない．カスタマイズコマンドを
+使うのは便利だし，Emacs に作業を行わせている．
+
+他の関数 `custom-set-...' は `custom-set-faces' である．この関数はさま
+ざまなフォントフェイスを設定する．自然に，著者はかなりの数のフェイスを
+設定していた．時には，`customize' を使って，再設定するし，また，
+`.emacs' ファイルで `custom-set-faces' 式を単に編集することもある
+
+`text-mode-hook'をカスタマイズする2番目の方法は `.emacs' ファイルを編集
+することである．この場合には，関数 `custom-set-...'  とは関係なくコード
+を書くことになる．
+
+自分でファイルを編集して，後で `customize' を使うと，以下のようなメッセー
+ジが表示される．
+
+     this option has been changed outside the customize buffer.
+
+このメッセージは警告だけである．もし，以下のボタンをクリックすると
+
+     Save for Future Sessions
+
+Emacs は `custom-set-...' 式を `.emacs' ファイルの終わりに書くだろう．
+そして，その式は自分で書いた式の後で評価される．それゆえ，自分で書いた
+式は上書きされることになる．害はない．しかし，このようなことが起こると，
+どの式が有効なのかを注意深く覚えておく必要がある．もし忘れると，混乱し
+てしまう．
+
+値が設定されている場所を覚えている限りは，問題はないだろう．ともかく，
+値はいつも `.emacs' という初期化ファイルで設定される．
+
+著者自身は `customize' を使うことはほとんどない．ほとんどの場合，自分で
+式を書いている．
+
+
+
+File: eintr-ja, Node: Beginning a .emacs File, Next: Text and Auto-fill, Prev: defcustom, Up: Emacs Initialization
+
+ファイル`.emacs'入門 *(2004/08/10)*
+===================================
+
+Emacsを起動すると、コマンド行で`-q'を指定して`.emacs'ファイルを読まない
+ように指示しないかぎり、Emacsは個人用の`.emacs'ファイルをロードする（コ
+マンド`emacs -q'により、箱から取り出したままのEmacsを使える）。
+
+`.emacs'ファイルには、Lispの式が収めてある。しばしば、値を設定する式だ
+けの場合もある。関数定義がある場合もある。
+
+初期化ファイルの概略については、
+*Note The Init File `~/.emacs': (emacs)Init File。
+
+本章では、長期に渡って使ってきた完全な`.emacs'ファイルを説明する。つま
+り、筆者の`.emacs'ファイルである。
+
+最初の部分は注釈であり、自分用のメモである。今ではわかっているが、始め
+た頃はそうではなかった。
+
+     ;;;; Bob's .emacs file
+     ; Robert J. Chassell
+     ; 26 September 1985
+
+日付を見てほしい！　だいぶまえにこのファイルを使い始めた。それ以来、追
+加し続けている。
+
+     ; Each section in this file is introduced by a
+     ; line beginning with four semicolons; and each
+     ; entry is introduced by a line beginning with
+     ; three semicolons.
+
+この部分は、Emacs Lispの注釈の習慣を述べたものである。
+セミコロン以降はすべて注釈である。
+セミコロンの数で、節や小文を表している
+（注釈について詳しくは、
+*Note Comments: (elisp)Comments）。
+
+     ;;;; The Help Key
+     ; Control-h is the help key;
+     ; after typing control-h, type a letter to
+     ; indicate the subject about which you want help.
+     ; For an explanation of the help facility,
+     ; type control-h two times in a row.
+
+ヘルプを起動するには`C-h'を2回タイプすることのメモ書きである。
+
+     ; To find out about any mode, type control-h m
+     ; while in that mode.  For example, to find out
+     ; about mail mode, enter mail mode and then type
+     ; control-h m.
+
+筆者はこれを「モードヘルプ」と読んでいるが、これはとても助けになる。普
+通、知っておくべきことをすべて教えてくれる。
+
+もちろん、読者の`.emacs'ファイルに、これらの注釈を含める必要はない。筆
+者のファイルに入れておいたのは、モードヘルプや注釈の習慣を忘れやすかっ
+たからである。ここに書いておけば、見れば思い出せる。
+
+
+
+File: eintr-ja, Node: Text and Auto-fill, Next: Mail Aliases, Prev: Beginning a .emacs File, Up: Emacs Initialization
+
+TextモードとAuto Fillモード *(2004/08/10)*
+==========================================
+
+TextモードとAuto Fillモードを有効にする部分である。
+
+     ;;; Text mode and Auto Fill mode
+     ; The next three lines put Emacs into Text mode
+     ; and Auto Fill mode, and are for writers who
+     ; want to start writing prose rather than code.
+
+     (setq default-major-mode 'text-mode)
+     (add-hook 'text-mode-hook 'text-mode-hook-identify)
+     (add-hook 'text-mode-hook 'turn-on-auto-fill)
+
+これは、物忘れしやすい人間へのメモ以外のことを初めて行う
+`.emacs'ファイルの部分である。
+
+最初の括弧の中の2行は、ファイルを探したときに、Cモードなどの他のモード
+でない場合には、Textモードを有効にする指示である。
+
+Emacsがファイルを読み込むとき、ファイル名の拡張子を調べる
+（拡張子は`.'のあとに続く部分である）。
+ファイルが`.c'や`.h'の拡張子で終わっていると、
+EmacsはCモードを有効にする。
+また、Emacsはファイルの最初の空行でない行を調べ、
+その行が`-*- C -*-'となっていると、EmacsはCモードを有効にする。
+Emacsは、自動的に使用する拡張子とモード指定のリストを持っている。
+さらに、Emacsは、バッファごとの「ローカル変数リスト」を調べるために
+ファイルの最後のページも調べる。
+
+*Note How Major Modes are Chosen: (emacs)Choosing Modes.
+
+*Note Local Variables in Files: (emacs)File Variables.
+
+`.emacs'ファイルに戻ろう。
+
+この行はどのように働くのであろうか？
+
+     (setq default-major-mode 'text-mode)
+
+この行は短いが、Emacs Lispの完全な式である。
+
+`setq'についてはすでによく知っている。変数`default-major-mode'に、値
+`text-mode'を設定する。`text-mode'の直前の引用符は、Emacsに変数
+`text-mode'を直接扱うことを指示する。`setq'の残りの動作については、
+*Note set & setq::。重要な点は、`.emacs'ファイルで値を設定する方法と
+Emacsのそれ以外の場面で値を設定する方法とは何ら変わらないことである。
+
+2行目はつぎのとおりであった。
+
+     (add-hook 'text-mode-hook 'text-mode-hook-identify)
+     (add-hook 'text-mode-hook 'turn-on-auto-fill)
+
+これら2行では、コマンド`add-hook'で、最初に`text-mode-hook-identify' を
+`text-mode-hook' に追加する．それから，変数`text-mode-hook'に
+`turn-on-auto-fill'を追加する。
+
+`turn-on-auto-fill'は、読者の予想どおり、プログラムの名前であり、Auto
+Fillモードを有効にする。関数 `text-mode-hook-identify' は
+`toggle-text-mode-auto-fill' にバッファが Text モードであることを伝える．
+
+Textモードを有効にするたびに、EmacsはTextモードにフックしたコマンドを実
+行する。つまり、Textモードを有効にするたびに、Auto Fillモードも有効にす
+る。
+
+まとめると、1行目は、ファイル名の拡張子や最初の空行以外の行やローカル変
+数で指定されない限り、ファイルを編集するときは、Textモードを有効にする
+指示である。
+
+Textモードは、他のことも含めて、普通の文書作成に適したシンタックステー
+ブルを設定する。Textモードでは、Emacsは引用符を単語の一部として扱う。し
+かし、ピリオドや空白は単語の一部ではない。したがって、`M-f'で`it's'を飛
+び越せる。一方、Cモードでは、`M-f'は`it's'の`t'の直後で止まる。
+
+2行目と3行目は、Textモードを有効にしたらAuto Fillモードも有効にする指示
+である。Auto Fillモードでは、Emacsは自動的に長すぎる行を分割し、つぎの
+行へ送る。Emacsは、単語の途中ではなく、単語と単語のあいだで行を分ける。
+
+Auto Fillモードを無効にすると、タイプしたとおりの行分けになる。
+`truncate-lines'に設定した値に依存して、タイプした単語が画面の右端から
+消えてしまうか、見にくいが画面上に継続行として表示される。
+
+さらに，`.emacs' ファイルで，詰め込み時に，コロンの後に2つスペースを挿
+入するようにしている．
+
+     (setq colon-double-space t)
+
+
+
+File: eintr-ja, Node: Mail Aliases, Next: Indent Tabs Mode, Prev: Text and Auto-fill, Up: Emacs Initialization
+
+メールの別名 *(2004/08/10)*
+===========================
+
+メモ書きも含めて、メールの別名を有効にする`setq'である。
+
+     ;;; Mail mode
+     ; To enter mail mode, type `C-x m'
+     ; To enter RMAIL (for reading mail),
+     ; type `M-x rmail'
+
+     (setq mail-aliases t)
+
+コマンド`setq'で、変数`mail-aliases'の値を`t'にする。`t'は真を意味する
+ので、この行の意味は、「メールの別名を使うようにする」である。
+
+メールの別名は、長い電子メールアドレスや複数の電子メールアドレスに短縮
+名を付ける便法である。「別名（aliases）」を保持するファイルは、
+`~/.mailrc'である。別名はつぎのように書く。
+
+     alias geo george@foobar.wiz.edu
+
+Georgeにメッセージを書くときには、アドレス`geo'を使う。メール転送プログ
+ラムは、自動的に`geo'を完全なアドレスに展開する。
+
+
+
+File: eintr-ja, Node: Indent Tabs Mode, Next: Keybindings, Prev: Mail Aliases, Up: Emacs Initialization
+
+Indent Tabsモード（タブによる字下げ） *(2004/08/10)*
+====================================================
+
+デフォルトでは、リージョンを整形するときに、
+Emacsは複数の空白のかわりにタブを挿入する
+（たとえば、コマンド`indent-region'で一度に複数の行を字下げする場合）。
+端末や普通の印刷ではタブは適しているのだが、
+TeXはタブを無視するのでTeXやTexinfoでの字下げには適さない。
+
+つぎの行は、Indent Tabsモードを無効にする。
+
+     ;;; Prevent Extraneous Tabs
+     (setq-default indent-tabs-mode nil)
+
+これまでのようにコマンド`setq'ではなく、`setq-default'を使っていること
+に注意してほしい。コマンド`setq-default'は、その変数にバッファ独自の値
+が設定されていないバッファでのみ値を設定する。
+
+*Note Tabs vs. Spaces: (emacs)Just Spaces.
+
+*Note Local Variables in Files: (emacs)File Variables.
+
+
+
+File: eintr-ja, Node: Keybindings, Next: Keymaps, Prev: Indent Tabs Mode, Up: Emacs Initialization
+
+キーバインド例 *(2004/08/10)*
+=============================
+
+つぎは、個人用のキーバインドである。
+
+     ;;; Compare windows
+     (global-set-key "\C-cw" 'compare-windows)
+
+`compare-windows'は、カレントウィンドウとつぎのウィンドウのテキストを比
+較するちょっとしたコマンドである。両者のウィンドウのポイント位置から始
+めて、一致する限り両者のウィンドウのテキストを比較する。筆者はこのコマ
+ンドをよく使う。
+
+これは、すべてのモードに対して大局的にキーを設定する方法でもある。
+
+コマンドは`global-set-key'である。これに続けてキーバインドを書く。
+`.emacs'ファイルでは、ここに記したようにキーバインドを書く。`\C-c'は
+「control-c」のことで、コントロールキーと`c'キーを同時に押し下げること
+を意味する。`w'は`w'キーを押し下げることを意味する。キーバインドは二重
+引用符で囲む。説明文章などでは、これを`C-c w'と書く（CTLキーのかわりに
+`M-c'のようにMETAをバインドする場合には、`\M-c'と書く。詳しくは、*Note
+Rebinding Keys in Your Init File: (emacs)Init Rebinding）。
+
+このキーで起動されるコマンドは`compare-windows'である。コマンドの直前に
+引用符があることに注意してほしい。さもないと、Emacsは、値を得るためにシ
+ンボルを評価しようとする。
+
+これらの3つ、二重引用符、`C'の直前のバックスラッシュ、引用符は、筆者が
+忘れがちなキーバインドの必須項目である。幸い、自分の`.emacs'ファイルを
+見ればよいことを覚えているので、そこに書いているとおりにできる。
+
+キーバインドに関していえば、`C-c w'は、前置キー`C-c'と単一文字`w'の組み
+合わせである。`C-c'に単一文字を続けるキーの組み合わせは、各個人用に予約
+されている。(著者はこれらのキーは自分のために使うことができるので，"自
+分専用の"キーと呼んでいる)．このキーに関しては誰に妨げられることもなく，
+自分専用のキーバインドとして使うことができるべきだ．Emacsの拡張を書く場
+合には、これらのキーの組み合わせを使わないようにする。かわりに、`C-c
+C-w'のようなキーの組み合わせを使う。さもないと、各個人用に使えるキーの
+組み合わせがなくなってしまう。
+
+注釈を付けた別のキーバインドもある。
+
+     ;;; Keybinding for `occur'
+     ; I use occur a lot, so let's bind it to a key:
+     (global-set-key "\C-co" 'occur)
+
+コマンド`occur'は、正規表現に一致するカレントバッファの行をすべて表示す
+る。一致した行はバッファ`*Occur*'に表示される。このバッファは、一致した
+行へ飛ぶためのメニューの役割を果たす。
+
+キーのバインドを解除する方法もある。
+
+     ;;; Unbind `C-x f'
+     (global-unset-key "\C-xf")
+
+このバインドを解除する理由は、筆者の場合`C-x C-f'とタイプするつもりで
+`C-x f'とタイプすることが多いからである。意図した操作であるファイルを探
+すかわりに、たいていの場合、望みの値ではない追い込み幅を誤って設定して
+しまう。デフォルトの幅を再設定することはほとんどないので、キーのバイン
+ドを解除した。
+
+つぎは、既存のキーバインドをリバインドする。
+
+     ;;; Rebind `C-x C-b' for `buffer-menu'
+     (global-set-key "\C-x\C-b" 'buffer-menu)
+
+デフォルトでは、`C-x C-b'はコマンド`list-buffers'を実行する。このコマン
+ドは、別のコマンドにバッファ一覧を表示する。筆者はそのウィンドウでほと
+んどの場合、何かをしたくなるので、バッファ一覧を表示するだけでなく、そ
+のウィンドウにポイントも移動するコマンド`buffer-menu'を好むのである。
+
+
+
+File: eintr-ja, Node: Keymaps, Next: Loading Files, Prev: Keybindings, Up: Emacs Initialization
+
+キーマップ *(2004/08/10)*
+=========================
+
+Emacsでは、どのキーがどのコマンドを呼ぶかを記録するために"キーマップ
+（keymaps）"を使っている。Emacs全体で有効となるキーバインドを設定するた
+めの単純なコマンドは `global-set-key' を使うことであり，これを使うと，
+`current-global-map' のキーバインドを変更する．
+
+Cモード、Textモードなどの特定のモードには、それぞれに独自のキーマップが
+あり、モード固有のキーマップは、すべてのバッファで共有されるグローバル
+キーマップを上書きする。
+
+関数`global-set-key'は、グローバルキーマップをバインドする。
+たとえば、つぎの式は、
+`C-c C-b'を関数`buffer-menu'にバインドする。
+
+     (global-set-key "\C-x\C-b" 'buffer-menu)
+
+モード固有のキーマップのバインドには関数`define-key'を使う。この関数は、
+キーとコマンドに加えて、引数としてモード固有のキーマップを取る。たとえ
+ば、筆者の`.emacs'ファイルには、コマンド`texinfo-insert-@group'を`C-c
+C-c g'にバインドする式がある。
+
+     (define-key texinfo-mode-map "\C-c\C-cg" 'texinfo-insert-@group)
+
+関数`texinfo-insert-@group'自体は、Texinfoモードを少々拡張するもので、
+Texinfoファイルに`@group'を挿入する。筆者はこのコマンドをいつも使ってお
+り、6文字の`@ g r o u p'とタイプするかわりに3文字の`C-c C-c g'とタイプ
+するほうを好んで使っている（`@group'と対応する`@end group'は、これらが
+囲むテキストを1ページに収めるようにするコマンドである。本書の数行に渡る
+例題は、`@group ... @end group'で囲んである）。
+
+関数`texinfo-insert-@group'の定義はつぎのとおりである。
+
+     (defun texinfo-insert-@group ()
+       "Insert the string @group in a Texinfo buffer."
+       (interactive)
+       (beginning-of-line)
+       (insert "@group\n"))
+
+（もちろん、タイプ量を節約するには、単語を挿入する関数を書くかわりに
+Abbrebモードを使うこともできる。筆者は、Texinfoモードの他のキーバインド
+とも整合性のよいキー列を好む。）
+
+`loaddefs.el'には、`c-mode.el'や`lisp-mode.el'のような、さまざまなモー
+ドのライブラリに加えて、数多くの`define-key'式がある。
+
+キーマップについて詳しくは、
+*Note Keymaps: (elisp)Keymapsや
+*Note Customizing Key Bindings: (emacs)Key Bindings。
+
+
+
+File: eintr-ja, Node: Loading Files, Next: Autoload, Prev: Keymaps, Up: Emacs Initialization
+
+ファイルのロード *(2004/08/10)*
+===============================
+
+GNU Emacsの利用者の多くの人が、Emacsの拡張を書いている。時が経つにつれ
+て、これらの拡張はしばしば新しいリリースに取り込まれる。たとえば、カレ
+ンダーや日記のパッケージは、いまでは、標準ディストリビューションの一部
+である。
+
+（筆者がEmacsの重要な部分であると考えるCalcは、標準ディストリビューショ
+ンの一部になるであろうが、巨大なので別配布のままになっている。）
+
+コマンド`load'を使えば、ファイル全体を評価してファイル内の関数や変数を
+Emacsにインストールできる。たとえばつぎのようにする。
+
+
+     (load "~/emacs/slowsplit")
+
+これは、読者のホームディレクトリ下のディレクトリ`emacs'から
+ファイル`slowsplit.el'（バイトコンパイルしたファイル
+`slowsplit.elc' があればそれ）を評価する、つまり、ロードする。こ
+のファイルには John Robinson が 1989年に書いた関数
+`split-window-quietly' が含まれている．
+
+関数 `split-window-quietly' はウィンドウを最小の再表示で分割する．著者
+は以前使っていた遅いマシンでよく動いてくれたので，1989年にインストール
+した．今では，遅い端末で時おり使う程度であるが，新しいウィンドウの下側
+と上側を極力そのままにするのが好きなので使い続けている．
+
+`split-window-vertically' のデフォルトのキーバインドを置き換えるために
+は，まず現在のキーお解除して，`split-window-quietly'をキーに割り当てな
+ければならない．
+
+     (global-unset-key "\C-x2")
+     (global-set-key "\C-x2" 'split-window-quietly)
+
+筆者のように多数の拡張をロードする場合、上のように拡張ファイルの正確な
+場所を指定するかわりに、そのディレクトリをEmacsの`load-path'に追加指定
+できる。すると、Emacsがファイルをロードするとき、デフォルトのディレクト
+リに加えて、そのディレクトリも探す（デフォルトのディレクトリは、Emacsを
+構築するときに`paths.h'で指定する）。
+
+つぎのコマンドは、既存のロードパスに読者のディレクトリ`~/emacs'を追加す
+る。
+
+     ;;; Emacs Load Path
+     (setq load-path (cons "~/emacs" load-path))
+
+`load-library'は、関数`load'の対話的インターフェイスである。関数全体は
+つぎのようである。
+
+     (defun load-library (library)
+       "Load the library named LIBRARY.
+     This is an interface to the function `load'."
+       (interactive "sLoad library: ")
+       (load library))
+
+関数名`load-library'は、ファイルの慣習的な同義語である「library（ライブ
+ラリ）」からきている。コマンド`load-library'のソースはライブラリ
+`files.el'にある。
+
+少々異なるが同じような処理を行う対話的コマンドは`load-file'である。
+`load-library'とこのコマンドとの違いに関しては、*Note Libraries of
+Lisp Code for Emacs: (emacs)Lisp Libraries。
+
+
+
+File: eintr-ja, Node: Autoload, Next: Simple Extension, Prev: Loading Files, Up: Emacs Initialization
+
+オートロード *(2004/08/10)*
+===========================
+
+関数を収めたファイルをロードしたり関数定義を評価したりして関数をインス
+トールするかわりに、関数を利用できるようにはするが、最初に呼び出すまで
+実際にはインストールしないようにできる。これを"オートロード
+（autoloading）"という。
+
+オートロードする関数を評価すると、Emacsは、関数を収めたファイルを自動的
+に評価してから関数を呼び出す。
+
+オートロードする関数を使うと、ライブラリをただちにロードする必要がない
+ので、Emacsの起動が素早くなる。しかし、そのような関数を最初に使うときに
+は、それらを収めたファイルを評価するので、多少待つ必要がある。
+
+あまり使わないような関数はしばしばオートロードの対象になる。ライブラリ
+`loaddefs.el'には、`bookmark-set'から`wordstar-mode' までの何百ものオー
+トロードする関数が定義されている。もちろん、「あまり」使わないような関
+数を頻繁に使う場合もあろう。その場合には、`.emacs'ファイルで`load'式を
+使って関数のファイルをロードするようにする。
+
+Emacs第21版用の筆者の`.emacs'ファイルでは、
+オートロードされる関数の内、12個のライブラリをロードしている
+（実際には、ダンプ版Emacsを作るときにこれらのファイルを
+含めておくべきだが、忘れていた。
+ダンプについて詳しくは、ファイル`INSTALL'や
+*Note Building Emacs: (elisp)Building Emacs）。
+
+読者が、`.emacs'ファイルにオートロードの式を含めたい場合もあろう。
+`autoload'は組み込み関数であり、最大で5つの引数を取るが、
+最後の3つは省略できる。
+第1引数は、オートロードする関数の名前である。
+第2引数は、ロードすべきファイルの名前である。
+第3引数は、関数の説明文であり、
+第4引数は、関数を対話的に呼ぶかどうかを指定する。
+第5引数は、オブジェクトの型であり、
+`autoload'は関数（デフォルト）に加えてキーマップやマクロも扱える。
+
+典型的な例はつぎのとおりである。
+
+     (autoload 'html-helper-mode
+       "html-helper-mode" "Edit HTML documents" t)
+
+(`html-helper-mode' は `html-mode' の代わりであり，標準配布に含まれてい
+る)
+
+この式は、関数`html-helper-mode'をオートロードする。ファイル
+`html-helper-mode.el' （バイトコンパイルしたファイル
+`html-helper-mode.elc'があれば、それ）を読み込む。ファイルは、
+`load-path'に指定したディレクトリにある必要がある。説明文の内容は、この
+モードはハイパーテキストマークアップ言語で書かれた文章の編集を助けるで
+ある。`M-x html-helper-mode'とタイプすると対話的にこのモードになる（関
+数がロードされていないと説明文も利用できないので、関数の説明文をオート
+ロードの式に複製する必要がある）。
+
+詳しくは、*Note Autoload: (elisp)Autoload。
+
+
+
+File: eintr-ja, Node: Simple Extension, Next: X11 Colors, Prev: Autoload, Up: Emacs Initialization
+
+簡単な拡張：`line-to-top-of-window' *(2004/08/10)*
+==================================================
+
+ウィンドウの先頭行にポイントを移動するEmacsへの簡単な拡張を説明する。筆
+者は、テキストを読みやすくするためこれをよく使っている。
+
+以下のコードを別のファイルに収めて、そのファイルを`.emacs'ファイルでロー
+ドしてもよいし、コードを`.emacs'ファイルに収めてもよい。
+
+定義はつぎのとおりである。
+
+     ;;; Line to top of window;
+     ;;; replace three keystroke sequence  C-u 0 C-l
+     (defun line-to-top-of-window ()
+       "Move the line point is on to top of window."
+       (interactive)
+       (recenter 0))
+
+つぎは、キーバインドである。
+
+最近ではマウス操作や非ASCII 文字と同様にファンクションキーも引用符なし
+で角括弧に入れて書かれる(Emacs 18 以前では端末ごとに異なるファンクショ
+ンキー割り当てを書かなければならなかった)．
+
+著者は `line-to-top-of-window' を以下のようにしてファンクションキー
+`F6' に割り当てている．
+
+     (global-set-key [f6] 'line-to-top-of-window)
+
+詳細については *Note Rebinding Keys in Your Init File: (emacs)Init
+Rebinding を参照のこと．
+
+もしバージョン20と21のように2つのバージョンのEmacsを1つの`.emacs' ファ
+イルで使うのであれば，以下のような条件式を使うことで評価する部分を変え
+ることができる．
+
+     (cond
+      ((string-equal (number-to-string 20) (substring (emacs-version) 10 12))
+       ;; バージョン 20 が評価するコード
+       ( ... ))
+      ((string-equal (number-to-string 21) (substring (emacs-version) 10 12))
+       ;; バージョン 21 が評価するコード
+       ( ... )))
+
+例えば，バージョン20とは違い21ではデフォルトでカーソルを点滅させる．著
+者はバージョン21の他の機能と同様に，そのような点滅は嫌いなので，以下の
+コードを `.emacs' ファイルに書いている (1) (*Note Simple
+Extension-Footnotes::):
+
+     (if (string-equal "21" (substring (emacs-version) 10 12))
+         (progn
+           (blink-cursor-mode 0)
+           ;; Insert newline when you press `C-n' (next-line)
+           ;; at the end of the buffer
+           (setq next-line-add-newlines t)
+           ;; Turn on image viewing
+           (auto-image-file-mode t)
+           ;; Turn on menu bar (this bar has text)
+           ;; (Use numeric argument to turn on)
+           (menu-bar-mode 1)
+           ;; Turn off tool bar (this bar has icons)
+           ;; (Use numeric argument to turn on)
+           (tool-bar-mode nil)
+           ;; Turn off tooltip mode for tool bar
+           ;; (This mode causes icon explanations to pop up)
+           ;; (Use numeric argument to turn on)
+           (tooltip-mode nil)
+           ;; If tooltips turned on, make tips appear promptly
+           (setq tooltip-delay 0.1)  ; default is one second
+            ))
+
+(`(number-to-string 21)' と入力する代わりに，数字を文字列へ変換させるよ
+りもむしろ，入力を省略して，`21'を文字列 `"21"'と書くことに著者は決めた．
+この例では，この式は長いが一般的な`(number-to-string 21)' よりもいい．
+しかし，もし返ってくる値について前もって知らなければ，関数
+`number-to-string' が必要となる)
+
+
+File: eintr-ja  Node: Simple Extension-Footnotes, Up: Simple Extension
+
+(1) `.emacs' ファイルやサイトファイルを読み込まないような Emacs のイン
+スタンスを開始した時でも，点滅はさせないようにしている:
+
+     emacs -q --no-site-file -eval '(blink-cursor-mode nil)'
+
+
+
+ File: eintr-ja, Node: X11 Colors, Next: Miscellaneous, Prev: Simple
+Extension, Up: Emacs Initialization *(2004/08/10)* version 19 with the
+MIT X examples should work with both 19; this works only with Emacs
+Emacs第19版をMITのXウィンドウシステムのもとで使用している場合には、色を
+指定できる（これまでの例は、Emacs第18版でも第19版でも動作するはずである
+が、この例は第19版でのみ動作する）。
+
+デフォルトの色は好みに合わないので、自前の指定をする。
+
+筆者の`.emacs'ファイルの値を設定する式はつぎのとおりである。
+
+
+     ;; カーソル色を設定
+     (set-cursor-color "white")
+
+     ;; マウス色を設定
+     (set-mouse-color "white")
+
+     ;; 前景色と背景色を設定
+     (set-foreground-color "white")
+     (set-background-color "darkblue")
+
+     ;;; isearch やドラッグ時のハイライトを設定
+     (set-face-foreground 'highlight "white")
+     (set-face-background 'highlight "blue")
+
+     (set-face-foreground 'region "cyan")
+     (set-face-background 'region "blue")
+
+     (set-face-foreground 'secondary-selection "skyblue")
+     (set-face-background 'secondary-selection "darkblue")
+
+     ;; Set calendar highlighting colors
+     (setq calendar-load-hook
+           '(lambda ()
+              (set-face-foreground 'diary-face   "skyblue")
+              (set-face-background 'holiday-face "slate blue")
+              (set-face-foreground 'holiday-face "white")))
+
+青のさまざまな濃淡は目にやさしく、画面のチラツキを目立たせない。
+
+代わりに，さまざまな X の初期化ファイルで設定できる．例えば，前景色や背
+景色，カーソル，ポインター(つまりマウス)色を `~/.Xresources' ファイルで
+以下のように設定できる．
+
+     Emacs*foreground:   white
+     Emacs*background:   darkblue
+     Emacs*cursorColor:  white
+     Emacs*pointerColor: white
+
+ともかく，これは Emacs の部分ではない．`~/.xinitrc'ファイルにあるX ウィ
+ンドウの色を設定している． (1) (*Note Simple
+Extension-Footnotes-Footnotes::)
+
+     # I use TWM for window manager.
+     xsetroot -solid Navy -fg white &
+
+
+File: eintr-ja  Node: Simple Extension-Footnotes-Footnotes, Up: Simple Extension-Footnotes
+
+(1) 時おり，GNOME, Enlightenment, SCWM, KDE のような最新のウィンドウマ
+ネージャを使う．その場合，しばしば単色よりも画像が設定される
+
+
+
+File: eintr-ja, Node: Miscellaneous, Next: Mode Line, Prev: X11 Colors, Up: Emacs Initialization
+
+`.emacs' ファイルのその他の設定 *(2004/08/10)*
+==============================================
+
+その他の雑多な設定の一部を説明しておく。
+
+
+   - マウスカーソルの色と形を設定する。
+          ; Cursor shapes are defined in
+          ; `/usr/include/X11/cursorfont.h';
+          ; for example, the `target' cursor is number 128;
+          ; the `top_left_arrow' cursor is number 132.
+
+          (let ((mpointer (x-get-resource "*mpointer"
+                                          "*emacs*mpointer")))
+            ;; If you have not set your mouse pointer
+            ;;     then set it, otherwise leave as is:
+            (if (eq mpointer nil)
+                (setq mpointer "132")) ; top_left_arrow
+            (setq x-pointer-shape (string-to-int mpointer))
+            (set-mouse-color "white"))
+
+
+
+File: eintr-ja, Node: Mode Line, Prev: Miscellaneous, Up: Emacs Initialization
+
+モード行の変更 *(2004/08/10)*
+=============================
+
+最後に、筆者のお気に入りの機能を説明する。モード行の変更である。
+
+著者はネットワークを介して作業をする時，使用しているマシンを忘れてしま
+うことがある．また，今どのディレクトリにいて，どの行にいるかも忘れがち
+である．
+
+だから，著者のモードラインはこのようになっている．
+
+     -:-- foo.texi   rattlesnake:/home/bob/  Line 1  (Texinfo Fill) Top
+
+マシン `rattlesnake'上で `foo.texi' というファイルを`/home/bob' という
+バッファで訪問している．Texinfo モードで1行目のバッファの先頭にいる．
+
+`.emacs' ファイルには以下のような部分がある．
+
+     ;; モードラインにどのマシン，どのディレクトリ，どの行にあるかを
+     ;; 追加の情報に加えて設定する．
+     (setq default-mode-line-format
+      (quote
+       (#("-" 0 1
+          (help-echo
+           "mouse-1: select window, mouse-2: delete others ..."))
+        mode-line-mule-info
+        mode-line-modified
+        mode-line-frame-identification
+        "    "
+        mode-line-buffer-identification
+        "    "
+        (:eval (substring
+                (system-name) 0 (string-match "\\..+" (system-name))))
+        ":"
+        default-directory
+        #(" " 0 1
+          (help-echo
+           "mouse-1: select window, mouse-2: delete others ..."))
+        (line-number-mode " Line %l ")
+        global-mode-string
+        #("   %[(" 0 6
+          (help-echo
+           "mouse-1: select window, mouse-2: delete others ..."))
+        (:eval (mode-line-mode-name))
+        mode-line-process
+        minor-mode-alist
+        #("%n" 0 2 (help-echo "mouse-2: widen" local-map (keymap ...)))
+        ")%] "
+        (-3 . "%P")
+        ;;   "-%-"
+        )))
+
+ここで，デフォルトのモードラインを再定義している．ほとんどの部分はデフォ
+ルトのものを使っているが，少し変えてある．Info のように上書きするさまざ
+まなモードを許すように*デフォルトの*モードライン書式を設定している．
+
+リストの多くの要素は説明である．`mode-line-modified' はバッファが変更さ
+れているか，`mode-name' はモード名を教えてくれる変数である．しかし，ま
+だ議論していない2つの機能のために，この書式は複雑なように思える．
+
+モードラインの最初の文字はダッシュかハイフン `-'である．以前は，単に
+`"-"' のように定義されていた．しかし，今ではEmacsは文字列にハイライトし
+たりヘルプ機能を利用できるように属性を追加できる．もしマウスカーソルを
+ハイフンの上に起くと，いくらかのヘルプが表示される．(デフォルトでは，情
+報が表示されるまで数秒待たなければなりません．表示されるまでの遅延は
+`tooltip-delay' の値で変更できる．)
+
+新しい文字列の書式は特別な構文を持つ．
+
+     #("-" 0 1 (help-echo "mouse-1: select window, ..."))
+
+`#('はリストを始める．リストの最初の要素は文字列自身であり，ここでは1個
+の `-' である．2番目と3番目の要素は4番目の要素が適用される範囲を規定す
+る．範囲は文字の*後から*始まる．だから，0は範囲が最初の文字の前から始まっ
+て，1は最初の文字の後で終わることを意味する．4番目の要素は範囲に適用さ
+れる属性である．これは属性のリストから成り，属性名(ここでは，
+`help-echo')，値(ここでは文字列)を含む．この新しい文字列に対する書式で
+ある2番目，3番目，4番目の要素は繰り返すことができる．
+
+詳細は *Note Text Properties in String: (elisp)Text Props and Strings
+と *Note Mode Line Format: (elisp)Mode Line Format を参照のこと．
+
+`mode-line-buffer-identification' はカレントバッファ名を表示する．これ
+は`(#("%12b" 0 4 ...' で始まるリストである．`#(' はリストの開始を意味す
+る．
+
+`"%12b"' はカレントバッファ名を関数馴染みの深い`buffer-name' を使って表
+示する．"12" は表示される最大の文字数を規定する．名前が短い時には，長さ
+を調節するために空白が挿入される．(バッファ名はしばしば12文字よりも長く
+なる．この12という長さは典型的な80文字幅のウィンドウでうまく動作してく
+れる．)
+
+`:eval' はEmacs 21の新しい機能である．この書式は続くフォームを評価し，
+結果を表示する文字列として使う．この例では，完全なシステム名の最初の要
+素を表示する．最初の要素の終わりの方にあるのは `.'(ピリオド) であり，
+`string-match' を使って要素の長さを調べている．0からその長さまでを
+substring で切り出すと，マシン名となる．
+
+ここは以下のような式である．
+
+     (:eval (substring
+             (system-name) 0 (string-match "\\..+" (system-name))))
+
+`%['と`%]'は、各再帰編集レベルに応じて鈎括弧の対を表示する。
+`%n'は、ナロイングしている場合に「Narrow」を表示する。
+`%P'は、ウィンドウの最下行より上に表示されているバッファの割合や
+「Top」、「Bottom」、「All」を表示する
+（小文字の`p'は、ウィンドウの先頭行より上に表示されているバッファの割合
+を表示する）。
+`%-'は、モード行が適当な長さになるように`-'を詰め込む。
+
+「Emacsを好きになるにはEmacsが好きである必要はない」を覚えておいてほし
+い。読者のEmacsは、デフォルトのEmacsとは、色表示が異なり、コマンドも異
+なり、キーも異なるであろう。
+
+一方、「箱から取り出した」ままのカスタマイズしていないEmacsを起動するに
+はつぎのようにタイプする。
+
+     emacs -q
+
+初期化ファイル`~/.emacs'をロードせずにEmacsを起動する。デフォルトのまま
+のEmacsである。何も変わっていない。
+
+
+
+File: eintr-ja, Node: Debugging, Next: Conclusion, Prev: Emacs Initialization, Up: Top
+
+デバッグ *(2004/08/10)*
+***********************
+
+GNU Emacsには2つのデバッガ、`debug'と`edebug'がある。最初のものは、
+Emacs内部に組み込まれていていつでも使える。2番目のものは使う前に関数を
+指示する必要がある．
+
+どちらのデバッガも*Note Debugging Lisp Programs: (elisp)Debuggingに詳し
+く記載されている。本章では、それぞれの短い例を示すことにする。
+
+* Menu:
+
+* debug::                       How to use the built-in debugger.
+* debug-on-entry::              Start debugging when you call a function.
+* debug-on-quit::               Start debugging when you quit with `C-g'.
+* edebug::                      How to use Edebug, a source level debugger.
+* Debugging Exercises::
+
+
+
+File: eintr-ja, Node: debug, Next: debug-on-entry, Prev: Debugging, Up: Debugging
+
+`debug' *(2004/08/10)*
+======================
+
+1から指定した数までの総和を求める関数定義を書いたとしよう（まえに説明し
+た関数`triangle'である。説明は、*Note Decrementing Example::）。
+
+しかし、関数定義にはバグがある。`1-'を`1='とタイプミスした。まちがった
+定義はつぎのとおりである。
+
+     (defun triangle-bugged (number)
+       "Return sum of numbers 1 through NUMBER inclusive."
+       (let ((total 0))
+         (while (> number 0)
+           (setq total (+ total number))
+           (setq number (1= number)))      ; ここがエラー
+         total))
+
+Infoで読んでいる場合には、いつものようにこの定義を評価できる。エコー領
+域に`triangle-bugged'と表示される。
+
+引数4で関数`triangle-bugged'を評価してみる。
+
+     (triangle-bugged 4)
+
+Emacs 21では以下のような `*Backtrace*'バッファを作成し，そのバッファに
+移動する
+
+     ---------- Buffer: *Backtrace* ----------
+     Debugger entered--Lisp error: (void-function 1=)
+       (1= number)
+       (setq number (1= number))
+       (while (> number 0) (setq total (+ total number))
+             (setq number (1= number)))
+       (let ((total 0)) (while (> number 0) (setq total ...)
+         (setq number ...)) total)
+       triangle-bugged(4)
+       eval((triangle-bugged 4))
+       eval-last-sexp-1(nil)
+       eval-last-sexp(nil)
+       call-interactively(eval-last-sexp)
+     ---------- Buffer: *Backtrace* ----------
+
+(この例は少々整形してある。デバッガは長い行を折り畳まない。大抵，デバッ
+ガは `*Backtrace*' バッファで `q'と入力することで終了できる．)
+
+実際、このような単純なバグならば、"Lisp error"の行で定義を修正する必要
+があることが分かるだろう．`1=' は"void"である．
+
+Emacs 20以前では以下のように表示される．
+
+     Symbol's function definition is void: 1=
+
+意味はEmacs 21の`*Backtrace*'バッファと同じ意味である．
+
+しかし，もし何をすべきか確信が無い時には，バックトレースをすべて読むこ
+とになる．
+
+この場合は，自動的にデバッガを開始して，`*Backtrace*' バッファに移動す
+る Emacs 21 を実行する必要がある．さもなければ，手動でデバッガを開始す
+る必要がある．
+
+バッファ`*Backtrace*'は、下から上へ向けて読む。Emacsが何を行ってエラー
+に至ったかを教えてくれる。Emacsは`C-x C-e' （`eval-last-sexp'）を対話的
+に呼び出し、これは`triangle-bugged'式の評価につながった。各行はLispイン
+タープリタが、つぎに何を評価したのかを教えてくれる．
+
+バッファの先頭から3行目はつぎのとおりである。
+
+     (setq number (1= number))
+
+Emacsはこの式を評価しようとした。そのために、先頭から2行目に示されたもっ
+とも内側の式を評価しようとした。
+
+     (1= number)
+
+これがエラーを起こした場所であり、先頭の行にはつぎのように表示されてい
+る。
+
+     Debugger entered--Lisp error: (void-function 1=)
+
+この誤りを修正して、関数定義を再評価し、再度試せばよい。
+
+
+
+File: eintr-ja, Node: debug-on-entry, Next: debug-on-quit, Prev: debug, Up: Debugging
+
+`debug-on-entry' *(2004/08/10)*
+===============================
+
+関数にエラーがある時，Emacs 21は自動的にデバッガを開始する．Emacs 20以
+前では開始せずにエラーメッセージのみを表示する．デバッガは手動で起動し
+なければなりません．
+
+すべてのバージョンのEmacs で手動でデバッファを開始できる．自分のコード
+にバグがなくてもデバッガを実行しておくと利点がある．いつか，あなたのコー
+ドからバグがなくなることだろう．
+
+`debug-on-entry' を呼んで関数を呼ぶことで，デバッガに入ることができます．
+
+つぎのようにタイプする。
+
+     M-x debug-on-entry RET triangle-bugged RET
+
+続いて、つぎの式を評価する。
+
+     (triangle-bugged 5)
+
+すべてのバージョンのEmacsはバッファ`*Backtrace*'を作成し、関数
+`triangle-bugged'を評価し始めたことを伝える。
+
+     ---------- Buffer: *Backtrace* ----------
+     Debugger entered--entering a function:
+     * triangle-bugged(5)
+       eval((triangle-bugged 5))
+       eval-last-sexp-1(nil)
+       eval-last-sexp(nil)
+       call-interactively(eval-last-sexp)
+     ---------- Buffer: *Backtrace* ----------
+
+バッファ`*Backtrace*'の中で、`d'とタイプする。Emacsは`triangle-bugged'
+の最初の式を評価し、バッファはつぎのようになる。
+
+     ---------- Buffer: *Backtrace* ----------
+     Debugger entered--beginning evaluation of function call form:
+     * (let ((total 0)) (while (> number 0) (setq total ...)
+             (setq number ...)) total)
+     * triangle-bugged(5)
+       eval((triangle-bugged 5))
+       eval-last-sexp-1(nil)
+       eval-last-sexp(nil)
+       call-interactively(eval-last-sexp)
+     ---------- Buffer: *Backtrace* ----------
+
+さらに`d'をゆっくりと8回タイプする。
+`d'をタイプするたびに、Emacsは関数定義内の別の式を評価する。
+
+最終的に、バッファはつぎのようになる。
+
+     ---------- Buffer: *Backtrace* ----------
+     Debugger entered--beginning evaluation of function call form:
+     * (setq number (1= number))
+     * (while (> number 0) (setq total (+ total number))
+             (setq number (1= number)))
+     * (let ((total 0)) (while (> number 0) (setq total ...)
+             (setq number ...)) total)
+     * triangle-bugged(5)
+       eval((triangle-bugged 5))
+       eval-last-sexp-1(nil)
+       eval-last-sexp(nil)
+       call-interactively(eval-last-sexp)
+     ---------- Buffer: *Backtrace* ----------
+
+最後にさらに`d'を2回タイプすると、Emacsはエラーに到達し、バッファ
+`*Backtrace*'の先頭の2行にはつぎのように表示される。
+
+     ---------- Buffer: *Backtrace* ----------
+     Debugger entered--Lisp error: (void-function 1=)
+     * (1= number)
+     ...
+     ---------- Buffer: *Backtrace* ----------
+
+`d'をタイプすることで、関数を順を追って実行することができるのである。
+
+バッファ`*Backtrace*'を終えるには、`q'とタイプする。これは、関数の追跡
+を止めるが、`debug-on-entry'を取り消さない。
+
+`debug-on-entry'の効果を無効にするには、つぎのように、
+`cancel-debug-on-entry'を呼んで関数名を与える。
+
+     M-x cancel-debug-on-entry RET triangle-bugged RET
+
+（Infoで読んでいる場合には、ここで`debug-on-entry'を取り消す。）
+
+
+
+File: eintr-ja, Node: debug-on-quit, Next: edebug, Prev: debug-on-entry, Up: Debugging
+
+`debug-on-quit'と`(debug)' *(2004/08/10)*
+=========================================
+
+`debug-on-error'を設定したり`debug-on-entry'を呼んだりすることに加えて、
+`debug'を起動するには別に2つの方法がある。
+
+変数`debug-on-quit'を`t'に設定すると、`C-g'（`keyboard-quit'）とタイプ
+するといつでも`debug'を起動できる。これは、無限ループのデバッグに役立つ。
+
+あるいは、つぎのように、コード内のデバッガを起動したい場所に`(debug)'を
+入れておくことである。
+
+     (defun triangle-bugged (number)
+       "Return sum of numbers 1 through NUMBER inclusive."
+       (let ((total 0))
+         (while (> number 0)
+           (setq total (+ total number))
+           (debug)                         ; デバッガを起動
+           (setq number (1= number)))      ; ここがエラー
+         total))
+
+関数`debug'は、*Note The Lisp Debugger: (elisp)Debuggerに詳しく記載され
+ている。
+
+
+
+File: eintr-ja, Node: edebug, Next: Debugging Exercises, Prev: debug-on-quit, Up: Debugging
+
+ソースレベルのデバッガ`edebug' *(2004/08/10)*
+=============================================
+
+Edebug はソースレベルのデバッガである．Edebugはデバッグ中のソースコード
+を表示して、現在評価中の行の左端に矢印を表示する。
+
+関数の実行を行ごとに制御したり、実行を停止する
+"ブレークポイント（breakpoint）"まで素早く実行させたりできる。
+
+Edebugは、*Note Edebug: (elisp)edebug に記載されている。
+
+バグのある`triangle-recursively'の関数定義をつぎに示す。復習するには、
+*Note Recursive triangle function::。
+
+     (defun triangle-recursively-bugged (number)
+       "Return sum of numbers 1 through NUMBER inclusive.
+     Uses recursion."
+       (if (= number 1)
+           1
+         (+ number
+            (triangle-recursively-bugged
+             (1= number)))))               ; ここがエラー
+     }
+
+この定義をインストールするには、普通は、関数の閉じ括弧の直後にカーソル
+を置いて`C-x C-e'（`eval-last-sexp'）とタイプするか、あるいは、定義の途
+中にカーソルを置いて`C-M-x'（`eval-defun'）とタイプする（デフォルトでは、
+コマンド`eval-defun'は、Emacs LispモードかLisp Interactiveモードのみで
+使える）。
+
+しかし、この関数定義をEdebugで使うには準備する必要があり、別のコマンド
+を使ってコードを処置する必要がある。定義の途中にカーソルを置いてつぎの
+ようにタイプする。
+
+     M-x edebug-defun RET
+
+これにより、Emacsは必要ならばEdebugを自動的にロードし、関数を正しく処置
+する
+
+関数を処置したら、つぎの式の直後にカーソルを置いて
+`C-x C-e'（`eval-last-sexp'）とタイプする。
+
+     (triangle-recursively-bugged 3)
+
+`triangle-recursively-bugged'のソースに戻り、カーソルが関数の`if'の行の
+先頭に位置付けされる。矢印は、関数のどの行を実行中かを示す。(後の例では，
+矢印を `=>'と書く．ウィンドウシステムではフリンジに三角形として表示され
+る．)
+
+     =>-!-(if (= number 1)
+
+In the example, the location of point is displayed as `-!-' (in a
+printed book, it is displayed with a five pointed star).
+
+SPCを押すと、ポイントはつぎに実行すべき式へ移動し、つぎのようになる。
+
+     =>(if -!-(= number 1)
+
+SPCを押し続けると、ポイントは式のあいだを移動する。同時に、式が値を返す
+と、その値がエコー領域に表示される。たとえば、`number'のあとにポイント
+が移動したときには、つぎのように表示される。
+
+     Result: 3 = C-c
+
+これは、`number'の値は3であり、ASCIIコードでは"control-c" （アルファベッ
+トの3番目の文字）であることを意味する。
+
+エラーに達するまで、コードの中を移動できる。評価するまえには、その行は
+つぎのようである。
+
+     =>        -!-(1= number)))))               ; ここがエラー
+
+もう一度SPCを押すと、つぎのようなエラーメッセージが表示される。
+
+     Symbol's function definition is void: 1=
+
+これがバグである。
+
+`q'を押してEdebugを終了する。
+
+処置した関数定義を削除するには、単に処置しない普通のコマンドで関数定義
+を再評価すればよい。たとえば、関数定義の閉じ括弧の直後にカーソルを移動
+して`C-x C-e'とタイプする。
+
+Edebugでは、関数の中を動き廻るよりも多くのことができる。エラーを検出し
+たり指定した停止位置に達した場合だけ停止するとか、さまざまな式の値の変
+化を表示したり、関数が何回呼ばれたかを調べたりなどである。
+
+Edebugは*Note Edebug: (elisp)edebugに記載されている。
+
+
+
+File: eintr-ja, Node: Debugging Exercises, Prev: edebug, Up: Debugging
+
+デバッグの演習問題
+==================
+
+   * 関数`count-words-region'をインストールし、これを呼び出すと組み込み
+     のデバッガを起動するようにせよ。2つの単語を含んだリージョンに対し
+     てこのコマンドを実行せよ。`d'を何度も押す必要がある。読者のシステ
+     ムでは、コマンドが終了したあとに「フック」が呼ばれるか？（フックに
+     ついて詳しくは、*Note Command Loop Overview: (elisp)Command
+     Overviewを参照）
+
+   * `count-words-region'をバッファ`*scratch*'にコピーし、`defun'の行の
+     まえの空白を取り去ってから、Edebug用に関数を処置し、実行を追ってみ
+     よ。この関数にはバグはないはずであるが、必要ならばバグを入れてみよ。
+     関数にバグがなければ、何の問題にも出会わずに実行を完了する。
+
+   * Edebugを実行中に、`?'とタイプしてEdebugのすべてのコマンドを表示し
+     てみよ（`global-edebug-prefix'は、普通、`C-x X'である。つまり、
+     `CTL-x'に続けて大文字の`X'である。Edebugのバッファ以外でこのキー列
+     を試してみよ）。
+
+   * Edebugバッファにて、`count-words-region'がバッファのどのリージョン
+     で動作しているかをコマンド`p'（`edebug-bounce-point'）を使って調べ
+     てみよ。
+
+   * 関数のうしろのほうにポイントを移動して`h'（`edebug-goto-here'）と
+     タイプしてその場所へジャンプしてみよ。
+
+   * Edebugに自身の関数をウォークスルーするように
+     `t'（`edebug-trace-mode'）コマンドを使ってみよ。
+     `edebug-Trace-fast-mode'を使うには大文字の`T'を使う。
+
+   * ブレークポイントを設定し、停止位置に達するまでTraceモードでEdebug
+     を実行してみよ。
+
+
+
+File: eintr-ja, Node: Conclusion, Next: the-the, Prev: Debugging, Up: Top
+
+結　論 *(2004/08/10)*
+*********************
+
+これで、本書の終わりまできた。値を設定する、自分のために簡単な`.emacs'
+ファイルを書く、Emacsの簡単なカスタマイズや拡張を書くなどのEmacs Lispで
+のプログラミングについて十分に学べたものと思う。
+
+これで終わりかもしれない。あるいは、さらに進んで、自習することもあろう。
+
+プログラミングの基本を少しは学べたはずである。しかし、ほんの少しである。
+ここでは説明しなかった多くのことがらがまだまだある。
+
+読者が進むべき道は、GNU Emacsのソースや、*Note The GNU Emacs Lisp
+Reference Manual: (elisp)Top.
+
+Emacs Lispのソースは冒険である。ソースを読み進めているときに、不慣れな
+関数や式に出会った場合には、それが何をするものか突き止める必要がある。
+
+リファレンスマニュアルに進んだとする。これは、とおしで完全な比較的読み
+やすいEmacs Lispの解説である。経験者向けだけでなく、一般向けでもある
+（`リファレンスマニュアル'は、GNU Emacsの標準ディストリビューションに含
+まれる。本書のように、Texinfoのソースファイルが付属しているので、オンラ
+インでも印刷しても読める）。
+
+GNU Emacsの一部でもあるオンラインヘルプに進むこともできる。
+すべての関数にはオンラインヘルプがあり、
+`find-tags'はソースファイルへ導くプログラムである。
+
+筆者はつぎのようにしてソースを探検した。だいぶまえに、その名前からまず
+`simple.el'を最初に見てみた。`simple.el'の関数のいくつかは複雑だったり、
+少なくとも一見しただけでは複雑に見えた。たとえば、関数`open-line' は複
+雑に見えた．
+
+関数`forward-sentence'でやったように、読者は、この関数をゆっくりとウォー
+クスルーするかもしれない(*Note forward-sentence::.)  あるいは、この関数
+を飛ばして、`split-line'などの別の関数を読むかもしれない。全部の関数を
+読む必要はない。`count-words-in-defun'によれば、関数`split-line'には27
+個の単語やシンボルが含まれている。
+
+これは短いが、`split-line'には、説明していない4つの式、
+`skip-chars-forward'、`indent-to'、`current-column'、`?\n'が含まれてい
+る。
+
+関数`skip-chars-forward'を考えてみよう（これは、*Note Review: Reviewで
+見た`back-to-indentation' の関数定義の一部である)．
+
+Emacsでは、`C-h f'（`describe-function'）に続けて関数名をタイプすれば、
+`skip-chars-forward'についてさらに調べることができる。関数の説明文を表
+示してくれる。
+
+`indent-to' のように適切な名前の関数は動作を予想することもできるし、
+探すこともできる．関数`describe-function'自身は`help.el'にある。
+長い関数の1つであるが、読みこなせる関数である。`C-h f'を使って
+`describe-function' を実行することで調べることもできる!
+
+この場合，コードが Lisp で書かれているので，`*Help*' バッファには関数定
+義を含むライブラリ名が表示される．ライブラリ名にカーソルを起き，RET キー
+を入力する (RET が `help-follow' に割り当てられている時には)と`M-.'
+(`find-tag')と同じように，関数定義へ直接移動できる．
+
+`describe-function' の定義を見ると，標準的な文字を使わないで
+`interactive' 式をカスタマイズする方法を見ることができる．そして，一時
+的なバッファの作成方法も分かる．
+
+(関数 `indent-to' はEmacs Lisp ではなく Cで書かれた"組み込み"関数
+である．`help-follow' は組み込み関数のドキュメントだけを表示し，
+定義箇所へは移動できない．しかし，適切に設定されていれば，
+`find-tag' で定義箇所へ移動できる．)
+
+`M-.'に割り当てられた `find-tag' を使うことで，関数定義を見ることができ
+る．最後に、リファレンスマニュアルにあるように、`i'（`Info-index'）に続
+けて関数名をタイプしてInfoのマニュアルを見るか、印刷したマニュアルの索
+引から`skip-chars-forward'を探す。
+
+`?\n'の意味も同様にして調べられる。
+`Info-index'に`?\n'を指定してみる。
+これは役立たないことがわかるであろうが、諦めないでほしい。
+`?'を付けずに`\n'だけで探すと、マニュアルの関連する節に辿りつける
+（*Note Character Type: (elisp)Character Type。
+`?\n'は改行を意味する）。
+
+その他の興味深いファイルは、`paragraphs.el'、`loaddefs.el'、
+`loadup.el'である。ファイル`paragraphs.el'には、長いものもあるが、短く
+て理解しやすい関数がある。ファイル`loaddefs.el'には、標準的な多数のオー
+トロードや多数のキーマップがある。筆者もその一部を見ただけで、すべてを
+見たことはない。`loadup.el'は、Emacsの標準的なものをロードするためのファ
+イルである。Emacsの構築方法に関してとても詳しく教えてくれる（構築に関し
+て詳しくは、*Note Building Emacs: (elisp)Building Emacs）。
+
+初歩は学べたはずである。しかし、プログラミングの重要な側面にはふれなかっ
+た。既知の関数`sort'を使う以外には、情報をソートする方法については説明
+しなかった。変数やリストを使うことを除いて、情報の保存方法については説
+明しなかった。プログラムを作成するプログラムの書き方については説明しな
+かった。これらは、別の話題である。
+
+GNU Emacsを実用的に使うに十分なことは学べたと思う。やっと、始めたばかり
+である。これで入門を終える。
+
+
+
+
+File: eintr-ja, Node: the-the, Next: Kill Ring, Prev: Conclusion, Up: Top
+
+関数`the-the' *(2004/08/10)*
+****************************
+
+文書を書いているときに、「you you」などと単語をだぶらせることがある。筆
+者は、しばしば「the」をだぶって書いていることに気づいた。そこで、重複し
+た単語を検出する関数を`the-the'と命名する。
+
+第1段階としては、重複の検出にはつぎの正規表現が使える。
+
+     \\(\\w+[ \t\n]+\\)\\1
+
+この正規表現は、単語構成文字の1個以上の繰り返しに続いて空白文字やタブや
+改行が1個以上続くものに一致する。しかし、最初の単語の終わりである改行は、
+2番目の単語の終わりである空白文字とは異なるので、2行にわたる単語の重複
+は検出できない（正規表現についてより詳しくは、*Note Regexp Search::や
+*Note Syntax of Regular Expressions: (emacs)Regexpsや*Note Regular
+Expressions: (elisp)Regular Expressionsを参照）。
+
+パターンは「with the」の「th」のような重複を検出できないので、単語構成
+文字の重複の探索を試しても失敗する。
+
+別の正規表現では、単語構成文字に続けて単語を構成しない文字があり重複部分
+が続くようなものを探す。
+ここで、`\\w+'は、単語構成文字の1個以上の繰り返しに一致し、
+`\\W*'は、単語を構成しない文字の0個以上の繰り返しに一致する。
+
+     \\(\\(\\w+\\)\\W*\\)\\1
+
+これも、役に立たない。
+
+つぎに、筆者が用いているパターンを示す。
+完全ではないが十分である。
+`\\b'は、単語の始めや終わりにある空の文字列に一致する。
+`[^@ \n\t]+'は、@-記号、空白文字、改行、タブ以外の
+任意の文字の1個以上の繰り返しに一致する。
+
+     \\b\\([^@ \n\t]+\\)[ \n\t]+\\1\\b
+
+より完全な表現を書くことも可能であろうが、この表現でも十分なのでこれを
+使っている。
+
+グローバルキーバインドとともに`.emacs'ファイルに収めた関数`the-the'をつ
+ぎに示す。
+
+     (defun the-the ()
+       "Search forward for for a duplicated word."
+       (interactive)
+       (message "Searching for for duplicated words ...")
+       (push-mark)
+       ;; This regexp is not perfect
+       ;; but is fairly good over all:
+       (if (re-search-forward
+            "\\b\\([^@ \n\t]+\\)[ \n\t]+\\1\\b" nil 'move)
+           (message "Found duplicated word.")
+         (message "End of buffer")))
+
+     ;; Bind `the-the' to  C-c \
+     (global-set-key "\C-c\\" 'the-the)
+
+
+テスト用のテキストを示しておく。
+
+     one two two three four five
+     five six seven
+
+上の関数定義の正規表現を別の正規表現に置き換えることもでき、それぞれを
+このテキストで試すとよい。
+
+
+
+File: eintr-ja, Node: Kill Ring, Next: Full Graph, Prev: the-the, Up: Top
+
+キルリングの扱い方
+******************
+
+キルリングはリストであるが、関数`rotate-yank-pointer'の働きでリングに変
+換されている。コマンド`yank'と`yank-pop'は、関数`rotate-yank-pointer'を
+使っている。本付録では、関数`rotate-yank-pointer'とともに、コマンド
+`yank'と`yank-pop'を説明する。
+
+* Menu:
+
+* rotate-yank-pointer::         Move a pointer along a list and around.
+* yank::                        Paste a copy of a clipped element.
+* yank-pop::                    Insert first element pointed to.
+
+
+
+File: eintr-ja, Node: rotate-yank-pointer, Next: yank, Prev: Kill Ring, Up: Kill Ring
+
+関数`rotate-yank-pointer' *(2004/08/10)*
+========================================
+
+関数`rotate-yank-pointer'は、`kill-ring-yank-pointer'が指すキルリングの
+要素を変更する。たとえば、`kill-ring-yank-pointer'が第2要素を指していた
+ら第3要素を指すように変更する。
+
+`rotate-yank-pointer'のコードをつぎに示す。
+
+     (defun rotate-yank-pointer (arg)
+       "Rotate the yanking point in the kill ring."
+       (interactive "p")
+       (let ((length (length kill-ring)))
+         (if (zerop length)
+
+             ;; 真の場合の動作
+             (error "Kill ring is empty")
+
+           ;; 偽の場合の動作
+           (setq kill-ring-yank-pointer
+                 (nthcdr (% (+ arg
+                               (- length
+                                  (length
+                                   kill-ring-yank-pointer)))
+                            length)
+                         kill-ring)))))
+
+* Menu:
+
+* Understanding rotate-yk-ptr::
+* rotate-yk-ptr body::          The body of `rotate-yank-pointer'.
+
+
+
+File: eintr-ja, Node: Understanding rotate-yk-ptr, Prev: Kill Ring, Up: Kill Ring
+
+`rotate-yank-pointer' の概略
+----------------------------
+
+関数 `rotate-yank-pointer' は複雑に見えるが、いつものように、部分部分に
+分解すれば理解できる。まず、骨格から見てみよう。
+
+     (defun rotate-yank-pointer (arg)
+       "Rotate the yanking point in the kill ring."
+       (interactive "p")
+       (let 変数リスト
+         本体...)
+
+この関数は、1つの引数、`arg'を取る。短い説明文字列があり、小文字の`p'を
+指定した`interactive'がある。これは、前置引数を処理した数を引数として関
+数に渡すことを意味する。
+
+関数定義の本体は`let'式であり、これには変数リストと本体がある。
+
+`let'式は、この関数内部でのみ使える変数を宣言する。この変数は、
+`length'であり、キルリング中の要素数に束縛される。関数`length'を呼び出
+してこれを行う（この関数は変数`length'と同じ名前である。しかし、一方は
+関数の名称としての使い方であり、他方は変数の名称としての使い方である。
+この2つはまったく異なる。同様に、英語の話者は、『I must ship this
+package immediately.』と『I must get aboard the ship immediately.』との
+`ship'の意味を区別できる）。
+
+関数`length'は、リスト内の要素の個数を返すので、
+`(length kill-ring)'は、キルリングにある要素の個数を返す。
+
+
+
+File: eintr-ja, Node: rotate-yk-ptr body, Prev: Kill Ring, Up: Kill Ring
+
+`rotate-yank-pointer'の本体 *(2004/08/10)*
+------------------------------------------
+
+`rotate-yank-pointer'の本体は`let'式であり、
+`let'式の本体は`if'式である。
+
+`if'式の目的は、キルリングに何かがあるかどうかを調べることである。キル
+リングが空ならば、関数`error'が関数の評価を停止し、エコー領域にメッセー
+ジを表示する。一方、キルリングに何かがあれば、関数の処理を実施する。
+
+`if'式の判定条件と真の場合の動作をつぎに示す。
+
+     (if (zerop length)                      ; 判定条件
+         (error "Kill ring is empty")        ; 真の場合の動作
+       ...
+
+キルリングに何もなければ、その長さは0であるはずなので、ユーザーにエラー
+メッセージ`Kill ring is empty'を表示する。`if'式では関数`zerop'を用いる
+が、これは値が0ならば真を返す。`zerop'が真を返したならば、`if'の真の場
+合の動作が評価される。真の場合の動作は、関数`error'で始まるリストである。
+これは関数`message'（*Note message::）に似ており、1行のメッセージをエコー
+領域に表示する。しかし、メッセージの表示に加えて、`error'はこれを含んだ
+関数の評価を停止させる。キルリングの長さが0ならば、関数の残りの部分は評
+価されないことを意味する。
+
+* Menu:
+
+* Digression concerning error::  How to mislead humans, but not computers.
+* rotate-yk-ptr else-part::     The else-part of the `if' expression.
+* Remainder Function::          The remainder, `%', function.
+* rotate-yk-ptr remainder::     Using `%' in `rotate-yank-pointer'.
+* kill-rng-yk-ptr last elt::    Pointing to the last element.
+
+
+
+File: eintr-ja, Node: Digression concerning error, Next: rotate-yk-ptr else-part, Prev: Kill Ring, Up: Kill Ring
+
+"エラー"という単語へ脱線
+........................
+
+(In my opinion, it is slightly misleading, at least to humans, to use
+the term `error' as the name of the `error' function.  A better term
+would be `cancel'.  Strictly speaking, of course, you cannot point to,
+much less rotate a pointer to a list that has no length, so from the
+point of view of the computer, the word `error' is correct.  But a
+human expects to attempt this sort of thing, if only to find out
+whether the kill ring is full or empty.  This is an act of
+exploration.  （筆者の意見では、関数 `error' の名前に「error」を使うこ
+とは、少なくとも人間にとっては、少々誤解を招く。よりよい名前は「cancel」
+であろう。厳密にいえば、長さが0のリストを指すポインタをつぎの要素を指す
+ように巡回できないので、コンピュータの視点からは「error」は正しい用語で
+ある。しかし、キルリングが満杯か空かを調べるだけでも、人間はこの種のこ
+とを試せるものと考える。これは、探査行為である。）
+
+（人間の視点からは、探査行為や発見行為は、必ずしもエラーではなく、した
+がって、たとえコンピュータ内部であっても、「error」と呼ぶべきではない。
+Emacsのコードでは、高潔に振舞っている人間がその環境を探査していてエラー
+を引き起こしたということになる。これは残念である。エラーがあった場合に
+はコンピュータは同じ手順を踏むのであるが、「cancel」のような用語のほう
+が、はっきりと意味を表す。）
+
+
+
+File: eintr-ja, Node: rotate-yk-ptr else-part, Next: Remainder Function, Prev: Kill Ring, Up: Kill Ring
+
+`if'式の偽の場合の動作
+......................
+
+`if'式の偽の場合の動作は、キルリングに何かがあるときに
+`kill-ring-yank-pointer'の値を設定することに費される。コードはつぎのと
+おりである。
+
+     (setq kill-ring-yank-pointer
+           (nthcdr (% (+ arg
+                         (- length
+                            (length kill-ring-yank-pointer)))
+                      length)
+                   kill-ring)))))
+
+これには説明が必要であろう。明らかに、`kill-ring-yank-pointer'には、前
+節で説明した関数`nthcdr'を使ってキルリングのどこかのCDRを設定する
+（*Note copy-region-as-kill::）。これをどうやって行っているのであろう？
+
+コードの詳細を見るまえに、関数`rotate-yank-pointer'の目的を考えてみよう。
+
+関数`rotate-yank-pointer'は、`kill-ring-yank-pointer'が指すものを変更す
+る。`kill-ring-yank-pointer'がリストの先頭要素を指している場合に
+`rotate-yank-pointer'を呼び出すと、2番目の要素を指すように変わる。
+`kill-ring-yank-pointer'が2番目の要素を指している場合に
+`rotate-yank-pointer'を呼び出すと、3番目の要素を指すように変わる（また、
+`rotate-yank-pointer'に1より大きな引数を与えると、その数だけポインタを
+進める）。
+
+関数`rotate-yank-pointer'は、`kill-ring-yank-pointer'が指すものを再設定
+するために`setq'を使う。`kill-ring-yank-pointer'がキルリングの第1要素を
+指している場合、もっとも簡単な場合であるが、関数`rotate-yank-pointer'は、
+`kill-ring-yank-pointer'が2番目の要素を指すようにする。いいかえれば、
+`kill-ring-yank-pointer'には、キルリングのCDRと同じ値が設定される必要が
+ある。
+
+つまり、つぎのような場合、
+
+     (setq kill-ring-yank-pointer
+        ("some text" "a different piece of text" "yet more text"))
+
+     (setq kill-ring
+        ("some text" "a different piece of text" "yet more text"))
+
+コードはつぎのようにする必要がある。
+
+     (setq kill-ring-yank-pointer (cdr kill-ring))
+
+その結果、`kill-ring-yank-pointer'はつぎのようになる。
+
+     kill-ring-yank-pointer
+          => ("a different piece of text" "yet more text"))
+
+実際の`setq'式では関数`nthcdr'を使ってこれを行う。
+
+すでに見たように（*Note nthcdr::）、
+関数`nthcdr'は、リストのCDRを繰り返し取る。
+CDRのCDRのCDR ...を取る。
+
+つぎの2つの式は同じ結果になる。
+
+     (setq kill-ring-yank-pointer (cdr kill-ring))
+
+     (setq kill-ring-yank-pointer (nthcdr 1 kill-ring))
+
+しかし、関数`rotate-yank-pointer'では、`nthcdr'の第1引数は、多くの算術
+を含んだ複雑に見える式である。
+
+     (% (+ arg
+           (- length
+              (length kill-ring-yank-pointer)))
+        length)
+
+いつものように、もっとも内側の式から始めて、外側に向かって調べる必要が
+ある。
+
+もっとも内側の式は、`(length kill-ring-yank-pointer)'である。これは、
+`kill-ring-yank-pointer'の現在の長さを調べる（`kill-ring-yank-pointer'
+は、その値がリストである変数の名前である）。
+
+この長さは、つぎの式の内側にある。
+
+     (- length (length kill-ring-yank-pointer))
+
+この式では、`length'は、関数の始めにある`let'文にてキルリングの長さを設
+定した変数である（変数の名前を`length'ではなく`length-of-kill-ring'とす
+れば、この関数がより明確になると考える読者がいるかもしれない。しかし、
+関数のテキスト全体を見れば短いので、ここでやっているように関数を小さな
+部分部分に分解しなければ、変数を`length'と命名しても邪魔ではない）。
+
+したがって、`(- length (length kill-ring-yank-pointer))'は、キルリング
+の長さと`kill-ring-yank-pointer'のリストの長さの差を取る。
+
+これが関数`rotate-yank-pointer'にどのように適合するのかを、
+つぎの状況で分析してみよう。
+`kill-ring'と同じで`kill-ring-yank-pointer'は
+キルリングの第1要素を指し、
+`rotate-yank-pointer'を引数1で呼び出したとする。
+
+変数`length'はキルリングの長さであり、`kill-ring-yank-pointer'はキルリ
+ング全体を指しているので、変数`length'と式`(length
+kill-ring-yank-pointer)'の値は同じである。そのため、
+
+     (- length (length kill-ring-yank-pointer))
+
+の値は0になる。
+`arg'は1なので、式全体では
+
+     (+ arg (- length (length kill-ring-yank-pointer)))
+
+の値は1になる。
+
+したがって、`nthcdr'の引数は、つぎの式の結果である。
+
+     (% 1 length)
+
+
+

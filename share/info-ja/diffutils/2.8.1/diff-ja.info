@@ -1,0 +1,5078 @@
+-*- coding: utf-8 -*-
+
+   This manual is for GNU Diffutils (version 2.8.1, 5 April 2002), and
+documents the GNU `diff', `diff3', `sdiff', and `cmp' commands for
+showing the differences between files and the GNU `patch' command for
+using their output to update files.
+
+   Copyright (C) 1992, 1993, 1994, 1998, 2001, 2002 Free Software
+Foundation, Inc.
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU Free Documentation License,
+     Version 1.1 or any later version published by the Free Software
+     Foundation; with no Invariant Sections, with the Front-Cover texts
+     being "A GNU Manual," and with the Back-Cover Texts as in (a)
+     below.  A copy of the license is included in the section entitled
+     "GNU Free Documentation License."
+
+     (a) The FSF's Back-Cover Text is: "You have freedom to copy and
+     modify this GNU Manual, like GNU software.  Copies published by
+     the Free Software Foundation raise funds for GNU development."
+
+INFO-DIR-SECTION Individual utilities
+START-INFO-DIR-ENTRY
+* cmp(ja): (diff-ja)Invoking cmp.      Compare 2 files byte by byte.
+* diff(ja): (diff-ja)Invoking diff.    Compare 2 files line by line.
+* diff3(ja): (diff-ja)Invoking diff3.  Compare 3 files line by line.
+* patch(ja): (diff-ja)Invoking patch.  Apply a patch to a file.
+* sdiff(ja): (diff-ja)Invoking sdiff.  Merge 2 files side-by-side.
+END-INFO-DIR-ENTRY
+
+INFO-DIR-SECTION GNU packages
+START-INFO-DIR-ENTRY
+* Diff(ja): (diff-ja).               Comparing and merging files.
+END-INFO-DIR-ENTRY
+
+
+File: diff-ja.info,  Node: Top,  Next: Overview,  Up: (dir)
+
+ファイルの比較とマージ
+**********************
+
+This manual is for GNU Diffutils (version 2.8.1, 5 April 2002), and
+documents the GNU `diff', `diff3', `sdiff', and `cmp' commands for
+showing the differences between files and the GNU `patch' command for
+using their output to update files.
+
+   Copyright (C) 1992, 1993, 1994, 1998, 2001, 2002 Free Software
+Foundation, Inc.
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU Free Documentation License,
+     Version 1.1 or any later version published by the Free Software
+     Foundation; with no Invariant Sections, with the Front-Cover texts
+     being "A GNU Manual," and with the Back-Cover Texts as in (a)
+     below.  A copy of the license is included in the section entitled
+     "GNU Free Documentation License."
+
+     (a) The FSF's Back-Cover Text is: "You have freedom to copy and
+     modify this GNU Manual, like GNU software.  Copies published by
+     the Free Software Foundation raise funds for GNU development."
+
+* Menu:
+
+* Overview::              Preliminary information.
+* Comparison::            What file comparison means.
+
+* Output Formats::        Formats for two-way difference reports.
+* Incomplete Lines::      Lines that lack trailing newlines.
+* Comparing Directories:: Comparing files and directories.
+* Adjusting Output::      Making `diff' output prettier.
+* diff Performance::      Making `diff' smarter or faster.
+
+* Comparing Three Files:: Formats for three-way difference reports.
+* diff3 Merging::         Merging from a common ancestor.
+
+* Interactive Merging::   Interactive merging with `sdiff'.
+
+* Merging with patch::    Using `patch' to change old files into new ones.
+* Making Patches::        Tips for making and using patch distributions.
+
+* Invoking cmp::          Compare two files byte by byte.
+* Invoking diff::         Compare two files line by line.
+* Invoking diff3::        Compare three files line by line.
+* Invoking patch::        Apply a diff file to an original.
+* Invoking sdiff::        Side-by-side merge of file differences.
+
+* Standards conformance:: Conformance to the POSIX standard.
+* Projects::              If you've found a bug or other shortcoming.
+
+* Copying This Manual::   How to make copies of this manual.
+* Index::                 Index.
+
+
+File: diff-ja.info,  Node: Overview,  Next: Comparison,  Prev: Top,  Up: Top
+
+概要
+****
+
+コンピュータユーザは，二つのファイルの差がどれくらいあるのか尋ねることが
+多いことを知っています．おそらく一つのファイルは，もう一つのファイルのよ
+り新しいバージョンでしょう．もしかすると，二つのファイルは最初は同一のも
+のだったのですが，別々の人が変更したものかもしれません．
+
+二つのファイルや，二つのディレクトリでそれぞれ対応するファイルの差を表示
+するために，`diff'コマンドを使用することが可能です．
+`diff'は，行単位でのファイル間の差を，コマンドラインで選択可能な
+いくつかの書式で出力します．この差の組は"差分(diff)"や"パッチ
+(patch)"と呼ばれることもよくあります．同一ファイルに対して，通常
+`diff'は何も出力しません．バイナリ(テキストでない)ファイルに対し
+て，通常`diff'はそれらが異なっていることだけを報告します．
+
+   二つのファイルの差がある場所のオフセットと行番号を表示するために，
+`cmp'コマンドを使用することが可能です．`cmp'では，二つの
+ファイル間で異なっている全ての文字を並べて表示することも可能です．二つの
+ファイルを文字単位で比較するもう一つの方法としては，Emacsコマンドの
+`M-x compare-windows'があります．そのコマンドの詳細は，*Note Other
+Window: (emacs)Other Window.
+
+   三つのファイル間の差を表示するために`diff3'コマンドを使用するこ
+とが可能です．二人の人が共通のオリジナルに個別の変更を行なったとき，
+`diff3'でオリジナルと二つの変更されたバージョンの差を報告させる
+ことが可能で，衝突しているという警告を用いながら，両者の変更をそれぞれ含
+めているマージされたファイルを生成することが可能です．
+
+   二つのファイルを対話的にマージするために`sdiff'コマンドを使用す
+ることが可能です．
+
+(プログラムのソースコードのような)テキストファイルへの更新を他の人に配布
+するために，`diff'で生成された差分の組を使用することが可能です．
+比較したファイルの差が小さいとき，この手法は特に役に立ちます．
+`diff'出力を与えることで，更新するための`patch'プログラ
+ムを使用したり，ファイルのコピーを"patch"にしたりすることが可能です．
+`diff'とは差分を生成するために一つのファイルからもう一つのファイ
+ルを引くことだと考える場合，`patch'とは，もう一つのものを再生成
+するために差分を一つのファイルに加えることだと考えることが可能です．
+
+このマニュアルの最初では差分の作成に集中し，その後でファイルを更新するた
+めに差分を使用する方法を提示します．
+
+   GNU `diff'は，Paul Eggert，Mike Haertel，David Hayes， Richard
+Stallman，そしてLen Towerによって書かれました．Wayne Davisonは，
+一体化した出力書式を設計し実装しました．基本的なアルゴリズムは，"An
+O(ND) Difference Algorithm and its Variations", Eugene W. Myers,
+`Algorithmica' Vol. 1 No. 2, 1986, pp. 251-266と，"A File Comparison
+Program", Webb Miller and Eugene W. Myers, `Software--Practice and
+Experience' Vol. 15 No. 11, 1985, pp. 1025-1040に記述されています．
+アルゴリズムは，"Algorithms for Approximate String Matching", E.
+Ukkonen, `Information and Control' Vol. 64, 1985, pp.
+100-118に記述されているものに依存しないようにして発明されました．
+
+   GNU `diff3'はRandy Smithによって書かれました．GNU `sdiff'はThomas
+Lordによって書かれました．GNU `cmp' はTorbjorn GranlundとDavid
+MacKenzieによって書かれました．
+
+   `patch'はLarry WallとPaul Eggertによって書かれました．いくつかの
+GNUの拡張部分はWayne DavisonとDavid MacKenzieが寄贈してくれました．
+このマニュアルの一部は，Larry Wallによって書かれたマニュアルページを適用
+していて，それには彼の許可が付随しています．
+
+
+File: diff-ja.info,  Node: Comparison,  Next: Output Formats,  Prev: Overview,  Up: Top
+
+1 比較が意味するもの
+********************
+
+二つのファイル間の差を考えるときいくつかの方法があります．差を考えるとき
+の一つの方法は，別のファイルを生成するために，まとまった行があるファイル
+から削除，挿入，または変更されているということです．`diff'は行単
+位で二つのファイルを比較し，異なっている行のまとまりを探し，そして，異なっ
+ているそれぞれのまとまりを報告します．目的によって，いくつかの書式で異なっ
+ている行を報告させることが可能です．
+
+   GNU `diff'では，詳細な差異を用いずにファイルが異なっている
+かどうかを表示することが可能です．それは，重要ではない差異の表示を抑制す
+る方法も提供しています．最も一般的なこととして，そのような差は単語や行の
+間の空白の数が変更されているものです．`diff'は，アルファベットの
+大文字小文字の差や，提供されている正規表現にマッチする行の差の表示を抑制
+する方法も提供しています．これらのオプションは累積されます．例えば，空白
+とアルファベットの大文字小文字の変更を無視することが可能です．
+
+二つのファイルの差を考えるもう一つの方法として，バイトの集合が同一または
+異なっているというのもがあります．`cmp'は二つのファイル間の差を，
+行単位ではなく，バイト単位で報告します．結果として，バイナリファイルに対
+して`diff'を使用するより，遥かに役に立つことが多いでしょう．テキ
+ストファイルに対しては，二つのファイルが同一かどうか，または，一つのファ
+イルがもう一方のファイルに前置されているかどうかを知りたいだけのとき，主
+に役に立つでしょう．
+
+バイト単位での変更を考慮する影響を説明するには，行単位での変更を考慮する
+ことと比較することが可能で，例えば単一の改行文字がファイルの最初にある場
+合に何が生じるかを考えてみてください．そのファイルを，最初に改行が無いだ
+けの同一の別ファイルと比較する場合，`diff'では改行がファイルに追
+加されたことを報告しますが，`cmp'では二つのファイルはほとんど全
+体が異なっていると報告するでしょう．
+
+   `diff3'は，通常三つの入力ファイルを行単位で比較し，差異のある行
+のまとまりを見つけ，それぞれの差異のある行のまとまりを報告します．その出
+力は，同じファイルを変更した二つのものの差を調べることを容易にするように
+設計されています．
+
+* Menu:
+
+* Hunks::             Groups of differing lines.
+* White Space::       Suppressing differences in white space.
+* Blank Lines::       Suppressing differences in blank lines.
+* Case Folding::      Suppressing differences in alphabetic case.
+* Specified Folding:: Suppressing differences that match regular expressions.
+* Brief::             Summarizing which files are different.
+* Binary::            Comparing binary files or forcing text comparisons.
+
+
+File: diff-ja.info,  Node: Hunks,  Next: White Space,  Up: Comparison
+
+1.1 Hunks
+=========
+
+二つのファイルを比較しているとき，`diff'は，"hunk"と呼ばれる
+異なっている行のまとまりが疎らに存在している両方のファイルから，共通な行
+の並びを探します．二つの同一ファイルの比較では差異のある行は無いので，一
+つの共通な行の並びが見つかり，hunkはありません．二つの全く異なるファイル
+の比較では，共通の行は無く，両方のファイルのすべての行を含んでいる一つの
+大きなhunkが生成されます．一般的に，二つの与えられたファイル間で，行のマッ
+チを調べる方法はたくさんあります．`diff'は，大きな共通行の並びを
+探しながら差異のある行を小さなhunkにして，全体のhunkの大きさを最小にする
+よう試みます．
+
+   例えば，ファイル`F'は三行`a'，`b'，`c'を含んでいて，
+ファイル`G'は同じ行を逆の順序`c'，`b'，`a'で含んでい
+ると仮定します．`diff'が行`c'を共通として見つけた場合，コマ ンド`diff F
+G'は以下の出力を生成します．
+
+     1,2d0
+     < a
+     < b
+     3a2,3
+     > b
+     > a
+
+しかし，その代わりに共通行`b'に注目する場合，以下の出力を生成します．
+
+     1c1
+     < a
+     ---
+     > c
+     3c3
+     < c
+     ---
+     > a
+
+`a'が共通行として見つかる可能性もあります．`diff'は常に，ファ
+イル間の最適なマッチしている部分を見つけるわけではありません．それで実行
+がより早くなります．しかし，出力は通常可能な限り短くなるようにします．
+`--minimal'オプションで，このトレードオフを調整することが可能です
+(*note diff Performance::)．
+
+
+File: diff-ja.info,  Node: White Space,  Next: Blank Lines,  Prev: Hunks,  Up: Comparison
+
+1.2 空白とタブのスペースの差を抑制する
+======================================
+
+`-E'と`--ignore-tab-expansion'オプションは，入力のタブとス
+ペースの違いを無視します．タブは，次のタブストップまでのスペースの数に等
+しいと考えられます．`diff'は，タブストップが八文字ごとに設定され
+ている仮定します．
+
+   `-b'と`--ignore-space-change'オプションはより強力です．そ
+れらは行末の空白を無視し，それ以外の一つ以上の空白の並びが等価であると考
+えます．これらのオプションを用いると，`diff'は以下のに行が等価で
+あると考えます．`$'は行末を示します．
+
+     Here lyeth  muche rychnesse  in lytell space.   -- John Heywood$
+     Here lyeth muche rychnesse in lytell space. -- John Heywood   $
+
+   `-w'と`--ignore-all-space'オプションは更に強力です．それら
+は，片方の行には空白がありもう一方にはない場合でさえ，その差を無視します．
+"空白"文字とは，タブ，改行，垂直タブ，改ページ，キャリッジリターン，
+そしてスペースです．ロケールによっては，追加の文字が空白として定義されて
+いるかもしれません．これらのオプションを用いると，`diff'は以下の
+に行を等価と考えます．`$'は行末を示し，`^M'はキャリッジリター
+ンを示します．
+
+     Here lyeth  muche  rychnesse in lytell space.--  John Heywood$
+       He relyeth much erychnes  seinly tells pace.  --John Heywood   ^M$
+
+
+File: diff-ja.info,  Node: Blank Lines,  Next: Case Folding,  Prev: White Space,  Up: Comparison
+
+1.3 空白行の差を抑制する
+========================
+
+`-B'と`--ignore-blank-lines'オプションは，空白行の挿入や削
+除を無視します．これらのオプションは，完全に空の行だけに効果があります．
+それらは，空のように見えるが，スペースやタブを含んでいる行には効果があり
+ません．これらのオプションを用いると，例えばファイルが以下のものを含んで
+いると考えます．
+     1.  A point is that which has no part.
+
+     2.  A line is breadthless length.
+     -- Euclid, The Elements, I
+   これは以下を含んでいるファイルと等価です．
+     1.  A point is that which has no part.
+     2.  A line is breadthless length.
+
+
+     -- Euclid, The Elements, I
+
+
+File: diff-ja.info,  Node: Case Folding,  Next: Specified Folding,  Prev: Blank Lines,  Up: Comparison
+
+1.4 大文字小文字の差を抑制する
+==============================
+
+GNU `diff'では，例えば，`Funky Stuff'，`funky STUFF'，そして`fUNKy
+stuFf'がすべて同じ名前だと考えるように，小文字
+がそれに対応する大文字と等価物として扱うことが可能です．こうするために，
+`-i'や`--ignore-case'オプションを使用してください．
+
+
+File: diff-ja.info,  Node: Specified Folding,  Next: Brief,  Prev: Case Folding,  Up: Comparison
+
+1.5 正規表現にマッチする行を抑制する
+====================================
+
+`grep'-形式の正規表現にマッチする行の挿入と削除を無視するために， `-I
+REGEXP'や`--ignore-matching-lines=REGEXP'
+オプションを指定してください．シェルのメタ文字がシェルで展開されるのを避
+けるために，正規表現をエスケープしてください．例えば，`diff -I
+'^[[:digit:]]''は，数字で始まる行のすべての変更を無視します．
+
+   しかし`-I'は，hunk内のすべての変更行が -- すべて挿入と削除で --
+正規表現にマッチする場合，正規表現を含んでいる行の挿入と削除のみを無視し
+ます．言い替えると，無視できない変更に対し，それに隣接する変更の完全な組
+を無視できるものも含めて`diff'は出力します．
+
+   一つ以上の`-I'オプションを使用して，行を無視するために一つ以上の
+正規表現を指定することが可能です．`diff'はそれぞれの正規表現に対
+し，それぞれの行のマッチを試みます．
+
+
+File: diff-ja.info,  Node: Brief,  Next: Binary,  Prev: Specified Folding,  Up: Comparison
+
+1.6 ファイルの差の概要
+======================
+
+ファイルが異なっているかどうかを知りたいだけのときで，差異が何かに注目し
+ていないとき，概要を出力する書式を使用することが可能です．この書式では，
+ファイル間の差を表示する代わりに，`diff'は単純にファイルに差異が
+あるかどうかを報告します．`-q'と`--brief'オプションでこの
+書式を選択します．
+
+   この書式は，二つのディレクトリの内容を比較するとき特に役に立ちます．
+`diff'は，差異があることが分かるとすぐにファイルの解析を停止する
+ことが可能なので，それは普通に行ごとに比較するより遥かに速くもなります．
+
+   `cmp'を使用することで，二つのファイルが違っているかどうかを，短
+く示しているものを得ることも可能です．ファイルが異なっているとき，デフォ
+ルトで，最初の差異が発生したところで`cmp'はバイトと行番号を出力
+します．`cmp'が出力を生成せず，ファイルが異なっているかどうかを
+終了ステータスだけで報告するようにするため，その情報を抑制するために
+`-s'オプションを使用することも可能です(*note Invoking cmp::)．
+
+   `diff'とは異なり，`cmp'はディレクトリを比較することは不
+可能です．二つのファイルの比較のみ可能です．
+
+
+File: diff-ja.info,  Node: Binary,  Prev: Brief,  Up: Comparison
+
+1.7 バイナリファイルと，テキストファイルの比較の強制
+====================================================
+
+`diff'が比較している二つのファイルのうちの一方がバイナリ(テキス
+トファイルではない)と考える場合，通常ファイルの組を概要の出力書式が選択
+されているように(*note Brief::)扱い，バイナリファイルが異なっていること
+だけを報告します．これは，行単位での比較がバイナリファイルに対して普通は
+意味が無いためです．
+
+   ファイルの最初の数バイトを調査して，`diff'はファイルがテキストか
+バイナリかを決定します．正確なバイト数はシステムに依存しますが，それは通
+常数千になります．ファイルの一部のすべてのバイトが`null'ではない場
+合，`diff'はファイルがテキストだと考えます．それ以外の場合は，ファ
+イルがバイナリだと考えます．
+
+   ファイルがテキストファイルだと`diff'に強制的に考えさせたいときも
+あるでしょう．例えば，`null'文字が含まれているテキストファイルを比
+較する可能性があります．`diff'は誤って，これらをテキストファイル
+ではないと決定するでしょう．また，`null'文字を特殊なフォーマットを
+示すために使用するワープロシステムで使用されているフォーマットのファイル
+を比較する可能性もあります．`-a'や`--text'オプションを使用
+することで，`diff'に強制的にすべてのファイルがテキストファイルで
+あると考えさせ，行ごとにそれらを比較させることが可能です．このオプション
+を使用して比較しているファイルが，実際にはテキストを含んでいない場合，お
+そらくファイルには数個の改行文字しかなく，`diff'の出力は，ファイ
+ルに含まれているすべての文字からなる長い行の差異を表示するhunkになるでしょ
+う．
+
+   すべてのファイルをバイナリファイルだと`diff'に強制的に考えさせ，
+ファイルが(どのように異なっているかではなく)異なっているかどうかのみを報
+告させることも可能です．このために`-q'や`--brief'オプショ
+ンを使用してください．
+
+   バイナリファイルの差は，`diff'の出力結果がすべての差を取り切れな
+いので，問題が生じると考えられます．この問題で，`diff'はステータ
+ス2で終了します．しかし，この問題は`--a'や`--text'オプショ
+ンを用いたり，`-q'や`--brief'オプションを用いることで発生
+しないので，これらどちらのオプションでも，`diff'はバイナリファイ
+ルをテキストファイルのように扱います．
+
+テキストファイルとバイナリファイルで差があるオペレーティングシステムでは，
+`diff'は通常，すべてのデータをテキストとして読み書きします．代わ
+りにバイナリデータとして`diff'に読み書きさせるために，
+`--binary'オプションを使用してください．このオプションは，
+GNUや伝統的なUnixシステムのようなPOSIX-準拠のシステムでは効果
+がありません．しかし，多くのパーソナルコンピュータのオペレーティングシス
+テムでは，行末の改行の後にキャリッジリターンが存在します．そのようなシス
+テムでは，`diff'は通常入力されるこれらのキャリッジリターンを無視
+し，それぞれの出力の行末にキャリッジリターンを生成しますが，
+`--binary'オプションを用いると`diff'はそれぞれのキャリッ
+ジリターンをそのまま入力文字として扱い，それぞれの出力の行末にキャリッジ
+リターンを生成しません．POSIX-準拠のシステムで変換する予定のテキス
+トではないファイルを扱うとき，これは役に立つはずです．
+
+   `--strip-trailing-cr'で，`diff'は行末の改行にキャリッジリ
+ターンが続いている入力行を普通の改行として扱います．多くのパーソナルコン
+ピュータのオペレーティングシステムからインポートされた不完全なテキストを
+比較するとき，これは役に立つはずです．このオプションは行が読み込まれる方
+法に影響があり，それは順次，比較される方法と出力の方法に影響していきます．
+
+二つのファイルをバイト単位で比較したい場合，二つのファイルのバイトごとの
+差の値を表示するために，`-l'オプションを用いて`cmp'プログ
+ラムを使用することが可能です．GNU `cmp'を用いると，これらの
+バイトのASCII表現を表示するために`-b'オプションを使用するこ
+とも可能です．詳細は*Note Invoking cmp::.
+
+   比較しているファイルのいずれかを`diff3'がバイナリ(テキストではな
+いファイル)と考える場合，そのような比較は普通意味が無いので，通常はエラー
+を報告します．`diff3'は，ファイルがバイナリかどうかを
+`diff'が決定するテストと同じテストを使用します．`diff'を
+用いるときと同様に，入力ファイルにテキストでないバイトが含まれているが，
+それ以外はテキストファイルに似ている場合，`-a'や`--text'オ
+プションを使用することで，`diff3'にすべてのファイルをテキストファ
+イルと考えさせ，行単位での比較を強制させることが可能です．
+
+
+File: diff-ja.info,  Node: Output Formats,  Next: Incomplete Lines,  Prev: Comparison,  Up: Top
+
+2 `diff'の出力書式
+******************
+
+`diff'には，出力書式に対する相互に排他的なオプションがいくつかあ
+ります．以下のセクションではそれぞれの書式を記述し，二つのサンプル入力ファ
+イル間の差を`diff'が報告する方法を図示します．
+
+* Menu:
+
+* Sample diff Input:: Sample `diff' input files for examples.
+* Normal::            Showing differences without surrounding text.
+* Context::           Showing differences with the surrounding text.
+* Side by Side::      Showing differences in two columns.
+* Scripts::           Generating scripts for other programs.
+* If-then-else::      Merging files with if-then-else.
+
+
+File: diff-ja.info,  Node: Sample diff Input,  Next: Normal,  Up: Output Formats
+
+2.1 二つのサンプル入力ファイル
+==============================
+
+`diff'の出力と，様々なオプションがどのようにしてそれを変更するか
+をを説明するために多くの例で使用する二つのサンプルファイルを以下に示しま
+す．
+
+   これはファイル`lao'です．
+
+     The Way that can be told of is not the eternal Way;
+     The name that can be named is not the eternal name.
+     The Nameless is the origin of Heaven and Earth;
+     The Named is the mother of all things.
+     Therefore let there always be non-being,
+       so we may see their subtlety,
+     And let there always be being,
+       so we may see their outcome.
+     The two are the same,
+     But after they are produced,
+       they have different names.
+
+   これはファイル`tzu'です．
+
+     The Nameless is the origin of Heaven and Earth;
+     The named is the mother of all things.
+
+     Therefore let there always be non-being,
+       so we may see their subtlety,
+     And let there always be being,
+       so we may see their outcome.
+     The two are the same,
+     But after they are produced,
+       they have different names.
+     They both may be called deep and profound.
+     Deeper and more profound,
+     The door of all subtleties!
+
+   この例では，最初のhunkには`lao'の最初の二つの行が含まれ，二番目の
+hunkには`lao'の四行目と対応する`tzu'の二行目と三行目が含まれ，
+そして，最後のhunkには`tzu'の最後の三行が含まれます．
+
+
+File: diff-ja.info,  Node: Normal,  Next: Context,  Prev: Sample diff Input,  Up: Output Formats
+
+2.2 周りの文(コンテクスト)を使用しない差の表示
+==============================================
+
+"通常"の`diff'出力の書式は，周りの文を付けずに差異部分のそれぞ
+れのhunkを表示します．そのような出力は，変更されていない周りの行に邪魔さ
+れず，行が変更された様子を見るには最も明確なときもあります(しかし，周り
+の文を0行使用した，周りの行を用いた書式や一体化した書式を使用して，同様
+な結果を得ることも可能です)．しかし，この書式をパッチの送付に広く使用す
+ることはもうありません．その目的では，周りの文を使用する書式 (*note
+Context Format::)と，一体化した書式(*note Unified Format::)がより
+好まれます．通常の書式は，古いバージョンの`diff'とPOSIX標準
+との互換性のため，デフォルトになっています．この出力書式を明示的に選択す
+るために`--normal'オプションを使用してください．
+
+* Menu:
+
+* Detailed Normal:: A detailed description of normal output format.
+* Example Normal::  Sample output in the normal format.
+
+
+File: diff-ja.info,  Node: Detailed Normal,  Next: Example Normal,  Up: Normal
+
+2.2.1 通常書式の詳細な説明
+--------------------------
+
+通常の出力書式は，一つ以上の差異部分のhunkを含んでいます．それぞれのhunk
+はファイルの差の一つの領域を表示します．通常の書式のhunkは以下のようにな
+ります．
+
+     CHANGE-COMMAND
+     < FROM-FILE-LINE
+     < FROM-FILE-LINE...
+     ---
+     > TO-FILE-LINE
+     > TO-FILE-LINE...
+
+   三つの形式の変更コマンド(`change-command')があります．それぞれ，最
+初のファイルの行番号またはカンマで分けられた行の範囲，変更方法の種類を示
+す単一文字，そして，二番目のファイルの行番号またはカンマで分けられた行の
+範囲です．すべての行番号は，それぞれのファイルのもともとの行番号です．変
+更コマンドの形式は以下のとおりです．
+
+`LaR'
+     最初のファイルのL行の後に，二番目のファイルの範囲Rに行が追加
+     されています．例えば，`8a12,15'は，1のファイルの八行目の後に2のファ
+     イルの12-15行が追加されたことを意味します．または，変更が2から1への場合，
+     ファイル2の12-15行が削除されたことを意味します．
+
+`FcT'
+     最初のファイルのFの範囲の行が，二番目のファイルのTの範囲の行
+     で置換されています．これは，追加と削除の組み合わせに似ていますが，よりコ
+     ンパクトになっています．例えば，`5,7c8,10'は，ファイル1の5-7行がファ
+     イル2の8-10行に変更されたことを意味します．または，変更が2から1への場合，
+     ファイル2の8-10行がファイル1の5-7行に変更されたことを意味します．
+
+`RdL'
+     最初のファイルから範囲Rの行が削除されています．行Lは，二番目
+     のファイルに削除されているようにみえる場所です．例えば，`5,7d3'はファ
+     イル1の5-7行が削除されていることを意味します．または，変更が2から1への
+     場合，ファイル2の3行目の後にファイル1の5-7行が追加されたことを意味しま
+     す．
+
+
+File: diff-ja.info,  Node: Example Normal,  Prev: Detailed Normal,  Up: Normal
+
+2.2.2 通常の書式の例
+--------------------
+
+コマンド`diff lao tzu'の出力は以下のようになります(完全な二つのファ
+イルの内容は*note Sample diff Input::)．二つのファイルで異なっている行の
+みが表示されていることに注目してください．
+
+     1,2d0
+     < The Way that can be told of is not the eternal Way;
+     < The name that can be named is not the eternal name.
+     4c2,3
+     < The Named is the mother of all things.
+     ---
+     > The named is the mother of all things.
+     >
+     11a11,13
+     > They both may be called deep and profound.
+     > Deeper and more profound,
+     > The door of all subtleties!
+
+
+File: diff-ja.info,  Node: Context,  Next: Side by Side,  Prev: Normal,  Up: Output Formats
+
+2.3 周りの文を用いた差の表示
+============================
+
+通常，ファイル間の差を見るときは，正確に何が変更されたのかを理解する手助
+けとなる，ファイルの差がある行の周りの部分も見たいと思うでしょう．このよ
+うなファイルの周りの部分を"context(周りの文)"と呼びます．
+
+   GNU `diff'は異なっている行の周りの文を表示する，二つの出力
+書式を提供しています．"context format(周りの文を用いた書式)"と "unified
+format(一体化した書式)"です．それで，異なっている行が見つかっ
+た関数やファイルのセクションを追加表示することが可能です．
+
+   `diff'の出力形式で，他人にファイルの新しいバージョンを配布する場
+合，彼らがファイルに独自の変更をしている場合でも差分を適用できるように，
+周りの文を表示する出力形式の一つを使用すべきです．この状況でも，異なって
+いる行の周りの文の行をファイル内で探すことで，`patch'で差分を適
+用することが可能です．これらの行が差分が告げている場所から実際には数行離
+れていても，`patch'は行番号を調整し，差分を正しく適用することが
+可能です．不完全な差分を適用するために`patch'を使用する詳細は， *Note
+Imperfect::.
+
+* Menu:
+
+* Context Format::  An output format that shows surrounding lines.
+* Unified Format::  A more compact output format that shows context.
+* Sections::        Showing which sections of the files differences are in.
+* Alternate Names:: Showing alternate file names in context headers.
+
+
+File: diff-ja.info,  Node: Context Format,  Next: Unified Format,  Up: Context
+
+2.3.1 周りの文を使用した書式
+----------------------------
+
+周りの文を使用した出力書式は，異なっている行の周りの文の数行を表示します．
+それはソースコードの更新部分を配布するための標準的な書式です．
+
+   この出力形式を選択するために，`-C LINES'，
+`--context[=LINES]'，または`-c'オプションを
+使用してください．これらのオプションのいくつかが受けとる引数LINES
+は，表示する周りの文の行数です．LINESを指定しない場合，それはデフォ
+ルトで三行になります．適切に処理するため，`patch'は通常少なくと
+も二行の周りの文を必要とします．
+
+* Menu:
+
+* Detailed Context:: A detailed description of the context output format.
+* Example Context::  Sample output in context format.
+* Less Context::     Another sample with less context.
+
+
+File: diff-ja.info,  Node: Detailed Context,  Next: Example Context,  Up: Context Format
+
+2.3.1.1 周りの文を使用した書式の詳細な説明
+..........................................
+
+周りの文を使用した出力書式は，二行のヘッダを用いて開始され，それは以下の
+ようになります．
+
+     *** FROM-FILE FROM-FILE-MODIFICATION-TIME
+     --- TO-FILE TO-FILE-MODIFICATION TIME
+
+タイムスタンプは通常，日付，有理数の秒を使用した時間，そして Internet
+RFC 2822 format (ftp://ftp.isi.edu/in-notes/rfc2822.txt)
+のタイムゾーンを示すため`2002-02-21 23:30:39.942229878 -0800'のよう
+になります．しかし，`LC_TIME'ロケールカテゴリが`C'または
+`POSIX'の場合，伝統的なタイムスタンプ`Thu Feb 21 23:30:39
+2002'が使用されます．
+
+   ヘッダの内容を`--label=LABEL'オプションを使用して変更するこ
+とが可能です．*Note Alternate Names::を参照してください．
+
+次に一つ以上の差異のhunkが続きます．それぞれのhunkはファイルの差異のある
+部分の一つの領域を表示します．周りの文を使用した書式では，hunkは以下のよ
+うになります．
+
+     ***************
+     *** FROM-FILE-LINE-RANGE ****
+       FROM-FILE-LINE
+       FROM-FILE-LINE...
+     --- TO-FILE-LINE-RANGE ----
+       TO-FILE-LINE
+       TO-FILE-LINE...
+
+差異のある行の周りの行は，二つのスペース文字を用いて開始されます．二つの
+ファイル間で異なっている行は，以下の識別文字の一つで開始され，スペース文
+字が続きます．
+
+`!'
+     二つのファイル間で変更されている一行以上のまとまった部分の行です．この
+     hunk部分の`!'で印が付いている行のまとまりに対応するものが，もう一方
+     のファイルに存在します．
+
+`+'
+     最初のファイルには対応するものが無い，二番目のファイルに"挿入された"行
+     です．
+
+`-'
+     二番目のファイルには対応するものが無い，最初のファイルから"削除された"
+     行です．
+
+   hunkの変更がすべて挿入されたものの場合，FROM-FILEの行は省略されま
+す．変更のすべてが削除の場合，TO-FILEの行は省略されます．
+
+
+File: diff-ja.info,  Node: Example Context,  Next: Less Context,  Prev: Detailed Context,  Up: Context Format
+
+2.3.1.2 周りの文を使用した書式の例
+..................................
+
+コマンド`diff -c lao tzu'の出力は以下のようになります(完全な二つの
+ファイルの内容は*note Sample diff Input::)．差の無い行が三行になるまで，
+差がある行の周りの行が表示されていることに注目してください．それらは周り
+の文の行です．周りの文が重なっているため，最初の二つのhunkは一緒になって
+いることにも注目してください．
+
+     *** lao	2002-02-21 23:30:39.942229878 -0800
+     --- tzu	2002-02-21 23:30:50.442260588 -0800
+     ***************
+     *** 1,7 ****
+     - The Way that can be told of is not the eternal Way;
+     - The name that can be named is not the eternal name.
+       The Nameless is the origin of Heaven and Earth;
+     ! The Named is the mother of all things.
+       Therefore let there always be non-being,
+         so we may see their subtlety,
+       And let there always be being,
+     --- 1,6 ----
+       The Nameless is the origin of Heaven and Earth;
+     ! The named is the mother of all things.
+     !
+       Therefore let there always be non-being,
+         so we may see their subtlety,
+       And let there always be being,
+     ***************
+     *** 9,11 ****
+     --- 8,13 ----
+       The two are the same,
+       But after they are produced,
+         they have different names.
+     + They both may be called deep and profound.
+     + Deeper and more profound,
+     + The door of all subtleties!
+
+
+File: diff-ja.info,  Node: Less Context,  Prev: Example Context,  Up: Context Format
+
+2.3.1.3 より少ない周りの文を用いた，周りの文を使用した書式の例
+..............................................................
+
+コマンド`diff -C 1 lao tzu'の出力は以下のようになります(完全な二つ
+のファイルの内容は*note Sample diff Input::)．ここでは最大一行が報告され
+ていることに注目してください．
+
+     *** lao	2002-02-21 23:30:39.942229878 -0800
+     --- tzu	2002-02-21 23:30:50.442260588 -0800
+     ***************
+     *** 1,5 ****
+     - The Way that can be told of is not the eternal Way;
+     - The name that can be named is not the eternal name.
+       The Nameless is the origin of Heaven and Earth;
+     ! The Named is the mother of all things.
+       Therefore let there always be non-being,
+     --- 1,4 ----
+       The Nameless is the origin of Heaven and Earth;
+     ! The named is the mother of all things.
+     !
+       Therefore let there always be non-being,
+     ***************
+     *** 11 ****
+     --- 10,13 ----
+         they have different names.
+     + They both may be called deep and profound.
+     + Deeper and more profound,
+     + The door of all subtleties!
+
+
+File: diff-ja.info,  Node: Unified Format,  Next: Sections,  Prev: Context Format,  Up: Context
+
+2.3.2 一体化した書式
+--------------------
+
+一体化した出力書式は周りの文を使用した書式の変形で，冗長な周りの行を省略
+していて，よりコンパクトになっています．この出力書式を選択するため，
+`-U LINES'，`--unified[=LINES]'，また
+は`-u'オプションを使用してください．引数LINESは，表示する周
+りの行数です．与えられていないとき，デフォルトは三行です．
+
+   現在，GNU `diff'だけがこの書式を生成することが可能で， GNU
+`patch'だけがこの書式の差分を自動的に適用することが可能
+です．適切に処理するため，`patch'は通常，少なくとも周りの三行を
+必要とします．
+
+* Menu:
+
+* Detailed Unified:: A detailed description of unified format.
+* Example Unified::  Sample output in unified format.
+
+
+File: diff-ja.info,  Node: Detailed Unified,  Next: Example Unified,  Up: Unified Format
+
+2.3.2.1 一体化した書式の詳細な記述
+..................................
+
+一体化した出力書式は二行のヘッダで開始され，それは以下のようになります．
+
+     --- FROM-FILE FROM-FILE-MODIFICATION-TIME
+     +++ TO-FILE TO-FILE-MODIFICATION-TIME
+
+タイムスタンプは，日付，有理数の秒を使用した時間，そして Internet RFC
+2822 format (ftp://ftp.isi.edu/in-notes/rfc2822.txt)
+のタイムゾーンを示すため`2002-02-21 23:30:39.942229878 -0800'のよう
+になります．
+
+   ヘッダの内容を，`--label=LABEL'オプションを用いて変更するこ
+とが可能です．*Note Alternate Names::を参照してください．
+
+次に，差異部分のhunkが一つ以上続きます．それぞれのhunkはファイルの差異部
+分の一つの領域を表示します．一体化した書式のhunkは以下のようになります．
+
+     @@ FROM-FILE-RANGE TO-FILE-RANGE @@
+      LINE-FROM-EITHER-FILE
+      LINE-FROM-EITHER-FILE...
+
+両方のファイルでの共通部分は，スペース文字で開始されます．二つのファイル
+間で実際に差のある行には，以下の左側の列に出力されている指示文字の一つが
+あります．
+
+`+'
+     最初のファイルの，ここに一行追加されました．
+
+`-'
+     最初のファイルから，ここの一行が削除されました．
+
+
+File: diff-ja.info,  Node: Example Unified,  Prev: Detailed Unified,  Up: Unified Format
+
+2.3.2.2 一体化した書式の例
+..........................
+
+以下は，コマンド`diff -u lao tzu'の出力です(二つのファイルの内容の
+完全なものは，*note Sample diff Input::)．
+
+     --- lao	2002-02-21 23:30:39.942229878 -0800
+     +++ tzu	2002-02-21 23:30:50.442260588 -0800
+     @@ -1,7 +1,6 @@
+     -The Way that can be told of is not the eternal Way;
+     -The name that can be named is not the eternal name.
+      The Nameless is the origin of Heaven and Earth;
+     -The Named is the mother of all things.
+     +The named is the mother of all things.
+     +
+      Therefore let there always be non-being,
+        so we may see their subtlety,
+      And let there always be being,
+     @@ -9,3 +8,6 @@
+      The two are the same,
+      But after they are produced,
+        they have different names.
+     +They both may be called deep and profound.
+     +Deeper and more profound,
+     +The door of all subtleties!
+
+
+File: diff-ja.info,  Node: Sections,  Next: Alternate Names,  Prev: Unified Format,  Up: Context
+
+2.3.3 差異のある領域が存在するセクションの表示
+----------------------------------------------
+
+それぞれの変更がファイルのどの部分かを知りたいときもあるでしょう．ファイ
+ルがソースコードの場合，これは変更された関数を意味します．ファイルがドキュ
+メントの場合，変更された章や付録を意味します．GNU `diff'で
+は，差異のある行の前にあるセクション見出し行で最も近くにあるものを表示す
+ることで，これを示すことが可能です．"セクション見出し"の行は，正規表現
+で決定されます．
+
+* Menu:
+
+* Specified Headings::  Showing headings that match regular expressions.
+* C Function Headings:: Showing headings of C functions.
+
+
+File: diff-ja.info,  Node: Specified Headings,  Next: C Function Headings,  Up: Sections
+
+2.3.3.1 正規表現にマッチする行を表示する
+........................................
+
+Cやそれに似た言語以外のソースコードのファイルで差異が生じたセクションを
+表示するために，`-F REGEXP'や
+`--show-function-line=REGEXP'オプションを使用してください．
+`diff'は，`grep'形式の正規表現REGEXPにマッチした行
+が，ファイルのセクションの先頭だと考えます．いくつかの一般的な言語に対す
+る正規表現を以下で提案します．
+
+`^[[:alpha:]$_]'
+     C, C++, Prolog
+
+`^('
+     Lisp
+
+`^@node'
+     Texinfo
+
+このオプションでは出力書式を自動的に選択しません．それを使用するために，
+周りの文を使用した書式(*note Context Format::)や，一体化した書式 (*note
+Unified Format::)を選択する必要があります．それ以外の出力書式では
+効果はありません．
+
+   `-F'と`--show-function-line'オプションで，差異があるそれぞ
+れのhunkの前にある変更されていない最も近い行で与えられた正規表現にマッチ
+する行を見つけます．そしてその行を，周りの文を使用した書式のアスタリスク
+がある行の終りに，または一体化した書式の`@@'行に追加します．マッ
+チする行がない場合は，そのまま変更されずに，hunk出力に出力されます．その
+行が40文字以上の場合，それらは最初の40文字だけ出力されます．そのような行
+に対し，一つ以上の正規表現を指定することが可能です．`diff'は，そ
+れぞれの行に対しそれぞれの正規表現にマッチすることを，最後に与えられたも
+のから試します．これは，希望があれば`-p'と`-F'を一緒に使用
+することが可能だということを意味します．
+
+
+File: diff-ja.info,  Node: C Function Headings,  Prev: Specified Headings,  Up: Sections
+
+2.3.3.2 Cの関数の見出しを表示する
+.................................
+
+Cとそれに似た言語で差異の生じた関数を表示するために，`-p'や
+`--show-c-function'オプションを使用することが可能です．このオプショ
+ンで，デフォルトの周りの文の行数を用いた周りの文を使用した出力書式を自動
+的にデフォルトにします(*note Context Format::)．コマンドラインのどこかで
+`-C LINES'を用いることで，その行数に優先させること可能です．
+コマンドラインのどこかで`-U LINES'を用いることで，その書式
+と行数に優先させることが可能です．
+
+   `-p'と`--show-c-function'オプションは，一体化した書式が指
+定されている場合，`-F '^[[:alpha:]$_]''と同じで，それ以外では `-c -F
+'^[[:alpha:]$_]''と同じです(*note Specified Headings::)． GNU
+`diff'は利便性を目的としてそれらを提供しています．
+
+
+File: diff-ja.info,  Node: Alternate Names,  Prev: Sections,  Up: Context
+
+2.3.4 ファイル名の代替物を表示する
+----------------------------------
+
+意味が無かったり情報として価値の無い名前を持つ二つのファイルを比較する場
+合，周りの文を利用したり一体化した出力書式のヘッダに，名前の変わりのもの
+を`diff'で表示させたいかもしれません．こうするために
+`--label=LABEL'オプションを使用してください．最初にこのオプ
+ションを与えると，ヘッダ内の最初のファイルの名前と日付をその引数で置換し，
+二回与えると，ヘッダ内の二番目のファイルの名前と日付をその引数で置換しま
+す．このオプションが二回以上与えられる場合，`diff' はエラーを報
+告します．`--label'オプションは，`-l'や`--paginate'
+オプションが使用されている(*note Pagination::)とき，`pr'ヘッダ内
+のファイル名に影響しません．
+
+   `diff -C 2 --label=original --label=modified lao tzu'の出力の最初の
+二行は以下のようになります．
+
+     *** original
+     --- modified
+
+
+File: diff-ja.info,  Node: Side by Side,  Next: Scripts,  Prev: Context,  Up: Output Formats
+
+2.4 差異を並べて表示する
+========================
+
+`diff'では，二つのファイルの差異のリストを並べて生成することが可
+能です．縦段落間の溝を用いてファイルは二列にリストアップされます．縦段落
+間の溝は以下のマーカの一つを含んでいます．
+
+white space
+     共通の対応する行です．すなわち，それぞれの行は同じ，または
+     `--ignore'オプション(*note White Space::)の一つで無視されている差
+     しかありません．
+
+`|'
+     対応する行に差があり，両方とも完全または両方とも不完全です．
+
+`<'
+     ファイルに差があり，最初のファイルだけに含まれている行です．
+
+`>'
+     ファイルに差があり，二番目のファイルだけに含まれている行です．
+
+`('
+     最初のファイルだけに含まれている行ですが，差異は無視されます．
+
+`)'
+     二番目のファイルだけに含まれている行ですが，差異は無視されます．
+
+`\'
+     対応する行に差があり，最初のファイルの行のみが不完全です．
+
+`/'
+     対応する行に差があり，二番目のファイルの行のみが不完全です．
+
+   通常出力行は，それは不完全な行が含まれている場合だけ不完全です．
+*Note Incomplete Lines::.
+しかし，出力行が二つの差異のある行に表示される
+とき，一方は不完全でもう一方はそうでないかもしれません．この状況では，出
+力行は完全ですが，その縦段落間の溝は，最初の行が不完全な場合は`\'
+で，二番目の行が不完全な場合は`/'で印が付いています．
+
+並べた書式が最も読み易いときもありますが，それには制限があります．それは
+通常よりはるかに幅広の出力を生成し，長過ぎると切り詰められます．また，通
+常より出力の整列状態に強く依存するので，可変幅フォント，標準的ではないタ
+ブストップ，または表示不可能な文字を使用している場合，その出力は特に見栄
+えが悪くなります．
+
+   並べた差異を対話的にマージするために，`sdiff'コマンドを使用する
+ことも可能です．ファイルのマージの詳細は，*Note Interactive Merging::.
+
+* Menu:
+
+* Side by Side Format::  Controlling side by side output format.
+* Example Side by Side:: Sample side by side output.
+
+
+File: diff-ja.info,  Node: Side by Side Format,  Next: Example Side by Side,  Up: Side by Side
+
+2.4.1 並べた書式の制御
+----------------------
+
+`-y'や`--side-by-side'オプションで並べた書式を選択します．
+並んでいる出力行には二つの入力行が含まれるので，出力は通常より幅広になり
+ます．通常は130列出力され，それは伝統的なプリンタの行に適しているはずで
+す．出力の幅を`-W COLUMNS'や`--width=COLUMNS'
+オプションを用いて設定することが可能です．出力は同じ幅で半分に分けられ，
+差異に印を付ける小さな縦段落間の溝で分けられています．入力行が長過ぎて出
+力の半分に適さないものは，出力で切り詰められます．
+
+   `--left-column'オプションで，二つの共通列の左の列のみ出力します．
+`--suppress-common-lines'オプションで，完全に共通の行の出力を抑制
+します．
+
+
+File: diff-ja.info,  Node: Example Side by Side,  Prev: Side by Side Format,  Up: Side by Side
+
+2.4.2 並べた出力の例
+--------------------
+
+コマンド`diff -y -W 72 lao tzu'の出力は以下のようになります(二つの
+ファイルの完全な内容は，*note Sample diff Input::)．
+
+     The Way that can be told of is n   <
+     The name that can be named is no   <
+     The Nameless is the origin of He        The Nameless is the origin of He
+     The Named is the mother of all t   |    The named is the mother of all t
+                                        >
+     Therefore let there always be no        Therefore let there always be no
+       so we may see their subtlety,           so we may see their subtlety,
+     And let there always be being,          And let there always be being,
+       so we may see their outcome.            so we may see their outcome.
+     The two are the same,                   The two are the same,
+     But after they are produced,            But after they are produced,
+       they have different names.              they have different names.
+                                        >    They both may be called deep and
+                                        >    Deeper and more profound,
+                                        >    The door of all subtleties!
+
+
+File: diff-ja.info,  Node: Scripts,  Next: If-then-else,  Prev: Side by Side,  Up: Output Formats
+
+2.5 編集スクリプトの作成
+========================
+
+出力モードには，TO-FILEを生成するためにFROM-FILEファイルを編
+集する，コマンドスクリプトを生成するものもあります．
+
+* Menu:
+
+* ed Scripts:: Using `diff' to produce commands for `ed'.
+* Forward ed:: Making forward `ed' scripts.
+* RCS::        A special `diff' output format used by RCS.
+
+
+File: diff-ja.info,  Node: ed Scripts,  Next: Forward ed,  Up: Scripts
+
+2.5.1 `ed'スクリプト
+--------------------
+
+`diff'で，`ed'テキストエディタに最初のファイルを二番目の
+ファイルに変更するように指示するコマンドを生成することが可能です．以前は
+これが，あるファイルをもう一つのファイルに自動的に編集することに適した唯
+一の出力モードでした．現在は，`patch'を用いることになり，それは
+もう時代遅れです．この出力書式を選択するために，`-e'や
+`--ed'オプションを使用してください．
+
+   通常の書式(*note
+Normal::)同様，この出力書式では周りの文を全く表示しませ
+ん．通常の書式とは異なり，(二番目のファイルと差分がある場合，最初のファ
+イルを生成するために)逆に差分を適用するのに必要な情報を含んでいません．
+
+   ファイル`d'に`diff -e old new'の出力が含まれている場合，コマン
+ド`(cat d && echo w) | ed - old'で`old'が`new'のコピーに
+なるように編集します．より一般的には，`d1'，`d2'，...，
+`dN'がそれぞれ，`diff -e old new1'，`diff -e new1 new2'， ...，`diff -e
+newN-1 newN'の出力になっている場合，`(cat d1 d2 ... dN && echo w) | ed
+- old'で`old'が`new'のコピーにな るように編集します．
+
+* Menu:
+
+* Detailed ed:: A detailed description of `ed' format.
+* Example ed::  A sample `ed' script.
+
+
+File: diff-ja.info,  Node: Detailed ed,  Next: Example ed,  Up: ed Scripts
+
+2.5.1.1 `ed'書式の詳細な記述
+............................
+
+`ed'出力書式は，一つ以上の差異部分のhunkから成り立ちます．複数行
+を変更するコマンドで，`ed'コマンドの成功によって行番号を解釈する
+方法に影響しないように，ファイルの終りに近い変更が最初に来ます．
+`ed'書式のhunkは以下のようになります．
+
+     CHANGE-COMMAND
+     TO-FILE-LINE
+     TO-FILE-LINE...
+     .
+
+   `ed'は行中のピリオドを入力の終りを示すものとして使用するので， GNU
+`diff'は，行中の単一のピリオドを二つのピリオドとして書
+き込み，それに続く`ed'コマンドで二つのピリオドを一つに変更するこ
+とで，変更された行を保護します．`ed'書式は不完全な行を表現するこ
+とが不可能なので，二番目のファイルの終りが変更のある不完全な行の場合，
+`diff'はエラーを報告し，改行を追加するように要求します．
+
+三種類の変更コマンドがあります．それぞれ，最初のファイルの行番号やカンマ
+で分離されている行の範囲と変更させる手法を示す単一文字から成り立ちます．
+すべての行番号は，ファイルの元々の行番号です．変更コマンドの種類は以下の
+とおりです．
+
+`La'
+     最初のファイルのL行目の後に二番目のファイルからのテキストを追加し
+     ます．例えば`8a'は，ファイル1の8行目以降に，それに続く行を追加しま
+     す．
+
+`Rc'
+     最初のファイルの範囲Rの行を，それに続く行で置換します．追加と削除
+     の組み合わせに似ていますが，よりコンパクトです．例えば`5,7c'は，ファ
+     イル1の5-7行をファイル2のテキストで変更することを意味します．
+
+`Rd'
+     最初のファイルから範囲Rの行を削除します．例えば，`5,7d'は，ファ
+     イル1の5-7行を削除することを意味します．
+
+
+File: diff-ja.info,  Node: Example ed,  Prev: Detailed ed,  Up: ed Scripts
+
+2.5.1.2 `ed'スクリプトの例
+..........................
+
+`diff -e lao tzu'の出力は以下のようになります(二つのファイルの完全
+な内容は，*note Sample diff Input::)．
+
+     11a
+     They both may be called deep and profound.
+     Deeper and more profound,
+     The door of all subtleties!
+     .
+     4c
+     The named is the mother of all things.
+
+     .
+     1,2d
+
+
+File: diff-ja.info,  Node: Forward ed,  Next: RCS,  Prev: ed Scripts,  Up: Scripts
+
+2.5.2 前置`ed'スクリプト
+------------------------
+
+`diff'で`ed'スクリプトのような出力を生成することが可能で
+すが，hunkは(前のものを後ろにする)前方への順序を用いています．コマンドの
+書式を若干変更することも可能です．それは，変更した行の前にコマンド文字前
+置すること，範囲をスペースで分離した行番号にすること，そして，単一のピリ
+オドから成り立つhunk行を明示する試みを行なわないことです．`ed'書
+式のように，前置`ed'書式は，不完全な行を表現することは不可能です．
+
+   前置`ed'書式は，`ed'でも`patch'でもこの書式の差
+分を適用することが不可能なので，ほとんど役に立ちません．それは主に，古い
+バージョンの`diff'との互換性のために存在しています．それを選択す
+るために，`-f'や`--forward-ed'オプションを使用してください．
+
+
+File: diff-ja.info,  Node: RCS,  Prev: Forward ed,  Up: Scripts
+
+2.5.3 RCSスクリプト
+-------------------
+
+RCS出力書式は，異なるファイルのバージョンとシステムを管理するために
+使用するフリープログラム，Revision Control Systemで使用するために設計さ
+れています．この出力書式を選択するために，`-n'や`--rcs'を
+使用してください．前に書いた`ed'書式(*note Forward ed::)に似てい
+ますが，それは前に書いた`ed'書式の単一のピリオドを含む行と不完全
+な行の問題を避けているので，ファイルの内容の任意の変更を表現することが可
+能です．単一のピリオドを含む行でテキストセクションを終える変わりに，それ
+ぞれのコマンドで影響する行数を指定します．`a'と`d'を組み合わせ
+たコマンドが，`c'の変わりに使用されます．また，二番目のファイルが変
+更されている不完全な行で終る場合，出力も不完全な行で終ります．
+
+   `diff -n lao tzu'の出力は以下のようになります(二つのファイルの完全
+な内容は，*note Sample diff Input::)．
+
+     d1 2
+     d4 1
+     a4 2
+     The named is the mother of all things.
+
+     a11 3
+     They both may be called deep and profound.
+     Deeper and more profound,
+     The door of all subtleties!
+
+
+File: diff-ja.info,  Node: If-then-else,  Prev: Scripts,  Up: Output Formats
+
+2.6 If-then-elseを用いたファイルのマージ
+========================================
+
+二つのCソースコードをマージするために`diff'を使用することが可能
+です．この書式の`diff'の出力は，両方のファイルのすべての行を含み
+ます．両方のファイルに共通の行は，一回だけ出力されます．差異のある部分は，
+Cプリプロセッサの指示語の`#ifdef NAME'や`#ifndef
+NAME'，`#else'，そして`#endif'で分離されています．出力を
+コンパイルするとき，マクロNAMEを定義したり未定義にしたりすることで，
+バージョンを選択します．
+
+   二つのファイルをマージするために，`-D NAME'や
+`--ifdef=NAME'オプションを用いて`diff'を使用してく
+ださい．引数のNAMEは，`#ifdef'と`#ifndef'といった指示語
+で使用するCプリプロセッサの識別子です．
+
+   例えば，`wait (&s)'の文を`waitpid (-1, &s, 0)'に変更し，新旧の
+ファイルを`--ifdef=HAVE_WAITPID'オプションを用いてマージした場合，
+影響する部分のコードは以下のようになるでしょう．
+
+         do {
+     #ifndef HAVE_WAITPID
+             if ((w = wait (&s)) < 0  &&  errno != EINTR)
+     #else /* HAVE_WAITPID */
+             if ((w = waitpid (-1, &s, 0)) < 0  &&  errno != EINTR)
+     #endif /* HAVE_WAITPID */
+                 return w;
+         } while (w != child);
+
+次のセクションで説明する，行のグループを使用した書式と，行の書式を使用す
+ることで，C以外の言語に対する書式を指定することが可能です．
+
+* Menu:
+
+* Line Group Formats::    Formats for general if-then-else line groups.
+* Line Formats::          Formats for each line in a line group.
+* Detailed If-then-else:: A detailed description of if-then-else format.
+* Example If-then-else::  Sample if-then-else format output.
+
+
+File: diff-ja.info,  Node: Line Group Formats,  Next: Line Formats,  Up: If-then-else
+
+2.6.1 行のグループを使用した書式
+--------------------------------
+
+行のグループを使用した書式で，プログラミング言語とテキストの書式化言語が
+含まれる，if-then-elseの入力が可能な多くのアプリケーションに適した書式を
+指定することができます．行のグループを使用した書式で，類似した行の連続し
+たグループに対して出力書式を指定します．
+
+   例えば，以下のコマンドで，TeXファイルの`old'と`new'を比較し，
+古い領域の周りに`\begin{em}'-`\end{em}'行を書き，新しい領
+域の周りに`\begin{bf}'-`\end{bf}'行を書くことで，出力をマー ジします．
+
+     diff \
+        --old-group-format='\begin{em}
+     %<\end{em}
+     ' \
+        --new-group-format='\begin{bf}
+     %>\end{bf}
+     ' \
+        old new
+
+以下のコマンドは上記の例と等価ですが，デフォルトの行のグループを使用した
+書式で綴っているので，若干冗長になっています．
+
+     diff \
+        --old-group-format='\begin{em}
+     %<\end{em}
+     ' \
+        --new-group-format='\begin{bf}
+     %>\end{bf}
+     ' \
+        --unchanged-group-format='%=' \
+        --changed-group-format='\begin{em}
+     %<\end{em}
+     \begin{bf}
+     %>\end{bf}
+     ' \
+        old new
+
+   以下はより高度な例で，"plain English"形式の行番号を含むヘッダを用いて
+差分リストを出力します．
+
+     diff \
+        --unchanged-group-format='' \
+        --old-group-format='-------- %dn line%(n=1?:s) deleted at %df:
+     %<' \
+        --new-group-format='-------- %dN line%(N=1?:s) added after %de:
+     %>' \
+        --changed-group-format='-------- %dn line%(n=1?:s) changed at %df:
+     %<-------- to:
+     %>' \
+        old new
+
+行のグループを使用した書式を指定するために，以下でリストアップするオプショ
+ンの一つを使用してください．行のグループを使用した書式のうち四つまで指定
+することが可能で，それぞれの行のグループの種類になります．通常
+FORMATはシェルのメタ文字を含んでいるので，引用符で囲むべきです．
+
+`--old-group-format=FORMAT'
+     これらの行のグループは，最初のファイルの行だけに含まれているhunkです．デ
+     フォルトの古いグループの書式は，指定されている場合は変更されたグループの
+     書式と同じです．それ以外の場合，行のグループはそのまま出力される書式にな
+     ります．
+
+`--new-group-format=FORMAT'
+     これらの行のグループは，二番目のファイルの行だけに含まれているhunkです．
+     デフォルトの新しいグループの書式は，指定されている場合は変更されたグルー
+     プの書式と同じです．それ以外の場合，行のグループはそのまま出力される書式
+     になります．
+
+`--changed-group-format=FORMAT'
+     これらの行のグループは，両方のファイルの行を含んでいるhunkです．デフォル
+     トで，変更されたグループの書式は，新旧のグループの書式を連結したものにな
+     ります．
+
+`--unchanged-group-format=FORMAT'
+     これらの行のグループは，両方のファイルに共通な行を含んでいます．デフォル
+     トで，変更されていないグループの書式は，行のグループをそのまま出力する書
+     式です．
+
+行のグループを使用した書式では，通常の文字はそのまま表示されます．伝統的
+な仕様は，`%'で開始し以下の形式の一つが続きます．
+
+`%<'
+     最初のファイルからの行を意味し，それは最後の改行を含めます．それぞれの行
+     は，古い行の書式に依存して書式化されます(*note Line Formats::)．
+
+`%>'
+     二番目のファイルからの行を意味し，それは最後の改行を含めます．それぞれの
+     行は，新しい行の書式に依存して書式化されます．
+
+`%='
+     両方のファイルに共通な行を意味し，それは最後の改行を含めます．それぞれの
+     行は，変更されていない行の書式に依存して書式化されます．
+
+`%%'
+     `%'を意味します．
+
+`%c'C''
+     このCは単一文字で，Cを意味します．Cをバックスラッシュ
+     やアポストロフィーにしてはいけません．例えば，`%c':''はコロンを意味
+     し，if-then-else書式のthen-part内部ではコロンは通常終端文字ですが，その
+     ままの意味になります．
+
+`%c'\O''
+     このOは，1桁，2桁，または3桁の八進数で，8ビットコードOの文字
+     を意味します．例えば，`%c'\0''はヌル文字を意味します．
+
+`FN'
+     このFは，`printf'の変換を指定し，Nは以下の文字の一つに
+     なり，Fで書式化されるNの値を意味します．
+
+    `e'
+          古いファイルのグループの直前の行番号です．
+
+    `f'
+          古いファイルのグループの最初の行の行番号です．E +
+          1と同じです．
+
+    `l'
+          古いファイルのグループの最後の行の行番号です．
+
+    `m'
+          古いファイルのグループ直後の行番号です．L + 1と同じです．
+
+    `n'
+          古いファイルのグループの行番号です．L - F + 1と同じです．
+
+    `E, F, L, M, N'
+          同様に，新しいファイルの行です．
+
+
+     `printf'の変換指定は，`%d'，`%o'，`%x'，または
+     `%X'が可能で，それぞれ，10進数，8進数，小文字の16進数，または大文字
+     の16進数の出力を指定します．`%'の後に続くオプションを順番に表します．
+     ゼロ以上のフラグの列．最小フィールド幅の整数．そして，ピリオドに続く桁数
+     の最小値を指定する追加の整数．フラグは，左寄せに対する`-'，
+     `LC_NUMERIC'ロケールのカテゴリで指定される，グループごとの桁数に分離
+     する`''，そして，スペースの変わりにゼロでパディングするための
+     `0'です．例えば，`%5dN'はグループの新しい行の数を，五文字幅の
+     フィールドで，`printf'の書式`"%5d"'で出力します．
+
+`(A=B?T:E)'
+     AがBに等しい場合はT，それ以外ではEになります．
+     AとBはそれぞれ10進数の定数または上記で解釈される単一文字です．
+     この書式指定は，Aの値がBの値に等しい場合はTと等価にな
+     ります．それ以外ではEと等価になります．
+
+     例えば`%(N=0?no:%dN) line%(N=1?:s)'は，N(新しいファイルのグルー
+     プの行数)が0の場合は`no lines'と等価で，Nが1の場合は`1
+     line'と等価で，それ以外の場合は`%dN lines'と等価になります．
+
+
+File: diff-ja.info,  Node: Line Formats,  Next: Detailed If-then-else,  Prev: Line Group Formats,  Up: If-then-else
+
+2.6.2 行の書式
+--------------
+
+行の書式は，if-then-else書式での行のグループの部分として入力行から出力行
+に持っていく行数を制御します．
+
+例えば，以下のコマンドは，テキストの左に変更を示す単一の文字を用いてテキ
+ストを出力します．出力の最初の文字は，削除行に対する`-'，追加行に対
+する`|'，そして変更されていない行に対するスペースです．その書式には，
+出力に概況が必要な場所では，改行文字が含まれます．
+
+     diff \
+        --old-line-format='-%l
+     ' \
+        --new-line-format='|%l
+     ' \
+        --unchanged-line-format=' %l
+     ' \
+        old new
+
+行の書式を指定するために，以下のオプションの一つを使用してください．シェ
+ルのメタ文字を含むことが多いので，FORMATを引用符で囲むべきです．
+
+`--old-line-format=FORMAT'
+     最初のファイルからの行だけ書式化します．
+
+`--new-line-format=FORMAT'
+     二番目のファイルからの行だけ書式化します．
+
+`--unchanged-line-format=FORMAT'
+     両方のファイルに共通の行を書式化します．
+
+`--line-format=FORMAT'
+     すべての行を書式化します．影響として，上記の三つのオプションすべてを同時
+     に設定します．
+
+   行の書式では，通常の文字はそれ自身を示します．変換指定は`%'で始め，
+以下の形式の一つを用います．
+
+`%l'
+     行の内容を意味し，後置される改行は(存在しても)数えません．この書式は行が
+     不完全かどうかを無視します．*Note Incomplete Lines::.
+
+`%L'
+     行の内容を意味し，後置される改行を(存在する場合)含みます．行が不完全な場
+     合，この書式はその不完全さを保持します．
+
+`%%'
+     `%'を意味します．
+
+`%c'C''
+     ここでのCは単一文字で，Cを意味します．Cをバックスラッ
+     シュにしたりアポストロフィーにしたりしてはいけません．例えば，
+     `%c':''はコロンを意味します．
+
+`%c'\O''
+     ここでのOは1桁，2桁，または3桁の8進数で，8進コードOの文字を
+     意味します．例えば，`%c'\0''はヌル文字を意味します．
+
+`Fn'
+     ここでのFは`printf'の変換指定で，Fで書式化された行番号
+     を意味します．例えば`%.5dn'は，`printf'の書式`"%.5d"'を使
+     用して行番号を出力します．`printf'変換指定の詳細は，*Note Line
+     Group Formats::.
+
+
+   デフォルトの行の書式は，改行文字が続く`%l'です．
+
+入力にタブ文字が含まれていて，それが出力行にとって重要な場合，行の書式の
+`%l'や`%L'をタブの直後に書くか(例えば， `%l' や
+`%L'を前置してタブ文字を使用します)，`-t'や
+`--expand-tabs'オプションを使用すべきです．
+
+行と行のグループの書式を組み合わせると，様々な書式を指定することが可能に
+なります．例えば以下のコマンドで，通常の`diff'の書式に似たものを
+使用します．`diff'の出力を詳細に制御するために，このコマンドに手
+を加えることも可能です．
+
+     diff \
+        --old-line-format='< %l
+     ' \
+        --new-line-format='> %l
+     ' \
+        --old-group-format='%df%(f=l?:,%dl)d%dE
+     %<' \
+        --new-group-format='%dea%dF%(F=L?:,%dL)
+     %>' \
+        --changed-group-format='%df%(f=l?:,%dl)c%dF%(F=L?:,%dL)
+     %<---
+     %>' \
+        --unchanged-group-format='' \
+        old new
+
+
+File: diff-ja.info,  Node: Detailed If-then-else,  Next: Example If-then-else,  Prev: Line Formats,  Up: If-then-else
+
+2.6.3 If-then-else書式の詳細な説明
+----------------------------------
+
+両方のファイルで共通の行に対し，`diff'は変更されていない行のグルー
+プ書式を使用します．マージされた出力書式の差異部分のそれぞれのhunkに対し，
+hunkが最初のファイルの行だけを含んでいる場合，`diff'は古い行のグ
+ループ書式を使用します．hunkが二番目のファイルの行だけを含んでいる場合，
+`diff'は新しい行のグループ書式を使用します．それ以外の場合，
+`diff'は変更されたグループ書式を使用します．
+
+古いもの，新しいもの，そして変更されている行の書式はそれぞれ，最初のファ
+イルの行，二番目のファイルの行，そして両方のファイルに共通の行の出力書式
+を指定します．
+
+   オプション`--ifdef=NAME'は，以下のシェルの構文を使用した連
+続したオプションと等価です．
+
+     --old-group-format='#ifndef NAME
+     %<#endif /* ! NAME */
+     ' \
+     --new-group-format='#ifdef NAME
+     %>#endif /* NAME */
+     ' \
+     --unchanged-group-format='%=' \
+     --changed-group-format='#ifndef NAME
+     %<#else /* NAME */
+     %>#endif /* NAME */
+     '
+
+   適切に入れ子状にするため，`diff'の出力を注意深く調べるべきです．
+例えば，`-D NAME'や`--ifdef=NAME'オプションを
+使用するとき，差異のある行がCのプリプロセッサの指示語の`#ifdef'，
+`#ifndef'，`#else'，`#elif'，または`#endif'を含んで
+いるかどうかを調べるべきで，それらはおそらく入れ子状になっているのでマッ
+チします．そうでない場合，手動で正しくする必要があります．望んだように本
+当になっていることを確実にするため，コードの結果を注意深く調べるのは良い
+考えです．入力ファイルが生成される方法に依存して，出力が二重になったもの
+が含まれたり，正しくないコードになったりします．
+
+   `patch' `-D NAME'オプションは，ファイルとマージされ
+たファイルを生成する差分で処理を行なう以外，`diff' `-D
+NAME'と同じように動作します．*Note patch Options::.
+
+
+File: diff-ja.info,  Node: Example If-then-else,  Prev: Detailed If-then-else,  Up: If-then-else
+
+2.6.4 If-then-else書式の例
+--------------------------
+
+`diff -DTWO lao tzu'の出力は以下のようになります(二つのファイルの完
+全な内容は，*note Sample diff Input::)．
+
+     #ifndef TWO
+     The Way that can be told of is not the eternal Way;
+     The name that can be named is not the eternal name.
+     #endif /* ! TWO */
+     The Nameless is the origin of Heaven and Earth;
+     #ifndef TWO
+     The Named is the mother of all things.
+     #else /* TWO */
+     The named is the mother of all things.
+
+     #endif /* TWO */
+     Therefore let there always be non-being,
+       so we may see their subtlety,
+     And let there always be being,
+       so we may see their outcome.
+     The two are the same,
+     But after they are produced,
+       they have different names.
+     #ifdef TWO
+     They both may be called deep and profound.
+     Deeper and more profound,
+     The door of all subtleties!
+     #endif /* TWO */
+
+
+File: diff-ja.info,  Node: Incomplete Lines,  Next: Comparing Directories,  Prev: Output Formats,  Up: Top
+
+3 不完全な行
+************
+
+入力ファイルが改行ではない文字で終るとき，最後の文字が改行ではないので，
+その最後の行は"不完全な行(incomplete line)"と呼ばれます．それ以外の
+すべての行は"完全な行(full lines)"と呼ばれ，改行文字で終ります．空白
+(*note White
+Space::)の差異が無視されない限り，不完全な行は完全な行にマッ
+チしません．
+
+   不完全な行は，`\'で開始される行が続く完全な行の出力とは，通常区別さ
+れます．しかし，RCS書式(*note RCS::)では，改行もそれに続く行も用い
+ず，不完全な行をそのまま出力します．並べた書式では，不完全な行を通常その
+まま表示しますが，場合によっては，段の印として`\'や`/'を使用し
+ます．if-then-elseの行の書式は，不完全な行を`%L'で保持し，`%l'
+で改行を破棄します．*Note Line Formats::.  最後に，`ed'と前置
+`ed'出力書式では(*note Output Formats::)，`diff'は不完全
+な行を表示することが不可能なので，改行があることを要求し，エラーを報告し
+ます．
+
+   例えば，`F'と`G'が１バイトのファイルで，それぞれ`f'と
+`g'を含んでいると仮定します．そして，`diff F G'は以下を出力し ます．
+
+     1c1
+     < f
+     \ No newline at end of file
+     ---
+     > g
+     \ No newline at end of file
+
+(正確なメッセージは英語以外のロケールとは異なるでしょう．)`diff -n F
+G'は，改行を後置すること無く以下を出力します．
+
+     d1 1
+     a1 1
+     g
+
+`diff -e F G'では，二つのエラーを報告し，以下を出力します．
+
+     1c
+     g
+     .
+
+
+File: diff-ja.info,  Node: Comparing Directories,  Next: Adjusting Output,  Prev: Incomplete Lines,  Up: Top
+
+4 ディレクトリの比較
+********************
+
+二つのディレクトリツリーでファイルのいくつかまたはすべてを比較するために，
+`diff'を使用することが可能です．`diff'への引数が両方とも
+ディレクトリのとき，両方のディレクトリに含まれているそれぞれのファイルを，
+`LC_COLLATE'ロケールカテゴリで指定されているように，アルファベット順
+に比較します．通常`diff'は，差異の無いファイルの組に対しては何も
+出力しませんが，`-s'や`--report-identical-files'オプション
+を使用している場合，同一ファイルの組も報告します．通常`diff'は，
+サブディレクトリの比較を行なわず，両方のディレクトリに共通のサブディレク
+トリについて報告しますが，`-r'や`--recursive'オプションを
+使用している場合，可能な限り深いレベルまで，ディレクトリツリーの対応する
+ファイルの組ごとに比較をします．
+
+   一方 のディレクトリだけにあるファイル名に対して，`diff'は通常，
+存在するファイルの内容を表示しません．ファイルがディレクトリに存在し，も
+う一方には存在しないことだけを報告します．実際に存在するファイルの内容全
+部を出力するように，もう一方のディレクトリにファイルは存在するが空のファ
+イルであるかのように，`diff'に動作させることも可能です．(該当す
+るものが最初または二番目のディレクトリにあるかどうかに依存して，挿入また
+は削除として出力します．)こうするために，`-N'や
+`--new-file'オプションを使用してください．
+
+古いディレクトリに一つ以上の大きなファイルがあり，新しいディレクトリには
+無い場合，`-N'の代わりに`--unidirectional-new-file'を使用
+することで，パッチをより小さくすることが可能です．このオプションは
+`-N'に似ていますが，最初のディレクトリには無く二番目ディレクトリ
+にあるファイル(すなわち，追加されたファイル)の内容だけを挿入します．パッ
+チの最初に，ユーザが適用するパッチで，パッチを適用する前に削除されたファ
+イルを削除するように命令を書いてください．配布物へのパッチを作成する議論
+は，*Note Making Patches::.
+
+   ディレクトリを比較している間にいくつかのファイルを無視するために，
+`-x PATTERN'や`--exclude=PATTERN'オプションを
+使用してください．このオプションで，シェルのパターンPATTERNにマッ
+チするベース名のファイルやサブディレクトリを無視します．シェルとは異なり，
+ファイル名のベースの最初のピリオドはパターンの最初のワイルドカードにマッ
+チします．シェルが展開しないように，PATTERNを引用符で囲むべきです．
+例えば，オプション`-x '*.[ao]''で，`.a'や`.o'で終る名前
+のファイルを無視します．
+
+このオプションは一回以上指定した場合は累積されます．例えば，オプション
+`-x 'RCS' -x '*,v''を使用することで，ベース名が`RCS'または
+`,v'で終るファイルやディレクトリを無視します．
+
+このオプションを何回も与える必要がある場合，その代わりにパターンをファイ
+ルに書き，`-X FILE'や`--exclude-from=FILE'オプ
+ションを使用することが可能です．
+
+二つのディレクトリを比較していて途中で停止した場合，その後で残りを続けた
+いこともあるでしょう．`-S FILE'や
+`--starting-file=FILE'オプションを使用することで，それが可
+能です．これで，最上位レベルのディレクトリで，ファイルFILEとアルファ
+ベット順でそれ以降のファイルだけを比較します．
+
+二つのディレクトリで，ファイル名が一方のディレクトリでは小文字で，もう一
+方では大文字になっているという差しかない場合，`diff'は通常，大文
+字小文字を区別してファイル名を比較するので，多くの差異を報告します．
+`--ignore-file-name-case'オプションを用いると，例えば一方のディレ
+クトリのファイル`Tao'の内容と，もう一方のファイル`TAO'の内容を
+比較するように，`diff'はファイル名の大文字小文字を無視します．
+`--no-ignore-file-name-case'オプションで，
+`--ignore-file-name-case'オプションの効果を停止し，デフォルトの動
+作に戻ります．
+
+   `--ignore-file-name-case'が効果があるときに，`-x
+PATTERN'，`--exclude=PATTERN'，`-X FILE'，
+または`--exclude-from=FILE'オプションが指定されている場合，
+指定されているパターンにマッチしたファイル名を除外するとき，大文字小文字
+を無視します．
+
+
+File: diff-ja.info,  Node: Adjusting Output,  Next: diff Performance,  Prev: Comparing Directories,  Up: Top
+
+5 `diff'の出力をより良くする
+****************************
+
+`diff'は，出力の見え方を調整する方法をいくつかの提供しています．
+これらの調整は，あらゆる出力書式に適用することが可能です．
+
+* Menu:
+
+* Tabs::       Preserving the alignment of tab stops.
+* Pagination:: Page numbering and time-stamping `diff' output.
+
+
+File: diff-ja.info,  Node: Tabs,  Next: Pagination,  Up: Adjusting Output
+
+5.1 タブストップの位置合わせを保持する
+======================================
+
+いくつかの`diff'出力書式のテキストには,テキストが挿入されている，
+削除されている，または変更されていることを示す一文字または二文字が前置さ
+れます．これらの文字を追加することで，タブが次のタブストップに移動し，行
+での列の位置揃えがなくなります．GNU `diff'は，行でのタブに
+よる列の位置揃えを正しくする二つの方法を提供しています．
+
+   最初の方法は，`diff'で出力する前に，すべてのタブを正しい数のスペー
+スに変更することです．この手法は`-t'や`--expand-tabs'オプ
+ションで選択してください．`diff'はタブストップを8列ごとに設定さ
+れていると仮定します．この形式の出力を`patch'で使用するとき，
+`patch'に`-l'や`--ignore-white-space'オプションを
+与える必要があります(詳細は，*note Changed White Space::)．
+
+タブの行の揃えを正しくするもう一つの方法は，スペースの代わりにタブを，行
+の最初の指示文字の後に追加する方法です．これで，それ以下のすべてのタブ文
+字が元のファイルでのタブストップに対応して，出力の位置会わせが正しくなる
+ように，同じ場所に確実に位置します．その欠点は，行が余りに長くなり過ぎて，
+画面や用紙の一行に適さないようになることです．また，一体化した出力書式で
+は変更形式を示す文字の後にスペースがないので，これでも動作しません．この
+手法は，`-T'や`--initial-tab'オプションで選択してください．
+
+
+File: diff-ja.info,  Node: Pagination,  Prev: Tabs,  Up: Adjusting Output
+
+5.2 `diff'出力のページ分割
+==========================
+
+長い出力にページ番号を付けたり，タイムスタンプを付けることも便利でしょう．
+`diff'の出力を`pr'プログラムに渡す，`-l'と
+`--paginate'オプションでこうなります．以下は，`diff -lc lao
+tzu'に対するヘッダのようなものです．
+
+     2002-02-22 14:20                 diff -lc lao tzu                 Page 1
+
+
+File: diff-ja.info,  Node: diff Performance,  Next: Comparing Three Files,  Prev: Adjusting Output,  Up: Top
+
+6 `diff'の性能のトレードオフ
+****************************
+
+GNU `diff'は効率的に動作します．しかし，状況によってはより
+速く，より小さな変更の組を生成させることが可能です．
+
+   `diff'の効率を改善する方法の一つは，コピーの代わりにハードリンク
+やシンボリックリンクを使用することです．`diff'は通常，同じファイ
+ルへの二つのハードリンクやシンボリックリンクは内容が同じはずなので読み込
+む必要がないため，これで効率が改善します．例えば，大きなディレクトリ階層
+をコピーして，コピーに対しいくつか変更して，そしてオリジナルとコピーを比
+較するのに`diff -r'を使用することが多いと仮定します．オリジナルのファ
+イルが読み込み専用の場合，ハードリンクやシンボリックリンクを使用してコピー
+を作成する(例えば，GNU `cp -lR'や`cp -sR'を用いる)ことで，
+効率をかなり改善することが可能です．コピーのファイルを最初に編集する前に，
+リンクを切って，通常のコピーで置換すべきです．
+
+   ファイル比較の方法を変更するオプションを与えることで，GNU
+`diff'の効率に影響を与えることも可能です．これらのオプションは，
+他のものを犠牲にして効率改善の見地で実装されていたり，他のものに害を与え
+ながら，場合によっては効率を改善したりします．
+
+   GNU `diff'が変更された行を決定する方法は，常に最小限の差異
+の集合で見つけ出します．通常それは，実用的な目的としては十分です．
+`diff'の出力が大きい場合，より小さな差異の集合を生成するために，
+`diff'を修正されたアルゴリズムで使用したいかもしれません．
+`-d'や`--minimal'でこうなります．しかし，通常は
+`diff'の実行が遅くなるので，デフォルトの動作ではありません．
+
+比較しているファイルが大きく，全体を通じて変更部分の小さな集合が点在して
+いるとき，`diff'が使用するアルゴリズムとは異なる変更を行なう，
+`--speed-large-files'を使用することも可能です．入力ファイルが一定
+して小さな密度で変更されているとき，このオプションで出力を変更することな
+く比較の速度が向上します．そうでない場合，`diff'は大きな差異の組
+を生成するかもしれません．しかし，出力は正しいままです．
+
+   通常`diff'は，差異部分の最小組を見つけようとする前に，両方のファ
+イルに共通な最初の部分と終りの部分を破棄します．これで`diff'の実
+行は速くなりますが，最小の出力ではなくなることもあるでしょう．
+`--horizon-lines=LINES'オプションは，`diff'が最初の
+部分の最後のLINES行と終りの部分の最初のLINES行を破棄すること
+を妨げます．これで，`diff'はより最小の出力を見つけることになるで
+しょう．
+
+変更された行に連続する行が含まれていて，それ以外では同一行が連続している
+と仮定してください．`diff'コマンドは，hunkに含まれてる連続した同
+じ部分を自由に選択します．この場合，`diff'は通常，隣接するhunkを
+マージするときはhunkの境界の位置を変更したり，hunkの行をファイルの終りま
+で位置を変更したりします．hunkのマージは出力行の見栄えを良くすることもあ
+るはずです．
+
+
+File: diff-ja.info,  Node: Comparing Three Files,  Next: diff3 Merging,  Prev: diff Performance,  Up: Top
+
+7 三つのファイルの比較
+**********************
+
+三つのファイルを比較し，それらの間の差異を表示するため，プログラム
+`diff3'を使用してください(`diff3'でファイルのマージも可 能です．*note
+diff3 Merging::)．
+
+   "通常の"`diff3'の出力書式は，周りの文を用いずに，それぞれの差
+異部分のhunkを表示します．hunkには，それが二方向か三方向かに依存してラベ
+ルが付けられてて，行には，入力ファイルの位置で注釈がつきます．
+
+   `diff3'の実行方法の詳細は，*Note Invoking diff3::.
+
+* Menu:
+
+* Sample diff3 Input::    Sample `diff3' input for examples.
+* Detailed diff3 Normal:: A detailed description of normal output format.
+* diff3 Hunks::           The format of normal output format.
+* Example diff3 Normal::  Sample output in the normal format.
+
+
+File: diff-ja.info,  Node: Sample diff3 Input,  Next: Detailed diff3 Normal,  Up: Comparing Three Files
+
+7.1 三番目の入力ファイルの見本
+==============================
+
+`diff3'の出力とオプションでそれを変更する様子を示す例で使用する
+三番目のサンプルファイルは，以下のようになります．最初の二つのファイルは，
+`diff'で使用したものと同じです(*note Sample diff Input::)．以下
+は，`tao'という三番目のサンプルファイルです．
+
+     The Way that can be told of is not the eternal Way;
+     The name that can be named is not the eternal name.
+     The Nameless is the origin of Heaven and Earth;
+     The named is the mother of all things.
+
+     Therefore let there always be non-being,
+       so we may see their subtlety,
+     And let there always be being,
+       so we may see their result.
+     The two are the same,
+     But after they are produced,
+       they have different names.
+
+       -- The Way of Lao-Tzu, tr. Wing-tsit Chan
+
+
+File: diff-ja.info,  Node: Detailed diff3 Normal,  Next: diff3 Hunks,  Prev: Sample diff3 Input,  Up: Comparing Three Files
+
+7.2 `diff3'の通常の書式の詳細な説明
+===================================
+
+それぞれのhunkは`===='で印がついた行で始まります．三方向のhunkには，
+`===='行があり，二方向のhunkには，そのhunkに差異のある三つの入力ファ
+イルのいずれかを示す，`1'，`2'，または`3'が後置されます．
+hunkには，入力行がどこからのものかを示す一つまたは二つのコマンドが前置さ
+れている，入力行の二つまたは三つの組のコピーが含まれます．
+
+通常，コマンドごとに異なる入力号のコピーに二つのスペースが前置されます．
+しかし，`-T'や`--initial-tab'オプションを用いると，
+`diff3'は二つのスペースの代わりにタブを使用します．これでタブの
+行揃えは正しくなります．詳細は，*Note Tabs::.
+
+   コマンドは以下の形式となります．
+
+`FILE:La'
+     このhunkは，ファイルFILEの行L以降にあり，そのファイルに含ま
+     れていない行です．もう一方のファイルを生成するべくこのファイルを編集する
+     ため，もう一方のファイルから得られるhunk行を後置する必要があります．例え
+     ば，`1:11a'は最初のファイルの11行以降のhunkで，そのファイルにその行
+     が含まれていないことを意味します．
+
+`FILE:Rc'
+     このhunkは，ファイルFILEの範囲Rの行を含みます．範囲Rは
+     カンマで分離されている行番号の組，または範囲が単一行の場合，一つの数字だ
+     けになります．もう一方のファイルを生成するべくこのファイルを編集するため，
+     指定された行を，もう一方のファイルから得られる行に変更する必要があります．
+     例えば，`2:11,13c'は，hunkが二番目のファイルの11行から13行に含まれ
+     ていることを意味します．
+
+   入力行の組の最後の行が不完全な場合(*note Incomplete
+Lines::)，出力とは区
+別される`\'で始まる行が後置された完全な行になります．
+
+
+File: diff-ja.info,  Node: diff3 Hunks,  Next: Example diff3 Normal,  Prev: Detailed diff3 Normal,  Up: Comparing Three Files
+
+7.3 `diff3'のhunk
+=================
+
+二つまたは三つの入力ファイルの差分の行のグループは，"diff3 hunks"と
+呼ばれ，`diff'のhunkに似ています(*note Hunks::)．`diff3'
+のhunkで三つの入力ファイルがすべて異なる場合，hunkは"三方向の
+hunk(three-way hunk)"と呼ばれます．二つの入力ファイルだけが異なる場合，
+それは"二方向のhunk(two-way hunk)"．
+
+   `diff'と同様に，いくつかの解が考えられます．ファイル`A'，
+`B'，そして`C'を比較するとき， `diff3'は通常，二つのコ マンド`diff A
+B'と`diff A C'で出力される二方向のhunkをマージし
+て，`diff3'のhunkを見つけます．これでは，必ずしも出力が最小にな
+るわけではありませんが，例外は滅多にないでしょう．
+
+   例えば，`F'には三行`a'，`b'，`f'が含まれていて，
+`G'に`g'，`b'，`g'という行が含まれていて，そして
+`H'に`a'，`b'，`h'という行が含まれていると仮定します． `diff3 F G
+H'の出力は以下のようになるでしょう．
+
+     ====2
+     1:1c
+     3:1c
+       a
+     2:1c
+       g
+     ====
+     1:3c
+       f
+     2:3c
+       g
+     3:3c
+       h
+
+その理由は，最初のファイルと三番目のファイルの`a'が含まれる二方向の
+hunkと二番目のファイルの`g'を見つけ，単一行の`b'が三つのファイ
+ルすべての共通行として見つかり，それぞれのファイルの最後の行に含まれる三
+方向のhunkが見つかるためです．
+
+
+File: diff-ja.info,  Node: Example diff3 Normal,  Prev: diff3 Hunks,  Up: Comparing Three Files
+
+7.4 `diff3'の通常の書式の例
+===========================
+
+コマンド`diff3 lao tzu tao'の出力は以下のようになります(ファイルの
+完全な内容は*note Sample diff3 Input::)．三つのファイル間で差異のある行
+だけが表示されていることに注意してください．
+
+     ====2
+     1:1,2c
+     3:1,2c
+       The Way that can be told of is not the eternal Way;
+       The name that can be named is not the eternal name.
+     2:0a
+     ====1
+     1:4c
+       The Named is the mother of all things.
+     2:2,3c
+     3:4,5c
+       The named is the mother of all things.
+
+     ====3
+     1:8c
+     2:7c
+         so we may see their outcome.
+     3:9c
+         so we may see their result.
+     ====
+     1:11a
+     2:11,13c
+       They both may be called deep and profound.
+       Deeper and more profound,
+       The door of all subtleties!
+     3:13,14c
+
+         -- The Way of Lao-Tzu, tr. Wing-tsit Chan
+
+
+File: diff-ja.info,  Node: diff3 Merging,  Next: Interactive Merging,  Prev: Comparing Three Files,  Up: Top
+
+8 共通の先祖からマージ
+**********************
+
+二人の人が同じファイルのコピーへの変更を行なったとき，衝突している部分の
+警告を用いて，お互いの変更の両方を含んでいるマージされた出力を
+`diff3'で生成することが可能です．
+
+   三つ以上のファイルを同時に比較するために，`diff4'と
+`diff5'のような名前のプログラムを想像するかもしれませんが，実際
+にそれが必要になることは滅多にありません．二つの変更の組を同時にマージす
+ることで，三つ以上のファイルの変更の組をマージするために，
+`diff3'を使用することが可能です．
+
+   `diff3'で，二つの修正されたバージョンから共通の以前のバージョン
+に変更を取り込むことが可能です．これで，二つの新しいファイルに存在する変
+更された組をマージします．二番目の引数として共通の以前のバージョンを指定
+し，二つの新しいバージョンを最初と三番目の引数として以下のように指定して
+ください．
+
+     diff3 MINE OLDER YOURS
+
+アルファベット順なので，引数の順番を覚えられるでしょう．
+
+   このことから，YOURSからOLDERを取り除いてその結果をMINE
+に追加したり，OLDERからYOURSへの変更をMINEにマージして
+いると考えられるでしょう．このマージは，それぞれの変更が近くにあり，
+MINEとOLDERでマッチする限りうまくいくでしょう．すべての三つ
+の入力ファイルが異なっているときや，OLDERだけが異なっているときは
+うまくいかないでしょう．これを"衝突(conflict)"と呼んでいます．三つの
+入力ファイルがすべて異なるとき，この衝突を"オーバーラップ(overlap)"
+と呼んでいます．
+
+   `diff3'は，オーバーラップや衝突を処理する方法も提供しています．
+オーバーラップや衝突を削除したり，オーバーラップだけを選択したり，衝突を
+特殊な`<<<<<<<'と`>>>>>>>'の行で印を付けたりすることが可能です．
+
+   `diff3'で，マージした出力を作成するために最初のファイルに適用す
+ることが可能な`ed'スクリプトとして，マージした結果を出力すること
+も可能です．しかし，`diff3'でマージした出力を直接生成した方が良
+いでしょう．これで`ed'の問題も回避します．
+
+* Menu:
+
+* Which Changes::            Selecting changes to incorporate.
+* Marking Conflicts::        Marking conflicts.
+* Bypassing ed::             Generating merged output directly.
+* Merging Incomplete Lines:: How `diff3' merges incomplete lines.
+* Saving the Changed File::  Emulating System V behavior.
+
+
+File: diff-ja.info,  Node: Which Changes,  Next: Marking Conflicts,  Up: diff3 Merging
+
+8.1 組み込む変更を選択する
+==========================
+
+MINEにマージするために，`-e'や`--ed'を用いて，
+OLDERからYOURSへのマージされていないすべての変更を選択するこ
+とが可能です．`-3'や`--easy-only'を用いて，オーバーラップ
+のないマージされていない変更だけを選択することが可能で，`-x'や
+`--overlap-only'を用いて，オーバーラップされている変更だけを選択
+することも可能です．
+
+   `-e'，`-3'，そして`-x'オプションは，"マージされ
+ていない変更(unmerged changes)"，例えば，MINEとYOURSで変更が
+異なるところだけを選択します．MINEとYOURSが同じところでは，
+変更部分は既にマージされていると仮定されるので，OLDERから
+YOURSへの変更を無視します．この仮定が安全ではない場合，`-A'
+や`--show-all'オプションを使用することが可能です(*note Marking
+Conflicts::)．
+
+   これら三つのオプションをそれぞれ用いたコマンド`diff3'の出力例は
+以下のようになります(ファイルの完全な内容は，*note Sample diff3
+Input::)． `-e'の出力が`-3'と`-x'で出力される変更の組をバラし
+て合体させたものになっていることに注意してください．
+
+   `diff3 -e lao tzu tao'の出力です．
+     11a
+
+       -- The Way of Lao-Tzu, tr. Wing-tsit Chan
+     .
+     8c
+       so we may see their result.
+     .
+
+   `diff3 -3 lao tzu tao'の出力です．
+     8c
+       so we may see their result.
+     .
+
+   `diff3 -x lao tzu tao'の出力です．
+     11a
+
+       -- The Way of Lao-Tzu, tr. Wing-tsit Chan
+     .
+
+
+File: diff-ja.info,  Node: Marking Conflicts,  Next: Bypassing ed,  Prev: Which Changes,  Up: diff3 Merging
+
+8.2 衝突の印づけ
+================
+
+`diff3'で，衝突部分に特殊なマーカー行を用いてマージされた出力を
+囲むことで，印を付けることが可能です．二つのファイルAとBから
+の衝突は，以下のように印が付きます．
+
+     <<<<<<< A
+     lines from A
+     =======
+     lines from B
+     >>>>>>> B
+
+   三つのファイルA，BそしてCからの衝突は，以下のように印 が付きます．
+
+     <<<<<<< A
+     lines from A
+     ||||||| B
+     lines from B
+     =======
+     lines from C
+     >>>>>>> C
+
+   `-A'や`--show-all'オプションは，`-e'オプションのよ
+うな動作をしますが，衝突部分を大カッコで囲み，マージされていない変更だけ
+でなく，OLDERからYOURSへのすべての変更を出力します．このため，
+サンプルの入力ファイル(*note Sample diff3 Input::)が与えられると，
+`diff3 -A lao tzu tao'は，`tzu'の差異部分の衝突の周りに大カッ
+コを書きます．
+
+     <<<<<<< tzu
+     =======
+     The Way that can be told of is not the eternal Way;
+     The name that can be named is not the eternal name.
+     >>>>>>> tao
+
+   また，三方向の衝突は以下のように出力されます．
+
+     <<<<<<< lao
+     ||||||| tzu
+     They both may be called deep and profound.
+     Deeper and more profound,
+     The door of all subtleties!
+     =======
+
+       -- The Way of Lao-Tzu, tr. Wing-tsit Chan
+     >>>>>>> tao
+
+   `-E'や`--show-overlap'オプションは，`-A'や
+`--show-all'オプションより情報が少なくなり，それはマージされてい
+ない変更だけを出力し，二番目のファイルの内容を出力しないためです．そのた
+め，`-E'オプションは`-e'オプションのように動作しますが，三
+方向のオーバーラップした変更で，最初と三番目のファイルが大カッコで囲みま
+す．同様に，`-X'は`-x'のように動作しますが，(オーバーラッ
+プが必要な)変更のすべてを大カッコで囲みます．例えば，上記のような三方向
+のオーバーラップしている変更に対し，`-E'と`-X'オプションは
+以下を出力します．
+
+     <<<<<<< lao
+     =======
+
+       -- The Way of Lao-Tzu, tr. Wing-tsit Chan
+     >>>>>>> tao
+
+   無意味で情報のない名前を持つファイルを比較している場合，`<<<<<<<'，
+`|||||||'，そして`>>>>>>>'の大カッコで別名を表示するために， `-L
+LABEL'や`--label=LABEL'オプションを使用す
+ることが可能です．このオプションで，それぞれの入力ファイルごとに，三回ま
+で与えることが可能です．このため，`diff3 -A -L X -L Y -L Z A B C'は
+`diff3 -A A B C'のように動作しますが，出力は，ファイル名`A'，
+`B'，そして`C'ではなく，ファイル名`X'，`Y'，そして
+`Z'からのようになります．
+
+
+File: diff-ja.info,  Node: Bypassing ed,  Next: Merging Incomplete Lines,  Prev: Marking Conflicts,  Up: diff3 Merging
+
+8.3 マージされた出力を直接生成する
+==================================
+
+`-m'や`--merge'オプションを用いると，`diff3'はマー
+ジされたファイルを直接出力します．これは，それを生成するために
+`ed'を使用するより効果的で，`ed'が除外するテキストではな
+いファイルでも動作します．`ed'スクリプトオプションを使用せずに
+`-m'を指定する場合，`-A' (`--show-all')が仮定されま す．
+
+   例えば，コマンド`diff3 -m lao tzu tao'は(入力ファイルのコピーは
+*note Sample diff3 Input::)，以下の出力を生成します．
+
+     <<<<<<< tzu
+     =======
+     The Way that can be told of is not the eternal Way;
+     The name that can be named is not the eternal name.
+     >>>>>>> tao
+     The Nameless is the origin of Heaven and Earth;
+     The Named is the mother of all things.
+     Therefore let there always be non-being,
+       so we may see their subtlety,
+     And let there always be being,
+       so we may see their result.
+     The two are the same,
+     But after they are produced,
+       they have different names.
+     <<<<<<< lao
+     ||||||| tzu
+     They both may be called deep and profound.
+     Deeper and more profound,
+     The door of all subtleties!
+     =======
+
+       -- The Way of Lao-Tzu, tr. Wing-tsit Chan
+     >>>>>>> tao
+
+
+File: diff-ja.info,  Node: Merging Incomplete Lines,  Next: Saving the Changed File,  Prev: Bypassing ed,  Up: diff3 Merging
+
+8.4 不完全な行を`diff3'がマージする方法
+=======================================
+
+`-m'を用いると，不完全な行(*note Incomplete Lines::)は見つかった
+ものとして，単純に出力にコピーされます．出力の終りで衝突があり，入力ファ
+イルの一つが不完全な行で終る場合，不完全な行が追加されるので，
+`|||||||'，`======='，または`>>>>>>>'の大カッコは，行の最
+初ではない場所に現れるでしょう．
+
+   `-m'オプションを用いないと，`ed'スクリプトオプションが指
+定されていて，不完全な行が見つかる場合，`diff3'は警告を生成し，
+改行が存在しないかのように動作します．
+
+
+File: diff-ja.info,  Node: Saving the Changed File,  Prev: Merging Incomplete Lines,  Up: diff3 Merging
+
+8.5 変更されたファイルの保存
+============================
+
+伝統的なUnix `diff3'は，変更を保存するコマンド`w'と`q'
+を後置しない`ed'スクリプトを生成します．System V `diff3'
+は，これらの追加コマンドを生成します．GNU `diff3'は通常，伝 統的なUnix
+`diff3'のように動作しますが，`-i'オプションを 用いると，System V
+`diff3'のように動作し，`w'と`q'コマ ンドを後置します．
+
+   `-i'オプションは，`ed'スクリプトオプションの
+`-AeExX3'の一つを要求し，マージされた出力のオプション`-m'
+と互換性がありません．
+
+
+File: diff-ja.info,  Node: Interactive Merging,  Next: Merging with patch,  Prev: diff3 Merging,  Up: Top
+
+9 `sdiff'を用いた対話的なマージ
+*******************************
+
+`sdiff'を用いると，横に並べた`-y'書式の比較を元にして (*note Side by
+Side::)，二つのファイルを対話的にマージすることが可能です．
+マージされたテキストを書く場所を指定するために，`-o FILE'や
+`--output=FILE'を使用してください．`sdiff'のオプショ ンの詳細は，*Note
+Invoking sdiff::.
+
+   ファイルを対話的にマージするもう一つの方法は，Emacs Lispパッケージの
+`emerge'を使用する方法です．詳細は，*Note emerge: (emacs)emerge.
+
+* Menu:
+
+* sdiff Option Summary:: Summary of `sdiff' options.
+* Merge Commands::       Merging two files interactively.
+
+
+File: diff-ja.info,  Node: sdiff Option Summary,  Next: Merge Commands,  Up: Interactive Merging
+
+9.1 `sdiff'に`diff'のオプションを指定する
+=========================================
+
+以下の`sdiff'は，`diff'と同じ意味です．これらのオプショ
+ンの使用については，*Note diff Options::.
+
+     -a -b -d -i -t -v
+     -B -E -I REGEXP
+
+     --ignore-blank-lines  --ignore-case
+     --ignore-matching-lines=REGEXP  --ignore-space-change
+     --ignore-tab-expansion
+     --left-column  --minimal  --speed-large-files
+     --strip-trailing-cr  --suppress-common-lines  --expand-tabs
+     --text  --version  --width=COLUMNS
+
+   歴史的な理由から，`sdiff'は別名のあるオプションもあります．
+`-l'は`--left-column'オプションと等価で，同様に，
+`-s'は`--suppress-common-lines'と等価です．`sdiff'
+の`-w'と`-W'オプションの意味は，`diff'とは違います． `sdiff'では，`-w
+COLUMNS'は `--width=COLUMNS'と等価で，`-W'は
+`--ignore-all-space'と等価です．`-o'オプションを用いない
+`sdiff'は，`-y'や`--side-by-side'オプション (*note Side by
+Side::)を用いた`diff'と等価です．
+
+
+File: diff-ja.info,  Node: Merge Commands,  Prev: sdiff Option Summary,  Up: Interactive Merging
+
+9.2 マージコマンド
+==================
+
+空白の溝を用いている共通行のグループは，最初のファイルから出力へコピーさ
+れます．差異のある行のそれぞれの行の後に，`sdiff'は`%'のプ
+ロンプトを出力して一時停止し，以下のコマンドの一つを待ち続けます．それぞ
+れのコマンドに<RET>を続けてください．
+
+`e'
+     どちらのバージョンも破棄します．空の一時ファイルでテキストエディタを呼び
+     出し，編集結果のファイルを出力にコピーします．
+
+`eb'
+     二つのバージョンを連結し，一時ファイルでその結果を編集し，そして，編集結
+     果を出力にコピーします．
+
+`ed'
+     `eb'に似ていますが，それぞれのバージョンに，ファイルや行があるバー
+     ジョンを表示するヘッダが前置されます．
+
+`el'
+     左のバージョンのコピーを編集し，その結果を出力にコピーします．
+
+`er'
+     右のバージョンのコピーを編集し，その結果を出力にコピーします．
+
+`l'
+     左のバージョンを出力にコピーします．
+
+`q'
+     終了します．
+
+`r'
+     右のバージョンを出力にコピーします．
+
+`s'
+     共通の行を黙ってコピーします．
+
+`v'
+     冗長な出力を出しながら共通の行をコピーします．これはデフォルトです．
+
+   呼び出されるテキストエディターは，`EDITOR'環境変数が設定されていれば
+それで指定されます．デフォルトはシステムに依存します．
+
+
+File: diff-ja.info,  Node: Merging with patch,  Next: Making Patches,  Prev: Interactive Merging,  Up: Top
+
+10 `patch'を用いてマージする
+****************************
+
+`patch'は，`diff'で生成される比較された出力を受けとり，
+パッチをあてたバージョンを生成しながら，オリジナルファイルのコピーに差分
+を適用します．`patch'を用いることで，ファイルをすべて配布する代
+わりに，変更したファイルの組だけを配布することが可能になります．取引先で
+は，変更したファイルのコピーを更新するために`patch'を適用するこ
+とが可能になります．`patch'は差分の書式を自動的に決定し，前後の
+ヘッダを飛ばし，パッチをあてるファイルを決定するためにヘッダを使用します．
+これで，取引先は`patch'に直接，変更部分のリストをメールのメッセー
+ジに含めることができます．
+
+   `patch'は，後戻りするパッチのような一般的な問題を検出し警告を発
+します．それで適用しなくてもよいパッチあてることを止めます．また，取引先
+が適切な順序で差分を適用するのを確実にするため，`patchlevel.h'ファ
+イルも管理することが可能です．
+
+   `patch'は，標準入力から連続した差分を受け入れ，それは通常，パッ
+チをあてるファイルを指定するヘッダで分離されています．それは，
+`diff'のhunk(*note Hunks::)を一つずつ適用します．hunkが元ファイ
+ルに正確にマッチしない場合，`patch'はできる限り発見的手法を用い
+てパッチをあてるファイルを見つけようとします．適切にマッチしている部分を
+見つけることが不可能な場合，`patch'はhunkを除外し，次のhunkに飛
+びます．`patch'は通常，hunk(が存在する場合はそれ)を
+`F.rej'に捨てながら，それぞれのファイルFを新しいバージョ
+ンで置換します．
+
+   `patch'へのオプションの詳細は，*Note Invoking patch::.
+
+* Menu:
+
+* patch Input::            Selecting the type of `patch' input.
+* Revision Control::       Getting files from RCS, SCCS, etc.
+* Imperfect::              Dealing with imperfect patches.
+* Creating and Removing::  Creating and removing files with a patch.
+* Patching Time Stamps::   Updating time stamps on patched files.
+* Multiple Patches::       Handling multiple patches in a file.
+* patch Directories::      Changing directory and stripping directories.
+* Backups::                Whether backup files are made.
+* Backup Names::           Backup file names.
+* Reject Names::           Reject file names.
+* patch Messages::         Messages and questions `patch' can produce.
+* patch and POSIX::        Conformance to the POSIX standard.
+* patch and Tradition::    GNU versus traditional `patch'.
+
+
+File: diff-ja.info,  Node: patch Input,  Next: Revision Control,  Up: Merging with patch
+
+10.1 `patch'の入力書式の選択
+============================
+
+`patch'は，パッチファイルで使用している`diff'の書式を，
+その内容を調査して決定します．特定の複雑な前置テキストの一つが含まれてい
+るパッチファイルに対し，`patch'がパッチファイルを特定の書式の差
+分であると解釈するように，以下のオプションの一つを使用する必要があるかも
+しれません．以下でリストアップしている出力書式は，`patch'が理解
+可能なものだけです．
+
+`-c'
+`--context'
+     周りの文を使用した差分．
+
+`-e'
+`--ed'
+     `ed'スクリプト．
+
+`-n'
+`--normal'
+     通常の差分．
+
+`-u'
+`--unified'
+     一体化した差分．
+
+
+File: diff-ja.info,  Node: Revision Control,  Next: Imperfect,  Prev: patch Input,  Up: Merging with patch
+
+10.2 リビジョンコントロール
+===========================
+
+存在しない入力ファイルが，`patch'でサポートされているリビジョン
+コントロールシステムにある場合，`patch'は通常，ユーザにリビジョ
+ンコントロールシステムからファイルを入手(チェックアウト)するかどうかを尋
+ねます．パッチは現在，RCS，ClearCase，そしてSCCSをサポートして
+います．RCSとSCCSでは，`patch'は入力ファイルが読み込み
+専用で，デフォルトのバージョンがリビジョンコントロールシステムのものとマッ
+チするときにも質問してきます．
+
+   `-g NUM'や`--get=NUM'は，サポートされているリ
+ビジョンコントロールシステムのファイルへのアクセスに影響します．
+NUMが正の場合，`patch'はユーザに尋ねることなくファイルを入
+手します．ゼロの場合，`patch'はファイルを入手するかどうかをユー
+ザに尋ねます．負の場合，`patch'はファイルを入手する前にユーザに
+尋ねます．NUMのデフォルト値は，`PATCH_GET'環境変数が設定されて
+いる場合，それで与えられます．存在しない場合，`patch'が
+POSIXに準拠している場合はデフォルト値はゼロで，そうでない場合は負に
+なります．*Note patch and POSIX::.
+
+   リビジョンコントロールシステムの選択は，`VERSION_CONTROL'環境変数に
+影響しません(*note Backup Names::)．
+
+
+File: diff-ja.info,  Node: Imperfect,  Next: Creating and Removing,  Prev: Revision Control,  Up: Merging with patch
+
+10.3 不完全なパッチの適用
+=========================
+
+`patch'は，パッチファイルに前置されるテキストを読み飛ばし，差分
+を適用し，そして後置されるテキストを読み飛ばそうとします．このため，メー
+ルのメッセージを直接`patch'に与えることが可能で，それはうまく動
+作するでしょう．差分全体が空白の固定量と思われる場合，`patch'は
+自動的に字下げを無視します．前後の文を使用した差分のそれぞれの行に改行が
+後置されている場合，`patch'は自動的に改行を無視します．前後の文
+を使用した差分が，Internet RFC 934
+(ftp://ftp.isi.edu/in-notes/rfc934.txt)によって，`-'で始まる行に`- 'を前置することでカプ
+セル化されている場合，`patch'は自動的に入力のカプセル化を外しま す．
+
+しかし，他の形式の不完全な入力では，ユーザが介入したりテストしたりする必
+要があります．
+
+* Menu:
+
+* Changed White Space:: When tabs and spaces don't match exactly.
+* Reversed Patches::    Applying reversed patches correctly.
+* Inexact::             Helping `patch' find close matches.
+* Dry Runs::            Predicting what `patch' will do.
+
+
+File: diff-ja.info,  Node: Changed White Space,  Next: Reversed Patches,  Up: Imperfect
+
+10.3.1 空白が変更されているパッチを適用する
+-------------------------------------------
+
+メーラ，エディタ，またはその他のプログラムによって，スペースをタブまたは
+その反対に変更するものもあります．これがパッチファイルや入力ファイルに対
+して生じている場合，ファイルは同じように見えますが，`patch'はそ
+れらを適切にマッチさせることが不可能です．この問題が生じる場合，パッチファ
+イルの空ではない連続した空白が空ではない入力ファイルの連続した空白にマッ
+チするように，`patch'の空白文字(例えば，スペースとタブ)の比較を
+曖昧にさせる，`-l'や`--ignore-white-space'オプションを使用
+してください．空白ではない文字は正確にマッチするはずです．周りの文のそれ
+ぞれの行は，入力ファイルの行にマッチするはずです．
+
+
+File: diff-ja.info,  Node: Reversed Patches,  Next: Inexact,  Prev: Changed White Space,  Up: Imperfect
+
+10.3.2 リバースパッチを適用する
+-------------------------------
+
+二番目のファイルの代わりに最初の新しいファイルで`diff'を実行する
+こともあります．これで"リバース"の差分が生成されます．そのようなパッチ
+を適用するために，`patch'に`-R'や`--reverse'オプショ
+ンを与えてください．`patch'はそれぞれのhunkの周りを，それを適用
+する前に入れ換えようとします．除外されたものは入れ換えられた書式に出力さ
+れます．
+
+   パッチがリバースだと`patch'が分かることもよくあります．パッチファ
+イルの最初のhunkで失敗する場合，リバースすることで適用可能かどうかを判定
+するために，`patch'はhunkをリバースします．可能な場合，
+`patch'は`-R'オプションを設定したいかどうかを尋ねます．不
+可能な場合，`patch'は通常通りパッチを適用し続けます．パッチが通
+常の差分で，最初のコマンドの追加が常に成功するため(削除されているであろ
+う)最初のコマンドが追加されている場合，空文がどこかでマッチするので，こ
+の手法でリバースパッチを検出することは不可能です．しかし，ほとんどのパッ
+チは行を削除するのではなく追加したり変更したりしているので，ほとんどの通
+常のリバース差分は削除で始まり，失敗すると`patch'はそれに注目し ます．
+
+   既に適用しているパッチを適用する場合，`patch'はそれをリバースパッ
+チだと考え，パッチを逆に適用するように提案します．これは特長と言っても良
+いでしょう．不注意にこうしてしまい，パッチを逆に適用したくない場合，その
+まま続けて"適用する"ために，この提案に`n'と答えてください -- ま
+たは，`patch'処理を中止するために`C-c'を入力してください．
+
+
+File: diff-ja.info,  Node: Inexact,  Next: Dry Runs,  Prev: Reversed Patches,  Up: Imperfect
+
+10.3.3 不正確なマッチを`patch'が見つけるように手助けをする
+----------------------------------------------------------
+
+周りの文を使用した差分と，より少ない範囲の通常の差分に対して，パッチが記
+述している行番号が正しくないときは，`patch'は正しいものを検出す
+ることが可能で，パッチのhunkを適用する正しい場所を見つけようとします．最
+初に見つかると，hunkで記述されている行番号に，以前にhunkに適用したオフセッ
+トを加えたり引いたりします．それが正しい場所ではない場合，hunkで与えられ
+る周りの文に一致する行の前後を`patch'はスキャンします．
+
+   最初に`patch'は周りの文のすべての行がマッチする場所を探します．
+そのような場所を見つけることができず，周りの文を使用している差分や一体化
+した差分を読み込んでいて，最大のfuzzの要素が1以上に設定されている場合，
+周りの文の最初と最後の行を無視しながら，`patch'はもう一度スキャ
+ンします．それでも失敗し，最大のfuzzの要素が2以上に設定されている場合，
+周りの文の最初の二行と最後の二行を無視しながらもう一度スキャンします．最
+大のfuzzの要素がそれより大きい場合は，同様に続けていきます．
+
+   `-F LINES'や`--fuzz=LINES'オプションで，最大の
+fuzzの要素をLINESに設定します．このオプションは，周りの文を使用し
+ている差分や一体化した差分だけに適用されます．hunkを導入する場所を探して
+いる間，LINES行まで無視します．より大きなfuzzの要素で，不完全なパッ
+チを作成する可能性が高くなることに注意してください．デフォルトのfuzzの値
+は2です．周りの文を使用した差分の行数，通常は三行，以上に設定しても意味
+はありません．
+
+   `patch'がパッチのhunkを導入する場所を見つけることができない場合，
+hunkをリジェクトファイルに書き出します(リジェクトファイルの命名方法は，
+*note Reject Names::)．入力されるパッチの形式のまま，リジェクトされた周
+りの文を用いた書式のhunkを書き出しても問題ありません．入力が通常または
+`ed'の差分の場合，周りの文の多くは単にヌルになります．リジェクト
+ファイルのhunkの行数は，これらのパッチファイルとは異なります．
+`patch'が失敗したファイルが属する適切な場所を，古いファイルでは
+なく新しいファイルで示しています．
+
+   `--verbose'オプションが与えられている場合，それぞれのhunkが完了す
+るとき，`patch'はhunkが成功したか失敗したかを告げ，失敗した場合，
+hunkを適用すべき行だと`patch'が考える(新しいファイルの)行を報告
+します．これが差分で指定されている行番号と異なる場合，そのオフセットを報
+告します．単一の大きなオフセットは，`patch'がhunkを間違った場所
+に導入していることを示している_可能性があります_．疑わしい場合も，
+`patch'は，マッチするようにfuzz要素を使用したかどうかを報告しま す．
+
+   `patch'は，行番号が`ed'スクリプトでoffになっているかどう
+かを報告することはできませんが，変更や削除コマンドになっている通常の差分
+での間違った行番号を検出することだけは可能です．差分に表示されている周り
+の文の行数(通常は3)以上のfuzz 要素を使用しているときの，周りの文を使用し
+た差分でも同じ問題があるかもしれません．この状況では，オリジナルとパッチ
+をあてる入力の間を変更することに意味があるかどうかを知るために，周りの文
+を使用した差分を見るべきでしょう．エラー無く組み込まれると，パッチが動作
+したことを見事に示していますが，保証はしていません．
+
+空のファイルへのパッチは，存在しないファイルに適用され，その逆も真です．
+*Note Creating and Removing::.
+
+   `patch'は通常，たくさん推測する必要があっても，正しい結果を生成
+します．しかし，結果はパッチが生成されたファイルのコピーに正確に適用され
+るときだけ保証されます．
+
+
+File: diff-ja.info,  Node: Dry Runs,  Prev: Inexact,  Up: Imperfect
+
+10.3.4 `patch'が行なうことの予測
+--------------------------------
+
+`patch'が複雑なまたは不完全な書式のパッチをどのように処理するか
+は，あらかじめ明確でないかもしれません．入力で`patch'が間違った
+ファイルを編集することが心配な場合，実際にファイルを変更することなく
+`patch'がパッチを適用した結果を出力する，`--dry-run'オプ
+ションを使用することが可能です．`patch'が期待したファイルを編集
+するかどうかを調べるために，予行演習をすることで生成される診断結果を，検
+査することが可能です．パッチが期待したものでない場合，パッチ(または
+`patch'のその他のオプション)を編集して，もう一度予行演習すること
+が可能です．パッチの目的に満足したら，`patch'を前回同様に呼び出
+すことで適用することが可能で，このときは`--dry-run'オプションは用
+いません．
+
+
+File: diff-ja.info,  Node: Creating and Removing,  Next: Patching Time Stamps,  Prev: Imperfect,  Up: Merging with patch
+
+10.4 ファイルの作成と削除
+=========================
+
+二つのディレクトリを比較しているとき，一方のディレクトリに存在しているファ
+イルがもう一方には無いこともあるかもしれません．`diff'に
+`-N'や`--new-file'オプションを与える場合や，
+`/dev/null'という名前のファイルや空のファイル，そしてEpoch (1970-01-01
+00:00:00 UTC)の日付のファイルで，古いファイルや新しいファイ
+ルを提供した場合，`diff'はこのファイルの内容を追加したり削除した
+りします．そのようなパッチが与えられたとき，`patch'は通常，新し
+いファイルを作成したり，古いファイルを削除したりします．しかし，
+POSIX(*note patch and POSIX::)に準拠するとき，`patch'は古い
+ファイルを削除せず，空にして残します．`-E'や
+`--remove-empty-files'オプションで，パッチを適用後に空になる出力
+ファイルを，パッチがファイルを削除するようには見えない場合でも
+`patch'は削除します．
+
+   パッチが既存のファイルを作成するように見える場合，`patch'はパッ
+チを適用する前に，確認のため尋ねてきます．
+
+
+File: diff-ja.info,  Node: Patching Time Stamps,  Next: Multiple Patches,  Prev: Creating and Removing,  Up: Merging with patch
+
+10.5 パッチファイルのタイムスタンプを更新
+=========================================
+
+`patch'がファイルを更新するとき，通常ファイルの最終更新のタイム
+スタンプを現在の日時に設定します．ソフトウエア配布物の追跡に
+`patch'を使用している場合，これで`make'は，パッチをあて
+たファイルが古いものだと間違って推定するはずです．例えば，
+`syntax.c'が`syntax.y'に依存していて`patch'が
+`syntax.c'を更新してから`syntax.y'を更新する場合，
+`syntax.y'が更新されているにもかかわらず，`syntax.c'はそれより
+古いものになります．
+
+   `-Z'や`--set-utc'オプションで，`patch'はパッチをあ
+てたファイルの編集時刻とアクセス時刻を，周りの文を使用した差分のヘッダで
+与えられるタイムスタンプに設定します．周りの文を使用した差分のヘッダに，
+タイムゾーンが指定されていない場合，Coordinated Universal Time(GMT
+として知られていることが多いUTC)だと仮定します．
+
+   `-T'や`--set-time'オプションは，`-Z'や
+`--set-utc'のように動作しますが，周りの文を使用した差分のヘッダの
+タイムスタンプを，UTCの代わりにローカルタイムを使用していると仮定し
+ます．ローカルタイムを使用しているパッチは，他のタイムゾーンにいる人が簡
+単に使用することが不可能で，ローカルなタイムスタンプは，ローカルな時計が
+夏時間に調整されている間に戻ってしまうので，このオプションは推奨されませ
+ん．周りの文を使用した差分のヘッダがタイムゾーンを指定している場合，この
+オプションは，`-Z'や`--set-utc'と等価です．
+
+   `patch'は通常，ファイルのオリジナルの最終更新のタイムスタンプが
+差分のヘッダで与えられるタイムスタンプとマッチしない場合や，ファイルの内
+容がパッチに正しくマッチしない場合，ファイルのタイムスタンプで設定されて
+いるものにすることを差し控えます．しかし，`-f'や`--force'
+オプションが設定されている場合，ファイルのタイムスタンプはおかまいなしに
+設定されます．
+
+   現在の`diff'書式の制限のため，`patch'で内容が変更されて
+いないファイルのタイムスタンプを更新することは不可能です．また，ファイル
+のタイムスタンプを現在の日時以外に設定する場合，後に`make'の呼び
+出しで，パッチをあてたファイルのタイムスタンプで混乱しないように，パッチ
+をあてるファイルに依存するすべてのファイルも(例えば`make clean'で)
+削除するべきです．
+
+
+File: diff-ja.info,  Node: Multiple Patches,  Next: patch Directories,  Prev: Patching Time Stamps,  Up: Merging with patch
+
+10.6 ファイル内の複数のパッチ
+=============================
+
+パッチファイルは一つ以上のパッチが含まれている場合，そして，コマンドライ
+ンで入力ファイルを指定していない場合，`patch'はそれぞれのファイ
+ルを個別のパッチファイルから来たもののように適用します．これは，それぞれ
+のパッチに対するパッチをあてるファイル名を決定し，ファイル名に対するそれ
+ぞれのパッチの前に前置されているテキストと，必要条件となるリビジョンレベ
+ルを調べるということを意味します(この話題の詳細は，*note Making
+Patches::)．
+
+   パッチの前に前置されてるテキストからファイル名を直観で知るために，
+`patch'は以下の規則を使用します．最初に，`patch'は以下の
+ような対象となるファイル名の順序のあるリストを受けとります．
+
+   * ヘッダが周りの文を使用した差分の場合，`patch'は古いものと新しい
+     もののファイル名をヘッダから受けとります．`-pNUM'や
+     `--strip=NUM'オプションに満たないスラッシュしかない場合，名
+     前は無視されます．`/dev/null'という名前も無視されます．
+
+   * 前置される不要な情報に`Index:'行があり，古いものの名前も新しいもの
+     の名前も両方とも無い，または`patch'がPOSIXに準拠している場
+     合，`patch'は`Index:'行の名前を受けとります．
+
+   *
+     以下の規則の目的で，対象となるファイル名は，ヘッダに現れる順番によらず，
+     (古いもの，新しいもの，索引の)順番にならんでいると考えられます．
+
+そして，`patch'は以下のような対象となるファイルのリストからファ
+イル名を選択します．
+
+   * 指定されたファイルが存在する場合，POSIXに準拠している場合は最初の名
+     前を，それ以外では最適な名前を選択します．
+
+   * `patch'がRCS，ClearCase，そしてSCCS(*note Revision
+     Control::)を無視せず，RCS，ClearCase，またはSCCS以外の名前のファ
+     イルが存在しない場合，`patch'はRCS，ClearCase，または
+     SCCSのマスターで最初に指名されたファイルを選択します．
+
+   * 指名したファイルが存在しないせず，RCS，ClearCase，またはSCCSの
+     マスターも見つからない，名前が与えられていない，`patch'が
+     POSIXに準拠していない，そしてパッチがファイルを作成しているように見
+     える場合，`patch'はディレクトリの作成が最小になるように，要求さ
+     れている最適な名前を選択します．
+
+   *
+     上記の発見的手法の結果でもファイル名が付かない場合，パッチをあてるファイ
+     ル名を尋ねられ，`patch'はその名前を選択します．
+
+   ファイル名の空ではない"最適な(best)"リストを決定するため，
+`patch'は最初に，パス名の構成要素を最小にして，すべての名前を受
+けとります．そして，最短のベース名にしてすべての名前を受けとります．そし
+て，すべての最短の名前を受けとります．最後に，残っている最初の名前を受け
+とります．
+
+   `patch'がPOSIXに準拠しているかどうかを知るために， *Note patch and
+POSIX::.
+
+
+File: diff-ja.info,  Node: patch Directories,  Next: Backups,  Prev: Multiple Patches,  Up: Merging with patch
+
+10.7 他のディレクトリでパッチを適用する
+=======================================
+
+`-d DIRECTORY'や`--directory=DIRECTORY'オプショ
+ンを`patch'に渡すと，ディレクトリDIRECTORYを，パッチファイ
+ル内のファイル名と，それ以外の(`-B'と`-o'のような)オプショ
+ンの引数として与えられているファイル名の両方を解読するカレントディレクト
+リにしにします．例えば，メールを読むプログラムで，`/usr/src/emacs'
+ディレクトリに，以下のようなパッチを含むメッセージから直接ファイルにパッ
+チをあてることが可能です．
+
+     | patch -d /usr/src/emacs
+
+パッチで与えられるファイル名にディレクトリが前置されてはいるものの，パッ
+チで与えられているディレクトリとは異なるディレクトリにファイルを保持した
+いときもあります．この状況では，ファイル名をNUMBER個切り取って設定
+するために，`-pNUMBER'や`--strip=NUMBER'オプショ
+ンを使用することが可能です．切り取り数は，ファイル名の最初から切り取る，
+ディレクトリ名が間にはいっている，スラッシュの数を`patch'に伝え
+ます．一つ以上の隣接したスラッシュは，単一のスラッシュとして数えられます．
+デフォルトで，`patch'はすべての前置したディレクトリを切捨て，ファ
+イルのベース名だけを残します．
+
+   例えば，パッチファイルのファイル名が`/gnu/src/emacs/etc/NEWS'だと仮
+定します．`-p0'を使用すると，ファイル名は編集されずに全部与えられ，
+`-p1'では，`gnu/src/emacs/etc/NEWS'(前置されたスラッシュが無
+い)が与えられ，`-p4'では`etc/NEWS'が与えられ，`-p'を
+全く指定しなければ，`NEWS'が与えられます．
+
+   `patch'はカレントディレクトリで，(スラッシュを切り捨てた後)それ
+ぞれのファイルを探し，`-d DIRECTORY'を使用した場合はそのディ
+レクトリで探します．
+
+
+File: diff-ja.info,  Node: Backups,  Next: Backup Names,  Prev: patch Directories,  Up: Merging with patch
+
+10.8 バックアップファイル
+=========================
+
+通常，パッチが正確にオリジナルの入力ファイルにマッチしない場合，その状況
+では`patch -R' (*note Reversed Patches::)でパッチを元に戻す場合にオ
+リジナルデータが元に戻らないので，バックアップファイルを作成します．しか
+し，POSIXに準拠しているとき，`patch'はデフォルトでバックアッ
+プファイルを作成しません．*Note patch and POSIX::.
+
+   `-b'や`--backup'オプションで，`patch'はパッチがオ
+リジナルの入力にマッチするかどうかに依存せずバックアップファイルを作成し
+ます．`--backup-if-mismatch'オプションでは，`patch'はマッ
+チしないファイルに対してバックアップファイルを作成します．これは，
+POSIXに準拠していないときのデフォルトです．
+`--no-backup-if-mismatch'オプションで，`patch'はマッチし
+ないファイルに対してもバックアップファイルを作成しません．これは
+POSIXに準拠しているときのデフォルトです．
+
+バックアップファイルが存在しないとき，存在しないファイルを再生成させる場
+所として，空の読み込み不可能なバックアップファイルが作成されます．
+
+
+File: diff-ja.info,  Node: Backup Names,  Next: Reject Names,  Prev: Backups,  Up: Merging with patch
+
+10.9 バックアップファイル名
+===========================
+
+通常，`patch'は，オリジナルの入力ファイルを，その名前に拡張子
+`.orig'や，`.orig'がバックアップファイルとして長過ぎる場合は
+`~'を後置したバックアップファイルに名前を変えます． (1) `-z
+BACKUP-SUFFIX'や`--suffix=BACKUP-SUFFIX'オ
+プションで，代わりのバックアップ用拡張子として`patch'は
+BACKUP-SUFFIXを使用します．
+
+   また，`SIMPLE_BACKUP_SUFFIX'環境変数でバックアップファイルの拡張子を
+指定することも可能ですが，オプションが優先されます．
+
+   `patch'では，GNU Emacsのように番号付のバックアップファイル
+を作成することも可能です．この手法を用いることで，それぞれのファイルに対
+して単一のバックアップファイルを持つ代わりに，`patch'でファイル
+にパッチを当てるたびに新しいバックアップファイルを作成します．例えば，
+`sink'という名前のファイルのバックアップは，連続的に，
+`sink.~1~'，`sink.~2~'，`sink.~3~'等になります．
+
+   `-V BACKUP-STYLE'や
+`--version-control=BACKUP-STYLE'オプションは，バックアップ
+ファイルを作成する手法を引数として受け入れます．`patch'が
+`PATCH_VERSION_CONTROL'環境変数を用いて作成するバックアップの形式を
+制御することも可能で，`-V'オプションで優先します．
+`PATCH_VERSION_CONTROL'が設定されていない場合，`VERSION_CONTROL'
+環境変数が代わりに使用されます．これらのオプションや変数でバックアップファ
+イルの名前を制御することに注意してください．リビジョンコントロールシステ
+ムの選択には影響しません(*note Revision Control::)．
+
+   環境変数と`-V'オプションの引数の値は，GNU Emacsの
+`version-control'変数に似ています(Emacsのバックアップバージョンの詳
+細は，*note Backup Names: (emacs)Backup Names.)．それ
+らは，より記述的な同義語も認識します．有効な値は以下にリストアップしてい
+ます．一意に求まる省略も受け入れます．
+
+`t'
+`numbered'
+     常に番号付のバックアップファイルを作成します．
+
+`nil'
+`existing'
+     既に存在しているファイルの番号付のバックアップを作成し，それ以外では単純
+     なバックアップを作成します．これはデフォルトです．
+
+`never'
+`simple'
+     常に単純なバックアップを作成します．
+
+   `patch'に，ディレクトリ名のような接頭辞を付けてバックアップファ
+イルを作成するるように伝えることも可能です．`-B PREFIX'や
+`--prefix=PREFIX'オプションで，PREFIXを前置したバック
+アップファイルを作成します．`-Y PREFIX'や
+`--basename-prefix=PREFIX'で，バックアップファイル名のファ
+イル名の構成要素の最後に，その代わりにPREFIXを前置します．例えば， `-Y
+~'で`dir/file.c'のバックアップファイルは
+`dir/~file.c'になります．これらの接頭辞オプションの一つを使用した場
+合，接尾子をベースにしたオプションは無視されます．
+
+   出力ファイルを`-o'オプションで指定する場合，そのファイルはバック
+アップされたものになりますが，入力ファイルではありません．
+
+バックアップファイルの名前に影響するオプションは，バックアップを作成する
+かどうかに影響しません．例えば，`--no-backup-if-mismatch'オプショ
+ンを指定した場合はバックアップが作成されないので，このセクションで記述さ
+れているオプションは全く影響しません．
+
+   ---------- Footnotes ----------
+
+   (1) GNU `patch'のバージョン2.5.4でのコーディングエラー
+で，常に`~'が使用されますが，次のリリースで修正されるでしょう．
+
+
+File: diff-ja.info,  Node: Reject Names,  Next: patch Messages,  Prev: Backup Names,  Up: Merging with patch
+
+10.10 リジェクトされたファイル名
+================================
+
+リジェクトファイル(パッチに含まれているファイルで，`patch'を適用
+する場所を見つけられなかったファイル)に対する名前は通常，出力ファイルに
+`.rej'を後置して命名されます(または，`.rej'を用いた場合，バッ
+クアップファイル名が長過ぎる場合は`#'になります)．
+
+また，すべてのリジェクトされたファイル名を単一のファイルに書くように伝え
+ることも可能です．`-r REJECT-FILE'や
+`--reject-file=REJECT-FILE'オプションは，REJECT-FILE
+をリジェクトされたファイル名として使用します．
+
+
+File: diff-ja.info,  Node: patch Messages,  Next: patch and POSIX,  Prev: Reject Names,  Up: Merging with patch
+
+10.11 `patch'からのメッセージと質問
+===================================
+
+`patch'は，特に入力のデコードで問題がある場合，様々なメッセージ
+を生成するはずです．処理方法が分からないような状況で，`patch'は
+通常，キーボードから更に情報を入力するように促します．キーボードからの入
+力を促さないようにしたり，メッセージ内のファイル名を引用符で囲む方法に効
+果を与えるために，メッセージを多くしたり少なくしたりするオプションもあり
+ます．
+
+* Menu:
+
+* More or Fewer Messages::    Controlling the verbosity of `patch'.
+* patch and Keyboard Input::  Inhibiting keyboard input.
+* patch Quoting Style::       Quoting file names in diagnostics.
+
+   `patch'は，すべてのhunkが正しく適用された場合は0，hunkが適用でき
+なかった場合は1，そして，より重要な問題がある場合は2のステータスで終了し
+ます．ループでパッチの組を適用しているとき，部分的にパッチを当てたファイ
+ルにそれ以降適用しないように，終了ステータスを調査すべきです．
+
+
+File: diff-ja.info,  Node: More or Fewer Messages,  Next: patch and Keyboard Input,  Up: patch Messages
+
+10.11.1 `patch'の冗長な制御
+---------------------------
+
+`--verbose'オプションを用いることで，`patch'により多くの
+メッセージを生成させることが可能です．例えば，このオプションを与えたとき，
+メッセージ`Hmm...'は，`patch'がパッチファイルのテキストを読
+み込んで，テキストにパッチがあるかどうかの決定を試み，存在する場合はパッ
+チの種類が何かの決定を試みていることを示します．
+
+   `-s'，`--quiet'，または`--silent'オプションを使用す
+ることで，エラーが発生しない限り，`patch'からの端末へのすべての
+出力を抑制することが可能です．
+
+
+File: diff-ja.info,  Node: patch and Keyboard Input,  Next: patch Quoting Style,  Prev: More or Fewer Messages,  Up: patch Messages
+
+10.11.2 キーボード入力の抑制
+----------------------------
+
+`patch'が尋ねることを避ける方法は二つあります．`-f'や
+`--force'オプションは，行なっていることが分かっていることを仮定し
+ます．それで`patch'は以下のことを行ないます．
+
+   * ヘッダにファイル名が含まれていないパッチを省略します．
+
+   * パッチの`Prereq:'行に対する間違ったバージョンでさえファイルにパッチ
+     を当てます．
+
+   *
+     パッチがリバースパッチのように見えてもリバースパッチと仮定しません．
+
+`-t'や`--batch'オプションは`-f'に似ていて，質問を抑
+制しますが，仮定は多少異なります．
+
+   * ヘッダにファイル名が含まれていないパッチを省略します(`-f'と同じで
+     す)．
+
+   * パッチの`Prereq:'行に対する間違ったバージョンのファイルにはパッチを
+     当てません．
+
+   *
+     パッチがリバースパッチのように見える場合，リバースパッチと仮定します．
+
+
+File: diff-ja.info,  Node: patch Quoting Style,  Prev: patch and Keyboard Input,  Up: patch Messages
+
+10.11.3 `patch'が引用符で囲む形式
+---------------------------------
+
+`patch'が診断メッセージでファイル名を出力するとき，名前の書式は
+何通りかになります．出力ファイル名に，句読点や改行のような特殊文字を含ん
+でいる場合でさえ，それを明確にするとき役に立つはずです．
+`--quoting-style=WORD'オプションで，名前の出力方法を制御し
+ます．WORDは以下の一つです．
+
+`literal'
+     名前をそのまま出力します．
+
+`shell'
+     名前にシェルのメタ文字や明確でない出力になる場合，シェルに対して名前を引
+     用符で囲みます．
+
+`shell-always'
+     名前が通常のもので引用符で囲む必要が無い場合でも，シェルに対して名前を引
+     用符で囲みます．
+
+`c'
+     C言語の文字列のように，名前を引用符で囲みます．
+
+`escape'
+     周りの二重引用不文字を削除する以外，`c'のように引用符で囲みます．
+
+   `--quoting-style'オプションのデフォルト値を，環境変数
+`QUOTING_STYLE'で指定することが可能です．この環境変数が設定されてい
+ない場合，デフォルト値は`shell'ですが，`patch'の将来のバー
+ジョンでは，このデフォルト値は変更されるかもしれません．
+
+
+File: diff-ja.info,  Node: patch and POSIX,  Next: patch and Tradition,  Prev: patch Messages,  Up: Merging with patch
+
+10.12 `patch'とPOSIXの標準
+==========================
+
+`--posix'オプションを指定したり，`POSIXLY_CORRECT'環境変数を
+設定した場合，`patch'は厳密にPOSIXの標準に従い，それは以下 の内容です．
+
+   *
+     差分のヘッダからファイル名を見るとき，リスト(古い，新しい，インデックス)
+     の最初に存在するファイルを受けとります．*Note Multiple Patches::.
+
+   * 差分で削除されるファイルを削除しません．*Note Creating and
+     Removing::.
+
+   * RCS，ClearCase，またはSCCSからファイルを取得するかどうかを尋ね
+     ません．*Note Revision Control::.
+
+   *
+     コマンドラインで，すべてのオプションがファイルに前置されていることを要求
+     します．
+
+   * 不一致があったとしても，ファイルをバックアップしません．*Note
+     Backups::.
+
+
+File: diff-ja.info,  Node: patch and Tradition,  Prev: patch and POSIX,  Up: Merging with patch
+
+10.13 GNU `patch'と伝統的な`patch'
+==================================
+
+現在のバージョンのGNU `patch'は，通常POSIXの標準に従い
+ます．この一般的な規則へのわずかな例外は，*Note patch and POSIX::.
+
+   残念ながらPOSIXでは，複数の重要な方法で，`patch'の動作を再
+定義しています．伝統的な`patch'やGNU `patch'のバー
+ジョン2.1とそれ以前で内部処理する必要がある場合，以下の違いを知っておく
+べきです．
+
+   * 伝統的な`patch'では，`-p'のオペランドはオプションで，
+     `-p'だけだと`-p0'と等価です．現在`-p'オプションはオ
+     ペランドを要求し，`-p 0'は現在`-p0'と等価です．互換性を最
+     大にするため，`-p0'と`-p1'のようなオプションを使用してくだ さい．
+
+     また，伝統的な`patch'は，前置されるパスを取り除くとき，単純にス
+     ラッシュを数えていきます．`patch'は現在，パス名の構成要素を数え
+     ます．すなわち，一つ以上の隣接するスラッシュは，現在単一のスラッシュとし
+     て数えられます．互換性を最大にするため，ファイル名に`//'を含むパッ
+     チを送るのは避けてください．
+
+   * 伝統的な`patch'は，デフォルトでバックアップが可能です．この動作
+     は現在，`-b'や`--backup'オプションで利用可能です．
+
+     反対に，POSIXの`patch'では，バックアップは一致しないものが
+     あるときでも決して作成されません．GNU `patch'では，この動作
+     は`--no-backup-if-mismatch'オプションや，POSIX準拠にすること
+     で利用可能です．
+
+     伝統的な`patch'の`-b SUFFIX'オプションは，GNU `patch'の`-b -z
+     SUFFIX'オプションと等価です．
+
+   * 伝統的な`patch'は，パッチヘッダからパッチを当てるファイル名を直
+     観するために，複雑な(そしてドキュメントが不完全な)手法を使用していました．
+     この手法は，POSIXに準拠しておらず，わずかにgotchaもあります．現在
+     `patch'は，別の複雑な(しかしドキュメントがより良い)，オプション
+     でPOSIXに準拠している手法を使用してます．よりgotchaが少ないことを期
+     待しています．その二つの手法は，周りの文を使用した差分のヘッダがファイル
+     名で，`Index:'行が前置物を取り除いた後でもすべて識別できる場合，互
+     換性があります．ヘッダのファイル名が同じ数のスラッシュを含んでいる場合，
+     通常はパッチに互換性があります．
+
+   * 伝統的な`patch'はユーザに質問するとき，標準エラー出力に質問を送
+     り，端末となっている以下のリストの最初のファイルから答を探します．標準エ
+     ラー出力，標準出力，`/dev/tty'，そして標準入力です．現在
+     `patch'は，標準出力に質問を送り，答を`/dev/tty'から受けとり
+     ます．質問に対するデフォルトは，デフォルトの答えを使用するとき
+     `patch'が無限ループにならないように変更されています．
+
+   * 伝統的な`patch'は，悪いhunkの数を数えたステータス値や，本当に問
+     題があったとき1になるステータスで終了していました．現在`patch'は，
+     hunkに失敗したものがある場合は1のステータス，本当に問題があったときは2の
+     ステータスで終了します．
+
+   * GNU `patch'，伝統的な`patch'，または，POSIX準
+     拠の`patch'を実行している人に実行方法を説明するとき，以下のオプ
+     ションに制限してください．以下のリストのスペースは重要で，オペランドは必
+     要です．
+
+          `-c'
+          `-d DIR'
+          `-D DEFINE'
+          `-e'
+          `-l'
+          `-n'
+          `-N'
+          `-o OUTFILE'
+          `-pNUM'
+          `-R'
+          `-r REJECTFILE'
+
+
+
+File: diff-ja.info,  Node: Making Patches,  Next: Invoking cmp,  Prev: Merging with patch,  Up: Top
+
+11 パッチの作成と使用の助言
+***************************
+
+パッチを作成したり使用したりするときは，常識を考慮してください．例えば，
+プログラム管理者にバグフィックスを送るとき，すべての主張をカバーする分か
+りにくい一つの大きなパッチの代わりに，一つの主張ごとに独立な小さなパッチ
+を複数送ってください．
+
+ソフトウエアパッケージの更新でパッチを配布しようとする場合，それ以外に覚
+えておくべきことは以下のとおりです．
+
+* Menu:
+
+* Tips for Patch Producers::    Advice for making patches.
+* Tips for Patch Consumers::    Advice for using patches.
+* Avoiding Common Mistakes::    Avoiding common mistakes when using `patch'.
+* Generating Smaller Patches::  How to generate smaller patches.
+
+
+File: diff-ja.info,  Node: Tips for Patch Producers,  Next: Tips for Patch Consumers,  Up: Making Patches
+
+11.1 パッチを生成するための助言
+===============================
+
+パッケージの古いバージョンを新しいバージョンに変更するパッチを作成するた
+め，最初に古いバージョンと新しいバージョンのコピーを隣接するサブディレク
+トリに作成してください．二つのバージョンを`tar'アーカイブに格納
+するのが一般的です．
+
+   パッチを生成するために，OLDとNEWをそれぞれ古いものと新しいも
+のがあるディレクトリにして，コマンド`diff -Naur OLD
+NEW'を使用してください．名前のOLDとNEWにスラッシュを含
+めるべきではありません．`-N'オプションで，ファイルを作成したり削
+除したりします．`-a'で，テキストファイル以外も更新するパッチにな
+ります．`-u'で，タイムスタンプと周りの文が十分にり役に立つパッチ
+を生成します．そして，`-r'でパッチはサブディレクトリも更新します．
+以下はコマンド例で，Bourneシェルの構文を使用しています．
+
+     diff -Naur gcc-3.0.3 gcc-3.0.4
+
+受けとる人にパッチの適用方法を伝えてください．これには使用する作業用ディ
+レクトリと，使用する`patch'のオプションも含めるべきです．受け手
+が行なうように手順をテストし，オリジナルファイルにパッチを適用してくださ
+い．
+
+   パッチを生成するときの一般的な誤解を避ける方法は，*Note Avoiding
+Common Mistakes::.
+
+
+File: diff-ja.info,  Node: Tips for Patch Consumers,  Next: Avoiding Common Mistakes,  Prev: Tips for Patch Producers,  Up: Making Patches
+
+11.2 パッチを使用するための助言
+===============================
+
+パッチの作成者は，受け手にパッチの適用方法を伝えているはずなので，パッチ
+の使用者の第一の規則は，パッチで提供される説明に従うことです．
+
+   GNU `diff'では，任意の長い行を持つファイルと不完全な行で終
+るファイルを解析することが可能です．しかし，`patch'の古いバージョ
+ンでは，そのようなファイルにパッチを当てることは不可能です．そのようなパッ
+チの適用時に問題がある場合，最近のバージョンのGNU `patch'に
+更新してみてください．
+
+
+File: diff-ja.info,  Node: Avoiding Common Mistakes,  Next: Generating Smaller Patches,  Prev: Tips for Patch Consumers,  Up: Making Patches
+
+11.3 一般的な誤解を避ける
+=========================
+
+複数のファイルのパッチを生成しているとき，`diff'はスラッシュの無
+いディレクトリ名に適用します．こうすることで，パッチの利用者が
+`-pNUMBER'を指定しているとき混乱が少なくなり，それは，この
+オプションで古いものと新しいもののファイル名でスラッシュの数が異なる場合，
+びっくりするような結果になるためです．例えば，以下のようなヘッダを持つパッ
+チを送らないでください．
+
+     diff -Naur v2.0.29/prog/README prog/README
+     --- v2.0.29/prog/README	2002-03-10 23:30:39.942229878 -0800
+     +++ prog/README	2002-03-17 20:49:32.442260588 -0800
+
+その理由は，二つのファイル名のスラッシュの数が異なっていて，異なるバージョ
+ンの`patch'では，ファイル名が異なっていると解釈するためです．混
+乱を避けるため，その代わりに以下のような出力を送ってください．
+
+     diff -Naur v2.0.29/prog/README v2.0.30/prog/README
+     --- v2.0.29/prog/README	2002-03-10 23:30:39.942229878 -0800
+     +++ v2.0.30/prog/README	2002-03-17 20:49:32.442260588 -0800
+
+   周りの文を使用した差分のヘッダや`Index:'行で，正しくファイル名を指
+定していることを確かめてください．既にパッチを当てたかどうか不思議に思う
+ので，リバースパッチを送らないように注意してください．
+
+   `README.orig'や`README~'のようなバックアップファイル名と比較し
+ているパッチは，`patch'が本当のファイルの代わりにバックアップファ
+イルにパッチを当てようとして混乱するので，そのようなパッチを送ることを避
+けてください．その代わりに，異なるディレクトリ，例えば`old/README'
+と`new/README'のように，同じベースファイル名で比較したパッチを送っ
+てください．
+
+以前に送られた他のパッチを実際に適用している人を保護するために，パッチファ
+イルの最初のパッチに，パッチレベルやバージョンナンバーが含まれている
+`patchlevel.h'や`version.c'のような名前でファイルを更新させる
+ことが可能です．入力ファイルに間違ったバージョンナンバーが含まれている場
+合，`patch'はすぐに文句をいいます．
+
+   この問題を避けるより明確な方法は，パッチの前に`Prereq:'行を書くこと
+です．パッチファイルに前置されるテキストに`Prereq:'で始まる行が含ま
+れている場合，`patch'はその行の次の単語(通常はバージョンナンバー)
+を受けとり，次の入力ファイルに空白や改行が前後にある単語が含まれているか
+どうか調査します．そうでない場合は，`patch'は処理する前に確認す
+るためのプロンプトを出します．これで間違った順序でパッチを偶然にも適用す
+ることが難しくなります．
+
+
+File: diff-ja.info,  Node: Generating Smaller Patches,  Prev: Avoiding Common Mistakes,  Up: Making Patches
+
+11.4 より小さいパッチを生成する
+===============================
+
+パッチを生成する最も単純な方法は`diff -Naur'を使用することですが (*note
+Tips for Patch Producers::)，パッチを作成する前にファイルの名前を
+変更したり削除したりすることで，パッチの大きさを小さくすることも可能かも
+しれません．古いバージョンのパッケージに新しいバージョンにはないファイル
+が含まれている場合や，二つのバージョン間で名前が変更されている場合，パッ
+チを適用する前に，古いバージョンのディレクトリでユーザが実行する
+`rm'と`mv'のリストを作成してください．そしてこれらのコマ
+ンドをスクラッチのディレクトリで実行してください．
+
+   他のファイルから容易に再構成可能だという理由から(例えば，`TAGS'と
+`yacc'と`makeinfo'からの出力)，パッチを含める必要がない
+ファイルが存在する場合，`diff'に`-x PATTERN'オプショ ン(*note Comparing
+Directories::)で得られるパッチを実行してください．パッ
+チ利用者がビルドするツールが無いため，パッチで派生ファイルを編集したくな
+い場合，パッチ利用者のタイムスタンプで`make'が混乱しないように，
+派生ファイルのパッチがそれに依存するファイルにパッチを当てないことを確か
+めてください．
+
+   さて，`diff -Naur'を使用してパッチを作成することが可能です．スクラッ
+チディレクトリを最初に，新しいディレクトリを二番目に指定していることを確
+かめてください．
+
+   パッチの最初に，パッチを適用する前にユーザに`rm'と`mv'コ
+マンドを実行するように伝えるメモを書いてください．やっと，スクラッチディ
+レクトリを削除できます．
+
+周りの文の使用をより小さくすることでパッチの大きさを小さくすることも可能
+ですが，パッチが入力行に正確にマッチしないとき，適切な処理を行なうため，
+`patch'は通常，最低二行必要だということを覚えておいてください．
+
+
+File: diff-ja.info,  Node: Invoking cmp,  Next: Invoking diff,  Prev: Making Patches,  Up: Top
+
+12 `cmp'の呼び出し
+******************
+
+`cmp'コマンドは二つのファイルを比較し，異なっている場合は異なっ
+ている最初のバイトと行番号を報告します．バイトと行は，1で始まります．
+`cmp'の引数は以下のとおりです．
+
+     cmp OPTIONS... FROM-FILE [TO-FILE [FROM-SKIP [TO-SKIP]]]
+
+   ファイル名の`-'は，常に標準入力になります．`cmp'は，ファイ
+ル名の一つが省略されている場合も標準入力を使用します．FROM-SKIPと
+TO-SKIPオペランドは，それぞれのファイルの最初で無視するバイト数で
+す．それらは，`--ignore-initial=FROM-SKIP:TO-SKIP'オ
+プションと等価です．
+
+終了ステータスの0は差異が見つからないこと，1は差異が見つかったこと，そし
+て0は問題が生じたことを意味します．
+
+* Menu:
+
+* cmp Options:: Summary of options to `cmp'.
+
+
+File: diff-ja.info,  Node: cmp Options,  Up: Invoking cmp
+
+12.1 `cmp'のオプション
+======================
+
+以下は，GNU `cmp'が受け入れるオプションすべての概要です．ほ
+とんどのオプションは二つの等価な名前があり，一つは`-'を前置する単一
+文字でもう一つは`--'を前置する長い名前です．複数の(引数を取らない)
+単一文字のオプションを，単一のコマンドラインの単語に組み合わせることが可
+能です．`-bl'は`-b -l'と等価です．
+
+`-b'
+`--print-bytes'
+     差異のあるバイトを出力します．制御文字は`^'にアルファベットを続けて
+     表示し，ハイビットセットがあるものについては("メタ(meta)"を意味する)
+     `M-'をバイトに前置します．
+
+`--help'
+     使用方の概要を出力し終了します．
+
+`-i SKIP'
+`--ignore-initial=SKIP'
+     入力ファイルの最初のSKIPバイトにある差異を無視します．SKIPバ
+     イトより小さいファイルは，空のファイルとして扱います．SKIPが
+     `FROM-SKIP:TO-SKIP'の形式の場合，最初の入力ファイルの
+     最初のFROM-SKIPバイトと，二番目のものの最初のTO-SKIPバイトを
+     読み飛ばします．
+
+`-l'
+`--verbose'
+     (10進数)のバイト数とすべての差異のあるバイトの(8進数)値を出力します．
+
+`-n COUNT'
+`--bytes=COUNT'
+     入力されたバイトの最大COUNTを比較します．
+
+`-s'
+`--quiet'
+`--silent'
+     何も出力しません．ファイルが異なっているかどうかを示す終了ステータスのみ
+     返します．
+
+`-v'
+`--version'
+     バージョン情報を出力し終了します．
+
+上記の表では，バイトを数えるオペランドは通常10進数ですが，8進数に対して
+は`0'を，16進数に対しては`0x'を前置してもかまいません．
+
+バイトを数えるとき，複数数えるための接尾子指定を後置することが可能です．
+この場合，省略された整数は1として理解されます．サイズを示す文字だけのと
+きや`iB'が続くものは，1024倍を使用して指定します．`B'が続くサ
+イズを示す文字は，その代わりに1000倍を指定します．例えば，`-n 4M' と`-n
+4MiB'は`-n 4194304'と等価ですが，`-n 4MB'は `-n
+4000000'と等価です．この表記方法は，10進数に対する SI prefixes
+(http://www.bipm.fr/enus/3_SI/si-prefixes.html)と， IEC 60027-2
+prefixes for binary multiples
+(http://physics.nist.gov/cuu/Units/binary.html)への上位互換性のためです．
+
+   以下の接尾子が定義されています．`1Y'のような大きいサイズは計算の制
+限のため，コンピュータによっては拒否されるかもしれません．
+
+`kB'
+     キロバイト：10^3 = 1000.
+
+`k'
+`K'
+`KiB'
+     キビバイト：2^10 = 1024．`K'は特殊です．SIのプレフィクスは
+     `k'，IEC 60027-2のプレフィクスは`Ki'ですが，伝統的なものと
+     POSIXでは，`k'を`KiB'の意味で使用します．
+
+`MB'
+     メガバイト：10^6 = 1,000,000．
+
+`M'
+`MiB'
+     メビバイト：2^20 = 1,048,576．
+
+`GB'
+     ギガバイト：10^9 = 1,000,000,000．
+
+`G'
+`GiB'
+     ギビバイト：2^30 = 1,073,741,824．
+
+`TB'
+     テラバイト：10^12 = 1,000,000,000,000．
+
+`T'
+`TiB'
+     テビバイト：2^40 = 1,099,511,627,776．
+
+`PB'
+     ペタバイト：10^15 = 1,000,000,000,000,000．
+
+`P'
+`PiB'
+     ペビバイト：2^50 = 1,125,899,906,842,624．
+
+`EB'
+     エクサバイト：10^18 = 1,000,000,000,000,000,000．
+
+`E'
+`EiB'
+     エクシビバイト：2^60 = 1,152,921,504,606,846,976．
+
+`ZB'
+     ゼータバイト：10^21 = 1,000,000,000,000,000,000,000．
+
+`Z'
+`ZiB'
+     2^70 = 1,180,591,620,717,411,303,424．(`Zi'はIEC 60027-2への
+     GNU拡張です．)
+
+`YB'
+     ヨットバイト：10^24 = 1,000,000,000,000,000,000,000,000．
+
+`Y'
+`YiB'
+     2^80 = 1,208,925,819,614,629,174,706,176．(`Yi'はIEC 60027-2
+     へのGNU拡張です．)
+
+
+File: diff-ja.info,  Node: Invoking diff,  Next: Invoking diff3,  Prev: Invoking cmp,  Up: Top
+
+13 `diff'の呼び出し
+*******************
+
+`diff'コマンドの実行書式は以下のとおりです．
+
+     diff OPTIONS... FILES...
+
+   最も単純な場合，二つのファイル名FROM-FILEとTO-FILEが与えられ
+ていて，`diff'はFROM-FILEとTO-FILEの内容を比較します．
+ファイル名`-'は標準入力から読み込まれたテキストを意味します．特別な
+場合として，`diff - -'は，標準入力のコピーと標準入力自身を比較しま す．
+
+   一つのファイルがディレクトリで，もう一方はディレクトリではない場合，
+`diff'はディレクトリではないファイルの名前を持つもう一つのディレ
+クトリのファイルと比較します．ディレクトリではないファイルを，`-'に
+してはいけません．
+
+   二つのファイル名が与えられ両方ともディレクトリの場合，`diff'は両
+方のディレクトリの対応するファイルを，アルファベット順に比較します．この
+比較は，`-r'や`--recursive'オプションが与えられていない限
+り再帰的ではありません．`diff'は，ディレクトリの実際の内容をファ
+イルであるかのように比較しません．標準入力には名前が無く"同じ名前のファ
+イル"という概念が適用できないので，完全に指定されているファイルを標準入
+力にしてはいけません．
+
+   `--from-file=FILE'オプションが与えられている場合，ファイル
+名の数は任意で，FILEそれぞれ指名されたファイルで比較されます．同様
+に，`--to-file=FILE'オプションが与えられている場合，それぞ
+れ指名されたファイルが，FILEと比較されます．
+
+   `diff'のオプションは`-'で始まっているので，`-'で始まる
+ファイル名は通常利用不可能です．しかし，引数として`--'自身をを与
+えることで，残りのファイル名が`-'で始まる場合でもそれをファイル名と
+して扱います．
+
+終了ステータス0は差異が無いことを意味し，1は差異が見つかったことを意味し，
+そして2は問題があったことを意味します．
+
+* Menu:
+
+* diff Options:: Summary of options to `diff'.
+
+
+File: diff-ja.info,  Node: diff Options,  Up: Invoking diff
+
+13.1 `diff'へのオプション
+=========================
+
+以下は，GNU `diff'が受け入れるすべてのオプションの概要です．
+ほとんどのオプションは二つの等価な名前があり，一つは`-'が前置された
+単一文字で，もう一つは`--'が前置されている長い名前です．複数の(引数
+を取らない) 単一文字のオプションを，単一のコマンドラインの単語に組み合わ
+せることが可能です．`-ac'は`-a -c'と等価です．長い名前のオ
+プションは，その名前のユニークな前方部分で省略することが可能です．カッコ
+([と])は，オプションで引数を取るオプションを示します．
+
+`-a'
+`--text'
+     ファイルがテキストのようには見えない場合でも，すべてのファイルをテキスト
+     として扱い，行単位で比較します．*Note Binary::.
+
+`-b'
+`--ignore-space-change'
+     空白の量による変更を無視します．*Note White Space::.
+
+`-B'
+`--ignore-blank-lines'
+     空白行の挿入や削除のみの変更を無視します．*Note Blank Lines::.
+
+`--binary'
+     バイナリモードでデータを読み書きします．*Note Binary::.
+
+`-c'
+     周りの三行を表示しながら，周りの文を使用した出力書式を使用します．
+     *Note Context Format::.
+
+`-C LINES'
+`--context[=LINES]'
+     周りのLINES行(整数)，またはLINESが与えられていない場合は三行
+     を表示しながら周りの文を使用した出力書式を使用します．*Note
+     Context Format::.
+     適切に処理するため，通常`patch'は少なくとも二行必要で す．
+
+     古いシステムでは，`diff'は，時代遅れの`-c'や`-p'と
+     組み合わせたとき効果がある`-LINES'をサポートしています． POSIX
+     1003.1-2001 (*note Standards conformance::)では，これを許可し
+     ていません．代わりに`-C LINES'を使用してください．
+
+`--changed-group-format=FORMAT'
+     if-then-else書式で，両方のファイルの異なっている部分の行グループを出力す
+     るためFORMATを使用します．*Note Line Group Formats::.
+
+`-d'
+`--minimal'
+     変更の組がより小さくなるように探すアルゴリズムに変更します．これで
+     `diff'はより遅く(時には非常に遅く)なります．*Note diff
+     Performance::.
+
+`-D NAME'
+`--ifdef=NAME'
+     マクロ名のポリプロセッサの条件式となる，マージされた`#ifdef'書式の
+     出力を生成します．*Note If-then-else::.
+
+`-e'
+`--ed'
+     有効な`ed'スクリプトとなる出力を生成します．*Note ed Scripts::.
+
+`-E'
+`--ignore-tab-expansion'
+     タブの展開による変更を無視します．*Note White Space::.
+
+`-f'
+`--forward-ed'
+     `ed'スクリプトのように見える出力を生成しますが，ファイルでの順序
+     は変更されています．*Note Forward ed::.
+
+`-F REGEXP'
+`--show-function-line=REGEXP'
+     周りの文を使用したり一体化した書式で，それぞれの差異のhunkに対し，
+     REGEXPにマッチしたそれ以前にある最後の行を表示します．
+
+`--from-file=FILE'
+     FILEをそれぞれのオペランドと比較します．FILEはディレクトリで
+     もかまいません．
+
+`--help'
+     使用方法の概要を出力し終了します．
+
+`--horizon-lines=LINES'
+     共通の最初の部分の最後のLINES行と共通の終りの部分の最初の
+     LINES行を削除しません．*Note diff Performance::.
+
+`-i'
+`--ignore-case'
+     大文字小文字の変更を無視します．大文字と小文字は等価だと考えます．
+     *Note Case Folding::.
+
+`-I REGEXP'
+`--ignore-matching-lines=REGEXP'
+     REGEXPにマッチする行の挿入と削除だけの変更を無視します． *Note
+     Specified Folding::.
+
+`--ignore-file-name-case'
+     再帰的な比較でファイル名を比較している時，大文字小文字を無視します．
+     *Note Comparing Directories::.
+
+`-l'
+`--paginate'
+     ページ付けするために出力を`pr'に渡します．*Note Pagination::.
+
+`-L LABEL'
+`--label=LABEL'
+     周りの文を使用した書式(*note Context Format::)と一体化した書式
+     (*note Unified
+     Format::)のヘッダで，ファイル名の代わりにラベルを使用しま
+     す．*Note RCS::.
+
+`--left-column'
+     横に並べた書式で，二つに共通な行を左の列だけに出力します．*Note
+     Side by Side Format::.
+
+`--line-format=FORMAT'
+     if-then-else書式で，すべての入力行を出力するためFORMATを使用します．
+     *Note Line Formats::.
+
+`-n'
+`--rcs'
+     RCS書式の差分を出力します．`-f'に似ていますがそれぞれのコマ
+     ンドは作用する行番号を指定します．*Note RCS::.
+
+`-N'
+`--new-file'
+     ディレクトリの比較で，ファイルが一方のディレクトリだけで見つかった場合，
+     もう一方には空のものが存在しているかのように処理します．*Note
+     Comparing Directories::.
+
+`--new-group-format=FORMAT'
+     if-then-else書式で，二番目のファイルからの行のグループを出力するために，
+     FORMATを使用します．*Note Line Group Formats::.
+
+`--new-line-format=FORMAT'
+     if-then-else書式で，二番目のファイルからの行を出力するために，
+     FORMATを使用します．*Note Line Formats::.
+
+`--old-group-format=FORMAT'
+     if-then-else書式で，最初のファイルからの行のグループを出力するために，
+     FORMATを使用します．*Note Line Group Formats::.
+
+`--old-line-format=FORMAT'
+     if-then-else書式で，最初のファイルからの行を出力するために，FORMAT
+     を使用します．*Note Line Formats::.
+
+`-p'
+`--show-c-function'
+     変更があったそれぞれのC関数を表示します．*Note C Function
+     Headings::.
+
+`-q'
+`--brief'
+     ファイルに差異があるかどうかを報告するだけで，差異を詳述しません．
+     *Note Brief::.
+
+`-r'
+`--recursive'
+     ディレクトリの比較時に，見つかったすべてのサブディレクトリを再帰的に比較
+     します．*Note Comparing Directories::.
+
+`-s'
+`--report-identical-files'
+     二つのファイルが同じとき報告します．*Note Comparing Directories::.
+
+`-S FILE'
+`--starting-file=FILE'
+     ディレクトリの比較時に，ファイルFILEから開始します．これは，中止さ
+     れた比較を再開するために使用します．*Note Comparing Directories::.
+
+`-H'
+`--speed-large-files'
+     小さな変更が大量にある大きなファイルの処理を高速化するため，発見的手法を
+     使用します．*Note diff Performance::.
+
+`--strip-trailing-cr'
+     入力行の最後に後置される改行を削除します．*Note Binary::.
+
+`--suppress-common-lines'
+     横に並べた書式で，共通の行を出力しません．*Note Side by Side
+     Format::.
+
+`-t'
+`--expand-tabs'
+     入力ファイルのタブによる位置合わせ保持するため，出力のタブをスペースに展
+     開します．*Note Tabs::.
+
+`-T'
+`--initial-tab'
+     通常または周りの文を使用する書式で，行のテキストの前にスペースではなくタ
+     ブを出力します．これで行のタブでの位置合わせが通常通りに見えます．
+     *Note Tabs::.
+
+`--to-file=FILE'
+     それぞれのオペランドをFILEと比較します．FILEはディレクトリで
+     もかまいません．
+
+`-u'
+     一体化した出力書式を使用し，周りの文を三行表示します．*Note
+     Unified Format::.
+
+`--unchanged-group-format=FORMAT'
+     if-then-else書式で，両方のファイルからの共通の行のグループを出力するため
+     に，FORMATを使用します．*Note Line Group Formats::.
+
+`--unchanged-line-format=FORMAT'
+     if-then-else書式で，両方のファイルに共通な行を出力するために，
+     FORMAT を使用します．*Note Line Formats::.
+
+`-P'
+`--unidirectional-new-file'
+     ディレクトリの比較時に，二つのうち二番目のディレクトリだけにファイルがあ
+     る場合，もう一方には空のファイルが存在しているかのように扱います．
+     *Note Comparing Directories::.
+
+`-U LINES'
+`--unified[=LINES]'
+     周りのLINES行(整数)，またはLINESが与えられていない場合は三行
+     を表示しながら一体化した出力書式を使用します．*Note Unified
+     Format::.  適
+     切に処理するため，通常`patch'は少なくとも二行必要です．
+
+     古いシステムでは，`diff'は，時代遅れの`-u'と組み合わせた
+     とき効果がある`-LINES'をサポートしています．POSIX 1003.1-2001
+     (*note Standards conformance::)では，これを許可していません．
+     代わりに`-U LINES'を使用してください．
+
+`-v'
+`--version'
+     バージョン情報を出力し終了します．
+
+`-w'
+`--ignore-all-space'
+     行の比較時に空白を無視します．*Note White Space::.
+
+`-W COLUMNS'
+`--width=COLUMNS'
+     横に並べた書式で，行ごとに最大COLUMNS行(デフォルトは130)出力します．
+     *Note Side by Side Format::.
+
+`-x PATTERN'
+`--exclude=PATTERN'
+     ディレクトリの比較時に，ベース名がPATTERNにマッチするファイルとサ
+     ブディレクトリを無視します．*Note Comparing Directories::.
+
+`-X FILE'
+`--exclude-from=FILE'
+     ディレクトリの比較時に，ベース名がFILEに含まれているパターンにマッ
+     チするファイルとサブディレクトリを無視します．*Note Comparing
+     Directories::.
+
+`-y'
+`--side-by-side'
+     横に並べた書式を使用します．*Note Side by Side Format::.
+
+
+File: diff-ja.info,  Node: Invoking diff3,  Next: Invoking patch,  Prev: Invoking diff,  Up: Top
+
+14 `diff3'の呼び出し
+********************
+
+`diff3'コマンドは三つのファイルを比較し，それらの差異の記述を出
+力します．その引数は以下のとおりです．
+
+     diff3 OPTIONS... MINE OLDER YOURS
+
+   比較するファイルは，MINE，OLDER，そしてYOURSです．これ
+らの三つのファイルの一つは`-'が可能で，それは`diff3'にファ
+イルを標準入力から読み込むように伝えます．
+
+   終了ステータスの0は`diff3'が成功したことを意味し，1は衝突が見つ
+かったことを意味し，2は問題があったことを意味します．
+
+* Menu:
+
+* diff3 Options:: Summary of options to `diff3'.
+
+
+File: diff-ja.info,  Node: diff3 Options,  Up: Invoking diff3
+
+14.1 Options to `diff3'
+=======================
+
+14.2 `diff3'のオプション
+========================
+
+以下は，GNU `diff3'が受け入れるすべてのオプションの概要です．
+複数の(引数を取らない)単一文字のオプションを，単一のコマンドラインの単語
+に組み合わせることが可能です．
+
+`-a'
+`--text'
+     ファイルがテキストのように見えない場合でも，すべてのファイルをテキストと
+     して扱い，行ごとに比較します．*Note Binary::.
+
+`-A'
+`--show-all'
+     OLDERからYOURSへのマージされていないすべての変更を，衝突した
+     部分の周りをカッコ付の行で囲んでMINEに取り込みます．*Note Marking
+     Conflicts::.
+
+`--diff-program=PROGRAM'
+     ファイルの比較で，`diff'の代わりにプログラムPROGRAMに互換
+     性のある比較を使用します．
+
+`-e'
+`--ed'
+     OLDERからYOURSへのすべての変更をMINEに取り込む
+     `ed'スクリプトを生成します．*Note Which Changes::.
+
+`-E'
+`--show-overlap'
+     `-e'に似ていますが，オーバーラップしている変更部分の最初と三番目
+     のファイルの行をカッコで囲みます．*Note Marking Conflicts::.  `-E'
+     を用いると，オーバーラップしている変更は以下のようになります．
+
+          <<<<<<< MINE
+          lines from MINE
+          =======
+          lines from YOURS
+          >>>>>>> YOURS
+
+`--help'
+     使用方法の概要を出力し終了します．
+
+`-i'
+     System V互換のため，`ed'スクリプトの終りに`w'と`q'コマ
+     ンドを生成します．このオプションは，`-AeExX3'オプションの一つと組
+     み合わせる必要があり，`-m'と組み合わせてはいけません． *Note
+     Saving the Changed File::.
+
+`-L LABEL'
+`--label=LABEL'
+     `-A'，`-E'，そして`-X'オプションで出力されるカッコ
+     に対して，ラベルLABELを使用します．このオプションはそれぞれの入力
+     ファイルに対して一つ，三回まで与えてもかまいません．デフォルトのラベルは
+     入力ファイルの名前です．このため，`diff3 -L X -L Y -L Z -m A B C'は
+     `diff3 -m A B C'ように動作しますが，出力は，ファイル名`A'，
+     `B'，そして`C'からではなく，ファイル名`X'，`Y'，そし
+     て`Z'からのように見えます．*Note Marking Conflicts::.
+
+`-m'
+`--merge'
+     最初のファイルに編集スクリプトを適用し，結果を標準出力に送ります．
+     `diff3'の出力を`ed'にパイプで送るのとは異なり，これはバ
+     イナリファイルや不完全なファイルに対しても動作します．編集スクリプトのオ
+     プションが指定されていない場合，`-A'が仮定されます． *Note
+     Bypassing ed::.
+
+`-T'
+`--initial-tab'
+     通常の書式の行の前のテキストに，二つのスペースの代わりにタブを出力します．
+     これで，行中のタブによる位置合わせが普通になります．*Note Tabs::.
+
+`-v'
+`--version'
+     バージョン情報を出力し終了します．
+
+`-x'
+`--overlap-only'
+     `-e'に似ていますが，オーバーラップしている変更だけ出力します．
+     *Note Which Changes::.
+
+`-X'
+     `-E'に似ていますが，オーバーラップしている変更だけ出力します．言
+     い替えると，`-x'に似ていますが，`-E'のようにカッコを変更し
+     ます．*Note Marking Conflicts::.
+
+`-3'
+`--easy-only'
+     `-e'に似ていますが，オーバーラップしていない変更だけ出力します．
+     *Note Which Changes::.
+
+
+File: diff-ja.info,  Node: Invoking patch,  Next: Invoking sdiff,  Prev: Invoking diff3,  Up: Top
+
+15 `patch'の呼び出し
+********************
+
+通常`patch'は以下のように呼び出します．
+
+     patch <PATCHFILE
+
+   `patch'を呼び出す完全な書式は以下のとおりです．
+
+     patch OPTIONS... [ORIGFILE [PATCHFILE]]
+
+   読み込むパッチを`-i PATCHFILE'や
+`--input=PATCHFILE'オプションで指定することも可能です．
+PATCHFILEを指定していない場合や，PATCHFILEが`-'の場合，
+`patch'はパッチを標準入力(すなわち`diff'の出力)から読み 込みます．
+
+   コマンドラインで入力ファイルを指定していない場合，`patch'は
+"前置されるテキスト(leading text)"(`diff'で出力されたパッチ
+内のテキスト)から編集するファイルを見つけようとします．
+
+   デフォルトで，`patch'は入力されるオリジナルファイルをパッチを当
+てたバージョンに置換し，オリジナルファイルをバックアップファイルに名前を
+変えます(`patch'がバックアップファイルを命名する方法の説明は， *note
+Backup Names::)．`-o FILE'や
+`--output=FILE'オプションで出力を書き出す場所を指定すること
+も可能です．しかし，FILEが入力ファイルの一つの場合はこのオプション
+を使用しないでください．
+
+* Menu:
+
+* patch Options::     Summary table of options to `patch'.
+
+
+File: diff-ja.info,  Node: patch Options,  Up: Invoking patch
+
+15.1 `patch'のオプション
+========================
+
+以下は，GNU `patch'が受け入れるすべてのオプションの概要です．
+これらのオプションを`patch'の古いバージョンで安全に使用するため， *Note
+patch and Tradition::.
+
+複数の引数を取らない単一文字のオプションを，一つのダッシュを用いて単一の
+コマンドラインに組み合わせることが可能です．
+
+`-b'
+`--backup'
+     バックアップが通常作成されない場合でも，それぞれのファイルのオリジナルの
+     内容をバックアップします．*Note Backups::.
+
+`-B PREFIX'
+`--prefix=PREFIX'
+     バックアップファイル名にPREFIXを前置します．*Note Backup Names::.
+
+`--backup-if-mismatch'
+     パッチがファイルに正確にマッチしない場合，それぞれのファイルのオリジナル
+     の内容をバックアップします．これは，POSIX準拠でないときデフォルトの
+     動作です．*Note Backups::.
+
+`--binary'
+     標準出力と`/dev/tty'以外，すべてのファイルをバイナリモードで読み書
+     きします．このオプションは，GNU/LinuxのようなPOSIX準拠のシステ
+     ムでは効果がありません．このオプションで差異があるシステムでは，パッチを
+     `diff -a --binary'で生成するべきです．*Note Binary::.
+
+`-c'
+`--context'
+     パッチファイルを周りの文を使用している差分として解釈します．*Note
+     patch Input::.
+
+`-d DIRECTORY'
+`--directory=DIRECTORY'
+     パッチファイルと，それ以外のオプションの引数として与えられるファイルの両
+     方のファイル名を解釈するため，ディレクトリDIRECTORYをカレントディ
+     レクトリにします．*Note patch Directories::.
+
+`-D NAME'
+`--ifdef=NAME'
+     NAMEを使用してif-then-elseの出力をマージします． *Note
+     If-then-else::.
+
+`--dry-run'
+     実際にファイルを変更せず，パッチを適用した結果を出力します．*Note
+     Dry Runs::.
+
+`-e'
+`--ed'
+     パッチファイルを`ed'スクリプトとして解釈します．*Note patch
+     Input::.
+
+`-E'
+`--remove-empty-files'
+     パッチを適用した後，空の出力ファイルを削除します．*Note Creating
+     and Removing::.
+
+`-f'
+`--force'
+     ユーザが自分が行なっていることを正確に知っていると仮定し，質問してきませ
+     ん．*Note patch Messages::.
+
+`-F LINES'
+`--fuzz=LINES'
+     最大のfuzz要素をLINESに設定します．*Note Inexact::.
+
+`-g NUM'
+`--get=NUM'
+     NUMが正の場合，必要があればリビジョンコントロールシステムから入力
+     ファイルを取得します．ゼロの場合はファイルを取得しません．負の場合，ユー
+     ザにファイルを取得するかどうか尋ねます．*Note Revision Control::.
+
+`--help'
+     使用方法の概要を出力し，終了します．
+
+`-i PATCHFILE'
+`--input=PATCHFILE'
+     パッチを標準入力からではなくPATCHFILEから読み込みます．*Note patch
+     Options::.
+
+`-l'
+`--ignore-white-space'
+     パッチファイルの連続した空白(スペースとタブ)を，入力ファイルのすべての連
+     続した空白にマッチさせます．*Note Changed White Space::.
+
+`-n'
+`--normal'
+     パッチファイルを通常の差分として解釈します．*Note patch Input::.
+
+`-N'
+`--forward'
+     `patch'がリバースパッチまたは既に適用しているものと考えられるパッ
+     チを無視します．`-R'も参照してください．*Note Reversed Patches::.
+
+`--no-backup-if-mismatch'
+     ファイルのオリジナルの内容をバックアップしません．これは，POSIX準拠
+     時のデフォルトの動作です．*Note Backups::.
+
+`-o FILE'
+`--output=FILE'
+     出力ファイル名としてFILEを使用します．*Note patch Options::.
+
+`-pNUMBER'
+`--strip=NUMBER'
+     ファイル名のストリップ数をNUMBERに指定します．*Note patch
+     Directories::.
+
+`--posix'
+     `POSIXLY_CORRECT'環境変数が設定されているかのように，POSIXに準
+     拠します．*Note patch and POSIX::.
+
+`--quoting-style=WORD'
+     `QUOTING_STYLE'環境変数がWORDに設定されているかのように，診断
+     時の名前を囲む引用符をWORD形式にします．*Note patch Quoting
+     Style::.
+
+`-r REJECT-FILE'
+`--reject-file=REJECT-FILE'
+     リジェクトファイル名としてREJECT-FILEを使用します．*Note Reject
+     Names::.
+
+`-R'
+`--reverse'
+     このパッチが古いファイルから新しいファイルに置き換えるように作成されたと
+     仮定します．*Note Reversed Patches::.
+
+`-s'
+`--quiet'
+`--silent'
+     エラーが生じない限り，静かに動作します．*Note patch Messages::.
+
+`-t'
+`--batch'
+     質問してきません．*Note patch Messages::.
+
+`-T'
+`--set-time'
+     パッチファイルの編集時間とアクセス時間を，周りの文を使用した差分のヘッダ
+     がローカル時間を使用していると仮定して，周りの文を使用した差分のヘッダの
+     タイムスタンプに設定します．*Note Patching Time Stamps::.
+
+`-u'
+`--unified'
+     パッチファイルが一体化した差分だと解釈します．*Note patch Input::.
+
+`-v'
+`--version'
+     バージョン情報を出力し，終了します．
+
+`-V BACKUP-STYLE'
+`--version=control=BACKUP-STYLE'
+     バックアップファイル名の名前の変換方法を選択します．*Note Backup
+     Names::.
+
+`--verbose'
+     通常より多くの診断メッセージを出力します．*Note patch Messages::.
+
+`-x NUMBER'
+`--debug=NUMBER'
+     内部デバッグフラグを設定します．`patch'へのパッチだけに意味があ
+     ります．
+
+`-Y PREFIX'
+`--basename-prefix=PREFIX'
+     バックアップファイルのベース名にPREFIXを前置します．*Note Backup
+     Names::.
+
+`-z SUFFIX'
+`--suffix=SUFFIX'
+     バックアップの拡張子として，`.orig'や`~'の代わりにSUFFIX
+     を使用します．*Note Backup Names::.
+
+`-Z'
+`--set-utc'
+     パッチファイルの編集時間とアクセス時間を，周りの文を使用した差分のヘッダ
+     がUTCを使用していると仮定して，周りの文を使用した差分のヘッダのタイ
+     ムスタンプに設定します．*Note Patching Time Stamps::.
+
+
+File: diff-ja.info,  Node: Invoking sdiff,  Next: Standards conformance,  Prev: Invoking patch,  Up: Top
+
+16 `sdiff'の呼び出し
+********************
+
+`sdiff'コマンドは，二つのファイルをマージし，その結果を対話的に
+出力します．その引数は以下のようになります．
+
+     sdiff -o OUTFILE OPTIONS... FROM-FILE TO-FILE
+
+   これは，FROM-FILEとTO-FILEをマージし，OUTFILEに出力し
+ます．FROM-FILEがディレクトリでTO-FILEがそうではない場合，
+`sdiff'はFROM-FILE内のファイル名がTO-FILEのファイル
+と比較し，逆も同じです．FROM-FILEとTO-FILEを両方ともディレク
+トリにすることはできません．
+
+   `sdiff'のオプションは`-'で始まるので，通常はFROM-FILE
+とTO-FILEを`-'で始めてはなりません．しかし，`--'を引数
+とすることで，それ以降の引数を`-'で始まる場合でもファイル名として扱
+います．`-'を入力ファイルとして使用してはいけません．
+
+   `-o'(または`--output')を用いない`sdiff'で，横に並
+べた差異を生成します．この使用方法は時代遅れです．代わりに`diff'
+の`-y'や`--side-by-side'オプションを使用してください．
+
+0の終了ステータスは差異が見つからなかったことを意味し，1は差異が見つかっ
+たことを意味し，そして2は問題が生じたことを意味します．
+
+* Menu:
+
+* sdiff Options:: Summary of options to `diff'.
+
+
+File: diff-ja.info,  Node: sdiff Options,  Up: Invoking sdiff
+
+16.1 `sdiff'のオプション
+========================
+
+以下は，GNU `sdiff'が受け入れるオプションすべての概要です．
+ぞれぞれのオプションは二つの等価な名前があり，一つは`-'を前置する単
+一文字で，もう一つは`--'を前置する長い名前です．複数の(引数を取らな
+い)単一文字のオプションを，単一のコマンドラインの単語に組み合わせること
+が可能です．長い名前のオプションは，ユニークに決定できる前方部分で省略可
+能です．
+
+`-a'
+`--text'
+     すべてのファイルを，テキストのように見えない場合でもテキストとして扱い，
+     行単位で比較します．*Note Binary::.
+
+`-b'
+`--ignore-space-change'
+     空白の量の変更を無視します．*Note White Space::.
+
+`-B'
+`--ignore-blank-lines'
+     空白行の挿入と削除だけの変更を無視します．*Note Blank Lines::.
+
+`-d'
+`--minimal'
+     より小さな変更の組を見つけるアルゴリズムに変更します．これで
+     `sdiff'はより遅く(時には非常に遅く)なります．*Note diff
+     Performance::.
+
+`--diff-program=PROGRAM'
+     ファイルを比較するため，`diff'の代わりにプログラムPROGRAM
+     と互換性のある比較を使用します．
+
+`-E'
+`--ignore-tab-expansion'
+     タブの展開による変更を無視します．*Note White Space::.
+
+`--help'
+     使用方法の概要を出力し終了します．
+
+`-i'
+`--ignore-case'
+     大文字小文字の変更を無視します．大文字と小文字が同じであると考えます．
+     *Note Case Folding::.
+
+`-I REGEXP'
+`--ignore-matching-lines=REGEXP'
+     REGEXPにマッチした行の挿入や削除だけの変更を無視します． *Note
+     Specified Folding::.
+
+`-l'
+`--left-column'
+     二つの共通な行の左の列だけを出力します．*Note Side by Side
+     Format::.
+
+`-o FILE'
+`--output=FILE'
+     マージされた出力をFILEに書き出します．このオプションはマージで必要
+     です．
+
+`-s'
+`--suppress-common-lines'
+     共通の行を出力しません．*Note Side by Side Format::.
+
+`--speed-large-files'
+     小さな変更が大量にある大きなファイルの処理を高速化するため，発見的手法を
+     使用します．*Note diff Performance::.
+
+`--strip-trailing-cr'
+     入力ファイルの終りに後置される改行を削除します．*Note Binary::.
+
+`-t'
+`--expand-tabs'
+     入力ファイルのタブによる位置合わせを保持するため，出力のタブをスペースに
+     展開します．*Note Tabs::.
+
+`-v'
+`--version'
+     バージョン情報を出力し終了します．
+
+`-w COLUMNS'
+`--width=COLUMNS'
+     行ごとに最大COLUMNS列(デフォルトは130列)出力します．*Note Side by
+     Side Format::.  歴史的な理由から，このオプションは`diff'では
+     `-W'に，`sdiff'では`-w'になっています．
+
+`-W'
+`--ignore-all-space'
+     行の比較で空白を無視します．*Note White Space::.
+     歴史的な理由から，この オプションは`diff'では`-w'に，`sdiff'では
+     `-W'になっています．
+
+
+File: diff-ja.info,  Node: Standards conformance,  Next: Projects,  Prev: Invoking sdiff,  Up: Top
+
+17 標準への準拠
+***************
+
+状況によっては，GNUのユーティリティの動作はPOSIXの標準と互換性
+がありません．これらの非互換性を抑制するため，`POSIXLY_CORRECT'環境
+変数を定義してください．POSIX準拠を調査していない限り，
+`POSIXLY_CORRECT'を定義する必要はありません．
+
+通常，オプションとオペランドは，任意の順序にすることが可能で，プログラム
+はすべてのオプションがオペランドの前にあるかのように動作します．例えば，
+`2'は`-C'のオプションの引数なので，`diff lao tzu -C 2' は`diff -C 2 lao
+tzu'のように動作します．しかし，
+`POSIXLY_CORRECT'環境変数が設定されている場合，それ以外のオプション
+が特定のコマンドに対して指定されていない限り，オプションはオペランドの前
+にある必要があります．
+
+   新しいバージョンのPOSIXは，古いバージョンのものと互換性が無いものも
+あります．例えば，古いバージョンのPOSIXでは`diff -C 10'と同じ
+意味を持つコマンド`diff -c -10'が利用可能ですが，POSIX
+1003.1-2001の`diff'では，`-10'のような数字列のオプションを許
+可していません．
+
+   GNUのユーティリティは通常，システム標準のPOSIXのバージョンに準
+拠しています．異なるPOSIXのバージョンに準拠させるため，
+`_POSIX2_VERSION'環境変数を適用させる標準の年月を指定する
+YYYYMMの形式の値に設定してください．現在，`_POSIX2_VERSION'に
+対して二つの値がサポートされています．`199209'はPOSIX
+1003.2-1992を意味し，`200112'はPOSIX 1003.1-2001を意味します．
+例えば，古いバージョンのPOSIXを仮定する古いソフトウェアを実行し， `diff
+-c -10'を使用している場合，環境変数で
+`_POSIX2_VERSION=199209'を設定することで，互換性の問題を回避するこ
+とが可能です．
+
+
+File: diff-ja.info,  Node: Projects,  Next: Copying This Manual,  Prev: Standards conformance,  Up: Top
+
+18 将来のプロジェクト
+*********************
+
+GNU `diff'と`patch'を改良するための考えとして以下の
+ものがあります．GNUプロジェクトには，ボランティアのプログラミングプ
+ロジェクトへの潜在能力として，いくつかの改良点を認識しました．見つけたバ
+グを報告することで，我々を助けることも可能です．
+
+   プロ グラマであって，GNUプロジェクトに何か貢献したい場合，これらの
+プロジェクトのボランティアになることを考えてみてください．真面目に作業を
+考えている場合，他のボランティアと調整するため<gnu@gnu.org>にメー
+ルを送ってください．
+
+* Menu:
+
+* Shortcomings:: Suggested projects for improvements.
+* Bugs::         Reporting bugs.
+
+
+File: diff-ja.info,  Node: Shortcomings,  Next: Bugs,  Up: Projects
+
+18.1 GNU `diff'と`patch'を改良するためのプロジェクトへの提案
+============================================================
+
+あらゆるのディレクトリの対からパッチを生成するため，GNU
+`diff'が使用できるようにし，与えられたパッチとそのようなツリーの
+コピーからもう一方のコピーに忠実なものを生成するため，，`patch'
+を使用できるようにすべきです．残念ながら，ディレクトリツリーの変更には，
+現在のパッチ書式を使用して表現することが不可能なものもあります．また，既
+存の書式には`patch'で処理しないものもあります．これらの欠点は，
+以下のプロジェクトに提案されている動機付けにもなります．
+
+* Menu:
+
+* Internationalization:: Handling multibyte and varying-width characters.
+* Changing Structure::   Handling changes to the directory structure.
+* Special Files::        Handling symbolic links, device special files, etc.
+* Unusual File Names::   Handling file names that contain unusual characters.
+* Time Stamp Order::     Outputting diffs in time stamp order.
+* Ignoring Changes::     Ignoring certain changes while showing others.
+* Speedups::             Improving performance.
+
+
+File: diff-ja.info,  Node: Internationalization,  Next: Changing Structure,  Up: Shortcomings
+
+18.1.1 マルチバイトと可変幅文字の処理
+-------------------------------------
+
+`diff'，`diff3'，そして`sdiff'は，入力のそれぞれ
+の行を単一バイトの文字による文字列として扱います．これにより，状況によっ
+てはマルチバイト文字を誤って処理するはずです．例えば，スペースを無視する
+ように依頼されているとき，`diff'はマルチバイトのスペース文字を適
+切に無視してくれません．
+
+   また，`diff'は現在，それぞれのバイトが一列の幅だと仮定していて，
+例えば，UTF-8エンコーディングを使用しているロケールのように，この仮定が
+正しくないロケールもあります．これは，`diff'の`-y'や
+`--side-by-side'オプションで問題が生じます．
+
+これらの問題は，単一バイト環境でのユーティリティの性能にあまり影響しない
+ように修正する必要があります．
+
+   IBM GNU/Linux Technology Center Internationalization Teamは，
+`diff'の国際化をサポートするパッチ
+`http://oss.software.ibm.com/developer/opensource/linux/patches/i18n/diffutils-2.7.2-i18n-0.1.patch.gz'
+を提案しています．残念ながら，これらのパッチは不完全で，`diff'の
+古いバージョンへのものなので，この領域でより多くの作業が必要です．
+
+
+File: diff-ja.info,  Node: Changing Structure,  Next: Special Files,  Prev: Internationalization,  Up: Shortcomings
+
+18.1.2 ディレクトリ構造の変更の処理
+-----------------------------------
+
+`diff'と`patch'は，ディレクトリ構造に関する変更で処理し
+ないものもあります．例えば，一つのディレクトリツリーには，補助的なファイ
+ルがある`D'という名前のディレクトリがあり，もう一方には同じ名前の
+`D'というファイルが含まれていると仮定します．`diff -r'は，
+`patch'がディレクトリのサブツリーをファイルに変換するための十分
+な情報を出力しません．
+
+パッチファイルに完全な内容を含める必要がないように，削除されたファイルを
+指定する方法があるべきです．`diff'がそのような情報を生成する方法
+がない場合でも，ファイル名が変更されたことを`patch'に伝える方法
+もあるべきです．ファイルの内容が変更されていない場合でも，ファイルのタイ
+ムスタンプを変更するように`patch'に伝える方法があるべきです．
+
+   これらの問題は，ディレクトリ構造の変更を表現する`diff'の出力書式
+を拡張し，これらの拡張を理解するよう`patch'を拡張することで修正
+可能です．
+
+
+File: diff-ja.info,  Node: Special Files,  Next: Unusual File Names,  Prev: Changing Structure,  Up: Shortcomings
+
+18.1.3 ディレクトリでも通常のファイルでもないファイル
+-----------------------------------------------------
+
+ファイルには，ディレクトリでも通常のファイルでもないものもあります．それ
+らはシンボリックリンク，デバイスの特殊ファイル，名前付パイプ，そしてソケッ
+トのような通常ではないファイルです．現在，`diff' はシンボリック
+リンクを通常のファイルのように扱います．それ以外のファイルは，トップレベ
+ルで指定されている場合は通常のファイルのように扱いますが，ディレクトリを
+比較しているときは存在していることを単純に報告するだけです．例えば，シン
+ボリックリンクが示しているファイルを変更している場合，`diff'はシ
+ンボリックリンクの変更ではなく，二つのファイルの間の差異を出力します．
+
+   `diff'は，オプションで特別に特殊ファイルの変更を報告するべきで，
+`patch'はこれらの拡張を理解するように拡張すべきです．
+
+
+File: diff-ja.info,  Node: Unusual File Names,  Next: Time Stamp Order,  Prev: Special Files,  Up: Shortcomings
+
+18.1.4 通常ではない文字を含むファイル名
+---------------------------------------
+
+ファイル名に改行や空白のような通常ではない文字が含まれるとき，`diff
+-r'は，`patch'が解析不可能なパッチを生成します．`diff'の
+出力書式でのその問題は`patch'だけではなく，それは奇妙な完全なファ
+イル名で，`diff'は構文的には正しいが間違ったファイルにパッチを当
+てるパッチを生成します．`diff'の出力の書式は，可能性のあるすべて
+のファイル名を処理するよう拡張されるべきです．
+
+
+File: diff-ja.info,  Node: Time Stamp Order,  Next: Ignoring Changes,  Prev: Unusual File Names,  Up: Shortcomings
+
+18.1.5 タイムスタンプの順に差分を出力する
+-----------------------------------------
+
+複数ファイルの差分を`patch'で適用する結果としてファイルのタイム
+スタンプの順番が台無しになるはずです．GNU `patch'には，更新
+されたファイルのタイムスタンプを維持するオプションがありますが (*note
+Patching Time Stamps::)，GNU `patch'がなかったりこれ
+らのオプションを使用しない局面でも動作するパッチを生成することが役に立つ
+こともあります．こうするための一つの方法は，出力する差分をタイムスタンプ
+の順番にする`diff'のオプションを実装することです．
+
+
+File: diff-ja.info,  Node: Ignoring Changes,  Next: Speedups,  Prev: Time Stamp Order,  Up: Shortcomings
+
+18.1.6 特定の変更を無視する
+---------------------------
+
+FROM-FILEとTO-FILEでマッチしていると考えられる二つの文字列を
+指定する機能があれば素晴らしいでしょう．例えば，二つの文字列が`foo'
+と`bar'で，二つの行がファイル1では`foo'でファイル2の対応する部
+分が`bar'の場合，その行が同じものとして処理されるということです．
+
+この機能を一般化させる方法や，そこで使用するべき構文は明確ではありません．
+
+部分的な置換は，比較する前に一つまたは両方のファイルでフィルタを通すこと
+です．例えば以下のようにします．
+
+     sed 's/foo/bar/g' file1 | diff - file2
+
+しかし，この出力はフィルタを通したテキストでオリジナルのものではありませ
+ん．
+
+
+File: diff-ja.info,  Node: Speedups,  Prev: Ignoring Changes,  Up: Shortcomings
+
+18.1.7 パフォーマンスの改善
+---------------------------
+
+二つの大きなディレクトリ構造を比較しているとき，元々は一方がもう一方から
+(例えば，`cp -pR'を用いて) タイムスタンプを維持したままコピーされて
+いれば，サイズが同じでタイムスタンプが同じ二つのファイルの内容は同じだと
+いう仮定を`diff'に伝えるオプションがある場合，パフォーマンスが大
+幅に改善されることでしょう．*Note diff Performance::.
+
+
+File: diff-ja.info,  Node: Bugs,  Prev: Shortcomings,  Up: Projects
+
+18.2 バグの報告
+===============
+
+GNU `cmp'，`diff'，`diff3'，または `sdiff'にバグを見つけたと思う場合，
+GNU utilities bug report mailing list
+(http://mail.gnu.org/mailman/listinfo/bug-gnu-utils)
+<bug-gnu-utils@gnu.org>に電子メールで報 告してください．GNU
+`patch'のバグの報告は
+<bug-patch@gnu.org>に送ってください．できるだけ問題を明確にし，
+`--version'オプションの出力と，できればバグを生成する入力ファイル
+のサンプルを含めて送ってください．些細ではないバグを修正した場合，それも
+送ってください．パッチがあればそれも送ってください．パッチがディレクトリ
+`ftp://alpha.gnu.org/gnu/diffutils/'で見つけられる最新のテストリリー
+スに関連する場合，管理者の作業が簡単になるかもしれません．
+
+
+File: diff-ja.info,  Node: Copying This Manual,  Next: Index,  Prev: Projects,  Up: Top
+
+Appendix A このマニュアルのコピーに付いて
+*****************************************
+
+* Menu:
+
+* GNU Free Documentation License::  License for copying this manual.
+
+
+File: diff-ja.info,  Node: GNU Free Documentation License,  Up: Copying This Manual
+
+A.1 GNU Free Documentation License
+==================================
+
+                        Version 1.1, March 2000
+
+     Copyright (C) 2000 Free Software Foundation, Inc.
+     59 Temple Place, Suite 330, Boston, MA  02111-1307, USA
+
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+  0. PREAMBLE
+
+     The purpose of this License is to make a manual, textbook, or other
+     written document "free" in the sense of freedom: to assure everyone
+     the effective freedom to copy and redistribute it, with or without
+     modifying it, either commercially or noncommercially.  Secondarily,
+     this License preserves for the author and publisher a way to get
+     credit for their work, while not being considered responsible for
+     modifications made by others.
+
+     This License is a kind of "copyleft", which means that derivative
+     works of the document must themselves be free in the same sense.
+     It complements the GNU General Public License, which is a copyleft
+     license designed for free software.
+
+     We have designed this License in order to use it for manuals for
+     free software, because free software needs free documentation: a
+     free program should come with manuals providing the same freedoms
+     that the software does.  But this License is not limited to
+     software manuals; it can be used for any textual work, regardless
+     of subject matter or whether it is published as a printed book.
+     We recommend this License principally for works whose purpose is
+     instruction or reference.
+
+  1. APPLICABILITY AND DEFINITIONS
+
+     This License applies to any manual or other work that contains a
+     notice placed by the copyright holder saying it can be distributed
+     under the terms of this License.  The "Document", below, refers to
+     any such manual or work.  Any member of the public is a licensee,
+     and is addressed as "you".
+
+     A "Modified Version" of the Document means any work containing the
+     Document or a portion of it, either copied verbatim, or with
+     modifications and/or translated into another language.
+
+     A "Secondary Section" is a named appendix or a front-matter
+     section of the Document that deals exclusively with the
+     relationship of the publishers or authors of the Document to the
+     Document's overall subject (or to related matters) and contains
+     nothing that could fall directly within that overall subject.
+     (For example, if the Document is in part a textbook of
+     mathematics, a Secondary Section may not explain any mathematics.)
+     The relationship could be a matter of historical connection with
+     the subject or with related matters, or of legal, commercial,
+     philosophical, ethical or political position regarding them.
+
+     The "Invariant Sections" are certain Secondary Sections whose
+     titles are designated, as being those of Invariant Sections, in
+     the notice that says that the Document is released under this
+     License.
+
+     The "Cover Texts" are certain short passages of text that are
+     listed, as Front-Cover Texts or Back-Cover Texts, in the notice
+     that says that the Document is released under this License.
+
+     A "Transparent" copy of the Document means a machine-readable copy,
+     represented in a format whose specification is available to the
+     general public, whose contents can be viewed and edited directly
+     and straightforwardly with generic text editors or (for images
+     composed of pixels) generic paint programs or (for drawings) some
+     widely available drawing editor, and that is suitable for input to
+     text formatters or for automatic translation to a variety of
+     formats suitable for input to text formatters.  A copy made in an
+     otherwise Transparent file format whose markup has been designed
+     to thwart or discourage subsequent modification by readers is not
+     Transparent.  A copy that is not "Transparent" is called "Opaque".
+
+     Examples of suitable formats for Transparent copies include plain
+     ASCII without markup, Texinfo input format, LaTeX input format,
+     SGML or XML using a publicly available DTD, and
+     standard-conforming simple HTML designed for human modification.
+     Opaque formats include PostScript, PDF, proprietary formats that
+     can be read and edited only by proprietary word processors, SGML
+     or XML for which the DTD and/or processing tools are not generally
+     available, and the machine-generated HTML produced by some word
+     processors for output purposes only.
+
+     The "Title Page" means, for a printed book, the title page itself,
+     plus such following pages as are needed to hold, legibly, the
+     material this License requires to appear in the title page.  For
+     works in formats which do not have any title page as such, "Title
+     Page" means the text near the most prominent appearance of the
+     work's title, preceding the beginning of the body of the text.
+
+  2. VERBATIM COPYING
+
+     You may copy and distribute the Document in any medium, either
+     commercially or noncommercially, provided that this License, the
+     copyright notices, and the license notice saying this License
+     applies to the Document are reproduced in all copies, and that you
+     add no other conditions whatsoever to those of this License.  You
+     may not use technical measures to obstruct or control the reading
+     or further copying of the copies you make or distribute.  However,
+     you may accept compensation in exchange for copies.  If you
+     distribute a large enough number of copies you must also follow
+     the conditions in section 3.
+
+     You may also lend copies, under the same conditions stated above,
+     and you may publicly display copies.
+
+  3. COPYING IN QUANTITY
+
+     If you publish printed copies of the Document numbering more than
+     100, and the Document's license notice requires Cover Texts, you
+     must enclose the copies in covers that carry, clearly and legibly,
+     all these Cover Texts: Front-Cover Texts on the front cover, and
+     Back-Cover Texts on the back cover.  Both covers must also clearly
+     and legibly identify you as the publisher of these copies.  The
+     front cover must present the full title with all words of the
+     title equally prominent and visible.  You may add other material
+     on the covers in addition.  Copying with changes limited to the
+     covers, as long as they preserve the title of the Document and
+     satisfy these conditions, can be treated as verbatim copying in
+     other respects.
+
+     If the required texts for either cover are too voluminous to fit
+     legibly, you should put the first ones listed (as many as fit
+     reasonably) on the actual cover, and continue the rest onto
+     adjacent pages.
+
+     If you publish or distribute Opaque copies of the Document
+     numbering more than 100, you must either include a
+     machine-readable Transparent copy along with each Opaque copy, or
+     state in or with each Opaque copy a publicly-accessible
+     computer-network location containing a complete Transparent copy
+     of the Document, free of added material, which the general
+     network-using public has access to download anonymously at no
+     charge using public-standard network protocols.  If you use the
+     latter option, you must take reasonably prudent steps, when you
+     begin distribution of Opaque copies in quantity, to ensure that
+     this Transparent copy will remain thus accessible at the stated
+     location until at least one year after the last time you
+     distribute an Opaque copy (directly or through your agents or
+     retailers) of that edition to the public.
+
+     It is requested, but not required, that you contact the authors of
+     the Document well before redistributing any large number of
+     copies, to give them a chance to provide you with an updated
+     version of the Document.
+
+  4. MODIFICATIONS
+
+     You may copy and distribute a Modified Version of the Document
+     under the conditions of sections 2 and 3 above, provided that you
+     release the Modified Version under precisely this License, with
+     the Modified Version filling the role of the Document, thus
+     licensing distribution and modification of the Modified Version to
+     whoever possesses a copy of it.  In addition, you must do these
+     things in the Modified Version:
+
+       A. Use in the Title Page (and on the covers, if any) a title
+          distinct from that of the Document, and from those of
+          previous versions (which should, if there were any, be listed
+          in the History section of the Document).  You may use the
+          same title as a previous version if the original publisher of
+          that version gives permission.
+
+       B. List on the Title Page, as authors, one or more persons or
+          entities responsible for authorship of the modifications in
+          the Modified Version, together with at least five of the
+          principal authors of the Document (all of its principal
+          authors, if it has less than five).
+
+       C. State on the Title page the name of the publisher of the
+          Modified Version, as the publisher.
+
+       D. Preserve all the copyright notices of the Document.
+
+       E. Add an appropriate copyright notice for your modifications
+          adjacent to the other copyright notices.
+
+       F. Include, immediately after the copyright notices, a license
+          notice giving the public permission to use the Modified
+          Version under the terms of this License, in the form shown in
+          the Addendum below.
+
+       G. Preserve in that license notice the full lists of Invariant
+          Sections and required Cover Texts given in the Document's
+          license notice.
+
+       H. Include an unaltered copy of this License.
+
+       I. Preserve the section entitled "History", and its title, and
+          add to it an item stating at least the title, year, new
+          authors, and publisher of the Modified Version as given on
+          the Title Page.  If there is no section entitled "History" in
+          the Document, create one stating the title, year, authors,
+          and publisher of the Document as given on its Title Page,
+          then add an item describing the Modified Version as stated in
+          the previous sentence.
+
+       J. Preserve the network location, if any, given in the Document
+          for public access to a Transparent copy of the Document, and
+          likewise the network locations given in the Document for
+          previous versions it was based on.  These may be placed in
+          the "History" section.  You may omit a network location for a
+          work that was published at least four years before the
+          Document itself, or if the original publisher of the version
+          it refers to gives permission.
+
+       K. In any section entitled "Acknowledgments" or "Dedications",
+          preserve the section's title, and preserve in the section all
+          the substance and tone of each of the contributor
+          acknowledgments and/or dedications given therein.
+
+       L. Preserve all the Invariant Sections of the Document,
+          unaltered in their text and in their titles.  Section numbers
+          or the equivalent are not considered part of the section
+          titles.
+
+       M. Delete any section entitled "Endorsements".  Such a section
+          may not be included in the Modified Version.
+
+       N. Do not retitle any existing section as "Endorsements" or to
+          conflict in title with any Invariant Section.
+
+     If the Modified Version includes new front-matter sections or
+     appendices that qualify as Secondary Sections and contain no
+     material copied from the Document, you may at your option
+     designate some or all of these sections as invariant.  To do this,
+     add their titles to the list of Invariant Sections in the Modified
+     Version's license notice.  These titles must be distinct from any
+     other section titles.
+
+     You may add a section entitled "Endorsements", provided it contains
+     nothing but endorsements of your Modified Version by various
+     parties--for example, statements of peer review or that the text
+     has been approved by an organization as the authoritative
+     definition of a standard.
+
+     You may add a passage of up to five words as a Front-Cover Text,
+     and a passage of up to 25 words as a Back-Cover Text, to the end
+     of the list of Cover Texts in the Modified Version.  Only one
+     passage of Front-Cover Text and one of Back-Cover Text may be
+     added by (or through arrangements made by) any one entity.  If the
+     Document already includes a cover text for the same cover,
+     previously added by you or by arrangement made by the same entity
+     you are acting on behalf of, you may not add another; but you may
+     replace the old one, on explicit permission from the previous
+     publisher that added the old one.
+
+     The author(s) and publisher(s) of the Document do not by this
+     License give permission to use their names for publicity for or to
+     assert or imply endorsement of any Modified Version.
+
+  5. COMBINING DOCUMENTS
+
+     You may combine the Document with other documents released under
+     this License, under the terms defined in section 4 above for
+     modified versions, provided that you include in the combination
+     all of the Invariant Sections of all of the original documents,
+     unmodified, and list them all as Invariant Sections of your
+     combined work in its license notice.
+
+     The combined work need only contain one copy of this License, and
+     multiple identical Invariant Sections may be replaced with a single
+     copy.  If there are multiple Invariant Sections with the same name
+     but different contents, make the title of each such section unique
+     by adding at the end of it, in parentheses, the name of the
+     original author or publisher of that section if known, or else a
+     unique number.  Make the same adjustment to the section titles in
+     the list of Invariant Sections in the license notice of the
+     combined work.
+
+     In the combination, you must combine any sections entitled
+     "History" in the various original documents, forming one section
+     entitled "History"; likewise combine any sections entitled
+     "Acknowledgments", and any sections entitled "Dedications".  You
+     must delete all sections entitled "Endorsements."
+
+  6. COLLECTIONS OF DOCUMENTS
+
+     You may make a collection consisting of the Document and other
+     documents released under this License, and replace the individual
+     copies of this License in the various documents with a single copy
+     that is included in the collection, provided that you follow the
+     rules of this License for verbatim copying of each of the
+     documents in all other respects.
+
+     You may extract a single document from such a collection, and
+     distribute it individually under this License, provided you insert
+     a copy of this License into the extracted document, and follow
+     this License in all other respects regarding verbatim copying of
+     that document.
+
+  7. AGGREGATION WITH INDEPENDENT WORKS
+
+     A compilation of the Document or its derivatives with other
+     separate and independent documents or works, in or on a volume of
+     a storage or distribution medium, does not as a whole count as a
+     Modified Version of the Document, provided no compilation
+     copyright is claimed for the compilation.  Such a compilation is
+     called an "aggregate", and this License does not apply to the
+     other self-contained works thus compiled with the Document, on
+     account of their being thus compiled, if they are not themselves
+     derivative works of the Document.
+
+     If the Cover Text requirement of section 3 is applicable to these
+     copies of the Document, then if the Document is less than one
+     quarter of the entire aggregate, the Document's Cover Texts may be
+     placed on covers that surround only the Document within the
+     aggregate.  Otherwise they must appear on covers around the whole
+     aggregate.
+
+  8. TRANSLATION
+
+     Translation is considered a kind of modification, so you may
+     distribute translations of the Document under the terms of section
+     4.  Replacing Invariant Sections with translations requires special
+     permission from their copyright holders, but you may include
+     translations of some or all Invariant Sections in addition to the
+     original versions of these Invariant Sections.  You may include a
+     translation of this License provided that you also include the
+     original English version of this License.  In case of a
+     disagreement between the translation and the original English
+     version of this License, the original English version will prevail.
+
+  9. TERMINATION
+
+     You may not copy, modify, sublicense, or distribute the Document
+     except as expressly provided for under this License.  Any other
+     attempt to copy, modify, sublicense or distribute the Document is
+     void, and will automatically terminate your rights under this
+     License.  However, parties who have received copies, or rights,
+     from you under this License will not have their licenses
+     terminated so long as such parties remain in full compliance.
+
+ 10. FUTURE REVISIONS OF THIS LICENSE
+
+     The Free Software Foundation may publish new, revised versions of
+     the GNU Free Documentation License from time to time.  Such new
+     versions will be similar in spirit to the present version, but may
+     differ in detail to address new problems or concerns.  See
+     `http://www.gnu.org/copyleft/'.
+
+     Each version of the License is given a distinguishing version
+     number.  If the Document specifies that a particular numbered
+     version of this License "or any later version" applies to it, you
+     have the option of following the terms and conditions either of
+     that specified version or of any later version that has been
+     published (not as a draft) by the Free Software Foundation.  If
+     the Document does not specify a version number of this License,
+     you may choose any version ever published (not as a draft) by the
+     Free Software Foundation.
+
+A.1.1 ADDENDUM: How to use this License for your documents
+----------------------------------------------------------
+
+To use this License in a document you have written, include a copy of
+the License in the document and put the following copyright and license
+notices just after the title page:
+
+       Copyright (C)  YEAR  YOUR NAME.
+       Permission is granted to copy, distribute and/or modify this document
+       under the terms of the GNU Free Documentation License, Version 1.1
+       or any later version published by the Free Software Foundation;
+       with the Invariant Sections being LIST THEIR TITLES, with the
+       Front-Cover Texts being LIST, and with the Back-Cover Texts being LIST.
+       A copy of the license is included in the section entitled ``GNU
+       Free Documentation License''.
+
+   If you have no Invariant Sections, write "with no Invariant Sections"
+instead of saying which ones are invariant.  If you have no Front-Cover
+Texts, write "no Front-Cover Texts" instead of "Front-Cover Texts being
+LIST"; likewise for Back-Cover Texts.
+
+   If your document contains nontrivial examples of program code, we
+recommend releasing these examples in parallel under your choice of
+free software license, such as the GNU General Public License, to
+permit their use in free software.
+
+
+File: diff-ja.info,  Node: Index,  Prev: Copying This Manual,  Up: Top
+
+Appendix B 索引
+***************
+
+ [index ]
+* Menu:
+
+* ! output format:                       Context.             (line   6)
+* +- output format:                      Unified Format.      (line   6)
+* < output format:                       Normal.              (line   6)
+* <<<<<<< for marking conflicts:         Marking Conflicts.   (line   6)
+* _POSIX2_VERSION:                       Standards conformance.
+                                                              (line  25)
+* aligning tab stops:                    Tabs.                (line   6)
+* alternate file names:                  Alternate Names.     (line   6)
+* backup file names:                     Backup Names.        (line   6)
+* backup file strategy:                  Backups.             (line   6)
+* binary file diff:                      Binary.              (line   6)
+* blank and tab difference suppression:  White Space.         (line   6)
+* blank line difference suppression:     Blank Lines.         (line   6)
+* brief difference reports:              Brief.               (line   6)
+* bug reports:                           Bugs.                (line   6)
+* C function headings:                   C Function Headings. (line   6)
+* C if-then-else output format:          If-then-else.        (line   6)
+* case difference suppression:           Case Folding.        (line   6)
+* ClearCase:                             Revision Control.    (line   6)
+* cmp invocation:                        Invoking cmp.        (line   6)
+* cmp options:                           cmp Options.         (line   6)
+* columnar output:                       Side by Side.        (line   6)
+* common mistakes with patches:          Avoiding Common Mistakes.
+                                                              (line   6)
+* comparing three files:                 Comparing Three Files.
+                                                              (line   6)
+* conflict:                              diff3 Merging.       (line  26)
+* conflict marking:                      Marking Conflicts.   (line   6)
+* context output format:                 Context.             (line   6)
+* creating files:                        Creating and Removing.
+                                                              (line   6)
+* diagnostics from patch:                patch Messages.      (line   6)
+* diff invocation:                       Invoking diff.       (line   6)
+* diff merging:                          Interactive Merging. (line   6)
+* diff options:                          diff Options.        (line   6)
+* diff sample input:                     Sample diff Input.   (line   6)
+* diff3 hunks:                           diff3 Hunks.         (line   6)
+* diff3 invocation:                      Invoking diff3.      (line   6)
+* diff3 options:                         diff3 Options.       (line   9)
+* diff3 sample input:                    Sample diff3 Input.  (line   6)
+* directories and patch:                 patch Directories.   (line   6)
+* directory structure changes:           Changing Structure.  (line   6)
+* dry runs for patch:                    Dry Runs.            (line   6)
+* ed script output format:               ed Scripts.          (line   6)
+* EDITOR:                                Merge Commands.      (line  44)
+* empty files, removing:                 Creating and Removing.
+                                                              (line   6)
+* exabyte, definition of:                cmp Options.         (line 102)
+* exbibyte, definition of:               cmp Options.         (line 106)
+* FDL, GNU Free Documentation License:   GNU Free Documentation License.
+                                                              (line   6)
+* file name alternates:                  Alternate Names.     (line   6)
+* file names with unusual characters:    Unusual File Names.  (line   6)
+* format of diff output:                 Output Formats.      (line   6)
+* format of diff3 output:                Comparing Three Files.
+                                                              (line   6)
+* formats for if-then-else line groups:  Line Group Formats.  (line   6)
+* forward ed script output format:       Forward ed.          (line   6)
+* full lines:                            Incomplete Lines.    (line   6)
+* function headings, C:                  C Function Headings. (line   6)
+* fuzz factor when patching:             Inexact.             (line   6)
+* gibibyte, definition of:               cmp Options.         (line  85)
+* gigabyte, definition of:               cmp Options.         (line  81)
+* headings:                              Sections.            (line   6)
+* hunks:                                 Hunks.               (line   6)
+* hunks for diff3:                       diff3 Hunks.         (line   6)
+* if-then-else output format:            If-then-else.        (line   6)
+* ifdef output format:                   If-then-else.        (line   6)
+* imperfect patch application:           Imperfect.           (line   6)
+* incomplete line merging:               Merging Incomplete Lines.
+                                                              (line   6)
+* incomplete lines:                      Incomplete Lines.    (line   6)
+* inexact patches:                       Inexact.             (line   6)
+* inhibit messages from patch:           More or Fewer Messages.
+                                                              (line   6)
+* interactive merging:                   Interactive Merging. (line   6)
+* introduction:                          Comparison.          (line   6)
+* intuiting file names from patches:     Multiple Patches.    (line   6)
+* invoking cmp:                          Invoking cmp.        (line   6)
+* invoking diff:                         Invoking diff.       (line   6)
+* invoking diff3:                        Invoking diff3.      (line   6)
+* invoking patch:                        Invoking patch.      (line   6)
+* invoking sdiff:                        Invoking sdiff.      (line   6)
+* keyboard input to patch:               patch and Keyboard Input.
+                                                              (line   6)
+* kibibyte, definition of:               cmp Options.         (line  69)
+* kilobyte, definition of:               cmp Options.         (line  64)
+* LC_COLLATE:                            Comparing Directories.
+                                                              (line   6)
+* LC_NUMERIC:                            Line Group Formats.  (line 135)
+* LC_TIME:                               Detailed Context.    (line  12)
+* line formats:                          Line Formats.        (line   6)
+* line group formats:                    Line Group Formats.  (line   6)
+* mebibyte, definition of:               cmp Options.         (line  78)
+* megabyte, definition of:               cmp Options.         (line  74)
+* merge commands:                        Merge Commands.      (line   6)
+* merged diff3 format:                   Bypassing ed.        (line   6)
+* merged output format:                  If-then-else.        (line   6)
+* merging from a common ancestor:        diff3 Merging.       (line   6)
+* merging interactively:                 Merge Commands.      (line   6)
+* messages from patch:                   patch Messages.      (line   6)
+* multibyte characters:                  Internationalization.
+                                                              (line   6)
+* multiple patches:                      Multiple Patches.    (line   6)
+* newline treatment by diff:             Incomplete Lines.    (line   6)
+* normal output format:                  Normal.              (line   6)
+* options for cmp:                       cmp Options.         (line   6)
+* options for diff:                      diff Options.        (line   6)
+* options for diff3:                     diff3 Options.       (line   9)
+* options for patch:                     patch Options.       (line   6)
+* options for sdiff:                     sdiff Options.       (line   6)
+* output formats:                        Output Formats.      (line   6)
+* overlap:                               diff3 Merging.       (line  26)
+* overlapping change, selection of:      Which Changes.       (line   6)
+* overview of diff and patch:            Overview.            (line   6)
+* paginating diff output:                Pagination.          (line   6)
+* patch consumer tips:                   Tips for Patch Consumers.
+                                                              (line   6)
+* patch input format:                    patch Input.         (line   6)
+* patch invocation:                      Invoking patch.      (line   6)
+* patch messages and questions:          patch Messages.      (line   6)
+* patch options:                         patch Options.       (line   6)
+* patch producer tips:                   Tips for Patch Producers.
+                                                              (line   6)
+* patch, common mistakes:                Avoiding Common Mistakes.
+                                                              (line   6)
+* PATCH_GET:                             Revision Control.    (line  14)
+* PATCH_VERSION_CONTROL:                 Backup Names.        (line  23)
+* patches, shrinking:                    Generating Smaller Patches.
+                                                              (line   6)
+* patching directories:                  patch Directories.   (line   6)
+* pebibyte, definition of:               cmp Options.         (line  99)
+* performance of diff:                   diff Performance.    (line   6)
+* petabyte, definition of:               cmp Options.         (line  95)
+* POSIX <1>:                             patch and POSIX.     (line   6)
+* POSIX:                                 Standards conformance.
+                                                              (line   6)
+* POSIXLY_CORRECT <1>:                   patch and POSIX.     (line   6)
+* POSIXLY_CORRECT:                       Standards conformance.
+                                                              (line   6)
+* projects for directories:              Shortcomings.        (line   6)
+* quoting style:                         patch Quoting Style. (line   6)
+* QUOTING_STYLE:                         patch Quoting Style. (line  29)
+* RCS:                                   Revision Control.    (line   6)
+* RCS script output format:              RCS.                 (line   6)
+* regular expression matching headings:  Specified Headings.  (line   6)
+* regular expression suppression:        Specified Folding.   (line   6)
+* reject file names:                     Reject Names.        (line   6)
+* removing empty files:                  Creating and Removing.
+                                                              (line   6)
+* reporting bugs:                        Bugs.                (line   6)
+* reversed patches:                      Reversed Patches.    (line   6)
+* revision control:                      Revision Control.    (line   6)
+* sample input for diff:                 Sample diff Input.   (line   6)
+* sample input for diff3:                Sample diff3 Input.  (line   6)
+* SCCS:                                  Revision Control.    (line   6)
+* script output formats:                 Scripts.             (line   6)
+* sdiff invocation:                      Invoking sdiff.      (line   6)
+* sdiff options:                         sdiff Options.       (line   6)
+* sdiff output format:                   sdiff Option Summary.
+                                                              (line   6)
+* section headings:                      Sections.            (line   6)
+* side by side:                          Side by Side.        (line   6)
+* side by side format:                   Side by Side Format. (line   6)
+* SIMPLE_BACKUP_SUFFIX:                  Backup Names.        (line  13)
+* special files:                         Special Files.       (line   6)
+* specified headings:                    Specified Headings.  (line   6)
+* summarizing which files differ:        Brief.               (line   6)
+* System V diff3 compatibility:          Saving the Changed File.
+                                                              (line   6)
+* tab and blank difference suppression:  White Space.         (line   6)
+* tab stop alignment:                    Tabs.                (line   6)
+* tebibyte, definition of:               cmp Options.         (line  92)
+* terabyte, definition of:               cmp Options.         (line  88)
+* testing patch:                         Dry Runs.            (line   6)
+* text versus binary diff:               Binary.              (line   6)
+* time stamp format, context diffs:      Detailed Context.    (line  12)
+* time stamp format, unified diffs:      Detailed Unified.    (line  11)
+* time stamps on patched files:          Patching Time Stamps.
+                                                              (line   6)
+* traditional patch:                     patch and Tradition. (line   6)
+* two-column output:                     Side by Side.        (line   6)
+* unified output format:                 Unified Format.      (line   6)
+* unmerged change:                       Which Changes.       (line   6)
+* varying-width characters:              Internationalization.
+                                                              (line   6)
+* verbose messages from patch:           More or Fewer Messages.
+                                                              (line   6)
+* version control:                       Revision Control.    (line   6)
+* VERSION_CONTROL <1>:                   Revision Control.    (line  24)
+* VERSION_CONTROL:                       Backup Names.        (line  23)
+* white space in patches:                Changed White Space. (line   6)
+* yottabyte, definition of:              cmp Options.         (line 117)
+* zettabyte, definition of:              cmp Options.         (line 109)
+
+
+
+Tag Table:
+Node: Top1656
+Node: Overview4038
+Node: Comparison7341
+Node: Hunks9883
+Node: White Space11275
+Node: Blank Lines12607
+Node: Case Folding13333
+Node: Specified Folding13742
+Node: Brief14658
+Node: Binary15805
+Node: Output Formats19924
+Node: Sample diff Input20633
+Node: Normal22094
+Node: Detailed Normal23092
+Node: Example Normal24796
+Node: Context25487
+Node: Context Format26892
+Node: Detailed Context27687
+Node: Example Context29507
+Node: Less Context31020
+Node: Unified Format32198
+Node: Detailed Unified32965
+Node: Example Unified34140
+Node: Sections35141
+Node: Specified Headings35845
+Node: C Function Headings37304
+Node: Alternate Names38139
+Node: Side by Side39043
+Node: Side by Side Format40959
+Node: Example Side by Side41697
+Node: Scripts42986
+Node: ed Scripts43424
+Node: Detailed ed44602
+Node: Example ed46156
+Node: Forward ed46595
+Node: RCS47392
+Node: If-then-else48478
+Node: Line Group Formats50127
+Node: Line Formats55557
+Node: Detailed If-then-else58493
+Node: Example If-then-else60344
+Node: Incomplete Lines61367
+Node: Comparing Directories62798
+Node: Adjusting Output66545
+Node: Tabs66968
+Node: Pagination68319
+Node: diff Performance68746
+Node: Comparing Three Files71464
+Node: Sample diff3 Input72303
+Node: Detailed diff3 Normal73235
+Node: diff3 Hunks74924
+Node: Example diff3 Normal76250
+Node: diff3 Merging77228
+Node: Which Changes79447
+Node: Marking Conflicts80873
+Node: Bypassing ed83303
+Node: Merging Incomplete Lines84644
+Node: Saving the Changed File85310
+Node: Interactive Merging85910
+Node: sdiff Option Summary86622
+Node: Merge Commands87666
+Node: Merging with patch88933
+Node: patch Input91294
+Node: Revision Control91955
+Node: Imperfect93181
+Node: Changed White Space94293
+Node: Reversed Patches95079
+Node: Inexact96608
+Node: Dry Runs99947
+Node: Creating and Removing100751
+Node: Patching Time Stamps101797
+Node: Multiple Patches103982
+Node: patch Directories106655
+Node: Backups108308
+Node: Backup Names109399
+Ref: Backup Names-Footnote-1112395
+Node: Reject Names112518
+Node: patch Messages113159
+Node: More or Fewer Messages114180
+Node: patch and Keyboard Input114810
+Node: patch Quoting Style115749
+Node: patch and POSIX116854
+Node: patch and Tradition117692
+Node: Making Patches120897
+Node: Tips for Patch Producers121680
+Node: Tips for Patch Consumers122918
+Node: Avoiding Common Mistakes123549
+Node: Generating Smaller Patches125979
+Node: Invoking cmp127698
+Node: cmp Options128499
+Node: Invoking diff131731
+Node: diff Options133478
+Node: Invoking diff3141432
+Node: diff3 Options142061
+Node: Invoking patch145036
+Node: patch Options146198
+Node: Invoking sdiff151421
+Node: sdiff Options152590
+Node: Standards conformance155188
+Node: Projects156792
+Node: Shortcomings157515
+Node: Internationalization158654
+Node: Changing Structure159795
+Node: Special Files160811
+Node: Unusual File Names161728
+Node: Time Stamp Order162293
+Node: Ignoring Changes162941
+Node: Speedups163672
+Node: Bugs164146
+Node: Copying This Manual164899
+Node: GNU Free Documentation License165154
+Node: Index185034
+
+End Tag Table

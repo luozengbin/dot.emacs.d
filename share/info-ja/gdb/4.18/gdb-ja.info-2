@@ -1,0 +1,5055 @@
+-*- coding: utf-8 -*-
+START-INFO-DIR-ENTRY
+* Gdb: (gdb).                     The GNU debugger.
+END-INFO-DIR-ENTRY
+   This file documents the GNU debugger GDB.
+
+   This is the Seventh Edition, February 1999, of `Debugging with GDB:
+the GNU Source-Level Debugger' for GDB Version 4.18.
+
+   Copyright (C) 1988-1999 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the entire resulting derived work is distributed under the terms
+of a permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions.
+
+
+File: gdb-ja.info,  Node: Server,  Next: NetWare,  Prev: Protocol,  Up: Remote Serial
+
+13.4.1.5 `gdbserver'プログラムの使用
+....................................
+
+`gdbserver'は、 UNIX系システム用の制御プログラムで、 これにより、
+通常のデバッグ用スタブをリンクすることなく、 `target
+remote'コマンドによって、
+ユーザ・プログラムをリモートのGDBに接続することができます。
+
+   `gdbserver'は、
+デバッグ用スタブに完全に取って代わるものではありません。 `gdbserver'は、
+GDBが必要とするのと同様のオペレーティング・システムの機能を基本的には必要とするからです。
+実際、
+リモートのGDBと接続するために`gdbserver'を実行できるシステムであれば、
+GDBをローカルに実行することも可能です。 それでも、
+`gdbserver'はGDBと比較するとかなりサイズが小さいので、
+便利なことがあります。 また、
+`gdbserver'の移植はGDB全体の移植よりも簡単なので、
+`gdbserver'を使うことで、
+新しいシステムでの作業をより早く開始することができます、 最後に、
+リアル・タイム・システムの開発をしている場合、
+リアル・タイムな操作に関わるトレードオフのために、
+例えばクロス・コンパイルなどによって、
+他のシステム上で可能な限り多くの開発作業を行ったほうが便利であるということがあるでしょう。
+デバッグ作業に関しても、
+`gdbserver'を使うことでこれと同じような選択を行うことができます。
+
+   GDBと`gdbserver'は、 シリアル回線またはTCP接続を経由して、
+標準的なGDBリモート・シリアル・プロトコルによって通信します。
+
+_ターゲット・マシンでは：_
+     デバッグしたいプログラムのコピーが1つ必要です。
+     `gdbserver'はユーザ・プログラムのシンボル・テーブルを必要とはしませんので、
+     スペースの節約が必要であれば、
+     プログラムをストリップすることができます。
+     ホスト・システム上のGDBが、
+     シンボルに関するすべての処理を実行します。
+
+     `gdbserver'を使うには、 GDBとの通信方法、
+     ユーザ・プログラムの名前、
+     ユーザ・プログラムへの引数を教えてやる必要があります。 構文は、
+     以下のとおりです。
+
+          target> gdbserver COMM PROGRAM [ ARGS ... ]
+
+     COMMは （シリアル回線を使うための） 装置名、 あるいは、
+     TCPのホスト名とポート番号です。 例えば、
+     `foo.txt'という引数を指定してEmacsをデバッグし、
+     シリアル・ポート`/dev/com1'経由でGDBと通信するには、
+     以下のように実行します。
+
+          target> gdbserver /dev/com1 emacs foo.txt
+
+     `gdbserver'は、 ホスト側のGDBが通信してくるのを受動的に待ちます。
+
+     シリアル回線の代わりにTCP接続を使うには、 以下のようにします。
+
+          target> gdbserver host:2345 emacs foo.txt
+
+     前の例との唯一の違いは第1引数です。 これは、
+     ホストのGDBとTCPによって接続することを指定しています。
+     `host:2345'は、
+     マシン`host'からローカルのTCPポート2345へのTCP接続を`gdbserver'が期待していることを意味します
+     （現在のバージョンでは、 `host'の部分は無視されます）。
+     ターゲット・システム上で既に使われているTCPポートでなければ、
+     任意の番号をポート番号として選択できます （例えば、
+     `23'は`telnet'に予約されています） (1)。
+     ここで指定したのと同じポート番号を、 ホスト上のGDBの`target
+     remote'コマンドで使わなければなりません。
+
+_GDBのホスト・マシンでは：_
+     GDBはシンボル情報、 デバッグ情報を必要とするので、
+     ストリップされていないユーザ・プログラムのコピーが必要です。
+     通常どおり、
+     第1引数にユーザ・プログラムのローカル・コピーの名前を指定してGDBを起動します
+     （シリアル回線の速度が9600 bps以外であれば、
+     `--baud'オプションも必要になります）。 その後、 `target
+     remote'コマンドによって`gdbserver'との通信を確立します。 引数には、
+     装置名 （通常は`/dev/ttyb'のようなシリアル装置）、 または、
+     `HOST:PORT'という形式でのTCPポート記述子を指定します。 例えば、
+
+          (gdb) target remote /dev/ttyb
+
+     では、 シリアル回線`/dev/ttyb'を介して`gdbserver'と通信します。
+     また、
+
+          (gdb) target remote the-target:2345
+
+     では、
+     ホスト`the-target'上のポート2345に対するTCP接続によって通信します。
+     TCP接続を使う場合には、 `target remote'コマンドを実行する前に、
+     `gdbserver'を起動しておかなければなりません。
+     そうしないと、エラーになります。
+     エラー・テキストの内容はホスト・システムによって異なりますが、
+     通常は`Connection refused'のような内容です。
+
+   ---------- Footnotes ----------
+
+   (1) 原注：他のサービスによって使用されているポート番号を選択すると、
+`gdbserver'はエラー・メッセージを出力して終了します。
+
+
+File: gdb-ja.info,  Node: NetWare,  Prev: Server,  Up: Remote Serial
+
+13.4.1.6 `gdbserve.nlm'プログラムの使用
+.......................................
+
+`gdbserve.nlm'はNetWareシステムでの制御プログラムです。 これによって、
+`target
+remote'コマンドでユーザ・プログラムをリモートのGDBに接続することができます。
+
+   GDBと`gdbserve.nlm'は、
+標準のGDBリモート・シリアル・プロトコルを使って、
+シリアル回線経由で通信します。
+
+_ターゲット・マシンでは：_
+     デバッグしたいプログラムのコピーが1つ必要です。
+     `gdbserve.nlm'はユーザ・プログラムのシンボル・テーブルを必要とはしませんので、
+     スペースの節約が必要であれば、
+     プログラムをストリップすることができます。
+     ホスト・システム上のGDBが、
+     シンボルに関わるすべての処理を実行します。
+
+     `gdbserve.nlm'を使うには、 GDBとの通信方法、
+     ユーザ・プログラムの名前、
+     ユーザ・プログラムの引数を教えてやる必要があります。 構文は、
+     以下のとおりです。
+
+          load gdbserve [ BOARD=BOARD ] [ PORT=PORT ]
+                        [ BAUD=BAUD ] PROGRAM [ ARGS ... ]
+
+     BOARDとPORTがシリアル回線を指定します。
+     BAUDは接続に使われるボーレートを指定します。
+     PORTとNODEのデフォルト値は0、 BAUDのデフォルト値は9600 bpsです。
+
+     例えば、 `foo.txt'という引数を指定してEmacsをデバッグし、
+     シリアル・ポート番号2、 ボード1を経由して19200
+     bpsの接続でGDBと通信するには、 以下のように実行します。
+
+          load gdbserve BOARD=1 PORT=2 BAUD=19200 emacs foo.txt
+
+_GDBのホスト・マシンでは：_
+     GDBはシンボル情報、 デバッグ情報を必要とするので、
+     ストリップされていないユーザ・プログラムのコピーが必要です。
+     通常どおり、
+     第1引数にユーザ・プログラムのローカル・コピーの名前を指定してGDBを起動します
+     （シリアル回線の速度が9600 bps以外であれば、
+     `--baud'オプションも必要になります）。 その後、 `target
+     remote'コマンドによって `gdbserve.nlm'との通信を確立します。
+     引数には、 装置名 （通常は`/dev/ttyb'のようなシリアル装置）
+     を指定します。 例えば、
+
+          (gdb) target remote /dev/ttyb
+
+     は、 シリアル回線`/dev/ttyb'を経由して`gdbserve.nlm'と通信します。
+
+
+File: gdb-ja.info,  Node: i960-Nindy Remote,  Next: UDI29K Remote,  Prev: Remote Serial,  Up: Remote
+
+13.4.2 GDBとリモートi960（Nindy）
+---------------------------------
+
+"Nindy"は、 Intel 960ターゲット・システム用のROM Monitorプログラムです。
+Nindyを使ってリモートのIntel 960を制御するようGDBが構成されている場合、
+いくつかの方法によってGDBに960との接続方法を教えることができます。
+
+   * シリアル・ポート、 Nindyプロトコルのバージョン、
+     通信スピードを指定するコマンドライン・オプションによる方法
+
+   * 起動時のプロンプトに答える方法
+
+   * GDBセッション中の任意の時点で`target'コマンドを使う方法 （*Note
+     Commands for managing targets: Target Commands）
+
+
+* Menu:
+
+* Nindy Startup::               Nindy使用時の起動方法
+* Nindy Options::               Nindy用のオプション
+* Nindy Reset::                 Nindy resetコマンド
+
+
+File: gdb-ja.info,  Node: Nindy Startup,  Next: Nindy Options,  Up: i960-Nindy Remote
+
+13.4.2.1 Nindy使用時の起動方法
+..............................
+
+コマンドライン・オプションを一切使わずに`gdb'を起動すると、
+通常のGDBプロンプトが表示される_前_に、
+使用するシリアル・ポートを指定するよう促されます。
+
+     Attach /dev/ttyNN -- specify NN, or "quit" to quit:
+
+このプロンプトに対して、 使いたいシリアル・ポートを示す
+（`/dev/tty'の後ろの） サフィックスを入力します。
+もしそうしたいのであれば、 プロンプトに空行で答えることによって、
+Nindyとの接続を確立せずに起動することもできます。 この場合、
+後にNindyと接続したいときには`target'コマンドを使います （*note
+Commands for managing targets: Target Commands.）。
+
+
+File: gdb-ja.info,  Node: Nindy Options,  Next: Nindy Reset,  Prev: Nindy Startup,  Up: i960-Nindy Remote
+
+13.4.2.2 Nindy用のオプション
+............................
+
+接続されたNindy-960ボードとのGDBセッションを開始するための
+起動オプションを以下に示します。
+
+`-r PORT'
+     ターゲット・システムとの接続に使用されるシリアル・インターフェイスのシリアル・ポート名を指定します。
+     このオプションは、 GDBがIntel
+     960ターゲット・アーキテクチャ用に構成されているときのみ利用可能です。
+     PORTは、 完全なパス名 （例：`-r /dev/ttya'）、
+     `/dev'配下のデバイス名 （例：`-r ttya'）、
+     `tty'固有の一意なサフィックス （例：`-r a'）
+     のいずれによっても指定することができます。
+
+`-O'
+     （ゼロではなく、 英大文字のOです）。
+     GDBがターゲット・システムと接続する際に、
+     古いNindyモニタ・プロトコルを使用すべきであることを指定します。
+     このオプションは、 GDBがIntel
+     960ターゲット・アーキテクチャ用に構成されているときのみ利用可能です。
+
+          _注意_：`-O'を指定したにもかかわらず、
+          実際にはより新しいプロトコルを期待しているターゲット・システムに接続しようとした場合、
+          接続は失敗します。 この失敗は、
+          あたかも通信速度の不一致が原因であるかのように見えてしまいます。
+          GDBは、 異なる回線速度によって再接続を繰り返し試みます。
+          割り込みによって、 この処理を中断させることができます。
+
+`-brk'
+     接続する前にNindyターゲットをリセットするために、
+     ターゲット・システムに対して最初に`BREAK'信号を送信するよう、
+     GDBに対して指定します。
+
+          _注意_：多くのターゲット・システムは、
+          このオプションが必要とするハードウェアを備えていません。
+          このオプションは、 少数のボードでしか機能しません。
+
+   標準の`-b'オプションが、
+シリアル・ポート上で使用される回線速度を制御します。
+
+
+File: gdb-ja.info,  Node: Nindy Reset,  Prev: Nindy Options,  Up: i960-Nindy Remote
+
+13.4.2.3 Nindy resetコマンド
+............................
+
+`reset'
+     ターゲットがNindyである場合、
+     このコマンドはBREAK信号をリモートのターゲット・システムに送信します。
+     これは、 BREAK信号を受信したときにハード・リセット （または、
+     その他の興味深いアクション）
+     を実行する回路がターゲットに備わっている場合にのみ役に立ちます。
+
+
+File: gdb-ja.info,  Node: UDI29K Remote,  Next: EB29K Remote,  Prev: i960-Nindy Remote,  Up: Remote
+
+13.4.3 AMD29K用のUDIプロトコル
+------------------------------
+
+GDBは、 a29kプロセッサ・ファミリをデバッグするためのAMD UDI （Universal
+Debugger Interface） プロトコルをサポートしています。
+MiniMONモニタを実行するAMDターゲットという構成を使うには、
+AMD社から無料で入手可能な`MONTIP'プログラムが必要になります。 また、
+AMD社から入手可能なUDI準拠のa29kシミュレータ・プログラム`ISSTIP'とともにGDBを使うこともできます。
+
+`target udi KEYWORD'
+     リモートのa29kボードまたはシミュレータへのUDIインターフェイスを選択します。
+     KEYWORDは、 AMD構成ファイル`udi_soc'内のエントリです。
+     このファイルには、
+     a29kターゲットに接続するときに使われるパラメータを指定する
+     キーワード・エントリが含まれます。
+     `udi_soc'ファイルが作業ディレクトリにない場合には、
+     環境変数`UDICONF'にそのパス名を設定しなければなりません。
+
+
+File: gdb-ja.info,  Node: EB29K Remote,  Next: VxWorks Remote,  Prev: UDI29K Remote,  Up: Remote
+
+13.4.4 AMD29KのEBMONプロトコル
+------------------------------
+
+AMD社は、 PC組み込み用の29K開発ボードを、
+DOS上で動作する`EBMON'というモニタ・プログラムとともに配布しています。
+この開発システムは、 省略してEB29Kと呼ばれます。
+UNIXシステム上のGDBを使ってEB29Kボード上でプログラムを実行するには、
+まず （EB29Kを組み込んだ）
+PCとUNIXシステムのシリアル・ポートの間をシリアル回線で接続しなければなりません。
+以下の節では、
+PCの`COM1'ポートとUNIXシステムの`/dev/ttya'との間をケーブルで接続してあるものと仮定します。
+
+* Menu:
+
+* Comms (EB29K)::               通信セットアップ
+* gdb-EB29K::                   EB29Kクロス・デバッグ
+* Remote Log::                  リモート・ログ
+
+
+File: gdb-ja.info,  Node: Comms (EB29K),  Next: gdb-EB29K,  Up: EB29K Remote
+
+13.4.4.1 通信セットアップ
+.........................
+
+PC上のDOSで以下のように実行することによって、
+PCのポートをセットアップします。
+
+     C:\> MODE com1:9600,n,8,1,none
+
+MS DOS 4.0上で実行されているこの例では、 PCポートを通信速度9600 bps、
+パリティ・ビットなし、 データ・ビット数8、 ストップ・ビット数1、
+リトライなしに設定しています。 UNIX側を設定する際には、
+同一の通信パラメータを使わなければなりません。
+
+   シリアル回線のUNIX側にPCの制御権を与えるには、
+DOSコンソール上で以下のように実行します。
+
+     C:\> CTTY com1
+
+（後に、 DOSコンソールに制御を戻したいときには、 `CTTY
+con'コマンドを使うことができます。 ただし、
+制御権を持っている装置からこのコマンドを送信する必要があります。
+ここでの例では、
+`COM1'に接続されているシリアル回線を通して送信することになります）。
+
+   UNIXのホストからは、
+PCと通信するのに`tip'や`cu'のような通信プログラムを使います。
+以下に例を示します。
+
+     cu -s 9600 -l /dev/ttya
+
+ここで示されている`cu'オプションはそれぞれ、
+使用する回線速度とシリアル・ポートを指定しています。
+`tip'コマンドを使った場合は、
+コマンドラインは以下のようなものになるでしょう。
+
+     tip -9600 /dev/ttya
+
+ここで`tip'への引数として指定した`/dev/ttya'の部分には、
+システムによって異なる名前を指定する必要があるかもしれません。
+使用するポートを含む通信パラメータは、
+"remote"記述ファイルにおいて`tip'コマンドへの引数と関連付けられます。
+通常このファイルは、 システム・テーブル`/etc/remote'です。
+
+   `tip'接続または`cu'接続を使用して
+DOSの作業ディレクトリを29Kプログラムが存在するディレクトリに変更し、
+PCプログラム`EBMON'
+（AMD社からボードとともに提供されるEB29K制御プログラム） を起動します。
+以下に示す例によく似た、
+`EBMON'プロンプト`#'で終わる`EBMON'の初期画面が表示されるはずです。
+
+     C:\> G:
+
+     G:\> CD \usr\joe\work29k
+
+     G:\USR\JOE\WORK29K> EBMON
+     Am29000 PC Coprocessor Board Monitor, version 3.0-18
+     Copyright 1990 Advanced Micro Devices, Inc.
+     Written by Gibbons and Associates, Inc.
+
+     Enter '?' or 'H' for help
+
+     PC Coprocessor Type   = EB29K
+     I/O Base              = 0x208
+     Memory Base           = 0xd0000
+
+     Data Memory Size      = 2048KB
+     Available I-RAM Range = 0x8000 to 0x1fffff
+     Available D-RAM Range = 0x80002000 to 0x801fffff
+
+     PageSize              = 0x400
+     Register Stack Size   = 0x800
+     Memory Stack Size     = 0x1800
+
+     CPU PRL               = 0x3
+     Am29027 Available     = No
+     Byte Write Available  = Yes
+
+     # ~.
+
+   続いて、 `cu'プログラムまたは`tip'プログラムを終了させます
+（上の例では、
+`EBMON'プロンプトにおいて`~.'を入力することで終了させています）。
+`EBMON'は、 GDBが制御権を獲得できる状態で、 実行を継続します。
+
+   この例では、
+PCとUNIXシステムの両方に同一の29Kプログラムが確実に存在するようにするのに、
+おそらく最も便利であろうと思われる方法を使うことを仮定しました。
+それは、 PC/NFSによる接続で、
+UNIXホストのファイル・システムの1つをPCの`G:'ドライブとする方法です。
+PC/NFS、 あるいは、 2つのシステム間を接続する類似の方法がない場合、
+フロッピ・ディスクによる転送など、
+UNIXシステムからPCへ29Kプログラムを転送するための他の手段を準備する必要があります。
+GDBは、
+シリアル回線経由で29Kプログラムをダウンロードすることは_しません_。
+
+
+File: gdb-ja.info,  Node: gdb-EB29K,  Next: Remote Log,  Prev: Comms (EB29K),  Up: EB29K Remote
+
+13.4.4.2 EB29Kクロス・デバッグ
+..............................
+
+最後に、
+UNIXシステム上の29Kプログラムが存在するディレクトリに`cd'コマンドによって移動して、
+GDBを起動します。 引数には、 29Kプログラムの名前を指定します。
+
+     cd /usr/joe/work29k
+     gdb myfoo
+
+   これで`target'コマンドが使えるようになります。
+
+     target amd-eb /dev/ttya 9600 MYFOO
+
+この例では、
+ユーザ・プログラムは`myfoo'と呼ばれるファイルであると仮定しています。
+`target amd-eb'に対して最後の引数として指定するファイル名は、
+DOS上でのプログラム名でなければならない点に注意してください。
+この例では単に`MYFOO'となっていますが、
+DOSのパス名を含むこともできますし、 転送メカニズムによっては、
+UNIX側での名前とは似ても似つかないものになることもあるでしょう。
+
+   ここまでくると、
+好きなようにブレイクポイントを設定することができます。
+29Kボード上でのプログラムの実行を監視する準備が整えば、
+GDBの`run'コマンドを使います。
+
+   リモート・プログラムのデバッグを停止するには、
+GDBの`detach'コマンドを使います。
+
+   PCの制御をPCコンソールに戻すには、GDBセッションが終了した後に、
+`EBMON'にアタッチするために、 もう一度`tip'または`cu'を使います。
+その後、 `q'コマンドによって`EBMON'をシャットダウンし、
+DOSのコマンドライン・インタープリタに制御を戻します。 `CTTY
+con'と入力して、
+入力されたコマンドがメインのDOSコンソールによって受け取られるようにし、
+`~.'を入力して`tip'または`cu'を終了させます。
+
+
+File: gdb-ja.info,  Node: Remote Log,  Prev: gdb-EB29K,  Up: EB29K Remote
+
+13.4.4.3 リモート・ログ
+.......................
+
+`target amd-eb'コマンドは、 接続に関わる問題のデバッグを支援するため、
+カレントな作業ディレクトリに`eb.log'というファイルを作成します。
+`eb.log'は、 `EBMON'に送信されたコマンドのエコーを含む、
+`EBMON'からのすべての出力を記録します。
+別のウィンドウ内でこのファイルに対して`tail -f'を実行すると、
+`EBMON'に関わる問題やPC側での予期せぬイベントを理解する助けになることがよくあります。
+
+
+File: gdb-ja.info,  Node: ST2000 Remote,  Next: Hitachi Remote,  Prev: VxWorks Remote,  Up: Remote
+
+13.4.5 GDBとTandem ST2000
+-------------------------
+
+ST2000をホスト・システムに接続する方法については、
+製造元のマニュアルを参照してください。 ST2000が物理的に接続されれば、
+それをデバッグ環境として確立するには、以下を実行します。
+
+     target st2000 DEV SPEED
+
+DEVは通常、
+シリアル回線によってST2000と接続される`/dev/ttya'のようなシリアル装置の名前です。
+代わりに、 `HOSTNAME:PORTNUMBER'という構文を使って
+（例えば、端末多重化装置経由で接続されたシリアル回線への）
+TCP接続としてDEVを指定することもできます。
+
+   このターゲットに対して、
+`load'コマンドと`attach'コマンドは定義されて_いません_。
+通常スタンドアロンで操作している場合と同様、
+ST2000にユーザ・プログラムをロードしなければなりません。 GDBは
+（シンボルのような） デバッグ用の情報を、
+ホスト・コンピュータ上にある別のデバッグ・バージョンのプログラムから読みとります。
+
+   ST2000での作業を支援するために、
+以下の補助的なGDBコマンドが利用可能です。
+
+`st2000 COMMAND'
+     STDBUGモニタにCOMMANDを送信します。 利用できるコマンドについては、
+     製造元のマニュアルを参照してください。
+
+`connect'
+     STDBUGコマンド・モニタに対して制御端末を接続します。
+     STDBUGの操作が終了した後、 `<RET>~.'
+     （Returnキーに続いて、チルダとピリオドを入力）、 または、
+     `<RET>~<C-d>' （Returnキーに続いて、チルダとControl-Dを入力）
+     のいずれかを入力することによってGDBコマンド・プロンプトに戻ります。
+
+
+File: gdb-ja.info,  Node: VxWorks Remote,  Next: ST2000 Remote,  Prev: EB29K Remote,  Up: Remote
+
+13.4.6 GDBとVxWorks
+-------------------
+
+開発者は、 GDBを使用することによって、
+ネットワークに接続されたVxWorks端末上のタスクを、
+UNIXのホストから起動してデバッグすることができます。
+VxWorksシェルから起動され、
+既に実行中の状態のタスクをデバッグすることもできます。 GDBは、
+UNIXホスト上で実行されるコードとVxWorksターゲット上で実行されるコードの両方を使います。
+`gdb'は、 UNIXホスト上にインストールされて実行されます
+（ホスト上のプログラムをデバッグするのに使うGDBと区別するために、
+`vxgdb'という名前でインストールされることもあります）。
+
+`VxWorks-timeout ARGS'
+     すべてのVxWorksベースのターゲットが、
+     `vxworks-timeout'オプションをサポートするようになりました。
+     このオプションはユーザによってセットされるもので、 ARGSは、
+     GDBがRPCの応答を待つ秒数を表わします。
+     実際のVxWorksターゲットが速度の遅いソフトウェア・シミュレータであったり、
+     帯域の小さいネットワーク回線を介して遠距離にある場合などに使うとよいでしょう。
+
+   VxWorksとの接続に関する以下の情報は、
+このマニュアルの作成時における最新の情報です。
+新しくリリースされたVxWorksでは、 手順が変更されているかもしれません。
+
+   VxWorks上でGDBを使うためには、 VxWorksカーネルを再構築して、
+VxWorksライブラリ`rdb.a'の中のリモート・デバッグ用のインターフェイス・ルーチンを組み込む必要があります。
+そのためには、
+VxWorksのコンフィギュレーション・ファイル`configAll.h'の中で`INCLUDE_RDB'を定義して、
+VxWorksカーネルを再構築します。
+この結果として生成されるカーネルには`rdb.a'が組み込まれ、
+VxWorksの起動時にソース・デバッグ用のタスク`tRdbTask'が起動されます。
+VxWorksの構成や再構築に関する詳細については、
+製造元のマニュアルを参照してください。
+
+   VxWorksシステム・イメージへの`rdb.a'の組み込みが終わり、
+UNIXの実行ファイル・サーチ・パスにGDBの存在するパスを加えれば、
+GDBを実行するための準備は完了です。 UNIXホストから`gdb'
+（インストールの方法によっては`vxgdb'） を実行します。
+
+   GDBが起動されて、 以下のプロンプトを表示します。
+
+     (vxgdb)
+
+* Menu:
+
+* VxWorks Connection::          VxWorksへの接続
+* VxWorks Download::            VxWorksダウンロード
+* VxWorks Attach::              タスクの実行
+
+
+File: gdb-ja.info,  Node: VxWorks Connection,  Next: VxWorks Download,  Up: VxWorks Remote
+
+13.4.6.1 VxWorksへの接続
+........................
+
+GDBの`target'コマンドによって、
+ネットワーク上のVxWorksターゲットに接続します。
+`tt'というホスト名を持つターゲットに接続するには、 以下のようにします。
+
+     (vxgdb) target vxworks tt
+
+   GDBは以下のようなメッセージを表示します。
+
+     Attaching remote machine across net...
+     Connected to tt.
+
+   続いてGDBは、
+最後にVxWorksターゲットが起動されたときより後にロードされた
+オブジェクト・モジュールのシンボル・テーブルを読み込もうと試みます。
+GDBは、
+コマンドのサーチ・パスに含まれているディレクトリを探索することによって、
+これらのファイルを見つけます （*note Your program's environment:
+Environment.）。
+オブジェクト・ファイルを見つけることができない場合には、
+以下のようなメッセージを表示します。
+
+     prog.o: No such file or directory.
+
+   このような場合には、
+GDBの`path'コマンドによって適切なディレクトリを検索パスに加えてから、
+再度`target'コマンドを実行します。
+
+
+File: gdb-ja.info,  Node: VxWorks Download,  Next: VxWorks Attach,  Prev: VxWorks Connection,  Up: VxWorks Remote
+
+13.4.6.2 VxWorksダウンロード
+............................
+
+VxWorksターゲットに接続済みの状態で、
+まだロードされていないオブジェクトをデバッグしたい場合には、
+GDBの`load'コマンドを使ってUNIXからVxWorksへ追加的にファイルをダウンロードすることができます。
+`load'コマンドの引数として指定されたオブジェクト・ファイルは、
+実際には2回オープンされます。 まず、
+コードをダウンロードするためにVxWorksターゲットによってオープンされ、
+次にシンボル・テーブルを読み込むためにGDBによってオープンされます。
+2つのシステム上のカレントな作業ディレクトリが異なると、
+問題が発生します。
+両方のシステムが同一のファイル・システムをNFSマウントしているのであれば、
+絶対パスを使うことで問題を回避することができます。 そうでない場合は、
+両方のシステム上で、
+オブジェクト・ファイルが存在するディレクトリを作業ディレクトリにして、
+パスを一切使わずにファイル名だけでファイルを参照するのが、
+最も簡単でしょう。 例えば、 プログラム`prog.o'が、
+VxWorksでは`VXPATH/vw/demo/rdb'に存在し、
+ホストでは`HOSTPATH/vw/demo/rdb'に存在するとしましょう。
+このプログラムをロードするには、 VxWorks上で以下のように実行します。
+
+     -> cd "VXPATH/vw/demo/rdb"
+
+   GDB上では、 以下のように実行します。
+
+     (vxgdb) cd HOSTPATH/vw/demo/rdb
+     (vxgdb) load prog.o
+
+   GDBは次のような応答を表示します。
+
+     Reading symbol data from wherever/vw/demo/rdb/prog.o... done.
+
+   ソース・ファイルを編集して再コンパイルした後に、
+`load'コマンドを使ってオブジェクト・モジュールを再ロードすることもできます。
+ただし、 これを行うと、
+GDBはその時点で定義されているすべてのブレイクポイント、 自動表示設定、
+コンビニエンス変数を削除し、 値ヒストリを初期化してしまいますので、
+注意してください （これは、
+ターゲット・システムのシンボル・テーブルを参照するデバッガのデータ構造の完全性を保つために必要です）。
+
+
+File: gdb-ja.info,  Node: VxWorks Attach,  Prev: VxWorks Download,  Up: VxWorks Remote
+
+13.4.6.3 タスクの実行
+.....................
+
+以下のように`attach'コマンドを使うことで、
+既存のタスクにアタッチすることも可能です。
+
+     (vxgdb) attach TASK
+
+TASKは、 VxWorksの16進数のタスクIDです。 アタッチするときに、
+タスクは実行中であってもサスペンドされていても構いません。
+実行中であったタスクは、 アタッチされたときにサスペンドされます。
+
+
+File: gdb-ja.info,  Node: Sparclet Remote,  Next: Simulator,  Prev: MIPS Remote,  Up: Remote
+
+13.4.7 GDB と Sparclet
+----------------------
+
+開発者は、 GDBを使うことによって、
+Sparcletターゲット上で実行中のタスクをUnixホストからデバッグできるようになります。
+GDBは、
+Unixホスト上で実行されるコードとSparcletターゲット上で実行されるコードの両方を使用します。
+`gdb'は、 Unixホスト上にインストールされて実行されます。
+
+`timeout ARGS'
+     GDBはオプション`remotetimeout'をサポートするようになりました。
+     このオプションはユーザによって設定されるもので、
+     ARGSはGDBが応答を待つ秒数を表わします。
+
+   デバッグ用にコンパイルする際には、
+デバッグ情報を得るために"-g"オプションを、 また、
+ターゲット上でロードしたい位置にプログラムを再配置するために"-Ttext"オプションを指定します。
+各セクションのサイズを小さくするために、
+"-n"または"-N"オプションを加えるのも良いでしょう。
+
+     sparclet-aout-gcc prog.c -Ttext 0x12010000 -g -o prog -N
+
+   アドレスが意図したものと一致しているかどうかを検証するのに、
+objdumpを使うことができます。
+
+     sparclet-aout-objdump --headers --syms prog
+
+   GDBが見つかるようにUnixの実行サーチ・パスを設定すれば、
+GDBを実行するための準備は完了です。 Unixホストから`gdb'
+（インストールの方法によっては、 `sparclet-aout-gdb'） を実行します。
+
+   GDBが起動されて、 以下のプロンプトを表示します。
+
+     (gdbslet)
+
+* Menu:
+
+* Sparclet File::                デバッグするファイルの選択
+* Sparclet Connection::          Sparcletへの接続
+* Sparclet Download::            Sparcletダウンロード
+* Sparclet Execution::           実行とデバッグ
+
+
+File: gdb-ja.info,  Node: Sparclet File,  Next: Sparclet Connection,  Up: Sparclet Remote
+
+13.4.7.1 デバッグするファイルの選択
+...................................
+
+GDBの`file'コマンドによって、
+デバッグするプログラムを選択することができます。
+
+     (gdbslet) file prog
+
+   このコマンドを実行すると、
+GDBは`prog'のシンボル・テーブルを読み込もうとします。 GDBは、
+コマンド・サーチ・パスに含まれるディレクトリを探索することによって、
+そのファイルを見つけます。 そのファイルがデバッグ情報付き
+（オプション"-g"） でコンパイルされた場合は、
+ソース・ファイルも探します。 GDBは、 ディレクトリ・サーチ・パス （*note
+Your program's environment: Environment.）
+に含まれるディレクトリを探索することによって、
+そのソース・ファイルを見つけます。 ファイルが見つからない場合には、
+次のようなメッセージを表示します。
+
+     prog: No such file or directory.
+
+   このメッセージが表示された場合には、
+GDBの`path'コマンドと`dir'コマンドを使って適切なディレクトリをサーチ・パスに加えてから、
+`target'コマンドを再実行します。
+
+
+File: gdb-ja.info,  Node: Sparclet Connection,  Next: Sparclet Download,  Prev: Sparclet File,  Up: Sparclet Remote
+
+13.4.7.2 Sparcletへの接続
+.........................
+
+GDBの`target'コマンドによってSparcletターゲットに接続することができます。
+シリアル・ポート"`ttya'"でターゲットに接続するには、
+以下のように入力します。
+
+     (gdbslet) target sparclet /dev/ttya
+     Remote target sparclet connected to /dev/ttya
+     main () at ../prog.c:3
+
+   GDBは以下のようなメッセージを表示します。
+
+     Connected to ttya.
+
+
+File: gdb-ja.info,  Node: Sparclet Download,  Next: Sparclet Execution,  Prev: Sparclet Connection,  Up: Sparclet Remote
+
+13.4.7.3 Sparcletダウンロード
+.............................
+
+Sparcletターゲットへの接続が完了すると、 GDBの`load'コマンドを使って、
+ホストからターゲットへファイルをダウンロードすることができます。
+ファイル名とロード・オフセットを、
+`load'コマンドへの引数として渡さなければなりません。
+ファイル形式はaoutですので、
+プログラムはその開始アドレスにロードされなければなりません。
+開始アドレスの値を知るにはobjdumpを使うことができます。
+ロード・オフセットとは、
+ファイルの個々のセクションのVMA（仮想メモリ・アドレス）に加算されるオフセットのことです。
+例えば、 プログラム`prog'が、 textセクションのアドレス0x12010000、
+dataセクションのアドレス0x12010160、
+bssセクションのアドレス0x12010170にリンクされているとすると、
+GDBでは以下のように入力します。
+
+     (gdbslet) load prog 0x12010000
+     Loading section .text, size 0xdb0 vma 0x12010000
+
+プログラムがリンクされたアドレスとは異なるアドレスにコードがロードされた場合、
+どこにシンボル・テーブルをマップするかをGDBに通知するために、
+`section'コマンドと`add-symbol-file'コマンドを使う必要があるかもしれません。
+
+
+File: gdb-ja.info,  Node: Sparclet Execution,  Prev: Sparclet Download,  Up: Sparclet Remote
+
+13.4.7.4 実行とデバッグ
+.......................
+
+以上により、 GDBの実行制御コマンドである`b'、 `step'、
+`run'などを使ってタスクのデバッグを開始することができます。
+コマンドの一覧については、 GDBのマニュアルを参照してください。
+
+     (gdbslet) b main
+     Breakpoint 1 at 0x12010000: file prog.c, line 3.
+     (gdbslet) run
+     Starting program: prog
+     Breakpoint 1, main (argc=1, argv=0xeffff21c) at prog.c:3
+     3        char *symarg = 0;
+     (gdbslet) step
+     4        char *execarg = "hello!";
+     (gdbslet)
+
+
+File: gdb-ja.info,  Node: Hitachi Remote,  Next: MIPS Remote,  Prev: ST2000 Remote,  Up: Remote
+
+13.4.8 GDBと日立のマイクロ・プロセッサ
+--------------------------------------
+
+日立のSH、 H8/300、 H8/500と通信するためには、
+GDBは以下の情報を知っている必要があります。
+
+  1. ユーザは、
+     日立マイクロ・プロセッサへのリモート・デバッグ用インターフェイスである`target
+     hms'と、
+     日立SHや日立300Hのインサーキット・エミュレータであるtarget`e7000'のどちらを使用したいかということ
+     （GDBが日立SH、 H8/300、 H8/500用に特に構成されている場合には、
+     `target hms'がデフォルトです）。
+
+  2. ホストと日立ボードを接続しているシリアル装置 （デフォルトは、
+     ホスト上で利用できる最初のシリアル装置です）
+
+  3. シリアル装置で使用する速度
+
+* Menu:
+
+* Hitachi Boards::      日立ボードへの接続
+* Hitachi ICE::         E7000インサーキット・エミュレータの使用
+* Hitachi Special::     日立マイクロ・プロセッサ用の特別なGDBコマンド
+
+
+File: gdb-ja.info,  Node: Hitachi Boards,  Next: Hitachi ICE,  Up: Hitachi Remote
+
+13.4.8.1 日立ボードへの接続
+...........................
+
+シリアル装置を明示的に指定する必要があれば、
+そのための専用コマンドである、 `gdb'の`device
+PORT'コマンドを使用します。 PORTのデフォルトは、
+ホスト上で最初に利用可能なポートです。
+これはUNIXホスト上でのみ必要であり、
+そこでは典型的には`/dev/ttya'という名前になります。
+
+   `gdb'には、 通信速度を設定するための専用コマンド`speed
+BPS'があります。 このコマンドもまた
+UNIXホストからのみ使用されるものです。 DOSホストでは通常どおり、
+GDBからではなくDOSの`mode'コマンドによって回線速度を設定します
+（例えば、 9600
+bpsの接続を確立するには`mode com2:9600,n,8,1,p'のように実行します）。
+
+   `device'コマンドと`speed'コマンドは、
+日立マイクロ・プロセッサ・プログラムのデバッグにUNIXホストを使う場合のみ利用可能です。
+DOSホストを使う場合、 GDBは、
+PCのシリアル・ポート経由で開発ボードと通信するのに、
+`asynctsr'と呼ばれる補助的な常駐プログラムに依存します。
+DOS側でシリアル・ポートの設定をする場合にも、
+DOSの`mode'コマンドを使わなければなりません。
+
+
+File: gdb-ja.info,  Node: Hitachi ICE,  Next: Hitachi Special,  Prev: Hitachi Boards,  Up: Hitachi Remote
+
+13.4.8.2 E7000インサーキット・エミュレータの使用
+................................................
+
+E7000インサーキット・エミュレータを使って、
+日立SHまたはH8/300H用のコードを開発することができます。 `target
+e7000'コマンドを以下のいずれかの形式で使って、 GDBをE7000に接続します。
+
+`target e7000 PORT SPEED'
+     E7000がシリアル・ポートに接続されている場合は、
+     この形式を使ってください。 引数PORTが、
+     使用するシリアル・ポートを指定します （例えば、 `com2'）。
+     3番目の引数は、 秒あたりのビット数による回線速度です （例えば、
+     `9600'）。
+
+`target e7000 HOSTNAME'
+     E7000がTCP/IPネットワーク上のホストとしてインストールされている場合、
+     ホスト名だけを指定することもできます。
+     GDBは接続に`telnet'を使います。
+
+
+File: gdb-ja.info,  Node: Hitachi Special,  Prev: Hitachi ICE,  Up: Hitachi Remote
+
+13.4.8.3 日立マイクロ・プロセッサ用の特別なGDBコマンド
+......................................................
+
+いくつかのGDBコマンドは、
+H8/300またはH8/500用に構成された場合にのみ利用可能です。
+
+`set machine h8300'
+`set machine h8300h'
+     `set machine'コマンドによって、
+     2種類のH8/300アーキテクチャのどちらか一方にあわせてGDBを調整します。
+     `show machine'コマンドによって、
+     現在有効なアーキテクチャを調べることができます。
+
+`set memory MOD'
+`show memory'
+     `set memory'コマンドによって、 使用中のH8/500メモリ・モデル （MOD）
+     を指定します。 `show memory'コマンドによって、
+     現在有効なメモリ・モデルを調べます。 MODに指定可能な値は、
+     `small'、 `big'、 `medium'、 `compact'のいずれかです。
+
+
+File: gdb-ja.info,  Node: MIPS Remote,  Next: Sparclet Remote,  Prev: Hitachi Remote,  Up: Remote
+
+13.4.9 GDBとリモートMIPSボード
+------------------------------
+
+GDBは、 MIPSのリモート・デバッグ用のプロトコルを使って、
+シリアル回線に接続されたMIPSボードと通信することができます。 これは、
+GDBを`--target=mips-idt-ecoff'によって構成することによって、
+利用することができます。
+
+   ターゲット・ボードとの接続を指定するには、
+以下のGDBコマンドを使用します。
+
+`target mips PORT'
+     ボード上でプログラムを実行するには、
+     引数にユーザ・プログラムの名前を指定して`gdb'を起動します。
+     ボードに接続するには、 `target mips PORT'コマンドを使用します。
+     PORTは、 ボードに接続されているシリアル・ポートの名前です。
+     プログラムがまだボードにダウンロードされていないのであれば、
+     `load'コマンドを使ってダウンロードすることができます。 その後、
+     通常利用できるすべてのGDBコマンドを使うことができます。
+
+     例えば以下の手順では、 デバッガを使うことによって、
+     シリアル・ポートを経由してターゲット・ボードに接続した後に、
+     PROGと呼ばれるプログラムをロードして実行しています。
+
+          host$ gdb PROG
+          GDB is free software and ...
+          (gdb) target mips /dev/ttyb
+          (gdb) load PROG
+          (gdb) run
+
+`target mips HOSTNAME:PORTNUMBER'
+     GDBのホスト構成によっては、
+     `HOSTNAME:PORTNUMBER'という構文を使うことで、
+     シリアル・ポートの代わりに （例えば、
+     端末多重化装置によって管理されているシリアル回線への）
+     TCP接続を指定することができます。
+
+`target pmon PORT'
+
+`target ddb PORT'
+
+`target lsi PORT'
+
+GDBは、 MIPSターゲットに対して、
+以下の特別なコマンドもサポートしています。
+
+`set processor ARGS'
+`show processor'
+     プロセッサの種類に固有のレジスタにアクセスしたい場合には、 `set
+     processor'コマンドを使ってMIPSプロセッサの種類を設定します。
+     例えば、 `set processor r3041'は、
+     3041チップで有効なCPOレジスタを使うよう、 GDBに対して通知します。
+     GDBが使っているMIPSプロセッサの種類を知るには、 `show
+     processor'コマンドを使います。 GDBが使っているレジスタを知るには、
+     `info reg'コマンドを使います。
+
+`set mipsfpu double'
+`set mipsfpu single'
+`set mipsfpu none'
+`show mipsfpu'
+     MIPS浮動小数点コプロセッサをサポートしないターゲット・ボードを使う場合は、
+     `set mipsfpu none'コマンドを使う必要があります
+     （このようなことが必要な場合には、
+     初期化ファイルの中にそのコマンドを入れてしまってもよいでしょう）。
+     これによって、
+     浮動小数値を返す関数の戻り値を見つける方法をGDBに知らせます。
+     またこれにより、 ボード上で関数を呼び出すときに、
+     GDBは浮動小数点レジスタの内容を退避する必要がなくなります。
+     R4650プロセッサ上にあるような、
+     単精度浮動小数だけをサポートする浮動小数点コプロセッサを使っている場合には、
+     `set mipsfpu single'コマンドを使います。
+     デフォルトの倍精度浮動小数点コプロセッサは、 `set mipsfpu
+     double'によって選択することができます。
+
+     以前のバージョンでは、 有効な選択肢は、
+     倍精度浮動小数コプロセッサを使う設定と浮動小数点コプロセッサを使わない設定だけでした。
+     したがって、 `set mipsfpu
+     on'で倍精度浮動小数コプロセッサが選択され、 `set mipsfpu
+     off'で浮動小数点コプロセッサを使わないという設定が選択されていました。
+
+     他の場合と同様、 `mipsfpu'変数に関する設定は、 `show
+     mipsfpu'によって問い合わせることができます。
+
+`set remotedebug N'
+`show remotedebug'
+     `remotedebug'変数を設定することによって、
+     ボードとの通信に関するいくつかのデバッグ用の情報を見ることができます。
+     `set remotedebug 1'によって値`1'を設定すると、
+     すべてのパケットが表示されます。 値を`2'に設定すると、
+     すべての文字が表示されます。 `show remotedebug'コマンドによって、
+     いつでも現在の設定値を調べることができます。
+
+`set timeout SECONDS'
+`set retransmit-timeout SECONDS'
+`show timeout'
+`show retransmit-timeout'
+     MIPSリモート・プロトコルにおけるパケット待ちの状態でのタイムアウト時間を、
+     `set timeout SECONDS'コマンドで制御することができます。
+     デフォルトは5秒です。 同様に、 パケットに対する確認 （ACK）
+     を待っている状態でのタイムアウト時間を、 `set retransmit-timeout
+     SECONDS'コマンドで制御することができます。 デフォルトは3秒です。
+     それぞれの値を`show timeout'と`show
+     retransmit-timeout'で調べることができます （どちらのコマンドも、
+     GDBが`--target=mips-idt-ecoff'用に構成されている場合_のみ_使用可能です）。
+
+     `set timeout'で設定されたタイムアウト時間は、
+     ユーザ・プログラムが停止するのをGDBが待っている間は適用されません。
+     この場合には、 GDBは永遠に待ち続けます。 これは、
+     停止するまでにプログラムがどの程度長く実行を継続するのかを知る方法がないからです。
+
+
+File: gdb-ja.info,  Node: Simulator,  Prev: Sparclet Remote,  Up: Remote
+
+13.4.10 シミュレートされたCPUターゲット
+---------------------------------------
+
+構成によっては、
+ユーザ・プログラムをデバッグする際にハードウェアCPUの代わりに使うことのできるCPUシミュレータが、
+GDBの中に組み込まれています。 現在のところ、
+ARM、D10V、D30V、FR30、H8/300、H8/500、
+i960、M32R、MIPS、MN10200、MN10300、
+PowerPC、SH、Sparc、V850、W65、Z8000 用のシミュレータが利用できます。
+
+Z8000系については、 `target sim'によって、 Z8002
+（Z8000アーキテクチャの、 セグメントを持たない変種） またはZ8001
+（セグメントを持つ変種） をシミュレートします。 シミュレータは、
+オブジェクト・コードを調べることで、
+どちらのアーキテクチャが適切であるかを認識します。
+
+`target sim ARGS'
+     シミュレートされたCPU上でプログラムをデバッグします。
+     シミュレータがセットアップ・オプションをサポートしている場合は、
+     それをARGSの部分に指定します。
+
+このターゲットを指定した後には、
+ホスト・コンピュータ上のプログラムをデバッグするのと同様の方法で、
+シミュレートされたCPU用のプログラムをデバッグすることができます。
+新しいプログラムのイメージをロードするには `file'コマンドを使い、
+ユーザ・プログラムを実行するには`run'コマンドを使う、 という具合です。
+
+   Z8000シミュレータでは、 通常のマシン・レジスタ （`info reg' を参照）
+がすべて利用可能であるだけでなく、 特別な名前を持つレジスタとして、
+3つの追加情報が提供されています。
+
+`cycles'
+     シミュレータ内のクロック・ティックをカウントします。
+
+`insts'
+     シミュレータ内で実行された命令をカウントします。
+
+`time'
+     1/60秒を単位とする実行時間を示します。
+
+   これらの変数は、 GDBの式の中で普通に参照することができます。 例えば、
+`b fputc if $cycles>5000'は、
+シミュレートされたクロック・ティックが最低5,000回発生した後に停止するような、
+条件付きブレイクポイントを設定します。
+
+
+File: gdb-ja.info,  Node: Controlling GDB,  Next: Sequences,  Prev: Targets,  Up: Top
+
+14 GDBの制御
+************
+
+`set'コマンドによってGDBの操作方法を変更することができます。
+GDBによるデータの表示方法を変更するコマンドについては、 *note Print
+settings: Print Settings.。 この章では、
+その他の設定について説明します。
+
+* Menu:
+
+* Prompt::                      プロンプト
+* Editing::                     コマンド編集
+* History::                     コマンド・ヒストリ
+* Screen Size::                 画面サイズ
+* Numbers::                     数値
+* Messages/Warnings::           オプションの警告およびメッセージ
+
+
+File: gdb-ja.info,  Node: Prompt,  Next: Editing,  Prev: Controlling GDB,  Up: Controlling GDB
+
+14.1 プロンプト
+===============
+
+GDBは、 "プロンプト"と呼ばれる文字列を表示することで、
+コマンドを受け付ける用意ができたことを示します。 通常、
+この文字列は`(gdb)'です。 `set prompt'コマンドによって、
+プロンプトの文字列を変更することができます。 例えば、
+GDBを使ってGDB自体をデバッグしているときには、
+どちらか一方のGDBセッションのプロンプトを変更して、
+どちらのGDBとやりとりしているのか区別できるようにすると便利です。
+
+   _注:_ 以前のバージョンとは異なり、 現在の`set prompt'は、
+ユーザが設定したプロンプトの後ろに空白を追加しません。 ユーザは、
+空白で終わるプロンプト、
+空白で終わらないプロンプトのいずれでも設定することができます。
+
+`set prompt NEWPROMPT'
+     今後はNEWPROMPTをプロンプトとして使用するよう、 GDBに指示します
+
+`show prompt'
+     `Gdb's prompt is: YOUR-PROMPT' という形式の1行を表示します
+
+
+File: gdb-ja.info,  Node: Editing,  Next: History,  Prev: Prompt,  Up: Controlling GDB
+
+14.2 コマンド編集
+=================
+
+GDBは入力コマンドを"readline"インターフェイスによって読み込みます。
+このGNUライブラリを使うことで、
+ユーザに対してコマンドライン・インターフェイスを提供するプログラムは、
+統一された振る舞いをするようになります。 これを使うことの利点としては、
+GNU Emacsスタイルまたは"vi"スタイルによるコマンドのインライン編集、
+`csh'スタイルのヒストリ代替、
+複数のデバッグ・セッションにまたがるコマンド・ヒストリの保存と呼び出しができるようになることが挙げられます。
+
+   `set'コマンドによって、
+GDBにおけるコマンドライン編集の振る舞いを制御することができます。
+
+`set editing'
+`set editing on'
+     コマンドライン編集を使用可能にします （コマンドライン編集は、
+     デフォルトの状態で使用可能です）。
+
+`set editing off'
+     コマンドライン編集を使用不可にします。
+
+`show editing'
+     コマンドライン編集が使用可能かどうかを示します。
+
+
+File: gdb-ja.info,  Node: History,  Next: Screen Size,  Prev: Editing,  Up: Controlling GDB
+
+14.3 コマンド・ヒストリ
+=======================
+
+デバッグ・セッション中にユーザが入力したコマンドをGDBに記録させることができるため、
+ユーザは実際に何が実行されたかを確実に知ることができます。
+以下のコマンドを使って、 GDBのコマンド・ヒストリ機能を管理します。
+
+`set history filename FNAME'
+     GDBコマンド・ヒストリ・ファイルの名前をFNAMEに設定します。 GDBは、
+     最初にこのファイルからコマンド・ヒストリ・リストの初期値を読み込み、
+     終了時には、
+     このファイルにセッション中のコマンド・ヒストリを書き込みます。
+     コマンド・ヒストリ・リストには、 ヒストリ展開機能、 あるいは、
+     後に列挙するヒストリ・コマンド編集文字によってアクセスすることができます。
+     このファイル名は、
+     デフォルトでは環境変数`GDBHISTFILE'の値になりますが、
+     この変数が設定されていない場合には`./.gdb_history'になります。
+
+`set history save'
+`set history save on'
+     コマンド・ヒストリをファイルの中に記録します。
+     ファイルの名前は`set history filename'コマンドで指定可能です。
+     デフォルトでは、 このオプションは使用不可の状態になっています。
+
+`set history save off'
+     コマンド・ヒストリをファイルの中に記録するのを停止します。
+
+`set history size SIZE'
+     GDBがヒストリ・リストの中に記録するコマンドの数を設定します。
+     デフォルトでは、 この値は環境変数`HISTSIZE'の値に設定されますが、
+     この変数が設定されていない場合は256になります。
+
+   ヒストリ展開機能により、 文字`!'には特別な意味が割り当てられます。
+
+   `!'は、 C言語における論理NOTの演算子でもあるので、
+ヒストリ展開機能はデフォルトではoffになっています。 `set history
+expansion
+on'コマンドによってヒストリ展開を利用できるようにした場合には、
+（`!'を式の中で論理NOTとして使うのであれば）
+`!'の後ろに空白かタブを入れることによって、
+それが展開されないようにする必要のある場合があります。
+ヒストリ展開が有効になっている場合でも、 readlineのヒストリ機能は、
+`!='や`!('という文字列を置き換えようとはしません。
+
+   ヒストリ展開を制御するコマンドには、 以下のようなものがあります。
+
+`set history expansion on'
+`set history expansion'
+     ヒストリ展開を使用可能にします。
+     ヒストリ展開はデフォルトでは使用不可です。
+
+`set history expansion off'
+     ヒストリ展開を使用不可にします。
+
+     readlineのコードには、 ヒストリ編集機能やヒストリ展開機能に関する、
+     より完全なドキュメントが付属しています。 GNU
+     Emacsや`vi'のことをよく知らない人は、
+     このドキュメントを読むとよいでしょう。
+
+`show history'
+`show history filename'
+`show history save'
+`show history size'
+`show history expansion'
+     これらのコマンドは、 GDBのヒストリ・パラメータの状態を表示します。
+     単に`show history'を実行すると、
+     4つのパラメータの状態がすべて表示されます。
+
+`show commands'
+     コマンド・ヒストリ中の最後の10個のコマンドを表示します。
+
+`show commands N'
+     コマンド番号Nのコマンドを中心に、
+     その前後の10個のコマンドを表示します。
+
+`show commands +'
+     最後に表示されたコマンドに続く10個のコマンドを表示します。
+
+
+File: gdb-ja.info,  Node: Screen Size,  Next: Numbers,  Prev: History,  Up: Controlling GDB
+
+14.4 画面サイズ
+===============
+
+GDBのコマンドは、 大量の情報を画面上に出力することがあります。
+大量の情報をすべて読むのを支援するために、
+GDBは1ページ分の情報を出力するたびに、
+出力を停止してユーザからの入力を求めます。 出力を継続したい場合は
+<RET>キーを押し、 残りの出力を破棄したい場合は`q'を入力します。 また、
+画面幅の設定によって、 どこで行を折り返すかが決まります。 GDBは、
+単純に次の行に折り返すのではなく、
+出力の内容に応じて読みやすいところで折り返すよう試みます。
+
+   通常GDBは、 termcapデータベースと`TERM'環境変数の値、 さらに、 `stty
+rows'、 `stty cols'の設定から、 画面の大きさを知っています。
+この結果が正しくない場合、 `set height'コマンドと`set
+width'コマンドで画面の大きさの設定を変更することができます。
+
+`set height LPP'
+`show height'
+`set width CPL'
+`show width'
+     これらの`set'コマンドは、 画面の高さをLPP行に、
+     幅をCPL桁に指定します。 関連する`show'コマンドが、
+     現在の設定を表示します。
+
+     ゼロ行の高さを指定すると、 GDBは出力がどんなに長くても、
+     出力途中で一時停止することをしません。 これは、
+     出力先がファイルやエディタのバッファである場合に便利です。
+
+     同様に、 `set width 0'を指定することによって、
+     GDBに行の折り返しを行わせないようにすることもできます。
+
+
+File: gdb-ja.info,  Node: Numbers,  Next: Messages/Warnings,  Prev: Screen Size,  Up: Controlling GDB
+
+14.5 数値
+=========
+
+GDBに対して8進、 10進、
+16進の数値を慣例にしたがって入力することはいつでも可能です。
+8進数は`0'で始まります。 10進数は`.'で終わります。
+16進数は`0x'で始まります。 このどれにも該当しないものは、
+デフォルトで10進数として入力されます。 同様に、 数値を表示するときも、
+特定のフォーマットが指定されていなければ、
+デフォルトで10進数として表示されます。 `set radix'コマンドによって、
+入力、 出力の両方のデフォルトを変更することができます。
+
+`set input-radix BASE'
+     数値入力のデフォルトの基数を設定します。
+     サポートされる選択肢は10進数の8、 10、 16です。
+     BASE自身はあいまいにならないように指定するか、 あるいは、
+     現在のデフォルトの基数を使用して指定します。 例えば、
+
+          set radix 012
+          set radix 10.
+          set radix 0xa
+
+     は基数を10進数に設定します。 一方、 `set radix 10'は、 現在の基数を
+     （それがどれであれ） 変更しません。
+
+`set output-radix BASE'
+     数値の表示に使うデフォルトの基数を設定します。
+     サポートされるBASEの選択肢は 10進数の8、 10、 16です。
+     BASE自身はあいまいにならないように指定するか、 あるいは、
+     現在のデフォルトの基数を使用して指定します。
+
+`show input-radix'
+     数値の入力に現在使われているデフォルトの基数を表示します。
+
+`show output-radix'
+     数値の表示に現在使われているデフォルトの基数を表示します。
+
+
+File: gdb-ja.info,  Node: Messages/Warnings,  Prev: Numbers,  Up: Controlling GDB
+
+14.6 オプションの警告およびメッセージ
+=====================================
+
+デフォルトでは、 GDBは内部の動作に関する情報を表示しません。
+性能の遅いマシンで実行している場合には、 `set
+verbose'コマンドを使うとよいでしょう。 これによって、 GDBは、
+長い内部処理を実行するときにメッセージを出力することで、
+クラッシュと勘違いされないようにします。
+
+   現在のところ、 `set verbose'コマンドによって制御されるメッセージは、
+ソース・ファイルのシンボル・テーブルを読み込み中であることを知らせるメッセージです。
+*Note Commands to specify files:
+Files.の`symbol-file'を参照してください。
+
+`set verbose on'
+     GDBが特定の情報メッセージを出力するようにします。
+
+`set verbose off'
+     GDBが特定の情報メッセージを出力しないようにします。
+
+`show verbose'
+     `set verbose'がon、 offのどちらの状態であるかを表示します。
+
+   デフォルトでは、
+オブジェクト・ファイルのシンボル・テーブルに問題を検出しても、
+GDBはメッセージを出力しません。 しかし、
+コンパイラをデバッグしているようなときには、
+このような情報があると便利かもしれません （*note Errors reading symbol
+files: Symbol Errors.）。
+
+`set complaints LIMIT'
+     異常な型のシンボルを検出するたびにGDBが出力するメッセージの総数をLIMIT個とします。
+     LIMIT個のメッセージを表示すると、
+     その後は問題を検出してもメッセージを表示しないようになります。
+     メッセージを1つも出力させないようにするには、
+     LIMITにゼロを指定してください。
+     メッセージの出力が抑止されないようにするには、
+     LIMITに大きな値を設定してください。
+
+`show complaints'
+     GDBが何個までシンボル異常に関するメッセージを出力できるよう設定されているかを表示します。
+
+   デフォルトでは、 GDBは慎重に動作し、
+コマンドを本当に実行するのか確認するために、
+ときには馬鹿げているとさえ思えるような質問を多く尋ねてきます。 例えば、
+既に実行中のプログラムを実行しようとすると、 次のように質問してきます。
+
+     (gdb) run
+     The program being debugged has been started already.
+     Start it from the beginning? (y or n)
+
+   ユーザが、 実行したコマンドの結果を何がなんでも見てみたいのであれば、
+この「機能」を抑止することができます。
+
+`set confirm off'
+     確認要求を行わないようにします。
+
+`set confirm on'
+     確認要求を行うようにします （デフォルト）。
+
+`show confirm'
+     確認要求の現在の設定を表示します。
+
+
+File: gdb-ja.info,  Node: Sequences,  Next: Emacs,  Prev: Controlling GDB,  Up: Top
+
+15 一連のコマンドのグループ化
+*****************************
+
+ブレイクポイント・コマンド （*note Breakpoint command lists: Break
+Commands.） とは別に、
+一連のコマンドを一括して実行するために保存する2つの方法を、
+GDBは提供しています。 ユーザ定義コマンドとコマンド・ファイルがそれです。
+
+* Menu:
+
+* Define::                      ユーザ定義コマンド
+* Hooks::                       ユーザ定義コマンド・フック
+* Command Files::               コマンド・ファイル
+* Output::                      制御された出力を得るためのコマンド
+
+
+File: gdb-ja.info,  Node: Define,  Next: Hooks,  Prev: Sequences,  Up: Sequences
+
+15.1 ユーザ定義コマンド
+=======================
+
+"ユーザ定義コマンド"とは、
+一連のGDBコマンドに単一コマンドとしての名前を新たに割り当てたものです。
+これは、 `define'コマンドによって行われます。 ユーザ・コマンドは、
+空白で区切られた引数を最高で10個まで受け取ることができます。 引数は、
+ユーザ・コマンドの中で、 $ARG0...$ARG9としてアクセスすることができます。
+簡単な例を以下に示します。
+
+     define adder
+       print $arg0 + $arg1 + $arg2
+
+このコマンドを実行するには、以下のようにします。
+
+     adder 1 2 3
+
+上の例では、 `adder'というコマンドを定義しています。 このコマンドは、
+3つの引数の合計を表示します。 引数は文字列で代用されますので、
+変数を参照することもできますし、 複雑な式を使うこともできます。 また、
+下位関数の呼び出しを行うこともできます。
+
+`define COMMANDNAME'
+     COMMANDNAMEという名前のコマンドを定義します。
+     同じ名前のコマンドが既に存在する場合は、
+     再定義の確認を求められます。
+
+     コマンドの定義は、 `define'コマンドに続いて与えられる、
+     他のGDBコマンド行から構成されます。 これらのコマンドの末尾は、
+     `end'を含む行によって示されます。
+
+`if'
+     引数として、 評価の対象となる式を1つだけ取ります。
+     その後に一連のコマンドが続きますが、 これらのコマンドは、
+     式の評価結果が真 （ゼロ以外の値） である場合にだけ実行されます。
+     さらに、 `else'行が続くことがあり、 この場合は、 `else'行の後に、
+     式の評価結果が偽であった場合にだけ実行される一連のコマンドが続きます。
+     末尾は、 `end'を含む行によって示されます。
+
+`while'
+     構文は`if'と似ています。 引数として、
+     評価の対象となる式を1つだけ取ります。 その後には、
+     実行されるべきコマンドが1行に1つずつ続き、
+     最後に`end'がなければなりません。 コマンドは、
+     式の評価結果が真である限り、 繰り返し実行されます。
+
+`document COMMANDNAME'
+     ユーザ定義コマンドCOMMANDNAMEのドキュメントを記述します。
+     このドキュメントは`help'コマンドによってアクセスできます。
+     コマンドCOMMANDNAMEは既に定義済みでなければなりません。
+     このコマンドは、
+     `define'コマンドが一連のコマンド定義を読み込むのと同様に、
+     `end'で終わる一連のドキュメントを読み込みます。
+     `document'コマンドの実行が完了すると、
+     コマンドCOMMANDNAMEに対して`help'コマンドを実行すると、
+     ユーザの記述したドキュメントが表示されます。
+
+     `document'コマンドを再度実行することによって、
+     コマンドのドキュメントを変更することができます。
+     `define'コマンドによってコマンドを再定義しても、
+     ドキュメントは変更されません。
+
+`help user-defined'
+     すべてのユーザ定義コマンドを一覧表示します。
+     個々のコマンドにドキュメントがあれば、 その1行目が表示されます。
+
+`show user'
+`show user COMMANDNAME'
+     COMMANDNAMEで指定されるコマンドを定義するのに使われたGDBコマンドを表示します
+     （ドキュメントは表示されません）。 COMMANDNAMEを指定しないと、
+     すべてのユーザ定義コマンドの定義が表示されます。
+
+   ユーザ定義コマンドが実行されるときに、
+定義内のコマンドは表示されません。
+定義内のコマンドがどれか1つでもエラーになると、
+ユーザ定義コマンドの実行が停止されます。
+
+   対話的に使われている場合には確認を求めてくるようなコマンドも、
+ユーザ定義コマンドの内部で使われている場合には確認を求めることなく処理を継続します。
+通常は実行中の処理に関してメッセージを表示するGDBコマンドの多くが、
+ユーザ定義コマンドの中から呼び出されている場合にはメッセージを表示しません。
+
+
+File: gdb-ja.info,  Node: Hooks,  Next: Command Files,  Prev: Define,  Up: Sequences
+
+15.2 ユーザ定義コマンド・フック
+===============================
+
+特別な種類のユーザ定義コマンドである、
+_フック_を定義することができます。
+`hook-foo'というユーザ定義コマンドが存在すると、
+`foo'というコマンドを実行するときにはいつも、
+`foo'コマンドが実行される前に （引数のない） `hook-foo'が実行されます。
+
+   また、 仮想コマンドである`stop'が存在します。 （`hook-stop'を）
+定義すると、 ユーザ・プログラムの実行が停止するたびに、
+その定義内のコマンドが実行されます。 実行タイミングは、
+ブレイクポイント・コマンドの実行、 自動表示対象の表示、 および、
+スタック・フレームの表示の直前です。
+
+   例えば、
+シングル・ステップ実行をしている際には`SIGALRM'シグナルを無視し、
+通常の実行時には通常どおり処理したい場合には、 以下のように定義します。
+
+     define hook-stop
+     handle SIGALRM nopass
+     end
+
+     define hook-run
+     handle SIGALRM pass
+     end
+
+     define hook-continue
+     handle SIGLARM pass
+     end
+
+   GDBのコマンドのうち、 その名前が1つの単語から成るものには、
+フックを定義することができます。 ただし、
+コマンド・エイリアスにフックを定義することはできません。 フックは、
+コマンドの基本名に対して定義しなければなりません。 例えば、
+`bt'ではなく`backtrace'を使います。 フックの実行中にエラーが発生すると、
+GDBコマンドは停止します。
+（ユーザが実際に入力したコマンドが実行する機会を与えられる前に）
+GDBはプロンプトを表示します。
+
+   既知のコマンドのいずれにも対応しないフックを定義しようとすると、
+`define'コマンドは警告メッセージを表示します。
+
+
+File: gdb-ja.info,  Node: Command Files,  Next: Output,  Prev: Hooks,  Up: Sequences
+
+15.3 コマンド・ファイル
+=======================
+
+GDBのコマンド・ファイルとは、
+各行がGDBコマンドとなっているファイルのことです。 （行の先頭が`#'の）
+コメントも含めることができます。
+コマンド・ファイル内の空行は何も実行しません。 それは、
+端末上での実行の場合とは異なり、
+最後に実行されたコマンドの繰り返しを意味しません。
+
+   GDBを起動すると、
+自動的に"初期化ファイル"からコマンドを読み込んで実行します。 これは、
+Unix上では`.gdbinit'という名前のファイルであり、
+DOS/Windows上では`gdb.ini'という名前のファイルです。 GDBは、
+ユーザのホーム・ディレクトリに初期化ファイルがあればまずそれを読み込み、
+続いてコマンンドライン・オプションとオペランドを処理した後、
+カレントな作業ディレクトリに初期化ファイルがあればそれを読み込みます。
+このように動くのは、
+ユーザのホーム・ディレクトリに初期化ファイルを置くことで、
+コマンドライン上のオプションやオペランドの処理に影響を与える （`set
+complaints'のような）
+オプションを設定することができるようにするためです。
+`-nx'オプションを使用すると、 初期化ファイルは実行されません。 *note
+Choosing modes: Mode Options.。
+
+   GDBのいくつかの構成では、 初期化ファイルは異なる名前で知られています
+（このような環境では、
+特別な形式のGDBが他の形式のGDBと共存する必要があり、
+そのために特別なバージョンのGDBの初期化ファイルには異なる名前が付けられます）。
+特別な名前の初期化ファイルを持つ環境には、 以下のようなものがあります。
+
+   * VxWorks（Wind River Systems社のリアルタイムOS）: `.vxgdbinit'
+
+   * OS68K（Enea Data Systems社のリアルタイムOS）: `.os68gdbinit'
+
+   * ES-1800（Ericsson Telecom社のAB M68000エミュレータ）: `.esgdbinit'
+
+   また、 `source'コマンドによって、
+コマンド・ファイルの実行を要求することもできます。
+
+`source FILENAME'
+     コマンド・ファイルFILENAMEを実行します。
+
+   コマンド・ファイルの各行は順番に実行されます。 コマンドの実行時に、
+そのコマンドは表示されません。 どれか1つでもコマンドがエラーになると、
+コマンド・ファイルの実行は停止されます。
+
+   対話的に使われている場合には確認を求めてくるようなコマンドも、
+コマンド・ファイル内で使われている場合は確認を求めることなく処理を継続します。
+通常は実行中の処理についてメッセージを表示するGDBコマンドの多くが、
+コマンド・ファイルの中から呼び出されている場合にはメッセージを表示しません。
+
+
+File: gdb-ja.info,  Node: Output,  Prev: Command Files,  Up: Sequences
+
+15.4 制御された出力を得るためのコマンド
+=======================================
+
+コマンド・ファイルやユーザ定義コマンドの実行中には、
+通常のGDBの出力は抑止されます。 唯一出力されるのは、
+定義内のコマンドが明示的に表示するメッセージだけです。 ここでは、
+ユーザが希望するとおりの出力を生成するのに役に立つ、
+3つのコマンドについて説明します。
+
+`echo TEXT'
+     TEXTを表示します。 通常は表示されない文字も、
+     Cのエスケープ・シーケンスを使うことでTEXTの中に含めることができます。
+     例えば、 改行コードを表示するには`\n'を使います。
+     *明示的に指定しない限り、 改行コードは表示されません。*
+     標準的なCのエスケープ・シーケンスに加えて、
+     バックスラッシュの後ろに空白を置くことで、 空白が表わされます。
+     これは、 先頭や末尾に空白のある文字列を表示するのに便利です。
+     というのは、 こうしないと、
+     引数の先頭や末尾の空白は削除されるからです。 ` and foo
+     = 'を表示するには、 `echo \ and foo = \ 'を実行してください。
+
+     Cと同様、 TEXTの末尾にバックスラッシュを置くことで、
+     コマンドを次の行以降に継続することができます。 例えば、
+
+          echo This is some text\n\
+          which is continued\n\
+          onto several lines.\n
+
+     は
+
+          echo This is some text\n
+          echo which is continued\n
+          echo onto several lines.\n
+
+     と同じ出力をもたらします。
+
+`output EXPRESSION'
+     EXPRESSIONの値を表示し、 それ以外には何も表示しません。
+     改行コードも、 `$NN = 'も表示されません。
+     EXPRESSIONの値は値ヒストリには入りません。 式の詳細については、
+     *Note Expressions: Expressions。
+
+`output/FMT EXPRESSION'
+     EXPRESSIONの値を、 FMTで指定されるフォーマットで表示します。
+     `print'コマンドと同じフォーマットを指定することができます。
+     詳細については、 *Note Output formats: Output Formats。
+
+`printf STRING, EXPRESSIONS...'
+     STRINGで指定された文字列にしたがってEXPRESSIONSの値を表示します。
+     複数のEXPRESSIONSはカンマで区切られ、
+     数値かポインタのいずれかを指定できます。 これらの値は、
+     ユーザ・プログラムからCのサブルーチン
+
+          printf (STRING, EXPRESSIONS...);
+
+     を実行した場合と同様に、 STRINGの指定にしたがって表示されます。
+
+     例えば、 次のようにして2つの値を16進数で表示することができます。
+
+          printf "foo, bar-foo = 0x%x, 0x%x\n", foo, bar-foo
+
+     フォーマットを指定する文字列の中で使えるバックスラッシュ・エスケープ・シーケンスは、
+     バックスラッシュとそれに続く単一文字から構成される簡単なものだけです。
+
+
+File: gdb-ja.info,  Node: Emacs,  Next: GDB Bugs,  Prev: Sequences,  Up: Top
+
+16 GNU Emacsの中でのGDBの使用
+*****************************
+
+GDBでデバッグ中のプログラムのソース・ファイルをGNU
+Emacsを使って参照（および編集）するための、
+特別なインターフェイスが提供されています。
+
+   このインターフェイスを使うには、 Emacsの中で`M-x
+gdb'コマンドを使います。
+デバッグしたい実行ファイルを引数として指定してください。
+このコマンドは、 GDBをEmacsのサブプロセスとして起動し、
+新しく作成したEmacsバッファを通じて入出力を行います。
+
+   Emacsの中でのGDBの使い方は、 通常のGDBの使い方とほぼ同様ですが、
+2つ相違点があります。
+
+   * 「端末」へのすべての入出力はEmacsバッファへ送られる。
+
+   これは、 GDBコマンドとその出力、 および、
+デバッグ対象のユーザ・プログラムによる入出力の両方に適用されます。
+
+以前に実行したコマンド・テキストをコピーして再入力することができるので便利です。
+出力された部分に関しても同様のことができます。
+
+   EmacsのShellモードで利用可能なすべての機能を、
+ユーザ・プログラムとのやりとりで使うことができます。 特に、
+通常どおりにシグナルを送信することができます。 例えば、 `C-c
+C-c'で割り込みシグナルを、 `C-c
+C-z'でストップ・シグナルを発生させることができます。
+
+   * GDBはEmacsを使ってソース・コードを表示する。
+
+   GDBがスタック・フレームを表示するときにはいつでも、
+Emacsがそのフレームのソース・ファイルを自動的に見つけて、
+カレント行の左側の余白に矢印 （`=>'） を表示します。
+Emacsはソース・コードを別バッファに表示し、 スクリーンを2つに分けて、
+GDBセッションとソースをともに表示します。
+
+   GDBの`list'コマンドや`search'コマンドを明示的に使えば、
+通常どおりの出力を生成することもできますが、
+これらをEmacsから使う理由はおそらくないでしょう。
+
+     _注意:_
+     ユーザ・プログラムの存在するディレクトリがユーザのカレント・ディレクトリでない場合、
+     ソース・ファイルの存在場所についてEmacsは簡単に混乱に陥ります。
+     このような場合、
+     ソースを表示するための追加のディスプレイ・バッファは表示されません。
+     GDBは、
+     ユーザの環境変数`PATH'のリストの中にあるディレクトリを探索してプログラムを見つけ出しますので、
+     GDBの入出力セッションは通常どおり進行します。 しかしEmacsは、
+     このような状況においてソース・ファイルを見つけ出すのに十分な情報をGDBから受け取っていません。
+     この問題を回避するには、
+     ユーザ・プログラムの存在するディレクトリからGDBモードを開始するか、
+     `M-x gdb'の引数の入力を求められたときに、
+     絶対パスでファイル名を指定します。
+
+     Emacsの既存のGDBバッファから、
+     デバッグ対象をどこかほかの場所にあるプログラムに変更する目的でGDBの`file'コマンドを使うと、
+     同様の混乱の発生することがあります。
+
+   デフォルトでは、 `M-x
+gdb'は`gdb'という名前のプログラムを呼び出します。
+別の名前でGDBを呼び出す必要がある場合 （例えば、
+異なる構成のGDBを別の名前で持っているような場合） は、
+Emacsの`gdb-command-name'という変数を設定します。 例えば
+
+     (setq gdb-command-name "mygdb")
+
+（を`ESC ESC'に続けて入力するか、 あるいは、
+`*scratch*'バッファまたは`.emacs'ファイルに入力することで）
+Emacsは`gdb'の代わりに「`mygdb'」という名前のプログラムを呼び出します。
+
+   GDBのI/Oバッファでは、 標準的なShellモードのコマンドに加えて、
+以下のような特別なEmacsコマンドを使うことができます。
+
+`C-h m'
+     EmacsのGDBモードの機能に関する説明を表示します。
+
+`M-s'
+     GDBの`step'コマンドのように、 ソース行を1行実行します。 さらに、
+     カレントなファイルとその中における位置を示すために、
+     表示ウィンドウを更新します。
+
+`M-n'
+     GDBの`next'コマンドのように、 関数呼び出しをすべてスキップして、
+     現在の関数内の次のソース行まで実行を進めます。 さらに、
+     カレントなファイルとその中における位置を示すために、
+     表示ウィンドウを更新します。
+
+`M-i'
+     GDBの`stepi'コマンドのように、 1命令を実行します。
+     必要に応じて表示ウィンドウを更新します。
+
+`M-x gdb-nexti'
+     GDBの`nexti'コマンドを使って、 次の命令まで実行します。
+     必要に応じて表示ウィンドウを更新します。
+
+`C-c C-f'
+     GDBの`finish'コマンドのように、
+     選択されたスタック・フレームを終了するまで実行を継続します。
+
+`M-c'
+     GDBの`continue'コマンドのように、
+     ユーザ・プログラムの実行を継続します。
+
+     _注意:_ Emacs v19では、 このコマンドは`C-c C-p'です。
+
+`M-u'
+     GDBの`up'コマンドのように、
+     数値引数によって示される数だけ上位のフレームに移動します （*note
+     Numeric Arguments: (Emacs)Arguments.  (1)）。
+
+     _注意:_ Emacs v19では、 このコマンドは`C-c C-u'です。
+
+`M-d'
+     GDBの`down'コマンドのように、
+     数値引数によって示される数だけ下位のフレームに移動します。
+
+     _注意:_ Emacs v19では、 このコマンドは`C-c C-d'です。
+
+`C-x &'
+     カーソルの位置にある数値を読み取り、
+     GDBのI/Oバッファの末尾に挿入します。 例えば、
+     以前に表示されたアドレスの前後のコードを逆アセンブルしたいとしましょう。
+     この場合、 まず`disassemble'と入力し、
+     次に表示されたアドレスのところにカーソルを移動し、
+     `disassemble'への引数を`C-x &'で読み取ります。
+
+     `gdb-print-command'リストの要素を定義することによって、
+     これをさらにカスタマイズすることができます。
+     これが定義されていると、 `C-x &'で入手した数値が挿入される前に、
+     それをフォーマットしたり、
+     処理したりすることができるようになります。 `C-x
+     &'に数値引数を指定すると、
+     特別なフォーマット処理を必要としているという意味になり、
+     その数値がリストの要素を取得するためのインデックスとなります。
+     リストの要素が文字列の場合は、
+     挿入される数値はEmacsの`format'関数によってフォーマットされます。
+     リストの要素が文字列以外の場合は、 その数値が、
+     対応するリスト要素への引数として渡されます。
+
+   どのソース・ファイルが表示されている場合でも、 Emacsの`C-x
+SPC'（`gdb-break'）コマンドは、
+ポイントの置かれているソース行にブレイクポイントを設定するようGDBに対して指示します。
+
+   ソースを表示中のバッファを誤って削除してしまった場合に、
+それを再表示させる簡単な方法は、
+GDBバッファの中で`f'コマンドを入力して、
+フレーム表示を要求することです。 Emacs配下では、
+カレント・フレームのコンテキストを表示するために必要であれば、
+ソース・バッファが再作成されます。
+
+   Emacsによって表示されるソース・ファイルは、
+通常どおりの方法でソース・ファイルにアクセスする、
+普通のEmacsバッファによって表示されます。 そうしたいのであれば、
+これらのバッファの中でファイルの編集を行うこともできますが、
+GDBとEmacsの間で行番号に関する情報が交換されていることを頭に入れておいてください。
+テキストに行を挿入したり、 削除したりすると、
+GDBの認識しているソース行番号は、
+実際のコードと正しく対応しなくなってしまいます。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注：`GNU Emacs 19
+マニュアル'（星雲社）の「ニューメリック引数」、 `GNU Emacs
+マニュアル'（共立出版）の「数引数」に、 日本語訳があります。
+
+
+File: gdb-ja.info,  Node: GDB Bugs,  Next: Formatting Documentation,  Prev: Emacs,  Up: Top
+
+17 GDBのバグ報告
+****************
+
+ユーザからのバグ報告は、
+GDBの信頼性を向上させるのに重要な役割を果たしています。
+
+   バグを報告することで、 その問題の解決につながり、
+結果として報告者自ら利益を得ることができるかもしれません。 もちろん、
+何の解決にもつながらないこともあります。 しかし、 いずれにしても、
+バグ報告の主要な意義は、 次のバージョンのGDBをより良いものにすることで、
+コミュニティ全体の役に立つという点にあります。 バグ報告は、
+GDBの保守作業へのユーザからの貢献です。
+
+バグ報告がその目的とするところを首尾よく達成できるようにするためには、
+バグを修正することを可能にするような情報が提供されなければなりません。
+
+* Menu:
+
+* Bug Criteria::                本当にバグを見つけたのかどうかを知る方法
+* Bug Reporting::               バグの報告方法
+
+
+File: gdb-ja.info,  Node: Bug Criteria,  Next: Bug Reporting,  Prev: GDB Bugs,  Up: GDB Bugs
+
+17.1 本当にバグを見つけたのかどうかを知る方法
+=============================================
+
+発見した現象がバグかどうかよく分からない場合には、
+以下のガイドラインを参照してください。
+
+   * 入力された情報が何であれ、
+     デバッガが致命的なシグナルを受信するのであれば、
+     それはGDBのバグです。
+     信頼性のあるデバッガは決してクラッシュなどしません。
+
+   * 正当な入力に対してGDBがエラー・メッセージを出力するのであれば、
+     それはバグです。 （クロス・デバッグを行っている場合には、
+     ターゲットへの接続に問題がある可能性もあるということに注意してください。）
+
+   * 不正な入力に対してGDBがエラー・メッセージを出力しないのであれば、
+     それはバグです。 ただし、
+     ユーザにとって「不正な入力」に思えるものが、
+     実は「拡張機能」であったり
+     「古くから使われている用法のサポート」であったりすることもあります。
+
+   * デバッグ・ツールに関する経験が豊富なユーザからのGDBの改善提案は、
+     どのような場合でも歓迎です。 (1)
+
+   ---------- Footnotes ----------
+
+   (1) 訳注：この日本語の翻訳マニュアルへの改善提案は、
+<ki@home.email.ne.jp>に送ってください。
+
+
+File: gdb-ja.info,  Node: Bug Reporting,  Prev: Bug Criteria,  Up: GDB Bugs
+
+17.2 バグの報告方法
+===================
+
+いくつかの企業や個人がGNUのソフトウェアをサポートしています。
+こうしたサポート組織からGDBを入手したのであれば、
+まずその組織に連絡することをお勧めします。
+
+   サポートを提供している多くの企業、 個人の連絡先情報が、 GNU
+Emacsディストリビューションの`etc/SERVICE'ファイルに記載されています。
+
+   どのような場合でも、 GDBのバグ報告を （英語で）
+以下のアドレスに送ることをお勧めします。 (1)
+
+     bug-gdb@prep.ai.mit.edu
+
+   *`info-gdb'、 `help-gdb'、 および、
+いかなるニュースグループにもバグ報告を送ることはしないでください。*
+GDBユーザのほとんどは、 バグ報告を受け取りたいと考えてはいません。
+バグ報告を受け取りたいと思っている人は、
+`bug-gdb'の配信を受けるようにしているはずです。
+
+   メーリング・リスト`bug-gdb'には、
+リピータとして機能する`gnu.gdb.bug'というニュースグループがあります。
+このメーリング・リストとニュースグループは、
+全く同一のメッセージを配信しています。
+メーリング・リストではなくニュースグループにバグ報告を流そうと考える人がよくいます。
+これはうまく機能するように見えますが、 1つ重大な問題があります。
+ニュースグループへの投稿では、
+送信者へのメール・パスが分からないことがよくあります。 したがって、
+もっと多くの情報が必要になったときに、
+バグの報告者と連絡を取ることができない可能性があります。
+こういうことがあるので、
+メーリング・リストへのバグ報告の方が望ましいのです。
+
+   最後の手段として、
+バグ報告を（英語で）紙に書いて下記に郵送するという方法があります。
+
+     GNU Debugger Bugs
+     Free Software Foundation Inc.
+     59 Temple Place - Suite 330
+     Boston, MA 02111-1307
+     USA
+
+役に立つバグ報告を行うための最も根本的な原則は、
+*すべての事実を報告する*ことです。
+ある事実を書くべきか省くべきかよく分からない場合は、
+書くようにしてください。
+
+   事実が省略されてしまうことがよくありますが、 これはバグ報告者が、
+自分には問題の原因は既に分かっていると考え、
+いくつかの細かい点は関係がないと仮定してしまうからです。 したがって、
+例の中で使った変数の名前などは重要ではないと、 報告者は考えます。
+おそらくそうかもしれません。 しかし、
+完全にそうであるとも言い切れません。
+メモリの参照がデタラメな場所を指しているというバグで、
+それがたまたまメモリ上においてその名前が置かれている箇所から値を取り出しているということがあるかもしれません。
+名前が異なれば、 そこの内容は、
+バグが存在するにもかかわらずデバッガが正しく動作してしまうような値になるかもしれません。
+このようなことがないよう、 特定の完全な実例を提供してください。
+バグの報告者にとっては、 このようにするのが最も簡単なはずであり、 かつ、
+それが最も役に立つのです。
+
+   バグ報告の目的は、
+そのバグを修正することができるようにすることにある、
+という点を頭に入れておいてください。 そのバグが、
+以前に報告されたものと同じであるという可能性もありますが、
+バグ報告が完全なもので、 必要な情報がすべて含まれたものでなければ、
+バグの報告者にも私たちにもそのことを知ることができません。
+
+   ときどき、 2、3の大雑把な事実だけを記述して、
+「何か思い当たることはありますか?」と聞いてくる人がいます。
+このようなバグ報告は役に立ちません。 このような報告には、
+より適切なバグ報告を送るよう報告者に注意する場合を除いて、
+_返事をすることを拒否する_よう強くお願いします。
+
+   バグを修正できるようにするためには、
+報告者は以下の情報をすべて含めるべきです。
+
+   * GDBのバージョン。 GDBのバージョンは、
+     引数を指定せずにGDBを起動すると、 表示されます。 また、
+     いつでも`show version'コマンドで表示させることができます。
+
+     この情報がないと、
+     カレント・バージョンのGDBを使ってバグを探すことに意味があるのかどうかを知ることができません。
+
+   * 使っているマシンのタイプ、
+     オペレーティング・システムの名前とバージョン番号。
+
+   * GDBをコンパイルするのに使われたコンパイラ （および、
+     そのバージョン）。 例えば、 gcc-2.8.1。
+
+   * デバッグ対象のプログラムをコンパイルするのに使われたコンパイラ
+     （および、 そのバージョン）。 例えば、 gcc-2.8.1、 あるいは、
+     HP92453-01 A.10.32.03 HP Cコンパイラ。 GCCについては、 `gcc
+     --version'によってこの情報を知ることができます。
+     他のコンパイラについては、 そのドキュメントを参照してください。
+
+   * バグを見つけたプログラムをコンパイルする際に、
+     コンパイラに渡したコマンド引数。 例えば、
+     `-O'オプションを使ったか否かなど。
+     何か重要な点を省いてしまうことがないよう、
+     すべての引数を記述してください。 `Makefile'のコピー （あるいは、
+     `make'からの出力） を添付すれば十分でしょう。
+
+     引数が何であったのかを私たちが推測しようとしても、
+     おそらく誤った推測をしてしまうでしょう。 そうなると、
+     バグは再現しないかもしれません。
+
+   * バグを再現することのできる、
+     完全な入力スクリプトとすべての必要なソース・ファイル。
+
+   * 発見された、 正しくないと思われる動作の説明。 例えば、
+     「致命的なシグナルを受信する」など。
+
+     もちろん、 GDBが致命的なシグナルを受信するというバグであれば、
+     私たちも間違いなくそれに気がつくでしょう。 しかし、
+     出力が正しくないというバグであれば、 紛れもない誤りでなければ、
+     私たちはそれに気付かないかもしれません。
+     私たちが間違いをする可能性を排除するようにしてください。
+
+     たとえ致命的なシグナルを受信するような問題であっても、
+     報告者はそのことを明示的に報告するべきです。
+     何か奇妙なことが起こっていると仮定しましょう。 例えば、
+     報告者が使っているGDBにちぐはぐなところがあるとか、
+     報告者のシステム上にあるCライブラリのバグだった、
+     というような場合です （こういうことは、 実際にありました！）。
+     このような場合、 報告者のGDBはクラッシュしても、
+     私たちのところではクラッシュしません。
+     クラッシュするはずであると報告されていれば、
+     私たちのGDBがクラッシュしなくても、
+     「私たちのところではバグが発生しない」ということを知ることができます。
+     クラッシュするはずであるという報告がなければ、
+     実際の現象から何も結論を引き出すことができません。
+
+   * もしGDBのソースへの修正を提案したいのであれば、
+     コンテキスト付きの差分情報を送ってください。
+     GDBのソースについて何か議論する場合も、
+     行番号に言及するのではなく、 コンテキストに言及してください。
+
+     私たちが開発中のソースの行番号は、
+     報告者の持っているソースの行番号とは一致しないでしょう。
+     報告者から見たソースの行番号は、
+     私たちにとって役に立つ情報を提供してくれません。
+
+   以下に、 バグ報告に必要ではない情報をいくつか列挙します。
+
+   * バグの包括的な説明。
+
+     バグを見つけると、 多くの時間をかけて、
+     入力ファイルをどのように変更するとバグが発生しなくなり、
+     どのように変更した場合はバグが発生し続けるかを調べる人がよくいます。
+
+     これは多くの場合、 時間のかかる作業であり、
+     しかもあまり役に立ちません。 というのは、
+     私たちがバグを見つけるのは、
+     デバッガでブレイクポイントを使いながら1つの実例を実行させることによってであり、
+     一連の実例からの純粋な演繹によってではないからです。
+     時間を無駄にせず、 何かほかのことに使うようお勧めします。
+
+     もちろん、 一番最初にバグを見つけたときの実例の_代わり_となる、
+     もっと単純な実例を見つけることができるのであれば、
+     私たちにとっても便利です。
+     出力におけるエラーはより発見しやすいものですし、
+     デバッガ配下で実行させる方が時間がかかりません。
+
+     しかし、 単純化は絶対に必要というわけでもありません。
+     こういうことをしたくないのであれば、
+     バグを発見したときのテスト・ケース全体を送って、
+     バグの報告を行ってください。
+
+   * バグに対するパッチ。
+
+     バグに対するパッチは、 それが良いものであれば、 役に立ちます。
+     しかし、 パッチがあれば十分であるとみなして、
+     テスト・ケースのような必要な情報を送るのを省かないでください。
+     提供されたパッチに問題があり、
+     別の方法で問題を修正することにする場合もありますし、
+     提供されたパッチを全く理解できないということもあるかもしれません。
+
+     GDBのような複雑なプログラムでは、
+     コード中のある特定のパスを通るような実例を作成するのは困難なことがあります。
+     報告者が実例を送ってくれなければ、
+     私たちには実例を作成することができず、 したがって、
+     バグが修正されたことを検証することができなくなってしまいます。
+
+     また、
+     報告者の送ってくれたパッチがどのような問題を修正しようとしているのか私たちに理解できない場合、
+     あるいは、 なぜそのパッチが改善になるのか私たちが理解できない場合、
+     そのパッチを組み込むことはしません。
+     テスト・ケースが1つでもあれば、
+     そうしたことを理解するのに役立つでしょう。
+
+   * バグが何であるか、 あるいは、 何に依存しているかに関する推測。
+
+     このような推測は普通は間違っているものです。 私たちですら、
+     デバッガを使って事実を見出すまでは、
+     このような点に関して正しく推測することはできないのです。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注：この日本語の翻訳マニュアルのバグは、 日本語（か英語）で、
+<ki@home.email.ne.jp>に報告してください。
+
+
+File: gdb-ja.info,  Node: Command Line Editing,  Next: Using History Interactively,  Prev: Formatting Documentation,  Up: Top
+
+18 コマンドライン編集
+*********************
+
+この章では、
+GNUのコマンドライン編集インターフェイスの基本的な特徴について説明します。
+
+* Menu:
+
+* Introduction and Notation::	表記法
+* Readline Interaction::	行編集のための最小限のコマンド・セット
+* Readline Init File::		ユーザの見地からのReadlineのカスタマイズ
+* Bindable Readline Commands::	バインディングを行うために利用可能なほとんどの
+                                Readlineコマンドの説明
+* Readline vi Mode::		Readlineをviエディタのように振る舞わせる方法の
+                                簡単な説明
+
+
+File: gdb-ja.info,  Node: Introduction and Notation,  Next: Readline Interaction,  Up: Command Line Editing
+
+18.1 行編集入門
+===============
+
+以下のパラグラフでは、
+キー・ストロークを表わすために使用される表記法について説明します。
+
+   <C-k>は、 Control-Kという意味です。 これは、
+コントロール・キーが押されたままの状態でキー<k>が押されたときに生成される文字を表わします。
+
+   <M-k>は、 Meta-Kという意味です。 これは、 メタ・キー
+（があるものとして、それ）
+が押されたままの状態でキー<k>が押されたときに生成される文字を表わします。
+メタ・キーがない場合、 最初に<ESC>キーを押し、 次にキー<k>を押すことで、
+同等のキー・ストロークを生成することができます。 どちらの手順も、
+キー<k>を"メタ化"する、 といいます。
+
+   <M-C-k>は、 Meta-Control-Kという意味です。 これは、
+<C-k>を"メタ化"することにより生成される文字を指します。
+
+   さらに、 いくつかのキーには名前があります。 <DEL>、 <ESC>、 <LFD>、
+<SPC>、 <RET>、 <TAB>は、 この文章の中でも、 初期化ファイルの中でも、
+各々のキーを表わします （*note Readline Init File::）。
+
+
+File: gdb-ja.info,  Node: Readline Interaction,  Next: Readline Init File,  Prev: Introduction and Notation,  Up: Command Line Editing
+
+18.2 Readlineの操作
+===================
+
+対話的なセッションにおいて、 長いテキストを1行に記述した後で、
+その行の先頭の単語のスペルが間違っていたことに気が付くことがよくあります。
+Readlineライブラリは、
+入力したテキストを操作するための一連のコマンドを提供しており、
+これによって、 その行の大部分を入力し直すことなく、
+タイプ・ミスしたところだけを修正することができます。
+これらの編集コマンドを使って、 修正が必要なところにカーソルを移動させ、
+テキストを削除したり、 修正テキストを挿入したりします。
+その行の修正が終われば、 単に<RETURN>を押します。 <RETURN>を押すのに、
+行末にいる必要はありません。 カーソルが行内のどこにあろうと、
+その行全体が入力として受け付けられます。
+
+* Menu:
+
+* Readline Bare Essentials::	Readlineについて最低限知っていなければならないこと
+* Readline Movement Commands::	入力行の中での移動
+* Readline Killing Commands::	テキストの削除と再入手
+* Readline Arguments::		コマンドへの数値引数の指定
+* Searching::			以前の行の中の検索
+
+
+File: gdb-ja.info,  Node: Readline Bare Essentials,  Next: Readline Movement Commands,  Up: Readline Interaction
+
+18.2.1 Readlineの基本
+---------------------
+
+行内に文字を入力するには、 単にその文字をタイプします。
+タイプされた文字はカーソルの位置に表示され、
+カーソルは1桁分右へ移動します。 1文字打ち間違えた場合は、
+削除文字（erase character）を使って、
+後退しながら打ち間違えた文字を削除することができます。
+
+   ときには、 本当は入力したかった文字を入力せず、
+その誤りに気が付くことなく、
+さらに数文字を入力してしまうということがあります。 このような場合には、
+<C-b>によってカーソルを左に移動し、 誤りを訂正することができます。
+訂正後、 <C-f>によってカーソルを右に移動することができます。
+
+   行の途中にテキストを追加すると、
+挿入されたテキストのためのスペースを空けるために、
+カーソルの右側にある文字が右方向に押しやられることに気がつくでしょう。
+同様に、 カーソル位置にあるテキストを削除すると、
+文字が削除されたために生じる空白を埋めるために、
+カーソルの右側にある文字が左方向に引き戻されます。
+入力行のテキストを編集するための最も基本的な操作の一覧を以下に示します。
+
+<C-b>
+     1文字戻ります。
+
+<C-f>
+     1文字進みます。
+
+<DEL>
+     カーソルの左にある文字を削除します。
+
+<C-d>
+     カーソル位置にある文字を削除します。
+
+表示可能な文字
+     行内のカーソル位置にその文字を挿入します。
+
+<C-_>
+     最後の編集コマンドを取り消して元に戻します。
+     行内に文字が無くなるまで取り消しを繰り返すことが可能です。
+
+
+File: gdb-ja.info,  Node: Readline Movement Commands,  Next: Readline Killing Commands,  Prev: Readline Bare Essentials,  Up: Readline Interaction
+
+18.2.2 Readline移動コマンド
+---------------------------
+
+上記の一覧は、 ユーザが入力行を編集するのに必要な、
+最も基本的なキー・ストロークを説明したものです。
+ユーザの利便を考慮して、 <C-b>、 <C-f>、 <C-d>、
+<DEL>に加えて多くのコマンドが追加されてきました。 以下に、
+行内をより迅速に動きまわるためのコマンドをいくつか示します。
+
+<C-a>
+     行の先頭に移動します。
+
+<C-e>
+     行の末尾に移動します。
+
+<M-f>
+     1単語分先に進みます。 単語は、 文字と数字から構成されます。
+
+<M-b>
+     1単語分前に戻ります。
+
+<C-l>
+     画面上の情報を消去し、
+     カレント行が画面の一番上にくるようにして再表示します。
+
+   <C-f>が1文字分先に進むのに対して、
+<M-f>が1単語分先に進む点に注意してください。 大まかな慣例として、
+コントロール・キーを使うと文字単位の操作になり、
+メタ・キーを使うと単語単位の操作になります。
+
+
+File: gdb-ja.info,  Node: Readline Killing Commands,  Next: Readline Arguments,  Prev: Readline Movement Commands,  Up: Readline Interaction
+
+18.2.3 Readlineキル（kill）コマンド
+-----------------------------------
+
+テキストを"キル（kill）"するとは、 行からテキストを削除し、 その際に、
+そのテキストを後に引き出して行内に"再挿入（yank）"することができるように退避しておくことを指します。
+あるコマンドの説明に「テキストをキル（kill）する」という記述があれば、
+後に別の箇所 （あるいは同じ箇所） において、
+そのテキストを再入手することができると考えて間違いありません。
+
+   キル（kill）コマンドを使うと、
+テキストは"キル・リング（kill-ring）"に退避されます。
+キル（kill）コマンドを任意の回数連続して実行すると、
+キル（kill）されたテキストはすべて連結されて退避されます。 したがって、
+再挿入（yank）を行うと、 そのすべてを入手することができます。
+キル・リング（kill-ring）は個々の行に固有のものではありません。
+以前入力した行においてキル（kill）したテキストを、
+後になって別の行を入力しているときに再挿入（yank）することができます。 
+
+   以下に、テキストをキル（kill）するためのコマンドを一覧で示します。
+
+<C-k>
+     カレントなカーソル位置から行末までのテキストをキル（kill）します。
+
+<M-d>
+     カーソル位置から、
+     カーソルの置かれている単語の末尾までをキル（kill）します。
+     カーソルが2つの単語の間にあるときは、
+     次の単語の末尾までをキル（kill）します。
+
+<M-DEL>
+     カーソル位置から、
+     カーソルの置かれている単語の先頭までをキル（kill）します。
+     カーソルが2つの単語の間にあるときは、
+     前の単語の先頭までをキル（kill）します。
+
+<C-w>
+     カーソル位置から、
+     それより前にある最初の空白までをキル（kill）します。
+     単語間の境界が異なるので、 これは<M-DEL>とは異なります。
+
+
+キル（kill）されたテキストを引き出して行内へ"再挿入（yank）"する方法を、
+以下に示します。 再挿入（yank）とは、 最後にキルされたテキストを、
+キル・バッファからコピーすることを意味しています。
+
+<C-y>
+     バッファ内のカーソル位置に、
+     最後にキル（kill）されたテキストを再挿入（yank）します。
+
+<M-y>
+     キル・リング（kill-ring）を回転させ、
+     新たに一番上にきたテキストを再挿入（yank）します。
+     このコマンドを実行できるのは、
+     1つ前に実行したコマンドが<C-y>または<M-y>の場合だけです。
+
+
+File: gdb-ja.info,  Node: Readline Arguments,  Next: Searching,  Prev: Readline Killing Commands,  Up: Readline Interaction
+
+18.2.4 Readlineの引数
+---------------------
+
+Readlineコマンドには数値引数を渡すことができます。 数値引数は、
+繰り返し回数として使われたり、 引数の符号として使われたりします。
+通常は先に進むようなコマンドに負の数を引数として指定すると、
+前に戻るようになります。 例えば、
+行の先頭までのテキストをキル（kill）するには、 `M--
+C-k'としてもよいでしょう。
+
+   コマンドに数値引数を渡す通常の方法は、
+コマンドの前にメタ化された数字を入力することです。
+入力された最初の「数字」がマイナス記号（<->）の場合、
+引数の符号は負になります。 引数を開始するためには、
+メタ化された数字を1つだけ入力すればよく、
+残りの数字はそのまま入力することができます。
+そして最後にコマンドを入力します。 例えば、
+<C-d>コマンドに引数として10を渡すためには、 `M-1 0 C-d'と入力します。
+
+
+File: gdb-ja.info,  Node: Searching,  Prev: Readline Arguments,  Up: Readline Interaction
+
+18.2.5 ヒストリ中のコマンドの検索
+---------------------------------
+
+readlineは、 コマンド・ヒストリ の中から、
+指定された文字列を含む行を検索するコマンドを提供しています。
+インクリメンタル（INCREMENTAL）と
+非インクリメンタル（NON-INCREMENTAL）の2つの検索モードがあります。
+
+   インクリメンタル（incremental）・モードでは、
+ユーザが検索文字列を入力し終わる前から検索が始まります。
+検索文字列の中の文字が1つ入力されるたびに、 readlineは、
+それまで入力された文字列にマッチする、
+ヒストリの中の次のエントリを表示します。
+インクリメンタル・モードの検索では、
+検索したいヒストリ・エントリを見つけるのに本当に必要となる文字だけを入力するだけで済みます。
+インクリメンタル・モードの検索を中止するのには、 <ESC>文字を使います。
+<C-j>でも、 検索は中止されます。 <C-g>は、
+インクリメンタル・モードの検索を終了させて、 元の行を表示します。
+検索が中止されると、
+検索文字列を含むヒストリ・エントリがカレント行となります。
+検索文字列にマッチする他のエントリをヒストリ・リストから見つけるためには、
+必要に応じて<C-s>または<C-r>を入力します。 これによって、
+それまでに入力された検索文字列にマッチする次のエントリをヒストリから見つけるために、
+下の方向、 または、 上の方向に検索が行われます。
+Readlineコマンドにバインドされているキー・シーケンスのうち上記以外のものを入力すると、
+検索は中止され、 そのコマンドが実行されます。 例えば
+<RET>が入力されると、 検索は中止され、
+そのときの行が受け入れられたことになります。 したがって、
+ヒストリ・リストの中のそのコマンドが実行されます。
+
+   非インクリメンタル（non-incremental）・モードでは、
+マッチするヒストリ行の検索を開始する前に、
+検索文字列全体を読み込みます。 検索文字列は、
+ユーザによって入力されたものでも構いませんし、
+カレント行の内容の一部であっても構いません。
+
+
+File: gdb-ja.info,  Node: Readline Init File,  Next: Bindable Readline Commands,  Prev: Readline Interaction,  Up: Command Line Editing
+
+18.3 Readline初期化ファイル
+===========================
+
+Readlineライブラリには、
+`emacs'スタイルのキー・バインディングがデフォルトで組み込まれていますが、
+異なるキー・バインディングを使うこともできます。
+ホーム・ディレクトリ内のファイル"inputrc"にコマンドを記述することで、
+誰でもReadlineを使うプログラムをカスタマイズすることができます。
+このファイルの名前は、 環境変数`INPUTRC'の値から取られます。
+この変数に値がセットされていない場合のデフォルトは、 `~/.inputrc'です。
+
+   Readlineライブラリを使うプログラムが起動されると、
+初期化ファイルが読み込まれ、 キー・バインディングが設定されます。
+
+   さらに、 `C-x C-r'コマンドを実行すると、
+この初期化ファイルが再読み込みされます。
+初期化ファイルに変更が加えられていれば、 その変更が反映されます。
+
+* Menu:
+
+* Readline Init File Syntax::	inputrcファイルの中におけるコマンドの構文
+
+* Conditional Init Constructs::	inputrcファイルの中における条件キー・バインディング
+
+* Sample Init File::		inputrcファイルの例
+
+
+File: gdb-ja.info,  Node: Readline Init File Syntax,  Next: Conditional Init Constructs,  Up: Readline Init File
+
+18.3.1 Readline初期化ファイルの構文
+-----------------------------------
+
+Readline初期化ファイルの中では、
+ほんの少数の基本的な構文だけが使用できます。 空行は無視されます。
+`#'で始まる行はコメントです。 `$'で始まる行は、 条件構文を表わします
+（*note Conditional Init Constructs::）。 その他の行は、
+変数設定とキー・バインディングを示します。
+
+変数設定
+     初期化ファイルの中で`set'コマンドを使用してReadlineの変数の値を変更することによって、
+     Readlineの実行時の振る舞いを変更することができます。
+     デフォルトのEmacsスタイルのキー・バインディングを変更して、
+     `vi'の行編集コマンドを使用できるようにするには、
+     以下のようにします。
+
+          set editing-mode vi
+
+     以下の変数によって、 実行時の振る舞いのかなりの部分が変更可能です。
+
+    `bell-style'
+          Readlineが端末のベル音を鳴らしたいと判断した場合に、
+          何が起こるかを制御します。 `none'がセットされると、
+          Readlineはベル音を鳴らしません。 `visible'がセットされると、
+          視覚的なベル(1) が利用可能であれば、 それを使います。
+          `audible'（デフォルト）がセットされると、 Readlineは、
+          端末のベル音を鳴らそうと試みます。
+
+    `comment-begin'
+          `insert-comment'コマンドが実行されたときに、
+          行の先頭に挿入される文字列です。 デフォルトの値は`"#"'です。
+
+    `completion-ignore-case'
+          `on'がセットされると、 Readlineは、
+          大文字・小文字を区別せずに、
+          ファイル名のマッチングや補完を行います。
+          デフォルトの値は`off'です。
+
+    `completion-query-items'
+          ユーザに対して補完候補の一覧を見たいかどうか問い合わせるタイミングを決定する、
+          補完候補の数です。 補完候補の数がこの値よりも多いと、
+          Readlineは、
+          補完候補の一覧を見たいかどうかをユーザに対して問い合わせることになります。
+          この値よりも少ない場合は、
+          問い合わせを行うことなく一覧を表示します。
+          デフォルトの境界は`100'です。
+
+    `convert-meta'
+          `on'がセットされると、 Readlineは、
+          第8ビットがセットされている文字をASCIIのキー・シーケンスに変換します。
+          これは、 該当文字の第8ビットを落として、
+          その前に<ESC>文字を付加することで、
+          メタ・プレフィックス・キー・シーケンス（meta-prefixed key
+          sequence） に変換することによって行われます。
+          デフォルトの値は`on'です。
+
+    `disable-completion'
+          `On'がセットされると、 Readlineは単語補完を抑制します。
+          補完文字（completion  character）は、
+          あたかも`self-insert'にマップされたかのように、
+          行内に挿入されます。 デフォルトは`off'です。
+
+    `editing-mode'
+          `editing-mode'変数は、
+          デフォルトで使用するキー・バインディングの種類を制御します。
+          Readlineは、 デフォルトの状態では、
+          Emacs編集モードで起動します。 このモードは、
+          キー・ストロークがEmacsに非常に良く似ています。 この変数は、
+          `emacs'と`vi'のどちらかに設定することができます。
+
+    `enable-keypad'
+          `on'がセットされると、 Readlineは、 呼び出されたときに、
+          アプリケーション・キーパッド（application
+          keypad）を有効にすることを試みます。 システムによっては、
+          矢印キーを使用できるようにするために、 これが必要となります。
+          デフォルトは`off'です。
+
+    `expand-tilde'
+          `on'がセットされると、 Readlineが単語補完を試みる際に、
+          チルダの展開が行われます。 デフォルトは`off'です。
+
+    `horizontal-scroll-mode'
+          この変数は、 `on'と`off'のどちらかに設定することができます。
+          これを`on'に設定すると、
+          1行のテキストの長さがスクリーン幅よりも長い場合に、
+          編集中の行のテキストが次の行に折り返すことなく、
+          同じ行の上で水平方向にスクロールするようになります。
+          デフォルトでは、 この変数には`off'がセットされています。
+
+    `keymap'
+          Readlineが認識している、
+          キー・バインディング・コマンドのカレントなキーマップをセットします。
+          セットすることのできる`keymap'名は、 `emacs'、
+          `emacs-standard'、 `emacs-meta'、 `emacs-ctlx'、 `vi'、
+          `vi-command'、 `vi-insert'です。
+          `vi'は`vi-command'と同等です。 また、
+          `emacs'は`emacs-standard'と同等です。 デフォルトの値は、
+          `emacs'です。 `editing-mode'変数の値も、
+          デフォルトのキーマップに影響を及ぼします。
+
+    `mark-directories'
+          `on'がセットされると、
+          補完されたディレクトリ名の後ろにスラッシュが付加されます。
+          デフォルトは`on'です。
+
+    `mark-modified-lines'
+          この変数に`on'がセットされると、 Readlineは、
+          変更されたヒストリ行の先頭にアスタリスク（`*'）を表示します。
+          この変数は、 デフォルトでは`off'です。
+
+    `input-meta'
+          `on'がセットされると、 Readlineは、
+          8ビット入力に対する端末側のサポートがどうであれ、
+          8ビット入力を有効にします
+          （読み込まれた文字の第8ビットを落としません）。
+          デフォルト値は`off'です。 `meta-flag'は、 この変数の別名です。
+
+    `output-meta'
+          `on'がセットされると、 Readlineは、
+          第8ビットがセットされている文字を、
+          メタ・プレフィックス・エスケープ・シーケンス （meta-prefixed
+          escape sequence） としてではなく、 直接表示します。
+          デフォルトは`off'です。
+
+    `print-completions-horizontally'
+          `on'がセットされると、 Readlineは、
+          マッチする補完候補をアルファベット順にソートして、
+          画面の下向きにではなく、 水平方向に並べて表示します。
+          デフォルトは`off'です。
+
+    `show-all-if-ambiguous'
+          補完関数のデフォルトの振る舞いを変更します。
+          `on'がセットされると、 複数の補完候補を持つ単語は、
+          ベル音を鳴らすことなく、 直ちに補完候補を一覧表示させます。
+          デフォルト値は`off'です。
+
+    `visible-stats'
+          `on'がセットされると、 補完候補を一覧表示する際に、
+          ファイル・タイプを示す文字がファイル名の後ろに付加されます。
+          デフォルトは`off'です。
+
+
+キー・バインディング
+     初期化ファイルの中でキー・バインディングを制御するための構文は単純です。
+     まず、
+     キー・バインディングを変更したいコマンドの名前を知っている必要があります。
+     以下のセクションにおいて、 コマンドの名前、
+     そのコマンドにデフォルトのキー・バインディングがある場合はそのバインディング、
+     および、 そのコマンドが何をするものであるかについての簡単な説明を、
+     一覧にして示します。
+
+     コマンドの名前を知っていれば、 初期化ファイルの中で、
+     コマンドにバインドしたいキーの名前、 コロン、
+     そして最後にコマンドの名前を、 1行にして記述するだけです。
+     キーの名前は、 好みに応じて異なる方法で表現することができます。
+
+    KEYNAME: FUNCTION-NAME or MACRO
+          KEYNAMEは、 英語で記述されたキーの名前です。 例えば、
+          以下のようになります。
+               Control-u: universal-argument
+               Meta-Rubout: backward-kill-word
+               Control-o: "> output"
+
+          上の例では、 <C-u>が関数`universal-argument'にバインドされ、
+          <C-o>がその右側に記述されたマクロ （行内に`>
+          output'というテキストを挿入するマクロ）
+          を実行するようバインドされます。
+
+    "KEYSEQ": FUNCTION-NAME or MACRO
+          前の例のKEYNAMEとは異なり、 KEYSEQには、
+          キー・シーケンス全体を示す文字列を指定することができます。
+          これは、
+          キー・シーケンスを二重引用符で囲むことによって実現されます。
+          以下の例に示すように、 いくつかのGNU
+          Emacsスタイルのキー・エスケープを使うことができますが、
+          特殊文字の名前は認識されません。
+
+               "\C-u": universal-argument
+               "\C-x\C-r": re-read-init-file
+               "\e[11~": "Function Key 1"
+
+          上の例では、 <C-u>が （最初の例と同様）
+          関数`universal-argument'に、 `<C-x>
+          <C-r>'が関数`re-read-init-file'に、 `<ESC> <[> <1> <1>
+          <~>'が`Function Key 1'というテキストを挿入するよう、
+          それぞれバインドされています。
+
+
+     キー・シーケンスを指定する際には、 以下のGNU
+     Emacsスタイルのエスケープ・シーケンスが利用できます。
+
+    `\C-'
+          コントロール・プレフィックス
+
+    `\M-'
+          メタ・プレフィックス
+
+    `\e'
+          エスケープ文字
+
+    `\\'
+          バックスラッシュ
+
+    `\"'
+          <">
+
+    `\''
+          <'>
+
+     GNU Emacsスタイルのエスケープ・シーケンスに加えて、
+     別のバックスラッシュ・エスケープ群が利用できます。
+
+    `\a'
+          警告（ベル）
+
+    `\b'
+          バックスペース
+
+    `\d'
+          削除
+
+    `\f'
+          フォーム・フィード
+
+    `\n'
+          改行
+
+    `\r'
+          復帰（carriage return）
+
+    `\t'
+          水平タブ
+
+    `\v'
+          垂直タブ
+
+    `\NNN'
+          ASCIIコードが8進数値のNNN （1個以上3個以下の数字）
+          に相当する文字
+
+    `\xNNN'
+          ASCIIコードが16進数値のNNN （1個以上3個以下の数字）
+          に相当する文字
+
+     マクロのテキストを入力する際には、
+     マクロ定義であることを示すために、
+     単一引用符または二重引用符を使わなければなりません。
+     引用符に囲まれないテキストは、 関数名であると見なされます。
+     マクロ本体においては、
+     上記のバックスラッシュ・エスケープは展開されます。
+     バックスラッシュとそれに続く文字の組み合わせがバックスラッシュ・エスケープに該当しない場合、
+     マクロのテキストの中のバックスラッシュは、 `"'や`''も含めて、
+     直後にある文字を引用します。 例えば、
+     以下のバインディングによって、 `C-x \'は、
+     行内に`\'を1つ挿入することになります。
+          "\C-x\\": "\\"
+
+
+   ---------- Footnotes ----------
+
+   (1) _訳注_： ベル音を鳴らす代わりに、
+画面表示をフラッシュさせることを表わしています。
+
+
+File: gdb-ja.info,  Node: Conditional Init Constructs,  Next: Sample Init File,  Prev: Readline Init File Syntax,  Up: Readline Init File
+
+18.3.2 条件初期化構文
+---------------------
+
+Readlineは、
+Cのプリプロセッサにおける条件コンパイル機能と質的に類似した機能を実装しています。
+これによって、
+あるテストの結果に応じてキー・バインディングや変数設定が実行されるようにすることができます。
+4種類のパーサ指示子が使われます。
+
+`$if'
+     `$if'は、 編集モード、 使用されている端末、 あるいは、
+     Readlineを使用しているアプリケーションに応じてバインディングが行われるようにすることを可能にします。
+     `$if'の後ろに、 テストされる内容が行末まで続きます。
+     テストされる内容をほかのものと分離するために特別に文字を使う必要はありません。
+
+    `mode'
+          Readlineが`emacs'モードと`vi'モードのどちらで動作しているかをテストするために、
+          `$if'指示子の一形式である`mode='が使用されます。 例えば、
+          Readlineが`emacs'モードで開始されている場合にのみ、
+          `emacs-standard'や`emacs-ctlx'のキーマップでバインディングをセットするようにするために、
+          これを`set
+          keymap'コマンドと組み合わせて使用することができます。
+
+    `term'
+          `term='という形式は、
+          端末のファンクション・キーによって特定のキー・シーケンスが出力されるようなバインディングを行うなどの目的で、
+          端末固有のキー・バインディングを組み込むために使用することができます。
+          `='の右側の単語は、 端末の完全名と、
+          端末の名前のうち最初の`-'までの部分の両方に対してテストされます。
+          これにより、 例えば`sun'は、
+          `sun'と`sun-cmd'の両方にマッチすることになります。
+
+    `application'
+          APPLICATIONは、
+          アプリケーション固有の設定を組み込むために使用されます。
+          Readlineライブラリを使用する個々のプログラムがセットするAPPLICATION
+          NAME （アプリケーション名） をテストすることができます。
+          特定のプログラムにとって役に立つ関数に対してキー・シーケンスをバインドするために、
+          これを使用することができます。 例えば以下のコマンドは、
+          Bashにおいて、 カレントな単語、 または、
+          1つ前の単語を引用符で囲むキー・シーケンスを追加します。
+               $if Bash
+               # カレントな単語、または、1つ前の単語を引用符で囲む
+               "\C-xq": "\eb\"\ef\""
+               $endif
+
+`$endif'
+     このコマンドは、 前の例が示すように、 `$if'コマンドを終わらせます。
+
+`$else'
+     `$if'指示子から枝分かれしたこの部分に記述されたコマンドは、
+     テスト結果が偽であった場合に実行されます。
+
+`$include'
+     この指示子は、 引数としてファイル名を1つ取り、
+     そのファイルからコマンドとバインディングを読み込みます。
+          $include /etc/inputrc
+
+
+File: gdb-ja.info,  Node: Sample Init File,  Prev: Conditional Init Constructs,  Up: Readline Init File
+
+18.3.3 初期化ファイルのサンプル
+-------------------------------
+
+以下に、 inputrcファイルの実例を示します。 この中では、
+キー・バインディング、 変数割り当て、 条件構文の例が示されています。
+
+
+     # このファイルは、Gnu Readlineライブラリを使うプログラムの行入力編集
+     # の振る舞いを制御する。Gnu Readlineライブラリを使うプログラムには、
+     # FTP、Bash、Gdbなどがある。
+     #
+     # inputrcファイルは、C-x C-rによって再読み込みすることができる。
+     # '#'で始まる行は、コメントである。
+     #
+     # 最初に、/etc/Inputrcからシステム全体のバインディングと変数割り当て
+     # を取り込む。
+     $include /etc/Inputrc
+
+     #
+     # emacsモードにおける種々のバインディングをセットする。
+
+     set editing-mode emacs
+
+     $if mode=emacs
+
+     Meta-Control-h:	backward-kill-word	関数名の後ろのテキストは無視される。
+
+     #
+     # キーパッド・モードにおける矢印キー
+     #
+     #"\M-OD":        backward-char
+     #"\M-OC":        forward-char
+     #"\M-OA":        previous-history
+     #"\M-OB":        next-history
+     #
+     # ANSIモードにおける矢印キー
+     #
+     "\M-[D":        backward-char
+     "\M-[C":        forward-char
+     "\M-[A":        previous-history
+     "\M-[B":        next-history
+     #
+     # 8ビット・キーパッド・モードにおける矢印キー
+     #
+     #"\M-\C-OD":       backward-char
+     #"\M-\C-OC":       forward-char
+     #"\M-\C-OA":       previous-history
+     #"\M-\C-OB":       next-history
+     #
+     # 8ビットANSIモードにおける矢印キー
+     #
+     #"\M-\C-[D":       backward-char
+     #"\M-\C-[C":       forward-char
+     #"\M-\C-[A":       previous-history
+     #"\M-\C-[B":       next-history
+
+     C-q: quoted-insert
+
+     $endif
+
+     # 旧スタイルのバインディング。これがたまたまデフォルトでもある。
+     TAB: complete
+
+     # シェルとのやりとりにおいて便利なマクロ
+     $if Bash
+     # パス（PATH）の編集
+     "\C-xp": "PATH=${PATH}\e\C-e\C-a\ef\C-f"
+     # 引用符で囲まれた単語を入力するための準備 -- 先頭と末尾の二重引用符
+     # を挿入して、先頭の引用符の直後に移動
+     "\C-x\"": "\"\"\C-b"
+     # バックスラッシュを挿入
+     # （シーケンスやマクロにおいて、バックスラッシュ・エスケープをテストする）
+     "\C-x\\": "\\"
+     # カレントな単語、または、1つ前の単語を引用符で囲む
+     "\C-xq": "\eb\"\ef\""
+     # バインドされていない行再表示コマンドにバインディングを追加
+     "\C-xr": redraw-current-line
+     # カレント行において変数を編集
+     "\M-\C-v": "\C-a\C-k$\C-y\M-\C-e\C-a\C-y="
+     $endif
+
+     # 視覚的なベルが利用可能であれば、それを使う
+     set bell-style visible
+
+     # 読み込みの際に、文字の第8ビットを落とさない
+     set input-meta on
+
+     # iso-latin1文字は、プレフィックス・メタ・シーケンスに変換せず、
+     # そのまま挿入する
+     set convert-meta off
+
+     # 第8ビットがセットされている文字を、メタ・プレフィックス文字として
+     # ではなく、直接表示する
+     set output-meta on
+
+     # ある単語について、150を超える補完候補が存在する場合、ユーザに対して
+     # すべてを表示させたいかどうかを問い合わせる
+     set completion-query-items 150
+
+     # FTP用
+     $if Ftp
+     "\C-xg": "get \M-?"
+     "\C-xt": "put \M-?"
+     "\M-.": yank-last-arg
+     $endif
+
+
+File: gdb-ja.info,  Node: Bindable Readline Commands,  Next: Readline vi Mode,  Prev: Readline Init File,  Up: Command Line Editing
+
+18.4 バインド可能なReadlineコマンド
+===================================
+
+* Menu:
+
+* Commands For Moving::		行の中での移動
+* Commands For History::	以前の行の入手
+* Commands For Text::		テキストを変更するためのコマンド
+* Commands For Killing::	キル（kill）と再挿入（yank）のためのコマンド
+* Numeric Arguments::		数字引数、繰り返し回数の指定
+* Commands For Completion::	Readlineによる入力補完
+* Keyboard Macros::		入力された文字群の保存と再実行
+* Miscellaneous Commands::	その他のコマンド
+
+   このセクションでは、
+キー・シーケンスにバインドすることが可能なReadlineコマンドについて説明します。
+
+
+File: gdb-ja.info,  Node: Commands For Moving,  Next: Commands For History,  Up: Bindable Readline Commands
+
+18.4.1 移動のためのコマンド
+---------------------------
+
+`beginning-of-line (C-a)'
+     カレント行の先頭に移動します。
+
+`end-of-line (C-e)'
+     行の末尾に移動します。
+
+`forward-char (C-f)'
+     1文字分先に進みます。
+
+`backward-char (C-b)'
+     1文字分後へ戻ります。
+
+`forward-word (M-f)'
+     次の単語の末尾へ移動します。 単語は、
+     文字と数字により構成されます。
+
+`backward-word (M-b)'
+     現在カーソルが指している単語、 または、
+     1つ前の単語の先頭に移動します。 単語は、
+     文字と数字により構成されます。
+
+`clear-screen (C-l)'
+     画面を消去し、 カレント行を再表示します。 その際、
+     カレント行が画面の一番上になるようにします。
+
+`redraw-current-line ()'
+     カレント行を再表示します。 デフォルトでは、
+     このコマンドはバインドされていません。
+
+
+
+File: gdb-ja.info,  Node: Commands For History,  Next: Commands For Text,  Prev: Commands For Moving,  Up: Bindable Readline Commands
+
+18.4.2 ヒストリを操作するためのコマンド
+---------------------------------------
+
+`accept-line (Newline, Return)'
+     カーソルの位置がどこにあっても、 その行を受け取ります。
+     この行が空行ではない場合、 それをヒストリ・リストに追加します。
+     この行がヒストリ行である場合は、
+     そのヒストリ行を最初の状態に復元します。
+
+`previous-history (C-p)'
+     ヒストリ・リストを1つ上に移動します。
+
+`next-history (C-n)'
+     ヒストリ・リストを1つ下に移動します。
+
+`beginning-of-history (M-<)'
+     ヒストリの最初の行に移動します。
+
+`end-of-history (M->)'
+     入力ヒストリの最後の行、 すなわち、 現在入力中の行に移動します。
+
+`reverse-search-history (C-r)'
+     カレント行から始めて上の方向へ検索を行います。
+     必要に応じてヒストリの上の方へ移動します。
+     インクリメンタルな検索を行います。
+
+`forward-search-history (C-s)'
+     カレント行から始めて下の方向へ検索を行います。
+     必要に応じてヒストリの下の方へ移動します。
+     インクリメンタルな検索を行います。
+
+`non-incremental-reverse-search-history (M-p)'
+     カレント行から始めて、 必要に応じてヒストリの上の方へ移動しつつ、
+     非インクリメンタルな検索を使って、
+     ユーザによって提供された文字列を上の方向へ検索します。
+
+`non-incremental-forward-search-history (M-n)'
+     カレント行から始めて、 必要に応じてヒストリの下の方へ移動しつつ、
+     非インクリメンタルな検索を使って、
+     ユーザによって提供された文字列を下の方向へ検索します。
+
+`history-search-forward ()'
+     カレント行の先頭からカレントなカーソル位置 （ポイビト）
+     までの間の文字列を、 ヒストリの中で下の方向へ検索します。 これは、
+     非インクリメンタルな検索です。 デフォルトでは、
+     このコマンドはバインドされていません。
+
+`history-search-backward ()'
+     カレント行の先頭からポイントまでの間の文字列を、
+     ヒストリの中で上の方向へ検索します。 これは、
+     非インクリメンタルな検索です。 デフォルトでは、
+     このコマンドはバインドされていません。
+
+`yank-nth-arg (M-C-y)'
+     1つ前に実行されたコマンドの最初の引数 （通常は、
+     1つ前の行の2つめの単語） を挿入します。 引数Nを指定すると、
+     1つ前に実行されたコマンドのN番目の単語を挿入します
+     （1つ前に実行されたコマンドの中の最初の単語を、
+     0番目の単語とします）。 負の値を引数に指定すると、
+     1つ前に実行されたコマンドの後ろから数えてN番目の単語を挿入します
+
+`yank-last-arg (M-., M-_)'
+     1つ前に実行されたコマンドの最後の引数
+     （1つ前のヒストリ・エントリの最後の単語） を挿入します。
+     引数を指定すると、 `yank-nth-arg'と同じように動作します。
+     `yank-last-arg'を連続して実行すると、
+     ヒストリ・リストを遡って移動していきます。 したがって、
+     各行の最後の引数が順番に挿入されていきます。
+
+
+File: gdb-ja.info,  Node: Commands For Text,  Next: Commands For Killing,  Prev: Commands For History,  Up: Bindable Readline Commands
+
+18.4.3 テキストを変更するためのコマンド
+---------------------------------------
+
+`delete-char (C-d)'
+     カーソル位置にある文字を削除します。 カーソルが空行の先頭にあり、
+     最後に入力された文字が`delete-char'にバインドされていない場合は、
+     `EOF'を返します。
+
+`backward-delete-char (Rubout)'
+     カーソル位置の前にある文字を削除します。 数値引数を指定すると、
+     文字を削除するのではなくキル（kill）するよう指示したことになります。
+
+`quoted-insert (C-q, C-v)'
+     このコマンドに続けて入力する文字をそのまま行に追加します。 これが、
+     例えば<C-q>のようなキー・シーケンスを挿入する方法です。
+
+`tab-insert (M-TAB)'
+     タブを挿入します。
+
+`self-insert (a, b, A, 1, !, ...)'
+     その文字自身を挿入します。
+
+`transpose-chars (C-t)'
+     カーソルの前にある文字をドラッグして、
+     カーソル位置にある文字の後ろに持っていきます。
+     カーソル自身も同様に前進させます。
+     挿入ポイントが行末にある場合には、 行の最後の2文字を入れ替えます。
+     負の引数を与えても機能しません。
+
+`transpose-words (M-t)'
+     カーソルの前にある単語をドラッグして、
+     カーソルの後ろにある単語の後ろに持っていきます。 カーソル自身も、
+     カーソルの後ろにある単語の後ろに移動します。
+
+`upcase-word (M-u)'
+     カレントな （あるいは、 その1つ後ろの）
+     単語の中のすべての文字を大文字に変換します。 負の引数を指定すると、
+     1つ前の単語の中のすべての文字を大文字に変換しますが、
+     カーソルは移動しません。
+
+`downcase-word (M-l)'
+     カレントな （あるいは、 その1つ後ろの）
+     単語の中のすべての文字を小文字に変換します。 負の引数を指定すると、
+     1つ前の単語の中のすべての文字を小文字に変換しますが、
+     カーソルは移動しません。
+
+`capitalize-word (M-c)'
+     カレントな （あるいは、 その1つ後ろの） 単語の先頭文字を大文字に、
+     それ以外の位置にある文字を小文字に変換します。
+     負の引数を指定すると、 1つ前の単語に対して同様の変換を行いますが、
+     カーソルは移動しません。
+
+
+
+File: gdb-ja.info,  Node: Commands For Killing,  Next: Numeric Arguments,  Prev: Commands For Text,  Up: Bindable Readline Commands
+
+18.4.4 キル（kill）と再挿入（yank）
+-----------------------------------
+
+`kill-line (C-k)'
+     カレントなカーソル位置から行末までのテキストをキル（kill）します。
+
+`backward-kill-line (C-x Rubout)'
+     行の先頭までのテキストをキルします。
+
+`unix-line-discard (C-u)'
+     カーソル位置から逆方向にカレント行の先頭までをキルします。
+     キルされたテキストは、 キル・リング（kill-ring）に退避されます。
+
+`kill-whole-line ()'
+     カーソルの位置にかかわらず、 カレント行のすべての文字をキルします。
+     デフォルトでは、 バインドされていません。
+
+`kill-word (M-d)'
+     カーソル位置からカレントな単語の末尾までをキルします。
+     カーソルが単語の間にある場合は、 次の単語の末尾までをキルします。
+     単語の境界は、 `forward-word'の場合と同様です。
+
+`backward-kill-word (M-DEL)'
+     カーソルの前にある単語をキルします。 単語の境界は、
+     `backward-word'の場合と同様です。
+
+`unix-word-rubout (C-w)'
+     空白類(1)を単語の境界として、 カーソルの前にある単語をキルします。
+     キルされた単語は、 キル・リングに退避されます。
+
+`delete-horizontal-space ()'
+     ポイントの前後にある、 すべての空白（スペース）とタブを削除します。
+     デフォルトでは、 バインドされていません。
+
+`kill-region ()'
+     ポイントと_マーク_ （待避されたカーソル位置）
+     の間のテキストをキルします。 このテキストは、
+     領域（REGION）と呼ばれます。 デフォルトでは、
+     このコマンドはバインドされていません。
+
+`copy-region-as-kill ()'
+     領域（region）内のテキストを、 直ちに再挿入（yank）できるよう、
+     キル・バッファ（kill buffer）にコピーします。 デフォルトでは、
+     このコマンドはバインドされていません。
+
+`copy-backward-word ()'
+     ポイントの前にある単語をキル・バッファにコピーします。
+     単語の境界は、 `backward-word'の場合と同様です。 デフォルトでは、
+     このコマンドはバインドされていません。
+
+`copy-forward-word ()'
+     ポイントの後ろにある単語をキル・バッファにコピーします。
+     単語の境界は、 `forward-word'の場合と同様です。 デフォルトでは、
+     このコマンドはバインドされていません。
+
+`yank (C-y)'
+     キル・リングの一番上の位置にあるテキストを、
+     バッファ内のカレントなカーソル位置に再挿入（yank）します。
+
+`yank-pop (M-y)'
+     キル・リングを回転させ、
+     新しく一番上の位置にきたテキストを再挿入（yank）します。
+     1つ前に実行したコマンドが、 yankまたはyank-popであった場合のみ、
+     このコマンドを実行することができます。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注：空白（スペース）、 水平タブ、 改行、 垂直タブ、
+フォーム・フィード
+
+
+File: gdb-ja.info,  Node: Numeric Arguments,  Next: Commands For Completion,  Prev: Commands For Killing,  Up: Bindable Readline Commands
+
+18.4.5 数値引数の指定
+---------------------
+
+`digit-argument (M-0, M-1, ... M--)'
+     既に蓄積済みの引数にこの数字を追加するか、 または、
+     この数字によって新しい引数を開始します。 負の引数を指定するには、
+     先頭を<M->とします。
+
+`universal-argument ()'
+     これは、 引数を指定する別の方法です。 このコマンドの後に、
+     場合によって先頭にマイナス記号の付く、
+     1つ以上の数字が続く場合には、 それらの数字が引数を定義します。
+     このコマンドの後ろに数字が続く場合には、
+     `universal-argument'を再実行することによって、
+     その数字引数を終わらせることができます。 しかし、
+     このコマンドの後ろに数字が続かない場合の再実行は、 無視されます。
+     特殊なケースとして、
+     このコマンドの直後に数字でもマイナス記号でもない文字が続く場合、
+     次に実行されるコマンドの引数カウントは4倍されます。
+     引数カウントの初期値は1です。 したがって、
+     この関数を最初に実行した後には、 引数カウントは4になり、
+     2回目に実行した後には16になります。 以下、 同様です。
+     デフォルトでは、 キーへのバインドはされていません。
+
+
+File: gdb-ja.info,  Node: Commands For Completion,  Next: Keyboard Macros,  Prev: Numeric Arguments,  Up: Bindable Readline Commands
+
+18.4.6 Readlineによる入力補完
+-----------------------------
+
+`complete (TAB)'
+     カーソルの前にあるテキストの補完を試みます。 これは、
+     アプリケーション固有の動作をします。 通常、
+     引数としてファイル名を入力しているときには、
+     ファイル名を補完することができます。
+     コマンド名を入力しているときには、
+     コマンド名を補完することができます。
+     GDBに対してシンボル名を入力しているときには、
+     シンボル名を補完することができます。
+     Bashに対して変数名を入力しているときには、
+     変数名を補完することができます。
+
+`possible-completions (M-?)'
+     カーソルの前にあるテキストの補完候補を一覧表示します。
+
+`insert-completions (M-*)'
+     `possible-completions'を実行すれば生成されたであろうテキストの補完候補をすべて、
+     ポイントの前に挿入します。
+
+`menu-complete ()'
+     `complete'に似ていますが、 補完されるべき単語を、
+     補完候補の一覧の中の1つと置き換えます。
+     `menu-complete'を繰り返し実行すると、
+     補完候補の一覧から順番に1つずつ補完候補が挿入されていきます。
+     候補一覧の終端に達すると、 ベル音が鳴らされ、
+     補完前のテキストが復元されます。 引数Nを指定すると、
+     補完候補の一覧の中でN個先に移動します。 一覧を逆方向に戻るために、
+     負の引数を指定することができます。 このコマンドは、
+     `TAB'にバインドすることを意図したものですが、
+     デフォルトではバインドされていません。
+
+
+
+File: gdb-ja.info,  Node: Keyboard Macros,  Next: Miscellaneous Commands,  Prev: Commands For Completion,  Up: Bindable Readline Commands
+
+18.4.7 キーボード・マクロ
+-------------------------
+
+`start-kbd-macro (C-x ()'
+     カレントなキーボード・マクロの構成要素として入力される文字の保存を開始します。
+
+`end-kbd-macro (C-x ))'
+     カレントなキーボード・マクロの構成要素として入力された文字の保存を終了して、
+     そのキーボード・マクロの定義を保存します。
+
+`call-last-kbd-macro (C-x e)'
+     最後に定義されたキーボード・マクロを再実行します。
+     マクロの中の文字群が、 あたかもキーボードから入力されたかのように、
+     現われます。
+
+
+
+File: gdb-ja.info,  Node: Miscellaneous Commands,  Prev: Keyboard Macros,  Up: Bindable Readline Commands
+
+18.4.8 その他のコマンド
+-----------------------
+
+`re-read-init-file (C-x C-r)'
+     inputrcファイルの内容を読み込み、
+     その中にあるバインディングや変数割り当てをすべて組み込みます。
+
+`abort (C-g)'
+     カレントな編集コマンドの実行を停止し、
+     （`bell-style'の設定次第では） 端末のベル音を鳴らします。
+
+`do-uppercase-version (M-a, M-b, M-X, ...)'
+     メタ化された文字Xが小文字である場合、
+     対応する大文字にバインドされているコマンドを実行します。
+
+`prefix-meta (ESC)'
+     次に入力される文字をメタ化します。 これは、
+     メタ・キーのないキーボード用のコマンドです。 `ESC
+     f'を入力するのは、 `M-f'を入力するのと同じことです。
+
+`undo (C-_, C-x C-u)'
+     インクリメンタルな取り消し処理を実行します。 取り消す内容は、
+     各行ごとに別々に記憶されています。
+
+`revert-line (M-r)'
+     行に加えられたすべての変更を取り消します。 これは、
+     `undo'コマンドを、
+     行を元の状態に戻すのに必要な回数繰り返して実行するようなものです。
+
+`tilde-expand (M-~)'
+     カレントな単語に対して、 チルダ展開を実行します。
+
+`set-mark (C-@)'
+     カレントなポイントにマークをセットします。 数値引数があれば、
+     その位置にマークがセットされます。
+
+`exchange-point-and-mark (C-x C-x)'
+     ポイントとマークを交換します。
+     待避されていた位置がカレントなカーソル位置としてセットされ、
+     元のカーソル位置はマークとして待避されます。
+
+`character-search (C-])'
+     文字を1つ読み込み、
+     その文字が次に現われるところにポイントを移動します。
+     負の数を指定すると、 その文字が以前に現われたところを探します。
+
+`character-search-backward (M-C-])'
+     文字を1つ読み込み、
+     その文字が前に現われたところにポイントを移動します。
+     負の数を指定すると、 その文字が次に現われるところを探します。
+
+`insert-comment (M-#)'
+     カレント行の先頭に`comment-begin'変数の値が挿入され、
+     挿入後の行が、 あたかも改行が入力されたかのように、
+     受け付けられます。
+
+`dump-functions ()'
+     Readlineの出力ストリームに、
+     すべての関数とそのキー・バインディングを出力します。
+     数値引数が指定されると、
+     INPUTRCファイルの一部として使用することのできる形式に、
+     出力がフォーマットされます。 このコマンドは、
+     デフォルトではバインドされていません。
+
+`dump-variables ()'
+     Readlineの出力ストリームに、
+     値をセットすることのできるすべての変数とその値を出力します。
+     数値引数が指定されると、
+     INPUTRCファイルの一部として使用することのできる形式に、
+     出力がフォーマットされます。 このコマンドは、
+     デフォルトではバインドされていません。
+
+`dump-macros ()'
+     マクロにバインドされているすべてのReadlineキー・シーケンスと、
+     そのキー・シーケンスが出力する文字列を出力します。
+     数値引数が指定されると、
+     INPUTRCファイルの一部として使用することのできる形式に、
+     出力がフォーマットされます。 このコマンドは、
+     デフォルトではバインドされていません。
+
+
+
+File: gdb-ja.info,  Node: Readline vi Mode,  Prev: Bindable Readline Commands,  Up: Command Line Editing
+
+18.5 Readlineの`vi'モード
+=========================
+
+Readlineライブラリは、
+`vi'の編集機能のフルセットを提供してはいませんが、
+簡単な行編集を行うのに十分な機能は備えています。
+Readlineの`vi'モードは、 POSIX 1003.2標準にしたがって動作します。
+
+   `emacs'編集モードと`vi'編集モードを対話的に切り替えるには、
+コマンドM-C-j（toggle-editing-mode）を使用してください。
+Readlineのデフォルトは`emacs'モードです。
+
+   `vi'モードで行入力を行うときには、 あたかも`i'を入力したかのように、
+最初から「挿入」モードになっています。
+<ESC>を押すと「コマンド」モードになり、
+標準的な`vi'の移動キーによって行のテキストを編集することができます。
+すなわち、 `k'により前のヒストリ行に移動すること、
+`j'によって後ろのヒストリ行に移動すること、 などが可能です。
+
+
+File: gdb-ja.info,  Node: Using History Interactively,  Next: Installing GDB,  Prev: Command Line Editing,  Up: Top
+
+Appendix A ヒストリの対話的な使用
+*********************************
+
+ここでは、 ユーザの見地に立って、
+GNUヒストリ・ライブラリの対話的な使い方を説明します。
+
+* Menu:
+
+* History Interaction::		ユーザから見たヒストリ機能の使い心地
+
+
+File: gdb-ja.info,  Node: History Interaction,  Up: Using History Interactively
+
+A.1 ヒストリの操作
+==================
+
+ヒストリ・ライブラリは、 `csh'のヒストリ展開機能に似た機能を提供します。
+以下において、 ヒストリ情報を操作するための構文を説明します。
+
+   ヒストリ展開は2つの部分から構成されます。 第1の部分で、
+過去のヒストリのどの行が代替処理に使用されるかが決まります。
+この行を"イベント"と呼びます。 第2の部分で、
+この行のうちどの部分がカレント行に挿入されるかが決まります。
+この部分のことを"ワード"と呼びます。 GDBは、
+Bashシェルと同様の方法によって行をワードに分割します。 したがって、
+引用符によって囲まれた複数の英単語（あるいはUNIX用語）は1つのワードとみなされます。
+
+* Menu:
+
+* Event Designators::	使用するヒストリ行の指定方法
+* Word Designators::	関心のあるワードの指定
+* Modifiers::		代替結果の変更
+
+
+File: gdb-ja.info,  Node: Event Designators,  Next: Word Designators,  Up: History Interaction
+
+A.1.1 イベント指定子
+--------------------
+
+"イベント指定子"とは、
+ヒストリ・リスト内のコマンド行エントリへの参照です。
+
+`!'
+     ヒストリ代替を開始します。 ただし次に続く文字が、 空白、 タブ、
+     行末、 <=>、 <(>である場合は例外です。
+
+`!!'
+     1つ前のコマンドを参照します。 これは、 `!-1'と同義です。
+
+`!n'
+     コマンド行番号Nのコマンド行を参照します。
+
+`!-n'
+     N行前のコマンド行を参照します。
+
+`!string'
+     コマンドの最初の部分が文字列STRINGで始まるコマンドのうち、
+     最後に実行されたものを参照します。
+
+`!?string'[`?']
+     文字列STRINGを含むコマンドのうち、
+     最後に実行されたものを参照します。
+
+
+
+File: gdb-ja.info,  Node: Word Designators,  Next: Modifiers,  Prev: Event Designators,  Up: History Interaction
+
+A.1.2 ワード指定子
+------------------
+
+コロン（<:>）が、 イベント指定子と"ワード指定子"の区切り文字になります。
+ワード指定子が<^>、 <$>、 <*>、 <%>で始まる場合は、
+この区切り文字は省略することができます。
+ワードは行の先頭から番号が付与され、
+最初のワードは0（ゼロ）番になります。
+
+`0 (zero)'
+     ゼロ番目のワードです。 多くのアプリケーションにおいて、
+     これはコマンド・ワードです。
+
+`n'
+     N番目のワードです。
+
+`^'
+     最初の引数、 すなわち1番目のワードです。
+
+`$'
+     最後の引数です。
+
+`%'
+     最後に実行された`?string?'検索にマッチしたワードです。
+
+`x-y'
+     ある範囲のワードを指します。 `-Y'は、 `0-Y'の省略形です。
+
+`*'
+     ゼロ番目のワードを除く、 すべてのワードです。 これは、
+     `1-$'と同義です。 イベントの内部にワードが1つしかなくても、
+     <*>の使用はエラーにはなりません。 この場合には、
+     空の文字列が返されます。
+
+
+
+File: gdb-ja.info,  Node: Modifiers,  Prev: Word Designators,  Up: History Interaction
+
+A.1.3 修飾子
+------------
+
+必須ではないワード指定子に続けて、
+以下の"修飾子"を1つ以上連続して追加することができます。
+個々の修飾子の前にコロン（<:>）を付けます。
+
+`#'
+     それまで入力されたコマンド行全体です。 これは、
+     1つ前のコマンドではなく、 カレントなコマンドを意味します。
+
+`h'
+     パス名の末尾の部分を削除したヘッド部です。
+
+`r'
+     `.'SUFFIX形式の拡張子を削除したベース名です。
+
+`e'
+     拡張子以外のすべての部分を削除します。
+
+`t'
+     パス名の末尾の部分を残し、 それより前にある部分をすべて削除します。
+
+`p'
+     新しいコマンドを表示するだけで実行しません。
+
+
+File: gdb-ja.info,  Node: Formatting Documentation,  Next: Command Line Editing,  Prev: GDB Bugs,  Up: Top
+
+Appendix B ドキュメントのフォーマット
+*************************************
+
+GDB 4には、 PostScriptまたはGhostScriptでそのまま印刷できる、
+フォーマット済みのリファレンス・カードが含まれています。 (1) これは、
+メインのソース・ディレクトリの下の`gdb'サブディレクトリにあります。
+PostScriptまたはGhostscriptを使えるプリンタがあれば、
+`refcard.ps'を使ってすぐにリファレンス・カードを印刷することができます。
+
+   GDB 4には、 リファレンス・カードのソースも含まれています。
+TeXを使えば、 以下のようにしてこれをフォーマットすることができます。
+
+     make refcard.dvi
+
+   GDBのリファレンス・カードは、
+米国のレター・サイズの用紙に"ランドスケープ"・モードで印刷するようにデザインされています。
+レター・サイズは、 横幅が11インチ、 高さが8.5インチです。
+DVI出力プログラムへのオプションとして、
+この印刷形式を指定する必要があります。
+
+   すべてのGDBドキュメントは、
+マシン上で読むことのできるディストリビューションの一部として提供されます。
+ドキュメントはTexinfoフォーマットで記述されています。 これは、
+単一のソースからオンライン・マニュアルとハードコピー・マニュアルの両方を生成するドキュメント・システムです。
+Infoフォーマット・コマンドの1つを使ってオンライン・ドキュメントを作成することができ、
+TeX （または`texi2roff'） を使ってハード・コピーの組版ができます。
+
+   GDBには、
+このマニュアルのフォーマット済みのオンラインInfoバージョンも含まれています。
+これは、 `gdb'サブディレクトリにあります。
+メインのInfoファイルは`gdb-4.18/gdb/gdb.info'で、
+同じディレクトリにある`gdb.info*'にマッチする従属ファイルを参照します。
+必要であれば、 これらのファイルを印刷したり、
+任意のエディタで表示して読むこともできます。 しかし、
+これらのファイルは、 GNU Emacsの`info'サブシステムや GNU
+Texinfoの一部として配布されるスタンドアロンの`info'プログラムを使った方が読みやすいでしょう。
+
+   これらのInfoファイルを自分でフォーマットしたいのであれば、
+`texinfo-format-buffer'や`makeinfo'のようなInfoフォーマット・プログラムが必要になります。
+
+   `makeinfo'がインストールされていて、
+GDBソース・ディレクトリのトップ・レベル （バージョン4.18では`gdb-4.18'）
+にいる場合は、 以下のようにしてInfoファイルを作成することができます。
+
+     cd gdb
+     make gdb.info
+
+   このマニュアルのコピーの組版を行って印刷するには、 TeX、
+TeXのDVI出力ファイルを印刷するプログラム、 および、
+Texinfo定義ファイル`texinfo.tex'が必要です。
+
+   TeXは組版プログラムです。 TeXは直接ファイルを印刷しませんが、
+DVIファイルと呼ばれるものを生成します。
+組版されたドキュメントを印刷するには、
+DVIファイルを印刷するプログラムが必要です。
+システム上にTeXがインストールされていれば、
+DVIファイルを印刷するプログラムも入っている可能性があります。
+印刷に使われるコマンドの正確な名前はシステムにより異なります。 `lpr
+-d'が一般によく使われます。 また （PostScriptプリンタでは）
+`dvips'がよく使われます。 DVIプリント・コマンドを使う際には、
+ファイル名に拡張子を付けないか、 あるいは、
+`.dvi'という拡張子を付ける必要があるかもしれません。
+
+   また、 TeXは`texinfo.tex'という名のマクロ定義ファイルを必要とします。
+このファイルはTeXに対して、
+Texinfoフォーマットで記述されたドキュメントをどのようにして組版するかを教えます。
+TeXは自分自身では、
+Texinfoファイルを読むことも組版することもできません。
+`texinfo.tex'はGDBととともに配布されていて、
+`gdb-VERSION-NUMBER/texinfo'ディレクトリにあります。
+
+   TeXとDVI印刷プログラムがインストールされていれば、
+このマニュアルを組版して、 印刷することができます。
+メインのソース・ディレクトリの下の`gdb'サブディレクトリ （例えば、
+`gdb-4.18/gdb'） に移動して、 以下のように実行します。
+
+     make gdb.dvi
+
+   その後、 `gdb.dvi'をDVI印刷プログラムに渡します。
+
+   ---------- Footnotes ----------
+
+   (1) 原注：バージョン4.18では`gdb-4.18/gdb/refcard.ps'です。
+
+
+File: gdb-ja.info,  Node: Installing GDB,  Next: Index,  Prev: Using History Interactively,  Up: Top
+
+Appendix C GDBのインストール
+****************************
+
+GDBには、
+インストールのための準備作業を自動化する`configure'スクリプトが付属しています。
+`configure'を実行した後に`make'を実行することで、
+`gdb'をビルドすることができます。
+
+   GDBディストリビューションには、
+GDBをビルドするのに必要なすべてのソース・コードが、
+単一のディレクトリの下に収められています。
+このディレクトリの名前は通常、
+`gdb'の後ろにバージョン番号を付加したものです。
+
+   例えば、 バージョン4.18のGDBディストリビューションは、
+`gdb-4.18'というディレクトリに収められています。 このディレクトリには、
+以下のものが含まれます。
+
+`gdb-4.18/configure （およびサポート・ファイル）'
+     GDB、 および、
+     GDBが必要とするすべてのライブラリの構成を行うためのスクリプト
+
+`gdb-4.18/gdb'
+     GDB自身に固有のソース
+
+`gdb-4.18/bfd'
+     Binary File Descriptorライブラリのソース
+
+`gdb-4.18/include'
+     GNUインクルード・ファイル
+
+`gdb-4.18/libiberty'
+     `-liberty'フリー・ソフトウェア・ライブラリのソース
+
+`gdb-4.18/opcodes'
+     opcodeテーブルおよび逆アセンブラのライブラリのソース
+
+`gdb-4.18/readline'
+     GNUコマンドライン・インターフェイスのソース
+
+`gdb-4.18/glob'
+     GNUファイル名パターン・マッチング・サブルーチンのソース
+
+`gdb-4.18/mmalloc'
+     メモリにマップされるGNU mallocパッケージのソース
+
+   GDBの構成とビルドを行う最も簡単な方法は、
+`gdb-VERSION-NUMBER'ソース・ディレクトリから`configure'を実行することです。
+ここでの例では、 このディレクトリは`gdb-4.18'です。
+
+   もしまだ`gdb-VERSION-NUMBER'ソース・ディレクトリにいないのであれば、
+まずそこに移動してください。 続いて`configure'を実行します。
+GDBが実行されるプラットフォームの識別子を引数として渡します。
+
+   例えば、 以下のようにします。
+
+     cd gdb-4.18
+     ./configure HOST
+     make
+
+HOSTは、 GDBが実行されるプラットフォームを識別する識別子です。
+例えば`sun4'や`decstation'などです
+（多くの場合HOSTは省略することができます。 この場合`configure'は、
+ユーザのシステムを調べることによって正しい値を推定しようとします）。
+
+   `configure HOST'を実行した後に`make'を実行することで、 `bfd'、
+`readline'、 `mmalloc'、 `libiberty'の各ライブラリがビルドされ、
+最後に`gdb'自体がビルドされます。
+構成されたソース・ファイルやバイナリは、
+対応するソース・ディレクトリに残されます。
+
+   `configure'はBourneシェル （`/bin/sh'） のスクリプトです。
+ユーザが別のシェルを実行していて、
+システムがこのことを自動的に認識してくれない場合は、
+明示的に`sh'にスクリプトを実行させる必要があるかもしれません。
+
+     sh configure HOST
+
+   バージョン4.18のソース・ディレクトリである`gdb-4.18'のように、
+配下に複数のライブラリやプログラムのソース・ディレクトリを含むディレクトリから`configure'を実行すると、
+`configure'は配下にあるそれぞれのディレクトリのための構成ファイルを作成します
+（`--norecursion'オプションによって、
+そうしないよう指定した場合は別です）。
+
+GDBディストリビューションの中の特定のサブディレクトリを構成したいだけの場合には、
+そのサブディレクトリから`configure'スクリプトを実行することができます。
+ただし、 `configure'スクリプトへのパスを必ず指定してください。
+
+   例えば、 バージョン4.18では、
+`bfd'サブディレクトリだけを構成するには以下のようにします。
+
+     cd gdb-4.18/bfd
+     ../configure HOST
+
+   `gdb'はどこにでもインストールできます。
+あらかじめ固定されたパスは1つもありません。 ただし、 ユーザのパスにある
+（`SHELL'環境変数により指定される）
+シェルが誰にでも読み込み可能であることを確かめる必要があります。
+GDBはシェルを使ってユーザ・プログラムを起動するということを憶えておいてください。
+子プロセスが読み込み不可のプログラムである場合、 システムによっては、
+GDBがそれをデバッグするのを拒否します。
+
+* Menu:
+
+* Separate Objdir::             異なるディレクトリでのGDBのコンパイル
+* Config Names::                ホストとターゲットの名前の指定
+* Configure Options::           configureオプションの要約
+
+
+File: gdb-ja.info,  Node: Separate Objdir,  Next: Config Names,  Prev: Installing GDB,  Up: Installing GDB
+
+C.1 異なるディレクトリでのGDBのコンパイル
+=========================================
+
+いくつかのホスト・マシンおよびターゲット・マシン用のGDBを実行したい場合、
+ホストとターゲットの個々の組み合わせ用にコンパイルされた異なる`gdb'が必要になります。
+`configure'には、
+個々の構成をソース・ディレクトリにではなく個別のサブディレクトリに生成する機能があり、
+このようなことが簡単にできるように設計されています。
+ユーザの使っている`make'プログラムに`VPATH'機能があれば （GNU
+`make'にはあります）、
+これら個々のディレクトリにおいて`make'を実行することで、
+そこで指定されている`gdb'プログラムをビルドすることができます。
+
+   個別のディレクトリにおいて`gdb'をビルドするには、
+ソースの置かれている場所を指定するために、
+`--srcdir'オプションを使って`configure'を実行します （同時に、
+ユーザの作業ディレクトリから`configure'を見つけるためのパスも指定する必要があります。
+もし、
+`configure'へのパスが`--srcdir'への引数として指定するものと同じであれば、
+`--srcdir'オプションは指定しなくてもかまいません。 指定されなければ、
+同じであると仮定されます）。
+
+   例えば、 バージョン4.18でSun
+4用のGDBを別のディレクトリにおいて構築するには、 以下のようにします。
+
+     cd gdb-4.18
+     mkdir ../gdb-sun4
+     cd ../gdb-sun4
+     ../gdb-4.18/configure sun4
+     make
+
+   `configure'が、 別の場所にあるソース・ディレクトリを使って、
+ある構成を作成する際には、
+ソース・ディレクトリ配下のディレクトリ・ツリーと同じ構造のディレクトリ・ツリーを
+（同じ名前で） バイナリ用に作成します。 この例では、 Sun
+4用のライブラリ`libiberty.a'は`gdb-sun4/libiberty'ディレクトリに、
+GDB自身は`gdb-sun4/gdb'ディレクトリにそれぞれ作成されます。
+
+いくつかのGDBの構成を別々のディレクトリにおいてビルドする理由としてよくあるのが、
+クロス・コンパイル （GDBは"ホスト"と呼ばれるあるマシン上で動作し、
+"ターゲット"と呼ばれる別のマシンで実行されているプログラムをデバッグする）
+環境用にGDBを構成する場合です。 クロス・デバッグのターゲットは、
+`configure'に対する`--target=TARGET'オプションを使って指定します。
+
+   プログラムやライブラリをビルドするために`make'を実行するときには、
+構成されたディレクトリにいなければなりません。 これは、
+`configure'を実行したときにいたディレクトリ （または、
+そのサブディレクトリの1つ） です。
+
+`configure'が個別のソース・ディレクトリに生成した`Makefile'は再帰的に呼び出されます。
+`gdb-4.18' （あるいは、
+`--srcdir=DIRNAME/gdb-4.18'により構成された別のディレクトリ）
+などのソース・ディレクトリにおいて`make'を実行すると、
+必要とされるすべてのライブラリがビルドされ、
+その後にGDBがビルドされることになります。
+
+   複数のホストまたはターゲットの構成が、
+異なる複数のディレクトリに存在する場合、 （例えば、
+それらが個々のホスト上にNFSマウントされている場合）
+並行して`make'を実行することができます。
+複数の構成が互いに干渉し合うということはありません。
+
+
+File: gdb-ja.info,  Node: Config Names,  Next: Configure Options,  Prev: Separate Objdir,  Up: Installing GDB
+
+C.2 ホストとターゲットの名前の指定
+==================================
+
+`configure'スクリプトにおけるホストおよびターゲットの指定方法は、
+3つの名称部分を持ちますが、
+あらかじめ定義された短い別名もいくつかサポートされています。 完全名は、
+以下のようなパターンの3つの情報部分を持ちます。
+
+     ARCHITECTURE-VENDOR-OS
+
+   例えば、 ホストを指定する引数HOSTとして、 あるいは、
+`--target=TARGET'オプションのTARGETの部分に、
+`sun4'という別名を使うことができます。
+これと同等の完全名は`sparc-sun-sunos4'です。
+
+   GDBに付属している`configure'スクリプトには、
+サポートされているすべてのホスト名、 ターゲット名、 および、
+別名を問い合わせするための機能はありません。 `configure'は、
+Bourneシェル・スクリプトの`config.sub'を呼び出すことによって、
+省略名を完全名に対応付けします。 このスクリプトを使って、
+省略名の意味が推測と合っているかどうかをテストすることもできます。
+以下に例を示します。
+
+     % sh config.sub i386-linux
+     i386-pc-linux-gnu
+     % sh config.sub alpha-linux
+     alpha-unknown-linux-gnu
+     % sh config.sub hp9k700
+     hppa1.1-hp-hpux
+     % sh config.sub sun4
+     sparc-sun-sunos4.1.1
+     % sh config.sub sun3
+     m68k-sun-sunos4.1.1
+     % sh config.sub i986v
+     Invalid configuration `i986v': machine `i986v' not recognized
+
+`config.sub'も、
+GDBディストリビューションの一部としてソース・ディレクトリ
+（バージョン4.18では、`gdb-4.18'） に入っています。
+
+
+File: gdb-ja.info,  Node: Configure Options,  Prev: Config Names,  Up: Installing GDB
+
+C.3 `configure'オプション
+=========================
+
+以下に、 GDBをビルドする上でほとんどの場合に役に立つ
+`configure'のオプションと引数の要約を示します。 `configure'には、
+ここには挙げられていないオプションもいくつかあります。
+`configure'に関する完全な説明については、 *note (configure.info)What
+Configure Does::。
+
+     configure [--help]
+               [--prefix=DIR]
+               [--exec-prefix=DIR]
+               [--srcdir=DIRNAME]
+               [--norecursion] [--rm]
+               [--target=TARGET]
+               HOST
+
+そうしたいのであれば、
+`--'ではなく単一の`-'でオプションを始めることもできますが、
+`--'を使うとオプション名を省略することができます。
+
+`--help'
+     `configure'の実行方法の簡単な要約を表示します。
+
+`--prefix=DIR'
+     プログラムおよびファイルをディレクトリ`DIR'にインストールするよう
+     ソースを構成します。
+
+`--exec-prefix=DIR'
+     プログラムをディレクトリ`DIR'にインストールするよう
+     ソースを構成します。
+
+`--srcdir=DIRNAME'
+     *注意: このオプションを使うには、 GNU `make'、 あるいは、
+     `VPATH'機能を持つ他の`make'を使用する必要があります。*
+     GDBソース・ディレクトリとは別のディレクトリに構成を作成する場合に、
+     このオプションを使用します。 特に、
+     いくつかの構成を別々のディレクトリにおいて同時に作成（かつ維持）する場合に、
+     このオプションを使うことができます。 `configure'は、
+     構成に固有のファイルをカレント・ディレクトリに書き込みますが、
+     DIRNAMEディレクトリにあるソースを使うように、
+     それらのファイルを調整します。 `configure'は、
+     DIRNAMEディレクトリ配下のソース・ディレクトリ・ツリーと同じ構造を持つディレクトリ・ツリーを、
+     作業ディレクトリの下に作成します。
+
+`--norecursion'
+     `configure'が実行されたディレクトリ・レベルだけを構成します。
+     サブディレクトリまで含めて構成することはしません。
+
+`--target=TARGET'
+     指定されたターゲットTARGETで実行するプログラムをクロス・デバッグするために、
+     GDBを構成します。 このオプションを指定しないと、 GDBと同じマシン
+     （ホスト） で実行されるプログラムをデバッグするよう、
+     GDBは構成されます。
+
+     利用可能なすべてのターゲットの一覧を生成する、
+     便利な方法はありません。
+
+`HOST ...'
+     指定されたホストHOST上で実行されるようGDBを構成します。
+
+     利用可能なすべてのホストの一覧を生成する、 便利な方法はありません。
+
+   ほかにも利用可能な多くのオプションがありますが、 これは通常、
+特殊な目的にのみ必要とされるものです。
+
+
+File: gdb-ja.info,  Node: Index,  Prev: Installing GDB,  Up: Top
+
+インデックス
+************
+
+ [index ]
+* Menu:
+
+* #:                                     Command Syntax.      (line  42)
+* # in Modula-2:                         GDB/M2.              (line  22)
+* $:                                     Value History.       (line  15)
+* $$:                                    Value History.       (line  15)
+* $_:                                    Convenience Vars.    (line  54)
+* $_ and info breakpoints:               Set Breaks.          (line 147)
+* $_ and info line:                      Machine Code.        (line  32)
+* $_, $__, and value history:            Memory.              (line  99)
+* $__:                                   Convenience Vars.    (line  64)
+* $_exitcode:                            Convenience Vars.    (line  70)
+* $bpnum:                                Set Breaks.          (line   6)
+* $cdir:                                 Source Path.         (line  49)
+* $cwd:                                  Source Path.         (line  49)
+* .:                                     M2 Scope.            (line   6)
+* .esgdbinit:                            Command Files.       (line  38)
+* .gdbinit:                              Command Files.       (line  13)
+* .os68gdbinit:                          Command Files.       (line  36)
+* .vxgdbinit:                            Command Files.       (line  34)
+* /proc:                                 Process Information. (line   6)
+* 29Kプログラムの実行[29Kプログラムのじっこう]: EB29K Remote. (line   6)
+* 2つのコロン[2つのコロン]:              Variables.           (line  44)
+* 2重コロン[2じゅうコロン]:              Variables.           (line  44)
+* @:                                     Arrays.              (line   6)
+* a.out and C++:                         Cplus expressions.   (line   9)
+* abbreviation:                          Command Syntax.      (line  13)
+* active targets:                        Active Targets.      (line   6)
+* add-shared-symbol-file:                Files.               (line 180)
+* add-symbol-file:                       Files.               (line 154)
+* Alpha stack:                           Alpha/MIPS Stack.    (line   6)
+* Alphaのスタック:                       Alpha/MIPS Stack.    (line   6)
+* AMD 29K register stack:                Registers.           (line  91)
+* AMD EB29K:                             Target Commands.     (line  86)
+* AMD29K via UDI:                        UDI29K Remote.       (line   6)
+* arguments (to your program):           Arguments.           (line   6)
+* artificial array:                      Arrays.              (line   6)
+* assembly instructions:                 Machine Code.        (line  70)
+* assignment:                            Assignment.          (line   6)
+* attach:                                Attach.              (line   6)
+* automatic display:                     Auto Display.        (line   6)
+* automatic thread selection:            Threads.             (line 113)
+* awatch:                                Set Watchpoints.     (line  34)
+* b:                                     Set Breaks.          (line   6)
+* backtrace:                             Backtrace.           (line  13)
+* backtraces:                            Backtrace.           (line   6)
+* bell-style:                            Readline Init File Syntax.
+                                                              (line  24)
+* break:                                 Set Breaks.          (line   6)
+* break ... thread THREADNO:             Thread Stops.        (line  11)
+* break in overloaded functions:         Debugging C plus plus.
+                                                              (line  10)
+* breakpoint commands:                   Break Commands.      (line   6)
+* breakpoint conditions:                 Conditions.          (line   6)
+* breakpoint numbers:                    Breakpoints.         (line  48)
+* breakpoint on events:                  Breakpoints.         (line  37)
+* breakpoint on memory address:          Breakpoints.         (line  24)
+* breakpoint on variable modification:   Breakpoints.         (line  24)
+* breakpoint subroutine, remote:         Stub Contents.       (line  33)
+* breakpoints:                           Breakpoints.         (line   6)
+* breakpoints and threads:               Thread Stops.        (line  11)
+* breakpointサブルーチン、リモート:      Stub Contents.       (line  33)
+* bt:                                    Backtrace.           (line  13)
+* bug criteria:                          Bug Criteria.        (line   6)
+* bug reports:                           Bug Reporting.       (line   6)
+* bugs in GDB:                           GDB Bugs.            (line   6)
+* c:                                     Continuing and Stepping.
+                                                              (line  20)
+* C and C++:                             C.                   (line   6)
+* C and C++ checks:                      C Checks.            (line   6)
+* C and C++ constants:                   C Constants.         (line   6)
+* C and C++ defaults:                    C Defaults.          (line   6)
+* C and C++ operators:                   C Operators.         (line   6)
+* C++:                                   C.                   (line   9)
+* C++ and object formats:                Cplus expressions.   (line   9)
+* C++ exception handling:                Debugging C plus plus.
+                                                              (line  23)
+* C++ scope resolution:                  Variables.           (line  57)
+* C++ support, not in COFF:              Cplus expressions.   (line   9)
+* C++ symbol decoding style:             Print Settings.      (line 241)
+* C++ symbol display:                    Debugging C plus plus.
+                                                              (line  32)
+* C++とDWARF:                            Cplus expressions.   (line   9)
+* C++とECOFF:                            Cplus expressions.   (line   9)
+* C++とELF:                              Cplus expressions.   (line   9)
+* C++とXCOFF:                            Cplus expressions.   (line   9)
+* C++とオブジェクトの形式[C++とオブジェクトのけいしき]: Cplus expressions.
+                                                              (line   9)
+* C++のサポート、COFFでない:             Cplus expressions.   (line   9)
+* C++のシンボルの表現[C++のシンボルのひょうげん]: Print Settings.
+                                                              (line 241)
+* C++のシンボル表示[C++のシンボルひょうじ]: Debugging C plus plus.
+                                                              (line  32)
+* C++のスコープ解決[C++のスコープかいけつ]: Variables.        (line  57)
+* C++の例外処理[C++のれいがいしょり]:    Debugging C plus plus.
+                                                              (line  23)
+* call:                                  Calling.             (line   6)
+* call overloaded functions:             Cplus expressions.   (line  34)
+* call stack:                            Stack.               (line   9)
+* calling functions:                     Calling.             (line   6)
+* calling make:                          Shell Commands.      (line  22)
+* casts, to view memory:                 Expressions.         (line  42)
+* catch:                                 Set Catchpoints.     (line  12)
+* catch catch:                           Set Catchpoints.     (line  19)
+* catch exceptions:                      Frame Info.          (line  59)
+* catch exec:                            Set Catchpoints.     (line  22)
+* catch fork:                            Set Catchpoints.     (line  26)
+* catch load:                            Set Catchpoints.     (line  35)
+* catch throw:                           Set Catchpoints.     (line  16)
+* catch unload:                          Set Catchpoints.     (line  41)
+* catch vfork:                           Set Catchpoints.     (line  30)
+* catchpoints <1>:                       Breakpoints.         (line  37)
+* catchpoints:                           Set Catchpoints.     (line   6)
+* cd:                                    Working Directory.   (line  17)
+* cdir:                                  Source Path.         (line  49)
+* checks, range:                         Range Checking.      (line   6)
+* checks, type:                          Type Checking.       (line   6)
+* checksum, for GDB remote:              Protocol.            (line  29)
+* choosing target byte order:            Byte Order.          (line   6)
+* clear:                                 Delete Breaks.       (line  26)
+* clearing breakpoints, watchpoints, catchpoints: Delete Breaks.
+                                                              (line   6)
+* COFF versus C++:                       Cplus expressions.   (line   9)
+* colon, doubled as scope operator:      M2 Scope.            (line   6)
+* colon-colon <1>:                       Variables.           (line  44)
+* colon-colon:                           M2 Scope.            (line   6)
+* command editing:                       Readline Bare Essentials.
+                                                              (line   6)
+* command files:                         Command Files.       (line   6)
+* command hooks:                         Hooks.               (line   6)
+* command line editing:                  Editing.             (line   6)
+* commands:                              Break Commands.      (line  12)
+* commands for C++:                      Debugging C plus plus.
+                                                              (line   6)
+* commands to STDBUG (ST2000):           ST2000 Remote.       (line  29)
+* comment:                               Command Syntax.      (line  42)
+* comment-begin:                         Readline Init File Syntax.
+                                                              (line  32)
+* compilation directory:                 Source Path.         (line  49)
+* Compiling:                             Sparclet Remote.     (line  17)
+* complete:                              Help.                (line  58)
+* completion:                            Completion.          (line   6)
+* completion of quoted strings:          Completion.          (line  68)
+* completion-query-items:                Readline Init File Syntax.
+                                                              (line  42)
+* condition:                             Conditions.          (line  52)
+* conditional breakpoints:               Conditions.          (line   6)
+* configuring GDB:                       Installing GDB.      (line   6)
+* confirmation:                          Messages/Warnings.   (line  57)
+* connect (to STDBUG):                   ST2000 Remote.       (line  33)
+* connect（STDBUGに対する）[connect（STDBUGにたいする）]: ST2000 Remote.
+                                                              (line  33)
+* continue:                              Continuing and Stepping.
+                                                              (line  20)
+* continuing:                            Continuing and Stepping.
+                                                              (line   6)
+* continuing threads:                    Thread Stops.        (line  38)
+* control C, and remote debugging:       Bootstrapping.       (line  23)
+* controlling terminal:                  Input/Output.        (line  23)
+* convenience variables:                 Convenience Vars.    (line   6)
+* convert-meta:                          Readline Init File Syntax.
+                                                              (line  51)
+* core:                                  Files.               (line 136)
+* core dump file:                        Files.               (line   6)
+* core-file:                             Files.               (line 136)
+* CPU simulator:                         Simulator.           (line   6)
+* CPUシミュレータ:                       Simulator.           (line   6)
+* crash of debugger:                     Bug Criteria.        (line   9)
+* Ctrl-C、リモート・デバッグ処理[Ctrl-C、リモート・デバッグしょり]: Bootstrapping.
+                                                              (line  23)
+* current directory:                     Source Path.         (line  49)
+* current thread:                        Threads.             (line  45)
+* cwd:                                   Source Path.         (line  49)
+* d:                                     Delete Breaks.       (line  41)
+* debugger crash:                        Bug Criteria.        (line   9)
+* debugging optimized code:              Compilation.         (line  28)
+* debugging stub, example:               Protocol.            (line   6)
+* debugging target:                      Targets.             (line   6)
+* define:                                Define.              (line  25)
+* delete:                                Delete Breaks.       (line  41)
+* delete breakpoints:                    Delete Breaks.       (line  41)
+* delete display:                        Auto Display.        (line  54)
+* deleting breakpoints, watchpoints, catchpoints: Delete Breaks.
+                                                              (line   6)
+* demangling:                            Print Settings.      (line 218)
+* detach:                                Attach.              (line  44)
+* device:                                Hitachi Boards.      (line   6)
+* dir:                                   Source Path.         (line  33)
+* directories for source files:          Source Path.         (line   6)
+* directory:                             Source Path.         (line  33)
+* directory, compilation:                Source Path.         (line  49)
+* directory, current:                    Source Path.         (line  49)
+* dis:                                   Disabling.           (line  41)
+* disable:                               Disabling.           (line  41)
+* disable breakpoints:                   Disabling.           (line   6)
+* disable display:                       Auto Display.        (line  63)
+* disable-completion:                    Readline Init File Syntax.
+                                                              (line  60)
+* disassemble:                           Machine Code.        (line  39)
+* display:                               Auto Display.        (line  28)
+* display of expressions:                Auto Display.        (line   6)
+* do:                                    Selection.           (line  47)
+* document:                              Define.              (line  49)
+* documentation:                         Formatting Documentation.
+                                                              (line  23)
+* down:                                  Selection.           (line  47)
+* down-silently:                         Selection.           (line  71)
+* download to H8/300 or H8/500:          Target Commands.     (line 244)
+* download to Hitachi SH:                Target Commands.     (line 244)
+* download to Nindy-960:                 Target Commands.     (line 240)
+* download to Sparclet:                  Sparclet Download.   (line   6)
+* download to VxWorks:                   VxWorks Download.    (line   6)
+* dynamic linking:                       Files.               (line 154)
+* eb.log:                                Remote Log.          (line   6)
+* EB29K board:                           EB29K Remote.        (line   6)
+* EB29Kボード:                           EB29K Remote.        (line   6)
+* EB29K用のログ・ファイル[EB29Kようのログ・ファイル]: Remote Log.
+                                                              (line   6)
+* EBMON:                                 Comms (EB29K).       (line  46)
+* echo:                                  Output.              (line  12)
+* ECOFF and C++:                         Cplus expressions.   (line   9)
+* editing:                               Editing.             (line  17)
+* editing command lines:                 Readline Bare Essentials.
+                                                              (line   6)
+* editing-mode:                          Readline Init File Syntax.
+                                                              (line  66)
+* ELF/DWARF and C++:                     Cplus expressions.   (line   9)
+* ELF/stabs and C++:                     Cplus expressions.   (line   9)
+* else:                                  Define.              (line  34)
+* Emacs:                                 Emacs.               (line   6)
+* enable:                                Disabling.           (line  53)
+* enable breakpoints:                    Disabling.           (line  53)
+* enable display:                        Auto Display.        (line  69)
+* enable-keypad:                         Readline Init File Syntax.
+                                                              (line  74)
+* end:                                   Break Commands.      (line  12)
+* entering numbers:                      Numbers.             (line   6)
+* environment (of your program):         Environment.         (line   6)
+* error on valid input:                  Bug Criteria.        (line  14)
+* event designators:                     Event Designators.   (line   6)
+* event handling:                        Set Catchpoints.     (line   6)
+* examining data:                        Data.                (line   6)
+* examining memory:                      Memory.              (line  10)
+* exception handlers <1>:                Frame Info.          (line  59)
+* exception handlers:                    Set Catchpoints.     (line   6)
+* exceptionHandler:                      Bootstrapping.       (line  39)
+* exec-file:                             Files.               (line  43)
+* executable file:                       Files.               (line  16)
+* exiting GDB:                           Quitting GDB.        (line   6)
+* expand-tilde:                          Readline Init File Syntax.
+                                                              (line  81)
+* expansion:                             History Interaction. (line   6)
+* expressions:                           Expressions.         (line   6)
+* expressions in C or C++:               C.                   (line   6)
+* expressions in C++:                    Cplus expressions.   (line   6)
+* expressions in Modula-2:               Modula-2.            (line  13)
+* f:                                     Selection.           (line  12)
+* fatal signal:                          Bug Criteria.        (line   9)
+* fatal signals:                         Signals.             (line  17)
+* fg:                                    Continuing and Stepping.
+                                                              (line  20)
+* file:                                  Files.               (line  16)
+* finish:                                Continuing and Stepping.
+                                                              (line 107)
+* flinching:                             Messages/Warnings.   (line  57)
+* floating point:                        Floating Point Hardware.
+                                                              (line   6)
+* floating point registers:              Registers.           (line  15)
+* floating point, MIPS remote:           MIPS Remote.         (line  63)
+* flush_i_cache:                         Bootstrapping.       (line  66)
+* focus of debugging:                    Threads.             (line  45)
+* foo:                                   Symbol Errors.       (line  57)
+* fork, debugging programs which call:   Processes.           (line   6)
+* forkを呼び出す関数のデバッグ[forkをよびだすかんすうのデバッグ]: Processes.
+                                                              (line   6)
+* format options:                        Print Settings.      (line   6)
+* formatted output:                      Output Formats.      (line   6)
+* Fortran:                               Summary.             (line  36)
+* forward-search:                        Search.              (line   8)
+* frame <1>:                             Frames.              (line   6)
+* frame <2>:                             Selection.           (line  12)
+* frame:                                 Frames.              (line  55)
+* frame number:                          Frames.              (line  34)
+* frame pointer:                         Frames.              (line  25)
+* frameless execution:                   Frames.              (line  42)
+* Fujitsu:                               Remote Serial.       (line  68)
+* g++:                                   C.                   (line   9)
+* GDB bugs, reporting:                   Bug Reporting.       (line   6)
+* GDB reference card:                    Formatting Documentation.
+                                                              (line   6)
+* GDBHISTFILE:                           History.             (line  10)
+* gdbserve.nlm:                          NetWare.             (line   6)
+* gdbserver:                             Server.              (line   6)
+* GDBのスレッド識別子[GDBのスレッドしきべつし]: Threads.      (line  63)
+* GDBのバグの報告[GDBのバグのほうこく]:  Bug Reporting.       (line   6)
+* GDBの終了[GDBのしゅうりょう]:          Quitting GDB.        (line   6)
+* GDBリファレンス・カード[GDBリファレンス・カード]: Formatting Documentation.
+                                                              (line   6)
+* getDebugChar:                          Bootstrapping.       (line  14)
+* GNU C++:                               C.                   (line   9)
+* GNU Emacs:                             Emacs.               (line   6)
+* h:                                     Help.                (line   9)
+* H8/300 or H8/500 download:             Target Commands.     (line 244)
+* H8/300 or H8/500 simulator:            Simulator.           (line   6)
+* H8/300やH8/500へのダウンロード:        Target Commands.     (line 244)
+* H8/300またはH8/500のシミュレータ:      Simulator.           (line   6)
+* handle:                                Signals.             (line  46)
+* handle_exception:                      Stub Contents.       (line  15)
+* handling signals:                      Signals.             (line  31)
+* hardware watchpoints:                  Set Watchpoints.     (line   6)
+* hbreak:                                Set Breaks.          (line  93)
+* help:                                  Help.                (line   6)
+* help target:                           Target Commands.     (line  20)
+* help user-defined:                     Define.              (line  65)
+* heuristic-fence-post (Alpha,MIPS):     Alpha/MIPS Stack.    (line  16)
+* history expansion:                     History.             (line  35)
+* history file:                          History.             (line  10)
+* history number:                        Value History.       (line  15)
+* history save:                          History.             (line  21)
+* history size:                          History.             (line  30)
+* history substitution:                  History.             (line  10)
+* Hitachi:                               Remote Serial.       (line  62)
+* Hitachi SH download:                   Target Commands.     (line 244)
+* Hitachi SH simulator:                  Simulator.           (line   6)
+* horizontal-scroll-mode:                Readline Init File Syntax.
+                                                              (line  85)
+* i:                                     Help.                (line  82)
+* i/o:                                   Input/Output.        (line   6)
+* i386:                                  Remote Serial.       (line  56)
+* i386-stub.c:                           Remote Serial.       (line  56)
+* i960:                                  i960-Nindy Remote.   (line   6)
+* if:                                    Define.              (line  34)
+* ignore:                                Conditions.          (line  85)
+* ignore count (of breakpoint):          Conditions.          (line  70)
+* INCLUDE_RDB:                           VxWorks Remote.      (line  28)
+* info:                                  Help.                (line  82)
+* info address:                          Symbols.             (line  30)
+* info all-registers:                    Registers.           (line  15)
+* info args:                             Frame Info.          (line  51)
+* info breakpoints:                      Set Breaks.          (line 147)
+* info catch:                            Frame Info.          (line  59)
+* info display:                          Auto Display.        (line  77)
+* info extensions:                       Show.                (line  31)
+* info f:                                Frame Info.          (line  18)
+* info files:                            Files.               (line 198)
+* info float:                            Floating Point Hardware.
+                                                              (line   9)
+* info frame <1>:                        Frame Info.          (line  18)
+* info frame:                            Show.                (line   9)
+* info functions:                        Symbols.             (line 108)
+* info line:                             Machine Code.        (line  14)
+* info locals:                           Frame Info.          (line  55)
+* info proc:                             Process Information. (line  15)
+* info proc id:                          Process Information. (line  29)
+* info proc mappings:                    Process Information. (line  18)
+* info proc status:                      Process Information. (line  34)
+* info proc times:                       Process Information. (line  24)
+* info program:                          Stopping.            (line  21)
+* info registers:                        Registers.           (line  11)
+* info s:                                Backtrace.           (line  31)
+* info set:                              Help.                (line 106)
+* info share:                            Files.               (line 222)
+* info sharedlibrary:                    Files.               (line 222)
+* info signals:                          Signals.             (line  37)
+* info source <1>:                       Show.                (line   9)
+* info source:                           Symbols.             (line  96)
+* info sources:                          Symbols.             (line 101)
+* info stack:                            Backtrace.           (line  31)
+* info target:                           Files.               (line 198)
+* info terminal:                         Input/Output.        (line  12)
+* info threads:                          Threads.             (line  66)
+* info types:                            Symbols.             (line  80)
+* info variables:                        Symbols.             (line 117)
+* info watchpoints:                      Set Watchpoints.     (line  40)
+* inheritance:                           Debugging C plus plus.
+                                                              (line  28)
+* init file:                             Command Files.       (line  13)
+* init file name:                        Command Files.       (line  28)
+* initial frame:                         Frames.              (line  12)
+* initialization file, readline:         Readline Init File.  (line   6)
+* innermost frame:                       Frames.              (line  12)
+* input-meta:                            Readline Init File Syntax.
+                                                              (line 114)
+* inspect:                               Data.                (line   6)
+* installation:                          Installing GDB.      (line   6)
+* instructions, assembly:                Machine Code.        (line  39)
+* Intel:                                 Remote Serial.       (line  56)
+* interaction, readline:                 Readline Interaction.
+                                                              (line   6)
+* internal GDB breakpoints:              Set Breaks.          (line 205)
+* interrupt:                             Quitting GDB.        (line  13)
+* interrupting remote programs:          Debug Session.       (line  75)
+* interrupting remote targets:           Bootstrapping.       (line  23)
+* invalid input:                         Bug Criteria.        (line  18)
+* jump:                                  Jumping.             (line  11)
+* keymap:                                Readline Init File Syntax.
+                                                              (line  93)
+* kill:                                  Kill Process.        (line   6)
+* kill ring:                             Readline Killing Commands.
+                                                              (line  19)
+* killing text:                          Readline Killing Commands.
+                                                              (line   6)
+* l:                                     List.                (line   6)
+* languages:                             Languages.           (line   6)
+* latest breakpoint:                     Set Breaks.          (line   6)
+* leaving GDB:                           Quitting GDB.        (line   6)
+* linespec:                              List.                (line  50)
+* list:                                  List.                (line   6)
+* listing machine instructions:          Machine Code.        (line  39)
+* load FILENAME:                         Target Commands.     (line 216)
+* log file for EB29K:                    Remote Log.          (line   6)
+* m680x0:                                Remote Serial.       (line  59)
+* m68k-stub.c:                           Remote Serial.       (line  59)
+* machine instructions:                  Machine Code.        (line  39)
+* maint info breakpoints:                Set Breaks.          (line 215)
+* maint print psymbols:                  Symbols.             (line 151)
+* maint print symbols:                   Symbols.             (line 151)
+* make:                                  Shell Commands.      (line  22)
+* makeの呼び出し[makeのよびだし]:        Shell Commands.      (line  22)
+* mapped:                                Files.               (line 105)
+* mark-modified-lines:                   Readline Init File Syntax.
+                                                              (line 109)
+* member functions:                      Cplus expressions.   (line  23)
+* memory models, H8/500:                 Hitachi Special.     (line  16)
+* memory tracing:                        Breakpoints.         (line  24)
+* memory, viewing as typed object:       Expressions.         (line  42)
+* memory-mapped symbol file:             Files.               (line 105)
+* memset:                                Bootstrapping.       (line  79)
+* meta-flag:                             Readline Init File Syntax.
+                                                              (line 114)
+* MIPS boards:                           MIPS Remote.         (line   6)
+* MIPS remote floating point:            MIPS Remote.         (line  63)
+* MIPS remotedebug protocol:             MIPS Remote.         (line  88)
+* MIPS remotedebugプロトコル:            MIPS Remote.         (line  88)
+* MIPS stack:                            Alpha/MIPS Stack.    (line   6)
+* MIPSのスタック:                        Alpha/MIPS Stack.    (line   6)
+* MIPSリモート浮動小数点[MIPSリモートふどうしょうすうてん]: MIPS Remote.
+                                                              (line  63)
+* MIPSボード:                            MIPS Remote.         (line   6)
+* Modula-2:                              Modula-2.            (line   6)
+* Modula-2 built-ins:                    Built-In Func/Proc.  (line   6)
+* Modula-2 checks:                       M2 Checks.           (line   6)
+* Modula-2 constants:                    M2 Constants.        (line   6)
+* Modula-2 defaults:                     M2 Defaults.         (line   6)
+* Modula-2 operators:                    M2 Operators.        (line   6)
+* Modula-2, deviations from:             Deviations.          (line   6)
+* Modula-2の#:                           GDB/M2.              (line  22)
+* Motorola 680x0:                        Remote Serial.       (line  59)
+* multiple processes:                    Processes.           (line   6)
+* multiple targets:                      Active Targets.      (line   6)
+* multiple threads:                      Threads.             (line   6)
+* n:                                     Continuing and Stepping.
+                                                              (line  89)
+* names of symbols:                      Symbols.             (line  16)
+* namespace in C++:                      Cplus expressions.   (line  28)
+* negative breakpoint numbers:           Set Breaks.          (line 205)
+* New SYSTAG:                            Threads.             (line  52)
+* next:                                  Continuing and Stepping.
+                                                              (line  89)
+* nexti:                                 Continuing and Stepping.
+                                                              (line 184)
+* ni:                                    Continuing and Stepping.
+                                                              (line 184)
+* Nindy:                                 i960-Nindy Remote.   (line   6)
+* Nindy-960へのダウンロード:             Target Commands.     (line 240)
+* notation, readline:                    Readline Bare Essentials.
+                                                              (line   6)
+* number representation:                 Numbers.             (line   6)
+* numbers for breakpoints:               Breakpoints.         (line  48)
+* object formats and C++:                Cplus expressions.   (line   9)
+* online documentation:                  Help.                (line   6)
+* optimized code, debugging:             Compilation.         (line  28)
+* outermost frame:                       Frames.              (line  12)
+* output:                                Output.              (line  39)
+* output formats:                        Output Formats.      (line   6)
+* output-meta:                           Readline Init File Syntax.
+                                                              (line 121)
+* overloading:                           Breakpoint Menus.    (line   6)
+* overloading in C++:                    Debugging C plus plus.
+                                                              (line  16)
+* packets, reporting on stdout:          Protocol.            (line  92)
+* partial symbol dump:                   Symbols.             (line 151)
+* patching binaries:                     Patching.            (line   6)
+* path:                                  Environment.         (line  14)
+* pauses in output:                      Screen Size.         (line   6)
+* pipes:                                 Starting.            (line  61)
+* pointer, finding referent:             Print Settings.      (line  86)
+* print:                                 Data.                (line   6)
+* print settings:                        Print Settings.      (line   6)
+* printf:                                Output.              (line  50)
+* printing data:                         Data.                (line   6)
+* process image:                         Process Information. (line   6)
+* processes, multiple:                   Processes.           (line   6)
+* prompt:                                Prompt.              (line   6)
+* protocol, GDB remote serial:           Protocol.            (line  22)
+* ptype:                                 Symbols.             (line  50)
+* putDebugChar:                          Bootstrapping.       (line  19)
+* pwd:                                   Working Directory.   (line  20)
+* q:                                     Quitting GDB.        (line   6)
+* quit [EXPRESSION]:                     Quitting GDB.        (line   6)
+* quotes in commands:                    Completion.          (line  68)
+* quoting names:                         Symbols.             (line  16)
+* raise exceptions:                      Set Catchpoints.     (line  72)
+* range checking:                        Range Checking.      (line   6)
+* rbreak:                                Set Breaks.          (line 131)
+* reading symbols immediately:           Files.               (line 105)
+* readline:                              Editing.             (line   6)
+* readnow:                               Files.               (line 105)
+* redirection:                           Input/Output.        (line   6)
+* reference card:                        Formatting Documentation.
+                                                              (line   6)
+* reference declarations:                Cplus expressions.   (line  41)
+* register stack, AMD29K:                Registers.           (line  91)
+* registers:                             Registers.           (line   6)
+* regular expression:                    Set Breaks.          (line 131)
+* reloading symbols:                     Symbols.             (line 125)
+* remote connection without stubs:       Server.              (line   6)
+* remote debugging:                      Remote.              (line   6)
+* remote programs, interrupting:         Debug Session.       (line  75)
+* remote serial debugging summary:       Debug Session.       (line   6)
+* remote serial debugging, overview:     Remote Serial.       (line   6)
+* remote serial protocol:                Protocol.            (line  22)
+* remote serial stub:                    Stub Contents.       (line   6)
+* remote serial stub list:               Remote Serial.       (line  52)
+* remote serial stub, initialization:    Stub Contents.       (line   9)
+* remote serial stub, main routine:      Stub Contents.       (line  15)
+* remote stub, example:                  Protocol.            (line   6)
+* remote stub, support routines:         Bootstrapping.       (line   6)
+* remotedebug, MIPS protocol:            MIPS Remote.         (line  88)
+* remotedebug、MIPSプロトコル:           MIPS Remote.         (line  88)
+* remotetimeout:                         Sparclet Remote.     (line  13)
+* repeating commands:                    Command Syntax.      (line  22)
+* reporting bugs in GDB:                 GDB Bugs.            (line   6)
+* reset:                                 Nindy Reset.         (line   7)
+* response time, MIPS debugging:         Alpha/MIPS Stack.    (line  11)
+* resuming execution:                    Continuing and Stepping.
+                                                              (line   6)
+* RET:                                   Command Syntax.      (line  22)
+* retransmit-timeout, MIPS protocol:     MIPS Remote.         (line  99)
+* retransmit-timeout、MIPSプロトコル:    MIPS Remote.         (line  99)
+* return:                                Returning.           (line   6)
+* returning from a function:             Returning.           (line   6)
+* reverse-search:                        Search.              (line   6)
+* run:                                   Starting.            (line   6)
+* running:                               Starting.            (line   6)
+* Running:                               Sparclet Remote.     (line  30)
+* running 29K programs:                  EB29K Remote.        (line   6)
+* running and debugging Sparclet programs: Sparclet Execution.
+                                                              (line   6)
+* running VxWorks tasks:                 VxWorks Attach.      (line   6)
+* rwatch:                                Set Watchpoints.     (line  29)
+* s:                                     Continuing and Stepping.
+                                                              (line  50)
+* saving symbol table:                   Files.               (line 105)
+* scope:                                 M2 Scope.            (line   6)
+* search:                                Search.              (line   8)
+* searching:                             Search.              (line   6)
+* section:                               Files.               (line 188)
+* select-frame:                          Frames.              (line  63)
+* selected frame:                        Stack.               (line  22)
+* serial connections, debugging:         Protocol.            (line  92)
+* serial device, Hitachi micros:         Hitachi Boards.      (line   6)
+* serial line speed, Hitachi micros:     Hitachi Boards.      (line  13)
+* serial line, target remote:            Debug Session.       (line  49)
+* serial protocol, GDB remote:           Protocol.            (line  22)
+* set:                                   Help.                (line  91)
+* set args:                              Arguments.           (line  16)
+* set assembly-language:                 Machine Code.        (line  70)
+* set check <1>:                         Type Checking.       (line  54)
+* set check:                             Range Checking.      (line  41)
+* set check range:                       Range Checking.      (line  41)
+* set check type:                        Type Checking.       (line  54)
+* set complaints:                        Messages/Warnings.   (line  33)
+* set confirm:                           Messages/Warnings.   (line  57)
+* set demangle-style:                    Print Settings.      (line 241)
+* set editing:                           Editing.             (line  17)
+* set endian auto:                       Byte Order.          (line   6)
+* set endian big:                        Byte Order.          (line   6)
+* set endian little:                     Byte Order.          (line  18)
+* set environment:                       Environment.         (line  41)
+* set extension-language:                Show.                (line  31)
+* set gnutarget:                         Target Commands.     (line  30)
+* set height:                            Screen Size.         (line  20)
+* set history expansion:                 History.             (line  49)
+* set history filename:                  History.             (line  10)
+* set history save:                      History.             (line  21)
+* set history size:                      History.             (line  30)
+* set input-radix:                       Numbers.             (line  15)
+* set language:                          Manually.            (line  10)
+* set listsize:                          List.                (line  34)
+* set machine:                           Hitachi Special.     (line   9)
+* set memory MOD:                        Hitachi Special.     (line  16)
+* set mipsfpu:                           MIPS Remote.         (line  63)
+* set output-radix:                      Numbers.             (line  28)
+* set print address:                     Print Settings.      (line  11)
+* set print array:                       Print Settings.      (line 105)
+* set print asm-demangle:                Print Settings.      (line 229)
+* set print demangle:                    Print Settings.      (line 218)
+* set print elements:                    Print Settings.      (line 117)
+* set print max-symbolic-offset:         Print Settings.      (line  74)
+* set print null-stop:                   Print Settings.      (line 129)
+* set print object:                      Print Settings.      (line 274)
+* set print pretty:                      Print Settings.      (line 134)
+* set print sevenbit-strings:            Print Settings.      (line 160)
+* set print static-members:              Print Settings.      (line 288)
+* set print symbol-filename:             Print Settings.      (line  54)
+* set print union:                       Print Settings.      (line 176)
+* set print vtbl:                        Print Settings.      (line 299)
+* set processor ARGS:                    MIPS Remote.         (line  51)
+* set prompt:                            Prompt.              (line  19)
+* set remotedebug <1>:                   Protocol.            (line  92)
+* set remotedebug:                       MIPS Remote.         (line  88)
+* set retransmit-timeout:                MIPS Remote.         (line  99)
+* set rstack_high_address:               Registers.           (line  91)
+* set symbol-reloading:                  Symbols.             (line 134)
+* set timeout:                           MIPS Remote.         (line  99)
+* set variable:                          Assignment.          (line  15)
+* set verbose:                           Messages/Warnings.   (line  17)
+* set width:                             Screen Size.         (line  20)
+* set write:                             Patching.            (line  17)
+* set_debug_traps:                       Stub Contents.       (line   9)
+* setting variables:                     Assignment.          (line   6)
+* setting watchpoints:                   Set Watchpoints.     (line   6)
+* SH:                                    Remote Serial.       (line  62)
+* sh-stub.c:                             Remote Serial.       (line  62)
+* share:                                 Files.               (line 226)
+* shared libraries:                      Files.               (line 213)
+* sharedlibrary:                         Files.               (line 226)
+* shell:                                 Shell Commands.      (line  10)
+* shell escape:                          Shell Commands.      (line  10)
+* show:                                  Help.                (line  97)
+* show args:                             Arguments.           (line  24)
+* show check range:                      Range Checking.      (line  41)
+* show check type:                       Type Checking.       (line  54)
+* show commands:                         History.             (line  71)
+* show complaints:                       Messages/Warnings.   (line  42)
+* show confirm:                          Messages/Warnings.   (line  63)
+* show convenience:                      Convenience Vars.    (line  38)
+* show copying:                          Help.                (line 123)
+* show demangle-style:                   Print Settings.      (line 271)
+* show directories:                      Source Path.         (line  64)
+* show editing:                          Editing.             (line  25)
+* show endian:                           Byte Order.          (line   6)
+* show environment:                      Environment.         (line  35)
+* show gnutarget:                        Target Commands.     (line  45)
+* show height:                           Screen Size.         (line  20)
+* show history:                          History.             (line  62)
+* show input-radix:                      Numbers.             (line  34)
+* show language:                         Show.                (line   9)
+* show listsize:                         List.                (line  39)
+* show machine:                          Hitachi Special.     (line   9)
+* show mipsfpu:                          MIPS Remote.         (line  63)
+* show output-radix:                     Numbers.             (line  37)
+* show paths:                            Environment.         (line  31)
+* show print address:                    Print Settings.      (line  41)
+* show print array:                      Print Settings.      (line 113)
+* show print asm-demangle:               Print Settings.      (line 236)
+* show print demangle:                   Print Settings.      (line 225)
+* show print elements:                   Print Settings.      (line 125)
+* show print max-symbolic-offset:        Print Settings.      (line  82)
+* show print object:                     Print Settings.      (line 285)
+* show print pretty:                     Print Settings.      (line 156)
+* show print sevenbit-strings:           Print Settings.      (line 173)
+* show print static-members:             Print Settings.      (line 296)
+* show print symbol-filename:            Print Settings.      (line  61)
+* show print union:                      Print Settings.      (line 185)
+* show print vtbl:                       Print Settings.      (line 307)
+* show processor:                        MIPS Remote.         (line  51)
+* show prompt:                           Prompt.              (line  22)
+* show remotedebug <1>:                  Protocol.            (line  92)
+* show remotedebug:                      MIPS Remote.         (line  88)
+* show retransmit-timeout:               MIPS Remote.         (line  99)
+* show rstack_high_address:              Registers.           (line 103)
+* show symbol-reloading:                 Symbols.             (line 147)
+* show timeout:                          MIPS Remote.         (line  99)
+* show user:                             Define.              (line  69)
+* show values:                           Value History.       (line  57)
+* show verbose:                          Messages/Warnings.   (line  23)
+* show version:                          Help.                (line 114)
+* show warranty:                         Help.                (line 126)
+* show width:                            Screen Size.         (line  20)
+* show write:                            Patching.            (line  30)
+* show-all-if-ambiguous:                 Readline Init File Syntax.
+                                                              (line 134)
+* si:                                    Continuing and Stepping.
+                                                              (line 172)
+* signal:                                Signaling.           (line   6)
+* signals:                               Signals.             (line   6)
+* silent:                                Break Commands.      (line  43)
+* sim:                                   Simulator.           (line  20)
+* simulator:                             Simulator.           (line   6)
+* simulator, H8/300 or H8/500:           Simulator.           (line   6)
+* simulator, Hitachi SH:                 Simulator.           (line   6)
+* simulator, Z8000:                      Simulator.           (line   6)
+* size of screen:                        Screen Size.         (line   6)
+* sleep:                                 Processes.           (line  15)
+* software watchpoints:                  Set Watchpoints.     (line   6)
+* source:                                Command Files.       (line  43)
+* source path:                           Source Path.         (line   6)
+* Sparc:                                 Remote Serial.       (line  65)
+* sparc-stub.c:                          Remote Serial.       (line  65)
+* sparcl-stub.c:                         Remote Serial.       (line  68)
+* Sparclet:                              Sparclet Remote.     (line   6)
+* Sparcletへのダウンロード:              Sparclet Download.   (line   6)
+* Sparcletプログラムの実行とデバッグ[Sparcletプログラムのじっこうとデバッグ]: Sparclet Execution.
+                                                              (line   6)
+* SparcLite:                             Remote Serial.       (line  68)
+* speed:                                 Hitachi Boards.      (line  13)
+* ST2000 auxiliary commands:             ST2000 Remote.       (line  25)
+* st2000 CMD:                            ST2000 Remote.       (line  29)
+* ST2000用の補助的なコマンド[ST2000ようのほじょてきなコマンド]: ST2000 Remote.
+                                                              (line  25)
+* stack frame:                           Frames.              (line   6)
+* stack on Alpha:                        Alpha/MIPS Stack.    (line   6)
+* stack on MIPS:                         Alpha/MIPS Stack.    (line   6)
+* stack traces:                          Backtrace.           (line   6)
+* stacking targets:                      Active Targets.      (line   6)
+* starting:                              Starting.            (line   6)
+* STDBUG commands (ST2000):              ST2000 Remote.       (line  29)
+* STDBUGコマンド（ST2000）:              ST2000 Remote.       (line  29)
+* step:                                  Continuing and Stepping.
+                                                              (line  50)
+* stepi:                                 Continuing and Stepping.
+                                                              (line 172)
+* stepping:                              Continuing and Stepping.
+                                                              (line   6)
+* stopped threads:                       Thread Stops.        (line  32)
+* stub example, remote debugging:        Protocol.            (line   6)
+* stupid questions:                      Messages/Warnings.   (line  57)
+* switching threads:                     Threads.             (line   6)
+* switching threads automatically:       Threads.             (line 113)
+* symbol decoding style, C++:            Print Settings.      (line 241)
+* symbol dump:                           Symbols.             (line 151)
+* symbol names:                          Symbols.             (line  16)
+* symbol overloading:                    Breakpoint Menus.    (line   6)
+* symbol table:                          Files.               (line   6)
+* symbol-file:                           Files.               (line  51)
+* symbols, reading immediately:          Files.               (line 105)
+* target:                                Targets.             (line   6)
+* target abug:                           Target Commands.     (line  79)
+* target adapt:                          Target Commands.     (line  82)
+* target amd-eb:                         Target Commands.     (line  85)
+* target array:                          Target Commands.     (line  93)
+* target bug:                            Target Commands.     (line  96)
+* target byte order:                     Byte Order.          (line   6)
+* target core:                           Target Commands.     (line  60)
+* target cpu32bug:                       Target Commands.     (line  99)
+* target dbug:                           Target Commands.     (line 102)
+* target ddb:                            Target Commands.     (line 105)
+* target ddb PORT:                       MIPS Remote.         (line  43)
+* target dink32:                         Target Commands.     (line 108)
+* target e7000 <1>:                      Target Commands.     (line 111)
+* target e7000:                          Hitachi ICE.         (line   6)
+* target es1800:                         Target Commands.     (line 114)
+* target est:                            Target Commands.     (line 117)
+* target exec:                           Target Commands.     (line  56)
+* target hms:                            Target Commands.     (line 120)
+* target lsi:                            Target Commands.     (line 126)
+* target lsi PORT:                       MIPS Remote.         (line  45)
+* target m32r:                           Target Commands.     (line 129)
+* target mips:                           Target Commands.     (line 132)
+* target mips PORT:                      MIPS Remote.         (line  15)
+* target mon960:                         Target Commands.     (line 135)
+* target nindy:                          Target Commands.     (line 138)
+* target nrom:                           Target Commands.     (line 144)
+* target op50n:                          Target Commands.     (line 148)
+* target pmon:                           Target Commands.     (line 151)
+* target pmon PORT:                      MIPS Remote.         (line  41)
+* target ppcbug:                         Target Commands.     (line 154)
+* target ppcbug1:                        Target Commands.     (line 155)
+* target r3900:                          Target Commands.     (line 159)
+* target rdi:                            Target Commands.     (line 162)
+* target rdp:                            Target Commands.     (line 165)
+* target remote:                         Target Commands.     (line  64)
+* target remote、TCPポート:              Debug Session.       (line  60)
+* target remote、シリアル回線[target remote、シリアルかいせん]: Debug Session.
+                                                              (line  49)
+* target rom68k:                         Target Commands.     (line 168)
+* target rombug:                         Target Commands.     (line 171)
+* target sds:                            Target Commands.     (line 174)
+* target sh3:                            Target Commands.     (line 183)
+* target sh3e:                           Target Commands.     (line 183)
+* target sim <1>:                        Simulator.           (line  20)
+* target sim:                            Target Commands.     (line  73)
+* target sparclite:                      Target Commands.     (line 177)
+* target st2000:                         Target Commands.     (line 188)
+* target udi:                            Target Commands.     (line 196)
+* target vxworks:                        Target Commands.     (line 201)
+* target w89k:                           Target Commands.     (line 206)
+* tbreak:                                Set Breaks.          (line  85)
+* TCP port, target remote:               Debug Session.       (line  60)
+* terminal:                              Input/Output.        (line   6)
+* thbreak:                               Set Breaks.          (line 116)
+* this:                                  Cplus expressions.   (line  28)
+* thread apply:                          Threads.             (line 103)
+* thread breakpoints:                    Thread Stops.        (line  11)
+* thread identifier (GDB):               Threads.             (line  63)
+* thread identifier (system):            Threads.             (line  52)
+* thread number:                         Threads.             (line  63)
+* thread THREADNO:                       Threads.             (line  88)
+* threads and watchpoints:               Set Watchpoints.     (line  82)
+* threads of execution:                  Threads.             (line   6)
+* threads, automatic switching:          Threads.             (line 113)
+* threads, continuing:                   Thread Stops.        (line  38)
+* threads, stopped:                      Thread Stops.        (line  32)
+* timeout, MIPS protocol:                MIPS Remote.         (line  99)
+* timeout、MIPSプロトコル:               MIPS Remote.         (line  99)
+* tracebacks:                            Backtrace.           (line   6)
+* tty:                                   Input/Output.        (line  23)
+* type casting memory:                   Expressions.         (line  42)
+* type checking:                         Type Checking.       (line   6)
+* type conversions in C++:               Cplus expressions.   (line  34)
+* u:                                     Continuing and Stepping.
+                                                              (line 114)
+* udi:                                   UDI29K Remote.       (line  13)
+* UDI:                                   UDI29K Remote.       (line   6)
+* UDI経由のAMD29K[UDIけいゆのAMD29K]:    UDI29K Remote.       (line   6)
+* undisplay:                             Auto Display.        (line  54)
+* unknown address, locating:             Output Formats.      (line  35)
+* unset environment:                     Environment.         (line  57)
+* until:                                 Continuing and Stepping.
+                                                              (line 114)
+* up:                                    Selection.           (line  40)
+* up-silently:                           Selection.           (line  71)
+* user-defined command:                  Define.              (line   6)
+* value history:                         Value History.       (line   6)
+* variable name conflict:                Variables.           (line  34)
+* variable values, wrong:                Variables.           (line  62)
+* variables, setting:                    Assignment.          (line  15)
+* version number:                        Help.                (line 114)
+* visible-stats:                         Readline Init File Syntax.
+                                                              (line 140)
+* VxWorks:                               VxWorks Remote.      (line   6)
+* vxworks-timeout:                       VxWorks Remote.      (line  17)
+* VxWorksへのダウンロード:               VxWorks Download.    (line   6)
+* VxWorksタスクの実行[VxWorksタスクの実行]: VxWorks Attach.   (line   6)
+* watch:                                 Set Watchpoints.     (line  24)
+* watchpoints:                           Breakpoints.         (line  24)
+* watchpoints and threads:               Set Watchpoints.     (line  82)
+* whatis:                                Symbols.             (line  42)
+* where:                                 Backtrace.           (line  31)
+* while:                                 Define.              (line  42)
+* wild pointer, interpreting:            Print Settings.      (line  86)
+* word completion:                       Completion.          (line   6)
+* working directory:                     Source Path.         (line  49)
+* working directory (of your program):   Working Directory.   (line   6)
+* working language:                      Languages.           (line  13)
+* writing into corefiles:                Patching.            (line   6)
+* writing into executables:              Patching.            (line   6)
+* wrong values:                          Variables.           (line  62)
+* x:                                     Memory.              (line  10)
+* XCOFF and C++:                         Cplus expressions.   (line   9)
+* yanking text:                          Readline Killing Commands.
+                                                              (line   6)
+* Z8000 simulator:                       Simulator.           (line   6)
+* Z8000シミュレータ:                     Simulator.           (line   6)
+* {TYPE}:                                Expressions.         (line  42)
+* アクティブ・ターゲット:                Active Targets.      (line   6)
+* アセンブリ言語の選択[アセンブリげんごのせんたく]: Machine Code.
+                                                              (line  70)
+* アセンブリ命令の表示[アセンブリめいれいのひょうじ]: Machine Code.
+                                                              (line  39)
+* アタッチ:                              Attach.              (line   6)
+* インストール:                          Installing GDB.      (line   6)
+* イベントに対するブレイクポイント[イベントにたいするブレイクポイント]: Breakpoints.
+                                                              (line  37)
+* イベント指定子[イベントしていし]:      Event Designators.   (line   6)
+* ウォッチポイント:                      Breakpoints.         (line  24)
+* ウォッチポイントとスレッド:            Set Watchpoints.     (line  82)
+* ウォッチポイントの設定[ウォッチポイントのせってい]: Set Watchpoints.
+                                                              (line   6)
+* エラー、正当な入力にたいする[エラー、せいとうなにゅうりょくにたいする]: Bug Criteria.
+                                                              (line  14)
+* エンコードされた形式[エンコードされたけいしき]: Print Settings.
+                                                              (line 218)
+* オーバーロード:                        Breakpoint Menus.    (line   6)
+* オーバーロード、C++での:               Debugging C plus plus.
+                                                              (line  16)
+* オーバーロードされた関数の呼び出し[オーバーロードされたかんすうのよびだし]: Cplus expressions.
+                                                              (line  34)
+* オーバーロードされている関数のブレイク[オーバーロードされているかんすうのブレイク]: Debugging C plus plus.
+                                                              (line  10)
+* オンライン文書[オンラインぶんしょ]:    Help.                (line   6)
+* オブジェクトの形式とC++[オブジェクトのけいしきとC++]: Cplus expressions.
+                                                              (line   9)
+* カレント・スレッド:                    Threads.             (line  45)
+* カレントなディレクトリ:                Source Path.         (line  49)
+* キャストしたメモリ:                    Expressions.         (line  42)
+* キャッチ、例外の[キャッチ、れいがいの]: Frame Info.         (line  59)
+* キャッチポイント <1>:                  Breakpoints.         (line  37)
+* キャッチポイント:                      Set Catchpoints.     (line   6)
+* キル・リング:                          Readline Killing Commands.
+                                                              (line  19)
+* クオート:                              Completion.          (line  68)
+* クラッシュ、デバッガの:                Bug Criteria.        (line   9)
+* コア・ダンプ・ファイル:                Files.               (line   6)
+* コア・ファイルへの書き込み[コア・ファイルへのかきこみ]: Patching.
+                                                              (line   6)
+* コメント:                              Command Syntax.      (line  42)
+* コロン、スコープ演算子の2重[コロン、スコープえんざんしの2じゅう]: M2 Scope.
+                                                              (line   6)
+* コンパイルするディレクトリ:            Source Path.         (line  49)
+* コンビニエンス変数[コンビニエンスへんすう]: Convenience Vars.
+                                                              (line   6)
+* コマンド、C++専用の[コマンド、C++せんようの]: Debugging C plus plus.
+                                                              (line   6)
+* コマンド、STDBUG（ST2000）に対する[コマンド、STDBUG（ST2000）にたいする]: ST2000 Remote.
+                                                              (line  29)
+* コマンド・ファイル:                    Command Files.       (line   6)
+* コマンド・フック:                      Hooks.               (line   6)
+* コマンドの繰り返し[コマンドのくりかえし]: Command Syntax.   (line  22)
+* コマンド行の編集[コマンドぎょうのへんしゅう]: Readline Bare Essentials.
+                                                              (line   6)
+* コマンド内の引用[コマンドないのいんよう]: Completion.       (line  68)
+* コマンド編集[コマンドへんしゅう] <1>:  Readline Bare Essentials.
+                                                              (line   6)
+* コマンド編集[コマンドへんしゅう]:      Editing.             (line   6)
+* サイズ、画面[サイズ、がめん]:          Screen Size.         (line   6)
+* シェル・エスケープ:                    Shell Commands.      (line  10)
+* シグナル:                              Signals.             (line   6)
+* シグナルの処理[シグナルのしょり]:      Signals.             (line  31)
+* システムのスレッド識別子[システムのスレッドしきべつし]: Threads.
+                                                              (line  52)
+* シミュレータ:                          Simulator.           (line   6)
+* シミュレータ、H8/300またはH8/500:      Simulator.           (line   6)
+* シミュレータ、Z8000:                   Simulator.           (line   6)
+* シミュレータ、日立SH[シミュレータ、ひたちSH]: Simulator.    (line   6)
+* シリアル・プロトコル、GDBリモート:     Protocol.            (line  22)
+* シリアル回線速度、日立マイクロ[シリアルかいせんそくど、ひたちマイクロ]: Hitachi Boards.
+                                                              (line  13)
+* シリアル接続、デバッグ処理[シリアルせつぞく、デバッグしょり]: Protocol.
+                                                              (line  92)
+* シリアル装置、日立マイクロ[シリアルそうち、ひたちマイクロ]: Hitachi Boards.
+                                                              (line   6)
+* シンボリック形式のアドレス解釈[シンボリックけいしきのアドレスかいしゃく]: Print Settings.
+                                                              (line  86)
+* シンボル・ダンプ:                      Symbols.             (line 151)
+* シンボル・テーブル:                    Files.               (line   6)
+* シンボル・ファイル、メモリにマップされた: Files.            (line 105)
+* シンボルのオーバーロード:              Breakpoint Menus.    (line   6)
+* シンボルの即時読み込み[シンボルのそくじよみこみ]: Files.    (line 105)
+* シンボルの表現、C++の[シンボルのひょうげん、C++の]: Print Settings.
+                                                              (line 241)
+* シンボルの名前[シンボルのなまえ]:      Symbols.             (line  16)
+* スコープ演算子[スコープえんざんし]:    M2 Scope.            (line   6)
+* スタック/トレース:                     Backtrace.           (line   6)
+* スタック、Alphaの:                     Alpha/MIPS Stack.    (line   6)
+* スタック、MIPSの:                      Alpha/MIPS Stack.    (line   6)
+* スタック・フレーム:                    Frames.              (line   6)
+* スタブを使わないリモート接続[スタブをつかわないリモートせつぞく]: Server.
+                                                              (line   6)
+* ステップ実行[ステップじっこう]:        Continuing and Stepping.
+                                                              (line   6)
+* スレッド、実行の[スレッド、じっこうの]: Threads.            (line   6)
+* スレッド、停止した[スレッド、ていしした]: Thread Stops.     (line  32)
+* スレッドとウォッチポイント:            Set Watchpoints.     (line  82)
+* スレッドのブレイクポイント:            Thread Stops.        (line  11)
+* スレッドの再開[スレッドのさいかい]:    Thread Stops.        (line  38)
+* スレッドの自動的選択[スレッドのじどうてきせんたく]: Threads.
+                                                              (line 113)
+* スレッドの切り替え[スレッドのきりかえ]: Threads.            (line   6)
+* スレッド識別子、GDBの[スレッドしきべつし、GDBの]: Threads.  (line  63)
+* スレッド識別子、システムの[スレッドしきべつし、システムの]: Threads.
+                                                              (line  52)
+* ソースのパス:                          Source Path.         (line   6)
+* ソフトウェア・ウォッチポイント:        Set Watchpoints.     (line   6)
+* ターゲットのバイト・オーダの選択[ターゲットのバイト・オーダのせんたく]: Byte Order.
+                                                              (line   6)
+* プロセス、多重[プロセス、たじゅう]:    Processes.           (line   6)
+* プロセスのイメージ:                    Process Information. (line   6)
+* プロトコル、GDBリモート・シリアル:     Protocol.            (line  22)
+* プロンプト:                            Prompt.              (line   6)
+* ダイナミック・リンク:                  Files.               (line 154)
+* ダウンロード、H8/300やH8/500への:      Target Commands.     (line 244)
+* ダウンロード、Nindy-960への:           Target Commands.     (line 240)
+* ダウンロード、日立SHへの[ダウンロード、ひたちSHへの]: Target Commands.
+                                                              (line 244)
+* チェック、CやC++の:                    C Checks.            (line   6)
+* チェック、Modula-2の:                  M2 Checks.           (line   6)
+* チェック、範囲[チェック、はんい]:      Range Checking.      (line   6)
+* チェックサム、GDBリモートの:           Protocol.            (line  29)
+* メモリ、型変換した[メモリ、かたへんかんした]: Expressions.  (line  42)
+* メモリ・アドレスのブレイクポイント[メモリ・アドレスのブレイクポイント]: Breakpoints.
+                                                              (line  24)
+* メモリ・モデル、H8/500:                Hitachi Special.     (line  16)
+* メモリにマップされたシンボル・ファイル: Files.              (line 105)
+* メモリのトレース:                      Breakpoints.         (line  24)
+* メンバ関数[メンバかんすう]:            Cplus expressions.   (line  23)
+* ユーザ・プログラムの環境[ユーザ・プログラムのかんきょう]: Environment.
+                                                              (line   6)
+* ユーザ・プログラムの作業ディレクトリ[ユーザ・プログラムのさぎょうディレクトリ]: Working Directory.
+                                                              (line   6)
+* ユーザ・プログラムへの引数[ユーザ・プログラムへのひきすう]: Arguments.
+                                                              (line   6)
+* ユーザ定義コマンド[ユーザていぎコマンド]: Define.           (line   6)
+* テキストのキル（kill）:                Readline Killing Commands.
+                                                              (line   6)
+* テキストの再挿入（yank）[テキストのさいそうにゅう]: Readline Killing Commands.
+                                                              (line   6)
+* データの検査[データのけんさ]:          Data.                (line   6)
+* ディレクトリ、コンパイルする:          Source Path.         (line  49)
+* ディレクトリ、ソース・ファイルの:      Source Path.         (line   6)
+* ディレクトリ、現在の[ディレクトリ、げんざいの]: Source Path.
+                                                              (line  49)
+* デバッガのクラッシュ:                  Bug Criteria.        (line   9)
+* デバッグ、最適化コードの[デバッグ、さいてきかコードの]: Compilation.
+                                                              (line  28)
+* デバッグ・ターゲット:                  Targets.             (line   6)
+* デバッグの対象[デバッグのたいしょう]:  Threads.             (line  45)
+* デフォルト、C/C++の:                   C Defaults.          (line   6)
+* デフォルト、Modula-2の:                M2 Defaults.         (line   6)
+* デマングル:                            Print Settings.      (line 218)
+* トレースバック:                        Backtrace.           (line   6)
+* ドキュメント:                          Formatting Documentation.
+                                                              (line  23)
+* リターン:                              Returning.           (line   6)
+* リダイレクト:                          Input/Output.        (line   6)
+* リモート・シリアル・スタブ:            Stub Contents.       (line   6)
+* リモート・シリアル・スタブ、メイン・ルーチン: Stub Contents.
+                                                              (line  15)
+* リモート・シリアル・スタブの一覧[リモート・シリアル・スタブのいちらん]: Remote Serial.
+                                                              (line  52)
+* リモート・シリアル・プロトコル:        Protocol.            (line  22)
+* リモート・スタブ、サポート・ルーチン:  Bootstrapping.       (line   6)
+* リモート・ターゲットの割り込み[リモート・ターゲットのわりこみ]: Bootstrapping.
+                                                              (line  23)
+* リモート・プログラムの割り込み[リモート・プログラムのわりこみ]: Debug Session.
+                                                              (line  75)
+* リモート・デバッグ:                    Remote.              (line   6)
+* リモート・デバッグ処理、スタブの実例[リモート・デバッグしょり、スタブのじつれい]: Protocol.
+                                                              (line   6)
+* リロード:                              Symbols.             (line 125)
+* リファレンス・カード:                  Formatting Documentation.
+                                                              (line   6)
+* レジスタ:                              Registers.           (line   6)
+* レジスタ・スタック、AMD29Kの:          Registers.           (line  91)
+* ハードウェア・ウォッチポイント:        Set Watchpoints.     (line   6)
+* ハンドラ、例外の[ハンドラ、れいがいの]: Frame Info.         (line  59)
+* バージョン番号[バージョンばんごう]:    Help.                (line 114)
+* バイト・オーダの選択、ターゲットの[バイト・オーダのせんたく、ターゲットの]: Byte Order.
+                                                              (line   6)
+* バイナリのパッチ:                      Patching.            (line   6)
+* バグの基準[バグのきじゅん]:            Bug Criteria.        (line   6)
+* バグの報告[バグのほうこく]:            Bug Reporting.       (line   6)
+* バグ報告、GDBの[バグほうこく、GDBの]:  GDB Bugs.            (line   6)
+* バックトレース:                        Backtrace.           (line   6)
+* パイプ:                                Starting.            (line  61)
+* パケット、標準出力への報告[パケット、ひょうじゅんしゅつりょくへのほうこく]: Protocol.
+                                                              (line  92)
+* パッチ、バイナリの:                    Patching.            (line   6)
+* ヒストリ・ファイル:                    History.             (line  10)
+* ヒストリの記録[ヒストリのきろく]:      History.             (line  21)
+* ヒストリの大きさ[ヒストリのおおきさ]:  History.             (line  30)
+* ヒストリ置換[ヒストリちかん]:          History.             (line  10)
+* ヒストリ展開[ヒストリてんかい]:        History.             (line  35)
+* ヒストリ番号[ヒストリばんごう]:        Value History.       (line  15)
+* フォーマット、出力[フォーマット、しゅつりょく]: Output Formats.
+                                                              (line   6)
+* フォーマットのオプション:              Print Settings.      (line   6)
+* フレーム:                              Frames.              (line   6)
+* フレーム・ポインタ:                    Frames.              (line  25)
+* フレームの番号[フレームのばんごう]:    Frames.              (line  34)
+* フレームを持たない関数の実行[フレームをもたないかんすうのじっこう]: Frames.
+                                                              (line  42)
+* ブレイクポイント:                      Breakpoints.         (line   6)
+* ブレイクポイント、ウォッチポイント、キャッチポイントの削除[ブレイクポイント、ウォッチポイント、キャッチポイントのさくじょ]: Delete Breaks.
+                                                              (line   6)
+* ブレイクポイント、メモリ・アドレスの[ブレイクポイント、メモリ・アドレスの]: Breakpoints.
+                                                              (line  24)
+* ブレイクポイント、条件付きの[ブレイクポイント、じょうけんつきの]: Conditions.
+                                                              (line   6)
+* ブレイクポイント、変数変化の[ブレイクポイント、へんすうへんかの]: Breakpoints.
+                                                              (line  24)
+* ブレイクポイント・コマンド:            Break Commands.      (line   6)
+* ブレイクポイントとスレッド:            Thread Stops.        (line  11)
+* ブレイクポイント番号[ブレイクポイントばんごう]: Breakpoints.
+                                                              (line  48)
+* ヘルプ情報[ヘルプじょうほう]:          Help.                (line   6)
+* ポインタの参照する位置[ポインタのさんしょうするいち]: Print Settings.
+                                                              (line  86)
+* マシン命令の選択[マシンめいれいのせんたく]: Machine Code.   (line  70)
+* マシン命令の表示[マシンめいれいのひょうじ]: Machine Code.   (line  39)
+* マルチスレッド:                        Threads.             (line   6)
+* マルチプロセス:                        Processes.           (line   6)
+* 一時停止、出力の[いちじていし、しゅつりょくの]: Screen Size.
+                                                              (line   6)
+* 引数、ユーザ・プログラムへの[ひきすう、ユーザ・プログラムへの]: Arguments.
+                                                              (line   6)
+* 引用[いんよう]:                        Symbols.             (line  16)
+* 引用、コマンド内の[いんよう、コマンドないの]: Completion.   (line  68)
+* 引用文字列の補完[いんようもじれつのほかん]: Completion.     (line  68)
+* 演算子、CやC++の[えんざんし、CやC++の]: C Operators.        (line   6)
+* 演算子、Modula-2の[えんざんし、Modula-2の]: M2 Operators.   (line   6)
+* 遠隔デバッグ[えんかくデバッグ]:        Remote.              (line   6)
+* 応答時間、MIPSデバッグの[おうとうじかん、MIPSデバッグの]: Alpha/MIPS Stack.
+                                                              (line  11)
+* 画面サイズ[がめんサイズ]:              Screen Size.         (line   6)
+* 開始[かいし]:                          Starting.            (line   6)
+* 概要、リモート・シリアル・デバッグ処理の[がいよう、リモート・シリアル・デバッグしょりの]: Remote Serial.
+                                                              (line   6)
+* 割り込み[わりこみ]:                    Quitting GDB.        (line  13)
+* 割り込み、リモート・プログラムの[わりこみ、リモート・プログラムの]: Debug Session.
+                                                              (line  75)
+* 確認[かくにん]:                        Messages/Warnings.   (line  57)
+* 環境、ユーザ・プログラムの[かんきょう、ユーザ・プログラムの]: Environment.
+                                                              (line   6)
+* 関数の呼び出し[かんすうのよびだし]:    Calling.             (line   6)
+* 機械語命令の選択[きかいごめいれいのせんたく]: Machine Code. (line  70)
+* 機械語命令の表示[きかいごめいれいのひようじ]: Machine Code. (line  39)
+* 起動[きどう]:                          Starting.            (line   6)
+* 逆アセンブル[ぎゃくアセンブル]:        Machine Code.        (line  39)
+* 共有ライブラリ[きょうゆうライブラリ]:  Files.               (line 213)
+* 繰り返し、コマンドの[くりかえし、コマンドの]: Command Syntax.
+                                                              (line  22)
+* 型チェック[かたチェック]:              Type Checking.       (line   6)
+* 型変換、C++での[かたへんかん、C++での]: Cplus expressions.  (line  34)
+* 型変換したメモリ[かたへんかんしたメモリ]: Expressions.      (line  42)
+* 継承[けいしょう]:                      Debugging C plus plus.
+                                                              (line  28)
+* 継続実行[けいぞくじっこう]:            Continuing and Stepping.
+                                                              (line   6)
+* 検査、データの[けんさ、データの]:      Data.                (line   6)
+* 検索[けんさく]:                        Search.              (line   6)
+* 現在のディレクトリ[げんざいのディレクトリ]: Source Path.    (line  49)
+* 言語[げんご]:                          Languages.           (line   6)
+* 呼び出し、makeの[よびだし、makeの]:    Shell Commands.      (line  22)
+* 呼び出し、オーバーロードされた関数の[よびだし、オーバーロードされたかんすうの]: Cplus expressions.
+                                                              (line  34)
+* 呼び出し、関数の[よびだし、かんすうの]: Calling.            (line   6)
+* 呼び出しスタック[よびだしスタック]:    Stack.               (line   9)
+* 更新、変数値の[こうしん、へんすうちの]: Assignment.         (line   6)
+* 行指定[ぎょうしてい]:                  List.                (line  50)
+* 差異、標準Modula-2との[さい、ひょうじゅんModula-2との]: Deviations.
+                                                              (line   6)
+* 再ロード、シンボルの[さいロード、シンボルの]: Symbols.      (line 125)
+* 再開、スレッドの[さいかい、スレッドの]: Thread Stops.       (line  38)
+* 最下位のフレーム[さいかいのフレーム]:  Frames.              (line  12)
+* 最後のブレイクポイント[さいごのブレイクポイント]: Set Breaks.
+                                                              (line   6)
+* 最上位のフレーム[さいじょういのフレーム]: Frames.           (line  12)
+* 最適化コードのデバッグ[さいてきかコードのデバッグ]: Compilation.
+                                                              (line  28)
+* 作業ディレクトリ[さぎょうディレクトリ]: Source Path.        (line  49)
+* 作業ディレクトリ、ユーザ・プログラムの[さぎょうディレクトリ、ユーザ・プログラムへの]: Working Directory.
+                                                              (line   6)
+* 作業言語[さぎょうげんご]:              Languages.           (line  13)
+* 削除、ブレイクポイント、ウォッチポイント、キャッチポイントの[さくじょ、ブレイクポイント、ウォッチポイント、キャッチポイントの]: Delete Breaks.
+                                                              (line   6)
+* 削除、ブレイクポイントの[さくじょ、ブレイクポイントの]: Delete Breaks.
+                                                              (line  41)
+* 参照する位置、ポインタの[さんしょうするいち、ポインタの]: Print Settings.
+                                                              (line  86)
+* 参照宣言[さんしょうせんげん]:          Cplus expressions.   (line  41)
+* 自動的選択、スレッドの[じどうてきせんたく、スレッドの]: Threads.
+                                                              (line 113)
+* 自動表示[じどうひょうじ]:              Auto Display.        (line   6)
+* 式[しき]:                              Expressions.         (line   6)
+* 式、C++の[しき、C++の]:                Cplus expressions.   (line   6)
+* 式、CやC++の[しき、CやC++の]:          C.                   (line   6)
+* 式、Modula-2での[しき、Modula-2での]:  Modula-2.            (line  13)
+* 式の表示[しきのひょうじ]:              Auto Display.        (line   6)
+* 識別子、GDBのスレッド[しきべつし、GDBのスレッド]: Threads.  (line  63)
+* 識別子、システムのスレッド[しきべつし、システムのスレッド]: Threads.
+                                                              (line  52)
+* 実行[じっこう]:                        Starting.            (line   6)
+* 実行のスレッド[じっこうのスレッド]:    Threads.             (line   6)
+* 実行の再開[じっこうのさいかい]:        Continuing and Stepping.
+                                                              (line   6)
+* 実行コードへの書き込み[じっこうコードへのかきこみ]: Patching.
+                                                              (line   6)
+* 実行ファイル[じっこうファイル]:        Files.               (line  16)
+* 実例、スタブのデバッグの[じつれい、スタブのデバッグの]: Protocol.
+                                                              (line   6)
+* 実例、リモート・スタブの[じつれい、リモート・スタブの]: Protocol.
+                                                              (line   6)
+* 終了、GDBの[しゅうりょう、GDBの]:      Quitting GDB.        (line   6)
+* 処理、シグナルの[しょり、シグナルの]:  Signals.             (line  31)
+* 初期フレーム[しょきフレーム]:          Frames.              (line  12)
+* 初期化、リモート・シリアル・スタブの[しょきか、リモート・シリアル・スタブの]: Stub Contents.
+                                                              (line   9)
+* 初期化ファイル[しょきかファイル]:      Command Files.       (line  13)
+* 初期化ファイル、readline[しょきかファイル、readline]: Readline Init File.
+                                                              (line   6)
+* 初期化ファイル名[しょきかファイルめい]: Command Files.      (line  28)
+* 出力、データの[しゅつりょく、データの]: Data.               (line   6)
+* 出力フォーマット[しゅつりょくフォーマット]: Output Formats. (line   6)
+* 書き込み、コア・ファイルへの[かきこみ、コア・ファイルへの]: Patching.
+                                                              (line   6)
+* 書き込み、実行コードへの[かきこみ、じっこうコードへの]: Patching.
+                                                              (line   6)
+* 消去、ブレイクポイント、ウォッチポイント、キャッチポイントの[しょうきょ、ブレイクポイント、ウォッチポイント、キャッチポイントの]: Delete Breaks.
+                                                              (line   6)
+* 省略形[しょうりゃくけい]:              Command Syntax.      (line  13)
+* 条件付きのブレイクポイント[じょうけんつきのブレイクポイント]: Conditions.
+                                                              (line   6)
+* 慎重な動作[しんちょうなどうさ]:        Messages/Warnings.   (line  57)
+* 人工配列[じんこうはいれつ]:            Arrays.              (line   6)
+* 数値表現[すうちひょうげん]:            Numbers.             (line   6)
+* 制御端末[せいぎょたんまつ]:            Input/Output.        (line  23)
+* 整形した出力[せいけいしたしゅつりょく]: Output Formats.     (line   6)
+* 正しくない値[ただしくないあたい]:      Variables.           (line  62)
+* 正規表現[せいきひょうげん]:            Set Breaks.          (line 131)
+* 設定、GDBの[せってい、GDBの]:          Installing GDB.      (line   6)
+* 設定、ウォッチポイントの[せってい、ウォッチポイントの]: Set Watchpoints.
+                                                              (line   6)
+* 設定、変数値の[せってい、へんすうちの]: Assignment.         (line   6)
+* 説明文字列[せつめいもじれつ]:          Help.                (line   6)
+* 切り替え、スレッドの[きりかえ、スレッドの]: Threads.        (line   6)
+* 選択、ターゲットのバイト・オーダの[せんたく、ターゲットのバイト・オーダの]: Byte Order.
+                                                              (line   6)
+* 選択、マシン命令の[せんたく、マシンめいれいの]: Machine Code.
+                                                              (line  70)
+* 選択されたフレーム[せんたくされたフレーム]: Stack.          (line  22)
+* 操作、readlineの[操作、readlineの]:    Readline Interaction.
+                                                              (line   6)
+* 組み込み機能、Modula-2の[くみこみきのう、Modula-2の]: Built-In Func/Proc.
+                                                              (line   6)
+* 多重スレッド[たじゅうスレッド]:        Threads.             (line   6)
+* 多重ターゲット[たじゅうターゲット]:    Active Targets.      (line   6)
+* 代入[だいにゅう]:                      Assignment.          (line   6)
+* 対象、デバッグの[たいしょう、デバッグの]: Threads.          (line  45)
+* 単語の補完[たんごのほかん]:            Completion.          (line   6)
+* 短縮形[たんしゅくけい]:                Command Syntax.      (line  13)
+* 端末[たんまつ]:                        Input/Output.        (line   6)
+* 致命的シグナル[ちめいてきシグナル] <1>: Bug Criteria.       (line   9)
+* 致命的シグナル[ちめいてきシグナル]:    Signals.             (line  17)
+* 値ヒストリ[あたいヒストリ]:            Value History.       (line   6)
+* 値ヒストリと$_や$__[あたいヒストリと$_や$__]: Memory.       (line  99)
+* 調査、メモリの[ちょうさ、メモリの]:    Memory.              (line  10)
+* 停止、出力の[ていし、しゅつりょくの]:  Screen Size.         (line   6)
+* 停止したスレッド[ていししたスレッド]:  Thread Stops.        (line  32)
+* 定数、C/C++の[ていすう、CやC++の]:     C Constants.         (line   6)
+* 定数、Modula-2の[ていすう、Modula-2の]: M2 Constants.       (line   6)
+* 通過カウント[つうかカウント]:          Conditions.          (line  70)
+* 展開[てんかい]:                        History Interaction. (line   6)
+* 動的リンク[どうてきリンク]:            Files.               (line 154)
+* 内部のブレイクポイント番号[ないぶのブレイクポイントばんごう]: Set Breaks.
+                                                              (line 205)
+* 読み込み、シンボルの即時[よみこみ、シンボルのそくじ]: Files.
+                                                              (line 105)
+* 日立[ひたち]:                          Remote Serial.       (line  62)
+* 日立SHへのダウンロード[ひたちSHへのダウンロード]: Target Commands.
+                                                              (line 244)
+* 日立SHシミュレータ[ひたちSHシミュレータ]: Simulator.        (line   6)
+* 入出力[にゅうしゅつりょく]:            Input/Output.        (line   6)
+* 入力、数値の[にゅうりょく、すうちの]:  Numbers.             (line   6)
+* 馬鹿げた質問[ばかげたしつもん]:        Messages/Warnings.   (line  57)
+* 発生、例外の[はっせい、れいがいの]:    Set Catchpoints.     (line  72)
+* 範囲チェック[はんいチェック]:          Range Checking.      (line   6)
+* 番号、ブレイクポイント[ばんごう、ブレイクポイント]: Breakpoints.
+                                                              (line  48)
+* 表記法、readline[ひょうきほう、readline]: Readline Bare Essentials.
+                                                              (line   6)
+* 表示、データの[ひょうじ、データの]:    Data.                (line   6)
+* 表示、マシン命令の[ひょうじ、マシンめいれいの]: Machine Code.
+                                                              (line  39)
+* 表示設定[ひょうじせってい]:            Print Settings.      (line   6)
+* 浮動小数ハードウェア[ふどうしょうすうハードウェア]: Floating Point Hardware.
+                                                              (line   6)
+* 浮動小数点、MIPSリモートの[ふどうしょうすうてん、MIPSリモートの]: MIPS Remote.
+                                                              (line  63)
+* 浮動小数点レジスタ[ふどうしょうすうてんレジスタ]: Registers.
+                                                              (line  15)
+* 負のブレイクポイント番号[ふのブレイクポイントばんごう]: Set Breaks.
+                                                              (line 205)
+* 不正な入力[ふせいなにゅうりょく]:      Bug Criteria.        (line  18)
+* 部分的シンボル・ダンプ[ぶぶんてきシンボル・ダンプ]: Symbols.
+                                                              (line 151)
+* 富士通[ふじつう]:                      Remote Serial.       (line  68)
+* 復帰、関数からの[ふっき、かんすうからの]: Returning.        (line   6)
+* 併用、ターゲットの[へいよう、ターゲットの]: Active Targets. (line   6)
+* 補完[ほかん]:                          Completion.          (line   6)
+* 補完、引用文字列の[ほかん、いんようもじれつの]: Completion. (line  68)
+* 変更、変数値の[へんこう、へんすうちの]: Assignment.         (line   6)
+* 変数への代入[へんすうへのだいにゅう]:  Assignment.          (line  15)
+* 変数値、正しくない[へんすうち、ただしくない]: Variables.    (line  62)
+* 変数変化のブレイクポイント[へんすうへんかのブレイクポイント]: Breakpoints.
+                                                              (line  24)
+* 変数名の衝突[へんすうめいのしょうとつ]: Variables.          (line  34)
+* 報告、GDBのバグ[ほうこく、GDBのバグ]:  GDB Bugs.            (line   6)
+* 編集[へんしゅう]:                      Editing.             (line  17)
+* 返る、関数から[かえる、かんすうから]:  Returning.           (line   6)
+* 保存、シンボル・テーブルの[ほぞん、シンボル・テーブルの]: Files.
+                                                              (line 105)
+* 未知のアドレス[みちのアドレス]:        Output Formats.      (line  35)
+* 名前、シンボルの[なまえ、シンボルの]:  Symbols.             (line  16)
+* 名前空間、C++の[なまえくうかん、C++の]: Cplus expressions.  (line  28)
+* 命令の表示、アセンブリ[めいれいのひょうじ、アセンブリ]: Machine Code.
+                                                              (line  39)
+* 命令セット[めいれいセット]:            Machine Code.        (line  70)
+* 戻る、関数から[もどる、かんすうから]:  Returning.           (line   6)
+* 要約、リモート・シリアル・デバッグ処理の[ようやく、リモート・シリアル・デバッグしょりの]: Debug Session.
+                                                              (line   6)
+* 略称[りゃくしょう]:                    Command Syntax.      (line  13)
+* 例外のキャッチ[れいがいのキャッチ]:    Frame Info.          (line  59)
+* 例外のハンドラ[れいがいのハンドラ]:    Frame Info.          (line  59)
+* 例外の発生[れいがいのはっせい]:        Set Catchpoints.     (line  72)
+* 例外ハンドラ[れいがいハンドラ]:        Set Catchpoints.     (line   6)
+* 例外処理[れいがいしょり]:              Set Catchpoints.     (line   6)
+
+

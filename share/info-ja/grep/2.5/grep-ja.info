@@ -1,0 +1,1919 @@
+-*- coding: utf-8 -*-
+START-INFO-DIR-ENTRY
+* grep(ja): (grep-ja).                   print lines matching a pattern.
+END-INFO-DIR-ENTRY
+   このファイルは，パターンマッチングエンジン`grep'を説明します．
+
+   Published by the Free Software Foundation, 59 Temple Place - Suite
+330 Boston, MA 02111-1307, USA
+
+   Copyright (C) 2000, 2001 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License" and "GNU Free
+Documentation License", with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License" (*note Copying::).
+
+
+File: grep-ja.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+Grep
+****
+
+`grep'は，パターンにマッチする行を探します．
+
+   このドキュメントは，GNU `grep'のバージョン2.5
+に対して作成されました．
+
+* Menu:
+
+* Introduction::                Introduction.
+* Invoking::                    Invoking `grep'; description of options.
+* Diagnostics::                 Exit status returned by `grep'.
+* Grep Programs::               `grep' programs.
+* Regular Expressions::         Regular Expressions.
+* Usage::                       Examples.
+* Reporting Bugs::              Reporting Bugs.
+* Copying::                     License terms.
+* Concept Index::               A menu with all the topics in this manual.
+* Index::                       A menu with all `grep' commands
+                                 and command-line options.
+
+
+File: grep-ja.info,  Node: Introduction,  Next: Invoking,  Prev: Top,  Up: Top
+
+1 はじめに
+**********
+
+`grep'は，与えられたパターンリストにマッチするものを含む行を，入
+力ファイルで検索します．行の中にマッチしているものが見つかるとき，(デフォ
+ルトで)標準出力，または，オプションで要求したあらゆる他の出力にコピーし
+ます.
+
+   `grep'は，テキストでのマッチを期待しますが，利用可能なメモリ以外
+に入力行の長さの制限はなく，行の任意の文字にマッチ可能です．入力ファイル
+の最後のバイトが改行では無い場合，`grep'は暗黙にそれを付加します．
+改行は，パターンリストのセパレータでもあるので，テキストの改行文字にマッ
+チする方法はありません。
+
+
+File: grep-ja.info,  Node: Invoking,  Next: Diagnostics,  Prev: Introduction,  Up: Top
+
+2 `grep'の呼び出し
+******************
+
+`grep'は，POSIX.2とGNUの拡張の，豊富なオプションセット を持っています．
+
+`-c'
+`--count'
+     標準的な出力を抑制します．代わりに，それぞれの入力ファイルに対し，マッチ
+     した行数を出力します．`-v'，`--revert-match'オプションと併用し
+     た場合，マッチしない行を数えます．
+
+`-e PATTERN'
+`--regexp=PATTERN'
+     PATTERNをパターンとして使います．`-'で始まるパターンの保護に
+     役立ちます．
+
+`-f FILE'
+`--file=FILE'
+     １行毎に，FILEからパターンを得ます．空のファイルは，０個のパターン
+     を含むので，何にもマッチしません．
+
+`-i'
+`--ignore-case'
+     パターンと入力ファイルの両方で，大文字小文字の違いを無視します．
+
+`-l'
+`--files-with-matches'
+     標準的な出力を抑制します．通常出力されている，それぞれの入力ファイルの名
+     前を代わりに出力します．全てのファイルの走査は，最初にマッチすると停止し
+     ます．
+
+`-n'
+`--line-number'
+     入力ファイルの行番号を，それぞれの出力行に前置します．
+
+`-o'
+`--only-matching'
+     PATTERNにマッチした行のマッチした部分のみ出力します．
+
+`-q'
+`--quiet'
+`--silent'
+     静かを意味します．標準出力に何も書き出しません．エラーが検出されていても，
+     マッチが見つかった場合，ゼロのステータスですぐに終了します．`-s'や
+     `--no-messages'オプションも参照してください．
+
+`-s'
+`--no-messages'
+     存在しない，あるいは読み込みできないファイルについての，エラーメッセージ
+     を抑制します．移植性のメモ: 伝統的な`grep'は，`-q'オプショ
+     ンが無く，`-s'オプションは，GNU `grep'の`-q'オプ
+     ションのように動作するので，伝統的な`grep'は，GNU
+     `grep'と異なり，POSIX.2準拠ではありません．伝統的な
+     `grep'との移植性を考慮するシェルスクリプトは，`-q'と
+     `-s'を避け，代わりに`/dev/null'に，出力をリダイレクトするべき
+     です．
+
+`-v'
+`--invert-match'
+     マッチするという意味を反転し，マッチしない行を選択します．
+
+`-x'
+`--line-regexp'
+     正確に行全体がマッチしたもののみを選択します．
+
+
+2.1 GNUの拡張
+=============
+
+`-A NUM'
+`--after-context=NUM'
+     マッチした行の後に，後ろの文脈をNUM行出力します．
+
+`-B NUM'
+`--before-context=NUM'
+     マッチした行の前に，前の文脈をNUM行出力します．
+
+`-C NUM'
+`--context=NUM'
+     出力文脈の前後の行を出力します．
+
+`--colour[=WHEN]'
+`--color[=WHEN]'
+     GREP_COLORで指定されているマーカーで，マッチした文字を囲みます．
+     WHENは，`never'，`always'，または`auto'が利用できます．
+
+`-NUM'
+     `--context=NUM'と同様に，前後の行を出力します．しかし，
+     `grep'は，与えられた行を，一度以上出力しません．
+
+`-V'
+`--version'
+     `grep'のバージョンナンバーを標準出力に出力します．このバージョン
+     ナンバーをすべてのバグレポートに含めてください．
+
+`--help'
+     これらのコマンドラインオプションの概要の簡単な使用法メッセージと，バグレ
+     ポートのアドレスを出力して終了します．
+
+`--binary-files=TYPE'
+     ファイルの最初の数バイトで，ファイルがバイナリデータを含むことを示してい
+     る場合，ファイルの形式がTYPEであると考えます．デフォルトで，
+     TYPEは`binary'で，`grep'は通常，バイナリファイルがマッ
+     チしたことを告げる１行のメッセージの出力する，または，マッチしない場合は
+     なにもメッセージを出力しないのどちらかです．TYPEが
+     `without-match'の場合，`grep'はバイナリファイルはマッチしな
+     いと考えます．これは`-I'オプションと同じです．TYPEが `text'
+     の場合，`grep'はバイナリファイルをテキストであるかの
+     ように処理します．これは`-a'オプションと同じです．_警告:_
+     `--binary-files=text'は，端末に出力されるバイナリのゴミを出力する可
+     能性があり，出力が端末で，且つ端末ドライバがそれをコマンドとして解釈した
+     場合，それは厄介な副作用となるはずです．
+
+`-b'
+`--byte-offset'
+     それぞれの出力行の前に，入力ファイルのバイトオフセットを出力します．
+     MS-DOSやMS-Windowsで`grep'を実行するときは，
+     `-u'(`--unix-byte-offsets')オプションが使われているかどうかに
+     依存して，バイトオフセットを出力します．以下を参照してください．
+
+`-D ACTION'
+`--devices=ACTION'
+     入力ファイルがデバイス，FIFO，またはソケットの場合，それを処理するために
+     ACTIONを使用します．デフォルトでACTIONは`read'で，それ
+     はデバイスが通常のファイルのように読み込まれることを意味します．
+     ACTIONが`skip'の場合，デバイス，FIFO，そしてソケットは何事も
+     なく飛ばされされます．
+
+`-d ACTION'
+`--directories=ACTION'
+     入力ファイルがディレクトリの場合，それを処理するために，ACTIONを使
+     用します．デフォルトでACTIONは`read'で，それは，ディレクトリ
+     が普通のファイルであるかのように読まれることを意味します(オペレーティン
+     グシステムとファイルシステムによってはこれができないものもあり，
+     `grep'は全てのディレクトリに対しエラーメッセージを出力したり，そ
+     れらを何事もなく飛ばしたりします)．ACTIONが`skip'の場合，ディ
+     レクトリは何事もなく飛ばされます．ACTIONが`recurse'の場合，
+     `grep'はそれぞれのディレクトリ下の全てのファイルを再帰的に読み込
+     みます．これは，`-r'オプションと同じです．
+
+`-H'
+`--with-filename'
+     それぞれのマッチに対し，ファイル名を出力します．
+
+`-h'
+`--no-filename'
+     複数のファイルが検索されているとき，出力の前のファイル名を抑制します．
+
+`--line-buffered'
+     ラインバッファリングのポリシーを設定します．動作速度にペナルティーが課せ
+     られるはずです．
+
+`--label=LABEL'
+     標準入力から来た実際の入力を，ファイルLABELからの入力のように表示
+     します．例えば`gzip -cd foo.gz |grep --label=foo something'のよ
+     うな，zgrepツールに対して，これは特に役に立ちます．
+
+`-L'
+`--files-without-match'
+     標準的な出力を抑制します．通常，出力されないそれぞれの入力ファイル名
+     (1)を，代わりに出
+     力します．全てのファイルのスキャンは，最初にマッチすると停止します．
+
+`-a'
+`--text'
+     バイナリファイルをテキストファイルであるかのように処理します．これは，
+     `--binary-files=text'オプションと同じです．
+
+`-I'
+     バイナリファイルを，マッチデータを含まないものとして処理します．これは
+     `--binary-files=without-match'オプションと同じです．
+
+`-w'
+`--word-regexp'
+     単語全体がマッチしているものを含む行のみを選択します．マッチしているサブ
+     文字列が，行の最初，または，単語を構成しない文字が前にあるかのどうかを調
+     べます．同様に，行の最後，または，単語を構成しない文字が後に続くかどうか
+     を調べます．単語を構成する文字は，文字，数字と，アンダースコアです．
+
+`-r'
+`-R'
+`--recursive'
+     コマンド行にあるそれぞれのディレクトリに対し，そのディレクトリの全てのファ
+     イルを再帰的に読み込み処理します．これは，`--directories=recurse'オ
+     プションと同じです．
+
+`--include=FILE_PATTERN'
+     ディレクトリを再帰的に処理しているとき，FILE_PATTERNにマッチしたファ
+     イルのみ検索します．
+
+`--exclude=FILE_PATTERN'
+     ディレクトリを再帰的に処理しているとき，FILE_PATTERNにマッチしたファ
+     イルを飛ばします．
+
+`-m NUM'
+`--max-count=NUM'
+     NUM個のマッチした行以降の読み込みを停止します．入力が通常のファイ
+     ルからの標準入力で，NUM個のマッチした行が出力された場合，
+     `grep'は，それ以降に行が存在していても，既存のマッチ行の最後以降
+     に標準入力を確実に配置します．これで，検索の概要を処理が呼び出し可能にな
+     ります．例えば，以下のシェルスクリプトでそれを利用してみます．
+
+          while grep -m 1 PATTERN
+          do
+            echo xxxx
+          done < FILE
+
+     しかし，以下のものはパイプが通常ファイルではないので動作しません．
+
+          # This probably will not work.
+          cat FILE |
+          while grep -m 1 PATTERN
+          do
+            echo xxxx
+          done
+
+     `grep'がNUM個のマッチ行の後で停止したとき，それ以降の行を
+     出力します．文中にマッチする行がない間は，別のマッチ行に遭遇したときに
+     `grep'は停止します．`-c'や`--count'オプションも使用さ
+     れているとき，`grep'はNUM個以上数えません．`-v'や
+     `--invert-match'オプションも使用されているとき，NUM個のマッチ
+     しない行を出力した後で停止します．
+
+`-y'
+     `-i'に対する時代遅れの同義語です．
+
+`-U'
+`--binary'
+     ファイルをバイナリとして扱います．デフォルトで，MS-DOSとMS-Windows
+     では，`grep'は，ファイルから読み込んだ最初の32kBの内容を見てファ
+     イル形式を推測します．`grep'が，ファイルをテキストファイルだと決
+     定した場合，元ファイルの内容から`CR'文字を取ります(`^'と
+     `$'を使った正規表現が正確に働くためです)．`-U'で指定してこの推
+     測を覆す場合，全てのファイルは読み込まれ，逐語的にマッチ検索する方式に渡
+     され，ファイルのそれぞれの行の終りが`CR/LF'の組のテキストファイルの
+     場合，失敗する正規表現も出てきます．このオプションは，MS-DOSと
+     MS-Windowsのみでサポートされています．
+
+`-u'
+`--unix-byte-offsets'
+     Unix形式のバイトオフセットを報告します．これで`grep'は，ファイル
+     があたかもUnixスタイルのファイルであるかのように，バイトオフセットを報告
+     するよう切替えます．すなわち，バイトオフセットは，取り除かれた`CR'
+     文字を無視します．これは，Unixマシンで`grep'を実行するのと同じ結
+     果を生成します．このオプションは，`-b'オプションと一緒に使用しない
+     限り効果がありません．MS-DOSとMS-Windows以外のプラットホームでは効
+     果がありません．
+
+`--mmap'
+     可能な場合，入力を読む際，デフォルトの`read'システムコールの代わり
+     に，`mmap'システムコールを使用します．`--mmap'が，良いパフォー
+     マンスを与える場合もあります．しかし，`grep'処理中に入力ファイル
+     が小さくなる場合や，I/Oエラーが生じた場合，`--mmap'は，(coreの吐き
+     出しを含め)未定義の動作をすることもあります．
+
+`-Z'
+`--null'
+     通常ファイル名に続く文字の代わりに，0バイト(ASCIIの`NUL'文字)
+     を出力します．例えば，`grep -lZ'は，それぞれのファイル名の後，通常
+     の改行の代わりに，0バイトを出力します．このオプションは，ファイル名が改
+     行のような普通でない文字を含む場合でも出力を曖昧にしません．このオプショ
+     ンは，改行文字を含むような任意のファイル名を処理するとき使用する，
+     `find -print0'，`perl -0'，`sort -z'と`xargs -0'のよ
+     うなコマンドとともに使用されます．
+
+`-z'
+`--null-data'
+     それぞれの行は，改行の代わりに0バイト(ASCIIの`NUL'文字)で終端
+     され，入力を１行として扱います．`-Z'や`--null'オプションのよう
+     に，このオプションは，任意のファイル名を処理する際の`sort -z'のよう
+     なコマンドとともに使用されます．
+
+
+   `grep'マッチエンジンの変形を使用するかどうかを制御する，追加のオ
+プションもあります．*Note Grep Programs::.
+
+2.2 環境変数
+============
+
+`grep'の動作は，以下の環境変数に影響されます．
+
+   ロケール`LC_FOO'は，３つの環境変数`LC_ALL'，
+`LC_FOO'，そして`LANG'を，その順番で調査して指定されます．
+これらの変数の最初に設定されているものでロケールを指定します，例えば，
+`LC_ALL'が設定されておらず`LC_MESSAGES'が`pt_BR'に設定され
+ている場合，`LC_MESSAGES'ロケールとしてブラジルのポルトガル語が使用
+されます．これらの環境変数が全く設定されていない場合，またはロケールのカ
+タログがインストールされていない場合，または`grep'が国際言語サポー
+ト(NLS)無しでコンパイルされていない場合は，Cロケールが使用されます．
+
+`GREP_OPTIONS'
+     この変数は，あらゆる明確なオプションの前に置く，デフォルトオプションを指
+     定します．例えば，`GREP_OPTIONS'が `--binary-files=without-match
+     --directories=skip' の場合，
+     `grep'は，２つのオプション`--binary-files=without-match'と
+     `--directories=skip'が，明確なオプションの前に指定されているように
+     動作します．オプション指定は，空白で分割します．バックスラッシュは次の文
+     字をエスケープするので，空白やバックスラッシュを含むオプションを指定する
+     とき使用することができます．
+
+`GREP_COLOR'
+     この変数は，マッチしたテキストを強調するために使用する周りのマーカーを指
+     定します．デフォルトはアスキー制御の赤です．
+
+`LC_ALL'
+`LC_COLLATE'
+`LANG'
+     これらの変数は`LC_COLLATE'ロケールを指定し，それは`[a-z]'のよ
+     うな範囲表現を解釈するために使用される，照合の手続きを決定します．
+
+`LC_ALL'
+`LC_CTYPE'
+`LANG'
+     これらの変数は`LC_CTYPE'ロケールを指定し，それは例えば，どの文字が
+     空白となるかといった，文字の型を決定します．
+
+`LC_ALL'
+`LC_MESSAGES'
+`LANG'
+     これらの変数は`LC_MESSAGES'ロケールを指定し，それは，`grep'
+     がメッセージで使用する言語を決定します．デフォルトのCロケールでは，アメ
+     リカ英語のメッセージを使用します．
+
+`POSIXLY_CORRECT'
+     設定されている場合，`grep'は，POSIX.2で要求されているように
+     動作します．そうでない場合，`grep'は，他のGNUプログラムのよ
+     うに動作します．POSIX.2は，ファイル名が続くオプションは，ファイル名
+     として扱う必要があると要求します．デフォルトで，そのようなオプションは，
+     オペランドリストの前に順序を変え，オプションとして扱われます．また，
+     POSIX.2は，理解できなかったオプションを「不正」と診断することも要求
+     しますが，本当に規則に反しているわけではないので，デフォルトでは「無効」
+     と診断されます．`POSIXLY_CORRECT'は，以下で述べる
+     `_N_GNU_nonoption_argv_flags_'も使用できないようにします．
+
+`_N_GNU_nonoption_argv_flags_'
+     (ここで，`N'は，`grep'のプロセスID番号です．)この環境
+     変数の値のI番目の文字が`1'の場合，`grep'のI番目
+     のオペランドは，明らかにそうであってもオプションと考えません．シェルは，
+     実行するそれぞれのコマンドに対し，この変数を環境に置くことができ，それを
+     指定すると，オペランドはワイルドカードを展開したファイル名の結果となり，
+     そのため，オプションとして扱われません．この動作は，GNUCライブラリ
+     のみで，`POSIXLY_CORRECT'が設定されていないときのみ利用可能です．
+
+
+   ---------- Footnotes ----------
+
+   (1) 訳注:マッチする行を含まないファイルという意味．
+
+
+File: grep-ja.info,  Node: Diagnostics,  Next: Grep Programs,  Prev: Invoking,  Up: Top
+
+3 診断
+******
+
+通常，選択した行が見つかった場合は終了ステータスが０で，それ以外では１に
+なります．しかし，`-q'や`--quiet'または`--silent'オ
+プションが使用されておらず，選択した行が見つからなければ，エラーが生じる
+と終了ステータスは２になります．
+
+
+File: grep-ja.info,  Node: Grep Programs,  Next: Regular Expressions,  Prev: Diagnostics,  Up: Top
+
+4 `grep'プログラム
+******************
+
+`grep'は，指名された入力ファイル(または，ファイルが指名されない
+場合や，`-'という名前のファイルが与えられた場合は標準入力)で，与え
+られたパターンにマッチしたものを含む行を探します．デフォルトで，
+`grep'はマッチした行を出力します．４つの主要な`grep'の変
+形があり，以下のオプションで制御されます．
+
+`-G'
+`--basic-regexp'
+     基本的な正規表現としてパターンを解釈します．これはデフォルトです．
+
+`-E'
+`--extended-regexp'
+     拡張された正規表現として，パターンを解釈します．
+
+`-F'
+`--fixed-strings'
+     改行で分けられた固定文字列のリストとしてパターンを解釈し，それはどれにで
+     もマッチします．
+
+`-P'
+`--perl-regexp'
+     Perlの正規表現としてパターンを解釈します．
+
+
+   さらに，2つの変形プログラム，`egrep'と`fgrep'が利用可能 です．
+`egrep'は，`grep -E'と同じです．`fgrep'は， `grep -F'と同じです．
+
+
+File: grep-ja.info,  Node: Regular Expressions,  Next: Usage,  Prev: Grep Programs,  Up: Top
+
+5 正規表現
+**********
+
+"正規表現"は，文字列のセットを記述するパターンです．正規表現は，より
+小さな表現を統合する，様々なオペレータを使った算数的な表現で，同様に組み
+立てられます．`grep'は，２つの異なるバージョンの正規表現構文，"
+基本"(BRE)と"拡張"(ERE)を理解します．GNU `grep'では，ど
+ちらの構文を使っても，利用可能な機能に違いはありません．他のインプリメン
+テーションでは，基本正規表現はそんなに強力ではありません．以下の記述は，
+拡張正規表現に当てはまります．基本正規表現との違いは，後で要約します．
+
+基本的な構築ブロックは，一文字にマッチする正規表現です．すべての文字と数
+字を含むほとんどの文字は，自分自身にマッチする正規表現です．特殊な意味を
+持つあらゆるメタ文字は，バックスラッシュを前に置くことで引用可能です．
+`['と`]'で囲まれた文字のリストは，リストのあらゆる一文字とマッ
+チします．リストの最初の文字がキャレット`^'の場合，リストに
+*ない*あらゆる文字にマッチします．例えば，正規表現
+`[0123456789]'は，あらゆる数字にマッチします．文字の範囲は，ハイフ
+ンで分けられた，最初と最後の文字を与えることで指定できます．
+
+   正規表現は，以下の反復子の一つを続けてもかまいません．
+
+`.'
+     ピリオド`.'は，あらゆる単一文字にマッチします．
+
+`?'
+     前の項目はオプションで，１回以下にマッチします．
+
+`*'
+     前の項目の０回以上にマッチします．
+
+`+'
+     前の項目の１回以上にマッチします．
+
+`{N}'
+     前の項目の，正確にN回にマッチします．
+
+`{N,}'
+     前の項目のN回以上にマッチします．
+
+`{N,M}'
+     前の項目の，N回以上，M回以下にマッチします．
+
+
+２つの正規表現を連結してもかまいません．結果として得られる正規表現は，そ
+れぞれの連結されたサブ表現にマッチする，２つのサブ文字列を連結した形式の，
+あらゆる文字列にマッチします．
+
+   ２つの正規表現は，インフィクスオペレータ`|'で連結してもかまいません．
+結果として得られる正規表現は，サブ表現のどちらかにマッチする，あらゆる文
+字列にマッチします．
+
+反復子は連結子に優先し，反対に交換子に優先します．サブ表現全体は，これら
+の優先規則を無効にするためにカッコで囲んでもかまいません．
+
+5.1 文字クラス
+==============
+
+"大カッコの表現"とは，`['と`]'で囲まれている文字のリストで
+す．それは，そのリストにある，あらゆる単一文字にマッチします．リストの最
+初の文字がキャレット`^'の場合，リストに*ない*あらゆる文字に
+マッチします．例えば，正規表現`[0123456789]'は，あらゆる数字にマッ
+チします．
+
+   大カッコ表現内部では，"範囲表現"はハイフンで分離されている２つの文字
+から成り立ちます．それは，ロケールの照合順で，そのロケールの文字集合を用
+いて，２つの文字の間をソートしたもの(その文字自身も含まれる)にある，あら
+ゆる単一文字にマッチします．例えば，デフォルトのCロケールでは，
+`[a-d]'は`[abcd]'と同じです．ロケールの多くは辞書の順番でソー
+トされていて，それらのロケールでは`[a-d]'は，一般的に`[abcd]'
+と同じではありません．例えば，`[aBbCcDd]'と同じかもしれません．伝統
+的な大カッコの解釈を得るために，`LC_ALL'環境変数を値`C'に設定す
+ることで，Cロケールを使用することが可能です．
+
+終りに，命名された特定の文字のクラスは，以下のように大カッコで前もって定
+義されています．その解釈は`LC_CTYPE'ロケールに依存します．以下の解
+釈はCロケールのもので，`LC_CTYPE'ロケールが指定されていない場合にデ
+フォルトになるものです．
+
+`[:alnum:]'
+     英数文字： `[:alpha:]'と`[:digit:]'．
+
+`[:alpha:]'
+     アルファベット文字： `[:lower:]'と`[:upper:]'．
+
+`[:blank:]'
+     空白文字： スペースとタブ．
+
+`[:cntrl:]'
+     コントロール文字．ASCIIでは，これらの文字は8進数コードで，000から
+     037までと177 (`DEL')です．その他の文字セットでは，それが何であれ，
+     文字と同じです．
+
+`[:digit:]'
+     数字： `0 1 2 3 4 5 6 7 8 9'．
+
+`[:graph:]'
+     グラフィック文字： `[:alnum:]'と`[:punct:]'．
+
+`[:lower:]'
+     小文字：`a b c d e f g h i j k l m n o p q r s t u v w x y z'．
+
+`[:print:]'
+     印刷可能な文字： `[:alnum:]'，`[:punct:]'，そしてスペース．
+
+`[:punct:]'
+     句読点文字：`! " # $ % & ' ( ) * + , - . / : ; < = > ? @ [ \ ] ^ _
+     ` { | } ~'．
+
+`[:space:]'
+     スペース文字：
+     タブ，改行，垂直タブ，フォームフィード，キャリッジリター
+     ン，そしてスペース．
+
+`[:upper:]'
+     大文字： `A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.
+
+`[:xdigit:]'
+     16進数： `0 1 2 3 4 5 6 7 8 9 A B C D E F a b c d e f'.
+
+
+   例えば，`[[:alnum:]]'は`[0-9A-Za-z]'を意味しますが，後者の書式
+は，CロケールとASCII文字の符号化に依存し，前者はロケールと文字集合
+に依存しません．(これらのクラス名のカッコはジンボル名の一部で，追加時に
+は，カッコのリストを範囲を定めるカッコを含める必要があることに注意してく
+ださい)
+
+   ほとんどのメタ文字は，リスト内で特殊な意味を失います．
+
+`]'
+     最初のリスト項目ではない場合，リストを終了します．そのため，`]'をリ
+     スト項目にしたい場合，それを最初に書く必要があります．
+
+`[.'
+     開いている照合するシンボルを表現します．
+
+`.]'
+     閉じている照合するシンボルを表現します．
+
+`[='
+     開いている等価クラスを表現します．
+
+`=]'
+     閉じている等価クラスを表現します．
+
+`[:'
+     有効な文字クラス名が続いている，開いている文字クラスを表現します．
+
+`:]'
+     有効な文字クラス名が続いている，閉じている字クラスを表現します．
+
+`-'
+     リストの最初または最後ではなく，範囲の最終の点ではない場合，範囲を表現し
+     ます．
+
+`^'
+     リストに無い文字を表現します．`^'をリストの項目にしたい場合，最初以
+     外のどこかに書いてください．
+
+
+5.2 バックスラッシュ文字
+========================
+
+特定の文字が続くとき，`\'は特殊ないもを持ちます．
+
+``\b''
+     単語の端にある空の文字列にマッチします．
+
+``\B''
+     単語の端ではない空の文字列にマッチします．
+
+``\<''
+     単語の最初の空の文字列にマッチします．
+
+``\>''
+     単語の終りの空の文字列にマッチします．
+
+``\w''
+     単語の構成要素にマッチし，それは`[[:alnum:]]'の同義語です．
+
+``\W''
+     単語の構成要素ではないものにマッチし，それは`[^[:alnum:]]'の同義語
+     です．
+
+
+   例えば，`\brat\b'は，分離されている単語`rat'にマッチし，
+`c\Brat\Be'は`crate'にマッチしますが，`dirty \Brat'は `dirty
+rat'にマッチしません．
+
+5.3 アンカー
+============
+
+キャレット`^'とドル記号`$'は，それぞれ行の最初と最後の空の文字
+列にマッチします．
+
+5.4 後方参照
+============
+
+後方参照`\N'(ここでのNは単一の10進数です)は，N番
+目のカッコで囲まれた正規表現のサブ表現としてこれまでにマッチしていたサブ
+文字列にマッチします．例えば，`(a)\1'は`aa'にマッチします．グ
+ループがマッチに関与していない状態で交換を使用するとき，後方参照は全体の
+マッチで失敗します．例えば，`a(.)|b\1'は`ba'にマッチしません．
+複数の正規表現が`-e'やファイルから`-f file'で与えられていると
+き，後方参照はそれぞれの表現に対しローカルなものになります．
+
+5.5 基本 vs 拡張
+================
+
+基本的な正規表現では，メタ文字`?'，`+'，`{'，`|'，
+`('，そして`)'は，その特別な意味を失います．その代わりにバック
+スラッシュバージョンの`\?'，`\+'，`\{'，`\|'， `\('，そして`\)'
+を使用してください．
+
+   伝統的な`egrep'は，`{'のメタ文字をサポートしておらず，その
+代わりに`\{'のサポートを実装しているものもあるので，移植性の高いス
+クリプトでは，`egrep'のパターンで`{'の使用を避け，リテラルの
+`{'にマッチさせるために`[{]'を使用すべきです．
+
+   GNU `egrep'では，`{'がインターバルの指定を開始するも
+のとして無効な場合，`{'は特殊なものではないと仮定して伝統的な使用
+方法のサポートを試みます．例えば，シェルコマンド`egrep '{1''は，正
+規表現の構文エラーを報告する代わりに，`{1'の２文字を検索します．
+POSIX.2では，この動作を拡張として許可していますが，移植性の高いスク
+リプトではそれを避けるべきです．
+
+
+File: grep-ja.info,  Node: Usage,  Next: Reporting Bugs,  Prev: Regular Expressions,  Up: Top
+
+6 使用法
+********
+
+GNU `grep'を呼び出す，シェルコマンドの例は以下のようになり ます．
+
+     grep -i 'hello.*world' menu.h main.c
+
+これは，`menu.h'と`main.c'で，文字列`world'が続く文字列
+`hello'を含む，全ての行をリストアップします．これは，`.*'が，
+行の0以上の文字にマッチするためです．*Note Regular Expressions::.
+`-i'オプションは，`grep'に大文字小文字を無視させ， `Hello,
+world!'にマッチさせます．そうしなければマッチしません．
+`grep'の呼び出し方の詳細は，*Note Invoking::.
+
+   以下に`grep'の使用法に関する一般的な質問と回答を記述します．
+
+  1.
+     マッチしたファイルの名前のみリストアップするには，どうしたら良いのですか？
+
+          grep -l 'main' *.c
+
+     カレントディレクトリで，内容に`main'があるCファイルの名前をリストアッ
+     プします．
+
+  2. ディレクトリを再帰的に検索するには，どうしたら良いのですか？
+
+          grep -r 'hello' /home/gigi
+
+     `hello'を，ディレクトリ`/home/gigi'の下の，全てのファイルで検
+     索します．検索ファイルをもっと制御するために，`find'，
+     `grep'と，`xargs'を使ってください．例えば，以下のコマン
+     ドはCファイルのみを検索します．
+
+          find /home/gigi -name '*.c' -print | xargs grep 'hello' /dev/null
+
+     これは，以下のコマンドとは異なります．
+
+          grep -r 'hello' *.c
+
+     それは単純に，現在のディレクトリのファイル名が`.c'で終るすべてのファ
+     イルで`hello'を探します．ここでの`-r'は，再帰的が`.c'と
+     いうファイルの一つがディレクトリであるという滅多に発生しない事象でのみ発
+     動するので，移植性のため不必要です．
+
+  3. パターンが`-'で始まる場合，どうすれば良いのでしょうか？
+
+          grep -e '--cut here--' *
+
+     `--cut here--'にマッチする全ての行を検索します．`-e'がない場合，
+     `grep'は，`--cut here--'をオプションのリストとして，分割し
+     ようとします．
+
+  4. 単語の一部ではなく，単語全体を検索したいのですが？
+
+          grep -w 'hello' *
+
+     単語全体で`hello'となるもののみを検索します．`Othello'にはマッ
+     チしません．より制御するため，単語の最初と最後にマッチする，`\<'と
+     `\>'を使ってください．例えば，以下のようにします．
+
+          grep 'hello\>' *
+
+     `hello'で終る単語のみを検索するので，単語`Othello'にマッチしま す．
+
+  5.
+     マッチした行の周りの文脈を出力するには，どうしたら良いのでしょうか？
+
+          grep -C 2 'hello' *
+
+     マッチした行の周りの文を，それぞれ２行出力します．
+
+  6. `grep'で強制的にファイル名を出力するにはどうしたら良いのでしょう
+     か？
+
+     `/dev/null'を加えてください．
+
+          grep 'eli' /etc/passwd /dev/null
+
+     以下を得るでしょう．
+
+          /etc/passwd:eli:DNGUTF58.IMe.:98:11:Eli Smith:/home/do/eli:/bin/bash
+
+  7. `ps'出力で，奇妙な正規表現をなぜ使うのですか？
+
+          ps -ef | grep '[c]ron'
+
+     パターンが角カッコなしで書かれている場合，`ps'出力行の
+     `cron'だけでなく，`ps'出力の`grep'にもマッチしま
+     す．プラットフォームによっては，`ps'の出力が画面の幅に制限されて
+     いることに注意してください．`grep'には，利用可能なメモリ以外には，
+     行の長さの制限は全くありません．
+
+  8. `grep'は"バイナリファイルのマッチ"をなぜ報告するのですか？
+
+     `grep'が，バイナリファイルから全てのマッチ*行*をリストアッ
+     プした場合，生成された出力はおそらく役に立たず，ディスプレイにゴミを撒き
+     散らすでしょう．そのため，GNU `grep'は，明らかなバイナリファ
+     イルからの出力は抑制します．明らかなバイナリファイルからも，GNU
+     `grep'の出力を強制させるため，`-a'や
+     `--binary-files=text'オプションを使用してください．"Binary file
+     matches"メッセージをエミュレートするため，`-I'や
+     `--binary-files=without-match'オプションを使用してください．
+
+  9. `grep -lv'は，なぜマッチしないファイル名を出力しないのですか？
+
+     `grep -lv'は，1つ以上マッチしていない行を含む，全てのファイル名をリ
+     ストアップします．マッチ行がない全てのファイル名をリストアップするために，
+     `-L'や`--files-without-match'オプションを使ってください．
+
+ 10. ORは`|'でできますが，ANDはどうするのですか？
+
+          grep 'paul' /etc/motd | grep 'franc,ois'
+
+     `paul'と`franc,ois'の両方を含む全ての行を検索します．
+
+ 11. 標準入力とファイルの両方を，どうすると検索できますか？
+
+     特別なファイル名`-'を使用してください．
+
+          cat /etc/passwd | grep 'alain' - /etc/motd
+
+ 12. どのようにして正規表現で回文を表現するのですが？
+
+     後方参照を使用して行なうことが可能で，例えば，４文字の回文は基本的な正規
+     表現で書くことが可能です．
+
+          grep -w -e '\(.\)\(.\).\2\1' file
+
+     それは，単語"radar"や"civic"にマッチします．
+
+     Guglielmo
+     Bondioniは，１９文字までの長さのすべての回文を見つける，単一の
+     正規表現を提案しました．
+
+          egrep -e '^(.?)(.?)(.?)(.?)(.?)(.?)(.?)(.?)(.?).?\9\8\7\6\5\4\3\2\1$' file
+
+     これはGNUの拡張正規表現の拡張機能を使用してなされていることに注意し
+     てください．それは他の`grep'では移植性が無いでしょう．
+
+ 13. 垂直バーがある以下の正規表現はなぜ失敗するのですか？
+
+          /bin/echo "ba" | egrep '(a)\1|(b)\1'
+
+     最初の交換で失敗し，最初のグループはマッチにならず，このため２番目の交換
+     でも失敗します．例えば，"aaba"にはマッチし，最初のグループはマッチに加わ
+     り，２番目のマッチで再利用することが可能です．
+
+ 14. `grep, fgrep, egrep'は何を意味するのですか？
+
+     `grep'はUnix上で行を編集するものとして生まれました．例えば，
+     `ed'は画面にマッチした行のリストを出力するために，この構文を使用
+     します．
+
+          global/regular expression/print
+          g/re/p
+
+     `fgrep'は修正された`grep'を意味し，`egrep'は拡張
+     された`grep'を意味します．
+
+
+
+File: grep-ja.info,  Node: Reporting Bugs,  Next: Copying,  Prev: Usage,  Up: Top
+
+7 バグの報告
+************
+
+バグの報告は，<bug-gnu-utils@gnu.org>に電子メールを送ってください．
+"Subject:"フィールドのどこかに，単語"grep"があることを確かめてくださ
+い．
+
+   `{n,m}'の大きな繰り返し回数で，`grep'が多くのメモリを使う
+可能性があります．さらに，特定のその他の曖昧な正規表現は，指数関数的な時
+間と空間を要求し，`grep'の実行はメモリ不足になる可能性があります．
+後方参照は大変遅く，指数関数的な時間を必要とする可能性があります．
+
+
+File: grep-ja.info,  Node: Copying,  Next: GNU General Public License,  Prev: Reporting Bugs,  Up: Top
+
+8 コピーについて
+****************
+
+GNU grep is licensed under the GNU GPL, which makes it "free software".
+
+   Please note that "free" in "free software" refers to liberty, not
+price.  As some GNU project advocates like to point out, think of "free
+speech" rather than "free beer".  The exact and legally binding
+distribution terms are spelled out below; in short, you have the right
+(freedom) to run and change grep and distribute it to other people, and
+even--if you want--charge money for doing either.  The important
+restriction is that you have to grant your recipients the same rights
+and impose the same restrictions.
+
+   This method of licensing software is also known as "open source"
+because, among other things, it makes sure that all recipients will
+receive the source code along with the program, and be able to improve
+it.  The GNU project prefers the term "free software" for reasons
+outlined at
+`http://www.gnu.org/philosophy/free-software-for-freedom.html'.
+
+   The exact license terms are defined by this paragraph and the GNU
+General Public License it refers to:
+
+     GNU grep is free software; you can redistribute it and/or modify it
+     under the terms of the GNU General Public License as published by
+     the Free Software Foundation; either version 2 of the License, or
+     (at your option) any later version.
+
+     GNU grep is distributed in the hope that it will be useful, but
+     WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     General Public License for more details.
+
+     A copy of the GNU General Public License is included as part of
+     this manual; if you did not receive it, write to the Free Software
+     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+   In addition to this, this manual is free in the same sense:
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU Free Documentation License,
+     Version 1.1 or any later version published by the Free Software
+     Foundation; with the Invariant Sections being "GNU General Public
+     License" and "GNU Free Documentation License", with no Front-Cover
+     Texts, and with no Back-Cover Texts.  A copy of the license is
+     included in the section entitled "GNU Free Documentation License".
+
+   The full texts of the GNU General Public License and of the GNU Free
+Documentation License are available below.
+
+* Menu:
+
+* GNU General Public License:: GNU GPL
+* GNU Free Documentation License:: GNU FDL
+
+
+File: grep-ja.info,  Node: GNU General Public License,  Next: GNU Free Documentation License,  Prev: Copying,  Up: Copying
+
+8.1 GNU General Public License
+==============================
+
+                         Version 2, June 1991
+     Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+     675 Mass Ave, Cambridge, MA 02139, USA
+
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+Preamble
+========
+
+The licenses for most software are designed to take away your freedom
+to share and change it.  By contrast, the GNU General Public License is
+intended to guarantee your freedom to share and change free
+software--to make sure the software is free for all its users.  This
+General Public License applies to most of the Free Software
+Foundation's software and to any other program whose authors commit to
+using it.  (Some other Free Software Foundation software is covered by
+the GNU Library General Public License instead.)  You can apply it to
+your programs, too.
+
+   When we speak of free software, we are referring to freedom, not
+price.  Our General Public Licenses are designed to make sure that you
+have the freedom to distribute copies of free software (and charge for
+this service if you wish), that you receive source code or can get it
+if you want it, that you can change the software or use pieces of it in
+new free programs; and that you know you can do these things.
+
+   To protect your rights, we need to make restrictions that forbid
+anyone to deny you these rights or to ask you to surrender the rights.
+These restrictions translate to certain responsibilities for you if you
+distribute copies of the software, or if you modify it.
+
+   For example, if you distribute copies of such a program, whether
+gratis or for a fee, you must give the recipients all the rights that
+you have.  You must make sure that they, too, receive or can get the
+source code.  And you must show them these terms so they know their
+rights.
+
+   We protect your rights with two steps: (1) copyright the software,
+and (2) offer you this license which gives you legal permission to copy,
+distribute and/or modify the software.
+
+   Also, for each author's protection and ours, we want to make certain
+that everyone understands that there is no warranty for this free
+software.  If the software is modified by someone else and passed on, we
+want its recipients to know that what they have is not the original, so
+that any problems introduced by others will not reflect on the original
+authors' reputations.
+
+   Finally, any free program is threatened constantly by software
+patents.  We wish to avoid the danger that redistributors of a free
+program will individually obtain patent licenses, in effect making the
+program proprietary.  To prevent this, we have made it clear that any
+patent must be licensed for everyone's free use or not licensed at all.
+
+   The precise terms and conditions for copying, distribution and
+modification follow.
+
+    TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+  1. This License applies to any program or other work which contains a
+     notice placed by the copyright holder saying it may be distributed
+     under the terms of this General Public License.  The "Program",
+     below, refers to any such program or work, and a "work based on
+     the Program" means either the Program or any derivative work under
+     copyright law: that is to say, a work containing the Program or a
+     portion of it, either verbatim or with modifications and/or
+     translated into another language.  (Hereinafter, translation is
+     included without limitation in the term "modification".)  Each
+     licensee is addressed as "you".
+
+     Activities other than copying, distribution and modification are
+     not covered by this License; they are outside its scope.  The act
+     of running the Program is not restricted, and the output from the
+     Program is covered only if its contents constitute a work based on
+     the Program (independent of having been made by running the
+     Program).  Whether that is true depends on what the Program does.
+
+  2. You may copy and distribute verbatim copies of the Program's
+     source code as you receive it, in any medium, provided that you
+     conspicuously and appropriately publish on each copy an appropriate
+     copyright notice and disclaimer of warranty; keep intact all the
+     notices that refer to this License and to the absence of any
+     warranty; and give any other recipients of the Program a copy of
+     this License along with the Program.
+
+     You may charge a fee for the physical act of transferring a copy,
+     and you may at your option offer warranty protection in exchange
+     for a fee.
+
+  3. You may modify your copy or copies of the Program or any portion
+     of it, thus forming a work based on the Program, and copy and
+     distribute such modifications or work under the terms of Section 1
+     above, provided that you also meet all of these conditions:
+
+       a. You must cause the modified files to carry prominent notices
+          stating that you changed the files and the date of any change.
+
+       b. You must cause any work that you distribute or publish, that
+          in whole or in part contains or is derived from the Program
+          or any part thereof, to be licensed as a whole at no charge
+          to all third parties under the terms of this License.
+
+       c. If the modified program normally reads commands interactively
+          when run, you must cause it, when started running for such
+          interactive use in the most ordinary way, to print or display
+          an announcement including an appropriate copyright notice and
+          a notice that there is no warranty (or else, saying that you
+          provide a warranty) and that users may redistribute the
+          program under these conditions, and telling the user how to
+          view a copy of this License.  (Exception: if the Program
+          itself is interactive but does not normally print such an
+          announcement, your work based on the Program is not required
+          to print an announcement.)
+
+     These requirements apply to the modified work as a whole.  If
+     identifiable sections of that work are not derived from the
+     Program, and can be reasonably considered independent and separate
+     works in themselves, then this License, and its terms, do not
+     apply to those sections when you distribute them as separate
+     works.  But when you distribute the same sections as part of a
+     whole which is a work based on the Program, the distribution of
+     the whole must be on the terms of this License, whose permissions
+     for other licensees extend to the entire whole, and thus to each
+     and every part regardless of who wrote it.
+
+     Thus, it is not the intent of this section to claim rights or
+     contest your rights to work written entirely by you; rather, the
+     intent is to exercise the right to control the distribution of
+     derivative or collective works based on the Program.
+
+     In addition, mere aggregation of another work not based on the
+     Program with the Program (or with a work based on the Program) on
+     a volume of a storage or distribution medium does not bring the
+     other work under the scope of this License.
+
+  4. You may copy and distribute the Program (or a work based on it,
+     under Section 2) in object code or executable form under the terms
+     of Sections 1 and 2 above provided that you also do one of the
+     following:
+
+       a. Accompany it with the complete corresponding machine-readable
+          source code, which must be distributed under the terms of
+          Sections 1 and 2 above on a medium customarily used for
+          software interchange; or,
+
+       b. Accompany it with a written offer, valid for at least three
+          years, to give any third party, for a charge no more than your
+          cost of physically performing source distribution, a complete
+          machine-readable copy of the corresponding source code, to be
+          distributed under the terms of Sections 1 and 2 above on a
+          medium customarily used for software interchange; or,
+
+       c. Accompany it with the information you received as to the offer
+          to distribute corresponding source code.  (This alternative is
+          allowed only for noncommercial distribution and only if you
+          received the program in object code or executable form with
+          such an offer, in accord with Subsection b above.)
+
+     The source code for a work means the preferred form of the work for
+     making modifications to it.  For an executable work, complete
+     source code means all the source code for all modules it contains,
+     plus any associated interface definition files, plus the scripts
+     used to control compilation and installation of the executable.
+     However, as a special exception, the source code distributed need
+     not include anything that is normally distributed (in either
+     source or binary form) with the major components (compiler,
+     kernel, and so on) of the operating system on which the executable
+     runs, unless that component itself accompanies the executable.
+
+     If distribution of executable or object code is made by offering
+     access to copy from a designated place, then offering equivalent
+     access to copy the source code from the same place counts as
+     distribution of the source code, even though third parties are not
+     compelled to copy the source along with the object code.
+
+  5. You may not copy, modify, sublicense, or distribute the Program
+     except as expressly provided under this License.  Any attempt
+     otherwise to copy, modify, sublicense or distribute the Program is
+     void, and will automatically terminate your rights under this
+     License.  However, parties who have received copies, or rights,
+     from you under this License will not have their licenses
+     terminated so long as such parties remain in full compliance.
+
+  6. You are not required to accept this License, since you have not
+     signed it.  However, nothing else grants you permission to modify
+     or distribute the Program or its derivative works.  These actions
+     are prohibited by law if you do not accept this License.
+     Therefore, by modifying or distributing the Program (or any work
+     based on the Program), you indicate your acceptance of this
+     License to do so, and all its terms and conditions for copying,
+     distributing or modifying the Program or works based on it.
+
+  7. Each time you redistribute the Program (or any work based on the
+     Program), the recipient automatically receives a license from the
+     original licensor to copy, distribute or modify the Program
+     subject to these terms and conditions.  You may not impose any
+     further restrictions on the recipients' exercise of the rights
+     granted herein.  You are not responsible for enforcing compliance
+     by third parties to this License.
+
+  8. If, as a consequence of a court judgment or allegation of patent
+     infringement or for any other reason (not limited to patent
+     issues), conditions are imposed on you (whether by court order,
+     agreement or otherwise) that contradict the conditions of this
+     License, they do not excuse you from the conditions of this
+     License.  If you cannot distribute so as to satisfy simultaneously
+     your obligations under this License and any other pertinent
+     obligations, then as a consequence you may not distribute the
+     Program at all.  For example, if a patent license would not permit
+     royalty-free redistribution of the Program by all those who
+     receive copies directly or indirectly through you, then the only
+     way you could satisfy both it and this License would be to refrain
+     entirely from distribution of the Program.
+
+     If any portion of this section is held invalid or unenforceable
+     under any particular circumstance, the balance of the section is
+     intended to apply and the section as a whole is intended to apply
+     in other circumstances.
+
+     It is not the purpose of this section to induce you to infringe any
+     patents or other property right claims or to contest validity of
+     any such claims; this section has the sole purpose of protecting
+     the integrity of the free software distribution system, which is
+     implemented by public license practices.  Many people have made
+     generous contributions to the wide range of software distributed
+     through that system in reliance on consistent application of that
+     system; it is up to the author/donor to decide if he or she is
+     willing to distribute software through any other system and a
+     licensee cannot impose that choice.
+
+     This section is intended to make thoroughly clear what is believed
+     to be a consequence of the rest of this License.
+
+  9. If the distribution and/or use of the Program is restricted in
+     certain countries either by patents or by copyrighted interfaces,
+     the original copyright holder who places the Program under this
+     License may add an explicit geographical distribution limitation
+     excluding those countries, so that distribution is permitted only
+     in or among countries not thus excluded.  In such case, this
+     License incorporates the limitation as if written in the body of
+     this License.
+
+ 10. The Free Software Foundation may publish revised and/or new
+     versions of the General Public License from time to time.  Such
+     new versions will be similar in spirit to the present version, but
+     may differ in detail to address new problems or concerns.
+
+     Each version is given a distinguishing version number.  If the
+     Program specifies a version number of this License which applies
+     to it and "any later version", you have the option of following
+     the terms and conditions either of that version or of any later
+     version published by the Free Software Foundation.  If the Program
+     does not specify a version number of this License, you may choose
+     any version ever published by the Free Software Foundation.
+
+ 11. If you wish to incorporate parts of the Program into other free
+     programs whose distribution conditions are different, write to the
+     author to ask for permission.  For software which is copyrighted
+     by the Free Software Foundation, write to the Free Software
+     Foundation; we sometimes make exceptions for this.  Our decision
+     will be guided by the two goals of preserving the free status of
+     all derivatives of our free software and of promoting the sharing
+     and reuse of software generally.
+
+                                NO WARRANTY
+ 12. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO
+     WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE
+     LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
+     HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT
+     WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT
+     NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+     FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE
+     QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE
+     PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY
+     SERVICING, REPAIR OR CORRECTION.
+
+ 13. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN
+     WRITING WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY
+     MODIFY AND/OR REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE
+     LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL,
+     INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+     INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
+     DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU
+     OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY
+     OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN
+     ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+                      END OF TERMS AND CONDITIONS
+How to Apply These Terms to Your New Programs
+=============================================
+
+If you develop a new program, and you want it to be of the greatest
+possible use to the public, the best way to achieve this is to make it
+free software which everyone can redistribute and change under these
+terms.
+
+   To do so, attach the following notices to the program.  It is safest
+to attach them to the start of each source file to most effectively
+convey the exclusion of warranty; and each file should have at least
+the "copyright" line and a pointer to where the full notice is found.
+
+     ONE LINE TO GIVE THE PROGRAM'S NAME AND AN IDEA OF WHAT IT DOES.
+     Copyright (C) 19YY  NAME OF AUTHOR
+
+     This program is free software; you can redistribute it and/or
+     modify it under the terms of the GNU General Public License
+     as published by the Free Software Foundation; either version 2
+     of the License, or (at your option) any later version.
+
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with this program; if not, write to the Free Software
+     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+   Also add information on how to contact you by electronic and paper
+mail.
+
+   If the program is interactive, make it output a short notice like
+this when it starts in an interactive mode:
+
+     Gnomovision version 69, Copyright (C) 19YY NAME OF AUTHOR
+     Gnomovision comes with ABSOLUTELY NO WARRANTY; for details
+     type `show w'.  This is free software, and you are welcome
+     to redistribute it under certain conditions; type `show c'
+     for details.
+
+   The hypothetical commands `show w' and `show c' should show the
+appropriate parts of the General Public License.  Of course, the
+commands you use may be called something other than `show w' and `show
+c'; they could even be mouse-clicks or menu items--whatever suits your
+program.
+
+   You should also get your employer (if you work as a programmer) or
+your school, if any, to sign a "copyright disclaimer" for the program,
+if necessary.  Here is a sample; alter the names:
+
+     Yoyodyne, Inc., hereby disclaims all copyright
+     interest in the program `Gnomovision'
+     (which makes passes at compilers) written
+     by James Hacker.
+
+     SIGNATURE OF TY COON, 1 April 1989
+     Ty Coon, President of Vice
+
+   This General Public License does not permit incorporating your
+program into proprietary programs.  If your program is a subroutine
+library, you may consider it more useful to permit linking proprietary
+applications with the library.  If this is what you want to do, use the
+GNU Library General Public License instead of this License.
+
+
+File: grep-ja.info,  Node: GNU Free Documentation License,  Next: Concept Index,  Prev: GNU General Public License,  Up: Copying
+
+8.2 GNU Free Documentation License
+==================================
+
+                        Version 1.1, March 2000
+     Copyright (C) 2000  Free Software Foundation, Inc.
+     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+
+  0. PREAMBLE
+
+     The purpose of this License is to make a manual, textbook, or other
+     written document "free" in the sense of freedom: to assure everyone
+     the effective freedom to copy and redistribute it, with or without
+     modifying it, either commercially or noncommercially.  Secondarily,
+     this License preserves for the author and publisher a way to get
+     credit for their work, while not being considered responsible for
+     modifications made by others.
+
+     This License is a kind of "copyleft", which means that derivative
+     works of the document must themselves be free in the same sense.
+     It complements the GNU General Public License, which is a copyleft
+     license designed for free software.
+
+     We have designed this License in order to use it for manuals for
+     free software, because free software needs free documentation: a
+     free program should come with manuals providing the same freedoms
+     that the software does.  But this License is not limited to
+     software manuals; it can be used for any textual work, regardless
+     of subject matter or whether it is published as a printed book.
+     We recommend this License principally for works whose purpose is
+     instruction or reference.
+
+
+  1. APPLICABILITY AND DEFINITIONS
+
+     This License applies to any manual or other work that contains a
+     notice placed by the copyright holder saying it can be distributed
+     under the terms of this License.  The "Document", below, refers to
+     any such manual or work.  Any member of the public is a licensee,
+     and is addressed as "you".
+
+     A "Modified Version" of the Document means any work containing the
+     Document or a portion of it, either copied verbatim, or with
+     modifications and/or translated into another language.
+
+     A "Secondary Section" is a named appendix or a front-matter
+     section of the Document that deals exclusively with the
+     relationship of the publishers or authors of the Document to the
+     Document's overall subject (or to related matters) and contains
+     nothing that could fall directly within that overall subject.
+     (For example, if the Document is in part a textbook of
+     mathematics, a Secondary Section may not explain any mathematics.)
+     The relationship could be a matter of historical connection with
+     the subject or with related matters, or of legal, commercial,
+     philosophical, ethical or political position regarding them.
+
+     The "Invariant Sections" are certain Secondary Sections whose
+     titles are designated, as being those of Invariant Sections, in
+     the notice that says that the Document is released under this
+     License.
+
+     The "Cover Texts" are certain short passages of text that are
+     listed, as Front-Cover Texts or Back-Cover Texts, in the notice
+     that says that the Document is released under this License.
+
+     A "Transparent" copy of the Document means a machine-readable copy,
+     represented in a format whose specification is available to the
+     general public, whose contents can be viewed and edited directly
+     and straightforwardly with generic text editors or (for images
+     composed of pixels) generic paint programs or (for drawings) some
+     widely available drawing editor, and that is suitable for input to
+     text formatters or for automatic translation to a variety of
+     formats suitable for input to text formatters.  A copy made in an
+     otherwise Transparent file format whose markup has been designed
+     to thwart or discourage subsequent modification by readers is not
+     Transparent.  A copy that is not "Transparent" is called "Opaque".
+
+     Examples of suitable formats for Transparent copies include plain
+     ASCII without markup, Texinfo input format, LaTeX input format,
+     SGML or XML using a publicly available DTD, and
+     standard-conforming simple HTML designed for human modification.
+     Opaque formats include PostScript, PDF, proprietary formats that
+     can be read and edited only by proprietary word processors, SGML
+     or XML for which the DTD and/or processing tools are not generally
+     available, and the machine-generated HTML produced by some word
+     processors for output purposes only.
+
+     The "Title Page" means, for a printed book, the title page itself,
+     plus such following pages as are needed to hold, legibly, the
+     material this License requires to appear in the title page.  For
+     works in formats which do not have any title page as such, "Title
+     Page" means the text near the most prominent appearance of the
+     work's title, preceding the beginning of the body of the text.
+
+  2. VERBATIM COPYING
+
+     You may copy and distribute the Document in any medium, either
+     commercially or noncommercially, provided that this License, the
+     copyright notices, and the license notice saying this License
+     applies to the Document are reproduced in all copies, and that you
+     add no other conditions whatsoever to those of this License.  You
+     may not use technical measures to obstruct or control the reading
+     or further copying of the copies you make or distribute.  However,
+     you may accept compensation in exchange for copies.  If you
+     distribute a large enough number of copies you must also follow
+     the conditions in section 3.
+
+     You may also lend copies, under the same conditions stated above,
+     and you may publicly display copies.
+
+  3. COPYING IN QUANTITY
+
+     If you publish printed copies of the Document numbering more than
+     100, and the Document's license notice requires Cover Texts, you
+     must enclose the copies in covers that carry, clearly and legibly,
+     all these Cover Texts: Front-Cover Texts on the front cover, and
+     Back-Cover Texts on the back cover.  Both covers must also clearly
+     and legibly identify you as the publisher of these copies.  The
+     front cover must present the full title with all words of the
+     title equally prominent and visible.  You may add other material
+     on the covers in addition.  Copying with changes limited to the
+     covers, as long as they preserve the title of the Document and
+     satisfy these conditions, can be treated as verbatim copying in
+     other respects.
+
+     If the required texts for either cover are too voluminous to fit
+     legibly, you should put the first ones listed (as many as fit
+     reasonably) on the actual cover, and continue the rest onto
+     adjacent pages.
+
+     If you publish or distribute Opaque copies of the Document
+     numbering more than 100, you must either include a
+     machine-readable Transparent copy along with each Opaque copy, or
+     state in or with each Opaque copy a publicly-accessible
+     computer-network location containing a complete Transparent copy
+     of the Document, free of added material, which the general
+     network-using public has access to download anonymously at no
+     charge using public-standard network protocols.  If you use the
+     latter option, you must take reasonably prudent steps, when you
+     begin distribution of Opaque copies in quantity, to ensure that
+     this Transparent copy will remain thus accessible at the stated
+     location until at least one year after the last time you
+     distribute an Opaque copy (directly or through your agents or
+     retailers) of that edition to the public.
+
+     It is requested, but not required, that you contact the authors of
+     the Document well before redistributing any large number of
+     copies, to give them a chance to provide you with an updated
+     version of the Document.
+
+  4. MODIFICATIONS
+
+     You may copy and distribute a Modified Version of the Document
+     under the conditions of sections 2 and 3 above, provided that you
+     release the Modified Version under precisely this License, with
+     the Modified Version filling the role of the Document, thus
+     licensing distribution and modification of the Modified Version to
+     whoever possesses a copy of it.  In addition, you must do these
+     things in the Modified Version:
+
+     A. Use in the Title Page (and on the covers, if any) a title
+     distinct    from that of the Document, and from those of previous
+     versions    (which should, if there were any, be listed in the
+     History section    of the Document).  You may use the same title
+     as a previous version    if the original publisher of that version
+     gives permission.
+     B. List on the Title Page, as authors, one or more persons or
+     entities    responsible for authorship of the modifications in the
+     Modified    Version, together with at least five of the principal
+     authors of the    Document (all of its principal authors, if it
+     has less than five).
+     C. State on the Title page the name of the publisher of the
+     Modified Version, as the publisher.
+     D. Preserve all the copyright notices of the Document.
+     E. Add an appropriate copyright notice for your modifications
+     adjacent to the other copyright notices.
+     F. Include, immediately after the copyright notices, a license
+     notice    giving the public permission to use the Modified Version
+     under the    terms of this License, in the form shown in the
+     Addendum below.
+     G. Preserve in that license notice the full lists of Invariant
+     Sections    and required Cover Texts given in the Document's
+     license notice.
+     H. Include an unaltered copy of this License.
+     I. Preserve the section entitled "History", and its title, and add
+     to    it an item stating at least the title, year, new authors, and
+       publisher of the Modified Version as given on the Title Page.
+     If    there is no section entitled "History" in the Document,
+     create one    stating the title, year, authors, and publisher of
+     the Document as    given on its Title Page, then add an item
+     describing the Modified    Version as stated in the previous
+     sentence.
+     J. Preserve the network location, if any, given in the Document for
+       public access to a Transparent copy of the Document, and
+     likewise    the network locations given in the Document for
+     previous versions    it was based on.  These may be placed in the
+     "History" section.     You may omit a network location for a work
+     that was published at    least four years before the Document
+     itself, or if the original    publisher of the version it refers
+     to gives permission.
+     K. In any section entitled "Acknowledgements" or "Dedications",
+     preserve the section's title, and preserve in the section all the
+      substance and tone of each of the contributor acknowledgements
+     and/or dedications given therein.
+     L. Preserve all the Invariant Sections of the Document,
+     unaltered in their text and in their titles.  Section numbers
+     or the equivalent are not considered part of the section titles.
+     M. Delete any section entitled "Endorsements".  Such a section
+     may not be included in the Modified Version.
+     N. Do not retitle any existing section as "Endorsements"    or to
+     conflict in title with any Invariant Section.
+
+     If the Modified Version includes new front-matter sections or
+     appendices that qualify as Secondary Sections and contain no
+     material copied from the Document, you may at your option
+     designate some or all of these sections as invariant.  To do this,
+     add their titles to the list of Invariant Sections in the Modified
+     Version's license notice.  These titles must be distinct from any
+     other section titles.
+
+     You may add a section entitled "Endorsements", provided it contains
+     nothing but endorsements of your Modified Version by various
+     parties-for example, statements of peer review or that the text has
+     been approved by an organization as the authoritative definition
+     of a standard.
+
+     You may add a passage of up to five words as a Front-Cover Text,
+     and a passage of up to 25 words as a Back-Cover Text, to the end
+     of the list of Cover Texts in the Modified Version.  Only one
+     passage of Front-Cover Text and one of Back-Cover Text may be
+     added by (or through arrangements made by) any one entity.  If the
+     Document already includes a cover text for the same cover,
+     previously added by you or by arrangement made by the same entity
+     you are acting on behalf of, you may not add another; but you may
+     replace the old one, on explicit permission from the previous
+     publisher that added the old one.
+
+     The author(s) and publisher(s) of the Document do not by this
+     License give permission to use their names for publicity for or to
+     assert or imply endorsement of any Modified Version.
+
+  5. COMBINING DOCUMENTS
+
+     You may combine the Document with other documents released under
+     this License, under the terms defined in section 4 above for
+     modified versions, provided that you include in the combination
+     all of the Invariant Sections of all of the original documents,
+     unmodified, and list them all as Invariant Sections of your
+     combined work in its license notice.
+
+     The combined work need only contain one copy of this License, and
+     multiple identical Invariant Sections may be replaced with a single
+     copy.  If there are multiple Invariant Sections with the same name
+     but different contents, make the title of each such section unique
+     by adding at the end of it, in parentheses, the name of the
+     original author or publisher of that section if known, or else a
+     unique number.  Make the same adjustment to the section titles in
+     the list of Invariant Sections in the license notice of the
+     combined work.
+
+     In the combination, you must combine any sections entitled
+     "History" in the various original documents, forming one section
+     entitled "History"; likewise combine any sections entitled
+     "Acknowledgements", and any sections entitled "Dedications".  You
+     must delete all sections entitled "Endorsements."
+
+  6. COLLECTIONS OF DOCUMENTS
+
+     You may make a collection consisting of the Document and other
+     documents released under this License, and replace the individual
+     copies of this License in the various documents with a single copy
+     that is included in the collection, provided that you follow the
+     rules of this License for verbatim copying of each of the
+     documents in all other respects.
+
+     You may extract a single document from such a collection, and
+     distribute it individually under this License, provided you insert
+     a copy of this License into the extracted document, and follow
+     this License in all other respects regarding verbatim copying of
+     that document.
+
+  7. AGGREGATION WITH INDEPENDENT WORKS
+
+     A compilation of the Document or its derivatives with other
+     separate and independent documents or works, in or on a volume of
+     a storage or distribution medium, does not as a whole count as a
+     Modified Version of the Document, provided no compilation
+     copyright is claimed for the compilation.  Such a compilation is
+     called an "aggregate", and this License does not apply to the
+     other self-contained works thus compiled with the Document, on
+     account of their being thus compiled, if they are not themselves
+     derivative works of the Document.
+
+     If the Cover Text requirement of section 3 is applicable to these
+     copies of the Document, then if the Document is less than one
+     quarter of the entire aggregate, the Document's Cover Texts may be
+     placed on covers that surround only the Document within the
+     aggregate.  Otherwise they must appear on covers around the whole
+     aggregate.
+
+  8. TRANSLATION
+
+     Translation is considered a kind of modification, so you may
+     distribute translations of the Document under the terms of section
+     4.  Replacing Invariant Sections with translations requires special
+     permission from their copyright holders, but you may include
+     translations of some or all Invariant Sections in addition to the
+     original versions of these Invariant Sections.  You may include a
+     translation of this License provided that you also include the
+     original English version of this License.  In case of a
+     disagreement between the translation and the original English
+     version of this License, the original English version will prevail.
+
+  9. TERMINATION
+
+     You may not copy, modify, sublicense, or distribute the Document
+     except as expressly provided for under this License.  Any other
+     attempt to copy, modify, sublicense or distribute the Document is
+     void, and will automatically terminate your rights under this
+     License.  However, parties who have received copies, or rights,
+     from you under this License will not have their licenses
+     terminated so long as such parties remain in full compliance.
+
+ 10. FUTURE REVISIONS OF THIS LICENSE
+
+     The Free Software Foundation may publish new, revised versions of
+     the GNU Free Documentation License from time to time.  Such new
+     versions will be similar in spirit to the present version, but may
+     differ in detail to address new problems or concerns.  See
+     http://www.gnu.org/copyleft/.
+
+     Each version of the License is given a distinguishing version
+     number.  If the Document specifies that a particular numbered
+     version of this License "or any later version" applies to it, you
+     have the option of following the terms and conditions either of
+     that specified version or of any later version that has been
+     published (not as a draft) by the Free Software Foundation.  If
+     the Document does not specify a version number of this License,
+     you may choose any version ever published (not as a draft) by the
+     Free Software Foundation.
+
+
+ADDENDUM: How to use this License for your documents
+====================================================
+
+To use this License in a document you have written, include a copy of
+the License in the document and put the following copyright and license
+notices just after the title page:
+
+
+       Copyright (C)  YEAR  YOUR NAME.
+       Permission is granted to copy, distribute and/or modify this document
+       under the terms of the GNU Free Documentation License, Version 1.1
+       or any later version published by the Free Software Foundation;
+       with the Invariant Sections being LIST THEIR TITLES, with the
+       Front-Cover Texts being LIST, and with the Back-Cover Texts being LIST.
+       A copy of the license is included in the section entitled ``GNU
+       Free Documentation License''.
+If you have no Invariant Sections, write "with no Invariant
+Sections" instead of saying which ones are invariant.  If you have no
+Front-Cover Texts, write "no Front-Cover Texts" instead of "Front-Cover
+Texts being LIST"; likewise for Back-Cover Texts.
+
+   If your document contains nontrivial examples of program code, we
+recommend releasing these examples in parallel under your choice of
+free software license, such as the GNU General Public License, to
+permit their use in free software.
+
+
+File: grep-ja.info,  Node: Concept Index,  Next: Index,  Prev: GNU Free Documentation License,  Up: Top
+
+概念による索引
+**************
+
+これは，`grep'コマンドとコマンドラインオプション以外の，このマニュ
+アルで述べられている，全ての問題の，一般的な索引です．
+
+ [index ]
+* Menu:
+
+* after context:                         Invoking.            (line  74)
+* alphabetic characters:                 Regular Expressions. (line  86)
+* alphanumeric characters:               Regular Expressions. (line  83)
+* anchoring:                             Regular Expressions. (line 195)
+* asterisk:                              Regular Expressions. (line  32)
+* back-reference:                        Regular Expressions. (line 201)
+* backslash:                             Regular Expressions. (line 166)
+* basic regular expressions:             Regular Expressions. (line 212)
+* before context:                        Invoking.            (line  78)
+* binary files:                          Invoking.            (line 168)
+* binary files, DOS/Windows:             Invoking.            (line 231)
+* blank characters:                      Regular Expressions. (line  89)
+* braces, one argument:                  Regular Expressions. (line  38)
+* braces, second argument omitted:       Regular Expressions. (line  41)
+* braces, two arguments:                 Regular Expressions. (line  44)
+* bracket expression:                    Regular Expressions. (line  61)
+* Bugs, reporting:                       Reporting Bugs.      (line   6)
+* byte offset:                           Invoking.            (line 118)
+* byte offsets, on DOS/Windows:          Invoking.            (line 243)
+* case insensitive search:               Invoking.            (line  26)
+* case insensitive search, obsolete option: Invoking.         (line 227)
+* changing name of standard input:       Invoking.            (line 156)
+* character class:                       Regular Expressions. (line  61)
+* character classes:                     Regular Expressions. (line  82)
+* character type:                        Invoking.            (line 316)
+* classes of characters:                 Regular Expressions. (line  82)
+* context:                               Invoking.            (line  82)
+* context lines, after match:            Invoking.            (line  74)
+* context lines, before match:           Invoking.            (line  78)
+* control characters:                    Regular Expressions. (line  92)
+* Copying:                               Copying.             (line   6)
+* counting lines:                        Invoking.            (line  10)
+* default options environment variable:  Invoking.            (line 294)
+* device search:                         Invoking.            (line 125)
+* digit characters:                      Regular Expressions. (line  97)
+* directory search:                      Invoking.            (line 133)
+* DOS byte offsets:                      Invoking.            (line 243)
+* DOS/Windows binary files:              Invoking.            (line 231)
+* dot:                                   Regular Expressions. (line  26)
+* environment variables:                 Invoking.            (line 293)
+* exclude files:                         Invoking.            (line 194)
+* FAQ about grep usage:                  Usage.               (line  17)
+* FDL, GNU Free Documentation License:   GNU Free Documentation License.
+                                                              (line   7)
+* files which don't match:               Invoking.            (line 162)
+* GPL, GNU General Public License:       GNU General Public License.
+                                                              (line   7)
+* graphic characters:                    Regular Expressions. (line 100)
+* hexadecimal digits:                    Regular Expressions. (line 121)
+* highlight markers:                     Invoking.            (line 304)
+* highlight, color, colour:              Invoking.            (line  86)
+* include files:                         Invoking.            (line 190)
+* interval specifications:               Regular Expressions. (line 217)
+* invert matching:                       Invoking.            (line  62)
+* language of messages:                  Invoking.            (line 322)
+* line buffering:                        Invoking.            (line 152)
+* line numbering:                        Invoking.            (line  36)
+* lower-case letters:                    Regular Expressions. (line 103)
+* match sub-expression at most once:     Regular Expressions. (line  29)
+* match sub-expression n or more times:  Regular Expressions. (line  41)
+* match sub-expression n times:          Regular Expressions. (line  38)
+* match sub-expression zero or more times: Regular Expressions.
+                                                              (line  32)
+* match the whole line:                  Invoking.            (line  66)
+* matching basic regular expressions:    Grep Programs.       (line  14)
+* matching extended regular expressions: Grep Programs.       (line  18)
+* matching fixed strings:                Grep Programs.       (line  22)
+* matching Perl regular expressions:     Grep Programs.       (line  27)
+* matching whole words:                  Invoking.            (line 177)
+* max-count:                             Invoking.            (line 199)
+* memory mapped input:                   Invoking.            (line 252)
+* message language:                      Invoking.            (line 322)
+* names of matching files:               Invoking.            (line  30)
+* national language support:             Invoking.            (line 316)
+* NLS:                                   Invoking.            (line 322)
+* no filename prefix:                    Invoking.            (line 149)
+* no warranty:                           GNU General Public License.
+                                                              (line 271)
+* numeric characters:                    Regular Expressions. (line  97)
+* only matching:                         Invoking.            (line  40)
+* palindromes:                           Usage.               (line 124)
+* pattern from file:                     Invoking.            (line  21)
+* pattern list:                          Invoking.            (line  16)
+* period:                                Regular Expressions. (line  26)
+* plus sign:                             Regular Expressions. (line  35)
+* print non-matching lines:              Invoking.            (line  62)
+* printable characters:                  Regular Expressions. (line 106)
+* punctuation characters:                Regular Expressions. (line 109)
+* question mark:                         Regular Expressions. (line  29)
+* quiet, silent:                         Invoking.            (line  45)
+* range expression:                      Regular Expressions. (line  67)
+* recursive search:                      Invoking.            (line 185)
+* regular expressions:                   Regular Expressions. (line   6)
+* searching directory trees:             Invoking.            (line 185)
+* Searching for a pattern.:              Introduction.        (line   6)
+* space characters:                      Regular Expressions. (line 113)
+* suppress binary data:                  Invoking.            (line 168)
+* suppress error messages:               Invoking.            (line  51)
+* translation of message language:       Invoking.            (line 322)
+* upper-case letters:                    Regular Expressions. (line 118)
+* Usage summary, printing:               Invoking.            (line  99)
+* Usage, examples:                       Usage.               (line   6)
+* Using grep, Q&A:                       Usage.               (line  17)
+* Version, printing:                     Invoking.            (line  95)
+* whitespace characters:                 Regular Expressions. (line 113)
+* with filename prefix:                  Invoking.            (line 145)
+* xdigit class:                          Regular Expressions. (line 121)
+* zero-terminated file names:            Invoking.            (line 260)
+* zero-terminated lines:                 Invoking.            (line 270)
+
+
+File: grep-ja.info,  Node: Index,  Prev: Concept Index,  Up: Top
+
+索引
+****
+
+これは，全ての`grep'コマンド，コマンドラインオプションと，環境変
+数の，アルファベット順のリストです．
+
+ [index ]
+* Menu:
+
+* *:                                     Regular Expressions. (line  32)
+* +:                                     Regular Expressions. (line  35)
+* --after-context:                       Invoking.            (line  74)
+* --basic-regexp:                        Grep Programs.       (line  14)
+* --before-context:                      Invoking.            (line  78)
+* --binary:                              Invoking.            (line 231)
+* --binary-files:                        Invoking.            (line 103)
+* --byte-offset:                         Invoking.            (line 118)
+* --colour:                              Invoking.            (line  86)
+* --context:                             Invoking.            (line  82)
+* --count:                               Invoking.            (line  10)
+* --devices:                             Invoking.            (line 125)
+* --directories:                         Invoking.            (line 133)
+* --exclude:                             Invoking.            (line 194)
+* --extended-regexp:                     Grep Programs.       (line  18)
+* --file:                                Invoking.            (line  21)
+* --files-with-matches:                  Invoking.            (line  30)
+* --files-without-match:                 Invoking.            (line 162)
+* --fixed-strings:                       Grep Programs.       (line  22)
+* --help:                                Invoking.            (line  99)
+* --ignore-case:                         Invoking.            (line  26)
+* --include:                             Invoking.            (line 190)
+* --invert-match:                        Invoking.            (line  62)
+* --label:                               Invoking.            (line 156)
+* --line-buffered:                       Invoking.            (line 152)
+* --line-number:                         Invoking.            (line  36)
+* --line-regexp:                         Invoking.            (line  66)
+* --max-count:                           Invoking.            (line 199)
+* --mmap:                                Invoking.            (line 252)
+* --no-filename:                         Invoking.            (line 149)
+* --no-messages:                         Invoking.            (line  51)
+* --null:                                Invoking.            (line 260)
+* --null-data:                           Invoking.            (line 270)
+* --only-matching:                       Invoking.            (line  40)
+* --perl-regexp:                         Grep Programs.       (line  27)
+* --quiet:                               Invoking.            (line  45)
+* --recursive:                           Invoking.            (line 185)
+* --regexp=PATTERN:                      Invoking.            (line  16)
+* --silent:                              Invoking.            (line  45)
+* --text:                                Invoking.            (line 168)
+* --unix-byte-offsets:                   Invoking.            (line 243)
+* --version:                             Invoking.            (line  95)
+* --With-filename:                       Invoking.            (line 145)
+* --word-regexp:                         Invoking.            (line 177)
+* -a:                                    Invoking.            (line 168)
+* -A:                                    Invoking.            (line  74)
+* -B:                                    Invoking.            (line  78)
+* -b:                                    Invoking.            (line 118)
+* -c:                                    Invoking.            (line  10)
+* -C:                                    Invoking.            (line  82)
+* -d:                                    Invoking.            (line 133)
+* -D:                                    Invoking.            (line 125)
+* -e:                                    Invoking.            (line  16)
+* -E:                                    Grep Programs.       (line  18)
+* -f:                                    Invoking.            (line  21)
+* -F:                                    Grep Programs.       (line  22)
+* -G:                                    Grep Programs.       (line  14)
+* -H:                                    Invoking.            (line 145)
+* -h:                                    Invoking.            (line 149)
+* -i:                                    Invoking.            (line  26)
+* -L:                                    Invoking.            (line 162)
+* -l:                                    Invoking.            (line  30)
+* -m:                                    Invoking.            (line 199)
+* -n:                                    Invoking.            (line  36)
+* -NUM:                                  Invoking.            (line  90)
+* -o:                                    Invoking.            (line  40)
+* -P:                                    Grep Programs.       (line  27)
+* -q:                                    Invoking.            (line  45)
+* -r:                                    Invoking.            (line 185)
+* -s:                                    Invoking.            (line  51)
+* -U:                                    Invoking.            (line 231)
+* -u:                                    Invoking.            (line 243)
+* -V:                                    Invoking.            (line  95)
+* -v:                                    Invoking.            (line  62)
+* -w:                                    Invoking.            (line 177)
+* -x:                                    Invoking.            (line  66)
+* -y:                                    Invoking.            (line 227)
+* -Z:                                    Invoking.            (line 260)
+* -z:                                    Invoking.            (line 270)
+* .:                                     Regular Expressions. (line  26)
+* ?:                                     Regular Expressions. (line  29)
+* _N_GNU_nonoption_argv_flags_:          Invoking.            (line 338)
+* alnum:                                 Regular Expressions. (line  83)
+* alpha:                                 Regular Expressions. (line  86)
+* blank:                                 Regular Expressions. (line  89)
+* cntrl:                                 Regular Expressions. (line  92)
+* digit:                                 Regular Expressions. (line  97)
+* graph:                                 Regular Expressions. (line 100)
+* GREP_COLOR:                            Invoking.            (line 304)
+* GREP_OPTIONS:                          Invoking.            (line 294)
+* LANG:                                  Invoking.            (line 310)
+* LC_ALL:                                Invoking.            (line 310)
+* LC_COLLATE:                            Invoking.            (line 310)
+* LC_CTYPE:                              Invoking.            (line 316)
+* LC_MESSAGES:                           Invoking.            (line 322)
+* lower:                                 Regular Expressions. (line 103)
+* POSIXLY_CORRECT:                       Invoking.            (line 327)
+* print:                                 Regular Expressions. (line 106)
+* punct:                                 Regular Expressions. (line 109)
+* space:                                 Regular Expressions. (line 113)
+* upper:                                 Regular Expressions. (line 118)
+* xdigit:                                Regular Expressions. (line 121)
+* {n,m}:                                 Regular Expressions. (line  44)
+* {n,}:                                  Regular Expressions. (line  41)
+* {n}:                                   Regular Expressions. (line  38)
+
+
+
+Tag Table:
+Node: Top1094
+Node: Introduction1923
+Node: Invoking2553
+Ref: Invoking-Footnote-115589
+Node: Diagnostics15645
+Node: Grep Programs15983
+Node: Regular Expressions16924
+Node: Usage24148
+Node: Reporting Bugs29635
+Node: Copying30159
+Node: GNU General Public License32821
+Node: GNU Free Documentation License51997
+Node: Concept Index71741
+Node: Index79964
+
+End Tag Table

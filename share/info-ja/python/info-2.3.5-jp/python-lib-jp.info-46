@@ -1,0 +1,1144 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: _winreg - Windows レジストリへのアクセス,  Next: winsound,  Prev: msvcrt - MS VC++実行時システムの有用なルーチン群,  Up: MS Windows 特有のサービス
+
+`_winreg' - Windows レジストリへのアクセス
+==========================================
+
+Windows レジストリを操作するためのルーチンおよびオブジェクト。
+
+_Added in Python version 2.0_
+
+これらの関数は Windows レジストリ API を Python で使えるようにします。
+プログラマがレジストリハンドルのクローズを失念した場合でも、確実に
+ハンドルがクローズされるようにするために、整数値をレジストリハンドル
+として使う代わりにハンドルオブジェクトが使われます。
+
+このモジュールは Windows レジストリ操作のための非常に低レベルの
+インタフェースを使えるようにします; 将来、より高レベルの レジストリ API
+インタフェースを提供するような、新たな `winreg'
+モジュールが作られるよう期待します。
+
+このモジュールでは以下の関数を提供します:
+
+`CloseKey(hkey)'
+     以前開かれたレジストリキーを閉じます。 HKEY
+     引数には以前開かれたレジストリキーを特定します。
+
+     このメソッド (または `handle.Close()') を使って HKEY が
+     閉じられなかった場合、Python が HKEY オブジェクトを破壊
+     する際に閉じられるので注意してください。
+
+`ConnectRegistry(computer_name, key)'
+     他の計算機上にある既定のレジストリハンドル接続を確立し、
+     "ハンドルオブジェクト (handle object)" を返します。
+
+     COMPUTER_NAME はリモートコンピュータの名前で、 `r"\\computername"'
+     の形式をとります。`None' の場合、ローカルの計算機が使われます。
+
+     KEY は接続したい既定のハンドルです。
+
+     戻り値は開かれたキーのハンドルです。
+     関数が失敗した場合、`EnvironmentError' 例外が 送出されます。
+
+`CreateKey(key, sub_key)'
+     特定のキーを生成するか開き、"ハンドルオブジェクト" を返します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数の うちの一つです。
+
+     SUB_KEY はこのメソッドが開く、または新規作成するキーの 名前です。
+
+     KEY が既定のキーの一つなら、SUB_KEY は `None'
+     でかまいません。この場合、返されるハンドルは関数に渡されたのと
+     同じキーハンドルです。
+
+     キーがすでに存在する場合、この関数は既に存在するキーを開きます。
+
+     戻り値は開かれたキーのハンドルです。この関数が失敗した場合、
+     `EnvironmentError' 例外が送出されます。
+
+`DeleteKey(key, sub_key)'
+     特定のキーを削除します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     SUB_KEY  は文字列で、KEY パラメタによって特定された
+     キーのサブキーでなければなりません。この値は `None' で
+     あってはならず、キーはサブキーを持っていてはなりません。
+
+     _このメソッドはサブキーをもつキーを削除することはできません。_
+
+     このメソッドの実行が成功すると、キー全体が、その値すべてを含めて
+     削除されます。このメソッドが失敗した場合、 `EnvironmentError'
+     例外が送出されます。
+
+`DeleteValue(key, value)'
+     レジストリキーから指定された名前つきの値を削除します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数
+     のうちの一つでなければなりません。
+
+     VALUE は削除したい値を指定するための文字列です。
+
+`EnumKey(key, index)'
+     開かれているレジストリキーのサブキーを列挙し、文字列で返します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数
+     のうちの一つでなければなりません。
+
+     INDEX は整数値で、取得するキーのインデクスを特定します。
+
+     この関数は呼び出されるたびに一つのサブキーの名前を取得します。
+     この関数は通常、これ以上サブキーがないことを示す
+     `EnvironmentError' 例外が送出されるまで繰り返し呼び 出されます。
+
+`EnumValue(key, index)'
+     開かれているレジストリキーの値を列挙し、タプルで返します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数
+     のうちの一つでなければなりません。
+
+     INDEX は整数値で、取得する値のインデクスを特定します。
+
+     この関数は呼び出されるたびに一つの値の名前を取得します。
+     この関数は通常、これ以上値がないことを示す `EnvironmentError'
+     例外が送出されるまで繰り返し呼び 出されます。
+
+     結果は 3 要素のタプルになります:
+
+     Index                              Meaning
+     ------                             -----
+     0                                  値の名前を特定する文字列
+     1                                  値のデータを保持するためのオブジェクトで、その型は背後の
+                                        レジストリ型に依存します
+     2                                  値のデータ型を特定する整数です
+
+
+`FlushKey(key)'
+     キーのすべての属性をレジストリに書き込みます。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数
+     のうちの一つでなければなりません。
+
+     キーを変更するために RegFlushKey を呼ぶ必要はありません。
+     レジストリの変更は怠惰なフラッシュ機構 (lazy flusher) を使って
+     フラッシュされます。また、システムの遮断時にもディスクにフラッシュ
+     されます。`CloseKey()' と違って、`FlushKey()'
+     メソッドはレジストリに全てのデータを書き終えたときにのみ返ります。
+     アプリケーションは、レジストリへの変更を絶対に確実にディスク上に
+     反映させる必要がある場合にのみ、`FlushKey()' を呼ぶべきです。
+
+     _ `FlushKey()' を呼び出す必要があるかどうか分からない場合、
+     おそらくその必要はありません。 _
+
+
+`RegLoadKey(key, sub_key, file_name)'
+     指定されたキーの下にサブキーを生成し、サブキーに指定されたファイル
+     のレジストリ情報を記録します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     SUB_KEY は記録先のサブキーを指定する文字列です。
+
+     FILE_NAME はレジストリデータを読み出すためのファイル名です。
+     このファイルは `SaveKey()' 関数で生成されたファイルでなくては
+     なりません。ファイル割り当てテーブル (FAT) ファイルシステム下では、
+     ファイル名は拡張子を持っていてはなりません。
+
+     この関数を呼び出しているプロセスが `SE_RESTORE_PRIVILEGE'
+     特権を持たない場合には LoadKey() は失敗します。
+     この特権はファイル許可とは違うので注意してください - 詳細は Win32
+     ドキュメンテーションを参照してください。
+
+     KEY が `ConnectRegistry()' によって返されたハンドル
+     の場合、FILENAME に指定されたパスは遠隔計算機に対する相対パス
+     名になります。
+
+     Win32 ドキュメンテーションでは、KEY は `HKEY_USER' または
+     `HKEY_LOCAL_MACHINE' ツリー内になければならない
+     とされています。これは正しいかもしれないし、そうでないかもしれません。
+
+`OpenKey(key, sub_key[, res` = 0'][, sam` = `KEY_READ''])'
+     指定されたキーを開き、"ハンドルオブジェクト" を返します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     SUB_KEY は開きたいサブキーを特定する文字列です。
+
+     RES 予約されている整数値で、ゼロでなくてはなりません。
+     標準の値はゼロです。
+
+     SAM は必要なキーへのセキュリティアクセスを記述する、
+     アクセスマスクを指定する整数です。標準の値は `KEY_READ' です。
+
+     指定されたキーへの新しいハンドルが返されます。
+
+     この関数が失敗すると 、`EnvironmentError' が送出されます。
+
+`OpenKeyEx()'
+     `OpenKeyEx()' の機能は `OpenKey()'
+     を標準の引数で使うことで提供されています。
+
+`QueryInfoKey(key)'
+     キーに関数情報をタプルとして返します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     結果は以下の 3 要素からなるタプルです:
+
+     インデクス                         意味
+     ------                             -----
+     0                                  このキーが持つサブキーの数を表す整数。
+     1                                  このキーが持つ値の数を表す整数。
+     2                                  最後のキーの変更が (あれば)
+                                        いつだったかを表す長整数で、 1600
+                                        年 1 月 1 日からの 100
+                                        ナノ秒単位で数えたもの。
+
+
+`QueryValue(key, sub_key)'
+     キーに対する、名前付けられていない値を文字列で取得します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     SUB_KEY は値が関連付けられているサブキーの名前を保持する文字列
+     です。この引数が `None' または空文字列の場合、この関数は KEY
+     で特定されるキーに対して `SetValue()' メソッドで
+     設定された値を取得します。
+
+     レジストリ中の値は名前、型、およびデータから構成されています。
+     このメソッドはあるキーのデータ中で、名前 NULL
+     をもつ最初の値を取得します。 しかし背後の API
+     呼び出しは型情報を返しません。非常に、非常に、非常に
+     不完全な実装です。この関数を使うべきではありません！！！
+
+`QueryValueEx(key, value_name)'
+     開かれたレジストリキーに関連付けられている、指定した名前の値に対して、
+     型およびデータを取得します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     VALUE_NAME は要求する値を指定する文字列です。
+
+     結果は 2 つの要素からなるタプルです:
+
+     インデクス                         意味
+     ------                             -----
+     0                                  レジストリ要素の名前。
+     1                                  この値のレジストリ型を表す整数。
+
+
+`SaveKey(key, file_name)'
+     指定されたキーと、そのサブキー全てを指定したファイルに保存します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     FILE_NAME はレジストリデータを保存するファイルの名前です、
+     このファイルはすでに存在していてはいけません。このファイル名が
+     拡張子を含んでいる場合、`LoadKey()'、 `ReplaceKey()' または
+     `RestoreKey()' メソッドは、ファイル割り当てテーブル (FAT)
+     型ファイルシステムを使うことができません。
+
+     KEY が遠隔の計算機上にあるキーを表す場合、FILE_NAME
+     で記述されているパスは遠隔の計算機に対して相対的なパスになります。
+     このメソッドの呼び出し側は `SeBackupPrivilege'
+     セキュリティ特権を保有していなければなりません。この特権は
+     ファイルパーミッションとは異なります - 詳細は Win32
+     ドキュメンテーションを参照してください。
+
+     この関数は SECURITY_ATTRIBUTES を NULL にして API に渡します。
+
+`SetValue(key, sub_key, type, value)'
+     値を指定したキーに関連付けます。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     SUB_KEY は値が関連付けられているサブキーの名前を表す文字列です。
+
+     TYPE はデータの型を指定する整数です。現状では、この値は `REG_SZ'
+     でなければならず、これは文字列だけが
+     サポートされていることを示します。他のデータ型をサポートするには
+     `SetValueEx()' を使ってください。
+
+     VALUE は新たな値を指定する文字列です。
+
+     SUB_KEY 引数で指定されたキーが存在しなければ、 SetValue
+     関数で生成されます。
+
+     値の長さは利用可能なメモリによって制限されます。(2048 バイト以上の)
+     長い値はファイルに保存して、そのファイル名を設定レジストリに保存
+     するべきです。そうすればレジストリを効率的に動作させる役に立ちます。
+
+     KEY 引数に指定されたキーは `KEY_SET_VALUE'
+     アクセスで開かれていなければなりません。
+
+`SetValueEx(key, value_name, reserved, type, value)'
+     開かれたレジストリキーの値フィールドにデータを記録します。
+
+     KEY はすでに開かれたキーか、既定の `HKEY_*' 定数 のうちの一つです。
+
+     SUB_KEY は値が関連付けられているサブキーの名前を表す文字列です。
+
+     TYPE はデータの型を指定する整数です。
+     値はこのモジュールで定義されている以下の定数のうちの一つでなければ
+     なりません:
+
+     定数                               意味
+     ------                             -----
+     REG_BINARY                         何らかの形式のバイナリデータ。
+     REG_DWORD                          32 ビットの数。
+     REG_DWORD_LITTLE_ENDIAN            32
+                                        ビットのリトルエンディアン形式の数。
+     REG_DWORD_BIG_ENDIAN               32
+                                        ビットのビッグエンディアン形式の数。
+     REG_EXPAND_SZ                      環境変数を参照している、ヌル文字で終端された文字列。
+                                        (`%PATH%')。
+     REG_LINK                           Unicode のシンボリックリンク。
+     REG_MULTI_SZ                       ヌル文字で終端された文字列からなり、二つのヌル文字で終端されている配列
+                                        (Python
+                                        はこの終端の処理を自動的に行います)。
+     REG_NONE                           定義されていない値の形式。
+     REG_RESOURCE_LIST                  デバイスドライバリソースのリスト。
+     REG_SZ                             ヌルで終端された文字列。
+
+     RESERVED は何もしません - API には常にゼロが渡されます。
+
+     VALUE は新たな値を指定する文字列です。
+
+     このメソッドではまた、指定されたキーに対して、さらに別の値や型情報を
+     設定することができます。KEY 引数で指定されたキーは `KEY_SET_VALUE'
+     アクセスで開かれていなければなりません。
+
+     キーを開くには、 `CreateKeyEx()' または `OpenKey()'
+     メソッドを使ってください。
+
+     値の長さは利用可能なメモリによって制限されます。(2048 バイト以上の)
+     長い値はファイルに保存して、そのファイル名を設定レジストリに保存
+     するべきです。そうすればレジストリを効率的に動作させる役に立ちます。
+
+
+* Menu:
+
+* レジストリハンドルオブジェクト::
+
+
+File: python-lib-jp.info,  Node: レジストリハンドルオブジェクト,  Prev: _winreg - Windows レジストリへのアクセス,  Up: _winreg - Windows レジストリへのアクセス
+
+レジストリハンドルオブジェクト
+------------------------------
+
+このオブジェクトは Windows の HKEY オブジェクトをラップし、
+オブジェクトが破壊されたときに自動的にハンドルを閉じます。
+オブジェクトの `Close()' メソッドと `CloseKey()' 関数
+のどちらも、後始末がきちんと行われることを保証するために呼び出す
+ことができます。
+
+このモジュールのレジストリ関数は全て、これらのハンドル
+オブジェクトの一つを返します。
+
+このモジュールのレジストリ関数でハンドルオブジェクトを受理する
+ものは全て整数も受理しますが、ハンドルオブジェクトを利用する
+ことを推奨します。
+
+ハンドルオブジェクトは `__nonzero__()' の意味構成を持ちます - すなわち、
+         if handle:
+             print "Yes"
+
+は、ハンドルが現在有効な (閉じられたり切り離されたりしていない) 場合
+には `Yes' となります。
+
+ハンドルオブジェクトはまた、比較の意味構成もサポートしています。
+このため、背後の Windows
+ハンドル値が同じものを複数のハンドルオブジェクト
+が参照している場合、それらの比較は真になります。
+
+ハンドルオブジェクトは (例えば組み込みの `int()' 関数を 使って)
+整数に変換することができます。この場合、背後の Windows
+ハンドル値が返されます、また、 `Detach()' メソッド
+を使って整数のハンドル値を返させると同時に、ハンドルオブジェクト から
+Windows ハンドルを切り離すこともできます。
+
+`Close()'
+     背後の Windows ハンドルを閉じます。
+
+     ハンドルがすでに閉じられていてもエラーは送出されません。
+
+`Detach()'
+     ハンドルオブジェクトから Windows ハンドルを切り離します。
+
+     切り離される以前にそのハンドルを保持していた整数 (または 64 ビット
+     Windows の場合には長整数) オブジェクトが返されます。
+     ハンドルがすでに切り離されていたり閉じられていたりした場合、
+     ゼロが返されます。
+
+     この関数を呼び出した後、ハンドルは確実に無効化されますが、
+     閉じられるわけではありません。背後の Win32 ハンドルがハンドル
+     オブジェクトよりも長く維持される必要がある場合にはこの
+     関数を呼び出すとよいでしょう。
+
+
+File: python-lib-jp.info,  Node: winsound,  Prev: _winreg - Windows レジストリへのアクセス,  Up: MS Windows 特有のサービス
+
+Windows 用の音声再生インタフェース
+==================================
+
+Windows の音声再生機構へのアクセス。
+
+_Added in Python version 1.5.2_
+
+`winsound' モジュールは Windows プラットフォーム上で提供されて
+いる基本的な音声再生機構へのアクセス手段を提供します。このモジュールでは
+いくつかの関数と定数が定義されています。
+
+`Beep(frequency, duration)'
+     PC のスピーカを鳴らします。 引数 FREQUENCY
+     は鳴らす音の周波数の指定で、単位は Hz です。 値は 37 から 32.767
+     でなくてはなりません。 引数 DURATION
+     は音を何ミリ秒鳴らすかの指定です。
+     システムがスピーカを鳴らすことができない場合、例外 `RuntimeError'
+     が送出されます。 _Note:_ Windows 95 および 98 では、Windows の関数
+     `Beep()' は存在しますが役に立ちません
+     (この関数は引数を無視します)。これらの ケースでは、Python
+     はポートを直接操作して `Beep()'  をシミュレートします (バージョン
+     2.1 で追加されました) 。この機能が
+     全てのシステムで動作するかどうかはわかりません。 _Added in Python
+     version 1.6_
+
+`PlaySound(sound, flags)'
+     プラットフォームの API から関数 `PlaySound()' を呼び出します。
+     引数 SOUND はファイル名、音声データの文字列、または `None'
+     をとり得ます。SOUND の解釈は FLAGS の値に依存します。この値は
+     以下に述べる定数をビット単位で OR して組み合わせたものになります。
+     システムのエラーが発生した場合、例外 `RuntimeError'
+     が送出されます。
+
+
+`MessageBeep([type=`MB_OK'])'
+     根底にある `MessageBeep()' 関数をプラットフォームの API から
+     呼び出します。この関数は音声をレジストリの指定に従って再生します。
+     TYPE 引数はどの音声を再生するかを指定します; とり得る値は `-1' 、
+     `MB_ICONASTERISK' 、 `MB_ICONEXCLAMATION' 、 `MB_ICONHAND' 、
+     `MB_ICONQUESTION' 、および `MB_OK' で、
+     全て以下に記述されています。 値 `-1' は "単純なビープ音"
+     を再生します; この値は他の場合で音声を再生することができなかった
+     際の最終的な代替音です。 _Added in Python version 2.3_
+
+`SND_FILENAME'
+     SOUND パラメタが WAV ファイル名であることを示します。 `SND_ALIAS'
+     と同時に使ってはいけません。
+
+`SND_ALIAS'
+     引数 SOUND はレジストリにある音声データに関連付けられた名前で
+     あることを示します。指定した名前がレジストリ上にない場合、定数
+     `SND_NODEFAULT' が同時に指定されていない限り、システム標準の
+     音声データが再生されます。標準の音声データが登録されていない場合、
+     例外 `RuntimeError' が送出されます。 `SND_FILENAME'
+     と同時に使ってはいけません。
+
+     全ての Win32 システムは少なくとも以下の名前をサポートします;
+     ほとんどの システムでは他に多数あります:
+
+     `PlaySound()' NAME                 対応するコントロールパネルでの音声名
+     ------                             -----
+     'SystemAsterisk'                   Asterisk
+     'SystemExclamation'                Exclamation
+     'SystemExit'                       Exit Windows
+     'SystemHand'                       Critical Stop
+     'SystemQuestion'                   Question
+
+     例えば以下のように使います:
+
+          import winsound
+          # Play Windows exit sound.
+          winsound.PlaySound("SystemExit", winsound.SND_ALIAS)
+          
+          # Probably play Windows default sound, if any is registered (because
+          # "*" probably isn't the registered name of any sound).
+          winsound.PlaySound("*", winsound.SND_ALIAS)
+
+
+`SND_LOOP'
+     音声データを繰り返し再生します。システムがブロックしないようにするため、
+     `SND_ASYNC' フラグを同時に使わなくてはなりません。 `SND_MEMORY'
+     と同時に使うことはできません。
+
+`SND_MEMORY'
+     `PlaySound()' の引数 SOUND が文字列の形式をとった WAV
+     ファイルのメモリ上のイメージであることを示します。 _Note:_
+     このモジュールはメモリ上のイメージを非同期に再生する機能をサポート
+     していません。従って、このフラグと `SND_ASYNC' を組み合わせると
+     例外 `RuntimeError' が送出されます。
+
+`SND_PURGE'
+     指定した音声の全てのインスタンスについて再生処理を停止します。
+
+`SND_ASYNC'
+     音声を非同期に再生するようにして、関数呼び出しを即座に返します。
+
+`SND_NODEFAULT'
+     指定した音声が見つからなかった場合にシステム標準の音声を鳴らさないように
+     します。
+
+`SND_NOSTOP'
+     現在鳴っている音声を中断させないようにします。
+
+`SND_NOWAIT'
+     サウンドドライバがビジー状態にある場合、関数がすぐ返るようにします。
+
+`MB_ICONASTERISK'
+     音声 `SystemDefault' を再生します。
+
+`MB_ICONEXCLAMATION'
+     音声 `SystemExclamation' を再生します。
+
+`MB_ICONHAND'
+     音声 `SystemHand' を再生します。
+
+`MB_ICONQUESTION'
+     音声 `SystemQuestion' を再生します。
+
+`MB_OK'
+     音声 `SystemDefault' を再生します。
+
+
+File: python-lib-jp.info,  Node: ドキュメント化されていないモジュール,  Next: バグ報告,  Prev: MS Windows 特有のサービス,  Up: Top
+
+ドキュメント化されていないモジュール
+************************************
+
+現在ドキュメント化されていないが、ドキュメント化すべきモジュールを
+以下にざっと列挙します。どうぞこれらのドキュメントを寄稿してください！
+(電子メールで <docs@python.org> に送ってください)。
+
+この章のアイデアと元の文章内容は Fredrik Lundh のポストによる ものです;
+この章の特定の内容は実際には改訂されてきています。
+
+* Menu:
+
+* フレームワーク::
+* 雑多な有用ユーティリティ::
+* プラットフォーム特有のモジュール::
+* マルチメディア関連::
+* 撤廃されたもの::
+* SGI 特有の拡張モジュール::
+
+
+File: python-lib-jp.info,  Node: フレームワーク,  Next: 雑多な有用ユーティリティ,  Prev: ドキュメント化されていないモジュール,  Up: ドキュメント化されていないモジュール
+
+フレームワーク
+==============
+
+フレームワークは記述するのが難しくなりがちですが、そうする価値は
+あります。
+
+``test''
+     -- 回帰テストフレームワークです。Python
+     本体の回帰テストのためのもの ですが、他の Python
+     ライブラリに対しても有用です。単一のモジュールと
+     いうよりはパッケージです。
+
+
+File: python-lib-jp.info,  Node: 雑多な有用ユーティリティ,  Next: プラットフォーム特有のモジュール,  Prev: フレームワーク,  Up: ドキュメント化されていないモジュール
+
+雑多な有用ユーティリティ
+========================
+
+以下のいくつかは非常に古く、かつ／またはあまり頑健ではありません。
+"hmm." マーク付きです。
+
+``bdb''
+     -- 汎用の Python デバッガ基底クラスです (pdb で使われています)。
+
+``ihooks''
+     -- import フックのサポートです (`rexec' のためのものです;
+     撤廃されるかもしれません)。
+
+``platform''
+     -- このモジュールでは、プラットフォームを識別するためのデータを
+     可能な限り多く取得しようとします。これにより、関数 API を介して
+     情報を取得できるようにします。
+     コマンドラインから呼び出された場合、このモジュールはプラットフォーム
+     情報を一つの文字列に繋げて `sys.stdout' に出力します。
+     出力形式はファイル名の一部として使うことができます。 _Added in
+     Python version 2.3_
+
+``smtpd''
+     -- RFC 821 に適合するための最低限の要求を満たした SMTP デーモン実装
+     です。
+
+
+File: python-lib-jp.info,  Node: プラットフォーム特有のモジュール,  Next: マルチメディア関連,  Prev: 雑多な有用ユーティリティ,  Up: ドキュメント化されていないモジュール
+
+プラットフォーム特有のモジュール
+================================
+
+これらのモジュールは `os.path' モジュールを実装するために
+用いられていますが、ここで触れる内容を超えてドキュメントされていません。
+これらはもう少しドキュメント化する必要があります。
+
+``ntpath''
+     -- Win32、 Win64、 WinCE、 および OS/2 プラットフォームにおける
+     `os.path' 実装です。
+
+``posixpath''
+     -- POSIXにおける `os.path' 実装です。
+
+``bsddb185''
+     -- まだBerkeleyDB
+     1.85を使用しているシステムで後方互換性を保つためのモ
+     ジュール。通常、特定のBSD
+     Unixベースのシステムでのみ利用可能。直接使用し ないで下さい。
+
+
+File: python-lib-jp.info,  Node: マルチメディア関連,  Next: 撤廃されたもの,  Prev: プラットフォーム特有のモジュール,  Up: ドキュメント化されていないモジュール
+
+マルチメディア関連
+==================
+
+``audiodev''
+     -- 音声データを再生するためのプラットフォーム非依存の API です。
+
+``linuxaudiodev''
+     -- Linux 音声デバイスで音声データを再生します。Python 2.3 では
+     `ossaudiodev' モジュールと置き換えられました。
+
+``sunaudio''
+     -- Sun 音声データヘッダを解釈します (撤廃されるか、ツール/デモに
+     なるかもしれません)。
+
+``toaiff''
+     -- "任意の" 音声ファイルを AIFF ファイルに変換します; おそらく
+     ツールかデモになるはずです。外部プログラム `sox' が必要です。
+
+``ossaudiodev''
+     -- Open Sound System API を介して音声データを再生します。
+     このモジュールは Linux、いくつかの BSD 系、およびいくつかの 商用
+     UNIX プラットフォームで利用できます。
+
+
+
+File: python-lib-jp.info,  Node: 撤廃されたもの,  Next: SGI 特有の拡張モジュール,  Prev: マルチメディア関連,  Up: ドキュメント化されていないモジュール
+
+撤廃されたもの
+==============
+
+これらのモジュールは通常 import して利用できません; 利用できるように
+するには作業を行わなければなりません。
+
+Python で書かれたものは、標準ライブラリの一部としてインストール
+されている `lib-old/' ディレクトリの中にインストールされます。
+利用するには、`PYTHONPATH' を使うなどして、`lib-old/' ディレクトリを
+`sys.path' に追加しなければなりません。
+
+撤廃された拡張モジュールのうち C で書かれたものは、標準の設定では
+ビルドされません。UNIXでこれらのモジュールを有効にするには、
+ビルドツリー内の `Modules/Setup' の適切な行のコメントアウトを
+外して、モジュールを静的リンクするなら Python をビルドしなおし、
+動的にロードされる拡張を使うなら共有オブジェクトをビルドして
+インストールする必要があります。
+
+``addpack''
+     -- パッケージへの別のアプローチです。組み込みのパッケージサポートを
+     使ってください。
+
+``cmp''
+     -- ファイル比較関数です。新しい `filecmp' を使ってください。
+
+``cmpcache''
+     -- 古い `cmp' モジュールのキャッシュ化版です。`filecmp'
+     を使ってください。
+
+``codehack''
+     -- 関数コードオブジェクトからか数名や行番号を抽出します
+     (現在ではこれらは属性: `co.co_name', `func.func_name',
+     `co.co_firstlineno' としてアクセスできます)。
+
+``dircmp''
+     -- ディレクトリ間の差分 (diff) ツールを構築するためのクラスです
+     (デモかツールになるかもしれません)。 _This is deprecated in Python
+     2.0.  `filecmp' モジュールが `dircmp' に置き換わります。_
+
+``dump''
+     -- 変数を再構築する Python コードを出力します。
+
+``fmt''
+     -- テキスト書式化処理の抽象化モジュールです (低速すぎます)。
+
+``lockfile''
+     -- FCNTL ファイルロック機構へのラッパです
+     (`fcntl.lockf()'/`flock()' を使ってください。; `fcntl'
+     を参照してください)。
+
+``newdir''
+     -- 新たな `dir()' 関数です。 (現在では標準の `dir()'
+     が同じくらい改良されました)。
+
+``Para''
+     -- `fmt' の補助モジュールです。
+
+``poly''
+     -- 多項式です。
+
+``regex''
+     -- Emacs 形式の正規表現サポートです;
+     古いコード内で未だに使われている かもしれません
+     (拡張モジュールです) 。ドキュメントは  を参照してください。
+
+``regsub''
+     -- `regex' で利用するための、正規表現に基づいた文字列置換
+     ユーティリティです (拡張モジュールです)。ドキュメントは
+     を参照してください。
+
+``tb''
+     -- 局所変数のダンプを伴うトレースバック印字のためのモジュールです
+     (`pdb.pm()' または `traceback' を使ってください)。
+
+``timing''
+     -- 高い精度で経過時間を計測します (`time.clock()' を使って
+     ください)。 (拡張モジュールです。)
+
+``tzparse''
+     -- タイムゾーン指定を解釈します (完成していません; 将来は
+     消滅するモジュールで、`TZ' 環境変数が設定されていないと
+     動作しません)。
+
+``util''
+     -- 他のどこにも分類しようがない有用な関数群です。
+
+``whatsound''
+     -- 音声ファイルを識別します; `sndhdr' を使ってください。
+
+``zmod''
+     -- 数学的な "体" の性質を計算します。
+
+以下のモジュールは撤廃されましたが、ツールやスクリプトとして
+復活しているようです:
+
+``find''
+     -- ディレクトリツリー内からパターンに合致するファイルを探します。
+
+``grep''
+     -- Python による `grep' 実装です。
+
+``packmail''
+     -- 自己展開形式の  UNIX シェルアーカイブを生成します。
+
+以下のモジュールはこのマニュアルの以前のバージョンでドキュメント
+されていましたが、現在では撤廃されたものと考えられています。
+これらのドキュメントのソースは、まだドキュメントソースアーカイブ
+から取得可能です。
+
+``ni''
+     -- "パッケージ内の" モジュールを import
+     します。今では基本的なパッケージ
+     のサポートは組み込みになっています。組み込みのサポートはこのモジュールで
+     提供されていた内容に非常に近いものとなっています。
+
+``rand''
+     -- 乱数生成器への古いインタフェースです。
+
+``soundex''
+     --
+     共有キーと同じような名前縮約アルゴリズムです。特定のアルゴリズムは
+     公開されているどのアルゴリズムとも一致しないようです。
+     (拡張モジュールです。)
+
+
+File: python-lib-jp.info,  Node: SGI 特有の拡張モジュール,  Prev: 撤廃されたもの,  Up: ドキュメント化されていないモジュール
+
+SGI 特有の拡張モジュール
+========================
+
+以下は SGI 特有のモジュールで、現在のバージョンの SGI の実情が
+反映されていないかもしれません。
+
+``cl''
+     -- SGI 圧縮ライブラリへのインタフェースです。
+
+``sv''
+     -- SGI Indigo 上の "simple video" ボード(旧式のハードウェアです)
+     へのインタフェースです。
+
+
+File: python-lib-jp.info,  Node: バグ報告,  Next: 歴史とライセンス,  Prev: ドキュメント化されていないモジュール,  Up: Top
+
+バグ報告
+********
+
+Python is a mature programming language which has established a
+reputation for stability.  In order to maintain this reputation, the
+developers would like to know of any deficiencies you find in Python or
+its documentation.
+
+Before submitting a report, you will be required to log into
+SourceForge; this will make it possible for the developers to contact
+you for additional information if needed.  It is not possible to submit
+a bug report anonymously.
+
+All bug reports should be submitted via the Python Bug Tracker on
+SourceForge (<http://sourceforge.net/bugs/?group_id=5470>).  The bug
+tracker offers a Web form which allows pertinent information to be
+entered and submitted to the developers.
+
+The first step in filing a report is to determine whether the problem
+has already been reported.  The advantage in doing so, aside from
+saving the developers time, is that you learn what has been done to fix
+it; it may be that the problem has already been fixed for the next
+release, or additional information is needed (in which case you are
+welcome to provide it if you can!).  To do this, search the bug
+database using the search box near the left side of the page.
+
+If the problem you're reporting is not already in the bug tracker, go
+back to the Python Bug Tracker
+(<http://sourceforge.net/bugs/?group_id=5470>).  Select the "Submit a
+Bug" link at the top of the page to open the bug reporting form.
+
+The submission form has a number of fields.  The only fields that are
+required are the "Summary" and "Details" fields.  For the summary,
+enter a _very_ short description of the problem; less than ten words is
+good.  In the Details field, describe the problem in detail, including
+what you expected to happen and what did happen.  Be sure to include
+the version of Python you used, whether any extension modules were
+involved, and what hardware and software platform you were using
+(including version information as appropriate).
+
+The only other field that you may want to set is the "Category" field,
+which allows you to place the bug report into a broad category (such as
+"Documentation" or "Library").
+
+Each bug report will be assigned to a developer who will determine what
+needs to be done to correct the problem.  You will receive an update
+each time action is taken on the bug.
+
+See also:
+     `How to Report Bugs Effectively'{Article which goes into some
+     detail about how to create a useful bug report.  This describes
+     what kind of information is useful and why it is useful.}
+
+     `Bug Writing Guidelines'{Information about writing a good bug
+     report.  Some of this is specific to the Mozilla project, but
+     describes general good practices.}
+
+
+File: python-lib-jp.info,  Node: 歴史とライセンス,  Next: 日本語訳について,  Prev: バグ報告,  Up: Top
+
+歴史とライセンス
+****************
+
+* Menu:
+
+* History of the software::
+* Terms and conditions for accessing or otherwise using Python::
+
+
+File: python-lib-jp.info,  Node: History of the software,  Next: Terms and conditions for accessing or otherwise using Python,  Prev: 歴史とライセンス,  Up: 歴史とライセンス
+
+History of the software
+=======================
+
+Python was created in the early 1990s by Guido van Rossum at Stichting
+Mathematisch Centrum (CWI, see <http://www.cwi.nl/>) in the Netherlands
+as a successor of a language called ABC.  Guido remains Python's
+principal author, although it includes many contributions from others.
+
+In 1995, Guido continued his work on Python at the Corporation for
+National Research Initiatives (CNRI, see
+<http://www.cnri.reston.va.us/>) in Reston, Virginia where he released
+several versions of the software.
+
+In May 2000, Guido and the Python core development team moved to
+BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
+year, the PythonLabs team moved to Digital Creations (now Zope
+Corporation; see <http://www.zope.com/>).  In 2001, the Python Software
+Foundation (PSF, see <http://www.python.org/psf/>) was formed, a
+non-profit organization created specifically to own Python-related
+Intellectual Property.  Zope Corporation is a sponsoring member of the
+PSF.
+
+All Python releases are Open Source (see <http://www.opensource.org/>
+for the Open Source Definition).  Historically, most, but not all,
+Python releases have also been GPL-compatible; the table below
+summarizes the various releases.
+
+Release        Derived from   Year           Owner          GPL
+                                                            compatible?
+------         ------         ------         ------         ------
+0.9.0 thru     n/a            1991-1995      CWI            yes
+1.2                                                         
+1.3 thru       1.2            1995-1999      CNRI           yes
+1.5.2                                                       
+1.6            1.5.2          2000           CNRI           no
+2.0            1.6            2000           BeOpen.com     no
+1.6.1          1.6            2001           CNRI           no
+2.1            2.0+1.6.1      2001           PSF            no
+2.0.1          2.0+1.6.1      2001           PSF            yes
+2.1.1          2.1+2.0.1      2001           PSF            yes
+2.2            2.1.1          2001           PSF            yes
+2.1.2          2.1.1          2002           PSF            yes
+2.1.3          2.1.2          2002           PSF            yes
+2.2.1          2.2            2002           PSF            yes
+2.2.2          2.2.1          2002           PSF            yes
+2.2.3          2.2.2          2002-2003      PSF            yes
+2.3            2.2.2          2002-2003      PSF            yes
+2.3.1          2.3            2002-2003      PSF            yes
+2.3.3          2.3.2          2004           PSF            yes
+2.3.4          2.3.3          2004           PSF            yes
+2.3.5          2.3.4          2005           PSF            yes
+
+_Note:_ GPL-compatible doesn't mean that we're distributing Python
+under the GPL.  All Python licenses, unlike the GPL, let you distribute
+a modified version without making your changes open source. The
+GPL-compatible licenses make it possible to combine Python with other
+software that is released under the GPL; the others don't.
+
+Thanks to the many outside volunteers who have worked under Guido's
+direction to make these releases possible.
+
+
+File: python-lib-jp.info,  Node: Terms and conditions for accessing or otherwise using Python,  Prev: History of the software,  Up: 歴史とライセンス
+
+Terms and conditions for accessing or otherwise using Python
+============================================================
+
+               *PSF LICENSE AGREEMENT FOR PYTHON 2.3.5*
+  1. This LICENSE AGREEMENT is between the Python Software Foundation
+     ("PSF"), and the Individual or Organization ("Licensee") accessing
+     and otherwise using Python 2.3.5 software in source or binary form
+     and its associated documentation.
+
+  2. Subject to the terms and conditions of this License Agreement, PSF
+     hereby grants Licensee a nonexclusive, royalty-free, world-wide
+     license to reproduce, analyze, test, perform and/or display
+     publicly, prepare derivative works, distribute, and otherwise use
+     Python 2.3.5 alone or in any derivative version, provided,
+     however, that PSF's License Agreement and PSF's notice of
+     copyright, i.e., "Copyright (C) 2001-2003 Python Software
+     Foundation; All Rights Reserved" are retained in Python 2.3.5
+     alone or in any derivative version prepared by Licensee.
+
+  3. In the event Licensee prepares a derivative work that is based on
+     or incorporates Python 2.3.5 or any part thereof, and wants to
+     make the derivative work available to others as provided herein,
+     then Licensee hereby agrees to include in any such work a brief
+     summary of the changes made to Python 2.3.5.
+
+  4. PSF is making Python 2.3.5 available to Licensee on an "AS IS"
+     basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND
+     DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 2.3.5
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+     2.3.5 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING
+     PYTHON 2.3.5, OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE
+     POSSIBILITY THEREOF.
+
+  6. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  7. Nothing in this License Agreement shall be deemed to create any
+     relationship of agency, partnership, or joint venture between PSF
+     and Licensee.  This License Agreement does not grant permission to
+     use PSF trademarks or trade name in a trademark sense to endorse
+     or promote products or services of Licensee, or any third party.
+
+  8. By copying, installing or otherwise using Python 2.3.5, Licensee
+     agrees to be bound by the terms and conditions of this License
+     Agreement.
+
+             *BEOPEN.COM LICENSE AGREEMENT FOR PYTHON 2.0*
+         *BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1*
+  1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
+     office at 160 Saratoga Avenue, Santa Clara, CA 95051, and the
+     Individual or Organization ("Licensee") accessing and otherwise
+     using this software in source or binary form and its associated
+     documentation ("the Software").
+
+  2. Subject to the terms and conditions of this BeOpen Python License
+     Agreement, BeOpen hereby grants Licensee a non-exclusive,
+     royalty-free, world-wide license to reproduce, analyze, test,
+     perform and/or display publicly, prepare derivative works,
+     distribute, and otherwise use the Software alone or in any
+     derivative version, provided, however, that the BeOpen Python
+     License is retained in the Software, alone or in any derivative
+     version prepared by Licensee.
+
+  3. BeOpen is making the Software available to Licensee on an "AS IS"
+     basis.  BEOPEN MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, BEOPEN MAKES NO
+     AND DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  4. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
+     SOFTWARE FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE,
+     OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY
+     THEREOF.
+
+  5. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  6. This License Agreement shall be governed by and interpreted in all
+     respects by the law of the State of California, excluding conflict
+     of law provisions.  Nothing in this License Agreement shall be
+     deemed to create any relationship of agency, partnership, or joint
+     venture between BeOpen and Licensee.  This License Agreement does
+     not grant permission to use BeOpen trademarks or trade names in a
+     trademark sense to endorse or promote products or services of
+     Licensee, or any third party.  As an exception, the "BeOpen
+     Python" logos available at http://www.pythonlabs.com/logos.html
+     may be used according to the permissions granted on that web page.
+
+  7. By copying, installing or otherwise using the software, Licensee
+     agrees to be bound by the terms and conditions of this License
+     Agreement.
+
+               *CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1*
+  1. This LICENSE AGREEMENT is between the Corporation for National
+     Research Initiatives, having an office at 1895 Preston White Drive,
+     Reston, VA 20191 ("CNRI"), and the Individual or Organization
+     ("Licensee") accessing and otherwise using Python 1.6.1 software in
+     source or binary form and its associated documentation.
+
+  2. Subject to the terms and conditions of this License Agreement, CNRI
+     hereby grants Licensee a nonexclusive, royalty-free, world-wide
+     license to reproduce, analyze, test, perform and/or display
+     publicly, prepare derivative works, distribute, and otherwise use
+     Python 1.6.1 alone or in any derivative version, provided,
+     however, that CNRI's License Agreement and CNRI's notice of
+     copyright, i.e., "Copyright (C) 1995-2001 Corporation for National
+     Research Initiatives; All Rights Reserved" are retained in Python
+     1.6.1 alone or in any derivative version prepared by Licensee.
+     Alternately, in lieu of CNRI's License Agreement, Licensee may
+     substitute the following text (omitting the quotes): "Python 1.6.1
+     is made available subject to the terms and conditions in CNRI's
+     License Agreement.  This Agreement together with Python 1.6.1 may
+     be located on the Internet using the following unique, persistent
+     identifier (known as a handle): 1895.22/1013.  This Agreement may
+     also be obtained from a proxy server on the Internet using the
+     following URL: <http://hdl.handle.net/1895.22/1013>."
+
+  3. In the event Licensee prepares a derivative work that is based on
+     or incorporates Python 1.6.1 or any part thereof, and wants to make
+     the derivative work available to others as provided herein, then
+     Licensee hereby agrees to include in any such work a brief summary
+     of the changes made to Python 1.6.1.
+
+  4. CNRI is making Python 1.6.1 available to Licensee on an "AS IS"
+     basis.  CNRI MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, CNRI MAKES NO AND
+     DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 1.6.1
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  5. CNRI SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+     1.6.1 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING
+     PYTHON 1.6.1, OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE
+     POSSIBILITY THEREOF.
+
+  6. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  7. This License Agreement shall be governed by the federal
+     intellectual property law of the United States, including without
+     limitation the federal copyright law, and, to the extent such U.S.
+     federal law does not apply, by the law of the Commonwealth of
+     Virginia, excluding Virginia's conflict of law provisions.
+     Notwithstanding the foregoing, with regard to derivative works
+     based on Python 1.6.1 that incorporate non-separable material that
+     was previously distributed under the GNU General Public License
+     (GPL), the law of the Commonwealth of Virginia shall govern this
+     License Agreement only as to issues arising under or with respect
+     to Paragraphs 4, 5, and 7 of this License Agreement.  Nothing in
+     this License Agreement shall be deemed to create any relationship
+     of agency, partnership, or joint venture between CNRI and
+     Licensee.  This License Agreement does not grant permission to use
+     CNRI trademarks or trade name in a trademark sense to endorse or
+     promote products or services of Licensee, or any third party.
+
+  8. By clicking on the "ACCEPT" button where indicated, or by copying,
+     installing or otherwise using Python 1.6.1, Licensee agrees to be
+     bound by the terms and conditions of this License Agreement.
+
+                                ACCEPT
+          *CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2*
+ Copyright
+(C) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam, The
+Netherlands.  All rights reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the name of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE FOR
+ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+File: python-lib-jp.info,  Node: 日本語訳について,  Next: Module Index,  Prev: 歴史とライセンス,  Up: Top
+
+日本語訳について
+****************
+
+* Menu:
+
+* このドキュメントについて::
+* 翻訳者一覧 敬称略::
+* 履歴::
+
+
+File: python-lib-jp.info,  Node: このドキュメントについて,  Next: 翻訳者一覧 敬称略,  Prev: 日本語訳について,  Up: 日本語訳について
+
+このドキュメントについて
+========================
+
+この文書は、Pythonドキュメント翻訳プロジェクトによる Python Library
+Reference Release 2.3.3
+の日本語訳版です。日本語訳に対する質問や提案などが
+ありましたら、Pythonドキュメント翻訳プロジェクトのメーリングリスト
+
+<http://www.python.jp/mailman/listinfo/python-doc-jp>
+
+または、プロジェクトのバグ管理ページ
+
+<http://sourceforge.jp/tracker/?atid=116&group_id=11&func=browse>
+
+までご報告ください。
+
+
+File: python-lib-jp.info,  Node: 翻訳者一覧 敬称略,  Next: 履歴,  Prev: このドキュメントについて,  Up: 日本語訳について
+
+翻訳者一覧 (敬称略)
+===================
+
+Akihiro Takizawa, Aoki Nobuaki, Atsuo Ishimoto, G.Yoshida,
+Hiroyuki Yoshimura, Minami Masanori, Shinsei Nakano, Sumiya Sakoda,
+YASOZUMI Daisuke, Yasushi Iwata, Yasushi MASUDA, Hiroshi Ayukawa,
+ippei-at-mbd.nifty.com, sakito, umi-at-venus.dti.ne.jp, ふるかわとおる,
+浦郷圭介, 梶山大輔, 根岸史郎, 山中裕史, 山本昇, 新山祐介, 森若和雄
+
+
+File: python-lib-jp.info,  Node: 履歴,  Prev: 翻訳者一覧 敬称略,  Up: 日本語訳について
+
+履歴
+====
+
+2.2.X: 2002\ 2.3.0: Autumn 2003\ 2.3.3: June 21, 2004\ 2.3.4: September
+20, 2004 \ 2.3.5: April 20, 2005
+

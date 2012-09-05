@@ -1,0 +1,1872 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Minor Modes, Next: Mode Line Format, Prev: Major Modes, Up: Modes
+
+マイナモード
+============
+
+"マイナモード"（minor mode）は、メジャーモードの選択とは独立にユーザー
+がオン／オフできる機能を提供します。マイナモードは、個別にも組み合わせ
+てもオンにできます。マイナモードは、長すぎますが『汎用的に使えるオプショ
+ン機能のモード』と命名したようがよいかもしれません。
+
+マイナモードは、普通、1つのメジャーモードを変更するだけではありません。
+たとえば、自動詰め込みモード（auto-fillモード）は、テキスト挿入を許す任
+意のメジャーモードで使えます。汎用的であるためには、マイナモードはメ
+ジャーモードが行うこととは実質的に独立である必要があります。
+
+マイナモードは、メジャーモードに比べて、実装するのがしばしば困難です。
+1つの理由は、任意の順でマイナモードをオン／オフできるようにする必要があ
+るからです。マイナモードは、メジャーモードや他のオンになっているマイナ
+モードとは無関係にその望みの効果を発揮できる必要があります。
+
+しばしば、マイナモードを実装するうえでもっとも大きな問題は、Emacsの残り
+の部分に対して必要なフックを探すことです。マイナモードキーマップにより、
+従来に比べて簡単になります。
+
+* Menu:
+
+* Minor Mode Conventions::      Tips for writing a minor mode.
+* Keymaps and Minor Modes::     How a minor mode can have its own keymap.
+* Easy-Mmode::                  A convenient facility for defining minor modes.
+
+
+
+File: elisp-ja, Node: Minor Mode Conventions, Next: Keymaps and Minor Modes, Prev: Minor Modes, Up: Minor Modes
+
+マイナモードを書くための慣習
+----------------------------
+
+メジャーモードに対するのと同じように、マイナモードを書くうえでの慣習が
+あります。メジャーモードの慣習には、マイナモードにも適用されるものがあ
+ります。つまり、モードを初期化する関数の名前、グローバルシンボルの名前、
+キーマップやその他のテーブルや表の使い方です。
+
+それらに加えて、マイナモードに固有な慣習もあります。
+
+   * マイナモードを制御する変数の名前は`-mode'で終ること。これを"モード
+     変数"（mode variable）と呼ぶ。マイナモードコマンドは、この変数を
+     （オフにするには`nil'、オンにするにはそれ以外に）設定すること。
+
+     可能ならば、変数に設定すると自動的にモードがオン／オフされるように
+     モードを実装する。そうすると、マイナモードコマンドは、変数に設定す
+     る以外にはなにもしないでよくなる。
+
+     この変数は、モード行にマイナモード名を表示するために
+     `minor-mode-alist'でも使われる。マイナモードキーマップを活性にした
+     り非活性にしたりもする。各コマンドやフックもこの変数の値を検査する。
+
+     各バッファごとに別々にマイナモードをオンにしたい場合には、この変数
+     をバッファローカルにする。
+
+   * モード変数と同じ名前のコマンドを定義する。その仕事は、当該変数に設
+     定することでモードをオン／オフすることである。
+
+     当該コマンドは、省略可能な引数を1つ受け取ること。引数が`nil'であれ
+     ばモードをトグル（オンであればオフに、オフであればオンに）する。さ
+     もなければ、引数が、正整数、`nil'以外のシンボル、`-'、あるいは、
+     CARがそのような整数やシンボルであるようなリストの場合にはモードを
+     オンにする。それ以外ではモードをオフにする。
+
+     `transient-mark-mode'の定義から引用した例を示す。モードのふるまい
+     をオン／オフする変数としての`transient-mark-mode'の使い方、および、
+     生の前置引数に基づいたマイナモードのオン／オフ／トグルの仕方を示す。
+
+          (setq transient-mark-mode
+                (if (null arg) (not transient-mark-mode)
+                  (> (prefix-numeric-value arg) 0)))
+
+   * モード行にマイナモードを表示したい場合には、各マイナモードについて
+     要素を`minor-mode-alist'に追加する（*Note Mode Line Variables::）。
+     この要素はつぎの形のリストであること。
+
+          (MODE-VARIABLE STRING)
+
+     ここで、MODE-VARIABLEはマイナモードのオン／オフを制御する変数であ
+     り、STRINGはモード行でモードを表す短い空白で始まる文字列である。同
+     時に複数のモードを表示できるように、これらの文字列は短いこと。
+
+     `minor-mode-alist'に要素を追加するときには、重複を防ぐために既存の
+     要素を検査する`assq'を使うこと。たとえばつぎのとおり。
+
+          (or (assq 'leif-mode minor-mode-alist)
+              (setq minor-mode-alist
+                    (cons '(leif-mode " Leif") minor-mode-alist)))
+
+このリストに要素を1回だけ追加するならば`add-to-list'も使えます（*Note
+Setting Variables::）。
+
+
+
+File: elisp-ja, Node: Keymaps and Minor Modes, Next: Easy-Mmode, Prev: Minor Mode Conventions, Up: Minor Modes
+
+キーマップとマイナモード
+------------------------
+
+各マイナモードは、モードがオンのときに活性になる独自のキーマップを持てます。
+マイナモード向けのキーマップを設定するには、
+`minor-mode-map-alist'に要素を追加します。
+*Note Active Keymaps::。
+
+マイナモードキーマップの1つの用途は、ある種の自己挿入文字のふるまいを変
+更して、自己挿入に加えてなにかを行わせるようにすることです。一般に、
+`self-insert-command'をカスタマイズする機構は（略語モードや自動詰め込み
+モード向けに設計された）特別な場合に限られるので、このようなことを行う
+唯一の方法です。（標準の`self-insert-command'の定義を読者独自の定義で置
+き換えないこと。エディタコマンドループはこの関数を特別扱いしている。）
+
+マイナモードでバインドしているキー列は、`C-c'で始まり、`{'、`}'、`<'、
+`>'、`:'、`;'*以外*の句読点文字の1つが続くようにします。（除外した句読
+点文字はメジャーモード向けに予約されている。）
+
+
+
+File: elisp-ja, Node: Easy-Mmode, Prev: Keymaps and Minor Modes, Up: Minor Modes
+
+Easy-Mmode
+----------
+
+パッケージeasy-mmodeは、マイナモードを実装する便利な方法を提供します。
+これを使うと、単純なマイナモードを1つの自己完結した定義に指定できます。
+
+ -- Macro: easy-mmode-define-minor-mode MODE DOC &optional INIT-VALUE MODE-INDICATOR KEYMAP
+     このマクロは、MODE（シンボル）という名前の新しいマイナモードを定義
+     する。
+
+     このマクロは、マイナモードをトグルするMODEという名前のコマンドを定
+     義し、その説明文字列をDOCとする。
+
+     また、MODEという名前の変数も定義する。この変数はモードのオン／オフ
+     にしたがって`t'/`nil'に設定される。この変数はINIT-VALUEに初期化さ
+     れる。
+
+     文字列MODE-INDICATORは、モードがオンのときにモード行に表示される文
+     字列である。それが`nil'であるとモード行にはモードを表示しない。
+
+     省略可能な引数KEYMAPは、マイナモードのキーマップを指定する。これは、
+     値がキーマップであるような変数の名前か、つぎの形のバインディングを
+     指定した連想リストであること。
+
+          (KEY-SEQUENCE . DEFINITION)
+
+`easy-mmode-define-minor-mode'を使った例を示します。
+
+     (easy-mmode-define-minor-mode hungry-mode
+       "Toggle Hungry mode.
+     With no argument, this command toggles the mode.
+     Non-null prefix argument turns on the mode.
+     Null prefix argument turns off the mode.
+
+     When Hungry mode is enabled, the control delete key
+     gobbles all preceding whitespace except the last.
+     See the command \\[hungry-electric-delete]."
+      ;; 初期値
+      nil
+      ;; モード行への表示
+      " Hungry"
+      ;; マイナモードのバインディング
+      '(("\C-\^?" . hungry-electric-delete)
+        ("\C-\M-\^?"
+         . (lambda ()
+             (interactive)
+             (hungry-electric-delete t)))))
+
+これは、『hungryモード』という名前のマイナモードを定義します。モードを
+トグルするコマンドの名前は`hungry-mode'、モードのオン／オフを表す変数の
+名前は`hungry-mode'、モードがオンのときに活性なキーマップを保持する変数
+の名前は`hungry-mode-map'です。`C-DEL'と`C-M-DEL'に対するキーバインディ
+ングでキーマップを初期化します。
+
+
+
+File: elisp-ja, Node: Mode Line Format, Next: Imenu, Prev: Minor Modes, Up: Modes
+
+モード行の書式
+==============
+
+Emacsの（ミニバッファ専用ウィンドウを除く）各ウィンドウにはモード行があっ
+て、ウィンドウに表示しているバッファに関する状態情報を表示しています。
+モード行には、バッファ名、対応するファイル、再帰編集の深さ、メジャーモー
+ドとマイナモードなどのバッファに関する情報が含まれます。
+
+本節では、モード行の内容の制御方法について述べます。モード行に表示され
+る情報のほとんどはオンになっているメジャーモードとマイナモードに関係す
+るので、本章に含めます。
+
+`mode-line-format'は、カレントバッファのモード行に表示する雛型を保持し
+ているバッファローカルな変数です。同一バッファに対するすべてのウィンド
+ウは同じ`mode-line-format'を使い、それらのモード行は（スクロールの割合
+や行やコラム位置を除いて）同じように表示されます。
+
+ウィンドウのモード行は、通常、ウィンドウに別のバッファを表示したときや、
+バッファの変更状態が`nil'から`t'へあるいはその逆の変化をしたときに更新
+されます。`mode-line-format'（*Note Mode Line Variables::）が参照する変
+数を修正したり、テキストの表示方法に影響するその他の変数やデータ構造
+（*Note Display::）を変更したときには、新しい情報を表示したり新たな方法
+で表示するためにモード行の更新を強制できます。
+
+ -- Function: force-mode-line-update
+     カレントバッファのモード行の更新を強制する。
+
+モード行は、通常、反転表示されます。
+*Note Inverse Video::の`mode-line-inverse-video'を参照してください。
+
+* Menu:
+
+* Mode Line Data::        The data structure that controls the mode line.
+* Mode Line Variables::   Variables used in that data structure.
+* %-Constructs::          Putting information into a mode line.
+
+
+
+File: elisp-ja, Node: Mode Line Data, Next: Mode Line Variables, Prev: Mode Line Format, Up: Mode Line Format
+
+モード行のデータ構造
+--------------------
+
+モード行の内容は、バッファローカルな変数`mode-line-format'に保持された
+リスト、文字列、シンボル、数から成るデータ構造で制御されます。このデー
+タ構造を"モード行構成"（mode line construct）と呼びます。これは単純なモー
+ド行構成から再帰的に構築します。同じデータ構造はフレームタイトル
+（*Note Frame Titles::）を構築するためにも使われます。
+
+ -- Variable: mode-line-format
+     この変数の値は、モード行全体の書式に責任を持つモード行構成である。
+     この変数の値は、モード行のテキストを作るためにどの変数を使うか、そ
+     れらはモード行のどこに現れるかを制御する。
+
+モード行構成は、定まったテキストの文字列のように単純でもかまいませんが、
+普通は、テキストを作るための別の変数の使い方を指定します。それらの変数
+の多くはそれ自身、それらの値としてモード行構成を持つように定義されてい
+ます。
+
+`mode-line-format'のデフォルト値は、`mode-name'や`minor-mode-alist'など
+の変数の値を使います。多くの目的には、`mode-line-format'が参照するいく
+つかの変数を変えるだけで十分です。
+
+モード行構成は、リスト、シンボル、文字列のいずれかです。その値がリスト
+であれば、その各要素はリスト、シンボル、文字列のいずれかです。
+
+`STRING'
+     モード行構成としての文字列は、
+     "`%'記法"を除いて、モード行にそのまま表示される。
+     `%'のうしろの10進数は、右側に空白を埋める
+     （つまりデータは左端に揃えられる）ときのフィールド幅を指定する。
+     *Note %-Constructs::。
+
+`SYMBOL'
+     モード行構成としてのシンボルは、その値を表す。SYMBOLの値は、
+     SYMBOLのかわりにモード行構成として使われる。しかし、`t'や`nil'のシ
+     ンボル、および、シンボルの値が空のものは無視する。
+
+     例外が1つある：` ' SYMBOLの値が文字列であると、`%'記法を処理せずに
+     文字列をそのまま表示する。
+
+`(STRING REST...) or (LIST REST...)'
+     最初の要素が文字列かリストであるリストは、すべての要素を再帰的に処
+     理し、結果を連結することを意味する。これはもっとも多用されるモード
+     行構成の形である。
+
+`(SYMBOL THEN ELSE)'
+     最初の要素がシンボルであるリストは条件節であり、
+     その意味はSYMBOLの値に依存する。
+     その値が`nil'以外であると、
+     2番目の要素THENをモード行構成として再帰的に処理する。
+     SYMBOLの値が`nil'であると、
+     3番目の要素ELSEをモード行構成として再帰的に処理する。
+     ELSEは省略してもよいが、その場合、
+     SYMBOLの値が`nil'であるところの要素はモード行に表示されない。
+
+`(WIDTH REST...)'
+     最初の要素が整数であるリストは、RESTの結果の切り詰めや引き伸しを指
+     定する。残りの要素RESTはモード行構成として再帰的に処理され連結され
+     る。（WIDTHが正であれば）結果の右端に空白を追加したり、（WIDTHが負
+     であれば）結果を（-WIDTH幅に）右端から切り詰める。
+
+     たとえば、ウィンドウの上端より上にバッファの何割があるかを表示するには、
+     `(-3 "%p")'のようなリストを使う。
+
+読者が`mode-line-format'自体を変更するときには、新しい値では、デフォル
+ト値（*Note Mode Line Variables::）に現れるものと同じ変数を使い、それら
+の値をコピーして使ったり、別の書式で情報を表示したりしないでください。
+こうしておけば、それらの変数に対する変更を介したユーザーや
+（`display-time'やメジャーモードなどの）Lispプログラムが行ったカスタマ
+イズが効果を発揮できます。
+
+ホスト名やデフォルトディレクトリを含んだ
+`shell-mode'に有用な`mode-line-format'の例を示します。
+
+     (setq mode-line-format
+       (list "-"
+        'mode-line-mule-info
+        'mode-line-modified
+        'mode-line-frame-identification
+        "%b--"
+        ;; リストを作るときに評価されることに注意
+        ;; 単なる文字列のモード行構成を作る
+        (getenv "HOST")
+        ":"
+        'default-directory
+        "   "
+        'global-mode-string
+        "   %[("
+        'mode-name
+        'mode-line-process
+        'minor-mode-alist
+        "%n"
+        ")%]--"
+        '(which-func-mode ("" which-func-format "--"))
+        '(line-number-mode "L%l--")
+        '(column-number-mode "C%c--")
+        '(-3 . "%p")
+        "-%-"))
+
+（変数`line-number-mode'、`column-number-mode'、`which-func-mode'は特定
+のマイナモードをオンにする。通常どおり、これらの変数の名前はマイナモー
+ドコマンドの名前でもある。）
+
+
+
+File: elisp-ja, Node: Mode Line Variables, Next: %-Constructs, Prev: Mode Line Data, Up: Mode Line Format
+
+モード行に使われる変数
+----------------------
+
+本節では、`mode-line-format'の標準値でモード行のテキストに含められる変
+数について述べます。これらの変数に関しては、本来特別なことはありません。
+別の変数を使うように`mode-line-format'を変更すれば、別の変数でもモード
+行において同じ効果を発揮します。
+
+ -- Variable: mode-line-mule-info
+     この変数は、言語環境、バッファのコーディングシステム、
+     現在の入力方式に関する情報を表示するモード行構成の値を保持する。
+     *Note Non-ASCII Characters::。
+
+ -- Variable: mode-line-modified
+     この変数は、カレントバッファが変更されたかどうかを表示するモード行
+     構成の値を保持する。
+
+     `mode-line-modified'のデフォルト値は`("%1*%1+")'である。これは、バッ
+     ファが変更されていると`**'を、未変更ならば`--'を、読み出し専用なら
+     ば`%%'を、読み出し専用でしかも変更されていれば`%*'をモード行に表示
+     することを意味する。
+
+     この変数を変更してもモード行の更新を強制しない。
+
+ -- Variable: mode-line-frame-identification
+     この変数はカレントフレームを識別する。
+     複数のフレームを表示できるウィンドウシステムを使用している場合には
+     デフォルト値は`" "'であり、
+     ある時点で1つのフレームしか表示できない普通の端末を使用している場合には
+     `"-%F "'である。
+
+ -- Variable: mode-line-buffer-identification
+     この変数はウィンドウに表示しているバッファを識別する。デフォルト値
+     は`("%12b")'であり、空白で埋めて最低12コラムでバッファ名を表示する。
+
+ -- Variable: global-mode-string
+     この変数は、デフォルトでモード行のバッファ名の直後に現れるモード行
+     指定を保持する。コマンド`display-time'は、`global-mode-string'が時
+     刻と負荷情報を含んだ変数`display-time-string'を参照するように設定
+     する。
+
+     `%M'記法は`global-mode-string'の値を使うが、
+     この変数は`mode-line-format'でモード行に含まれるため
+     `%M'は廃れた記法である。
+
+ -- Variable: mode-name
+     このバッファローカルな変数は、カレントバッファのメジャーモードの
+     『愛称』を保持する。各メジャーモードは、モード行にモード名が現れる
+     ようにこの変数に設定すること。
+
+ -- Variable: minor-mode-alist
+     この変数は、モード行にマイナモードがオンであることを表示する方法を
+     指定する要素からなる連想リストを保持する。
+     `minor-mode-alist'の各要素は、2要素リストであること。
+
+          (MINOR-MODE-VARIABLE MODE-LINE-STRING)
+
+     より一般的には、MODE-LINE-STRINGはどのようなモード行指定でもよい。
+     それは、MINOR-MODE-VARIABLEの値が`nil'以外のときにモード行に現れ、
+     さもなければ現れない。これらの文字列は、繋がらないように空白で始ま
+     ること。慣習的には、特定モードに対するMINOR-MODE-VARIABLEは、当該
+     マイナモードがオンであると`nil'以外に設定される。
+
+     `minor-mode-alist'のデフォルト値はつぎのとおり。
+
+          minor-mode-alist
+          => ((vc-mode vc-mode)
+              (abbrev-mode " Abbrev")
+              (overwrite-mode overwrite-mode)
+              (auto-fill-function " Fill")
+              (defining-kbd-macro " Def")
+              (isearch-mode isearch-mode))
+
+     `minor-mode-alist'自体はバッファローカルではない。マイナモードが各
+     バッファごとにオンにできる場合には、連想リストに指定した対応する各
+     変数はバッファローカルであること。
+
+ -- Variable: mode-line-process
+     このバッファローカルな変数は、サブプロセスとの通信用に使われている
+     モードの処理状態に関するモード行の情報を保持する。メジャーモード名
+     の直後に空白で区切らずに表示される。たとえば、バッファ`*shell*'に
+     おけるこの変数の値は`(":%s")'であり、シェルがその状態をメジャーモー
+     ドとともに`(Shell: run)'のように表示できる。通常、この変数は`nil'
+     である。
+
+ -- Variable: default-mode-line-format
+     この変数は、`mode-line-format'を変更していないバッファのデフォルト
+     の`mode-line-format'の値を保持する。これは`(default-value
+     'mode-line-format)'と同じである。
+
+     `default-mode-line-format'のデフォルト値はつぎのリストである。
+
+          ("-"
+           mode-line-mule-info
+           mode-line-modified
+           mode-line-frame-identification
+           mode-line-buffer-identification
+           "   "
+           global-mode-string
+           "   %[("
+           mode-name
+           mode-line-process
+           minor-mode-alist
+           "%n"
+           ")%]--"
+           (which-func-mode ("" which-func-format "--"))
+           (line-number-mode "L%l--")
+           (column-number-mode "C%c--")
+           (-3 . "%p")
+           "-%-")
+
+ -- Variable: vc-mode
+     各バッファにおいてバッファローカルな変数`vc-mode'は、バッファで訪
+     問したファイルが版管理されているか、そうならばその方式を記録してい
+     る。版管理されていない場合はその値は`nil'、さもなければモード行に
+     表示される文字列である。
+
+
+
+File: elisp-ja, Node: %-Constructs, Prev: Mode Line Variables, Up: Mode Line Format
+
+モード行の`%'記法
+-----------------
+
+以下は、認識される`%'記法とその意味の表です。`%%'以外の記法では、最大表
+示文字数を指定する10進数を`%'のあとに追加できます。
+
+`%b'
+     関数`buffer-name'で得られたカレントバッファ名。
+     *Note Buffer Names::。
+
+`%f'
+     関数`buffer-file-name'で得られた訪問したファイルの名前。
+     *Note Buffer File Name::。
+
+`%F'
+     選択しているフレームのタイトル（ウィンドウシステム上のみ）か名前。
+     *Note Window Frame Parameters::。
+
+`%c'
+     ポイントの現在のコラム番号。
+
+`%l'
+     ポイントの現在の行番号。
+
+`%*'
+     バッファが読み出し専用であれば`%'（`buffer-read-only'を参照）、
+     バッファが変更されていれば`*'（`buffer-modified-p'を参照）、
+     さもなければ`-'。
+     *Note Buffer Modification::。
+
+`%+'
+     バッファが変更されていれば`*'（`buffer-modified-p'を参照）、
+     バッファが読み出し専用であれば`%'（`buffer-read-only'を参照）、
+     さもなければ`-'。
+     `%*'との違いは、変更された読み出し専用バッファに対してのみである。
+     *Note Buffer Modification::。
+
+`%&'
+     バッファが変更されていれば`*'、さもなければ`-'である。
+
+`%s'
+     `process-status'で得たカレントバッファに属するサブプロセスの状態。
+     *Note Process Information::。
+
+`%t'
+     訪問したファイルがテキストファイルであるかバイナリファイルであるか
+     を表す。（特定のオペレーティングシステムでのみ意味を持つ。）
+
+`%p'
+     ウィンドウの*上端*の上にあるバッファのテキストの割合、あるいは、
+     `Top'、`Bottom'、`All'のいずれかである。
+
+`%P'
+     ウィンドウの*下端*の上にあるバッファのテキスト（ウィンドウに見えて
+     るテキストと上端の上にあるテキスト）の割合にバッファの先頭が見えて
+     いれば`Top'を加えたもの、あるいは、`Bottom'、`All'のいずれかである。
+
+`%n'
+     ナロイングしていると`Narrow'、さもなければなにもなし。（*Note
+     Narrowing::の`narrow-to-region'を参照）。
+
+`%['
+     （ミニバッファのレベルを除く）再帰編集レベルの深さを表す。
+     各編集レベルごとに1つの`['。
+     *Note Recursive Editing::。
+
+`%]'
+     （ミニバッファのレベルを除く）各再帰編集レベルごとに1つの`]'。
+
+`%%'
+     文字`%'。
+     `%'記法を許す文字列に`%'をそのまま含めるための方法である。
+
+`%-'
+     モード行の残り部分を埋めるに十分な個数のダッシュ。
+
+つぎの2つの`%'記法はまだ使えますが、変数`mode-name'や
+`global-mode-string'を使って同じ効果を得られるのでこれらは廃れた記法で
+す。
+
+`%m'
+     `mode-name'の値。
+
+`%M'
+     `global-mode-string'の値。現在、`display-time'は
+     `global-mode-string'の値を変更する。
+
+
+
+File: elisp-ja, Node: Imenu, Next: Font Lock Mode, Prev: Mode Line Format, Up: Modes
+
+iメニュー
+=========
+
+"iメニュー"（Imenu）とは、ユーザーがバッファ内の定義や節の一覧からその
+1つを選ぶとバッファ内の当該箇所へ直接移動できる機能です。iメニューは、
+バッファ内の定義や部分の名前や位置を表すバッファインデックスを構築して
+おくことで動作し、当該箇所へ移動するためにユーザーがそれらの1つを選べる
+ようにします。本節ではメジャーモードに対するiメニューをカスタマイズする
+方法を説明します。
+
+普通のもっとも単純な方法は、変数`imenu-generic-expression'に設定するこ
+とです。
+
+ -- Variable: imenu-generic-expression
+     この変数が`nil'以外であると、iメニュー向けの定義を探すための正規表
+     現を指定する。もっとも単純な場合、要素はつぎのような形である。
+
+          (MENU-TITLE REGEXP SUBEXP)
+
+     ここで、MENU-TITLEが`nil'以外であると、この要素に一致したものはバッ
+     ファインデックスのサブメニューに置くことを意味する。MENU-TITLE自体
+     はサブメニューの名前を指定する。MENU-TITLEが`nil'であると、この要
+     素に一致したものはバッファインデックスのメニューに直接置かれる。
+
+     リストの2番目の要素REGEXPは正規表現（*Note Regular Expressions::）
+     であり、これに一致した箇所がバッファインデックスに現れる定義になる。
+     3番目の要素SUBEXPは、定義の名前に一致するREGEXPの部分式である。
+
+     要素はつぎの形でもよい。
+
+          (MENU-TITLE REGEXP INDEX FUNCTION ARGUMENTS...)
+
+     この要素に一致するものは、バッファインデックスの特別な項目になり、
+     ユーザーが当該項目を選ぶと、
+     ITEM-NAME、バッファ位置、ARGUMENTSを引数として
+     FUNCTIONを呼び出す。
+
+     emacs-lispモード向けには、PATTERNはつぎのようになる。
+
+          ((nil "^\\s-*(def\\(un\\|subst\\|macro\\|advice\\)\
+          \\s-+\\([-A-Za-z0-9+]+\\)" 2)
+           ("*Vars*" "^\\s-*(def\\(var\\|const\\)\
+          \\s-+\\([-A-Za-z0-9+]+\\)" 2)
+           ("*Types*"
+            "^\\s-*\
+          (def\\(type\\|struct\\|class\\|ine-condition\\)\
+          \\s-+\\([-A-Za-z0-9+]+\\)" 2))
+
+     この変数に設定すると、カレントバッファにおいてバッファローカルな変
+     数になる。
+
+ -- Variable: imenu-case-fold-search
+     この変数は、IMENU-GENERIC-EXPRESSIONとの一致に際して大文字小文字を
+     区別するかどうかを制御する。デフォルトは`t'であり、大文字小文字を
+     区別せずに一致をとる。
+
+     この変数に設定すると、カレントバッファにおいてバッファローカルな変
+     数になる。
+
+ -- Variable: imenu-syntax-alist
+     この変数は、`imenu-generic-expression'を処理中にカレントバッファの
+     構文テーブルに優先する構文テーブルの変更部分の連想リストである。各
+     要素はつぎの形であること。
+
+          (CHARACTERS . SYNTAX-DESCRIPTION)
+
+     CARのCHARACTERSは、文字か文字列である。それらの文字は、指定した構
+     文SYNTAX-DESCRIPTIONであることを意味する。これは
+     `modify-syntax-entry'（*Note Syntax Table Functions::）に渡される。
+
+     この機能は典型的には、通常のシンボル構成文字を単語構成文字として扱
+     い、`imenu-generic-expression'を単純化し一致処理を速くする。たとえ
+     ば、fortranモードではつぎのように使っている。
+
+            (setq imenu-syntax-alist '(("_$" . "w")))
+
+     こうすると、`imenu-generic-expression'のパターンでは、
+     `\\(\\sw\\|\\s_\\)+'のかわりに`\\sw+'を使える。この技法は、名前の
+     先頭文字の集合を名前の残りの文字の集合よりも小さく制限する必要があ
+     るモードで使うには不便であることに注意してほしい。
+
+     この変数に設定すると、カレントバッファにおいてバッファローカルな変
+     数になる。
+
+メジャーモードのiメニューをカスタマイズする別の方法は、
+変数`imenu-prev-index-position-function'や
+`imenu-extract-index-name-function'に設定することです。
+
+ -- Variable: imenu-prev-index-position-function
+     この変数が`nil'以外であると、その値は、バッファインデックスに置く
+     つぎの定義をファイルで後向きに探すための関数であること。
+
+     その関数は、バッファインデックスの項目に対応する箇所にポイントを置
+     くこと。項目がみつからなければ`nil'を返すこと。
+
+     この変数に設定すると、カレントバッファにおいてバッファローカルな変
+     数になる。
+
+ -- Variable: imenu-extract-index-name-function
+     この関数が`nil'以外であると、その値は、ポイントが変数
+     `imenu-prev-index-position-function'が返した定義の部分にあると仮定
+     して、当該定義の名前を返す関数であること。
+
+     この変数に設定すると、カレントバッファにおいてバッファローカルな変
+     数になる。
+
+メジャーモードのiメニューをカスタマイズする最後の方法は、変数
+`imenu-create-index-function'に設定することです。
+
+ -- Variable: imenu-create-index-function
+     この関数は、バッファインデックスの作成に使う関数を指定する。その関
+     数は引数なしで、カレントバッファに対するインデックスを返すこと。
+     `save-excursion'の内側から呼ばれるので、その関数がポイントをどこに
+     置こうと関係ない。
+
+     デフォルト値は、インデックスの連想リストを生成するために
+     `imenu-generic-expression'を使う関数である。読者が別の関数を指定す
+     れば、`imenu-generic-expression'は使われない。
+
+     この変数に設定すると、カレントバッファにおいてバッファローカルな変
+     数になる。
+
+ -- Variable: imenu-index-alist
+     この変数は、カレントバッファに対するインデックスの連想リストを保持
+     する。この変数に設定すると、カレントバッファにおいてバッファローカ
+     ルな変数になる。
+
+     連想リストの単純な要素は`(INDEX-NAME . INDEX-POSITION)' のような形
+     である。このような単純な要素を選ぶと、バッファ内でINDEX-POSITIONへ
+     移動する効果がある。
+
+     特別な要素は`(INDEX-NAME POSITION FUNCTION ARGUMENTS...)'のような
+     形である。このような特別な要素を選ぶと、つぎのようなフォームを実行
+     する。
+
+          (funcall FUNCTION INDEX-NAME POSITION ARGUMENTS...)
+
+     入れ子になった部分連想リストの要素は
+     `(INDEX-NAME  SUB-ALIST)'のような形である。
+
+
+
+File: elisp-ja, Node: Font Lock Mode, Next: Hooks, Prev: Imenu, Up: Modes
+
+フォントロック（font-lock）モード
+=================================
+
+"フォントロック（font-lock）モード"とは、バッファ内の特定部分に対して、
+それらの構文上の役割に応じた属性`face'を自動的に付加する機能のことです。
+バッファを解析する方法はメジャーモードに依存しますが、ほとんどのメジャー
+モードでは、どの文脈でどのフェイスを使うかを指示する条件を定義します。
+本節では、特定の言語向けに、いいかえれば、特定のメジャーモード向けにフォ
+ントロックをカスタマイズする方法を説明します。
+
+フォントロック（font-lock）モードは、強調表示すべきテキストを2つの方法
+で、つまり、構文テーブルに基づいた構文解析、あるいは、（通常、正規表現
+による）探索で探します。構文解析による処理を最初に行ってコメントや文字
+列定数を探し、`font-lock-comment-face'や`font-lock-string-face'
+（*Note Faces for Font Lock::）を使ってそれらを強調表示します。探索によ
+る処理がこれに続きます。
+
+* Menu:
+
+* Font Lock Basics::
+* Search-based Fontification::
+* Other Font Lock Variables::
+* Levels of Font Lock::
+* Faces for Font Lock::
+* Syntactic Font Lock::
+
+
+
+File: elisp-ja, Node: Font Lock Basics, Next: Search-based Fontification, Prev: Font Lock Mode, Up: Font Lock Mode
+
+フォントロック（font-lock）の基本
+---------------------------------
+
+フォントロック（font-lock）モードがテキストを強調表示する方法を制御する
+変数がいくつかあります。しかし、メジャーモードでこれらの変数を直接に設
+定するべきではありません。そのかわりに、バッファローカルな変数
+`font-lock-defaults'に設定すべきです。フォントロック（font-lock）モード
+がオンになると、この変数に設定された値を使って他のすべての変数に設定し
+ます。
+
+ -- Variable: font-lock-defaults
+     この変数はメジャーモードがバッファローカルな変数として設定し、当該
+     モードにおいてテキストをどのように表示するかを指定する。値はつぎの
+     形であること。
+
+          (KEYWORDS KEYWORDS-ONLY CASE-FOLD
+           SYNTAX-ALIST SYNTAX-BEGIN OTHER-VARS...)
+
+     最初の要素KEYWORDSは、間接的に`font-lock-keywords'の値を指定する。
+     要素KEYWORDSがシンボルであると、その変数としての値が
+     `font-lock-keywords'に使われる。あるいは、要素KEYWORDSがそのような
+     シンボルのリストであると、各シンボルが1つのレベルの表示方法を指定
+     する。最初のシンボルはレベル1の表示方法、2番目のシンボルはレベル2
+     の表示方法といった具合である。
+
+     2番目の要素KEYWORDS-ONLYは、変数`font-lock-keywords-only'の値を指
+     定する。これが`nil'以外であると（文字列やコメントの）構文による処
+     理を行わない。
+
+     3番目の要素CASE-FOLDは、`font-lock-case-fold-search'の値を指定する。
+     これが`nil'以外であると、フォントロック（font-lock）モードは
+     `font-lock-keywords'で指定された探索で大文字小文字を区別しない。
+
+     4番目の要素SYNTAX-ALISTが`nil'以外である場合、それは
+     `(CHAR-OR-STRING . STRING)'の形のコンスセルのリストであること。こ
+     れらは表示方法を選ぶための構文テーブルの設定に使われる（*Note
+     Syntax Table Functions::）。得られた構文テーブルは
+     `font-lock-syntax-table'に保持される。
+
+     5番目の要素SYNTAX-BEGINは、
+     `font-lock-beginning-of-syntax-function'の値を指定する（下記参照）。
+
+     OTHER-VARS以降の要素は、`(VARIABLE . VALUE)'という形である。この種
+     の要素は、表示方法の選択に影響するその他の変数に設定するために使わ
+     れる。
+
+
+
+File: elisp-ja, Node: Search-based Fontification, Next: Other Font Lock Variables, Prev: Font Lock Basics, Up: Font Lock Mode
+
+探索に基づくフォント選択
+------------------------
+
+フォントロック（font-lock）モードのカスタマイズにおいてもっとも重要な変
+数は`font-lock-keywords'です。探索に基づく表示方法の選択における探索条
+件を指定します。
+
+ -- Variable: font-lock-keywords
+     この変数の値は、強調表示するべきキーワードのリストである。このリス
+     トに正規表現を書く場合には注意すること。貧弱な書き方をしたパターン
+     であると、動作を劇的に遅くする！
+
+`font-lock-keywords'の各要素は、特定のテキストの探し方と当該テキストを
+どのように強調表示するか指定します。フォントロック（font-lock）モードは、
+`font-lock-keywords'の要素を1つ1つ処理し、各要素において、それに一致す
+るものすべてを探して処理します。通常、すでに表示方法を選択済みのテキス
+ト部分については、それ以降の要素に一致しても表示方法を変えません。しか
+し、HIGHLIGHTERの要素OVERRIDEを使って、異なるふるまいを指定できます。
+
+`font-lock-keywords'の各要素はつぎのいずれかの形です。
+
+`REGEXP'
+     正規表現REGEXPに一致したものはすべて
+     `font-lock-keyword-face'を使って強調表示する。
+
+          ;; 孤立した`foo'の出現は
+          ;; `font-lock-keyword-face'で強調表示する。
+          "\\<foo\\>"
+
+     関数`regexp-opt'（*Note Syntax of Regexps::）は、異なる複数個のキー
+     ワードに一致する最適な正規表現を計算するのに有用である。
+
+`FUNCTION'
+     関数FUNCTIONを呼び出してテキストを探し、それが探し出したものを
+     `font-lock-keyword-face'を使って強調表示する。
+
+     FUNCTIONは、探索限界を引数として呼び出される。みつかれば`nil'以外
+     を返すとともにみつけた部分を表すマッチデータを設定する。
+
+`(MATCHER . MATCH)'
+     この種の要素では、MATCHERは、上に述べた正規表現か関数を表す。CDRの
+     MATCHは、（MATCHERに一致した部分全体のかわりに）強調表示すべき
+     MATCHERの部分式を指定する。
+
+          ;; `fubar'の各出現の`bar'を
+          ;; `font-lock-keyword-face'で強調表示
+          ("fu\\(bar\\)" . 1)
+
+     正規表現MATCHERを作るために`regexp-opt'を使った場合、
+     MATCHの値を計算するには
+     `regexp-opt-depth'（*Note Syntax of Regexps::）を使える。
+
+`(MATCHER . FACENAME)'
+     この種の要素では、FACENAMEは、強調表示に使うフェイス名を指定する値
+     を表す式である。
+
+          ;; `fubar'の出現は、`fubar-face'の値で
+          ;; 表されたフェイスを使って強調表示
+          ("fubar" . fubar-face)
+
+`(MATCHER . HIGHLIGHTER)'
+     この種の要素では、HIGHLIGHTERは、MATCHERに一致した部分の強調表示方
+     法を指定するリストである。つぎの形であること。
+
+          (SUBEXP FACENAME OVERRIDE LAXMATCH)
+
+     CARのSUBEXPは、強調表示すべき一致部分の部分式を指定する整数（0は一
+     致部分全体を意味する）である。2番目の要素FACENAMEは、上に述べたよ
+     うにフェイスを指定する。
+
+     HIGHLIGHTERの最後の2つの要素、OVERRIDEとLAXMATCHはフラグである。
+     OVERRIDEが`t'であると、当該要素は、`font-lock-keywords'のまえの要
+     素で決定済みの表示方法に優先することを表す。`keep'であると、他の要
+     素では表示方法が決定していない各文字の表示方法を表す。`prepend'で
+     あると、属性`face'の先頭にフェイスFACENAMEを追加する。`append'であ
+     ると、属性`face'の末尾にフェイスFACENAMEを追加する。
+
+     LAXMATCHが`nil'以外であると、MATCHERで一致したものの中にSUBEXP番目
+     の部分式がなくてもエラーとしないことを意味する。
+
+     この種の要素とその動作の例を示す。
+
+          ;; `foo'や`bar'の出現の表示方法がすでに決まっていても
+          ;; `foo-bar-face'で強調表示する
+          ;; `foo-bar-face'の値はフェイスであること
+          ("foo\\|bar" 0 foo-bar-face t)
+
+          ;; 関数`fubar-match'がみつけた各出現内の最初の部分式を
+          ;; `fubar-face'の値が表すフェイスで強調表示する
+          (fubar-match 1 fubar-face)
+
+`(MATCHER HIGHLIGHTERS...)'
+     この種の要素は、1つのMATCHERに対して複数のリストHIGHLIGHTERを指定
+     する。これが有用であるためには、各HIGHLIGHTERでSUBEXPの値が異なる
+     こと。つまり、それぞれをMATCHERの異なる部分式に適用できること。
+
+
+`(eval . FORM)'
+     FORMは、バッファにおいて`font-lock-keywords'のこの値が始めて使われ
+     たときに評価すべき式である。その値は、この表にあげた形の1つである
+     こと。
+
+*警告：*` ' `font-lock-keywords'の要素は、行をまたがって一致するように
+設計しないこと。そのような処理は信頼性がない。
+`font-lock-fontify-buffer'は、行にまたがるパターンを正しく扱えるが、読
+者がバッファを編集したときの更新処理では、一度に1行ずつ処理するために正
+しく扱えない。
+
+
+
+File: elisp-ja, Node: Other Font Lock Variables, Next: Levels of Font Lock, Prev: Search-based Fontification, Up: Font Lock Mode
+
+その他のフォントロック変数
+--------------------------
+
+本節では、`font-lock-defaults'を用いてメジャーモードで設定できる他の変
+数について述べます。
+
+ -- Variable: font-lock-keywords-only
+     `nil'以外であると、フォントロック（font-lock）モードは、
+     構文に基づいてコメントや文字列を強調表示すべきでないことを意味する。
+     `font-lock-keywords'に基づく強調表示のみを行う。
+
+
+ -- Variable: font-lock-keywords-case-fold-search
+     `nil'以外であると、`font-lock-keywords'の正規表現探索では大文字小
+     文字を区別しないことを意味する。
+
+ -- Variable: font-lock-syntax-table
+     この変数は、コメントや文字列の表示方法に用いる構文テーブルを指定す
+     る。
+
+ -- Variable: font-lock-beginning-of-syntax-function
+     この変数が`nil'以外であると、ポイントを構文上の『トップレベル』で
+     文字列やコメントの外側に後方移動する関数であること。フォントロック
+     （font-lock）モードは、構文に基づく処理において正しい結果を得るた
+     めに必要に応じてこの関数を使う。
+
+     関数は引数なしで呼び出される。ポイントを構文ブロックの先頭に置くこ
+     と。典型的な値は、`beginning-of-line'（行頭は構文ブロックの外側で
+     ある）、あるいは、プログラム向けのモードでは`beginning-of-defun'、
+     テキスト向けのモードでは`backward-paragraph' （モード固有の関数は
+     構文ブロックの外側にポイントを移動する）である。
+
+     値が`nil'であると、バッファの先頭を構文ブロックの外側の位置として
+     使う。これは誤りではないが、動作を遅くする。
+
+ -- Variable: font-lock-mark-block-function
+     この変数が`nil'以外であると、コマンド`M-g
+     M-g'（`font-lock-fontify-block'）による再表示のためにテキストの括
+     られた範囲を選ぶために引数なしで呼ばれ関数であること。
+
+     関数は、選んだ範囲にリージョンを設定すること。正しい結果を得られる
+     ように大きめのテキスト範囲を選ぶのがよいが、再表示処理が遅くならな
+     いように大きすぎないこと。典型的な値は、プログラム向けモードでは
+     `mark-defun'、テキスト向けモードでは`mark-paragraph'である。
+
+
+
+File: elisp-ja, Node: Levels of Font Lock, Next: Faces for Font Lock, Prev: Other Font Lock Variables, Up: Font Lock Mode
+
+フォントロックのレベル
+----------------------
+
+多くのメジャーモードでは、3段階の表示方法を提供します。
+`font-lock-defaults'のKEYWORDSにシンボルのリストを使って複数レベルを定
+義できます。各シンボルは1つのレベルの表示方法を指定します。どのレベルを
+選ぶかはユーザーの責任です。指定したレベルのシンボルの値は
+`font-lock-keywords'の初期化に使われます。
+
+表示方法のレベルを定義する際の慣習をあげておきます。
+
+   * レベル1：` ' 関数宣言、（includeやimportなどの）ファイル指定、文字
+     列、コメントを強調表示する。速さが肝心であり、重要な構文やトップレ
+     ベルの構成要素のみを強調表示する。
+
+   * レベル2：` ' レベル1に加えて、キーワードのようにふるまう型名を含む
+     当該言語のすべてのキーワード、名前付き定数。（構文的な、あるいは、
+     意味的な）すべてのキーワードを適切に強調表示するのが目的。
+
+   * レベル3：` ' レベル2に加えて、関数や変数宣言で定義されたシンボル、
+     適切なすべての組み込み関数の名前。
+
+
+
+File: elisp-ja, Node: Faces for Font Lock, Next: Syntactic Font Lock, Prev: Levels of Font Lock, Up: Font Lock Mode
+
+フォントロックのフェイス
+------------------------
+
+フォントロック（font-lock）モードでは任意のフェイスを使えますが、
+フォントロック（font-lock）モード向けに特別に定義さたフェイスがあります。
+これらのシンボルのおのおのは、フェイス名でもあり、
+シンボル自身をデフォルト値とする変数でもあります。
+つまり、`font-lock-comment-face'のデフォルト値は、
+`font-lock-comment-face'です。
+これは、
+フェイス名を値に持つような式を書く`font-lock-keywords'などの場面で、
+`font-lock-comment-face'と書けることを意味します。
+
+`font-lock-comment-face'
+     （典型的には）コメントに使われる。
+
+`font-lock-string-face'
+     （典型的には）文字列に使われる。
+
+`font-lock-keyword-face'
+     （典型的には）キーワード、つまり、Cの`for'や`if'のように構文的に重
+     要な名前に使われる。
+
+`font-lock-builtin-face'
+     （典型的には）組み込み関数の名前に使われる。
+
+`font-lock-function-name-face'
+     （典型的には）関数定義／宣言内において、定義／宣言されている関数の
+     名前に使われる。
+
+`font-lock-variable-name-face'
+     （典型的には）変数定義／宣言内において、定義／宣言されている変数の
+     名前に使われる。
+
+`font-lock-type-face'
+     （典型的には）ユーザー定義のデータ型の名前が定義／参照される場所に
+     おいて、それらの名前に使われる。
+
+`font-lock-constant-face'
+     （典型的には）定数の名前に使われる。
+
+`font-lock-warning-face'
+     （典型的には）独特な構文や別のテキストの意味を大きく変えるようなも
+     のに使われる。たとえば、Emacs Lispの`;;;###autoload'やCの`#error'
+     指定に使われる。
+
+
+
+File: elisp-ja, Node: Syntactic Font Lock, Prev: Faces for Font Lock, Up: Font Lock Mode
+
+構文的なフォントロック
+----------------------
+
+フォントロック（font-lock）モードは、属性`syntax-table'を自動更新するた
+めにも使えます。1つの構文テーブルだけでは十分でないような言語において有
+用です。
+
+ -- Variable: font-lock-syntactic-keywords
+     この変数は構文的なフォントロックをオンにし制御する。その値はつぎの
+     形の要素からなるリストであること。
+
+          (MATCHER SUBEXP SYNTAX OVERRIDE LAXMATCH)
+
+     この要素の各部分には、つぎの`font-lock-keywords'の対応する種類の要
+     素と同じ意味がある。
+
+          (MATCHER SUBEXP FACENAME OVERRIDE LAXMATCH)
+
+     しかし、属性`face'に使う値FACENAMEを指定するかわりに、属性
+     `syntax-table'に使う値SYNTAXを指定する。ここで、SYNTAXは、構文テー
+     ブルを値とする変数、`(SYNTAX-CODE . MATCHING-CHAR)'の形の構文テー
+     ブルの項目、あるいは、この2種類のどちらかを値とする式である。
+
+
+
+File: elisp-ja, Node: Hooks, Prev: Font Lock Mode, Up: Modes
+
+フック
+======
+
+"フック"（hook）とは、既存のプログラムから特定の場面で呼び出される（1つ
+か一連の）関数を収めた変数です。Emacsは、カスタマイズのためにフックを用
+意しています。ほとんどの場合、フックはファイル`.emacs'で設定しますが、
+Lispプログラムが行ってもかまいません。標準のフック関数一覧については、
+*Note Standard Hooks::。
+
+Emacsの多くのフックは"ノーマルフック"（normal hook）です。これらの変数
+は、引数なしで呼び出される関数のリストを保持しています。フック名が
+`-hook'で終っていると、ノーマルフックを意味します。読者がそれらを単一の
+方法で使えるように、可能な限りノーマルフックにするように心掛けています。
+
+各メジャーモード関数は、その初期化の最終段階で"モードフック"（mode
+hook）と呼ばれるノーマルフックを実行すると期待されます。これにより、モー
+ドがすでに設定したバッファローカルな変数を上書きすることで、ユーザーが
+モードのふるまいをカスタマイズしやすくしています。しかし、フックは別の
+場面でも使われています。たとえば、フック`suspend-hook'は、Emacsが自身を
+一時休止する直前に実行されます。（*Note Suspending Emacs::）。
+
+ノーマルフックにフック関数を追加する推奨方法は、
+`add-hook'（下記参照）を呼ぶことです。
+フック関数は、`funcall'（*Note What Is a Function::）が
+受け付けるならばどんな種類の関数でもかまいません。
+ほとんどのノーマルフック変数は最初は空ですが、
+`add-hook'はその扱い方を知っています。
+
+フック変数の名前が`-hook'で終らない場合、それが"アブノーマルフック
+（abnormal hook）であることを表します。読者は、そのようなフックの正しい
+使い方を説明書で調べるべきです。
+
+変数名が`-functions'や`-hooks'で終っていると、その値は関数のリストです
+が、それらの関数を引数ありで呼び出したり、関数の戻り値をどこかで使うと
+いう意味でアブノーマル（異常）なのです。リストに関数を追加するには
+`add-hook'を使えますが、関数を書くときには注意する必要があります。（こ
+れらの変数のうち、実際にはノーマルフックであるものもある。ノーマルフッ
+クには`-hook'を使うという慣習を確立するまえに命名したものである。）
+
+変数名が`-function'で終っていると、その値は、関数のリストではなく、1つ
+の関数です。
+
+lisp対話モードで自動詰め込み（auto-fill）モードをオンにするためにモード
+フックを使った例を示します。
+
+     (add-hook 'lisp-interaction-mode-hook 'turn-on-auto-fill)
+
+適当な時期に、Emacsは関数`run-hooks'を使って特定のフックを実行します。
+この関数は、`add-hook'で追加されたフック関数を呼び出します。
+
+ -- Function: run-hooks &rest HOOKVAR
+     この関数は複数個のフック変数名を引数にとり、各フックを順に実行する。
+     各引数HOOKVARは、フック変数のシンボルであること。これらの引数は、
+     指定された順に処理される。
+
+     フック変数が`nil'以外の値であると、その値は、関数か関数のリストで
+     ある。値が関数（ラムダ式や関数定義を持つシンボル）であると、それを
+     呼び出す。値がリストであると、順番にその要素を呼び出す。フック関数
+     は、引数なしで呼び出される。現在、フック変数に1つの関数を入れるこ
+     とは廃れかけている。つねに関数のリストを使うべきである。
+
+     例として、`emacs-lisp-mode'がそのモードフックをどのように実行する
+     かを示す。
+
+          (run-hooks 'emacs-lisp-mode-hook)
+
+ -- Function: run-hook-with-args HOOK &rest ARGS
+     この関数は、フック関数に引数を渡すアブノーマルフックを実行する方法
+     である。各フック関数に引数ARGSを渡して呼び出す。
+
+ -- Function: run-hook-with-args-until-failure HOOK &rest ARGS
+     この関数は、フック関数に引数を渡すアブノーマルフックを実行するが、
+     フック関数が失敗するとただちに止める方法である。フック関数が`nil'
+     を返すまで、各フック関数に引数ARGSを渡して呼び出す。`nil'が返って
+     くると`nil'で戻る。さもなければ、`nil'以外の値を返す。
+
+ -- Function: run-hook-with-args-until-success HOOK &rest ARGS
+     この関数は、フック関数に引数を渡すアブノーマルフックを実行するが、
+     フック関数が成功するとただちに止める方法である。フック関数が`nil'
+     以外を返すまで、各フック関数に引数ARGSを渡して呼び出す。`nil'以外
+     が返ってくると最後に呼び出したフック関数の戻り値を返す。
+
+ -- Function: add-hook HOOK FUNCTION &optional APPEND LOCAL
+     この関数はフック変数HOOKに関数FUNCTIONを追加する手軽な方法である。
+     引数FUNCTIONは、正しい個数の引数をとる任意の正しいLisp関数であるこ
+     と。たとえば、
+
+          (add-hook 'text-mode-hook 'my-text-hook-function)
+
+     は、`text-mode-hook'というフックに
+     `my-text-hook-function'を追加する。
+
+     `add-hook'は、ノーマルフックに加えてアブノーマルフックにも使える。
+
+     フック関数は実行順序に依存しないように設計するのが最良である。実行
+     順序に依存すると『トラブルを呼び込む』ようなものである。しかし、順
+     序は予測できる。通常、FUNCTIONはフックリストの先頭に置かれるので、
+     （ほかに`add-hook'の呼び出しがなければ）最初に実行される。省略可能
+     な引数APPENDが`nil'以外であると、新たなフック関数はフックリストの
+     末尾に置かれ、最後に実行される。
+
+     LOCALが`nil'以外であると、新たなフック関数をカレントバッファにバッ
+     ファローカルにすることを意味する。これを行うまえに、
+     （`make-local-variable'*ではなく*）`make-local-hook'を呼んでフック
+     自身をバッファローカルにしておく必要がある。フック自身がバッファロー
+     カルでないと、LOCALの値は意味を持たない。フック関数はつねにグロー
+     バルである。
+
+ -- Function: remove-hook HOOK FUNCTION &optional LOCAL
+     この関数は、フック変数HOOKからFUNCTIONを取り除く。
+
+     LOCALが`nil'以外であると、グローバルなフックリストではなくバッファ
+     ローカルなフックリストからFUNCTIONを削除することを指定する。フック
+     変数自身がバッファローカルでないと、LOCALの値は意味を持たない。
+
+ -- Function: make-local-hook HOOK
+     この関数は、フック変数`hook'をカレントバッファにバッファローカルにする。
+     フック変数がバッファローカルであると、
+     バッファローカルなフック関数とグローバルなフック関数を持つことができ、
+     `run-hooks'はそれらすべてを実行する。
+
+     この関数は、バッファローカルな値の要素を`t'にすることで動作する。
+     これは、バッファローカルな値に加えてフック変数のデフォルト値にある
+     フック関数を使うことを表すフラグである。
+     `run-hooks'はこのフラグを理解し、
+     `make-local-hook'はすべてのノーマルフックを処理できる。
+     アブノーマルフックに関しては、
+     `t'の意味を理解するように更新したものだけが処理できる。
+
+     フック変数に対して`make-local-variable'を直接使わないこと。それだ
+     けでは不十分である。
+
+
+File: elisp-ja, Node: Documentation, Next: Files, Prev: Modes, Up: Top
+
+説明文
+******
+
+GNU Emacs Lispには、便利なオンラインのヘルプ機能があります。そのほとん
+どは、関数や変数に付随した説明文字列から取り出したものです。本章では、
+説明文を参照するプログラムの書き方に加えて、読者のLispプログラムに適切
+な説明文字列を書く方法を説明します。
+
+Emacsの説明文字列は、Emacsマニュアルと同じものではないことに注意願いま
+す。マニュアルには言語texinfoで書いた独自のソースファイルがありますが、
+説明文字列は関数や変数の定義の中で指定されています。説明文字列を集めて
+も、よいマニュアルとは構成が違いますので、マニュアルとしては十分ではあ
+りません。
+
+* Menu:
+
+* Documentation Basics::      Good style for doc strings.
+                                Where to put them.  How Emacs stores them.
+* Accessing Documentation::   How Lisp programs can access doc strings.
+* Keys in Documentation::     Substituting current key bindings.
+* Describing Characters::     Making printable descriptions of
+                                non-printing characters and key sequences.
+* Help Functions::            Subroutines used by Emacs help facilities.
+
+
+
+File: elisp-ja, Node: Documentation Basics, Next: Accessing Documentation, Prev: Documentation, Up: Documentation
+
+説明文の基本
+============
+
+説明文字列は、文字列に対するLisp構文、つまり、文字列のテキストをダブル
+クォートで囲って書きます。これは、説明文字列が実際にはLispの文字列オブ
+ジェクトだからです。関数や変数の定義の正しい箇所に文字列を書くと、説明
+文としての役割を果たします。関数定義においては、説明文字列は引数のつぎ
+にあります。変数定義においては、変数の初期値のつぎにあります。
+
+説明文字列を書くときには、
+最初の1行は1つの（あるいは2つの）完全な文にしてください。
+`apropos'などのある種のコマンドは、
+複数行にまたがる説明文字列の最初の1行だけを表示するからです。
+また、説明文字列の2行目以降を字下げしないでください。
+字下げがあると、
+`C-h f'（`describe-function'）や
+`C-h v'（`describe-variable'）で説明文字列を表示すると
+不恰好になります。
+*Note Documentation Tips::。
+
+説明文字列には、特別な部分文字列、つまり、説明文を表示するときに現在の
+キーマップからキーバインディングを探すことを表すものがあります。これに
+より、ユーザーがキーバインディングを変更していても説明文字列から関連す
+るコマンドのキーを参照できます。（*Note Accessing Documentation::）。
+
+Emacs Lispでは、説明文字列はその説明対象である関数や変数を介して参照し
+ます。
+
+   * 関数の説明文は、関数定義自身に収められている（*Note Lambda
+     Expressions::）。関数`documentation'がその取り出し方を知っている。
+
+   * 変数の説明文は、変数の属性リストに属性名`variable-documentation'で
+     収められている。関数`documentation-property'がその取り出し方を知っ
+     ている。
+
+場所を節約するために、あらかじめロード済みの関数や変数（基本関数や自動
+ロード対象の関数を含む）に対する説明文は、Emacs本体にではなく、ファイル
+`emacs/etc/DOC-VERSION'に収めてあります。Emacsセッションの最中にバイト
+コンパイル済みのファイルからロードされる関数や変数の説明文字列は、当該
+ファイルに収めてあります（*Note Docs and Compilation::）。
+
+Emacs内部のデータ構造では、説明文字列のかわりに、ファイル内の位置を表す
+整数かファイル名と整数を含むリストで表します。関数`documentation'や
+`documentation-property'は、この情報を用いて適切なファイルから説明文字
+列を取り出します。この処理はユーザーには見えません。
+
+説明文字列の利用に関する情報は、
+*Note ヘルプ機能: (emacs)Helpを参照してください。
+
+ディレクトリ`emacs/lib-src'には、
+ファイル`emacs/etc/DOC-VERSION'を美しく印刷するための
+コマンドが2つあります。
+`sorted-doc'と`digest-doc'です。
+
+
+
+File: elisp-ja, Node: Accessing Documentation, Next: Keys in Documentation, Prev: Documentation, Up: Documentation
+
+説明文字列の参照
+================
+
+ -- Function: documentation-property SYMBOL PROPERTY &optional VERBATIM
+     この関数は、シンボルSYMBOLの属性リストに属性PROPERTYで記録されてい
+     る説明文字列を返す。必要ならばファイルからテキストを取り出し、実際
+     のキーバインディングに置き換えるために`substitute-command-keys'を
+     実行する。（VERBATIMが`nil'以外であると、置換を行わない。）
+
+          (documentation-property 'command-line-processed
+             'variable-documentation)
+               => "Non-nil once command line has been processed"
+          (symbol-plist 'command-line-processed)
+               => (variable-documentation 188902)
+
+ -- Function: documentation FUNCTION &optional VERBATIM
+     この関数は、関数FUNCTIONの説明文字列を返す。
+     必要ならばファイルからテキストを取り出す。
+     続いて、（VERBATIMが`nil'ならば）
+     実際の（現在の）キーバインディングを含んだ値を返すために
+     `substitute-command-keys'を実行する。
+
+     関数`documentation'は、FUNCTIONに関数定義がないとエラー
+     `void-function'を通知する。しかし、関数定義に説明文字列がなくても
+     エラーではない。その場合、`documentation'は`nil'を返す。
+
+2つの関数`documentation'と`documentation-property'を用いて、数個のシン
+ボルの説明文字列をバッファ`*Help*'に表示する例を示します。
+
+     (defun describe-symbols (pattern)
+       "Describe the Emacs Lisp symbols matching PATTERN.
+     All symbols that have PATTERN in their name are described
+     in the `*Help*' buffer."
+       (interactive "sDescribe symbols matching: ")
+       (let ((describe-func
+              (function
+               (lambda (s)
+                 ;; Print description of symbol.
+                 (if (fboundp s)             ; これは関数
+                     (princ
+                      (format "%s\t%s\n%s\n\n" s
+                        (if (commandp s)
+                            (let ((keys (where-is-internal s)))
+                              (if keys
+                                  (concat
+                                   "Keys: "
+                                   (mapconcat 'key-description
+                                              keys " "))
+                                "Keys: none"))
+                          "Function")
+                        (or (documentation s)
+                            "not documented"))))
+
+                 (if (boundp s)              ; これは変数
+                     (princ
+                      (format "%s\t%s\n%s\n\n" s
+                        (if (user-variable-p s)
+                            "Option " "Variable")
+                        (or (documentation-property
+                              s 'variable-documentation)
+                            "not documented")))))))
+             sym-list)
+
+         ;; パターンに一致するシンボルのリストを作る
+         (mapatoms (function
+                    (lambda (sym)
+                      (if (string-match pattern (symbol-name sym))
+                          (setq sym-list (cons sym sym-list))))))
+
+         ;; データを表示する
+         (with-output-to-temp-buffer "*Help*"
+           (mapcar describe-func (sort sym-list 'string<))
+           (print-help-return-message))))
+
+関数`describe-symbols'は`apropos'のように動作しますが、より多くの情報を
+提供します。
+
+     (describe-symbols "goal")
+
+     ---------- Buffer: *Help* ----------
+     goal-column     Option
+     *Semipermanent goal column for vertical motion, as set by ...
+
+     set-goal-column Keys: C-x C-n
+     Set the current horizontal position as a goal for C-n and C-p.
+     Those commands will move to this position in the line moved to
+     rather than trying to keep the same horizontal position.
+     With a non-nil argument, clears out the goal column
+     so that C-n and C-p resume vertical motion.
+     The goal column is stored in the variable `goal-column'.
+
+     temporary-goal-column   Variable
+     Current goal column for vertical motion.
+     It is the column where point was
+     at the start of current run of vertical motion commands.
+     When the `track-eol' feature is doing its job, the value is 9999.
+     ---------- Buffer: *Help* ----------
+
+ -- Function: Snarf-documentation FILENAME
+     この関数は、実行可能なEmacsをダンプする直前の
+     Emacsの初期化処理中にのみ使われる。
+     ファイルFILENAMEに格納された説明文字列のファイル内位置を探し出し、
+     それらの情報を実際の文字列のかわりに
+     メモリ内の関数定義や変数の属性リストに記録する。
+     *Note Building Emacs::。
+
+     EmacsはファイルFILENAMEをディレクトリ`emacs/etc'から読む。ダンプし
+     たEmacsをのちに実行すると、同じファイルをディレクトリ
+     `doc-directory'で探す。通常、FILENAMEは`"DOC-VERSION"'である。
+
+ -- Variable: doc-directory
+     この変数は、組み込みであったりあらかじめロード済みの関数や変数の説
+     明文字列を収めたファイル`"DOC-VERSION"'を置いたディレクトリの名前
+     を保持する。
+
+     ほとんどの場合、これは`data-directory'と同じである。
+     Emacsをインストールせずに構築したディレクトリから起動すると、
+     それらは異なることがある。
+     *Note Help Functions::の`data-directory'を参照。
+
+     Emacsの古い版では、この目的には`exec-directory'を用いていた。
+
+
+
+File: elisp-ja, Node: Keys in Documentation, Next: Describing Characters, Prev: Accessing Documentation, Up: Documentation
+
+説明文内のキーバインディングの置換
+==================================
+
+説明文字列からキー列を参照するときには、現在の活性なキーバインディング
+を使うべきです。これは以下に述べる特別なテキスト列でできます。普通の方
+法で説明文字列を参照すると、これらの特別な列は現在のキーバインディング
+情報で置き換えられます。置き換えは`substitute-command-keys'を呼び出して
+行います。読者自身がこの関数を使うこともできます。
+
+特別な列とその意味を以下にあげます。
+
+`\[COMMAND]'
+     コマンドCOMMANDを起動するキー列を表す。
+     COMMANDにキーバインディングがなければ、
+     `M-x COMMAND'を表す。
+
+`\{MAPVAR}'
+     変数MAPVARの値であるキーマップの概要を表す。この概要は
+     `describe-bindings'を使って作成する。
+
+`\<MAPVAR>'
+     空テキストを表す。副作用のためだけに使う。つまり、この説明文字列内
+     のこれ以降にある列`\[COMMAND]'に対するキーマップとしてMAPVARの値を
+     指定する。
+
+`\='
+     後続の文字をクォートし`\='は破棄する。
+     したがって、`\=\['は`\['という出力になり、
+     `\=\='は`\='という出力になる。
+
+*注意：*` ' Emacs Lispでは、文字列内の`\'は、2つ続けて書くこと。
+
+ -- Function: substitute-command-keys STRING
+     この関数は、STRINGから上記の特別な列を探し、それらをそれらが意味す
+     るものに置き換え、結果を文字列で返す。これにより、説明文の表示では、
+     ユーザー独自のカスタマイズしたキーバインディングを実際に参照できる。
+
+特別な列の例を示します。
+
+     (substitute-command-keys
+        "To abort recursive edit, type: \\[abort-recursive-edit]")
+     => "To abort recursive edit, type: C-]"
+
+     (substitute-command-keys
+        "The keys that are defined for the minibuffer here are:
+       \\{minibuffer-local-must-match-map}")
+     => "The keys that are defined for the minibuffer here are:
+
+     ?               minibuffer-completion-help
+     SPC             minibuffer-complete-word
+     TAB             minibuffer-complete
+     C-j             minibuffer-complete-and-exit
+     RET             minibuffer-complete-and-exit
+     C-g             abort-recursive-edit
+     "
+
+     (substitute-command-keys
+        "To abort a recursive edit from the minibuffer, type\
+     \\<minibuffer-local-must-match-map>\\[abort-recursive-edit].")
+     => "To abort a recursive edit from the minibuffer, type C-g."
+
+
+
+File: elisp-ja, Node: Describing Characters, Next: Help Functions, Prev: Keys in Documentation, Up: Documentation
+
+ヘルプメッセージ用の文字変換
+============================
+
+これらの関数は、イベント、キー列、文字をテキスト表記に変換します。これ
+らの表記は、メッセージに文字やキー列をテキストとして含めるのに有用です。
+というのは、非印字文字や白文字を印字文字の列に変換するからです。白文字
+でない印字文字は文字そのもので表記します。
+
+ -- Function: key-description SEQUENCE
+     この関数は、SEQUENCEの入力イベントに対するEmacsの標準表記を含んだ
+     文字列を返す。引数SEQUENCEは、文字列、ベクトル、リストである。正し
+     いイベントについて詳しくは*Note Input Events::。下記の
+     `single-key-description'の例を参照。
+
+ -- Function: single-key-description EVENT
+     この関数は、EVENTをキーボード入力向けのEmacsの標準表記で表した文字
+     列を返す。普通の印字文字はそのまま現れるが、コントロール文字は
+     `C-'で始まる文字列に、メタ文字は`M-'で始まる文字列に、空白、タブな
+     どは、`SPC'、`TAB'などとなる。ファンクションキーのシンボルはそれ自
+     身が現れる。リストであるイベントはリストのCARのシンボルの名前が現
+     れる。
+
+          (single-key-description ?\C-x)
+               => "C-x"
+          (key-description "\C-x \M-y \n \t \r \f123")
+               => "C-x SPC M-y SPC C-j SPC TAB SPC RET SPC C-l 1 2 3"
+          (single-key-description 'C-mouse-1)
+               => "C-mouse-1"
+
+ -- Function: text-char-description CHARACTER
+     この関数は、CHARACTERをテキストに現れる文字向けのEmacsの標準表記で
+     表した文字列を返す。`single-key-description'に似ているが、コントロー
+     ル文字は、始めにカレットを付けて表現する点が異なる（Emacsのバッファ
+     では、コントロールは普通このように表示される）。
+
+          (text-char-description ?\C-c)
+               => "^C"
+          (text-char-description ?\M-m)
+               => "M-m"
+          (text-char-description ?\C-\M-m)
+               => "M-^M"
+
+ -- Function: read-kbd-macro STRING
+     この関数は、キーボードマクロの処理に主に使われるが、
+     `key-description'に対するおおまかな逆変換にも使える。
+     空白で区切ったキーの表記を収めた文字列で、この関数を呼び出す。
+     対応するイベントを収めた文字列かベクトルを返す。
+     （指定したイベントに依存して、正しい単一のキー列であったりなかったりする。
+     *Note Keymap Terminology::。）
+
+
+
+File: elisp-ja, Node: Help Functions, Prev: Describing Characters, Up: Documentation
+
+ヘルプ機能
+==========
+
+Emacsにはさまざまオンラインヘルプ関数があり、それらはすべてプレフィック
+ス`C-h'のサブコマンドとして使えます。それらについて詳しくは、*Note ヘル
+プ機能: (emacs)Helpを参照してください。ここでは、同じ情報を得るプログラ
+ムレベルのインターフェイスを説明します。
+
+ -- コマンド: apropos REGEXP &optional DO-ALL
+     この関数は、正規表現REGEXPに一致する名前を持つすべてのシンボルを探
+     し、それらのリストを返す（*Note Regular Expressions::）。さらに、
+     バッファ`*Help*'に、各シンボルについて、シンボルとその説明文字列の
+     始めの部分から取り出した1行の説明文を表示する。
+
+     DO-ALLが`nil'以外であると、`apropos'は、みつけた関数に対するキーバ
+     インディングも表示する。さらに、関数や変数以外も含めてすべてのシン
+     ボルを表示する。
+
+     つぎの例では、`apropos'は、`exec'を名前に含むすべてのシンボルを探
+     しだす。（ここではバッファ`*Help*'の表示は示さない。）
+
+          (apropos "exec")
+               => (Buffer-menu-execute command-execute exec-directory
+              exec-path execute-extended-command execute-kbd-macro
+              executing-kbd-macro executing-macro)
+
+ -- Variable: help-map
+     この変数の値は、ヘルプキー`C-h'に続く文字向けのローカルキーマップ
+     である。
+
+ -- プレフィックスコマンド: help-command
+     このシンボルは関数ではない。
+     その関数定義セルは、`help-map'として知られるキーマップを保持している。
+     `help.el'での定義はつぎのとおりである。
+
+          (define-key global-map "\C-h" 'help-command)
+          (fset 'help-command help-map)
+
+ -- Function: print-help-return-message &optional FUNCTION
+     この関数は、ヘルプコマンドのあとでそれ以前のウィンドウの状態に復元
+     する方法を述べた文字列を作成する。メッセージを作成後、FUNCTIONが
+     `nil'以外であれば、メッセージをFUNCTIONに適用する。さもなければ、
+     メッセージをエコー領域に表示するために`message'を呼び出す。
+
+     この関数は、スペシャルフォーム`with-output-to-temp-buffer'の中から
+     呼び出され、しかも、当該スペシャルフォームで`standard-output'に値
+     が束縛されているものと仮定する。使用例については、*Note Accessing
+     Documentation::の長い例を参照。
+
+ -- Variable: help-char
+     この変数の値はヘルプ文字、つまり、Emacsがヘルプを意味すると認識す
+     る文字である。デフォルトでは、その値は`C-h'を表す8である。
+     `help-form'が`nil'以外のLisp式であると、Emacsがこの文字を読み取る
+     とその式を評価し、その結果が文字列であれば結果をウィンドウに表示す
+     る。
+
+     通常、`help-form'の値は`nil'である。そうすると、ヘルプ文字にはコマ
+     ンド入力のレベルでは特別な意味はなく、普通の意味でのキー列の一部に
+     なる。`C-h'の標準のキーバインディングは、いくつかの汎用目的のヘル
+     プ機能向けのプレフィックスキーである。
+
+     ヘルプ文字は、プレフィックスキーのうしろでも特別である。
+     プレフィックスのサブコマンドとしてのバインディングがないと、
+     プレフィックスキーのすべてのサブコマンドの一覧を表示する
+     `describe-prefix-bindings'を実行する。
+
+ -- Variable: help-event-list
+     この変数の値は、別の『ヘルプ文字』として動作するイベント型のリスト
+     である。これらのイベントは`help-char'で指定されたイベントとまった
+     く同様に扱われる。
+
+ -- Variable: help-form
+     この変数が`nil'以外であると、その値は、`help-char'を読むたびに評価
+     すべきフォームである。フォームを評価すると文字列を生成すれば、その
+     文字列が表示される。
+
+     `read-event'や`read-char'を呼ぶコマンドは、入力中には`help-form'を
+     `nil'以外に（たぶん）束縛すべきである。（`C-h'に別の意味がある場合
+     には、こうしないこと。）この式の評価結果は、なんのための入力でどの
+     ように入力すべきかを説明する文字列であること。
+
+     ミニバッファに入ると、この変数は`minibuffer-help-form' （*Note
+     Minibuffer Misc::）の値に束縛される。
+
+ -- Variable: prefix-help-command
+     この変数はプレフィックスキーに対するヘルプを表示する関数を保持する。
+     ユーザーがプレフィックスキーに続けてヘルプ文字や当該プレフィックス
+     のあとではバインディングを持たない文字を打つとその関数が呼ばれる。
+     この変数のデフォルト値は`describe-prefix-bindings'である。
+
+ -- Function: describe-prefix-bindings
+     この関数は、もっとも最近のキー列のプレフィックスキーのすべてのサブ
+     コマンドの一覧を表示するために`describe-bindings'を呼び出す。プレ
+     フィックスの説明には、当該キー列の最後のイベント以外のすべてが含ま
+     れる。（最後のイベントはヘルプ文字であると仮定する。）
+
+つぎの2つの関数は、『エレクトリック』モードのように制御を放棄せずにヘル
+プを提供したいモードのためです。それらの名前は、普通のヘルプ関数と区別
+するために`Helper'で始まります。
+
+ -- コマンド: Helper-describe-bindings
+     このコマンドは、ローカルキーマップとグローバルキーマップの両者の
+     すべてのキーバインディングの一覧を収めたヘルプバッファを表示した
+     ウィンドウをポップアップする。
+     `describe-bindings'を呼び出すことで動作する。
+
+ -- コマンド: Helper-help
+     このコマンドはカレントモードについてのヘルプを提供する。
+     ミニバッファにおいて`Help (Type ? for further options)'のメッセージで
+     ユーザーに問い合わせ、キーバインディングの意味やモードの目的を
+     調べることを補佐する。
+     `nil'を返す。
+
+     このコマンドは、キーマップ`Helper-help-map'を変更することでカスタ
+     マイズできる。
+
+ -- Variable: data-directory
+     この変数は、Emacsとともに配布された特定の説明文やテキストファイル
+     をEmacsが探すためのディレクトリの名前を保持する。Emacsの古い版では、
+     この目的には`exec-directory'を用いていた。
+
+ -- Macro: make-help-screen FNAME HELP-LINE HELP-TEXT HELP-MAP
+     このマクロは、サブコマンドの一覧を表示するプレフィックスキーのよう
+     に動作するFNAMEという名前のコマンドのヘルプを定義する。
+
+     起動されると、FNAMEはウィンドウにHELP-TEXTを表示し、HELP-MAPに従っ
+     てキー列を読み実行する。文字列HELP-TEXTは、HELP-MAPが提供するバイ
+     ンディングを記述するべきである。
+
+     コマンドFNAMEは、HELP-TEXTの表示をスクロールすることで、それ自身で
+     は少数のイベントを扱うように定義される。FNAMEがそれらの特殊イベン
+     トの1つを読み取ると、スクロールしてつぎのイベントを読み取る。読み
+     取ったイベントが、扱えるものでなく、HELP-MAPにバインディングがあれ
+     ば、当該キーのバインディングを実行して戻る。
+
+     HELP-LINEは、HELP-MAP内の選択項目を1行にまとめたものであること。
+     Emacsの現在の版では、この引数はオプション`three-step-help'を`t'に
+     設定してある場合にのみ使われる。
+
+     このマクロは、`C-h C-h'のバインディングであるコマンド
+     `help-for-help'で使われている。
+
+ -- User Option: three-step-help
+     この変数が`nil'以外であると、`make-help-screen'で定義されたコマン
+     ドは、まず文字列HELP-LINEをエコー領域に表示し、ユーザーがヘルプ文
+     字を再度打った場合にのみより長い文字列を表示する。
+
+
+File: elisp-ja, Node: Files, Next: Backups and Auto-Saving, Prev: Documentation, Up: Top
+
+ファイル
+********
+
+Emacsでは、ファイルやディレクトリを
+探したり、作成したり、眺めたり、保存したり、その他のことをできます。
+本章では、Emacs Lispのファイル関連の関数のほとんどについて説明しますが、
+他の一部は*Note Buffers::で、バックアップや自動保存に関することは
+*Note Backups and Auto-Saving::で説明します。
+
+ファイル関数の多くは、ファイル名の引数を1つないし複数個取ります。
+ファイル名は実際には文字列です。
+これらのほとんどの関数では、`expand-file-name'を呼び出して
+ファイル名引数を展開することで`~'や
+（`../'を含む）相対ファイル名を正しく処理します。
+これらの関数は、`$HOME'などの環境変数置換は認識しません。
+*Note File Name Expansion::。
+
+* Menu:
+
+* Visiting Files::           Reading files into Emacs buffers for editing.
+* Saving Buffers::           Writing changed buffers back into files.
+* Reading from Files::       Reading files into buffers without visiting.
+* Writing to Files::         Writing new files from parts of buffers.
+* File Locks::               Locking and unlocking files, to prevent
+                               simultaneous editing by two people.
+* Information about Files::  Testing existence, accessibility, size of files.
+* Changing Files::           Renaming files, changing protection, etc.
+* File Names::               Decomposing and expanding file names.
+* Contents of Directories::  Getting a list of the files in a directory.
+* Create/Delete Dirs::	     Creating and Deleting Directories.
+* Magic File Names::	     Defining "magic" special handling
+			       for certain file names.
+* Format Conversion::        Conversion to and from various file formats.
+
+
+
+File: elisp-ja, Node: Visiting Files, Next: Saving Buffers
+
+ファイルの訪問
+==============
+
+ファイルを訪問するとは、ファイルをバッファに読み込むことです。いったん
+こうすると、バッファはそのファイルを"訪問している"（visiting）といい、
+そのファイルをバッファの『訪問しているファイル』と呼びます。
+
+ファイルとバッファは2つの異なるものです。ファイルは、コンピュータ内に
+（読者が削除しない限り）恒久的に記録されている情報です。一方、バッファ
+はEmacs内部にある情報であり、編集セッションを終了する（あるいはバッファ
+を削除する）と消えてしまいます。通常、バッファにはファイルからコピーし
+た情報があります。つまり、バッファはそのファイルを訪問しているのです。
+読者は、バッファ内のコピーを編集コマンドで修正するのです。バッファに対
+するそのような変更では、ファイルは変更しません。したがって、変更を恒久
+的なものにするには、読者はバッファを"保存"（save）する、つまり、バッファ
+の変更した内容をファイルにコピーし戻す必要があります。
+
+ファイルとバッファの区別にも関わらず、バッファを意味してファイルといっ
+たり、その逆のいい方をしばしばします。もちろん、『同じ名前のファイルに
+ただちに保存するつもりでバッファを編集している』とはいわずに『ファイル
+を編集している』といいます。しばしば、人間は明確に区別する必要はありま
+せん。しかし、コンピュータプログラムを扱ううえでは、区別を心得ておくこ
+とがよいのです。
+
+* Menu:
+
+* Visiting Functions::         The usual interface functions for visiting.
+* Subroutines of Visiting::    Lower-level subroutines that they use.
+
+
+
+File: elisp-ja, Node: Visiting Functions, Prev: Visiting Files, Up: Visiting Files
+
+ファイルを訪問する関数
+----------------------
+
+本節では、ファイルを訪問するために通常使う関数について述べます。
+歴史的な理由で、これらの関数は`visit-'でなく`find-'という
+名前で始まります。
+バッファで訪問したファイルの名前を参照するための関数や変数、ならびに、
+訪問したファイルの名前で既存バッファを探すための関数や変数については、
+*Note Buffer File Name::。
+
+Lispプログラムにおいて、ファイルの内容を変更せずにその内容を調べたいときには、
+もっとも速い方法は一時的なバッファで`insert-file-contents'を
+使うことです。
+ファイルを訪問する必要はありませんし、それには余計に時間がかかります。
+*Note Reading from Files::。
+
+ -- コマンド: find-file FILENAME
+     このコマンドはファイルFILENAMEを訪問したバッファを選択する。そのよ
+     うなバッファが既存ならば当該バッファを使う。さもなければ、新たなバッ
+     ファを作成してファイルを読み込む。当該バッファを返す。
+
+     関数`find-file'の本体は非常に簡単で、つぎのとおりである。
+
+          (switch-to-buffer (find-file-noselect filename))
+
+     （*Note Displaying Buffers::の`switch-to-buffer'を参照。）
+
+     `find-file'が対話的に呼び出されると、ミニバッファでFILENAMEを問い
+     合わせる。
+
+ -- Function: find-file-noselect FILENAME &optional NOWARN RAWFILE
+     この関数は、ファイルを訪問するすべての関数の基である。ファイル
+     FILENAMEを訪問した／するバッファを探し／作成し、当該バッファを返す。
+     そのようなバッファが既存ならば当該バッファを使う。さもなければ、新
+     たなバッファを作成してファイルを読み込む。必要に応じて、バッファを
+     カレントバッファにしたりウィンドウに表示できるが、この関数はそこま
+     では行わない。
+
+     `find-file-noselect'が既存バッファを使うときには、ファイルの内容が
+     当該バッファに最後に訪問してから、あるいは、当該バッファを最後に保
+     存してから変更されたかどうかまず確認する。ファイルが変更されていれ
+     ば、この関数は変更されたファイルを再度読み込むかどうかユーザーに問
+     い合わせる。ユーザーが`yes'と答えると、バッファ内の変更は破棄され
+     る。
+
+     省略可能な引数NOWARNが`nil'であると、この関数はさまざまな場面で警
+     告／助言メッセージを表示する。たとえば、バッファを作成する必要があ
+     り、かつ、指定したファイルFILENAMEがない場合には、エコー領域にメッ
+     セージ`New file'を表示し、バッファは空にしておく。
+
+     関数`find-file-noselect'は、
+     ファイルを読み込み終えると通常`after-find-file'を呼び出す
+     （*Note Subroutines of Visiting::）。
+     その関数は、バッファのメジャーモードを設定し、ローカル変数を解析し、
+     訪問したファイルより新しい自動保存ファイルが存在するとユーザーに警告を発し、
+     `find-file-hooks'の関数を実行して処理を終える。
+
+     省略可能な引数RAWFILEが`nil'以外であると、`after-find-file'を呼び
+     出さず、失敗しても`find-file-not-found-hooks'を実行しない。さらに、
+     RAWFILEの値が`nil'以外であると、コーディングシステムの変換（*Note
+     Coding Systems::）や書式変換（*Note Format Conversion::）も行わな
+     い。
+
+     関数`find-file-noselect'は、ファイルFILENAMEを訪問したバッファを返
+     す。
+
+          (find-file-noselect "/etc/fstab")
+               => #<buffer fstab>
+
+ -- コマンド: find-file-other-window FILENAME
+     このコマンドは、選択しているウィンドウ以外のウィンドウにおいて、
+     ファイルFILENAMEを訪問したバッファを選択する。
+     別の既存ウィンドウを使うか、ウィンドウを分割する。
+     *Note Displaying Buffers::を参照。
+
+     このコマンドが対話的に呼び出されると、
+     FILENAMEを問い合わせる。
+
+ -- コマンド: find-file-read-only FILENAME
+     このコマンドは、`find-file'のようにファイルFILENAMEを訪問した
+     バッファを選択するが、当該バッファは読み出し専用となる。
+     *Note Read Only Buffers::。
+
+     このコマンドが対話的に呼び出されると、
+     FILENAMEを問い合わせる。
+
+ -- コマンド: view-file FILENAME
+     このコマンドは、閲覧（view）モードでFILENAMEを訪問し、
+     閲覧（view）モードを抜けるとそれ以前のバッファに戻る。
+     閲覧（view）モードは、ファイルを素早く眺めるためのコマンドを与えるが
+     テキストの変更は許さないマイナモードである。
+     閲覧（view）モードに入ると、ノーマルフック`view-mode-hook'を実行する。
+     *Note Hooks::。
+
+     `view-file'が対話的に呼び出されると、
+     FILENAMEを問い合わせる。
+
+ -- Variable: find-file-hooks
+     この変数の値は、ファイルを訪問後に呼び出される関数のリストである。
+     ファイルにローカル変数指定（があれば）は、フックを実行するまえに処
+     理される。フック関数が実行されときには、ファイルを訪問したバッファ
+     はカレントバッファになっている。
+
+     この変数はノーマルフックのように動作するが、
+     改名すべきではないと考えている。
+     *Note Hooks::。
+
+ -- Variable: find-file-not-found-hooks
+     この変数の値は、`find-file'や`find-file-noselect'に
+     存在しないファイルを与えたときに呼び出される関数のリストである。
+     `find-file-noselect'は、ファイルが存在しないことがわかると
+     ただちにこれらの関数を呼び出す。
+     `nil'以外の値が返されるまで、リストに現れる順に呼び出す。
+     `buffer-file-name'は設定済みである。
+
+     関数の値を使い、しかも、一部の関数だけを呼び出すので、これはノーマ
+     ルフックではない。
+
+
+

@@ -1,0 +1,1870 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Interactive Call, Next: Command Loop Info, Prev: Defining Commands, Up: Command Loop
+
+対話的呼び出し
+==============
+
+コマンドループでは, キー列をコマンドへ変換し終えると, 関数
+`command-execute'を用いてそのコマンドを起動します.  コマンドが関数であ
+れば, `command-execute'は引数を読み取り, コマンドを呼び出す
+`call-interactively'を呼びます.  読者自身がこれらの関数を呼び出しても
+かまいません.
+
+ -- Function: commandp OBJECT
+     OBJECTが対話的呼び出しに適していれば, つまり, OBJECTがコマンドで
+     あれば`t'を返す.  さもなければ`nil'を返す.
+
+     対話的呼び出しが可能なオブジェクトには, （キーボードマクロとして
+     扱われる）文字列やベクトル, トップレベルで`interactive'を呼び出し
+     ているラムダ式, そのようなラムダ式をコンパイルしたバイトコード関
+     数オブジェクト, 対話的（`autoload'の4番目の引数が`nil'以外）と宣
+     言された自動ロードオブジェクト, 一部の基本関数が含まれる.
+
+     シンボルの関数定義が`commandp'を満たせば, シンボルも`commandp'を
+     満たす.
+
+     キーやキーマップはコマンドではない.  それらはコマンドを探すために
+     使われる（*Note Keymaps::）.
+
+     `commandp'の実用的な使用例については, *Note Accessing
+     Documentation::の`documentation'を参照.
+
+ -- Function: call-interactively COMMAND &optional RECORD-FLAG KEYS
+     この関数は, 対話的呼び出し可能な関数COMMANDをその対話指定に従って
+     引数を読み取り呼び出す.  COMMANDが関数でなかったり, 対話的に呼び
+     出せない（つまり, コマンドでない）場合には, エラーを通知する.  キー
+     ボードマクロ（文字列やベクトル）はコマンドとみなすが, それらは関
+     数でないため, この関数はキーボードマクロを受け付けない.
+
+     RECORD-FLAGが`nil'以外であると, コマンドとその引数を無条件にリス
+     ト`command-history'に追加する.  さもなければ, 引数を読むためにコ
+     マンドがミニバッファを使った場合にのみ追加する.  *Note Command
+     History::.
+
+     もし引数KEYSを指定すると, コマンドがそれを起動したイベントを問い
+     合わせたときに与えるイベント列を指定する.
+
+ -- Function: command-execute COMMAND &optional RECORD-FLAG KEYS
+     この関数はCOMMANDを実行する.  引数COMMANDは`commandp'を満たすこと. 
+     つまり, 対話的呼び出し可能な関数かキーボードマクロであること.
+
+     `command'が文字列やベクトルであると, `execute-kbd-macro'で実行さ
+     れる.  関数であると, 省略可能なRECORD-FLAGとともに関数を
+     `call-interactively'に渡す.
+
+     シンボルは, その関数定義を使って処理する.  `autoload'で定義された
+     シンボルは, 対話的呼び出し可能な関数と宣言されていればコマンドと
+     みなす.  そのような定義では, 指定されたライブラリをロードしてから
+     シンボルの定義を再検査して処理する.
+
+     もし引数KEYSを指定すると, コマンドがそれを起動したイベントを問い
+     合わせたときに与えるイベント列を指定する.
+
+ -- コマンド: execute-extended-command PREFIX-ARGUMENT
+     この関数は`completing-read'（*Note Completion::）を使ってミニバッ
+     ファでコマンド名を読む.  そして`command-execute'を使って指定され
+     たコマンドを実行する.  コマンドが返した値が
+     `execute-extended-command'の値になる.
+
+     コマンドが前置引数を必要とする場合, PREFIX-ARGUMENTの値を受け取る.
+     `execute-extended-command'が対話的に呼ばれた場合, 現在の生の前置
+     引数がPREFIX-ARGUMENTとして使われ, それが実行するコマンドへ渡され
+     る.
+
+     `execute-extended-command'は通常`M-x'に定義付けられ, 
+     そのため, プロンプトとして文字列`M-x 'を使う. 
+     （`execute-extended-command'を起動するために使われた
+     イベントをプロンプトにするべきであるが, 
+     それを実装するのは手間がかかる. ）
+     もし前置引数を指定すると, その内容もプロンプトの一部になる. 
+
+          (execute-extended-command 1)
+          ---------- Buffer: Minibuffer ----------
+          1 M-x forward-word RET
+          ---------- Buffer: Minibuffer ----------
+               => t
+
+ -- Function: interactive-p
+     この関数は, これ（`interactive-p'の呼び出し）を含んだ関数が
+     `call-interactively'で対話的に呼び出されると`t'を返す.  （Lispか
+     ら`call-interactively'が呼び出されても, エディタコマンドループが
+     直接呼び出しても違いはない. ）これを含んだ関数がLispの評価（ある
+     いは`apply'や`funcall'）で呼び出された場合は, 対話的呼び出しでは
+     ない.
+
+`interactive-p'のもっとも一般的な用途は, 情報メッセージを表示するかど
+うか決めることです.  特別な例外として, キーボードマクロを実行中にはい
+つでも, `interactive-p'は`nil'を返します.  これは情報メッセージを省い
+てマクロの実行を速くするためです.
+
+つぎのように使います.
+
+     (defun foo ()
+       (interactive)
+       (when (interactive-p)
+         (message "foo")))
+          => foo
+
+     (defun bar ()
+       (interactive)
+       (setq foobar (list (foo) (interactive-p))))
+          => bar
+
+     ;; M-x fooと打つ
+          -| foo
+
+     ;; M-x barと打つ
+     ;; これはなにも表示しない
+
+     foobar
+          => (nil t)
+
+この種のことを行う別の方法は, コマンドを対話的呼び出しでは`nil'以外の
+値になる引数`print-message'を取るようにし, その引数が`nil'以外になるよ
+うな`interactive'指定を使うことです.  つぎのようにします.
+
+     (defun foo (&optional print-message)
+       (interactive "p")
+       (when print-message
+         (message "foo")))
+
+`p'で与えられる数値前置引数はけっして`nil'になりません.
+
+
+
+File: elisp-ja, Node: Command Loop Info, Next: Input Events, Prev: Interactive Call, Up: Command Loop
+
+コマンドループからの情報
+========================
+
+エディタコマンドループは, 自身や実行中のコマンドのために状態記録を数個
+のLisp変数に設定します.
+
+ -- Variable: last-command
+     この変数は, コマンドループが（現在のコマンドの）まえに実行したコ
+     マンドの名前を記録する.  通常, この値は関数定義を持つシンボルであ
+     るが, 保証はしない.
+
+     コマンドが後続のコマンドに対する前置引数を指定する場合を除いて, 
+     コマンドからコマンドループへ戻ると`this-command'から値をコピーす
+     る.
+
+     この変数は現在の端末に対してつねにローカルであり, バッファに対し
+     てローカルにはならない.  *Note Multiple Displays::.
+
+ -- Variable: real-last-command
+     `last-command'と同様にEmacsがこの変数に設定するが, Lispプログラム
+     ではけっして変更しない.
+
+ -- Variable: this-command
+     この変数は, エディタコマンドループがいま実行しているコマンドの名
+     前を記録する.  `last-command'と同様に, 通常は関数定義を持つシンボ
+     ルである.
+
+     コマンドループは, コマンドを実行する直前にこの変数に設定し, コマ
+     ンドが終了すると（コマンドが後続のコマンドに対する前置引数を指定
+     する場合を除いて）この値を`last-command'にコピーする.
+
+     後続のコマンドに対するフラグとして実行中にこの変数に設定するコマ
+     ンドもある.  特に, テキストをキルする関数群は`this-command'に
+     `kill-region'を設定して, 直後に続くキルコマンドではキルしたテキス
+     トをまえのキルに追加するようにする.
+
+特定のコマンドがエラーを起こした場合に直前のコマンドとは認識されたくな
+い場合には, 読者はそのコマンドがそれを防ぐように書く必要があります.  1
+つの方法は, 以下に示すように, コマンドの始めで`this-command'に`t'を設
+定し, コマンドの終りで`this-command'に正しい値を戻します.
+
+     (defun foo (args...)
+       (interactive ...)
+       (let ((old-this-command this-command))
+         (setq this-command t)
+         ...do the work...
+         (setq this-command old-this-command)))
+
+`let'で`this-command'を束縛しません.  というのは, エラーがあると`let'
+は古い値を復元するからです.  これこそがここでは避けたい`let'の機能です.
+
+ -- Function: this-command-keys
+     この関数は, 現在のコマンドに対して直前のコマンドが生成した前置引
+     数を含めて, 現在のコマンドを起動したキー列を含んだ文字列かベクト
+     ルを返す.  すべてのイベントが文字であれば, 値は文字列である.
+     *Note Input Events::.
+
+          (this-command-keys)
+          ;; C-u C-x C-eを使ってこの式を評価する
+               => "^U^X^E"
+
+ -- Function: this-command-keys-vector
+     `this-command-keys'と同様だが, つねにベクトルでイベントを返すため, 
+     文字列に入力イベントを保持する際の複雑さを扱う必要がない（*Note
+     Strings of Events::）.
+
+ -- Variable: last-nonmenu-event
+     この変数は, マウスメニューによるイベントを考慮せずに, キー列とし
+     て読んだ最後の入力イベントを保持する.
+
+     この変数の1つの用途は, メニューをポップアップする位置を
+     `x-popup-menu'に指示することである.  `y-or-n-p'（*Note Yes-or-No
+     Queries::）も内部的に使っている.
+
+ -- Variable: last-command-event
+ -- Variable: last-command-char
+     この変数には, コマンドの一部としてコマンドループが読んだ最後の入
+     力イベントが設定される.  この変数の主な用途は, どの文字を挿入すべ
+     きかを決定するために`self-insert-command'が使うことである.
+
+          last-command-event
+          ;; C-u C-x C-eを使ってこの式を評価する
+               => 5
+
+     `C-e'のASCIIコードは5なので, 値は5である.
+
+     Emacs 18版との互換性のために別名`last-command-char'がある.
+
+ -- Variable: last-event-frame
+     この変数は, 最後の入力イベントを振り向けたフレームを記録する.  通
+     常これは, イベントが生成されたときに選択されていたフレームである
+     が, そのフレームが入力フォーカスを別のフレームに振り向けていると, 
+     この値はイベントを振り向けた先のフレームである.  *Note Input
+     Focus::.
+
+
+
+File: elisp-ja, Node: Input Events, Next: Reading Input, Prev: Command Loop Info, Up: Command Loop
+
+入力イベント
+============
+
+Emacsのコマンドループは, キーボードやマウスのユーザーの操作を表す"入力
+イベント"（input event）列を読みます.  キーボード操作に対するイベント
+は, 文字かシンボルです.  マウスイベントはつねにリストです.  本節では, 
+入力イベントの表現方法やその意味を詳しく説明します.
+
+ -- Function: eventp OBJECT
+     この関数は, OBJECTが入力イベントであるかイベント型であると`nil'以
+     外を返す.
+
+     任意のシンボルがイベントやイベント型として使われることに注意.
+     `eventp'は, Lispのプログラムコードがシンボルをイベントとして使う
+     かどうか区別できない.  そのかわりに, シンボルが, Emacsの現在のセッ
+     ションにおいて入力として読まれたイベントに使われたことがあるかど
+     うかを区別する.  シンボルがそのように使われたことがなければ,
+     `eventp'は`nil'を返す.
+
+* Menu:
+
+* Keyboard Events::		Ordinary characters--keys with symbols on them.
+* Function Keys::		Function keys--keys with names, not symbols.
+* Mouse Events::                Overview of mouse events.
+* Click Events::		Pushing and releasing a mouse button.
+* Drag Events::			Moving the mouse before releasing the button.
+* Button-Down Events::		A button was pushed and not yet released.
+* Repeat Events::               Double and triple click (or drag, or down).
+* Motion Events::		Just moving the mouse, not pushing a button.
+* Focus Events::		Moving the mouse between frames.
+* Misc Events::                 Other events window systems can generate.
+* Event Examples::		Examples of the lists for mouse events.
+* Classifying Events::		Finding the modifier keys in an event symbol.
+				Event types.
+* Accessing Events::		Functions to extract info from events.
+* Strings of Events::           Special considerations for putting
+				  keyboard character events in a string.
+
+
+
+File: elisp-ja, Node: Keyboard Events, Next: Function Keys, Prev: Input Events, Up: Input Events
+
+キーボードイベント
+------------------
+
+キーボードからは2種類の入力があります.  普通のキーとファンクションキー
+です.  普通のキーは文字に対応します.  それらが生成するイベントは, Lisp
+では文字として表現されます.  文字イベントのイベント型は文字自身（整数）
+です.  *Note Classifying Events::を参照してください.
+
+入力文字イベントは, 0から524287までの"基本コード"（basic code）と以下
+の"修飾ビット"（modifier bit）の任意の組み合わせです.
+
+meta
+     文字コードのビット2**27 は, メタキーを押し下げながら文字を打った
+     ことを表す.
+
+control
+     文字コードのビット2**26 は非ASCII文字のコントロール文字を表す.
+
+     `C-a'などのASCIIコントロール文字には独自の特別な基本コードがある
+     ため, Emacsはそれを表すための特別なビットを必要としない.  つまり,
+     `C-a'のコードは単に1である.
+
+     しかし, コントロールキーを使った`%'などのASCIIにないコントロール
+     との組み合わせを打った場合, 得られる数値は`%'のコードに2**26 を加
+     えたものである（端末で非ASCIIのコントロール文字を扱えるとして）.
+
+shift
+     文字コードのビット2**25 は, シフトキーを押し下げながらASCIIコント
+     ロール文字を打ったことを表す.
+
+     英文字では, 基本コードそのものが大文字か小文字かを表す.  数字文字
+     と区切り文字では, シフトキーは異なる基本コードのまったく異なる文
+     字を選ぶ.  可能な限りASCII文字集合ですませるために, これらの文字
+     に対しては, Emacsはビット2**25 を使わない.
+
+     しかし, ASCIIでは`C-A'と`C-a'を区別できないため, Emacsは, `C-A'で
+     はビット2**25 を使うが, `C-a'ではこのビットを使わない.
+
+hyper
+     文字コードのビット2**24 は, ハイパーキーを押し下げながら文字を打っ
+     たことを表す.
+
+super
+     文字コードのビット2**23 は, スーパーキーを押し下げながら文字を打っ
+     たことを表す.
+
+alt
+     文字コードのビット2**22 は, アルトキーを押し下げながら文字を打っ
+     たことを表す.  （ALTとラベルされたキーが実際にはメタキーである端
+     末も存在する. ）
+
+読者のプログラム内では, 特定の修飾ビットの値を明示することは避けるのが
+最良です.  文字の修飾ビットを検査するには, 関数`event-modifiers'
+（*Note Classifying Events::）を使います.  キーバインディングを作ると
+きには, （`\C-', `\M-'などの）修飾ビットを伴う文字の入力表現を使います.
+`define-key'でキーバインディングを作るときには, 文字の指定には
+`(control hyper ?x)'のようなリストを使います（*Note Changing Key
+Bindings::）.  関数`event-convert-list'は, そのようなリストをイベント
+型に変換します（*Note Classifying Events::）.
+
+
+
+File: elisp-ja, Node: Function Keys, Next: Mouse Events, Prev: Keyboard Events, Up: Input Events
+
+ファンクションキー
+------------------
+
+ほとんどのキーボードには, "ファンクションキー"（function key）, つまり, 
+文字ではない名前や記号のキーがあります.  Emacs Lispでは, ファンクショ
+ンキーはシンボルで表現されます.  シンボルの（小文字の）名前がファンク
+ションキーのラベルです.  たとえば, F1というラベルのキーを押すと, 入力
+ストリームにはシンボル`f1'が置かれます.
+
+ファンクションキーイベントのイベント型は, イベントシンボルそれ自身です.
+*Note Classifying Events::.
+
+ファンクションキーに対するシンボル命名慣習の特例を以下に示します.
+
+`backspace', `tab', `newline', `return', `delete'
+     これらのキーは, ほとんどのキーボードにある特別なキーを持つ一般的
+     なASCIIコントロール文字に対応する.
+
+     ASCIIでは, `C-i'とTABは同じ文字である.  これらを区別できる端末で
+     は, 前者を整数9, 後者をシンボル`tab'と表現することで, EmacsはLisp
+     プログラムに区別を伝える.
+
+     ほとんどの場面では, これら2つを区別しても有用ではない.  そのため, 
+     通常, `function-key-map'（*Note Translating Input::）は, `tab'を9
+     に対応付けるようには設定してある.  したがって, 文字コード9（文字
+     `C-i'）に対するキーバインディングは`tab'にも適用される.  この種の
+     他のシンボルについても同様である.  関数`read-char'も同様にこれら
+     のイベントを文字に変換する.
+
+     ASCIIでは, BSは実際には`C-h'である.  しかし, `backspace'は文字コー
+     ド127（DEL）に変換され, 文字コード8（BS）には変換されない.  ほと
+     んどのユーザーはこれを好む.
+
+`left', `up', `right', `down'
+     カーソル矢印キー
+`kp-add', `kp-decimal', `kp-divide', ...
+     （普通のキーボードの右側にある）キーパッドのキー.
+`kp-0', `kp-1', ...
+     キーパッドの数字キー.
+`kp-f1', `kp-f2', `kp-f3', `kp-f4'
+     キーパッドのPFキー
+`kp-home', `kp-left', `kp-up', `kp-right', `kp-down'
+     キーパッドの矢印キー.  Emacsは, 通常, これらを対応するキーパッド
+     のものではない`home', `left', ...のキーに変換する.
+`kp-prior', `kp-next', `kp-end', `kp-begin', `kp-insert', `kp-delete'
+     普通のキーに対応するキーパッドのキー.  Emacsは, 通常, 同じ名前の
+     キーパッドのものではないキーに変換する.
+
+ファンクションキーにもALT, CTRL, HYPER, META, SHIFT, SUPERの修飾キーを
+使えます.  それらを表現するには, シンボル名に接頭辞を付けます.
+
+`A-'
+     アルト修飾.
+`C-'
+     コントロール修飾.
+`H-'
+     ハイパー修飾.
+`M-'
+     メタ修飾.
+`S-'
+     シフト修飾.
+`s-'
+     スーパー修飾.
+
+したがって, METAを押し下げたF3キーのシンボルは`M-f3'です.  複数の接頭
+辞を使うときには, アルファベット順に書くことを勧めますが, キーバインディ
+ングの探索関数や修飾関数の引数では関係ありません.
+
+
+
+File: elisp-ja, Node: Mouse Events, Next: Click Events, Prev: Function Keys, Up: Input Events
+
+マウスイベント
+--------------
+
+Emacsでは4種類のマウスイベント, つまり, クリックイベント, ドラッグイベ
+ント, ボタン押し下げイベント, モーションイベントを扱えます.  すべての
+マウスイベントは, リストで表現します.  リストのCARはイベント型であり, 
+どの修飾キーとともにどのマウスボタンを使ったかを表します.  イベント型
+では, ダブル（連続2回）／トリプル（連続3回）の押し下げも区別できます
+（*Note Repeat Events::）.  リストの残りの要素は, 位置情報と時間情報で
+す.
+
+キーの探索では, イベント型のみが意味を持ちます.  型が同じであれば, 異
+なるイベントでも同じコマンドを実行します.  コマンドでは, 対話指定コー
+ド`e'を用いてイベントの完全な値を参照できます.  *Note Interactive
+Codes::.
+
+マウスイベントで始まるキー列は, カレントバッファのキーマップではなく, 
+マウスが入っているウィンドウのバッファのキーマップを用いて読まれます. 
+つまり, あるウィンドウ内でクリックしても, 当該ウィンドウやバッファを選
+択するとは限らず, その動作はキー列のコマンドバインディングで完全に制御
+されます.
+
+
+
+File: elisp-ja, Node: Click Events, Next: Drag Events, Prev: Mouse Events, Up: Input Events
+
+クリックイベント
+----------------
+
+ユーザーがマウスのボタンを同じ場所で押し下げてから離すと, "クリック"
+（click）イベントが生成されます.  マウスクリックイベントはつぎの形式で
+す.
+
+     (EVENT-TYPE
+      (WINDOW BUFFER-POS (X . Y) TIMESTAMP)
+      CLICK-COUNT)
+
+通常の各要素の意味はつぎのとおりです.
+
+EVENT-TYPE
+     どのマウスボタンが使われたかを表すシンボル.  ボタンを左から右へ番
+     号を付けて, シンボル`mouse-1', `mouse-2', ...の1つである.
+
+     ファンクションキーの場合と同様に, アルト, コントロール, ハイパー, 
+     メタ, シフト, スーパーの修飾キーを表す接頭辞`A-', `C-', `H-',
+     `M-', `S-', `s-'も使える.
+
+     このシンボルはイベントのイベント型としての役割も果たす.  キーバイ
+     ンディングはイベント型でイベントを指定する.  したがって,
+     `mouse-1'に対するキーバインディングは, イベント型EVENT-TYPEが
+     `mouse-1'であるすべてのイベントに適用される.
+
+WINDOW
+     クリックを行ったウィンドウ.
+
+X, Y
+     ウィンドウWINDOWの左上端を`(0 . 0)'としたクリック位置のピクセル単
+     位の座標.
+
+BUFFER-POS
+     クリックした文字のバッファ内位置.
+
+TIMESTAMP
+     イベントが発生したときのミリ秒単位の時刻.  （この値は, Emacs Lisp
+     の整数の範囲では約5時間で一周するので, 時間的に近傍のイベントを関
+     連付ける場合にのみ有用である. ）
+
+CLICK-COUNT
+     同じマウスボタンを素早く押し下げた繰り返し回数.  *Note Repeat
+     Events::.
+
+モード行やスクロールバーなどのスクリーンの特別な部分で発生したイベント
+では, BUFFER-POS, XとYの意味は少々異なります.
+
+スクロールバーの内側でのクリックでは, BUFFER-POSはシンボル
+`vertical-scroll-bar'か`horizontal-scroll-bar'であり, `(X . Y)'は
+`(PORTION . WHOLE)'に置き換えられます.  ここで, PORTIONはスクロールバー
+の先頭や左端からのクリック位置, WHOLEはスクロールバー全体の長さです.
+
+モード行やウィンドウWINDOWを右隣のものと区切る縦方向の区切り行の内側で
+は, BUFFER-POSはシンボル`mode-line'か`vertical-line'です.  モード行で
+は, Yは意味のあるデータではありません.  縦方向の区切り行では, Xは意味
+のあるデータではありません.
+
+1つの特別な場面では, BUFFER-POSは単一のシンボルではなく（上に述べた1つ
+の）シンボルを含んだリストになります.  イベントに対する仮想的なプレフィッ
+クスキーを入力ストリームに挿入するとこのようになります.  *Note Key
+Sequence Input::.
+
+
+
+File: elisp-ja, Node: Drag Events, Next: Button-Down Events, Prev: Click Events, Up: Input Events
+
+ドラッグイベント
+----------------
+
+Emacsには, ドラッグイベントがあります.  ユーザーがマウスボタンを押し下
+げてから, ボタンを離すまえに別の文字位置へマウスを動かすと"ドラッグ"
+（drag）イベントが発生します.  マウスのすべてのイベントのように, Lisp
+ではドラッグイベントはリストとして表現されます.  つぎのように, リスト
+は開始マウス位置と終了位置を記録しています.
+
+     (EVENT-TYPE
+      (WINDOW1 BUFFER-POS1 (X1 . Y1) TIMESTAMP1)
+      (WINDOW2 BUFFER-POS2 (X2 . Y2) TIMESTAMP2)
+      CLICK-COUNT)
+
+ドラッグイベントでは, シンボルEVENT-TYPEの名前には接頭辞`drag-'が付き
+ます.  たとえば, ボタン2を押し下げてマウスをドラッグするとイベント
+`drag-mouse-2'が生成されます.  イベントの2番目と3番目の要素は, ドラッ
+グの開始位置と終了位置を与えます.  なお, データにはクリックイベントと
+同じ意味があります（*Note Click Events::）.  ドラッグイベントかどうか
+を区別せずに, マウスの任意のイベントの2番目の要素は同じ方法で参照でき
+ます.
+
+接頭辞`drag-'は, `C-'や`M-'のような修飾キー接頭辞に続きます.
+
+`read-key-sequence'が, キーバインディングを持たないドラッグイベントを
+受け取り, かつ, それに対応するクリックイベントにはバインディングがある
+場合, ドラッグイベントの開始位置をクリック位置とするクリックイベントに
+変換します.  つまり, 望まなければ, 読者はクリックイベントとドラッグイ
+ベントを区別する必要がありません.
+
+
+
+File: elisp-ja, Node: Button-Down Events, Next: Repeat Events, Prev: Drag Events, Up: Input Events
+
+ボタン押し下げイベント
+----------------------
+
+クリックイベントとドラッグイベントは, ユーザーがマウスボタンを離したと
+きに発生します.  ボタンを離すまではクリックとドラッグを区別する方法が
+ないため, ボタンを離すまで発生しえません.
+
+ボタンを押し下げたらただちに動作を始めたい場合には, 読者は"ボタン押し
+下げ"（button-down）イベントを処理する必要があります. (1) (*Note
+Button-Down Events-Footnotes::) ボタンを押し下げるとただちに発生します. 
+それらは, シンボルEVENT-TYPEの名前に接頭辞`down-'があることを除けば, 
+クリックイベント（*Note Click Events::）とまったく同じリストで表現され
+ます.  接頭辞`down-'は, `C-'や`M-'のような修飾キー接頭辞に続きます.
+
+関数`read-key-sequence'は, コマンドバインディングを持たないボタン押し
+下げイベントを無視します.  したがって, Emacsのコマンドループもそれらを
+無視します.  つまり, 読者がボタン押し下げイベントでなにかをしたいので
+なければ, 読者はボタン押し下げイベントを定義する必要はありません.  ボ
+タン押し下げイベントを定義する理由は, ボタンが離されるまで（モーション
+イベントを読んで）マウスの動きを追跡するためです.  *Note Motion
+Events::.
+
+
+File: elisp-ja  Node: Button-Down Events-Footnotes, Up: Button-Down Events
+
+(1) 「ボタン押し下げ」は, 「ドラッグ」の対句.
+
+
+
+File: elisp-ja, Node: Repeat Events, Next: Motion Events, Prev: Button-Down Events, Up: Input Events
+
+繰り返しイベント
+----------------
+
+マウスを動かさずに同一のマウスボタンを素早く連続して押し下げると,
+Emacsは2回目以降の押し下げに対して特別な"繰り返し"（repeat）マウスイベ
+ントを生成します.
+
+もっとも一般的な繰り返しイベントは"ダブルクリック"（double-click）イベ
+ントです.  ボタンを2回クリックすると, Emcasはダブルクリックイベントを
+生成します.  （他のすべてのクリックイベントのように）読者がボタンを離
+したときにイベントが生成されます.
+
+ダブルクリックイベントのイベント型には, 接頭辞`double-'が含まれます. 
+したがって, metaを押し下げて2番目のボタンをダブルクリックすると, Lisp
+プログラムには`M-double-mouse-2'が送られます.  ダブルクリックイベント
+にバインディングがなければ, 対応する普通のクリックイベントを用いて実行
+します.  したがって, 実際に利用したくない限りは, 読者はダブルクリック
+機能に注意する必要はありません.
+
+ユーザーがダブルクリックすると, Emacsはまず普通のクリックイベントを生
+成し, つぎにダブルクリックイベントを生成します.  したがって, ダブルク
+リックイベントのコマンドバインディングでは, すでに普通のクリックコマン
+ドが動作済みであると仮定して設計する必要があります.  普通のクリックの
+結果をもとに望みのダブルクリックの結果を得るようにします.
+
+普通のクリックの意味にダブルクリックの意味を『追加』するようにすると便
+利です.  ダブルクリックのユーザーインターフェイスはこのようにすること
+を勧めます.
+
+ボタンをクリックして, ふたたびボタンを押し下げてそのままマウスを動かす
+と, 最終的にボタンを離した時点で, "ダブルドラッグ"（double-drag）イベ
+ントが生成されます.  そのイベント型には`drag'のかわりに`double-drag'が
+含まれます.  ダブルドラッグイベントにバインディングがなければ, Emacsは
+普通のドラッグイベントとしてバインディングを探します.
+
+ダブルクリックイベントやダブルドラッグイベントを生成するまえに, ユーザー
+がボタンを2回目に押し下げたとき, Emacsは"ダブルダウン"（double-down）
+イベントを生成します.  このイベント型には`down'のかわりに`double-down'
+が含まれます.  ダブルダウンイベントにバインディングがなければ, Emacsは
+普通のボタン押し下げイベントとしてバインディングを探します.  どちらで
+もバインディングがみつからなければ, ダブルダウンイベントは無視します.
+
+まとめると, ボタンをクリックしてただちに再度ボタンを押し下げると,
+Emacsは, はじめのクリックに対してボタン押し下げイベントとクリックイベ
+ントを生成し, 再度ボタンを押し下げるとダブルダウンイベントを生成し, 最
+後にダブルクリックイベントかダブルドラッグイベントを生成します.
+
+ボタンを2回クリックしてから再度押し下げる操作を素早く行うと, Emacsは,
+"トリプルダウン"（triple-down）イベントに続けて"トリプルクリック"
+（triple-click）イベントか"トリプルドラッグ"（triple-drag）イベントを
+生成します.  これらのイベント型には`double'のかわりに`triple'が含まれ
+ます.  トリプルのイベントにバインディングがなければ, Emacsは対応するダ
+ブルのイベントを使います.
+
+ボタンを3回以上クリックしてから再度押し下げると, 3回目以降の押し下げに
+対するイベントはすべてトリプルのイベントです.  Emacsは, クアドラプル
+（4回）, クインタプル（5回）, …などのイベントは生成しません.  しかし, 
+イベントリストを調べれば, ボタンを何回押したか正確にわかります.
+
+ -- Function: event-click-count EVENT
+     この関数は, イベントEVENTにおいてボタンが連続して押された回数を返
+     す.  EVENTが, ダブルダウンイベント, ダブルクリックイベント, ダブ
+     ルドラッグイベントであると, 値は2である.  EVENTがトリプルのイベン
+     トであると, 値は3かそれ以上である.  EVENTが（繰り返しイベントでは
+     ない）普通のマウスイベントであると, 値は1である.
+
+ -- Variable: double-click-time
+     繰り返しイベントが生成されるためには, 同じスクリーン位置において
+     連続してマウスボタンを押し下げ, しかも, 各押し下げの間隔は
+     `double-click-time'の値未満（ミリ秒）である必要がある.
+     `double-click-time'に`nil'を設定すると, 連続したクリックの検出を
+     禁止する.  `t'を設定すると時間制限をなくし, Emacsは連続したクリッ
+     クの検出を位置だけで行う.
+
+
+
+File: elisp-ja, Node: Motion Events, Next: Focus Events, Prev: Repeat Events, Up: Input Events
+
+モーションイベント
+------------------
+
+Emacsは, ボタン操作を伴わないマウスの移動を表す"マウスモーション"
+（mouse motion）イベントを生成することがあります.  マウスモーションイ
+ベントはつぎのようなリストで表現されます.
+
+     (mouse-movement (WINDOW BUFFER-POS (X . Y) TIMESTAMP))
+
+リストの2番目の要素は, クリックイベント（*Note Click Events::）と同様
+に, マウスの現在位置を表します.
+
+スペシャルフォーム`track-mouse'により, その本体の内側ではモーションイ
+ベントの生成を可能にできます.  フォーム`track-mouse'の外側では, Emacs
+はマウスの移動のみに対するイベントを生成しないので, それらのイベントは
+現れません.  *Note Mouse Tracking::.
+
+
+
+File: elisp-ja, Node: Focus Events, Next: Misc Events, Prev: Motion Events, Up: Input Events
+
+フォーカスイベント
+------------------
+
+ウィンドウシステムは, どのウィンドウにキーボード入力を与えるかをユーザー
+が制御するための一般的な方法を提供します.  ウィンドウを選ぶことを"フォー
+カス"（focus）と呼びます.  ユーザーがEmacsのフレームを切り替える操作を
+行うと, "フォーカスイベント"（focus event）が生成されます.  グローバル
+キーマップにあるフォーカスイベントの普通の定義は, Emcasの新たなフレー
+ムを選択するようになっていて, これはユーザーが期待することです.  *Note
+Input Focus::.
+
+Lispでは, フォーカスイベントはつぎのようなリストで表現されます.
+
+     (switch-frame NEW-FRAME)
+
+ここで, NEW-FRAMEは切り替え先のフレームです.
+
+Xのほとんどのウィンドウマネージャは, マウスをウィンドウへ入れるだけで
+当該ウィンドウにフォーカスが設定されるようになっています.  フレームに
+マウスが入るとカーソルの形状を変更するので, Emacsでもそのようにします. 
+しかし, Lispプログラムにとっては, なんらかの入力が到着するまではフォー
+カスの変更について知る必要がありません.  そのため, ユーザーが実際にキー
+ボードのキーを打つか新たなフレームでマウスボタンを押し下げたときだけ,
+Emacsはフォーカスイベントを生成します.  フレーム間でマウスを動かしただ
+けでは, フォーカスイベントは生成されません.
+
+キー列の途中にフォーカスイベントが現れると, キー列を乱します.  そのた
+め, Emacsはキー列の途中にはフォーカスイベントを生成しません.  ユーザー
+がキー列の途中で, つまり, プレフィックスキーのあとでフォーカスを変更す
+ると, 複数イベントのキー列のまえかうしろにフォーカスイベントを移動し, 
+途中には現れないようにEmacsはイベントの順序を並び替えます.
+
+
+
+File: elisp-ja, Node: Misc Events, Next: Event Examples, Prev: Focus Events, Up: Input Events
+
+ウィンドウシステムのその他のイベント
+------------------------------------
+
+ウィンドウシステム内で起きたことを表す他のイベントもあります.
+
+`(delete-frame (FRAME))'
+     この種のイベントは, Emacsのフレームであるウィンドウを削除するコマ
+     ンドをユーザーがウィンドウマネージャに与えたことを表す.
+
+     イベント`delete-frame'の標準定義はフレームFRAMEの削除である.
+
+`(iconify-frame (FRAME))'
+     この種のイベントは, ウィンドウマネージャを用いてユーザーがフレー
+     ムFRAMEをアイコン化したことを表す.  これに対する標準定義は
+     `ignore'である.  というのは, フレームはすでにアイコンになっている
+     ので, Emacsが行うことはなにもないからである.  このイベント型の目
+     的は, 必要ならばその種のイベントを読者が追跡できるようにしておく
+     ことである.
+
+`(make-frame-visible (FRAME))'
+     この種のイベントは, ウィンドウマネージャを用いてユーザーがアイコ
+     ン化したフレームFRAMEを開いたことを表す.  これに対する標準定義は
+     `ignore'である.  というのは, フレームはすでに見えるようになってい
+     るので, Emacsが行うことはなにもないからである.
+
+`(mouse-wheel POSITION DELTA)'
+     この種のイベントは, （MSインテリマウスなどの）マウスのホイールを
+     動かすと生成される.  その典型的な効果はスクロールやズーミングであ
+     る.
+
+     要素DELTAはホイールの回転方向と回転量である.  その絶対値はホイー
+     ルを回すごとに増加する数である.  負のDELTAは, 逆転, つまり, ユー
+     ザーへ近付く方向への回転を表し, 正のDELTAは, 順転, つまり, ユーザー
+     から遠ざかる方向への回転を表す.
+
+     要素POSITIONはイベントの発生位置を表し, マウスクリックイベントで
+     使われる形式と同じである.
+
+     この種のイベントは, ある種のシステムでのみ生成される.
+
+`(drag-n-drop POSITION FILES)'
+     この種のイベントは, Emacsの外側のアプリケーションで一群のファイル
+     を選択し, それらをEmacsのフレームにドラッグ＆ドロップしたときに生
+     成される.
+
+     要素POSITIONはイベントの発生位置を表し, マウスクリックイベントで
+     使われる形式と同じであり, 要素FILESはドラッグ＆ドロップされたファ
+     イル名のリストである.  このイベントを扱う通常の処理は, それらのファ
+     イルを訪問することである.
+
+     現状では, この種のイベントは, ある種のシステムでのみ生成される.
+
+これらのイベントがキー列の途中, つまり, プレフィックスキーのうしろに現
+れると, 複数イベントのキー列のまえかうしろに当該イベントを移動し, 途中
+には現れないようにEmacsはイベントの順序を並び替えます.
+
+
+
+File: elisp-ja, Node: Event Examples, Next: Classifying Events, Prev: Misc Events, Up: Input Events
+
+イベントの例
+------------
+
+ユーザーが同じ場所でマウスの左ボタンを押し下げてから離すと, つぎのよう
+なイベント列が生成されます.
+
+     (down-mouse-1 (#<window 18 on NEWS> 2613 (0 . 38) -864320))
+     (mouse-1      (#<window 18 on NEWS> 2613 (0 . 38) -864180))
+
+コントロールキーを押し下げた状態で, ユーザーがマウスの2番目のボタンを
+押し下げ, マウスをつぎの行へドラッグすると, つぎのような2つのイベント
+が生成されます.
+
+     (C-down-mouse-2 (#<window 18 on NEWS> 3440 (0 . 27) -731219))
+     (C-drag-mouse-2 (#<window 18 on NEWS> 3440 (0 . 27) -731219)
+                     (#<window 18 on NEWS> 3510 (0 . 28) -729648))
+
+メタキーとシフトキーを押し下げた状態で, ユーザーがマウスの2番目のボタ
+ンをウィンドウのモード行で押し下げ, マウスを別のウィンドウへドラッグす
+ると, つぎのような2つのイベントが生成されます.
+
+     (M-S-down-mouse-2 (#<window 18 on NEWS> mode-line (33 . 31) -457844))
+     (M-S-drag-mouse-2 (#<window 18 on NEWS> mode-line (33 . 31) -457844)
+                       (#<window 20 on carlton-sanskrit.tex> 161 (33 . 3)
+                        -453816))
+
+
+
+File: elisp-ja, Node: Classifying Events, Next: Accessing Events, Prev: Event Examples, Up: Input Events
+
+イベントの分類
+--------------
+
+各イベントには"イベント型"（event type）があって, キーバインディング処
+理のためにイベントを分類します.  キーボードイベントでは, イベント型は
+イベントの値に等しいです.  したがって, 文字に対するイベント型は文字で
+あり, ファンクションキーに対するイベント型はシンボルそのものです.  リ
+ストであるイベントでは, イベント型はリストのCARにあるシンボルです.  し
+たがって, イベント型はつねにシンボルか文字です.
+
+イベント型が同じであるイベントは, キーバインディングに関する限り同じで
+す.  つまり, それらは同じコマンドを実行します.  しかし, これは, それら
+が必ずしも同じことを行うという意味ではありません.  イベント全体を調べ
+てなにを行うかを決定するコマンドもあります.  たとえば, マウスイベント
+の生起位置を使って, バッファのどの部分を処理するかを決めるコマンドもあ
+ります.
+
+イベントをおおまかに分類すると有用な場合もあります.  たとえば, 他の修
+飾キーやマウスボタンには関係なしに, METAキーが使われているイベントかど
+うか調べたいことがあるでしょう.
+
+関数`event-modifiers'や`event-basic-type'は, そのような情報を便利に与
+えるためのものです.
+
+ -- Function: event-modifiers EVENT
+     この関数は, EVENTにある修飾子のリストを返す.  修飾子はシンボルで
+     あり, `shift', `control', `meta', `alt', `hyper', `super'である. 
+     さらに, マウスイベントシンボルの修飾子リストには, 必ず, `click',
+     `drag', `down'の1つが含まれる.
+
+     引数EVENTは, イベントオブジェクト全体であるか, 単なるイベント型で
+     ある.
+
+     例を示す.
+
+          (event-modifiers ?a)
+               => nil
+          (event-modifiers ?\C-a)
+               => (control)
+          (event-modifiers ?\C-%)
+               => (control)
+          (event-modifiers ?\C-\S-a)
+               => (control shift)
+          (event-modifiers 'f5)
+               => nil
+          (event-modifiers 's-f5)
+               => (super)
+          (event-modifiers 'M-S-f5)
+               => (meta shift)
+          (event-modifiers 'mouse-1)
+               => (click)
+          (event-modifiers 'down-mouse-1)
+               => (down)
+
+     クリックイベントに対する修飾子リストには`click'が明示的に含まれる
+     が, イベントシンボルの名前自体には`click'は含まれない.
+
+ -- Function: event-basic-type EVENT
+     この関数は, EVENTにあるキーやマウスボタンを返す.  たとえばつぎの
+     とおり.
+
+          (event-basic-type ?a)
+               => 97
+          (event-basic-type ?A)
+               => 97
+          (event-basic-type ?\C-a)
+               => 97
+          (event-basic-type ?\C-\S-a)
+               => 97
+          (event-basic-type 'f5)
+               => f5
+          (event-basic-type 's-f5)
+               => f5
+          (event-basic-type 'M-S-f5)
+               => f5
+          (event-basic-type 'down-mouse-1)
+               => mouse-1
+
+ -- Function: mouse-movement-p OBJECT
+     この関数は, OBJECTがマウス移動のイベントならば`nil'以外を返す.
+
+ -- Function: event-convert-list LIST
+     この関数は, 修飾子名と基本イベント型のリストをそれらが示すイベン
+     ト型に変換する.  たとえばつぎのとおり.
+
+          (event-convert-list '(control ?a))
+               => 1
+          (event-convert-list '(control meta ?a))
+               => -134217727
+          (event-convert-list '(control super f1))
+               => C-s-f1
+
+
+
+File: elisp-ja, Node: Accessing Events, Next: Strings of Events, Prev: Classifying Events, Up: Input Events
+
+イベントの参照
+--------------
+
+本節では, マウスボタンイベントやモーションイベント内のデータを参照する
+ための便利な関数について述べます.
+
+つぎの2つの関数は, 以下の形式のリストであるマウスボタンイベントの開始
+位置や終了位置を返します.
+
+     (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
+
+ -- Function: event-start EVENT
+     イベントEVENTの開始位置を返す.
+
+     EVENTがクリックイベントやボタン押し下げイベントであると, イベント
+     の位置を返す.  EVENTがドラッグイベントであると, ドラッグの開始位
+     置を返す.
+
+ -- Function: event-end EVENT
+     イベントEVENTの終了位置を返す.
+
+     EVENTがドラッグイベントであると, ユーザーがマウスボタンを離したと
+     きの位置を返す.  EVENTがクリックイベントかボタン押し下げイベント
+     であると, 実際の値は開始位置であり, その種のイベントにある唯一の
+     位置情報である.
+
+つぎの5つの関数は, 上に述べた位置情報のリストを引数として, そのさまざ
+まな部分を返す.
+
+ -- Function: posn-window POSITION
+     POSITION内のウィンドウを返す.
+
+ -- Function: posn-point POSITION
+     POSITIONのバッファ内位置を返す.  これは整数である.
+
+ -- Function: posn-x-y POSITION
+     POSITION内のピクセル単位のxy座標をコンスセル`(X . Y)'として返す.
+
+ -- Function: posn-col-row POSITION
+     POSITIONの（文字単位の）行（row）とコラム（col）の座標をコンスセ
+     ル`(COL . ROW)'として返す.  これらは実際にはPOSITION内のXとYの値
+     から計算される.
+
+ -- Function: posn-timestamp POSITION
+     POSITION内の時刻情報を返す.
+
+つぎの関数はスクロールバーでのイベントを解読するのに便利です.
+
+ -- Function: scroll-bar-event-ratio EVENT
+     スクロールバー内でのイベントから, スクロールバーに対する縦方向の
+     位置を返す.  その値は2つの整数を含むコンスセル`(PORTION . WHOLE)'
+     であり, その比は位置の割合を表す.
+
+ -- Function: scroll-bar-scale RATIO TOTAL
+     この関数は（実質的には）RATIOにTOTALを掛け, 結果を整数に丸める. 
+     引数RATIOは数ではなく`(NUM . DENOM)'であり, 典型的には
+     `scroll-bar-event-ratio'が返す値である.
+
+     この関数はスクロールバー内での位置をバッファ内での位置へ換算する
+     のに便利である.  つぎのように行う.
+
+          (+ (point-min)
+             (scroll-bar-scale
+                (posn-x-y (event-start event))
+                (- (point-max) (point-min))))
+
+     スクロールバー内でのイベントには, xy座標のかわりに比を表す2つの整
+     数があることに注意.
+
+
+
+File: elisp-ja, Node: Strings of Events, Next: Reading Input, Prev: Accessing Events, Up: Input Events
+
+キーボードイベントを文字列で保持する
+------------------------------------
+
+文字列が使われるほとんどの場面では, 文字列にはテキスト文字, つまり, バッ
+ファやファイルにある文字と同じ種類のものが入っていると考えています. 
+文字列にはキーボード文字が入っているとみなして使うLispプログラムもあり
+ます.  たとえば, 文字列には, キー列やキーボードマクロの定義が入ってい
+るのです.  しかし, キーボード文字を文字列に保持するのは複雑であり, そ
+れは歴史的な互換性を保つためにするのであり, また, つねに可能とは限りま
+せん.
+
+新しいプログラムでは, キーボードイベントを文字列に保持しないで, このよ
+うな複雑さを避けるように推奨します.  つぎのようにします.
+
+   * キー列に対しては, それらを`lookup-key'や`define-key'に対する引数
+     以外にも使うつもりならば, 文字列のかわりにベクトルを使う.  たとえ
+     ば, `read-key-sequence'のかわりに`read-key-sequence-vector'を
+     `this-command-keys'のかわりに`this-command-keys-vector'を使う.
+
+   * メタ文字を含むキー列は, それらを`define-key'に直接渡す場合であっ
+     ても, ベクトルで書く.
+
+   * 文字列である可能性があるキー列の内容を調べるときには,
+     `listify-key-sequence'（*Note Event Input Misc::）を使って, それ
+     をリストに変換しておく.
+
+複雑さの原因は, キーボード入力に含まれる修飾ビットにあります.  メタ修
+飾子以外の修飾ビットを文字列に入れることは不可能であり, メタ修飾子は特
+別な場合として唯一許されているのです.
+
+初期のGNU Emacsでは, メタ文字を128から255の範囲のコードで表現していま
+した.  その当時, 基本文字コードは0から127でしたから, キーボード文字の
+すべてのコードは文字列に収まったのです.  多くのLispプログラムでメタ文
+字を表すために文字列定数内で`\M-'を使い, 特に, `define-key'や類似の関
+数に対する引数に使われ, キー列やイベント列はつねに文字列で表現されてい
+ました.
+
+127を超える大きな基本文字コードと追加の修飾ビットを扱えるようにしたと
+き, メタ文字の表現方法を変更せざるをえませんでした.  現在, メタ修飾子
+を表す文字内のビットは2**27 であり, そのような数を文字列に入れることは
+できません.
+
+文字列定数で`\M-'を使っているプログラムを扱えるように, 文字列にメタ文
+字を入れるための特別な規則があります.  以下は, 文字列を入力文字の列と
+して解釈するための規則です.
+
+   * キーボード文字の値が0から127の範囲にあれば, 無変更で文字列に入れ
+     る.
+
+   * コードが2**27 から2**27+127, の範囲にあるこれらの文字のメタ変種は
+     文字列に入れられるが, それらの数値を変更する必要がある.  ビット
+     2**27 のかわりに2**7 ビットに変更し, 128から255の範囲の値にする. 
+     ユニバイト文字列だけにこれらのコードを入れられる.
+
+   * 256以上の非ASCII文字はマルチバイト文字列だけに入れられる.
+
+   * その他のキーボード文字イベントは文字列に収められない.  これには,
+     128から255の範囲のキーボードイベントも含む.
+
+キーボード入力文字の文字列を作る`read-key-sequence'などの関数はつぎの
+規則に従います.  つまり, 文字列に収まらないイベントであるときには, 文
+字列のかわりにベクトルを作ります.
+
+読者が文字列で`\M-'の入力構文を使うと, それらは128から255の範囲のコー
+ドになります.  対応するキーボードイベントを文字列に保存するように変更
+したときに得られるコードと同じです.  したがって, 文字列内のメタイベン
+トは, それらがどのように文字列に収められたかに関わらず, 整合性のある動
+作をします.
+
+しかし, 本節のはじめに述べた推奨方法に従ってこれらのことがらを避けるほ
+うが, ほとんどのプログラムはよりよく動作するでしょう.
+
+
+
+File: elisp-ja, Node: Reading Input, Next: Special Events, Prev: Input Events, Up: Command Loop
+
+入力の読み取り
+==============
+
+エディタコマンドループは, 関数`read-key-sequence'を使ってキー列を読み
+取ります.  なお, 関数`read-key-sequence'は関数`read-event'を使います. 
+これらやイベント入力を扱う他の関数は, Lispプログラムからも使えます.
+*Note Temporary Displays::の`momentary-string-display', および, *Note
+Waiting::の`sit-for'を参照してください.  端末の入力モードの制御や端末
+入力のデバッグに関する関数や変数については, *Note Terminal Input::. 
+入力イベントを読むときにそれらを変換したり修正する機能については,
+*Note Translating Input::.
+
+上位レベルの入力機能については, *Note Minibuffers::を参照してください.
+
+* Menu:
+
+* Key Sequence Input::		How to read one key sequence.
+* Reading One Event::		How to read just one event.
+* Quoted Character Input::	Asking the user to specify a character.
+* Event Input Misc::    	How to reread or throw away input events.
+
+
+
+File: elisp-ja, Node: Key Sequence Input, Next: Reading One Event, Prev: Reading Input, Up: Reading Input
+
+キー列の入力
+------------
+
+コマンドループは, `read-key-sequence'を呼ぶことでキー列の入力を読み取
+ります.  Lispプログラムからこの関数を呼び出してもよく, たとえば,
+`describe-key'は, 説明対象とするキーを読むためにこの関数を使います.
+
+ -- Function: read-key-sequence PROMPT
+     この関数は, キー列を読み取り文字列かベクトルとして返す.  完全なキー
+     列を収集し終えるまで, つまり, 現在活性なキーマップにおいて, 非プ
+     レフィックスコマンドを指定するのに十分になるまで, イベントを読み
+     続ける.
+
+     イベントがすべて文字であり, かつ, それらが文字列に収まるならば,
+     `read-key-sequence'は文字列（*Note Strings of Events::）を返す. 
+     さもなければ, ベクトルを返す.  ベクトルならば, 任意の種類のイベン
+     ト, つまり, 文字, シンボル, リストを保持できるからである.  文字列
+     やベクトルの要素は, キー列のイベントである.
+
+     引数PROMPTは, プロンプトとしてエコー領域に表示する文字列であるか, 
+     あるいは, プロンプトを表示しないことを意味する`nil'である.
+
+     以下の例では, プロンプト`?'がエコー領域に表示され, ユーザーは`C-x
+     C-f'と打つ.
+
+          (read-key-sequence "?")
+
+          ---------- Echo Area ----------
+          ?C-x C-f
+          ---------- Echo Area ----------
+
+               => "^X^F"
+
+     関数`read-key-sequence'は中断を抑止する.  この関数が動作中に`C-g'
+     を打っても, 他の文字と同様に扱い, `quit-flag'を設定しない.  *Note
+     Quitting::.
+
+ -- Function: read-key-sequence-vector PROMPT
+     これは`read-key-sequence'と同様であるが, つねにベクトルとしてキー
+     列を返し, 文字列としてはけっして返さない.  *Note Strings of
+     Events::.
+
+入力文字が大文字であって, それらにキーバインディングがないとき, 対応す
+る小文字にキーバインディングがあれば, `read-key-sequence'は文字を小文
+字に変換します.  `lookup-key'はこのような変換を行わないことに注意して
+ください.
+
+関数`read-key-sequence'は, ある種のマウスイベントも変換します.  バイン
+ディングのないドラッグイベントをクリックイベントに変換したり, バインディ
+ングのないボタン押し下げイベントを完全に無視します.  さらに, フォーカ
+スイベントとその他のウィンドウイベントを並び替えて, それらが他のイベン
+トのキー列の途中に現れないようにします.
+
+マウスイベントが, モード行やスクロールバーなどのウィンドウの特別な部分
+で生起しても, 特別なイベント型はなく, マウスボタンや修飾キーの組み合わ
+せを普通どおりに表したシンボルです.  ウィンドウのどの部分かに関する情
+報は, イベント内の別の部分, つまり, 座標に入っています.  しかし,
+`read-key-sequence'は, その情報をシンボル`mode-line', `vertical-line',
+`horizontal-scroll-bar', `vertical-scroll-bar'を用いた仮想的な『プレ
+フィックスキー』に変換します.  ウィンドウの特別な部分におけるマウスク
+リックの意味は, これらの仮想的なプレフィックスキーを用いてキー列を定義
+することで定義できます.
+
+たとえば, `read-key-sequence'を呼び出してから, ウィンドウのモード行で
+クリックすると, つぎのような2つのイベントを得ます.
+
+     (read-key-sequence "Click on the mode line: ")
+          => [mode-line
+              (mouse-1
+               (#<window 6 on NEWS> mode-line
+                (40 . 63) 5959987))]
+
+ -- Variable: num-input-keys
+     この変数の値は, 現在のEmacsセッションにおいて, これまでに処理され
+     たキー列の個数である.  これには, 端末から読み取ったキー列, および, 
+     実行したキーボードマクロから読み取ったキー列が含まれる.
+
+ -- Variable: num-nonmacro-input-events
+     この変数は, 端末からこれまでに受け取った入力イベントの総個数を保
+     持する.  キーボードマクロで生成されたものは含まない.
+
+
+
+File: elisp-ja, Node: Reading One Event, Next: Quoted Character Input, Prev: Key Sequence Input, Up: Reading Input
+
+単一イベントの読み取り
+----------------------
+
+コマンド入力用の最低レベルの関数は, 単一イベントを読み取る関数です.
+
+ -- Function: read-event &optional PROMPT SUPPRESS-INPUT-METHOD
+     この関数は, 必要ならばイベントの到着を待って, コマンド入力のつぎ
+     のイベントを読み取って返す.  イベントは, ユーザーか（実行中の）キー
+     ボードマクロから直接得る.
+
+     PROMPTが`nil'以外であると, これはプロンプトとしてエコー領域に表示
+     される文字列であること.  さもなければ, `read-event'は入力待ちであ
+     ることを示すメッセージを表示せずに, そのかわりに, 現在のコマンド
+     を実行するに至ったイベントや現在のコマンドが読み取ったイベントを
+     プロンプトとして表示する.  *Note The Echo Area::.
+
+     SUPPRESS-INPUT-METHODが`nil'以外であると, このイベントの読み取り
+     に関しては現在の入力方式を使わない.  入力方式の処理をせずにイベン
+     トを読みたいときには, つねにこのようにすること.
+     `input-method-function'を束縛してはならない（下記参照）.
+
+     変数`cursor-in-echo-area'が`nil'以外であると, `read-event'は, エ
+     コー領域に表示されたメッセージの末尾にカーソルを一時的に移動する. 
+     さもなければ, `read-event'はカーソルを移動しない.
+
+     `read-event'がヘルプ文字と定義されたイベントを受け取ると, それを
+     返さずに`read-event'がイベントを直接処理してしまう場合がある.
+     *Note Help Functions::.  "特殊イベント"（special event）と呼ばれ
+     る他のイベントも`read-event'が直接処理する（*Note Special
+     Events::）.
+
+     `read-event'を呼んで右矢印のファンクションキーを押すとつぎのよう
+     になる.
+
+          (read-event)
+               => right
+
+ -- Function: read-char
+     この関数はコマンド入力の文字を読み取りそれを返す.  文字を得るまで, 
+     文字以外のイベントはすべて破棄する.
+
+     最初の例では, ユーザーは文字`1'（ASCIIコード49）を打つ.  2番目の
+     例は, `eval-expression'を使ってミニバッファから`read-char'を呼び
+     出すキーボードマクロの定義である.  `read-char'はキーボードマクロ
+     の直後の文字, つまり, `1'を読む.  そして, `eval-expression'はその
+     戻り値をエコー領域に表示する.
+
+          (read-char)
+               => 49
+
+          ;; これを評価するために読者はM-:を使うと仮定する
+          (symbol-function 'foo)
+               => "^[:(read-char)^M1"
+          (execute-kbd-macro 'foo)
+               -| 49
+               => nil
+
+`read-event'は, あれば現在の入力方式も起動します.
+`input-method-function'が`nil'以外であれば, それは関数であるはずです.
+`read-event'が修飾ビットのない（SPCを含む）印字文字を読み取ると, 引数
+としてイベントを渡してその関数を呼び出します.
+
+ -- Variable: input-method-function
+     これが`nil'以外であると, その値は現在の入力方式関数を指定する.
+
+     *注意：*` ' この変数を`let'で束縛しないこと.  この変数はしばしば
+     バッファローカルであり, 入力を読む周囲で束縛すると（読者がこれを
+     もっとも束縛*しそうな*ところ）, Emacsが入力を待っているときにバッ
+     ファが非同期に切り替わると, 誤ったバッファに値を復元してしまうこ
+     とがある.
+
+入力方式関数は, 入力として使われるイベントのリストを返すべきです. 
+（リストが`nil'であると入力がなかったことを意味し, `read-event'は別の
+イベントを待つ. ）これらのイベントは, `unread-command-events'内のイベ
+ントよりまえに処理されます.  入力方式関数が返したイベントは, それらが
+修飾ビットがない印字文字であっても, 入力方式関数に再度渡されることはあ
+りません.
+
+入力方式関数が`read-event'や`read-key-sequence'を呼び出すときには,
+`input-method-function'を`nil'に束縛して再帰呼び出しを防ぐべきです.
+
+キー列の2番目以降のイベントを読むときには, 入力方式関数を呼び出しませ
+ん.  したがって, それらの文字は, 入力方式処理の対象ではありません.  入
+力方式の処理では, `overriding-local-map'と
+`overriding-terminal-local-map'の値を検査するのがよいです.  これらの変
+数のいずれかが`nil'以外であるときには, 入力方式ではその引数をリストに
+入れ, それ以上処理せずにそのリストを返すべきです.
+
+
+
+File: elisp-ja, Node: Quoted Character Input, Next: Event Input Misc, Prev: Reading One Event, Up: Reading Input
+
+クォートした文字の入力
+----------------------
+
+ユーザーに文字入力を促して, コントロール文字やメタ文字を文字そのものや
+文字の8進数コードで手軽に入力できるようにするには, 関数
+`read-quoted-char'を使います.  コマンド`quoted-insert'は, この関数を使っ
+ています.
+
+ -- Function: read-quoted-char &optional PROMPT
+     この関数は`read-char'に似ているが, 最初に読んだ文字が8進数字文字
+     （0-7）であると, 任意個数の8進数字文字を読み取り（8進数字文字以外
+     が現れると止める）, その数値の文字コードが表す文字を返す.
+
+     最初の文字を読むと中断を抑制するので, ユーザーは`C-g'を入力できる.
+     *Note Quitting::.
+
+     PROMPTを与えると, それはユーザーへのプロンプトを表す文字列を指定
+     する.  プロンプト文字列はつねにエコー領域に表示され, あとに`-'が
+     続く.
+
+     つぎの例では, ユーザーは8進数177（10進数では127）を打つ.
+
+          (read-quoted-char "What character")
+
+          ---------- Echo Area ----------
+          What character-177
+          ---------- Echo Area ----------
+
+               => 127
+
+
+
+File: elisp-ja, Node: Event Input Misc, Next: Special Events, Prev: Quoted Character Input, Up: Reading Input
+
+その他のイベント入力機能
+------------------------
+
+本節では, イベントを処理せずに『まえもって覗き見』する方法, 処理待ちの
+入力の有無の検査方法, 処理待ちの入力の破棄方法について述べます.  関数
+`read-passwd'も参照してください（*Note Reading a Password::）.
+
+ -- Variable: unread-command-events
+     この変数は, コマンド入力として読まれることを待っているイベントの
+     リストを保持する.  イベントはリストに現れる順に使われ, 使われると
+     1つ1つ取り除かれる.
+
+     関数でイベントを読んだあとにそれを使わない場面があるため, この変
+     数が必要になる.  この変数にイベントを保存すると, コマンドループや
+     コマンド入力を読む関数によって通常どおり処理される.
+
+     たとえば, 数値前置引数を実現する関数は, 任意個数の数字文字を読み
+     取る.  数字文字でないイベントをみつけたら, そのイベントを読み戻し
+     て, コマンドループが通常どおりに読めるようにする必要がある.  同様
+     に, インクリメンタルサーチでは, この機能を使って探索においては意
+     味を持たないイベントを読み戻す.  なぜなら, そのようなイベントは探
+     索を終了させ, 通常どおり実行される必要があるからである.
+
+     `unread-command-events'に入れられるようにキー列からイベントを確実
+     に簡単に取り出す方法は`listify-key-sequence'を使うことである
+     （*Note Strings of Events::）.
+
+     もっとも最近に読み戻したイベントが最初に再度読まれるように, 普通
+     はこのリストの先頭にイベントを追加する.
+
+ -- Function: listify-key-sequence KEY
+     この関数は, 文字列やベクトルであるKEYを個々のイベントのリストに変
+     換する.  この結果は`unread-command-events'に入れられる.
+
+ -- Variable: unread-command-char
+     この変数は, コマンド入力として読まれる文字を保持する.  値「-1」は, 
+     『空』を意味する.
+
+     この変数はほとんど廃れており, かわりに`unread-command-events'を使
+     うべきである.  Emacs 18版以前向けに書かれたプログラムを扱うためだ
+     けに存在する.
+
+ -- Function: input-pending-p
+     この関数は, 現在, コマンド入力があるかどうかを調べる.  ただちに返
+     るが, 入力があれば値`t'を, さもなければ`nil'を返す.  入力がないの
+     に`t'を返すことが稀にある.
+
+ -- Variable: last-input-event
+ -- Variable: last-input-char
+     この変数は, コマンドの一部として, あるいは, Lispプログラムが明示
+     的に読み取った最後の端末入力イベントを記録する.
+
+     以下の例で, Lispプログラムは文字`1'（ASCIIコード49）を読む.  それ
+     が`last-input-event'の値になるが, （この式を評価するコマンドは
+     `C-x C-e'と仮定するので）`last-command-event'の値は`C-e'のままで
+     ある.
+
+          (progn (print (read-char))
+                 (print last-command-event)
+                 last-input-event)
+               -| 49
+               -| 5
+               => 49
+
+     Emacs 18版との互換性のために, 別名`last-input-char'が存在する.
+
+ -- Function: discard-input
+     この関数は端末入力バッファの内容を廃棄し, 定義中のキーボードマク
+     ロを取り消す.  これは`nil'を返す.
+
+     以下の例で, フォームを評価しはじめてから, ユーザーは何文字か打つ.
+     `sleep-for'が待機を終えると, `discard-input'は待機中に打たれた文
+     字をすべて破棄する.
+
+          (progn (sleep-for 2)
+                 (discard-input))
+               => nil
+
+
+
+File: elisp-ja, Node: Special Events, Next: Waiting, Prev: Reading Input, Up: Command Loop
+
+特殊イベント
+============
+
+特殊イベントは, 読まれるとただちに非常に低レベルで処理されます.  関数
+`read-event'はこれらのイベントをそれ自身で処理してしまい, それらを返す
+ことはありません.
+
+このように処理されるイベントは表示されることはなく, キー列に組み込まれ
+ることもなく, `last-command-event'や`(this-command-keys)'の値に現れる
+こともありません.  特殊イベントが数値引数を破棄することはなく,
+`unread-command-events'で読み戻すことはできません.  特殊イベントがキー
+ボードマクロに現れることはなく, 読者がキーボードマクロを定義していると
+きに, 特殊イベントがキーボードマクロに記録されることはありません.
+
+しかし, それらのイベントは, 読まれた直後には`last-input-event'に現れま
+すから, これからイベントの定義で実際のイベントを見ることができます.
+
+`iconify-frame', `make-frame-visible', `delete-frame'のイベント型は, 
+通常このように処理されます.  特殊イベントをどのように処理するか, どの
+イベントが特殊イベントであるかを定義するキーマップは変数
+`special-event-map'にあります（*Note Active Keymaps::）.
+
+
+
+File: elisp-ja, Node: Waiting, Next: Quitting, Prev: Special Events, Up: Command Loop
+
+時間待ちと入力待ち
+==================
+
+待機関数は, 指定時間経過するか入力がくるまで待つように設計してあります. 
+たとえば, ユーザーに表示を眺める時間を与えるために計算途中で休止したい
+でしょう.  `sit-for'は, 休止してスクリーンを更新し, 入力がくるとただち
+に戻ります.  一方, `sleep-for'はスクリーンを更新せずに休止します.
+
+ -- Function: sit-for SECONDS &optional MILLISEC NODISP
+     この関数は（処理待ちのユーザーからの入力がなければ）再表示を行い,
+     SECONDS秒休止するか, 入力がくるまで待つ.  入力がこずに（*Note
+     Event Input Misc::の`input-pending-p'を参照）指定時間だけ休止した
+     場合は, 戻り値は`t'である.  さもなければ, 戻り値は`nil'である.
+
+     引数SECONDSは整数である必要はない.  それが浮動小数点数であると,
+     `sit-for'は秒の小数も待つ.  秒単位しか扱えないシステムもあり, そ
+     のようなシステムではSECONDSを秒に切り下げる.
+
+     省略可能な引数MILLISECは, ミリ秒単位の追加待ち時間を指定する.  こ
+     れはSECONDSで指定した時間に加えられる.  秒未満を扱えないシステム
+     では, MILLISECに0以外を指定するとエラーになる.
+
+     入力がくると再表示をつねに取り止め, 再表示開始まえに入力がくると, 
+     いっさい再表示しない.  したがって, 処理待ちの入力があると, 再表示
+     を強制する方法はない.  しかし, 処理待ちの入力がなければ,
+     `(sit-for 0)'で再表示を強制できる.
+
+     NODISPが`nil'以外であると, `sit-for'は再表示はしないが, 入力がく
+     るとただちに（あるいは指定時間だけ経過すると）戻る.
+
+     フレームをアイコンにしたりアイコンにしたフレームを開くとイベント
+     が生成されるため, `sit-for'は戻る.  *Note Misc Events::.
+
+     `sit-for'の普通の目的は, 読者が表示したテキストを読む時間をユーザー
+     に与えることである.
+
+ -- Function: sleep-for SECONDS &optional MILLISEC
+     この関数は表示を更新せずに単にSECONDS秒だけ休止する.  入力にはいっ
+     さい注意を払わない.  `nil'を返す.
+
+     引数SECONDSは整数である必要はない.  それが浮動小数点数であると,
+     `sleep-for'は秒の小数も待つ.  秒単位しか扱えないシステムもあり, 
+     そのようなシステムではSECONDSを秒に切り下げる.
+
+     省略可能な引数MILLISECは, ミリ秒単位の追加待ち時間を指定する.  こ
+     れはSECONDSで指定した時間に加えられる.  秒未満を扱えないシステム
+     では, MILLISECに0以外を指定するとエラーになる.
+
+     遅延を保証したい場合に`sleep-for'を使う.
+
+現在時刻を取得する関数については*Note Time of Day::.
+
+
+
+File: elisp-ja, Node: Quitting, Next: Prefix Command Arguments, Prev: Waiting, Up: Command Loop
+
+中断
+====
+
+Lisp関数が動作中に`C-g'を打つと, Emacsがなにを行っていても"中断"を引き
+起こします.  つまり, もっとも内側の活性なコマンドループに制御が戻りま
+す.
+
+コマンドループがキーボード入力を待っているときに`C-g'を打っても, 中断
+を引き起こさずに, 普通の入力文字として動作します.  もっとも単純な場合,
+`C-g'はコマンド`keyboard-quit'を実行しますが, その効果は中断を引き起こ
+すことですから, 読者には区別できないはずです.  しかし, プレフィックス
+キーに続けて`C-g'を打つと, それらは組み合わされて未定義キーになります. 
+その効果は, 前置引数を含めてプレフィックスキーを取り消します.
+
+ミニバッファでは, `C-g'には別の定義があって, ミニバッファを強制終了さ
+せます.  つまり, ミニバッファから抜け出て中断します.  （単に中断したの
+では, ミニバッファ*内で* コマンドループに戻るだけである. ）コマンドルー
+プで入力を読んでいるときに`C-g'で直接中断しない理由は, このようにミニ
+バッファでその意味を再定義できるようにするためです.  ミニバッファでは, 
+プレフィックスキーに続く`C-g'は再定義してなく, プレフィックスキーと前
+置引数を取り消すという通常の効果を持ちます.  `C-g'がつねに直接中断する
+のでは, このようにすることさえ不可能です.
+
+`C-g'が直接に中断するときには, 変数`quit-flag'に`t'を設定します.
+Emacsはこの変数を適切なときに検査し`nil'でないと中断します.  したがっ
+て, `quit-flag'に`nil'以外を設定すると中断を引き起こします.
+
+Cのコードのレベルでは, どこでも中断できるわけではありません.
+`quit-flag'を検査している特別な箇所だけです.  このようにするのは, それ
+以外の箇所で中断するとEmacsの内部状態に矛盾をきたす可能性があるからで
+す.  中断は安全な場所まで延期されるので, 中断によってEmcasがクラッシュ
+することはありません.
+
+`read-key-sequence'や`read-quoted-char'などのある種の関数は, 入力を待っ
+ている場合であっても中断を完全に抑制します.  中断するかわりに, `C-g'は
+入力として働きます.  `read-key-sequence'の場合, コマンドループにおいて
+`C-g'の特別なふるまいをもたらします.  `read-quoted-char'の場合, `C-q'
+で`C-g'をクォートできるようになります.
+
+変数`inhibit-quit'に`nil'以外の値を束縛することでLisp関数のある部分に
+おいて中断を抑制できます.  そうすると, `C-g'はそれでもいつもどおり
+`quit-flag'を`t'にしますが, その通常の結果である中断は抑制されます. 
+最終的にフォーム`let'の終りで束縛が解除されるなどして`inhibit-quit'が
+再度`nil'になります.  その時点でも`quit-flag'が`nil'以外であると要求し
+た中断がただちに起こります.  このふるまいは, プログラムの『臨界領域』
+では中断が起こらないことを保証する理想的なものです.
+
+（`read-quoted-char'などの）ある種の関数では, `C-g'は特別に処理され中
+断を引き起こしません.  `inhibit-quit'に`t'を束縛して入力を読み取り,
+`inhibit-quit'が再度`nil'になるまえに`quit-flag'を`nil'にすることでそ
+のようにします.  これを`read-quoted-char'の定義の以下の抜粋で示しましょ
+う.  最初の入力文字のあとで通常の中断を許す方法も示しています.
+
+     (defun read-quoted-char (&optional prompt)
+       "...DOCUMENTATION..."
+       (let ((message-log-max nil) done (first t) (code 0) char)
+         (while (not done)
+           (let ((inhibit-quit first)
+                 ...)
+     	(and prompt (message "%s-" prompt))
+     	(setq char (read-event))
+     	(if inhibit-quit (setq quit-flag nil)))
+           ...変数`code'に設定する...)
+         code))
+
+ -- Variable: quit-flag
+     `inhibit-quit'が`nil'であれば, この変数が`nil'以外であるとEmacsは
+     ただちに中断する.  `C-g'は, `inhibit-quit'に関わらず, 通常,
+     `quit-flag'に`nil'以外を設定する.
+
+ -- Variable: inhibit-quit
+     この変数は, `quit-flag'が`nil'以外の値に設定されたときにEmacsが中
+     断すべきかどうかを決定する.  `inhibit-quit'が`nil'以外であると,
+     `quit-flag'に特別な意味はない.
+
+ -- コマンド: keyboard-quit
+     この関数は`(signal 'quit nil)'で`quit'条件を通知する.  これは中断
+     と同じことを行う.  （*Note Errors::の`signal'を参照. ）
+
+中断として使う`C-g'以外の特殊文字を使えます.  *Note Terminal Input::の
+関数`set-input-mode'を参照してください.
+ 
+
+
+File: elisp-ja, Node: Prefix Command Arguments, Next: Recursive Editing, Prev: Quitting, Up: Command Loop
+
+前置コマンド引数
+================
+
+Emacsのほとんどのコマンドは, "前置引数"（prefix argument）, つまりコマ
+ンド自身のまえに指定された数を利用できます.  （前置引数とプレフィック
+スキーを混同しないこと. ）前置引数はつねに値で表現され, `nil'であると
+現在は前置引数がないことを表します.  各コマンドは, 前置引数を使っても
+よいし, 無視してもかまいません.
+
+前置引数には2つの表現方法があります.  "生"（raw）と"数値"（numeric）で
+す.  エディタコマンドループでは, 内部的には生の表現を使い, その情報を
+保持するLisp変数もそのようにしますが, コマンドではどちらの表現を要求し
+てもかまいません.
+
+生の前置引数の値にはつぎの可能性があります.
+
+   * 前置引数がないことを意味する`nil'.  その数値としての値は1であるが, 
+     多くのコマンドでは`nil'と整数1を区別する.
+
+   * それ自身が表す整数.
+
+   * 整数を要素とする1要素のリスト.  この形式の前置引数は, 数字文字な
+     しの1個以上の`C-u'の結果である.  リスト内の数値は整数であるが, そ
+     のようなリストと整数のみを区別するコマンドもある.
+
+   * シンボル`-'.  数字文字なしに`M--'や`C-u -'を打ったことを表す.  こ
+     れに等価な数値は-1であるが, 整数-1とシンボル`-'を区別するコマンド
+     もある.
+
+いろいろな前置引数でつぎの関数を呼び出す例を示します.
+
+     (defun display-prefix (arg)
+       "Display the value of the raw prefix arg."
+       (interactive "P")
+       (message "%s" arg))
+
+以下は, 生の前置引数で`display-prefix'を呼び出した結果です.
+
+             M-x display-prefix  -| nil
+
+     C-u     M-x display-prefix  -| (4)
+
+     C-u C-u M-x display-prefix  -| (16)
+
+     C-u 3   M-x display-prefix  -| 3
+
+     M-3     M-x display-prefix  -| 3      ; （`C-u 3'と同じ）
+
+     C-u -   M-x display-prefix  -| -      
+
+     M--     M-x display-prefix  -| -      ; （`C-u -'と同じ）
+
+     C-u - 7 M-x display-prefix  -| -7     
+
+     M-- 7   M-x display-prefix  -| -7     ; （`C-u -7'と同じ）
+
+Emacsは, 前置引数を保持するために2つの変数, `prefix-arg'と
+`current-prefix-arg'を使います.  他のコマンド向けに前置引数を設定する
+`universal-argument'などのコマンドは, 前置引数を`prefix-arg'に保持しま
+す.  対照的に, `current-prefix-arg'には現在のコマンドに対して前置引数
+を運ぶ役割があり, この変数に設定しても以後のコマンドに対する前置引数に
+はなんの効果もありません.
+
+通常, コマンドは, `interactive'宣言により, 「生」か「数値」のいずれの
+表現の前置引数を使うか指定します.  （*Note Using Interactive::. ）ある
+いは, 変数`current-prefix-arg'にある前置引数の値を関数から直接見てもか
+まいませんが, これは見通しのよい方法ではありません.
+
+ -- Function: prefix-numeric-value ARG
+     この関数は, 有効な生の前置引数の値ARGからそれに等価な数値を返す. 
+     引数は, シンボル, 数, リストのいずれかである.  それが`nil'である
+     と, 戻り値は1である.  `-'であると, 戻り値は-1である.  数であると, 
+     その数を返す.  リストであると, リストの（数であるはずの）CARを返
+     す.
+
+ -- Variable: current-prefix-arg
+     この変数は, *現在の*コマンドに対する生の前置引数を保持する.  コマ
+     ンドが直接この変数を調べてもよいが, 前置引数を参照する普通の方法
+     は`(interactive "P")'を使うことである.
+
+ -- Variable: prefix-arg
+     この変数の値は, *つぎの*編集コマンド向けの生の前置引数である.  後
+     続のコマンド向けの前置引数を指定する`universal-argument'などのコ
+     マンドは, この変数に設定することで動作する.
+
+ -- Variable: last-prefix-arg
+     まえのコマンドで使われた生の前置引数の値.
+
+つぎのコマンドは, 後続のコマンド向けの前置引数を設定するためのものです. 
+それ以外の目的には呼ばないでください.
+
+ -- コマンド: universal-argument
+     このコマンドは入力を読み取り, 後続のコマンド向けの前置引数を指定
+     する.  なにをしているか理解していない限り, 読者自身でこのコマンド
+     を呼ばないこと.
+
+ -- コマンド: digit-argument ARG
+     このコマンドは, 後続のコマンド向けの前置引数に追加する.  引数ARG
+     は, このコマンドが呼び出されるまえの生の前置引数であり, 前置引数
+     を更新する計算に使われる.  なにをしているか理解していない限り, 読
+     者自身でこのコマンドを呼ばないこと.
+
+ -- コマンド: negative-argument ARG
+     このコマンドは, 後続のコマンド向けの数値前置引数に追加する.  引数
+     ARGは, このコマンドが呼び出されるまえの生の前置引数であり, その値
+     の符号を変えて新たな前置引数とする.  なにをしているか理解していな
+     い限り, 読者自身でこのコマンドを呼ばないこと.
+
+
+
+File: elisp-ja, Node: Recursive Editing, Next: Disabling Commands, Prev: Prefix Command Arguments, Up: Command Loop
+
+再帰編集
+========
+
+Emacsが動作を始めると, Emacsのコマンドループに自動的に入ります.  この
+トップレベルのコマンドループからはけっして抜けることはなく, Emacsが動
+いている限り動作し続けます.  Lispプログラムからコマンドループを起動す
+ることもできます.  そうすると, 活性なコマンドループが複数作られること
+になるので, それを"再帰編集"（recursive editing）と呼びます.  再帰編集
+レベルには, それを起動したコマンドを一時休止させ, 当該コマンドを再開す
+るまでユーザーにどんな編集でも許す効果があります.
+
+再帰編集中に利用可能なコマンドは, トップレベルのコマンドループと同じも
+のでありキーマップで定義されます.  再帰編集を抜けるための数個の特別な
+コマンドがあり, 完了すると再帰編集レベルから抜ける別のコマンドもありま
+す.  （再帰編集を抜けるコマンドはつねに利用可能であるが, 再帰編集中で
+ないとなにも行わない. ）
+
+再帰編集を含むすべてのコマンドループでは, コマンドループから実行したコ
+マンドのエラーによってコマンドループから抜け出さないように汎用目的のエ
+ラーハンドラを設定します.
+
+ミニバッファでの入力は, 特別な種類の再帰編集です.  これには, ミニバッ
+ファやミニバッファ用ウィンドウを表示するなどの特別な処理がありますが, 
+読者が考えるよりは少ないのです.  ミニバッファでは特別なふるまいをする
+キーもありますが, それらはミニバッファのローカルマップによるものです. 
+ウィンドウを切り替えると, Emacsの普通のコマンドを使えます.
+
+再帰編集レベルを起動するには, 関数`recursive-edit'を呼び出します.  こ
+の関数にはコマンドループが含まれています.  さらに, `exit'を伴った
+`catch'の呼び出しもあり, これにより, `exit'へ投げることで再帰編集レベ
+ルから抜け出せるようになっています（*Note Catch and Throw::）.  `t'以
+外の値を投げると, `recursive-edit'は, 呼び出し側の関数へ普通に戻ります. 
+コマンド`C-M-c'（`exit-recursive-edit'）は, これを行います.  値`t'を投
+げると`recursive-edit'に中断を引き起こし, 1つ上のレベルのコマンドルー
+プへ制御を戻します.  これを"強制終了"（aborting）と呼び, `C-]'
+（`abort-recursive-edit'）で行えます.
+
+ミニバッファを使う場合を除いて, ほとんどのアプリケーションでは再帰編集
+を使うべきではありません.  カレントバッファのメジャーモードを一時的な
+特別なメジャーモードに変更するほうが, 一般にはユーザーにとってより便利
+です.  ただし, 当該メジャーモードには, まえのモードに戻るコマンドを用
+意しておきます.  （rmailのコマンド`e'は, この方式を使っている. ）ある
+いは, 『再帰的に』編集する別のテキストをユーザーに与えたい場合には, 特
+別なモードの新たなバッファを作成してそれを選択します.  当該モードには, 
+処理を終えてまえのバッファに戻るコマンドを定義しておきます.  （rmailの
+コマンド`m'は, このようにする. ）
+
+再帰編集はデバッグに便利です.  ブレークポイントの一種として関数定義に
+`debug'の呼び出しを挿入しておくと, その箇所に達したときにいろいろと調
+べられます.  `debug'は再帰編集を起動しますが, デバッガとしての機能も提
+供します.
+
+`query-replace'で`C-r'を打ったり, `C-x q'（`kbd-macro-query'）を使った
+ときにも再帰編集レベルが使われます.
+
+ -- Function: recursive-edit
+     この関数はエディタコマンドループを起動する.  Emacsの初期化過程で
+     自動的に呼び出され, ユーザーが編集できるようにする.  Lispプログラ
+     ムから呼ばれると, 再帰編集レベルに入る.
+
+     以下の例では, 関数`simple-rec'は, まず1単語分ポイントを進め, エコー
+     領域にメッセージを表示して再帰編集に入る.  そうすると, ユーザーは
+     望むことはなんでもできるようになり, （再帰編集を）抜けるために
+     `C-M-c'を打つと, `simple-rec'の実行を継続する.
+
+          (defun simple-rec ()
+            (forward-word 1)
+            (message "Recursive edit in progress")
+            (recursive-edit)
+            (forward-word 1))
+               => simple-rec
+          (simple-rec)
+               => nil
+
+ -- コマンド: exit-recursive-edit
+     この関数は, （ミニバッファでの入力を含む）もっとも内側の再帰編集
+     から抜ける.  その関数定義は実質的には`(throw 'exit nil)'である.
+
+ -- コマンド: abort-recursive-edit
+     この関数は, 再帰編集から抜けたあとで`quit'を通知することで, （ミ
+     ニバッファでの入力を含む）もっとも内側の再帰編集を要請したコマン
+     ドを強制終了する.  その関数定義は実質的には`(throw 'exit t)'であ
+     る.  *Note Quitting::.
+
+ -- コマンド: top-level
+     この関数は, すべての再帰編集を抜ける.  すべての計算を抜け出てメイ
+     ンのコマンドループへ直接戻るため, 値は返さない.
+
+ -- Function: recursion-depth
+     この関数は再帰編集の現在の深さを返す.  活性な再帰編集がなければ0
+     を返す.
+
+
+
+File: elisp-ja, Node: Disabling Commands, Next: Command History, Prev: Recursive Editing, Up: Command Loop
+
+コマンドを禁止する
+==================
+
+"コマンドを禁止する"とは, コマンドを実行するまえにユーザーの確認を必要
+とするようにコマンドに印を付けることです.  コマンドを禁止するのは, 初
+心者に混乱をもたらす可能性のあるコマンドに対してや, コマンドの誤用を防
+ぐためです.
+
+コマンドを禁止する低レベルの機構は, コマンドのLispシンボルに`nil'以外
+の属性`disabled'を入れることです.  これらの属性は, 通常, ユーザーの
+`.emacs'ファイルにてつぎのようなLisp式で設定します.
+
+     (put 'upcase-region 'disabled t)
+
+数個のコマンドにはデフォルトでこれらの属性がありますから, `.emacs'ファ
+イルで属性を取り除きます.
+
+属性`disabled'の値は文字列であり, コマンドを禁止したことを表すメッセー
+ジです.  たとえばつぎのとおりです.
+
+     (put 'delete-region 'disabled
+          "Text deleted this way cannot be yanked back!\n")
+
+禁止したコマンドを対話的に起動するとどうなるかについて詳しくは*Note 使
+用禁止コマンド: (emacs-ja)Disabling.  コマンドを禁止しても, Lispプログ
+ラムから関数として呼び出すことにはなんの影響もありません.
+
+ -- コマンド: enable-command COMMAND
+     これ以降, 特別な確認なしにCOMMANDを実行可能にする.  さらに（ユー
+     ザーが了承すれば）ユーザーの`.emacs'ファイルを変更して, 将来のセッ
+     ションでもそのようにする.
+
+ -- コマンド: disable-command COMMAND
+     これ以降, COMMANDの実行には特別な確認を必要とするようにする.  さ
+     らに（ユーザーが了承すれば）ユーザーの`.emacs'ファイルを変更して, 
+     将来のセッションでもそのようにする.
+
+ -- Variable: disabled-command-hook
+     禁止したコマンドをユーザーが対話的に起動したとき, 禁止したコマン
+     ドのかわりにこのノーマルフックを実行する.  フック関数では,
+     `this-command-keys'を使ってコマンドを実行するためにユーザーがなに
+     を入力したかを調べ, コマンドそのものを探し出せる.  *Note Hooks::.
+
+     デフォルトでは, `disabled-command-hook'には, ユーザーに処理を進め
+     るかどうかを問い合わせる関数が入っている.
+
+
+
+File: elisp-ja, Node: Command History, Next: Keyboard Macros, Prev: Disabling Commands, Up: Command Loop
+
+コマンド履歴
+============
+
+コマンドループでは, 実行した複雑なコマンドの履歴を管理していて, それら
+のコマンドを簡単に繰り返せるようにしています.  "複雑なコマンド"とは, 
+ミニバッファを使って引数を読むコマンドです.  これには, 任意の`M-x'コマ
+ンド, 任意の`M-:'コマンド, ミニバッファから引数を読み取る`interactive'
+指定を持つ任意のコマンドが含まれます.  コマンド自身の実行中に明示的に
+ミニバッファを使っても, 複雑なコマンドとはみなしません.
+
+ -- Variable: command-history
+     この変数の値は, 最近使った複雑なコマンドのリストであり, 各要素は
+     評価すべきフォームを表す.  編集セッション中は, すべての複雑なコマ
+     ンドを集積するが, （変数`history-length'で指定される）最大サイズ
+     に達すると新しい要素を追加するたびに古い要素を削除する.
+
+          command-history
+          => ((switch-to-buffer "chistory.texi")
+              (describe-key "^X^[")
+              (visit-tags-table "~/emacs/src/")
+              (find-tag "repeat-complex-command"))
+
+この履歴リストは, 実際にはミニバッファ履歴（*Note Minibuffer History::）
+の特別な場合です.  要素は文字列ではなく式なのです.
+
+まえのコマンドを編集したり取り出すための専用コマンドがたくさんあります. 
+コマンド`repeat-complex-command'と`list-command-history'は, ユーザーマ
+ニュアル（*Note ミニバッファコマンドの繰り返し: (emacs-ja)Repetition..）
+に説明してあります。ミニバッファ内では, 通常のミニバッファ履歴コマンド
+を使えます.
+
+
+

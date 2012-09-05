@@ -1,0 +1,1978 @@
+\input texinfo.tex      @c -*-texinfo-*-*
+
+@c Copyright (C) 2001-2005  Free Software Foundation, Inc.
+@c
+@c This file is part of GNU gengetopt 
+@c
+@c GNU gengetopt is free software; you can redistribute it and/or modify 
+@c it under the terms of the GNU General Public License as published by 
+@c the Free Software Foundation; either version 2, or (at your option) 
+@c any later version. 
+@c
+@c GNU gengetopt is distributed in the hope that it will be useful, but 
+@c WITHOUT ANY WARRANTY; without even the implied warranty of 
+@c MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+@c Public License for more details. 
+@c
+@c You should have received a copy of the GNU General Public License along 
+@c with gengetopt; see the file COPYING. If not, write to the Free Software 
+@c Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+
+@c %**start of header
+@setfilename gengetopt-ja.info
+@include gengetopt-v.texi
+@settitle GNU Gengetopt @value{VERSION}
+@finalout
+@c @setchapternewpage odd
+@c %**end of header
+
+@c @documentlanguage ja
+
+@set myhomepage @uref{http://www.lorenzobettini.it}
+
+@ifinfo
+This file documents GNU Gengetopt, a tool to write option parsers for C programs.
+
+This edition is for Gengetopt version @value{VERSION}.
+
+Copyright @copyright{} 2001-2005 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Free Software Foundation.
+@end ifinfo
+
+@c @shorttitlepage Gengetopt
+
+@titlepage
+@title GNU Gengetopt
+@subtitle An command line option parser generator
+@subtitle for GNU Gengetopt version @value{VERSION}
+@subtitle updated on @value{UPDATED-MONTH}
+
+@author Lorenzo Bettini
+
+@c 翻訳：西尾 太
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2001-2005 Free Software Foundation, Inc.
+
+This is Edition @value{EDITION} of the Gengetopt manual.
+
+It documents GNU Gengetopt version @value{VERSION}.
+
+@c I don't think FSF will be printing this anytime soon :-)
+@c Published by the Free Software Foundation @*
+@c 59 Temple Place Suite 330 @*
+@c Boston, MA 02111-1307 @*
+@c USA @*
+@c ISBN ...
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Free Software Foundation.
+@end titlepage
+
+@ifnottex
+@node Top, Audience, (dir), (dir)
+@top Gengetopt
+
+@c Gengetopt is a tool to write option parsing code for C programs.
+@c 
+gengetoptは，Cプログラムのオプションを構文解析するコードを書くツールです．
+
+@c This is Edition @value{EDITION} of the Gengetopt manual.
+@c 
+これは，gengetoptマニュアルの@value{EDITION}版です．
+
+@c It documents GNU Gengetopt version @value{VERSION}.
+@c 
+これは，GNU gengetoptのバージョン@value{VERSION}のドキュメントです．
+@end ifnottex
+
+@menu
+* Audience::                    What is gengetopt and who it is for.
+* Copying::                     Your rights.
+* Installation::                Download and Installation
+* Basic Usage::                 How to run Gengetopt; syntax of .ggo files
+* Invoking gengetopt::          gengetopt command line options
+* Terminology::                 Definitions of options, values, and so forth.
+* Group options::               Mutual exclusive options
+* Configuration files::         Parsing a configuration file
+* Multiple Options::            Multiple options
+* No getopt_long::              What if getopt_long is not available?
+* Bugs::                        What is lame and/or buggy in Gengetopt @value{VERSION}
+* Mailing Lists::               For discussions and announces
+* Index::                       Index.
+@end menu
+
+@node Audience, Copying, Top, Top
+@c @unnumbered Audience
+@unnumbered 読者の皆様へ
+@cindex Audience
+@cindex Who should use Gengetopt
+
+@c Gengetopt is a tool to generate C code to parse the command line
+@c arguments @code{argc} and @code{argv} that are part of every C or C++
+@c program.  The generated code uses the C library function
+@c @code{getopt_long} to perform the actual command line parsing.
+@c 
+gengetoptは，すべてのCやC++プログラムの一部であるコマンドライン引数
+@code{argc}と@code{argv}を構文解析する，Cのコードを生成するツールです．
+生成されたコードは、実際にコマンドラインの構文解析を行うために，Cライブ
+ラリ関数の@code{getopt_long}を使用します．
+
+@c This manual is written for C and C++ programmers, specifically the
+@c @emph{lazy} ones.  If you've written any non-trivial C program, you've
+@c had to deal with argument parsing.  It isn't particularly difficult, nor
+@c is it particularly exciting.  It @emph{is} one of the classic
+@c programming nuisances, which is why most books on programming leave it
+@c as an exercise for the reader.  Gengetopt can save you from this work,
+@c leaving you free to focus on the interesting parts of your program.
+@c 
+このマニュアルは，CとC++のプログラマに対して書かれていて，特に@emph{な
+まけもの}のためです．それなりのCプログラムを書いた経験があれば，引数の
+構文解析を処理する必要があったことでしょう．特に難しくもありませんが，
+興味深いことでもありません．それは，伝統的なプログラム行為@emph{であり}，
+殆どのプログラミングの書籍で読者の訓練として残されているものです．
+gengetoptは，この作業からあなたを解放し，プログラムの興味深い部分に集中
+するべく自由をあたえてくれます．
+
+@c Thus your program will be able to handle command line options such as: 
+@c 
+このように，プログラムでは，以下のようなコマンドラインオプションを処理
+することが可能になるでしょう．
+
+@example
+myprog --input foo.c -o foo.o --no-tabs -i 100 *.class
+@end example
+
+@c And both long options (those that start with @code{--}) and short
+@c options (start with @code{-} and consist of only one character) can be
+@c handled (see @ref{Terminology} for further details). For standards about
+@c short and long options you may want to take a look at the GNU Coding
+@c Standards (@uref{http://www.gnu.org/prep/standards_toc.html}).
+@c 
+また，長いオプション(@code{--}で始まるものです)と短いオプション
+(@code{-}で始まり，単一の文字となっています)の両方が処理されます(詳細は
+@ref{Terminology})．短いオプションと長いオプションに関する標準は，GNU
+Coding Standards (@uref{http://www.gnu.org/prep/standards_toc.html})を
+参照してください．
+
+@c Gengetopt can also generate a function to save the command line options
+@c into a file (see @ref{Basic Usage}), and a function to read the command
+@c line options from a  file (see @ref{Configuration files}).  Of course,
+@c these two kinds of files are compliant.
+@c 
+gengetoptは，コマンドラインオプションをファイルに保存する関数
+(@ref{Basic Usage})と，コマンドラインオプションをファイルから読みこむ関
+数(@ref{Configuration files}) を生成することが可能です．もちろん，これ
+ら二種類のファイルは標準にしたがっています．
+
+@node Copying, Installation, Audience, Top
+@c @unnumbered Gengetopt Copying Conditions
+@unnumbered gengetoptのコピー条件
+@cindex Copying conditions
+@cindex Conditions for copying Gengetopt
+
+@c Gengetopt is free software; you are free to use, share and modify it
+@c under the terms of the GNU General Public License that accompanies this
+@c manual.
+@c 
+gengetoptはフリーソフトウェアです．利用，共有，そして編集は，このマニュ
+アルに記載されているGNU General Public Licenseの元に自由にできます．
+
+@c The code that Gengetopt generates is also free software; however it is
+@c licensed with a simple all-permissive license instead of the GPL or
+@c LGPL.  You are free to do anything you like with the generated code,
+@c including incorporating it into or linking it with proprietary software.
+@c 
+gengetoptが生成したコードもフリーソフトウェアです．しかし，GPLやLGPLの
+代わりに，単純にすべてのことが許可されたライセンスで許可されています．
+生成されたコードは，独占的なソフトウェアに組み込んだり，リンクしたりす
+ることも自由です．
+
+@c Gengetopt was originally written by Roberto Arturo Tena Sanchez.   It is
+@c currently maintained by Lorenzo Bettini @value{myhomepage}.
+@c 
+gengetoptは，最初にRoberto Arturo Tena Sanchezによって書かれました．現
+在では，Lorenzo Bettini @value{myhomepage}がメンテナンスしています．
+
+@c A primordial version of @ref{Terminology} was written by 
+@c Adam Greenblatt.
+@c 
+最初のバージョンの@ref{Terminology}は，Adam Greenblattによって書かれま
+した．
+
+@node Installation, Basic Usage, Copying, Top
+@c @chapter Installation
+@chapter インストール
+@cindex installation
+@cindex download
+
+@c See the file @file{INSTALL} for detailed building and  installation
+@c instructions; anyway if you're used to compiling Linux software that
+@c comes with sources you may simply follow the usual procedure, i.e. untar
+@c the file you downloaded in a directory and then:
+@c 
+ビルドとインストールの説明の詳細は，ファイル@file{INSTALL}を参照してく
+ださい．ソースコードが付随しているLinuxソフトウェアをコンパイルするため
+にとりあえず使用したい場合，以下の一般的な手順に従って下さい．つまり，
+適当なディレクトリでダウンロードしたファイルを展開(untar)し，以下を実行
+します．
+
+@example
+cd <source code main directory>
+./configure
+make
+make install
+@end example
+
+@c Note: unless you specify a different install directory by 
+@c @code{--prefix} option of
+@c configure (e.g. @code{./configure --prefix=<your home>}), 
+@c you must be root to run @code{make install}.
+@c 
+注意：@command{configure}の@code{--prefix}オプションで，別のインストー
+ルディレクトリを指定していない限り(例えば，@code{./configure
+--prefix=<your home>})，ルートで@code{make install}を実行する必要があり
+ます．
+
+@c Files will be installed in the following directories:
+@c 
+ファイルは，以下のディレクトリにインストールされます．
+
+@table @code
+@c @item executables
+@c         @code{/prefix/bin}
+@c @item docs
+@c         @code{/prefix/share/doc/gengetopt}
+@c @item examples
+@c         @code{/prefix/share/doc/gengetopt/examples}
+@c @item additional files           
+@c         @code{/prefix/share/gengetopt}
+@c 
+@item 実行形式
+        @code{/prefix/bin}
+@item ドキュメント
+        @code{/prefix/share/doc/gengetopt}
+@item 例
+        @code{/prefix/share/doc/gengetopt/examples}
+@item 追加ファイル
+        @code{/prefix/share/gengetopt}
+@end table
+
+@c Default value for prefix is @code{/usr/local} 
+@c but you may change it with @code{--prefix}
+@c option to configure.
+@c 
+@var{prefix}のデフォルトは@code{/usr/local}ですが，@command{configure}
+の@code{--prefix}オプションで変更してもかまいません．
+
+@c @section Download
+@section ダウンロード
+@cindex download
+
+@c You can download it from GNU's ftp site:
+@c @uref{ftp://ftp.gnu.org/gnu/gengetopt} or from one of its mirrors (see
+@c @uref{http://www.gnu.org/prep/ftp.html}).
+@c 
+GNUのFTPサイト@uref{ftp://ftp.gnu.org/gnu/gengetopt}や，そのミラーの一
+つ(@uref{http://www.gnu.org/prep/ftp.html}を参照してください)からダウン
+ロードすることが可能です．
+
+@c I do not distribute Windows binaries anymore; since, they can be easily
+@c built by using Cygnus C/C++ compiler, available at
+@c @uref{http://www.cygwin.com}.  However, if you don't feel like
+@c downloading such compiler, you can request such binaries directly to me,
+@c by e-mail (find my e-mail at my home page) and I can send them to you.
+@c 
+Windows用のバイナリは，もはや配付していません．その理由は，
+@uref{http://www.cygwin.com}で利用可能なCygnus C/C++ コンパイラを使用す
+ることで簡単にビルドすることが可能だからです．しかし，そのようなコンパ
+イラのダウンロードが自由にできない場合，バイナリを直接要求することが可
+能で，電子メール(ホームページでメールアドレスを探して下さい)を送っても
+らえればそれらを送付することが可能です．
+
+@c Archives are digitally signed by me (Lorenzo Bettini) with GNU gpg
+@c (@uref{http://www.gnupg.org}). My GPG public key can be found at my home
+@c page (@value{myhomepage}).
+@c 
+私(Lorenzo Bettini)の電子署名は，GNU gpg (@uref{http://www.gnupg.org})
+でなされていて，GPGの公開鍵はホームページ(@value{myhomepage})で見つかる
+はずです．
+
+@c You can also get the patches, if they are available for a particular
+@c release (see below for patching from a previous version).
+@c 
+特定のリリースが利用可能であれば，パッチの入手も可能です(以前のバージョ
+ンからのパッチは以下を参照してください)．
+
+@c @section Anonymous CVS Access
+@section 匿名でのCVSアクセス
+@cindex CVS
+
+@c This project's CVS repository can be checked out through anonymous
+@c (pserver) CVS with the following instruction set. When prompted for a
+@c password for anoncvs, simply press the Enter key.
+@c 
+このプロジェクトのCVSリポジトリは，以下の手順で匿名(pserver)CVSから取り
+出すことが可能です．anoncvsのパスワード入力のプロンプトでは，単純に
+Enterキーを押してください．
+
+@example
+cvs -d:pserver:anoncvs@@subversions.gnu.org:/cvsroot/gengetopt login
+
+cvs -z3 -d:pserver:anoncvs@@subversions.gnu.org:/cvsroot/gengetopt \
+  co gengetopt
+@end example
+
+@c Further instructions can be found at the address:
+@c 
+それ以上の手順は，以下のアドレスで見つかるはずです．
+
+@uref{http://savannah.gnu.org/projects/gengetopt}.
+
+@c Please notice that this way you will get the latest development sources
+@c of Gengetopt, which may also be unstable.  This solution is the
+@c best if you intend to correct/extend this program: you should send me
+@c patches against the latest cvs repository sources.
+@c 
+この方法は，gengetoptの最新の開発バージョンを入手する方法で，不安定の可
+能性があることに注意してください．この手法は，このプログラムを修整した
+り拡張したりすることが目的の場合は最適です．最新のcvsリポジトリソースへ
+のパッチを送ったほうが良いでしょう．
+
+@c If, on the contrary, you want to get the sources of a given release,
+@c through cvs, say, e.g., version X.Y.Z, you must specify the tag
+@c @code{rel_X_Y_Z} when you run the cvs command or the @code{cvs update}
+@c command.
+@c 
+反対に，該当するリリースのソースを入手したい場合，例えばバージョン
+X.Y.Zでは，cvsコマンドや@code{cvs update}コマンドを実行するとき，タグ
+@code{rel_X_Y_Z}を指定する必要があります．
+
+@c When you compile the sources that you get through the cvs repository,
+@c before running the @code{configure} and @code{make} commands, you
+@c should, at least the first time, run the command:
+@c 
+cvsリポジトリから入手したソースをコンパイルするとき，@code{configure}と
+@code{make}コマンドの前に，少なくとも一度，以下のコマンドを実行してくだ
+さい．
+
+@example
+sh reconf
+@end example
+
+@noindent
+@c This will run the autotools commands in the correct order, and also copy
+@c possibly missing files.  You should have installed recent versions of
+@c @code{automake} and @code{autoconf} in order for this to succeed.
+@c You will also need @code{flex} and @code{bison}.
+@c 
+これで，autotoolsコマンドを正しい順序で実行し，足りない可能性があるファ
+イルもコピーします．これを成功させるため，最新バージョンの
+@code{automake}と@code{autoconf}をインストールすべきです．また，
+@code{flex}と@code{bison}も必要です．
+
+@c NOTICE: This convention holds since release 2.14.
+@c 
+注意：この慣習は，リリース2.14以降から維持されています．
+
+@c @section What you need to build gengetopt
+@section gengetoptのビルドに必要なもの
+@cindex requirements
+
+@c Gengetopt has been developed under GNU/Linux, using gcc (C++),
+@c and bison (yacc) and flex (lex), and ported under Win32 with Cygnus
+@c C/C++compiler, available at @uref{http://www.cygwin.com}.  I used the
+@c excellent GNU Autoconf and GNU Automake.  I also used Autotools
+@c (@uref{ftp://ftp.ugcs.caltech.edu/pub/elef/autotools}) which creates a
+@c starting source tree (according to GNU standards) with autoconf,
+@c automake starting files.
+@c 
+gengetoptは，GNU/Linuxで，gcc (C++)，bison (yacc)，そしてflex (lex)を使
+用して開発され，また@uref{http://www.cygwin.com}で利用可能なCygnus
+C/C++コンパイラに移植されました．優秀なGNU AutoconfとGNU Automakeを使用
+しています．また，Autotools
+(@uref{ftp://ftp.ugcs.caltech.edu/pub/elef/autotools})も利用しており，
+それは(GNU標準に準拠した)ソースツリーでのautoconfとautomakeを用いたスター
+トファイルを生成します．
+
+@c Moreover @emph{Gengen}
+@c (@uref{http://www.lorenzobettini.it/software/gengen}) is used for
+@c automatically generating the code that generates the command line parser.
+@c 
+さらに，@emph{Gengen}
+(@uref{http://www.lorenzobettini.it/software/gengen})をコマンドライン構
+文解析を生成するコードの自動生成で使用しています．
+
+@c Actually, you don't need all these tools above to build source-highlight
+@c because I provide generated sources, unless you want to develop
+@c source-highlight.
+@c 
+実際，生成されたソースを提供しているので，ソースの重要部分を開発したい
+わけでは無いかぎり，ソースの重要部分をビルドするために，これらの上記の
+すべてのツールが必要だというわけではありません．
+
+@c The code generated by gengetopt relies on the @code{getopt_long}
+@c function that is usually in the standard C library; however, there may
+@c be some implementations of the C library that don't include it; in this
+@c case you have to link the program that uses the file generated by
+@c gengetopt with the files @file{getopt.c} and @file{getopt1.c} and
+@c include @file{gnugetopt.h} in your project.  We obviously provide these
+@c files in the utility files directory (@file{<install
+@c prefix>/share/gengetopt}).  These files are part of the GNU C library.
+@c You may want to take a look at @code{getopt_long} man page. 
+@c 
+gengetoptで生成されるコードは，@code{getopt_long}関数に依存し，通常それ
+は標準のCライブラリに含まれています．しかし，それが含まれていないCライ
+ブラリの実装も存在する可能性があります．この状況では，プログラムをファ
+イル@file{getopt.c}と@file{getopt1.c}とともにgengetoptで生成されたファ
+イルを使用してプログラムをリンクし，プロジェクトに@file{gnugetopt.h}を
+含める必要があります．我々は明示的にこれらのファイルをユーティリティファ
+イルのディレクトリで提供しています(@file{<install
+prefix>/share/gengetopt})．これらのファイルはGNU Cライブラリの一部です．
+@code{getopt_long}のmanページを参照してください．
+
+@c Read also @ref{No getopt_long}, for instructions on how to check whether
+@c getopt_long is part of the library and how to deal with their lacking
+@c (using autoconf and automake).
+@c 
+@code{getopt_long}がライブラリの一部かどうかを調査する方法と，足りない
+場合に(autoconfとautomakeを使用して)処理する方法の手順は，@ref{No
+getopt_long}も参照してください．
+
+@c @section Patching from a previous version
+@section 以前のバージョンからのパッチ
+@cindex patching
+
+@c If you downloaded a patch, say
+@c @file{gengetopt-1.3-1.3.1-patch.gz} (i.e., the patch to go from version
+@c 1.3 to version 1.3.1), cd to the directory with sources from the
+@c previous version (gengetopt-1.3) and type:  
+@c 
+@file{gengetopt-1.3-1.3.1-patch.gz} (例えば，バージョン1.3をバージョン
+1.3.1に変更するパッチ)といったパッチをダウンロードした場合，ディレクト
+リを以前のバージョンのソースディレクトリ(gengetopt-1.3)に移動し，以下を
+入力します．
+
+@example
+gunzip -cd ../gengetopt-1.3-1.3.1.patch.gz | patch -p1 
+@end example
+
+@c and restart the compilation process (if you had already run configure a
+@c simple make should do).
+@c 
+そして，コンパイル処理を再び開始してください(既に@command{configure}を
+実行している場合，単純に@command{make}してください)．
+
+@node Basic Usage, Invoking gengetopt, Installation, Top
+@c @chapter Basic Usage
+@chapter 基本的な使用方法
+@cindex how to use Gengetopt
+@cindex getting started with Gengetopt
+@cindex tutorial
+
+@c The command line options, which have to be handled by gengetopt
+@c generated function, are specified in a file (typically with @file{.ggo}
+@c extension). This file consist in lines of sentences with the following
+@c formats, commands in @{@} are optional@footnote{Command lines that are too long are
+@c split into multiple indented lines separated by a @code{\}.  Of course
+@c these commands are to be given in one line only, anyway.}:
+@c 
+gengetoptが生成した関数で処理する必要があるコマンドラインオプションは，
+ファイル(通常は@file{.ggo}の拡張子)で指定します．このファイルは，以下の
+フォーマットの文で構築し，@{@}のコマンドはオプションです@footnote{長す
+ぎるコマンドラインは複数の行に@code{\}で分割します．もちろん，これらの
+コマンドは，いずれにせよ一行だけであたえることになります．}．
+
+@example
+package <packname>
+version <version>
+
+option <long> <short> <desc> @{argtype@} @{typestr="<type descr>"@} \
+    @{default="<default value>"@} @{required@} @{argoptional@} @{multiple@}
+option <long> <short> <desc> @{typestr="<type descr>"@} \
+    @{values="value1","value2",...@} @{default="<default value>"@} \
+    @{required@} @{argoptional@} @{multiple@}
+option <long> <short> <desc> flag <on/off>
+@end example
+
+@c Where:
+@c 
+これらの意味は以下のようになります．
+
+@table @code
+@item package
+
+@c Double quoted string.  This has the precedence over @code{PACKAGE} generated by autoconf.
+@c 
+二重引用符で囲まれた文字列です．これは，autoconfが生成する
+@code{PACKAGE}に優先します．
+ 
+@item version 
+
+@c Double quoted string.  This has the precedence over @code{VERSION} generated by autoconf.
+@c 
+二重引用符で囲まれた文字列です．これは，autoconfが生成する
+@code{VERSION}に優先します．
+
+@item purpose 
+
+@c What the program does (even on more than one line), it will be printed
+@c with the help.  Double quoted string.
+@c 
+プログラムの目的で(一行以上でもかまいません)，ヘルプで出力されます．二
+重引用符で囲まれた文字列です．
+
+@item long 
+
+@c The long option, a double quoted string with upper and lower case
+@c characters, digits, a dash (@code{-}) and a dot (@code{.}).  No spaces
+@c allowed.  The name of the variables generated to store arguments (see
+@c later in this section) are long options converted to be legal C variable
+@c names.  This means that @code{.} and @code{-} are both replaced by
+@c @code{_}.
+@c 
+長いオプションで，二重引用符で囲まれた文字列で，大文字と小文字，数字，
+ダッシュ(@code{-})，そしてドット(@code{.})を使用します．スペースは利用
+できません．引数を保存するために生成される変数の名前は(このセクションの
+後の部分を参照してください)，正当なCの変数名に変換された長いオプション
+になります．これは，@code{.}と@code{-}が両方とも@code{_}で置換されるこ
+とを意味します．
+
+@item short 
+
+@c The short option, a single upper or lower case char, or a digit.  If
+@c a @code{-} is specified, then no short option is considered for the long
+@c option (thus long options with no associated short options are allowed).
+@c 
+短いオプションで，単一の大文字や小文字，または数字です．@code{-}が指定
+されている場合，短いオプションは，長いオプションに対するものとは考慮さ
+れません(このため，関聯する短いオプションが無い長いオプションが可能にな
+ります)．
+
+@item desc 
+
+@cindex wrapping
+
+@c Double quoted string with upper and lower case characters, digits, a
+@c dash (@code{-}) and a dot (@code{.}).   The first character must not be
+@c a space.  This description will be printed during the output of
+@c @code{--help}.  Wrapping will be automatically performed, and @code{\n}
+@c is interpreted as a newline request.
+@c 
+二重引用符で囲まれた文字列で，大文字と小文字，数字，ダッシュ(@code{-})，
+そしてドット(@code{.})を使用します．最初の文字はスペースにしてはいけま
+せん．この記述は，@code{--help}の出力で表示されます．改行は自動的に行わ
+れ，@code{\n}は改行が要求されているものと解釈されます．
+
+@item argtype 
+
+@c @code{string}, @code{int}, @code{short}, @code{long}, @code{float},
+@c @code{double}, @code{longdouble} or @code{longlong}.  If no type is
+@c specified the option does not accept an argument.
+@c 
+@code{string}，@code{int}，@code{short}，@code{long}，@code{float}，
+@code{double}，@code{longdouble}，または@code{longlong}です．型が指定さ
+れていない場合，オプションは引数を受けつけません．
+
+@item typestr 
+
+@c a description for the type of the values for the option.   This will be
+@c used during the output of @code{--help} (e.g., @code{"filename"} instead
+@c of simply @code{STRING}, or @code{"portnumber"} instead of simply
+@c @code{INT}).
+@c 
+オプション値の型の記述です．これは，@code{--help}の出力で使用されます
+(例えば，単純な@code{STRING}の代わりに@code{"filename"}，単純な
+@code{INT}の代わりに@code{"portnumber"})．
+
+@item values
+ 
+@c a list of strings containing all the possible values that can be passed
+@c to the option.  The type is considered string and must not be specified.
+@c 
+オプションに渡すことが可能な利用可能なすべての値を含む文字列のリストで
+す．型は文字列だと考慮され，指定してはなりません．
+ 
+@item default 
+
+@c an optional default value for the option.  The value must always be
+@c specified as a double quoted string.
+@c 
+オプションに対する追加のデフォルト値です．値は常に二重引用符で囲まれた
+文字列として指定する必要があります．
+
+@item required 
+
+@c @code{yes} or @code{no}.  This specifies whether such option must be
+@c given at each program invocation.
+@c 
+@code{yes}または@code{no}です．これは，そのオプションがプログラムの呼び
+出しごとに能える必要があるかどうかを指定します．
+ 
+@item argoptional 
+
+@c If this flag is specified then this option has an argument that is
+@c optional.  In this case, when you specify the argument at command line,
+@c please use @code{=} in case you use a long option, and avoid spaces if
+@c you use short option.  For instance, if the option with optional
+@c argument is @code{-B|--bar}, use the following command line syntax:
+@c @code{-B15} or @code{--bar=15}, and NOT the following one @code{-B 15}
+@c nor @code{--bar 15}.
+@c 
+このフラグが指定されている場合，このオプションは追加の引数を取ります．
+この状況では，コマンドラインで引数を指定するとき，長いオプションの使用
+時には@code{=}を使用し，短いオプションの場合はスペースを入れないで下さ
+い．例えば，追加の引数があるオプションでは，以下のコマンドラインの構文
+を使用して下さい．@code{-B15}または@code{--bar=15}で，@code{-B 15}でも
+@code{--bar 15}でも@emph{ありません}．
+ 
+@item multiple 
+
+@c If this flag is specified then this option can be specified more than
+@c once at command line; all the values for this option are stored in an
+@c array.  See @ref{Multiple Options}.
+@c 
+このフラグが指定されている場合，このオプションはコマンドラインで一度以
+上指定することが可能になります．このオプションのすべての値が配列に保存
+されます．@ref{Multiple Options}を参照して下さい．
+
+@item on/off 
+
+@c @code{on} or @code{off}.  This is the state of the flag when the program
+@c starts. If user specifies the option, the flag toggles.
+@c 
+@code{on}または@code{off}です．これは，プログラム開始時のフラグの状態と
+なります．ユーザがオプション指定している場合，フラグは切替えられます．
+
+@end table
+
+@c Comments begins with @code{#} in any place of the line and ends in the end of line.
+@c 
+コメントは行の任意の場所の@code{#}で始まり，行の終わりで終了となります．
+
+@c Notice that the options @code{-h,--help} and @code{-V,--version} are
+@c added automatically; however, if you specify an option yourself that has
+@c @code{h} as short form or @code{help} as long form, then
+@c @code{-h,--help} is not added (and you have to handle the help option
+@c manually).  The same holds for @code{-V,--version}.
+@c 
+オプション@code{-h,--help}と@code{-V,--version}は自動的に追加されます．
+短い形式の@code{h}や，長い形式の@code{help}を独自のオプションとして指定
+した場合，追加されません(ヘルプオプションを手動で処理する必要がありま
+す)．@code{-V,--version}も同じです．
+
+@c Options can be part of sections, that provide a more meaningful
+@c descriptions of the options.  A @emph{section} can be defined with the
+@c following syntax (the @code{sectiondesc} is optional) and all the options
+@c following a section declaration are considered part of that sections:
+@c 
+オプションはセクションの一部にすることが可能で，オプションのより意味の
+ある記述を提供します．@emph{section}は以下の構文で定義され
+(@code{sectiondesc}はオプションです)，，セクション宣言が続くすべてのオ
+プションは，セクションの一部と考慮されます．
+
+@example
+section "section name" @{sectiondesc="optional section description"@}
+@end example
+
+@c You can also specify the list of values that can be passed to an option
+@c (in that case the option has type @code{string}).  If a value that is not in
+@c the list is passed, an error is raised.  You can think of such options
+@c as @emph{enumerated} options.
+@c 
+オプションに渡す値のリストを指定することも可能です(その状況では，オプショ
+ンの型は@code{string}です)．値が渡されたリストに無い場合，エラーとなり
+ます．そのようなオプションは@emph{列挙型}オプションだと考えることができ
+ます．
+ 
+@c Here's an example of such a file (the file is called @file{sample1.ggo})
+@c 
+以下は，そのようなファイルの例です(ファイルは@file{sample1.ggo}としま
+す)．
+
+@example
+# file sample1.ggo 
+option  "str-opt"     s "A string option, for a filename" \
+     string typestr="filename" no 
+option  "my-opt"      m "Another integer option, \
+     this time the description of the \
+     option should be quite long to require wrapping... possibly \
+     more than one wrapping :-) especially if I\nrequire a line break" int no 
+option  "int-opt"     i "A int option"         int        yes 
+section "more involved options" \
+     sectiondesc="the following options\nare more complex"
+option  "flag-opt"    - "A flag option"        flag       off
+option  "funct-opt"   F "A function option"    no 
+section "last option section"
+option  "long-opt"    - "A long option"        long       no 
+option  "def-opt"     - "A string option with default" \
+     string default="Hello" no
+option  "enum-opt"    - "A string option with list of values" \
+     values="foo","bar","hello" default="hello" no
+@end example
+
+@c The simplest way to use gengetopt is to pass this file as the standard input, i.e.: 
+@c 
+gengetoptを使用するもっとも簡単な方法は，このファイルを標準入力として渡
+す方法です．すなわち以下のようにします．
+
+@example
+gengetopt < sample1.ggo
+@end example
+
+@c By default gengetopt generates @file{cmdline.h} and @file{cmdline.c}.  Otherwise we
+@c can specify these names with a command line option:
+@c 
+デフォルトで，gengetoptは@file{cmdline.h}と@file{cmdline.c}を生成します．
+それ以外では，これらの名前をコマンドラインオプションで指定することが可
+能です．
+
+@example
+gengetopt < sample1.ggo --file-name=cmdline1 --unamed-opts
+@end example
+
+@cindex parameter
+@cindex option without name
+@c The option @code{--unamed-opts} allows the generated command line parser
+@c to accept also names, without an option (for instance you can pass a
+@c file name without an option in front of it, and also use wildcards, such
+@c as @code{*.c}, @code{foo*.?} and so on).   These are also called
+@c @emph{parameters} (see @ref{Terminology}).  You can specify an optional
+@c description for these additional names (default is @code{FILES}).
+@c 
+オプション@code{--unamed-opts}で生成するコマンドライン構文解析器にも名
+前を付けることが可能となり，オプションが無い場合(例えば，その前にオプショ
+ンが無ければファイル名を渡すことが可能で，そこでは，@code{*.c}，
+@code{foo*.?}などのようなワイルドカードを使用することが可能です)．これ
+らは@emph{パラメータ}とも呼ばれています(@pxref{Terminology})．これらの
+追加の名前に，追加の記述を指定することが可能です(デフォルトは
+@code{FILES}です)．
+
+@c In @file{cmdline1.h} you'll find the generated C struct: 
+@c 
+ファイル@file{cmdline1.h}で，生成されるCの構造体を見つけましょう．
+
+@include cmdline1.h.texinfo
+
+@c The @code{<option>_given} field is set to a value different from 0 when
+@c an argument for @code{<option>} has been specified.   If the option
+@c accepts an argument and it is not of @code{flag} type The
+@c @code{<option>_arg} field is set to the value passed at the command
+@c line.  The @code{<option>_arg} field has the corresponding C type
+@c specified in the file passed to gengetopt.  The additional field
+@c @code{<option>_orig} is always a string containing the original value
+@c passed at the command line.  This may be different, for instance, in
+@c case of numerical arguments: gengetopt converts the passed value (a
+@c string) into the corresponding numerical type; due to convertions, float
+@c representations, etc., this may not correspond exactly to the original
+@c value passed at command line.  The user can always access this original
+@c value by using @code{<option>_orig} instead of @code{<option>_arg}, as
+@c he sees fit@footnote{The @code{<option>_orig} was introduced in the
+@c release 2.14.}.  For instance, gengetopt itselfs uses the original value
+@c when it saves the command line options into a file (see the
+@c @code{_file_save} function in the following).
+@c 
+@code{<option>_given}フィールドは，@code{<option>}の引数が指定されてい
+るとき，0以外の値が設定されます．オプションが引数を受け入れ，
+@code{flag}の型ではない場合，@code{<option>_arg}フィールドはコマンドラ
+インで渡された値に設定されます．@code{<option>_arg}フィールドは，
+gengetoptに渡されたファイルで指定されている，対応するCの型を持ちます．
+追加のフィールド@code{<option>_orig}は常に，コマンドラインで渡された元
+の値を含む文字列です．これは，例えば数値の引数の状況では異なる可能性が
+あります．gengetoptは渡された値(文字列)を対応する数値の型に変換します．
+変換のため，浮動小数点表現などになり，これは，コマンドラインで渡された
+元の値とは正確に一致しない可能性があります．ユーザは，
+@code{<option>_arg}の代わりに@code{<option>_orig}を使用することで，この
+元の値にアクセスすることが，足元を見るのと同じくらい，いつでも可能です
+@footnote{@code{<option>_orig}は，リリース2.14で導入されました}．例えば，
+gengetopt自身，コマンドラインオプションをファイルに保存するとき，元の値
+を使用しています(以下の@code{_file_save}関数を参照して下さい)．
+
+@c If it is of @code{flag} type, only the field @code{<option>_flag}
+@c is generated.
+@c 
+@code{flag}の型の場合，@code{<option>_flag}フィールドだけ生成されます．
+
+@c Even if @code{<option>_given} is 0, the corresponding
+@c @code{<option>_arg} is set to default value (if one has been specified
+@c for @code{<option>}).  However, in this case, the @code{<option>_orig}
+@c is set to @code{NULL}.
+@c 
+@code{<option>_given}が0の場合でも，対応する@code{<option>_arg}はデフォ
+ルト値になります(@code{<option>}が指定されている場合)．しかし，この状況
+では，@code{<option>_orig}は@code{NULL}に設定されます．
+
+@c Notice that by default the generated function is called @code{cmdline_parser}
+@c (see the command line options below, to override this name), and it
+@c takes the arguments that main receives and a pointer to such a struct,
+@c that it will be filled.
+@c 
+デフォルトで，生成される関数は@code{cmdline_parser}と呼ばれ(この名前に
+優先させる方法は，以下のコマンドラインオプションを参照して下さい)，
+main関数が受け取る引数と，値が充填されている構造体へのポインタを受け取
+ります．
+
+@c @code{cmdline_parser_free} can be called to deallocate memory allocated by the
+@c parser for string and multiple options.
+@c 
+@code{cmdline_parser_free}は，文字列と複数回オプションの構文解析器で確
+保されたメモリを解放するために呼び出すことが可能です．
+
+@c Notice that after calling this function, the parsing functions should
+@c not be called anymore.
+@c 
+この関数の呼び出し後，構文解析関数を呼び出してはならないことに注意して
+ください．
+
+@c @code{cmdline_parser_init} can be called to initialize the struct (it is
+@c not mandatory, since it is done automatically by the command line
+@c parser).
+@c 
+@code{cmdline_parser_init}は，構造体の初期化をするために呼び出すことが
+可能です(それは必須ではなく，その理由はコマンドライン構造解析器が自動的
+に行うためです)．
+
+@c @code{cmdline_parser_file_save}@footnote{This function was introduced in
+@c the release 2.14.} can be used to save the command line options into a
+@c file.  The contents of this file are consistent with the configuration
+@c files (@ref{Configuration files}).  Notice that if an option has a
+@c default value, this option will be saved into the file only if it was
+@c passed explicitly at command line (or read from a configuration file),
+@c i.e., default values will not be saved into the file.
+@c 
+@code{cmdline_parser_file_save}@footnote{この関数はリリース2.14で導入さ
+れました}は，コマンドラインオプションをファイルに保存するために使用する
+ことが可能です．このファイルの内容は，コンフィグレーションファイル
+(@ref{Configuration files})と両立します．オプションにデフォルト値がある
+場合，このオプションではコマンドラインで明示的に渡されたもの(または，コ
+ンフィグレーションファイルから読み込まれたもの)だけをファイルに保存する
+ことに注意してください．つまり，デフォルト値はファイルに保存されません．
+
+@c And here's how these functions can be used inside the main program: 
+@c 
+以下は，これらの関数をmainプログラムで使用する方法を記述しています．
+
+@include main1.cc.texinfo
+
+@c Now you can compile @file{main1.cc} and the @file{cmdline1.c} generated
+@c by gengetopt and link all together to obtain @code{sample1} executable:
+@c 
+さて，@file{main1.cc}とgengetoptで生成した@file{cmdline1.c}をコンパイル
+し，@code{sample1}という実行形式を入手するために，すべてをリンクするこ
+とが可能となりました．
+
+@example
+gcc -c cmdline1.c
+g++ -c main1.cc
+g++ -o sample1 cmdline1.o main1.o
+@end example
+
+@c (Here we assume that @code{getopt_long} is included in the standard C library;
+@c see @ref{Installation} and @ref{No getopt_long}).
+@c 
+(ここでは，@code{getopt_long}が標準Cライブラリからインクルードされてい
+ることを仮定しています．@ref{Installation}と@ref{No getopt_long}を参照
+してください)
+
+@c Now let's try some tests with this program:
+@c 
+さて，このプログラムでテストしてみましょう．
+
+@example
+$ ./sample1 -s "hello" --int-opt 1234
+This one is from a C++ program
+Try to launch me with some options
+(type sample1 --help for the complete list)
+For example: ./sample1 *.* --funct-opt
+Here are the options you passed...
+You inserted hello for --str-opt option.
+This is the integer you input: 1234.
+The flag is off.
+Have a nice day! :-)
+@end example
+
+@c You can also pass many file names to the command line (this also shows
+@c how flags work):
+@c 
+たくさんのファイル名をコマンドラインに渡すことも可能です(これでもフラグ
+の動作方法が分かります)．
+
+@example
+$ ./sample1 *.h -i -100 -x
+This one is from a C++ program
+Try to launch me with some options
+(type sample1 --help for the complete list)
+For example: ./sample1 *.* --funct-opt
+Here are the options you passed...
+file: cmdline1.h
+file: cmdline2.h
+file: cmdline.h
+file: getopt.h
+This is the integer you input: -100.
+The flag is on.
+Have a nice day! :-)
+@end example
+
+@c And if we try to omit the @code{--int-opt} (or @code{-i}), which is
+@c required, we get an error:
+@c 
+そして，@code{--int-opt} (または，@code{-i})を省略してみると，それは必
+須なのでエラーになります．
+
+@example
+$ ./sample1
+This one is from a C++ program
+Try to launch me with some options
+(type sample1 --help for the complete list)
+For example: ./sample1 *.* --funct-opt
+sample1: `--int-opt' (`-i') option required!
+@end example
+
+@c Here is the output of @code{--help}:
+@c 
+以下は，@code{--help}の出力です．
+
+@example
+sample1 2.0
+
+Usage: sample1 -iINT|--int-opt=INT [-h|--help] [-V|--version] 
+         -sfilename|--str-opt=filename -mINT|--my-opt=INT [--flag-opt] 
+         [-F|--funct-opt] --long-opt=LONG --def-opt=STRING  [FILES]...
+
+  -h, --help              Print help and exit
+  -V, --version           Print version and exit
+  -s, --str-opt=filename  A string option, for a filename
+  -m, --my-opt=INT        Another integer option, this time the description of
+                            the option should be quite long to require
+                            wrapping... possibly more than one wrapping :-)
+                            especially if I
+                            require a line break
+  -i, --int-opt=INT       A int option
+
+more involved options:
+the following options
+are more complex
+      --flag-opt          A flag option  (default=off)
+  -F, --funct-opt         A function option
+
+last option section:
+      --long-opt=LONG     A long option
+      --def-opt=STRING    A string option with default  (default=`Hello')
+      --enum-opt=STRING   A string option with list of values  (possible
+                            values="foo", "bar", "hello" default=`hello')
+@end example
+
+@cindex wrapping
+
+@c Notice how @code{filename} is printed instead of @code{STRING} for the option
+@c @code{--str-opt} (since @code{typestr} was used in the @file{sample1.ggo} file) and how the
+@c description of @code{--my-opt} is wrapped to 80 columns, and how the @code{\n} is
+@c actually interpreted as a newline request.
+@c 
+オプション@code{--str-opt}に対して，@code{STRING}ではなく
+@code{filename}が出力されること(@code{typestr}が@file{sample1.ggo}ファ
+イルで使用されています)，@code{--my-opt}の記述が80文字でおりかえされて
+いること，そして，@code{\n}が実際に改行が要求されていることとして解釈さ
+れていることに注目してください．
+ 
+@c If you're curious you may want to take a look at the generated C file @file{cmdline1.c}. 
+@c 
+心配であれば，生成されたCファイル@file{cmdline1.c}を見てください．
+
+@c You may find other examples in @file{/prefix/share/doc/gengetopt/examples}
+@c or in the @file{tests} of the source tarbal.
+@c 
+@file{/prefix/share/doc/gengetopt/examples}や，ソースのtarballの
+@file{tests}で他の例も見つかるでしょう．
+
+@node Invoking gengetopt, Terminology, Basic Usage, Top
+@c @chapter Invoking gengetopt
+@chapter gengetoptの呼び出し
+@cindex invoking
+@cindex gengetopt options
+
+@c This is the output of @code{gengetopt --help}:
+@c 
+以下は@code{gengetopt --help}の出力です．
+
+@smallexample
+@include help_output.texinfo
+@end smallexample 
+
+@c The options should be clear; in particular: 
+@c 
+オプションは，特に，はっきりとさせておくべきでしょう．
+
+@table @code
+
+@item --func-name 
+@c if no @code{--func-name} is given, @code{cmdline_parser} is taken by default;
+@c 
+@code{--func-name}があたえられていない場合，@code{cmdline_parser}がデフォ
+ルトになります．
+ 
+@item --arg-struct-name 
+@c allows to specify the name of the generated struct for command line
+@c arguments (default is @code{gengetopt_args_info})
+@c 
+コマンドライン引数に対応して生成される構造体の名前を指定することが可能
+です(デフォルトは@code{gengetopt_args_info})．
+ 
+@item --long-help 
+@c the ``Usage'' line reports all the options; this may be unpleasant if options are many;
+@c 
+``Usage''行で，すべてのオプションを表示します．これは，オプションが多い
+場合，よろこばしくない可能性があります．
+ 
+@item --unamed-opts 
+@c the program will accept also options without a name, which, in most
+@c case, means that we can pass many file names to the program (see the
+@c example in @ref{Basic Usage}, where we call @code{sample1 *.h}). You can
+@c specify an optional description for these additional names (default is
+@c @code{FILES}).
+@c 
+プログラムは，名前の無いオプションも受け入れ，それはほとんどの状況で，
+プログラムに多くのファイル名を渡すことが可能になることを意味します
+(@code{sample1 *.h}を呼び出している@ref{Basic Usage}の例を参照して下さ
+い)．これらの追加の名前にオプションの記述を指定することが可能です(デフォ
+ルトは@code{FILES}です)．
+ 
+@item --no-handle-help 
+@itemx --no-handle-version
+
+@c if @code{--no-handle-help} (@code{--no-handle-version}) is given the
+@c command line option @code{--help|-h} (@code{--version|-V}) is not
+@c handled automatically, so the programmer will be able to print some
+@c other information; then the function for printing the standard help
+@c (version) response can be used; this function is called
+@c @code{<parser-name>_print_help} (@code{<parser-name>_print_version}),
+@c where @code{<parser-name>} is the name specified with @code{--func-name}
+@c or the default, @code{cmdline_parser}.
+@c 
+@code{--no-handle-help} (@code{--no-handle-version})が与えられている場
+合，コマンドラインオプション@code{--help|-h} (@code{--version|-V})は，
+自動的に処理されないので，プログラマはそれ以外のオプションを出力するこ
+とが可能になります．標準的なヘルプ(バージョン)に対応して出力する関数は
+使用可能です．この関数は，@code{<parser-name>_print_help}
+(@code{<parser-name>_print_version})と呼ばれ，@code{<parser-name>}の名
+前は，@code{--func-name}で指定されたもの，またはデフォルトの
+@code{cmdline_parser}になります．
+ 
+@item --no-handle-error
+@c if @code{--no-handle-error} is given, an error in the parsing does not
+@c provoke the exit of the program; instead, since the parser function, in
+@c case of an error, returns a value different 0, the program can print a
+@c help message, as gengetopt itself does in case of an error (try it!).
+@c 
+@code{--no-handle-error}が与えられている場合，構文解析時のエラーで，プ
+ログラムの終了コードが呼び出されません．その代わりに，構文解析関数は，
+エラー時には0以外の値を返し，プログラムはヘルプメッセージを出力し，
+gengetopt自身がエラー時に行うことと同じようになります(試してみてください！)．
+ 
+@item --gen-version 
+@c is a flag (default on) that when disabled does not put in the output
+@c file the gengetopt version (it is useful for testing purposes).
+@c 
+これはフラグ(デフォルトでon)で，利用不可能なときは出力ファイルに
+gengetoptのバージョンを書き出しません(テスト目的で役に立ちます)．
+
+@end table
+
+@c You may have already guessed it: gengetopt uses gengetopt itself for
+@c command line options, and its specification file is @code{cmdline.ggo}
+@c in the source directory.   In particular the command line for gengetopt
+@c itself is generated with the following command:
+@c 
+既にお分かりかもしれませんが，gengetoptはgengetopt自身を，コマンドライ
+ンオプションに対して使用していて，その仕様が書かれているファイルはソー
+スディレクトリの@code{cmdline.ggo}です．特に，gengetopt自身のコマンドラ
+インは，以下のコマンドで生成されています．
+
+@example
+gengetopt --input=cmdline.ggo --no-handle-version \
+          --no-handle-help --no-handle-error
+@end example
+
+@c Indeed when @code{--help|-h} is passed on the command line, gengetopt will call
+@c @code{cmdline_parser_print_help()} and then the lines for reporting bugs.  When
+@c @code{--version|-V} is passed, it will call cmdline_parser_print_version() and
+@c then prints a copyright.  If an error occurs it prints a message on the
+@c screen:
+@c 
+実際，@code{--help|-h}がコマンドラインで渡されると，gengetoptは
+@code{cmdline_parser_print_help()}を呼び出し，バグ報告の行が表示されま
+す．@code{--version|-V}が渡されるとき，
+@code{cmdline_parser_print_version()}が呼び出され，著作権が出力されます．
+エラーが生じた場合，画面にメッセージが出力されます．
+
+@example
+$ ./gengetopt --zzzz
+./gengetopt: unrecognized option `--zzzz'
+Run gengetopt --help to see the list of options.
+@end example
+
+@node Terminology, Group options, Invoking gengetopt, Top
+@c @chapter Terminology
+@chapter 用語集
+@cindex Terminology
+@cindex argument, defined
+@cindex option, defined
+@cindex value, defined
+@cindex parameter, defined
+@cindex short option, defined
+@cindex long option, defined
+@cindex multiple option, defined
+@cindex required option, defined
+
+@c An @dfn{argument} is an element of the @code{argv} array passed into
+@c your C or C++ program by your operating system.
+@c 
+@dfn{引数(argument)}とは，CやC++プログラムにオペレーティングシステムから渡さ
+れる@code{argv}配列の要素です．
+
+@c An @dfn{option} is an argument that begins with @option{-}, 
+@c or @option{--}.
+@c 
+@dfn{オプション(option)}とは，@option{-}や@option{--}で始まる引数です．
+
+@c A @dfn{value} is an argument, or part of an argument, that is associated
+@c with a particular option (an option may also not accept any value).  For
+@c example, in
+@c 
+@dfn{値(value)}とは，引数または引数の一部で，特定のオプションに関連付け
+られたものです(オプションは引数を受け付けなくてもかまいません)．例えば
+以下を考えます．
+
+@example
+> ls --width=80
+@end example
+
+@c @noindent @command{ls} is called with one argument, @option{--width=80},
+@c which is an option that has a value, @code{80}, while in
+@c 
+@noindent
+@command{ls}は一つの引数@option{--width=80}で呼び出され，それは値
+@code{80}を持つオプションです．一方以下を考えます．
+
+@example
+> ls --width 80
+@end example
+
+@c @noindent @command{ls} is called with two arguments, @option{--width},
+@c which is an option, and @code{80} which might or might not be a value.
+@c In this case, whether the @code{80} is treated as a value associated
+@c with the preceding @option{--width} option, or as the name of a file to
+@c list depends on how @command{ls} parses the @option{--width} option.
+@c 
+@noindent
+@command{ls}は二つの引数で呼び出され，@option{--width}はオプションで，
+@code{80}は値かもしれませんし，そうでないかもしれません．この状況では，
+@code{80}が前置されている@option{--width}オプションに関聯する値として扱
+われるか，ファイル名のリストとして扱われるかは，@command{ls}が
+@option{--width}オプションを構文解析する方法に依存します．
+
+@c The order in which options are specified is @emph{usually} unimportant:
+@c 
+オプションの順番を指定することは，@emph{通常}重要ではありません．
+
+@example
+> ls -a -l
+> ls -l -a
+@end example
+
+@c @noindent both do exactly the same thing.
+@c 
+@noindent
+両方とも正確に同じことを行います．
+
+@c An @dfn{parameter} is an argument that is not an option.  For example, in
+@c 
+@dfn{パラメータ(parameter)}は，引数でオプションではありません．例えば以
+下を考えます．
+
+@example
+> cp --archive source dest
+@end example
+
+@c @noindent @command{cp} is called with three arguments, the option
+@c @option{--archive}, the parameter @code{source}, and the parameter
+@c @code{dest}.  Unlike options, the order in which parameters are
+@c specified usually @emph{is} important:
+@c 
+@noindent
+@command{cp}は，三つの引数で呼び出され，それはオプション
+@option{--archive}，パラメータ@code{source}，そしてパラメータ
+@code{dest}です．オプションとは異なり．パラメータの順序の指定は，通常重
+要@emph{です}．
+
+@example
+> cp --archive --verbose source dest
+> cp --verbose --archive source dest
+> cp --archive source --verbose dest
+> cp --archive --verbose dest source
+@end example
+
+@c @noindent The first three @command{cp} commands do the same thing, but the
+@c fourth one is completely different.
+@c 
+@noindent
+最初の三つの@command{cp}コマンドは同じことを行いますが，四番目のものは，
+全く異なります．
+
+@c If you're new to Gengetopt, you may wish to skip the rest of this
+@c section.  It goes into more detail about different sorts of options, and
+@c how they are parsed.
+@c 
+gengetoptの初心者は，このセクションの残りを読まなくてもかまいません．オ
+プションの種類の詳細と，それらの構文解析に進んでいきます．
+
+@c Note that some parameters may begin with @option{-} or @option{--}.
+@c Equivalently, not @emph{all} arguments that begin with @option{-} or
+@c @option{--} are options.  Consider
+@c 
+パラメータには，@option{-}で@option{--}で始めてもかまわないものがあるこ
+とに注意してください．特に，@option{-}や@option{--}で始まる@emph{すべて
+の}引数はオプションです．以下を考えます．
+
+@example
+> ls -- -file
+> tar -c -f - . > ../foo.tar
+@end example
+
+@c @noindent The @command{ls} command has two arguments; the first
+@c argument, @option{--} is ignored by @command{ls}, but causes the
+@c @option{-file} argument to be interpreted as a parameter.  The @command{tar}
+@c command has four arguments.  The @option{-c} argument tells tar to
+@c create an archive; the @option{-f} argument, which takes a value,
+@c @code{-}, tells tar that the archive should be written onto the standard
+@c output, and the fourth argument, @code{.}, tells tar what directories to
+@c include in the archive.  (The remaining two items, @code{>} and
+@c @code{../foo.tar}, tell the shell to redirect the @command{tar}
+@c command's output to the file ../foo.tar.  The @command{tar} command
+@c doesn't even see them.)
+@c 
+@noindent
+@command{ls}コマンドには二つの引数があります．最初のものは引数で，
+@option{--}は@command{ls}は無視しますが，これで@option{-file}引数はパラ
+メータとして解釈されます．@command{tar}コマンドは四つの引数があります．
+@option{-c}引数は，@command{tar}にアーカイブを作成するよう伝えます．
+@option{-f}引数は値を取り，それは@code{-}で，@command{tar}にアーカイブ
+を標準出力に書き込む用に伝え，四番目の引数@code{.}は，@command{tar}にアー
+カイブに含めるディレクトリを伝えます．(残りの二つの項目は@code{>}と
+@code{../foo.tar}で，シェルに@command{tar}コマンドの出力をファイル
+@file{../foo.tar}にリダイレクトするよう伝えます．@command{tar}コマンド
+が見ることはありません．)
+
+@c The GNU convention is that @option{-} by itself is always interpreted as
+@c a value or parameter, while the first @option{--} by itself is always
+@c ignored, but causes all subsequent arguments to be interpreted as
+@c parameters.  Gengetopt always behaves this way.
+@c 
+GNUの慣習では，@option{-}自身は常にパラメータとして解釈されますが，最初
+の@option{--}自身は常に無視され，それ以降の全ての引数はパラメータとして
+解釈されます．gengetoptは常にこの方法で動作します．
+
+@c A @dfn{short option} is an option that begins with @option{-}.  Not
+@c including the leading dash, short options must be one character long:
+@c 
+@dfn{短いオプション(short option)}は@option{-}で始まるオプションです．
+前置するダッシュは含まれず，短いオプションは一文字の長さにする必要があ
+ります．
+
+@example
+> ls -a -l -t --width=80
+@end example
+
+@c @noindent The @option{-a}, @option{-l}, and @option{-t} options are all short
+@c options.  Multiple short options may be combined into a single
+@c argument:
+@c 
+@noindent
+@option{-a}，@option{-l}，そして@option{-t}オプションは，すべて短いオプ
+ションです．複数の短いオプションは，一つに組み合わせてもかまいません．
+
+@example
+> ls -alt --width=80
+@end example
+
+@c @noindent is equivalent to the above example.
+@c 
+@noindent
+これは，上記の例と等価です．
+
+@c A @dfn{long option} is an option that begins with @option{-}
+@c or @option{--}.  Ignoring the leading punctuation, long
+@c options may be one or more characters long:
+@c 
+@dfn{長いオプション(long option)}は，@option{-}や@option{--}で始まるオ
+プションです．前置される区切り文字(punctuation)は無視され，長いオプショ
+ンは，一文字以上の長さにしてもかまいません．
+
+@example
+> ls --all -fs
+@end example
+
+@c @noindent The @command{ls} command has two arguments; the long option
+@c @option{--all}, and the pair of short options @option{-fs}.  
+@c 
+@noindent
+@command{ls}コマンドは，二つの引数があります．それは，長いオプション
+@option{--all}と，短いオプションの組@option{-fs}です．
+
+@c Long options need not have synonymous short options; after all, complex
+@c programs like @command{cc} have more long options than there are valid
+@c short option characters; it wouldn't be possible to assign a short
+@c option to each of them.  Short options are encouraged, but not required,
+@c to have a synonymous long option.
+@c 
+長いオプションに短いオプションの同義語を持たせる必要はありません．結局，
+@command{cc}のような複雑なプログラムでは，有効な短いオプション文字以上
+の数の長いオプションがあります．短いオプションをすべてに割り当てること
+は不可能でしょう．短いオプションが推奨されていますが，長いオプションの
+同義語を持たせることは必須ではありません．
+
+@c Long options may be abbreviated, as long as the abbreviation is not
+@c ambiguous.  Gengetopt automatically treats unambiguous abbreviations as
+@c synonyms.  
+@c 
+長いオプションは，省略しても不明瞭にならない限り，省略してもかまいませ
+ん．gengetoptは，明確な省略語を同義語として自動的に処理します．
+
+@c Short options may have values just like long options, but if several
+@c short options are grouped together into one argument, only the last one
+@c may have a value.  Values in the same argument as a long option are
+@c delimited by an equals sign, values in the same argument as a short
+@c option are not:
+@c 
+短いオプションは，長いオプションのように値を持たせてもかまいませんが，
+いくつかの短いオプションが一つの引数に纏められている場合，最後のものだ
+けが値を持つことができます．長いオプションの引数の値は等号で分離されて
+いて，短いオプションの引数の値は分離されていません．
+
+@example
+> ls --width 60  # ok, value is "60"
+> ls --width=60  # ok, value is "60"
+> ls -w60        # ok, value is "60"
+> ls -w 60       # ok, value is "60"
+> ls -w=60       # unexpected, value is "=60"
+> ls -T7 -w60    # ok, value for -T is 7, value for -w is 60
+> ls -T7w60      # unexpected, value for -T is "7w60", no -w at all
+@end example
+
+@c A @dfn{required option} must be present, otherwise  an error will be
+@c raised.  
+@c 
+@dfn{必須のオプション(required option)}は必要で，そうでなければエラーと
+なります．
+
+@c A @dfn{multiple option} is an option that may appear more than once on
+@c the command line.  Gengetopt would create a tidy array for multiple
+@c options (see @ref{Multiple Options}, for further details about dealing
+@c with multiple options).
+@c 
+@dfn{複数回オプション(multiple option)}とは，一度以上コマンドラインに書
+いてもかまわないオプションです．gengetoptは，複数回オプションに対して，
+小さな配列を作成します(複数回オプションの詳細は@ref{Multiple Options})．
+
+@node Group options, Configuration files, Terminology, Top
+@c @chapter Group options
+@chapter グループオプション
+@cindex group options
+
+@c It is also possible to group options; options belonging to a @emph{group} are
+@c considered @emph{in mutual exclusion}.  In order to use this feature, first the
+@c @code{group} has to be defined, and then a @code{groupoption} can be defined.  A
+@c groupoption has basically the same syntax of a standard option, apart
+@c that the required flag must not be specified (it would not make sense,
+@c since the options of the same group are mutual exclusive) and the group
+@c to which the option belongs has to be specified.
+@c 
+グループオプションも可能です．@emph{グループ}に所属するオプションは，
+@emph{お互いに排他的である}と考慮されます．この機能を使用するために，最
+初に@code{group}を定義する必要があり，その後で@code{groupoption}を定義
+することが可能になります．グループオプションは，基本的に標準的なオプショ
+ンの構文と同じですが，必須フラグを指定してはならず(同じグループのオプショ
+ンは，お互いに排他的なので，意味が無いでしょう)，オプションが所属するグ
+ループを指定する必要があります．
+
+@example
+defgroup "<group name>" @{groupdesc="<group description>"@} @{yes@}
+groupoption <long> <short> <desc> <argtype> group="<group name>" \
+     @{argoptional@} @{multiple@}
+@end example
+
+@c If a group is defined as required, then one (but only one) option
+@c belonging to the group has to be specified.
+@c 
+グループが必須として定義されている場合，グループに所属している一つの(そ
+して，一つだけ)オプションを指定する必要があります．
+ 
+@c Here's an example (taken from the test @file{test_group_cmd.ggo}):
+@c 
+以下は例です(テスト@file{test_group_cmd.ggo}から持ってきました)．
+
+@example 
+defgroup "my grp2"
+defgroup "grp1" groupdesc="an option of this group is required" yes
+groupoption "opta" a "string a" group="grp1" multiple
+groupoption "optA" A "string A" string group="grp1" argoptional
+groupoption "optAmul" M "string M" string group="grp1" argoptional multiple
+groupoption "optb" b "string b" group="grp1"
+groupoption "optc" - "string c" group="my grp2"
+groupoption "optd" d "string d" group="my grp2"
+@end example
+
+@c The group @code{grp1} is required, so either @code{--opta} or
+@c @code{--optb} has to be specified (but only one of them).  Here's the
+@c output of some executions:
+@c 
+グループ@code{grp1}は必須で，@code{--opta}または@code{--optb}を指定する
+必要があります(そしてそれは，どちらか一方だけです)．以下は何度か実行し
+た結果です．
+
+@example 
+$ ./test_groups
+test_groups: 0 options of group grp1 were given. One is required
+$ ./test_groups -a          OK
+$ ./test_groups -a -a       OK (the same option given twice)
+$ ./test_groups -a -b
+test_groups: 2 options of group grp1 were given. One is required
+$ ./test_groups -a -c       OK
+$ ./test_groups -a --optc -d
+test_groups: 2 options of group my grp2 were given. At most one is required
+@end example
+
+@node Configuration files, Multiple Options, Group options, Top
+@c @chapter Configuration files
+@chapter コンフィグレーションファイル
+@cindex configuration files
+
+@c It is often useful to specify command line options directly in a
+@c configuration file, so that the value of some options are read from this
+@c file if they are not given as command line options.  When the command
+@c line option @code{--conf-parser} is given to gengetopt, apart from the standard
+@c command line option parser, also this additional parser is generated
+@c (its name is @code{<commandline_parser>_configfile}):
+@c 
+コマンドラインオプションを直接コンフィグレーションファイルで指定すると
+便利なときも多いので，オプションの値はコマンドラインオプションが与えら
+れていない場合，このファイルから読みこまれるようにします．コマンドライ
+ンオプション@code{--conf-parser}がgengetoptで与えられている場合，標準的
+なコマンドラインオプションの構文解析器以外に，以下の追加の構文解析器が
+生成されます(名前は@code{<commandline_parser>_configfile}です)．
+
+@example
+int
+<cmd_parser_name>_configfile (char * const filename,
+                              struct gengetopt_args_info *args_info,
+                              int override,
+                              int initialize,
+                              int check_required);
+@end example
+
+@c The parameter @code{override} tells whether the values read in the
+@c configuration file have to override those specified at the command line.
+@c The @code{initialize} tells whether the args_info struct has to be
+@c initialize.
+@c 
+パラメータ@code{override}は，コンフィグレーションファイルから読み込まれ
+た値を，コマンドラインで指定されたものに優先させる必要があるかどうかを
+伝えます．@code{initialize}は，args_info構造体を初期化する必要があるか
+どうかを伝えます．
+
+@c IMPORTANT: you have to explicitly set @code{initialize} to true (i.e.,
+@c different from 0) if you call the config file parser before the standard
+@c command line option parser, otherwise unpredictable results may show.
+@c 
+重要：コンフィグレーションファイルの構文解析器を，標準のコマンドライン
+オプション構文解析器の前に呼び出す場合，明示的に@code{initialize}を真に
+設定する必要があり(例えば，0ではないもの)，そうしなければ予想できない結
+果が表示される可能性があります．
+
+@c The @code{check_required} tells whether the check for required options
+@c must be performed or not.
+@c 
+@code{check_required}は，必須のオプションを調査する必要があるかどうかを
+伝えます．
+ 
+@c If you call the config file parser before the standard command line
+@c option parser and then you want to call the standard command line parser
+@c you MUST use this second version, passing 0 for initialized, so that
+@c collected values from the config file are not lost:
+@c 
+コンフィグレーションファイルの構文解析器を標準のコマンドラインオプショ
+ンの構文解析器の前に呼び出す場合で，標準のコマンドラインの構文解析器を
+呼び出したい場合，以下の二番目のバージョンを使用する必要があり，コンフィ
+グレーションファイルで収集した値を失わないように，初期化で0を渡す必要が
+あります．
+
+@example
+int
+<cmd_parser_name>2 (int argc,
+                    char * const *argv,
+                    struct gengetopt_args_info *args_info,
+                    int override,
+                    int initialize,
+                    int check_required);
+@end example
+
+@c Notice, that with this version you can also specify whether the options
+@c passed at the command line must override the ones read from the config
+@c file.  If you set @code{override} to 0, and a command line option is
+@c given that has already been read from the config file, an error will be
+@c raised.  Moreover, you have to specify whether the check for missing
+@c required options must be performed or not.  This concerns also options
+@c of a required group (@ref{Group options}).
+@c 
+注意：このバージョンを用いると，コマンドラインで渡すオプションをコンフィ
+グレーションファイルから読み込んだものに優先させる必要があるかどうかを
+指定することも可能です．@code{override}を0に設定し，コンフィグレーショ
+ンファイルから既に読み込まれているものに対し，コマンドラインオプション
+が与えられた場合，エラーが発生します．さらに，足りない必須オプションの
+調査をする必要があるかどうかを指定する必要があります．これは，必須グルー
+プのオプションにも関係します(@ref{Group options})．
+ 
+@c If you decide not to request the check for required option, you can
+@c test it manually, after the command line parsing returns by using the
+@c following generated function:
+@c 
+必須オプションの調査を要求しないことに決めた場合，コマンドラインの構文
+解析が，以下のように生成された関数を使用して戻った後で，手動で調査する
+ことが可能です．
+
+@example 
+int
+<cmd_parser_name>_required (struct gengetopt_args_info *args_info,
+                            const char *program_name);
+@end example
+
+@c where @code{program_name} is the name of your executable (usually you
+@c should pass @code{argv[0]} as argument).  If the function returns a
+@c value different from 0, then some required options are missing.  An
+@c error has already been printed by this function.  This concerns also
+@c options of a required group (@ref{Group options}).
+@c 
+ここで，@code{program_name}は実行形式の名前です(通常，引数として
+@code{argv[0]}で渡します)．関数が0以外の値を返す場合，必須オプションに
+足りないものがあります．エラーはこの関数で既に出力されています．これは，
+必須グループのオプションにも関係します(@ref{Group options})．
+
+@c The config file has the following simple syntax: lines starting with #
+@c are considered comments and:
+@c 
+コンフィグレーションファイルは，以下のような単純な構文になっています．
+@samp{#}で始まる行はコメントと考慮されます．
+
+@example
+<option_name> = @{<option_val>@} 
+@end example
+
+@noindent
+@c or simply (if the option does not take an argument):
+@c 
+または，(オプションが引数を取らない場合)単純に以下のようになっています．
+
+@example
+<option_name>
+@end example
+
+@noindent
+@c which means that @code{option_name} is given, and if it accepts an argument,
+@c then its value is @code{option_val}.  The @code{=} is not mandatory.
+@c 
+これは，@code{option_name}が与えられていて，引数をうけいれる場合が値が
+@code{option_val}になっていることを意味します．@code{=}は必須ではありま
+せん．
+
+@c For instance here's a program that uses this feature (this is the test
+@c @file{test_conf_parser}):
+@c 
+例えば，この機能を使用している以下のプログラムを考えます(これはテストの
+@file{test_conf_parser}です)．
+
+@include test_conf_parser.c.texinfo
+
+@c So if we use the following config file
+@c 
+そして，以下のコンフィグレーションファイルを使用している状況を考えます．
+
+@example
+# required option
+required "this is a test"
+float 3.14
+no-short
+string another
+@end example
+
+@noindent
+@c and we run @code{test_conf_parser} like that, we will have
+@c 
+そして，@code{test_conf_parser}を以下のように実行します．
+
+@example 
+./test_conf_parser -r bar -i 100 --float 2.14 --conf-file test_conf.conf 
+value of required: this is a test
+value of string: another
+value of no-short: 1
+value of int: 100
+value of float: 3.140000
+@end example
+
+@c If, instead we call the @code{test_conf_parser_cmd_parser_configfile} with 0
+@c for override argument, we get the following result
+@c 
+代わりに，引数に優先させるため@code{test_conf_parser_cmd_parser_configfile}を0として呼び出す場合，以下のような結果になります．
+ 
+@example
+value of required: bar
+value of string: another
+value of no-short: 1
+value of int: 100
+value of float: 2.140000
+@end example
+
+@c This second example use the second version of the command line parser:
+@c first call the configuration file parser and then the command line
+@c parser (the command line options will override the configuration file
+@c options):
+@c 
+この二番目の例では，二番目のバージョンのコマンドライン構文解析器を使用
+しています．最初にコンフィグレーションファイル構文解析器を呼び出し，そ
+れからコマンドライン構文解析器を呼び出します(コマンドラインオプションは，
+コンフィグレーションファイルのオプションに優先します)．
+ 
+@include test_conf_parser_ov2.c.texinfo
+
+@noindent
+@c This is an invocation and its results:
+@c 
+以下のように呼び出したときの結果です．
+
+@example 
+./test_conf_parser_ov2 -r "bar" --float 2.14 -i 100
+value of required: bar
+value of string: another
+value of no-short: 1
+value of int: 100
+value of float: 2.140000
+@end example
+
+@c @section Further details on the configuration file parser
+@section コンフィグレーションファイルの構文解析器の詳細
+
+@c The generated config file parser function uses the constant
+@c @code{CONFIG_FILE_LINE_SIZE} to read each line of the configuration
+@c file.  By default this constant is set to @code{2048} that should be
+@c enough for most applications.  If your application uses configuration
+@c files with lines that are longer, you can compile the generated C file
+@c by specifying an explicit value for this constant with the @code{-D}
+@c command line option of @code{gcc}.
+@c 
+生成されるコンフィグレーションファイルの構文解析関数は，コンフィグレー
+ションファイルのそれぞれの行を読み込むとき，定数
+@code{CONFIG_FILE_LINE_SIZE}を使用しています．この定数のデフォルトは
+@code{2048}に設定されていて，ほとんどのアプリケーションで十分でしょう．
+アプリケーションで，それ以上の長さの行があるコンフィグレーションファイ
+ルを使用している場合，@code{gcc}の@code{-D}コマンドラインオプションを用
+いて，この定数の値を明示的に指定して，Cファイルのコンパイルをすることが
+可能です．
+
+@node Multiple Options, No getopt_long, Configuration files, Top
+@c @chapter Multiple Options
+@chapter 複数回オプション
+@cindex multiple options
+
+@c If an option is specified as @code{multiple}, then it can be specified multiple
+@c times at command line.  In this case, say the option is called @code{foo}, the
+@c generated @code{foo_given} field in the args structure contains the number of
+@c times it was specified and the generated field @code{foo_arg} is an array
+@c containing all the values that were specified for this option.
+@c 
+オプションが@code{multiple}として指定されている場合，それをコマンドライ
+ンで複数回指定することが可能です．ここで，オプションを@code{foo}と仮定
+すると，生成される引数の構造体の@code{foo_given}フィールドには，指定さ
+れた回数が含まれ，生成される@code{foo_arg}フィールドは，このオプション
+で指定されたすべての値を含んでいる配列になります．
+ 
+@c Notice that if a default value is specified for a multiple option, that
+@c value is assigned to the option only if no other value is specified on
+@c the command line (and the corresponding @code{_given} field will be set to 1),
+@c i.e., a default value IS NOT always part of the values of a multiple
+@c option.
+@c 
+複数回オプションのデフォルト値が指定されている場合，それ以外の値がコマ
+ンドラインで指定されていない場合だけ割り当てられることに注意してくださ
+い(そのときは，対応する@code{_given}フィールドは1に設定されます)．すな
+わち，デフォルト値は常に複数回オプションの値になるわけではありません．
+
+@c For instance, if the gengetopt file is as follows
+@c 
+例えば，gengetoptへのファイルが以下のものを考えます．
+
+@example
+# test options that can be given more than once
+option "string"      s "string option" string no multiple
+option "int"         i "int option" int no multiple
+@end example
+
+@noindent
+@c Then the command line options can be collected like that
+@c 
+そして，コマンドラインオプションを以下のようにまとめることが可能です．
+
+@example
+
+@end example
+
+@noindent
+@c Then if this program is called with the following command line options
+@c 
+プログラムが以下のコマンドラインオプションで呼び出されると仮定します．
+
+@include multiple_example.c.texinfo
+
+@noindent
+@c The output of the program will be
+@c 
+プログラムの出力は以下のようになります．
+ 
+@example
+passed string: world
+passed string: hello
+passed string: bar
+passed string: foo
+passed int: 200
+passed int: 100
+@end example
+
+@c You can also pass arguments to a multiple option separated by commas, as in the following:
+@c 
+以下のように，複数回オプションにカンマで分離した引数を渡すことも可能で
+す．
+
+@example
+./test_multiple -s"foo","bar","hello" -i100,200 -s "world"
+@end example
+
+@node No getopt_long, Bugs, Multiple Options, Top
+@c @chapter What if getopt_long is not available?
+@chapter getopt_longが利用できない場合どうするの？
+@cindex getopt_long
+@cindex automake
+@cindex autoconf
+
+@c If you use gengetopt to generate C functions for parsing command line
+@c arguments you have to know that these generated functions use
+@c @code{getopt_long} to actually read the command line and parsing it.
+@c This function is typically part of the standard C library, but some
+@c implementations may not include it.   But this is not a problem: we
+@c provide C files that actually implement getopt_long function:
+@c @file{getopt.c} @file{getopt1.c} and @file{gnugetopt.h}.   You'll find
+@c these files in the @file{<install prefix>/share/gengetopt} directory
+@c where @file{<install prefix>} is the one you specified during
+@c compilation.   If no prefix had been specified, @file{/usr/local} is the
+@c default.   If you downloaded gengetopt in binary form prefix will
+@c probably be @file{/usr/local} or @file{/usr}.
+@c 
+コマンドライン引数を構文解析するCの関数を生成するためgengetoptを使用し
+ている場合，これらの生成された関数が，実際にコマンドラインを読み込み，
+それを構文解析するために，@code{getopt_long}を使用していることを知って
+おく必要があります．この関数は，通常標準Cライブラリの一部ですが，実装に
+よっては含まれていない可能性があります．しかし，これは問題にはなりませ
+ん．我々は，getopt_long関数を実際に実装しているCのファイルを提供してい
+ます．@file{getopt.c}，@file{getopt1.c}そして@file{gnugetopt.h}です．こ
+れらのファイルは，@file{<install prefix>/share/gengetopt}ディレクトリで
+見つかり，@file{<install prefix>}はコンパイル時に指定したものになります．
+プレフィクスを指定しなかった場合は@file{/usr/local}がデフォルトです．バ
+イナリ形式のgengetoptをダウンロードした場合，プレフィクスは
+@file{/usr/local}または@file{/usr}になります．
+
+@c You can rename @file{gnugetopt.h} to @file{getopt.h} and then
+@c simply compile these files and link them to the executable
+@c of you program.  However, if you use automake and autoconf here's a more
+@c elegant solution: you should download the macro you find
+@c at this URL:
+@c 
+@file{gnugetopt.h}を@file{getopt.h}に名前を変更し，これらのファイルをコ
+ンパイルし，プログラムの実行形式にリンクすることが可能です．しかし，
+automakeとautoconfを使用している場合，より簡潔な解決方法があります．以
+下のURLからマクロをダウンロードしてください．
+
+@uref{http://www.gnu.org/software/ac-archive/m4source/adl_func_getopt_long.m4}
+
+@c and add it to your @file{acinclude.m4}.  You can find this macro
+@c also in the @file{acinclude.m4} in the sources of gengetopt.
+@c 
+そして，@file{acinclude.m4}にそれを追加して下さい．このマクロは，
+gengetoptのソースの@file{acinclude.m4}にもあります．
+
+@c This macro checks if getopt_long function is in C library;
+@c if it is not then it adds @file{getopt.o} and @file{getopt1.o} to the objects files
+@c that will be linked to your executable (@code{LIBOBJS}).
+@c 
+このマクロはgetopt_long関数がCライブラリかどうかを調査し，そうでない場
+合は@file{getopt.o}と@file{getopt1.o}を実行形式にリンクするオブジェクト
+ファイルに追加します(@code{LIBOBJS})．
+
+@c Then in @file{Makefile.am} of your source directory you have to add the contents
+@c of @code{LIBOBJS} to the @code{LDADD} of the program that has to use getopt_long;
+@c e.g., if the program @file{foo} has to use getopt_long, you have to add
+@c the following line
+@c 
+そして，ソースディレクトリの@file{Makefile.am}で，@code{LIBOBJS}の内容
+に，getopt_longを使用する必要があるプログラムの@code{LDADD}を追加する必
+要があります．例えば，プログラム@file{foo}がgetopt_longを使用する必要が
+ある場合，以下の行を追加する必要があります．
+
+@example
+foo_LDADD = @@LIBOBJS@@
+@end example
+
+@c Now these files will be compiled and linked to your program only if
+@c necessary.
+@c 
+さて，これらのファイルはコンパイルされ，必要がある場合だけプログラムに
+リンクされます．
+
+@c Moreover you have to add @file{getopt.c} @file{getopt1.c} and
+@c @file{gnugetopt.h} to your distribution.  Note that it is not necessary
+@c to put these file names among the @code{foo_SOURCES} contents), but you have to
+@c add @file{gnugetopt.h} to @code{EXTRA_DIST}:
+@c 
+更に，@file{getopt.c}，@file{getopt1.c}，そして@file{gnugetopt.h}を配布
+物に追加する必要があります．これらのファイル名を@code{foo_SOURCES}の中
+身に書く必要はありませんが，@file{gnugetopt.h}は@code{EXTRA_DIST}に追加
+する必要があります．
+
+@example
+EXTRA_DIST = gnugetopt.h
+@end example
+
+@c You may want to take a look at gengetopt's @file{configure.in} and
+@c @file{src/Makefile.am}: they both use the techniques described here.
+@c 
+gengetoptの@file{configure.in}と@file{src/Makefile.am}を見てみると良い
+でしょう．それらは両方とも，ここで記述しているテクニックを使用していま
+す．
+
+@node Bugs, Mailing Lists, No getopt_long, Top
+@c @chapter Known Bugs and Limitations
+@chapter 既知のバグと制限
+@cindex Known Bugs
+@cindex Limits
+@cindex Misfeatures
+
+@c If you find a bug in @command{gengetopt}, please send electronic
+@c mail to 
+@c 
+@command{gengetopt}のバグを発見した場合，電子メールを以下に送って下さい．
+
+@c @code{bug-gengetopt at gnu dot org}
+@c 
+@code{bug-gengetop@@gnu.org}
+
+@c Include the version
+@c number, which you can find by running @w{@samp{gengetopt
+@c --version}}.  Also include in your message the output that the program
+@c produced and the output you expected.@refill
+@c 
+@w{@samp{gengetopt --version}}を実行すると分かるバージョン番号を含めて
+下さい．また，メッセージにプログラムが生成した出力と，期待したものを含
+めて下さい．@refill
+
+@c If you have other questions, comments or suggestions about
+@c @command{gengetopt}, contact the author via electronic mail
+@c (find the address at @value{myhomepage}).  The author will try to help
+@c you out, although he may not have time to fix your problems.
+@c 
+他に@command{gengetopt}に関する疑問，コメント，または提案がある場合，電
+子メールと利用して，作者と連絡を取って下さい(アドレスは
+@value{myhomepage}にあります)．作者は手助けしようとしますが，問題を解決
+するために十分な時間が取れないかもしれません．
+
+@c The list of todos in the @file{TODO}.
+@c 
+TODOリストは@file{TODO}にあります．
+
+@node Mailing Lists, Index, Bugs, Top
+@c @chapter Mailing Lists
+@chapter メーリングリスト
+@cindex mailing list
+
+@c The following mailing lists are available: 
+@c 
+以下のメーリングリストが利用可能です．
+
+@c @code{help-gengetopt at gnu dot org}
+@c 
+@code{help-gengetopt@@gnu.org}
+
+@noindent
+@c for generic discussions about the program and for asking for help about
+@c it (open mailing list),
+@c @uref{http://mail.gnu.org/mailman/listinfo/help-gengetopt}
+@c 
+プログラムと一般的な議論と，それに関するヘルプをお願いするもの(オープン
+なメーリングリスト)．
+@uref{http://mail.gnu.org/mailman/listinfo/help-gengetopt}
+ 
+@c @code{info-gengetopt at gnu dot org}
+@c 
+@code{info-gengetopt@@gnu.org}
+
+@noindent
+@c for receiving information about new releases and features (read-only
+@c mailing list),
+@c @uref{http://mail.gnu.org/mailman/listinfo/info-gengetopt}.
+@c 
+新たなリリースや機能に関する情報を入手するためのもの(読むだけのメーリン
+グリスト)．
+@uref{http://mail.gnu.org/mailman/listinfo/info-gengetopt}.
+ 
+@c If you want to subscribe to a mailing list just go to the URL and follow
+@c the instructions, or send me an e-mail and I'll subscribe you.
+@c 
+メーリングリストに参加したい場合，URLに移動し手順に従うか，私に電子メー
+ルを送ってくれれば登録します．
+
+@node Index,  , Mailing Lists, Top
+@c @unnumbered Index
+@unnumbered 索引
+
+@printindex cp
+
+@contents
+@bye
+

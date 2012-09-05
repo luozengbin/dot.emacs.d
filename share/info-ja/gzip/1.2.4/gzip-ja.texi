@@ -1,0 +1,474 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename gzip-ja.info
+@settitle Gzip User's Manual
+@finalout
+@setchapternewpage odd
+@c %**end of header
+
+@ifinfo
+This file documents the the GNU @code{gzip} command for compressing files.
+
+Copyright (C) 1992-1993 Jean-loup Gailly
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@titlepage
+@title gzip
+@subtitle データ圧縮プログラム
+@subtitle Edition 1.2.4, for Gzip Version 1.2.4
+@subtitle July 1993
+@author Jean-loup Gailly 著
+@author OKUJI Yoshinori 訳
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1992-1993 Jean-loup Gailly
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+
+@node Top, , , (dir)
+
+@ifinfo
+このファイルはファイルを圧縮するための @code{gzip} コマンドを解説してい
+ます。
+@end ifinfo
+
+@menu
+* 複製::                どのように@code{gzip} を複製したり共有できるのか。
+* 概観::                準備的な情報。
+* 見本::                @code{gzip} からの出力の見本。
+* gzipの起動::          @code{gzip} の走らせ方。
+* 高度な使い方::        連結されたファイル。
+* 環境::                @code{GZIP} 環境変数
+* テープ::              @code{gzip} をテープで使う。
+* 問題::                バグの報告。
+* 概念による索引::      概念の索引。
+@end menu
+
+@node 複製, 概観, , Top
+@include gpl.texinfo
+
+@node 概観, 見本, 複製, Top
+@chapter 概観
+@cindex 概観
+
+@code{gzip} は Lempel-Ziv コーディング (LZ77) を使って指名されたファイル
+の大きさを減らします。可能であれば、各ファイルは、所有モードやアクセス時
+刻、修正時刻を同じに保ったまま、@samp{.gz} という拡張子を付けたもので置
+き換えられます。(デフォルトの拡張子は VMS では @samp{-gz} で、MSDOS や
+OS/2 FAT、Atari では @samp{z} です。) もし何もファイルが指定されなかった
+り、ファイル名が "-" だったりすると、標準入力が圧縮されて標準出力に出さ
+れます。@code{gzip} は通常のファイルを圧縮しようとするだけでしょう。とり
+わけ、シンボリック・リンクは無視するでしょう。
+
+もし新しいファイル名がそのファイルシステムには長過ぎるなら、@code{gzip}
+はそれを切り捨てます。@code{gzip} はファイル名のうち3文字よりも長い部分
+だけを切り捨てようとします。(部分はドットで区切られています。) もしその
+名前が小さい部分だけから成り立っていたら、一番長い部分が切り捨てられます。
+例えば、ファイル名が14文字に限定されていたら、gzip.msdos.exe は
+gzi.msd.exe.gz に圧縮されます。名前はファイル名の長さに限界のないシステ
+ムでは切り捨てられません。
+
+デフォルトで、@code{gzip} は元のファイル名やタイムスタンプを圧縮されたファ
+イルに保存します。これらは @samp{-N} オプションを付けて、そのファイルを
+解凍するときに使われます。これは圧縮されたファイルの名前が切り捨てられい
+たり、そのタイムスタンプがファイルの転送後に保存されなかったときに有効で
+す。
+
+圧縮されたファイルは、@samp{gzip -d} や @code{gunzip} か @code{zcat} を
+使って、元の姿に戻すことができます。もし圧縮されたファイルに収められてい
+た元の名前が、そのファイルシステムには適していなかった場合、適合させるた
+めに、その元の名前から新しい名前が組み立てられます。
+
+@code{gunzip} はそのコマンド行でファイルのリストを受け取り、@samp{.gz}
+や @samp{.z}、@samp{.Z}、@samp{-gz}、@samp{-z}、@samp{_z} で終わる名前を
+持ち、正しいマジックナンバーで始まる各ファイルを、その元の拡張子を持たな
+い、解凍されたファイルで置き換えます。@code{gunzip} はまた、特別な拡張子、
+@samp{.tgz} や @samp{.taz} をそれぞれ @samp{.tar.gz} と @samp{.tar.Z} の
+略記であると認識します。圧縮するとき、@code{gzip} は @samp{.tar} 拡張子
+を持つファイルを切り捨てる代わりに、もし必要であれば、 @samp{.tgz} 拡張
+子を使用します。
+
+@code{gunzip} は現在 @code{gzip}、@code{zip}、@code{compress}、
+あるいは、@code{pack} で作られたファイルを解凍することができます。入力形
+式の検出は自動的です。最初の二つの形式を使っているとき、@code{gunzip} は
+32ビット CRC (cyclic redundancy check) を確認します。@code{pack} に対し
+ては、@code{gunzip} は圧縮されていないときの長さを確認します。
+@code{compress} 形式は一貫性を確認できるようには設計されませんでした。し
+かし、@code{gunzip} はときどき悪い @samp{.Z} ファイルを検出することがで
+きます。もし @samp{.Z} ファイルを解凍しているときにエラーを受け取ったな
+ら、標準的な @code{uncompress} が文句を言わないからといって、その
+@samp{.Z} ファイルが正しいと思ってはいけません。このことは一般的に、標準
+的な @code{uncompress} はその入力を確認せず、幸福そうにゴミの出力を生成
+してくれることを意味しています。SCO の @samp{compress-H} 形式
+(@code{lzh} 圧縮手法) は CRC を含んでいませんが、いくつかの一貫性の確認
+をできるようにしています。
+
+@code{zip} で作成されたファイルは @code{gzip} で解凍できますが、'
+deflation' 手法で圧縮された、単一の要素しかない場合だけです。この特徴は
+@code{tar.zip} ファイルを @code{tar.gz} 形式に変換するのを助けることだけ
+を目的にします。いくつかの要素を持つ @code{zip} ファイルを抜き出すには、
+@code{gunzip} ではなく @code{unzip} を使ってください。
+
+@code{zcat} は @samp{gunzip -c} と同じです。@code{zcat} はコマンド行のファ
+イルのリストか標準入力を解凍して、解凍されたデータを標準出力に書き出しま
+す。@code{zcat} は @samp{.gz} 接尾辞とは無関係に、正しいマジックナンバー
+を持つファイルを解凍するでしょう。
+
+@code{gzip} は @code{zip} や PKZIP で使われている Lempel-Ziv アルゴリズ
+ムを利用します。得られる圧縮量は入力の大きさやありふれた部分文字列の分布
+に依存しています。典型的には、ソース・コードや英語のようなテキストは 60
+から 70% 減少します。一般的に、LZW (@code{compress} で使われている) や、
+Huffman コーディング (@code{pack} で使われている)、adaptive Huffman コー
+ディング (@code{compact}) で達成されるよりも、ずっと良い圧縮です。
+
+たとえ圧縮されたファイルが若干元よりも大きくなっても、圧縮は常に行われま
+す。最悪の場合の膨張は、@code{gzip} のファイル・ヘッダに対して数バイトと、
+各 32K ブロック毎に 5 バイト、あるいは、大きなファイルでは 0.015% の膨張
+率です。実際に使われるディスク・ブロックの数はほとんど絶対に増えないこと
+に注意してください。@code{gzip} は圧縮したり解凍したりするとき、ファイル
+のモードや所有権、タイムスタンプを保存します。
+
+@node 見本, gzipの起動, 概観, Top
+@chapter 出力の見本
+@cindex 見本
+
+さて、これが @code{gzip} を実行する現実的な例です。
+
+これは @samp{gzip -h } というコマンドの出力です:
+
+@example
+gzip 1.2.4 (18 Aug 93)
+usage: gzip [-cdfhlLnNrtvV19] [-S suffix] [file ...]
+ -c --stdout      write on standard output, keep original files unchanged
+ -d --decompress  decompress
+ -f --force       force overwrite of output file and compress links
+ -h --help        give this help
+ -l --list        list compressed file contents
+ -L --license     display software license
+ -n --no-name     do not save or restore the original name and time stamp
+ -N --name        save or restore the original name and time stamp
+ -q --quiet       suppress all warnings
+ -r --recursive   operate recursively on directories
+ -S .suf  --suffix .suf     use suffix .suf on compressed files
+ -t --test        test compressed file integrity
+ -v --verbose     verbose mode
+ -V --version     display version number
+ -1 --fast        compress faster
+ -9 --best        compress better
+ file...          files to (de)compress. If none given, use standard input.
+@end example
+
+これは @samp{gzip -v texinfo.tex} というコマンドの出力です:
+
+@example
+texinfo.tex:             71.6% -- replaced with texinfo.tex.gz
+@end example
+
+次のコマンドは現在のディレクトリやサブディレクトリにおいて、あらゆる
+@code{gzip} ファイルを検索し、元のファイルを壊さずに適切に展開します:
+
+@example
+find . -name '*.gz' -print | sed 's/^\(.*\)[.]gz$/gunzip < "&" > "\1"/' | sh
+@end example
+
+@node gzipの起動, 高度な使い方, 見本, Top
+@chapter @code{gzip} の起動
+@cindex 起動
+@cindex オプション
+
+@code{gzip} プログラムを実行するための形式はこうです。
+
+@example
+gzip @var{オプション} @dots{}
+@end example
+
+@code{gzip} は以下のオプションをサポートしています:
+
+@table @samp
+@item --stdout
+@itemx --to-stdout
+@itemx -c
+出力は標準出力に書きます。元のファイルを変えないでおきます。もしいくつも
+の入力ファイルがあったら、その出力は独立に圧縮された部分のひと続きになり
+ます。より良く圧縮するためには、全ての入力ファイルを圧縮する前に連結して
+ください。
+
+@item --decompress
+@itemx --uncompress
+@itemx -d
+解凍します。
+
+@item --force
+@itemx -f
+そのファイルが複数のリンクを持っていたり、対応するファイルがすでに存在し
+ていたり、あるいは、圧縮されたデータが端末から読まれたり書かれたりしても、
+強制的に圧縮や解凍を行います。もしその入力データが @code{gzip} で認識さ
+れる形式でなくて、オプション --stdout も与えられていたなら、その入力デー
+タを変更せずに標準出力に写します。@code{zcat} は @code{cat} のように振る
+舞います。もし @samp{-f} が与えられなくて、バックグラウンドで実行されて
+いないときなら、@code{gzip} は存在するファイルを上書きして良いかどうかを
+確認するために、プロンプトを出します。
+
+@item --help
+@itemx -h
+オプションを記述した有益なヘルプ・メッセージを表示して終了します。
+
+@item --list
+@itemx -l
+各圧縮されたファイルに対して、以下のフィールドを列挙します:
+
+@example
+compressed size: 圧縮されたファイルの大きさ
+uncompressed size: 解凍されたファイルの大きさ
+ratio: 圧縮率 (もし分からなかったら、0.0%)
+uncompressed_name: 解凍されたファイルの名前
+@end example
+
+解凍された大きさは、圧縮された @samp{.Z} ファイルのような、@code{gzip}
+形式以外のファイルでは @samp{-1} となります。そのようなファイルに対して
+解凍された大きさを得るのには、こうします:
+
+@example
+zcat file.Z | wc -c
+@end example
+
+--verbose オプションと組み合わせると、以下のフィールドもまた表示されます:
+
+@example
+method: 圧縮の手法 (deflate、compress、lzh、pack)
+crc: 解凍されたデータの 32ビット CRC
+date と time: 解凍されたファイルのタイムスタンプ
+@end example
+
+その crc は gzip 形式でないファイルでは ffffffff となります。
+
+--verbose を付けると、いくかの大きさが不明でなければ、大きさの合計やあら
+ゆるファイルに対する圧縮率も表示されます。--quiet を付けると、タイトルや
+合計の行は表示されません。
+
+@item --license
+@itemx -L
+@code{gzip} のライセンスを表示して終了。
+
+@item --no-name
+@itemx -n
+圧縮するとき、元のファイル名とタイムスタンプをデフォルトで保存しません。
+(元の名前は切り捨てられなければならなかったなら必ず保存されます。) 解凍
+するとき、元のファイル名を復元せず (@code{gzip} の接尾辞だけを圧縮された
+ファイル名から取り除きます)、元のタイムスタンプを復元しません (圧縮され
+たファイルからそれを写し取ります)。このオプションは解凍のときはデフォル
+トです。
+
+@item --name
+@itemx -N
+圧縮するとき、常に元のファイル名とタイムスタンプを保存します。これがデフォ
+ルトです。解凍するとき、もしあれば元のファイル名とタイムスタンプを復元し
+ます。このオプションはファイル名の長さに限界のあるシステムやファイルの転
+送の後にタイムスタンプが失われてしまったときに有用です。
+
+@item --quiet
+@itemx -q
+全ての警告メッセージを抑制します。
+
+@item --recursive
+@itemx -r
+再帰的にディレクトリ構造を移動して回ります。もしコマンド行で指定されたファ
+イル名のいずれかがディレクトリだったら、@code{gzip} はそのディレクトリに
+降りて、そこで見付けるファイルを全て圧縮します (あるいは、@code{gunzip}
+の場合には解凍します)。
+
+@item --suffix @var{suf}
+@itemx -S @var{suf}
+@samp{.gz} ではなく、接尾辞 @samp{@var{suf}} を使います。どんな接尾辞で
+も与えられますが、ファイルが他のシステムに転送されるときの混乱を避けるた
+めに、@samp{.z} と @samp{.gz} 以外の接尾辞は敬遠するべきです。空の接尾辞
+は強制的に gunzip に接尾辞にかかわりなく、あらゆる与えられたファイルに解
+凍を試みさせます、このように:
+
+@example
+gunzip -S "" *        (MSDOS には *.*)
+@end example
+
+gzip の以前のバージョンは @samp{.z} 接尾辞を使用しました。@code{pack} と
+の衝突を避けるため、これは変更されました。
+
+@item --test
+@itemx -t
+試験。圧縮されたファイルの完全性を確認します。
+
+@item --verbose
+@itemx -v
+多弁。各圧縮されるファイルに対して、その名前と百分率での減少を表示します。
+
+@item --version
+@itemx -V
+バージョン。そのバージョン番号とコンパイル時のオプションを表示して、終了。
+
+@item --fast
+@itemx --best
+@itemx -@var{n}
+指定された整数 @var{n} を使って圧縮の速度を調整し、そこでは @samp{-1} や
+@samp{--fast} は最速の圧縮手法 (あまり圧縮されない) を示し、
+@samp{--best} や @samp{-9} は最も遅い圧縮手法 (最適な圧縮) を示します。
+デフォルトの圧縮レベルは @samp{-6} です (すなわち、速度の犠牲により高度
+に圧縮される傾向があります)。
+@end table
+
+@node 高度な使い方, 環境, gzipの起動, Top
+@chapter 高度な使い方
+@cindex 連結されたファイル
+
+複数の圧縮されたファイルは連結することができます。この場合、
+@code{gunzip} は一度に全ての要素を抽出するでしょう。もし一つの要素が損傷
+を受けたなら、損傷した要素を削除した後に他の要素をなお取り戻すことができ
+るかもしれません。通常全ての要素が解凍されてから一気に再圧縮すると、より
+良い圧縮に達成できます。
+
+これは @code{gzip} ファイルを連結する例です:
+
+@example
+gzip -c file1  > foo.gz
+gzip -c file2 >> foo.gz
+@end example
+
+そして
+
+@example
+gunzip -c foo
+@end example
+
+は次に等しくなります。
+
+@example
+cat file1 file2
+@end example
+
+@samp{.gz} ファイルの一つの要素が損傷した場合、他の要素はなお取り戻すこ
+とができます (もし損傷を受けた要素が取り除かれれば)。しかしながら、一度
+に全ての要素を圧縮することによって、より良い圧縮を得ることができます:
+
+@example
+cat file1 file2 | gzip > foo.gz
+@end example
+
+はこれよりも良く圧縮します。
+
+@example
+gzip -c file1 file2 > foo.gz
+@end example
+
+もしより良い圧縮を得るために、連結されたファイルを再圧縮したいなら、こう
+します:
+
+@example
+zcat old.gz | gzip > new.gz
+@end example
+
+もし圧縮されたファイルがいくつもの要素から成り立っているなら、
+@samp{--list} オプションによって報告される、解凍された大きさと CRC は最
+後の要素だけに適用されます。もしあらゆる要素に対して解凍された大きさが必
+要なら、こうできます:
+
+@example
+zcat file.gz | wc -c
+@end example
+
+もし要素を後で独立に抽出できるよう、複数の要素を持つ単一のアーカイブ・ファ
+イルを作成したいなら、@code{tar} や @code{zip} のようなアーカイバを使っ
+てください。GNU @code{tar} は @code{gzip} を透過的に起動するための、
+@samp{-z} オプションをサポートします。@code{gzip} は @code{tar} を補完を
+するように設計されたのであって、代用品ではありません。
+
+@node 環境, テープ, 高度な使い方, Top
+@chapter 環境
+@cindex 環境
+
+環境変数 @code{GZIP} は @code{gzip} のためのデフォルトのオプションの組を
+保持できます。これらのオプションは最初に解釈され、明示的なコマンド行パラ
+メータによって上書きできます。例えば:
+
+@example
+shに対して:    GZIP="-8v --name"; export GZIP
+cshに対して:   setenv GZIP "-8v --name"
+MSDOSに対して: set GZIP=-8v --name
+@end example
+
+Vax/VMS 上では、プログラムの起動のためのシンボル・セットとの衝突を避ける
+ために、環境変数の名前は @code{GZIP_OPT} です。
+
+@node テープ, 問題, 環境, Top
+@chapter @code{gzip} をテープで使う
+@cindex テープ
+
+圧縮されたデータをテープに書き込むとき、大体ブロック境界までゼロで出力に
+詰め物をする必要があります。データが読まれて、ブロック全体が解凍のために
+@code{gunzip} の渡されるとき、@code{gunzip} は圧縮されたデータの後に余計
+なゴミがあることを検出し、デフォルトで警告を発します。その警告を抑制する
+には @samp{--quiet} オプションを使わなければなりません。このオプションは
+@code{GZIP} 環境変数で設定できて、このようになります:
+
+@example
+shに対して:    GZIP="-q"  tar -xfz --block-compress /dev/rst0
+cshに対して:   (setenv GZIP "-q"; tar -xfz --block-compress /dev/rst0)
+@end example
+
+上記の例において、@code{gzip} は GNU @code{tar} の @samp{-z} オプション
+によって暗黙のうちに起動されています。同じブロックの大きさ (@code{tar}
+の @samp{-b} オプション) がテープ上で圧縮されたデータを読み書きするため
+に使われるよう確認してください。(この例は @code{tar} の GNU 版を使ってい
+ることを仮定しています。)
+
+@node 問題, 概念による索引, テープ, Top
+@chapter バグ報告
+@cindex バグ
+
+もし @code{gzip} のバグを見付けたら、どうか電子メールを
+@w{@samp{jloup@@chorus.fr}} か、もし失敗したら、
+@w{@samp{bug-gnu-utils@@prep.ai.mit.edu}} へ送ってください。そのバージョ
+ン番号を含めてください、それは @w{@samp{gzip -V}} を走らせれば分かります。
+また、あなたのメッセージにハードウェアやオペレーティング・システム、
+@code{gzip} をコンパイルするのに使ったコンパイラ、バグの挙動の説明、そし
+て、そのバグの引き金となる @code{gzip} への入力を含めてください。@refill
+
+@node 概念による索引, , 問題, Top
+@unnumbered 概念による索引
+
+@printindex cp
+
+@contents
+@bye

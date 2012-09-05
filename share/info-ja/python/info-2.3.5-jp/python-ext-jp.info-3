@@ -1,0 +1,1174 @@
+This is python-ext-jp.info, produced by makeinfo version 4.5 from
+python-ext-jp.texi.
+
+12 October 2005
+
+
+File: python-ext-jp.info,  Node: 特定の型に特化した属性の管理,  Prev: 総称的な属性を管理する,  Up: 属性を管理する
+
+特定の型に特化した属性の管理
+............................
+
+話を単純にするため、ここでは `char*' を使ったバージョンのみを
+示します。name パラメータの型はインターフェイスとして `char*' を使うか
+`PyObject*' を使うかの違いしかありません。
+この例では、上の総称的な例と同じことを効率的にやりますが、 Python 2.2
+で追加された総称的な型のサポートを使わずにやります。
+これを紹介することは 2つの意味をもっています。ひとつはどうやって、
+古いバージョンの Python と互換性のあるやり方で、基本的な属性管理を
+おこなうか。そしてもうひとつはハンドラの関数がどのようにして呼ばれるのか。
+これで、たとえその機能を拡張する必要があるとき、何をどうすればいいか
+わかるでしょう。
+
+`tp_getattr' ハンドラはオブジェクトが属性への参照を要求するときに
+呼ばれます。 これは、そのクラスの `__getattr__()'
+メソッドが呼ばれるであろう状況と 同じ状況下で呼び出されます。
+
+これを処理するありがちな方法は、(1) 一連の関数 (下の例の
+`newdatatype_getSize()' や `newdatatype_setSize()') を実装する、(2)
+これらの関数を記録したメソッドテーブルを提供する、 そして (3)
+そのテーブルの参照結果を返す getattr 関数を提供することです。
+メソッドテーブルはタイプオブジェクトの `tp_methods' メンバと
+同じ構造を持っています。
+
+以下に例を示します:
+
+     static PyMethodDef newdatatype_methods[] = {
+         {"getSize", (PyCFunction)newdatatype_getSize, METH_VARARGS,
+          "Return the current size."},
+         {"setSize", (PyCFunction)newdatatype_setSize, METH_VARARGS,
+          "Set the size."},
+         {NULL, NULL, 0, NULL}           /* 見張り */
+     };
+     
+     static PyObject *
+     newdatatype_getattr(newdatatypeobject *obj, char *name)
+     {
+         return Py_FindMethod(newdatatype_methods, (PyObject *)obj, name);
+     }
+
+`tp_setattr' ハンドラは、クラスのインスタンスの `__setattr__()' または
+`__delattr__()' メソッドが呼ばれるであろう
+状況で呼び出されます。ある属性が削除されるとき、3番目のパラメータは
+`NULL'に
+なります。以下の例はたんに例外を発生させるものですが、もし本当にこれと
+同じことをしたいなら、`tp_setattr' ハンドラを `NULL'に設定すべきです。
+
+     static int
+     newdatatype_setattr(newdatatypeobject *obj, char *name, PyObject *v)
+     {
+         (void)PyErr_Format(PyExc_RuntimeError, "Read-only attribute: \%s", name);
+         return -1;
+     }
+
+
+File: python-ext-jp.info,  Node: オブジェクトの比較,  Next: 抽象的なプロトコルのサポート,  Prev: 属性を管理する,  Up: タイプメソッド
+
+オブジェクトの比較
+------------------
+
+         cmpfunc tp_compare;
+
+`tp_compare' ハンドラは、オブジェクトどうしの比較が必要で、
+そのオブジェクトに要求された比較をおこなうのに適した特定の拡張比較メソッドが
+実装されていないときに呼び出されます。(これが定義されているとき、
+`PyObject_Compare()' または `PyObject_Cmp()' が使われると
+これはつねに呼び出されます、また Python で `cmp()' が使われたときにも
+呼び出されます。) これは `__cmp__()' メソッドに似ています。
+この関数はもし OBJ1 が OBJ2 より「小さい」場合は `-1' を返し、
+それらが等しければ `0'、そしてもし OBJ1 が OBJ2 より
+「大きい」場合は`1' を返す必要があります。
+(以前は大小比較の結果として、任意の大きさの負または正の整数を返せましたが、
+Python 2.2 以降ではこれはもう許されていません。将来的には、上にあげた
+以外の返り値は別の意味をもつ可能性があります。)
+
+`tp_compare' ハンドラは例外を発生させられます。
+この場合、この関数は負の値を返す必要があります。呼び出した側は
+`PyErr_Occurred()' を使って例外を検査しなければなりません。
+
+以下はサンプル実装です:
+
+     static int
+     newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
+     {
+         long result;
+     
+         if (obj1->obj_UnderlyingDatatypePtr->size <
+             obj2->obj_UnderlyingDatatypePtr->size) {
+             result = -1;
+         }
+         else if (obj1->obj_UnderlyingDatatypePtr->size >
+                  obj2->obj_UnderlyingDatatypePtr->size) {
+             result = 1;
+         }
+         else {
+             result = 0;
+         }
+         return result;
+     }
+
+
+File: python-ext-jp.info,  Node: 抽象的なプロトコルのサポート,  Next: その他いろいろ,  Prev: オブジェクトの比較,  Up: タイプメソッド
+
+抽象的なプロトコルのサポート
+----------------------------
+
+Python はいくつもの _抽象的な_ “プロトコル” をサポートしています。
+これらを使用する特定のインターフェイスについては  の 「Abstract Objects
+Layer」の章で解説されて います。
+
+これら多数の抽象的なインターフェイスは、Python の実装が開発される
+初期の段階で定義されていました。とりわけ数値や辞書、そしてシーケンスなどの
+プロトコルは最初から Python の一部だったのです。それ以外のプロトコルは
+その後追加されました。
+型の実装にあるいくつかのハンドラルーチンに依存するようなプロトコル
+のために、古いプロトコルはハンドラの入ったオプションのブロックとして
+定義し、型オブジェクトから参照するようになりました。
+タイプオブジェクトの主部に追加のスロットをもつ新しいプロトコルについては、
+フラグ用のビットを立てることでそれらのスロットが存在しており、
+インタプリタがチェックすべきであることを指示できます。
+(このフラグ用のビットは、そのスロットの値が 非 `NULL'であることを
+示しているわけではありません。フラグはスロットの存在を示すのに使えますが、
+そのスロットはまだ埋まっていないかもしれないのです。)
+
+         PyNumberMethods   tp_as_number;
+         PySequenceMethods tp_as_sequence;
+         PyMappingMethods  tp_as_mapping;
+
+お使いのオブジェクトを数値やシーケンス、あるいは辞書のようにふるまうように
+したいならば、それぞれに C の `PyNumberMethods' 構造体、
+`PySequenceMethods' 構造体、または `PyMappingMethods' 構造体のアドレスを
+入れます。これらに適切な値を入れても入れなくてもかまいません。
+これらを使った例は Python の配布ソースにある `Objects' で
+みつけることができるでしょう。
+
+         hashfunc tp_hash;
+
+この関数は、もし使うのならば、これはお使いの型のインスタンスの
+ハッシュ番号を返すようにします。以下はやや的はずれな例ですが :
+
+     static long
+     newdatatype_hash(newdatatypeobject *obj)
+     {
+         long result;
+         result = obj->obj_UnderlyingDatatypePtr->size;
+         result = result * 3;
+         return result;
+     }
+
+         ternaryfunc tp_call;
+
+この関数は、その型のインスタンスが「関数として呼び出される」ときに呼ばれます。
+たとえばもし `obj1' にそのインスタンスが入っていて、Python スクリプトで
+`obj1('hello')' を実行したとすると、 `tp_call' ハンドラが 呼ばれます。
+
+この関数は 3つの引数をとります:
+
+  1. ARG1 にはその呼び出しの対象となる、
+     そのデータ型のインスタンスが入ります。たとえば呼び出しが
+     `obj1('hello')' の場合、ARG1 は `obj1' になります。
+
+  2. ARG2 は呼び出しの引数を格納しているタプルです。
+     ここから引数を取り出すには `PyArg_ParseTuple()' を使います。
+
+  3. ARG3 はキーワード引数のための辞書です。これが `NULL' 以外で
+     キーワード引数をサポートしているなら、
+     `PyArg_ParseTupleAndKeywords()'
+     をつかって引数を取り出せます。キーワード引数をサポートしていないのに
+     これが `NULL' 以外の場合は、キーワード引数はサポートしていない旨の
+     メッセージとともに `TypeError' を発生させてください。
+
+以下はこの call 関数をてきとうに使った例です。
+
+     /* call 関数の実装。
+      *    obj1 : 呼び出しを受けるインスタンス。
+      *    obj2 : 呼び出しのさいの引数を格納するタプル、この場合は 3つの文字列。
+      */
+     static PyObject *
+     newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *other)
+     {
+         PyObject *result;
+         char *arg1;
+         char *arg2;
+         char *arg3;
+     
+         if (!PyArg_ParseTuple(args, "sss:call", &arg1, &arg2, &arg3)) {
+             return NULL;
+         }
+         result = PyString_FromFormat(
+             "Returning -- value: [\%d] arg1: [\%s] arg2: [\%s] arg3: [\%s]\n",
+             obj->obj_UnderlyingDatatypePtr->size,
+             arg1, arg2, arg3);
+         printf("\%s", PyString_AS_STRING(result));
+         return result;
+     }
+
+         /* バージョン 2.2 以降で追加 */
+         /* Iterators */
+         getiterfunc tp_iter;
+         iternextfunc tp_iternext;
+
+これらの関数はイテレータ用プロトコルをサポートします。
+オブジェクトが、その (ループ中に順に生成されていくかもしれない) 内容を
+巡回 (訳注: イテレータでひとつずつ要素をたどっていくこと) する
+イテレータをサポートしたい場合は、`tp_iter' ハンドラを
+実装する必要があります。 `tp_iter' ハンドラによって返される
+オブジェクトは `tp_iter' と `tp_iternext' の両方を実装する必要が
+あります。
+どちらのハンドラも、それが呼ばれたインスタンスをひとつだけ引数としてとり、
+新しい参照を返します。エラーが起きた場合には例外を設定してから
+`NULL'を返す必要があります。
+
+巡回可能な要素を表現するオブジェクトに対しては、`tp_iter' ハンドラが
+イテレータオブジェクトを返す必要があります。イテレータオブジェクトは
+巡回中の状態を保持する責任をもっています。お互いに干渉しない複数の
+イテレータの存在を許すようなオブジェクト (リストやタプルがそうです)
+の場合は、 新しいイテレータを作成して返す必要があります。
+(巡回の結果生じる副作用のために)
+一回だけしか巡回できないオブジェクトの場合は、それ自身への参照を返すような
+ハンドラと、 `tp_iternext' ハンドラも実装する必要があります。
+ファイルオブジェクトはそのようなイテレータの例です。
+
+イテレータオブジェクトは両方のハンドラを実装する必要があります。
+`tp_iter' ハンドラはそのイテレータへの新しい参照を返します
+(これは破壊的にしか巡回できないオブジェクトに対する `tp_iter'
+ハンドラと同じです)。 `tp_iternext'
+ハンドラはその次のオブジェクトがある場合、それへの
+新しい参照を返します。巡回が終端に達したときは例外を出さずに `NULL' を
+返してもいいですし、 `StopIteration' を放出してもかまいません。
+例外を使わないほうがやや速度が上がるかもしれません。
+実際のエラーが起こったときには、例外を放出して
+`NULL'を返す必要があります。
+
+
+File: python-ext-jp.info,  Node: その他いろいろ,  Prev: 抽象的なプロトコルのサポート,  Up: タイプメソッド
+
+その他いろいろ
+--------------
+
+上にあげたほとんどの関数は、その値として `0' を与えれば
+省略できることを忘れないでください。それぞれの関数で提供しなければならない
+型の定義があり、これらは Python の include 用ディレクトリの `object.h'
+というファイルにおさめられています。これは Python の
+配布ソースに含まれています。
+
+新しいデータ型に何らかのメソッドを実装するやりかたを学ぶには、
+以下の方法がおすすめです: Python
+の配布されているソースをダウンロードして 展開する。`Objects'
+ディレクトリへ行き、C のソースファイルから
+「`tp_'欲しい名前」の文字列で検索する (たとえば `tp_print' とか
+`tp_compare' のように)。こうすれば実装したい例がみつかるでしょう。
+
+あるオブジェクトが、いま実装している型のインスタンスであるかどうかを
+確かめたい場合には、 `PyObject_TypeCheck' 関数を使ってください。
+使用例は以下のようなかんじです:
+
+         if (! PyObject_TypeCheck(some_object, &MyType)) {
+             PyErr_SetString(PyExc_TypeError, "arg #1 not a mything");
+             return NULL;
+         }
+
+
+File: python-ext-jp.info,  Node: distutils による C および C++ 拡張モジュールのビルド,  Next: Windows 上での C および C++ 拡張モジュールのビルド,  Prev: 新しい型を定義する,  Up: Top
+
+distutils による C および C++ 拡張モジュールのビルド
+****************************************************
+
+Python 1.4 になってから、動的にリンクされるような拡張モジュール
+をビルドするためのメイクファイルを作成するような、特殊なメイクファイル
+をUNIX 向けに提供するようになりました。Python 2.0 からは この機構
+(いわゆる Makefile.pre.in および Setup ファイルの関係ファイル)
+はサポートされなくなりました。インタプリタ自体のカスタマイズは
+ほとんど使われず、 distutils で拡張モジュールをビルドできる
+ようになったからです。
+
+distutils を使った拡張モジュールのビルドには、ビルドを行う計算機上に
+distutils をインストールしていることが必要です。 Python 2.x には
+distutils が入っており、 Python 1.5 用には個別の
+パッケージがあります。distutils はバイナリパッケージの作成も
+サポートしているので、ユーザが拡張モジュールをインストールする
+際に、必ずしもコンパイラが必要というわけではありません。
+
+distutils ベースのパッケージには、駆動スクリプト (driver script) となる
+`setup.py' が入っています。 `setup.py' は普通の Python
+プログラムファイルで、ほとんどの場合 以下のような見かけになっています:
+
+     from distutils.core import setup, Extension
+     
+     module1 = Extension('demo',
+                         sources = ['demo.c'])
+     
+     setup (name = 'PackageName',
+            version = '1.0',
+            description = 'This is a demo package',
+            ext_modules = [module1])
+
+この `setup.py' とファイル `demo.c' があるとき、以下の コマンド
+
+     python setup.py build
+
+を実行すると、`demo.c' をコンパイルして、`demo' という名前の
+拡張モジュールを`build' ディレクトリ内に生成します。
+システムによってはモジュールファイルは `build/lib.system'
+サブディレクトリに生成され、`demo.so' や `demo.pyd'
+といった名前になることがあります。
+
+`setup.py' 内では、コマンドの実行はすべて `setup' 関数を
+呼び出して行います。この関数は可変個のキーワード引数をとります。
+例ではその一部を使っているにすぎません。
+もっと具体的にいうと、例の中ではパッケージをビルドするための
+メタ情報と、パッケージの内容を指定しています。 通常、パッケージには
+Python ソースモジュールやドキュメント、
+サブパッケージ等といった別のファイルも入ります。 distutils
+の機能に関する詳細は、  に書かれている distutils
+のドキュメントを参照してください;
+この節では、拡張モジュールのビルドについてのみ説明します。
+
+駆動スクリプトをよりよく構成するために、決め打ちの引数を `setup'
+に入れておくことがよくあります。 上の例では、`setup' の `ext_modules' は
+拡張モジュールのリストで、リストの各々の要素は `Extension'
+クラスのインスタンスになっています。 上の例では、`demo'
+という名の拡張モジュールを定義していて、単一の ソースファイル`demo.c'
+をコンパイルしてビルドするよう定義しています。
+
+多くの場合、拡張モジュールのビルドはもっと複雑になります。
+というのは、プリプロセッサ定義やライブラリの追加指定が必要に
+なることがあるからです。例えば以下のファイルがその実例です。
+
+     from distutils.core import setup, Extension
+     
+     module1 = Extension('demo',
+                         define_macros = [('MAJOR_VERSION', '1'),
+                                          ('MINOR_VERSION', '0')],
+                         include_dirs = ['/usr/local/include'],
+                         libraries = ['tcl83'],
+                         library_dirs = ['/usr/local/lib'],
+                         sources = ['demo.c'])
+     
+     setup (name = 'PackageName',
+            version = '1.0',
+            description = 'This is a demo package',
+            author = 'Martin v. Loewis',
+            author_email = 'martin@v.loewis.de',
+            url = 'http://www.python.org/doc/current/ext/building.html',
+            long_description = '''
+     This is really just a demo package.
+     ''',
+            ext_modules = [module1])
+
+この例では、`setup' は追加のメタ情報と共に呼び出されます。
+配布パッケージを構築する際には、メタ情報の追加が推奨されています。
+拡張モジュール自体については、プリプロセッサ定義、インクルードファイルの
+ディレクトリ、ライブラリのディレクトリ、ライブラリといった指定が
+あります。 distutils
+はこの情報をコンパイラに応じて異なるやり方で引渡します。 例えば、UNIX
+では、上の設定は以下のようなコンパイルコマンドに なるかもしれません:
+
+     gcc -DNDEBUG -g -O3 -Wall -Wstrict-prototypes -fPIC -DMAJOR_VERSION=1 -DMINOR_VERSION=0 -I/usr/local/include -I/usr/local/include/python2.2 -c demo.c -o build/temp.linux-i686-2.2/demo.o
+     
+     gcc -shared build/temp.linux-i686-2.2/demo.o -L/usr/local/lib -ltcl83 -o build/lib.linux-i686-2.2/demo.so
+
+これらのコマンドラインは実演目的で書かれたものです; distutils の
+ユーザは distutils が正しくコマンドを実行すると信用してください。
+
+* Menu:
+
+* 拡張モジュールの配布::
+
+
+File: python-ext-jp.info,  Node: 拡張モジュールの配布,  Prev: distutils による C および C++ 拡張モジュールのビルド,  Up: distutils による C および C++ 拡張モジュールのビルド
+
+拡張モジュールの配布
+====================
+
+拡張モジュールをうまくビルドできたら、三通りの使い方があります。
+
+エンドユーザは普通モジュールをインストールしようと考えます; これには
+
+     python setup.py install
+
+を実行します。
+
+モジュールメンテナはソースパッケージを作成します; これには
+
+     python setup.py sdist
+
+を実行します。
+
+場合によっては、ソース配布物に追加のファイルを含める必要が あります;
+これには`MANIFEST.in' ファイルを使います; 詳しくは distutils
+のドキュメントを参照してください。
+
+ソースコード配布物をうまく構築できたら、メンテナはバイナリ配布物も
+作成できます。プラットフォームに応じて、以下のコマンドのいずれかを
+使います。
+
+     python setup.py bdist_wininst
+     python setup.py bdist_rpm
+     python setup.py bdist_dumb
+
+
+File: python-ext-jp.info,  Node: Windows 上での C および C++ 拡張モジュールのビルド,  Next: 他のアプリケーションへの Python の埋め込み,  Prev: distutils による C および C++ 拡張モジュールのビルド,  Up: Top
+
+Windows 上での C および C++ 拡張モジュールのビルド
+**************************************************
+
+この章では Windows 向けの Python 拡張モジュールを Microsoft Visual C++
+を使って作成する方法について簡単に述べ、その後に拡張モジュールの
+ビルドがどのように動作するのかについて詳しい背景を述べます。
+この説明は、Python 拡張モジュールを作成する Windows プログラマと、 UNIX
+と Windows の双方でうまくビルドできるようなソフトウェアの
+作成に興味がある UNIX プログラマの双方にとって有用です。
+
+モジュールの作者には、この節で説明している方法よりも、 distutils
+によるアプローチで拡張モジュールをビルドするよう勧めます。 また、Python
+をビルドした際に使われた C コンパイラが必要です; 通常は Microsoft
+Visual C++です。
+
+_Notice:_ この章では、Python のバージョン番号が符号化されて入っている
+たくさんのファイル名について触れます。これらのファイル名は `XY'
+で表されるバージョン名付きで表現されます; `X' は使っている Python
+リリースのメジャーバージョン番号、 `Y' はマイナーバージョン番号です。
+例えば、 Python 2.2.1 を使っているなら、`XY' は実際には `22'
+になります。
+
+* Menu:
+
+* 型どおりのアプローチ::
+* UNIX と Windows の相違点::
+* DLL 使用の実際::
+
+
+File: python-ext-jp.info,  Node: 型どおりのアプローチ,  Next: UNIX と Windows の相違点,  Prev: Windows 上での C および C++ 拡張モジュールのビルド,  Up: Windows 上での C および C++ 拡張モジュールのビルド
+
+型どおりのアプローチ
+====================
+
+Windows での拡張モジュールのビルドには、UNIXと同じように、 `distutils'
+パッケージを使ったビルド作業の制御と
+手動の二通りのアプローチがあります。 distutils
+によるアプローチはほとんどの拡張モジュールで うまくいきます;
+`distutils' を使った拡張モジュールの ビルドとパッケージ化については、
+に あります。この節では、C や C++で書かれた Python 拡張モジュール
+を手動でビルドするアプローチについて述べます。
+
+以下の説明に従って拡張モジュールをビルドするには、インストールされている
+Python と同じバージョンの Python のソースコードを持っていなければ
+なりません。また、 Microsoft Visual C++ "Developer Studio"
+が必要になります; プロジェクトファイルは VC++ バージョン 6
+向けのものが提供されていますが、以前のバージョンの VC++も
+使えます。ここで述べる例題のファイルは、Python ソースコードと
+共に配布されており、`PC\example_nt\' ディレクトリにあります。
+
+  1. *例題ファイルをコピーする*\ `example_nt' ディレクトリは `PC'
+     ディレクトリのサブディレクトリ になっています。これは PC
+     関連の全てのファイルをソースコード配布物内の
+     同じディレクトリに置くための措置です。とはいえ実際には、
+     `example_nt' ディレクトリは`PC' の下では利用できません。
+     そこで、まずこのディレクトリを一階層上にコピーして、 `example_nt'
+     が `PC' および `Include' と同じ
+     階層のディレクトリになるようにします。
+     以降の作業は、移動先の新しいディレクトリ内で行ってください。
+
+  2. *プロジェクトを開く*\ VC++から、 `ファイル /ワークスペースを開く'
+     ダイアログメニューを選択します (`ファイル /開く'
+     ではありません!)。ディレクトリ階層を辿って、`example_nt'
+     _をコピーしたディレクトリ_ 内の`example.dsw' を選択
+     し、「開く」をクリックします。
+
+  3. *例題の DLL をビルドする*\
+     設定が全て正しく行われているか調べるために、ビルドしてみます:
+
+       1. ビルド構成を選びます。このステップは省略できます。 `ビルド
+          /アクティブな構成の選択' を選び、 "example - Win32 リリース"
+          または "example - Win32 デバッグ"
+          を選びます。このステップを飛ばすと、VC++ はデフォルトで
+          デバッグ構成を使います。
+
+       2. DLL をビルドします。デバッグモードなら、 `ビルド
+          /example_d.dll のビルド' を、 リリースモードなら `ビルド
+          /example.dll' を選びます。
+          この操作で。全ての中間ファイルおよび最終ファイルが、上のビルド構成
+          で選んだ構成に従って`Debug' または `Release' という名前の
+          ディレクトリに生成されます。
+
+  4. *デバッグモードの DLL をテストする*\
+     デバッグビルドが成功したら、コマンドプロンプトを起動し、
+     `example_nt\Debug' ディレクトリに移動して
+     ください。以下のセッション通りにコマンドを実行できるはずです (`C>'
+     は DOS コマンドのプロンプト、`>`>'>' は Python のプロンプトです;
+     ビルド情報や様々なデバッグ出力は、
+     ここに示したスクリーン出力と一致しないこともあるので注意して下さい):
+
+          C>..\..\PCbuild\python_d
+          Adding parser accelerators ...
+          Done.
+          Python 2.2 (#28, Dec 19 2001, 23:26:37) [MSC 32 bit (Intel)] on win32
+          Type "copyright", "credits" or "license" for more information.
+          >>> import example
+          [4897 refs]
+          >>> example.foo()
+          Hello, world
+          [4903 refs]
+          >>>
+
+     おめでとうございます! とうとう初めての Python
+     拡張モジュールのビルド に成功しましたね。
+
+  5. *自分用にプロジェクトを作成する*\
+     プロジェクト用のディレクトリを適当な名前で作成してください。
+     自作の C ソースコードをディレクトリ内にコピーします。
+     モジュールのソースコードファイル名は必ずしもモジュール名と
+     一致している必要はありませんが、初期化関数の名前はモジュール名と
+     一致していなければなりません -- 初期化関数の名前が `initspam()'
+     なら、モジュールは`spam' という 名前でしか import
+     できません。`initspam()' は 第一引数を `"spam"'
+     にして、`Py_InitModule()' を 呼び出します
+     (このディレクトリにある、最小限の内容が書かれている `example.c'
+     を手がかりにするとよいでしょう)。
+     ならわしとして、ファイルは`spam.c' または `spammodule.c'
+     という名前にしておきます。 出力ファイル名はリリースモードでは
+     `smap.dll' や `spam.pyd'、 デバッグモードでは`smap_d.dll' や
+     `spam_d.pyd'、になるはず です (後者は、システムライブラリ
+     `spam.dll' と、Python
+     インタフェースとなる自作のモジュールとの混同を避けるために
+     推奨されています) 。
+
+     さて、やり方は二通りあります:
+
+       1. `example.dsw' と `example.dsp' をコピーし、 `spam.*'
+          に名前を変えて、手作業で編集する
+
+       2. 新しくプロジェクトを作成する; 説明は下にあります。
+
+     どちらの場合も、`example_nt\example.def' を `spam\spam.def'
+     にコピーして、新たにできた `spam.def' を編集し、二行目に
+     ``initspam'' が入るように します。
+     自分で新たなプロジェクトを作成したのなら、ここで `spam.def' を
+     プロジェクトに追加しておいてください (このファイルはたった二行しか
+     ない目障りなファイルです。`.def' ファイルを全く無視するという
+     方法もあり、それには `/exprt:initspam' を
+     「プロジェクトのオプション」ダイアログにあるリンク設定のどこかに
+     手動で追加します)。
+
+  6. *新しくプロジェクトを作成する*\ `ファイル /新規作成 /プロジェクト'
+     ダイアログ
+     を使って、新たなプロジェクト用ワークスペースを作成します。 "Win32
+     ダイナミックリンクライブラリ" を選択し、名前(`spam')
+     を入れ、「場所」が先ほど作成した `spam' ディレクトリ下に (Python
+     ビルドツリーの直下のサブディレクトリで、`Include' および `PC'
+     と同じディレクトリになるはずです) あることを
+     確かめます。「作成」をクリックします。
+
+     `プロジェクト /設定' ダイアログを開きます。
+     ほんのいくつかですが、設定の変更が必要です。
+     「構成」ドロップダウンリストに「すべての構成」が設定されているか
+     確かめてください。C/C++ タブを選び、ポップアップメニュー
+     から「プリプロセッサ」カテゴリを選びます。 以下のテキスト:
+
+          ..\Include,..\PC
+
+     を、「追加のインクルードディレクトリ」とラベルされた
+     エントリボックスに入力します
+
+     次に、「リンカ」タブの「入力」カテゴリを選び、
+
+          ..\PCbuild
+
+     を "追加のライブラリディレクトリ" と書かれたテキストボックスに
+     入力します。
+
+     さて、構成ごとに特有の設定をいくつか行う必要があります:
+
+     「構成」 ドロップダウンリストから、"Win32 リリース" を
+     選んでください。「リンク」タブをクリックし、「入力」カテゴリを
+     選んで、「追加の依存ファイル」ボックス内のリストに`pythonXY.lib'
+     を追加します。
+
+     「構成」 ドロップダウンリストから、"Win32 デバッグ" に切り替え、
+     「追加の依存ファイル」ボックス内のリストに`pythonXY_d.lib'
+     を追加します。 次に C/C++ タブをクリックして、 "コード生成"
+     をカテゴリから 選び、 "ラインタイムライブラリ" に対して
+     "マルチスレッド デバッグ DLL" を選びます。
+
+     「構成」ドロップダウンリストから "Win32 リリース" に切り替えなおし
+     ます。 "ラインタイムライブラリ" に対して "マルチスレッド DLL"
+     を選びます。
+
+     前の節で述べた`spam.def' をここで作成しておかねばなりません。
+     その後、`追加 /ファイルをプロジェクトに追加'
+     ダイアログを選びます。「ファイルの種類」を `*.*' にして、 `spam.c'
+     と `spam.def' を選び、 OK をクリックします
+     (一つ一つファイルを追加してもかまいません)。
+
+作っているモジュールが新たな型を作成するのなら、 以下の行:
+
+         PyObject_HEAD_INIT(&PyType_Type)
+
+がうまくいかないはずです。そこで:
+
+         PyObject_HEAD_INIT(NULL)
+
+に変更してください。また、以下の行をモジュール初期化関数に加えます:
+
+         MyObject_Type.ob_type = &PyType_Type;
+
+この操作を行う詳しい理由は、  の 第 3 節を参照してください。
+
+
+File: python-ext-jp.info,  Node: UNIX と Windows の相違点,  Next: DLL 使用の実際,  Prev: 型どおりのアプローチ,  Up: Windows 上での C および C++ 拡張モジュールのビルド
+
+UNIX と Windows の相違点
+========================
+
+UNIX と Windows では、コードの実行時読み込みに全く異なる
+パラダイムを用いています。動的ロードされるようなモジュールをビルド
+しようとする前に、自分のシステムがどのように動作するか
+知っておいてください。
+
+UNIXでは、共有オブジェクト (`.so') ファイルにプログラムが
+使うコード、そしてプログラム内で使う関数名やデータが入っています。
+ファイルがプログラムに結合されると、これらの関数やデータに
+対するファイルのコード内の全ての参照は、メモリ内で関数やデータが
+配置されている、プログラム中の実際の場所を指すように変更されます。
+これは基本的にはリンク操作にあたります。
+
+Windows では、動的リンクライブラリ (`.dll') ファイルには ぶら下がり参照
+(dangling reference) はありません。
+その代わり、関数やデータへのアクセスはルックアップテーブルを
+介します。従って DLL コードの場合、実行時にポインタがプログラム
+メモリ上の正しい場所を指すように修正する必要はありません;
+その代わり、コードは常に DLL のルックアップテーブルを使い、
+ルックアップテーブル自体は実行時に実際の関数やデータを指すように
+修正されます。
+
+UNIXには、唯一のライブラリファイル形式 (`.a') しかありません。 `.a'
+ファイルには複数のオブジェクトファイル (`.o') 由来の
+コードが入っています。共有オブジェクトファイル (`.so') を作成
+するリンク処理の段階中に、リンカは定義場所の不明な識別子に遭遇する
+ことがあります。このときリンカはライブラリ内のオブジェクトファイルを
+検索します; もし識別子が見つかると、リンカはそのオブジェクトファイルから
+全てのコードを取り込みます。
+
+Windows では、二つの形式のライブラリ、静的ライブラリとインポート
+ライブラリがあります (どちらも`.lib' と呼ばれています)。
+静的ライブラリは UNIX における `.a' ファイルに似ています;
+このファイルには、必要に応じて取り込まれるようなコードが入っています。
+インポートライブラリは、基本的には特定の識別子が不正ではなく、 DLL
+がロードされた時点で存在することを保証するためにだけ使われます。
+リンカはインポートライブラリからの情報を使ってルックアップテーブル
+を作成し、DLL に入っていない識別子を使えるようにします。
+アプリケーションや DLL がリンクされるさい、インポートライブラリ
+が生成されることがあります。このライブラリは、アプリケーションや DLL
+内のシンボルに依存するような、将来作成される全ての DLL で
+使うために必要になります。
+
+二つの動的ロードモジュール、B と C を作成し、別のコードブロック A を
+共有するとします。UNIXでは、 `A.a' を `B.so' や`C.so'
+をビルドするときのリンカに渡したりは_しません_; そんなことをすれば、
+コードは二度取り込まれ、B と C のそれぞれが自分用のコピーを持って
+しまいます。 Windows では、`A.dll' をビルドすると`A.lib'
+もビルドされます。 B や C のリンクには`A.lib' を渡します。 `A.lib'
+にはコードは 入っていません; 単に A
+のコードにアクセスするするために実行時に
+用いられる情報が入っているだけです。
+
+Windows ではインポートライブラリの使用は `import spam'
+とするようなものです; この操作によって spam の名前にアクセスできますが、
+コードのコピーを個別に作成したりはしません。UNIXでは、ライブラリとの
+リンクはむしろ `from spam import *' に似ています;
+この操作では個別にコードのコピーを生成します。
+
+
+File: python-ext-jp.info,  Node: DLL 使用の実際,  Prev: UNIX と Windows の相違点,  Up: Windows 上での C および C++ 拡張モジュールのビルド
+
+DLL 使用の実際
+==============
+
+Windows 版の Python は Microsoft Visual C++でビルドされています;
+他のコンパイラを使うと、うまく動作したり、しなかったりします (Borland
+も一見うまく動作しません)。この節の残りの部分は MSVC++ 向けの説明です。
+
+Windows で DLL を作成する際は、`pythonXY.lib' をリンカに
+渡さねばなりません。 例えば二つの DLL 、spam と ni (spam の中には C
+関数が入っているとします) をビルドするには、以下のコマンドを 実行します:
+
+     cl /LD /I/python/include spam.c ../libs/pythonXY.lib
+     cl /LD /I/python/include ni.c spam.lib ../libs/pythonXY.lib
+
+最初のコマンドで、三つのファイル: `spam.obj'、`spam.dll' および
+`spam.lib' ができます。 `Spam.dll' には (`PyArg_ParseTuple()' のような)
+Python 関数は全く入って いませんが、`pythonXY.lib' のおかげで Python
+コードを 見つけることはできます。
+
+二つ目のコマンドでは、`ni.dll' (および `.obj' と `.lib')
+ができ、このライブラリは spam と Python 実行形式中の
+必要な関数をどうやって見つければよいか知っています。
+
+全ての識別子がルックアップテーブル上に公開されるわけではありません。
+他のモジュール (Python 自体を含みます) から、自作の識別子が
+見えるようにするには、 `void _declspec(dllexport) initspam(void)' や
+`PyObject _declspec(dllexport) *NiGetSpamData(void)'
+のように、`_declspec(dllexport)' で宣言せねばなりません。
+
+Developer Studio は必要もなく大量のインポートライブラリを DLL に
+突っ込んで、実行形式のサイズを 100K も大きくしてしまいます。
+不用なライブラリを追い出したければ、「プロジェクトのプロパティ」
+ダイアログを選び、「リンカ」タブに移動して、
+_インポートライブラリの無視_ を指定します。その後、
+適切な`msvcrtXX.lib' をライブラリのリストに追加してください。
+
+
+File: python-ext-jp.info,  Node: 他のアプリケーションへの Python の埋め込み,  Next: バグ報告,  Prev: Windows 上での C および C++ 拡張モジュールのビルド,  Up: Top
+
+他のアプリケーションへの Python の埋め込み
+******************************************
+
+前章では、 Python を拡張する方法、すなわち C 関数のライブラリを Python
+に結びつけて機能を拡張する方法について述べました。
+同じようなことを別の方法でも実行できます: それは、自分の C/C++
+アプリケーションに Python を埋め込んで機能を強化する、というものです。
+埋め込みを行うことで、アプリケーションの何らかの機能を C や C++
+の代わりに Python で実装できるようになります。
+埋め込みは多くの用途で利用できます; ユーザが Python でスクリプトを書き、
+アプリケーションを自分好みに仕立てられるようにする、というのが
+その一例です。プログラマが、特定の機能を Python でより楽に書ける場合に
+自分自身のために埋め込みを行うこともできます。
+
+Python の埋め込みは Python の拡張と似ていますが、全く同じという
+わけではありません。その違いは、Python を拡張した場合には
+アプリケーションのメインプログラムは依然として Python インタプリタ
+である一方、 Python を組み込みんだ場合には、メインプログラムには Python
+が関係しない -- その代わりに、アプリケーションのある一部分 が時折
+Python インタプリタを呼び出して何らかの Python コードを 実行させる --
+かもしれない、ということです。
+
+従って、 Python の埋め込みを行う場合、自作のメインプログラムを
+提供しなければなりません。メインプログラムがやらなければならないこと
+の一つに、 Python インタプリタの初期化があります。とにかく少なくとも
+関数 `Py_Initialize()' (Mac OS なら`PyMac_Initialize()')
+を呼び出さねばなりません。 オプションとして、Python
+側にコマンドライン引数を渡すために関数呼び出し
+を行います。その後、アプリケーションのどこでもインタプリタを
+呼び出せるようになります。
+
+インタプリタを呼び出すには、異なるいくつかの方法があります: Python
+文が入った文字列を`PyRun_SimpleString()' に渡す、 stdio
+ファイルポインタとファイル名 (これはエラーメッセージ内で
+コードを識別するためだけのものです) を `PyRun_SimpleFile()'
+に渡す、といった具合です。
+これまでの各章で説明した低水準の操作を呼び出して、Python オブジェクトを
+構築したり使用したりもできます。
+
+Python の埋め込みを行っている簡単なデモは、ソース配布物の `Demo/embed/'
+ディレクトリにあります。
+
+See also:
+     `Python/C API リファレンスマニュアル'{ Python  C
+     インタフェースの詳細はこのマニュアルに書かれています。
+     必要な情報の大部分はここにあるはずです。}
+
+* Menu:
+
+* 高水準の埋め込み::
+* 超高水準の埋め込みから踏み出す 概要::
+* 純粋な埋め込み::
+* 埋め込まれた Python の拡張::
+* C++による Python の埋め込み::
+* リンクに関する要件::
+
+
+File: python-ext-jp.info,  Node: 高水準の埋め込み,  Next: 超高水準の埋め込みから踏み出す 概要,  Prev: 他のアプリケーションへの Python の埋め込み,  Up: 他のアプリケーションへの Python の埋め込み
+
+高水準の埋め込み
+================
+
+Python の埋め込みの最も簡単な形式は、超高水準インタフェースの 利用です。
+このインタフェースは、アプリケーションとやり取りする必要がない Python
+スクリプトを実行するためのものです。
+例えばこれは、一つのファイル上で何らかの操作を実現するのに利用
+できます。
+
+     #include <Python.h>
+     
+     int
+     main(int argc, char *argv[])
+     {
+       Py_Initialize();
+       PyRun_SimpleString("from time import time,ctime\n"
+                          "print 'Today is',ctime(time())\n");
+       Py_Finalize();
+       return 0;
+     }
+
+上のコードでは、まず Python インタプリタを `Py_Initialize()'
+で起動し、続いてハードコードされた Python
+スクリプトで日付と時間の出力を実行します。 その後、`Py_Finalize()'
+の呼び出しでインタプリタを 終了し, プログラムの終了に続きます。
+実際のプログラムでは、Python スクリプトを他のソース、おそらく
+テキストエディタルーチンやファイル、データベースから取り出したいと
+考えるかもしれません。Python コードをファイルから取り出すには、
+`PyRun_SimpleFile()' 関数を使うのがよいでしょう。
+この関数はメモリを確保して、ファイルの内容をロードする手間を
+省いてくれます。
+
+
+File: python-ext-jp.info,  Node: 超高水準の埋め込みから踏み出す 概要,  Next: 純粋な埋め込み,  Prev: 高水準の埋め込み,  Up: 他のアプリケーションへの Python の埋め込み
+
+超高水準の埋め込みから踏み出す: 概要
+====================================
+
+高水準インタフェースは、断片的な Python コードをアプリケーションから
+実行できるようにしてくれますが、アプリケーションと Python コードの
+間でのデータのやり取りは、控えめに言っても煩わしいものです。
+データのやり取りをしたいなら、より低水準のインタフェース呼び出しを
+利用しなくてはなりません。より多く C コードを書かねばならない
+代わりに、ほぼ何でもできるようになります。
+
+Python の拡張と埋め込みは、趣旨こそ違え、同じ作業であるということ
+に注意せねばなりません。これまでの章で議論してきたトピックの
+ほとんどが埋め込みでもあてはまります。これを示すために、 Python から C
+への拡張を行うコードが実際には何をするか考えて みましょう:
+
+  1. データ値を Python から C に変換する。
+
+  2. 変換された値を使って C ルーチンの関数呼び出しを行い、
+
+  3. 呼び出しで得られたデータ値 C から Python に変換する。
+
+Python を埋め込む場合には、インタフェースコードが行う作業は以下の
+ようになります:
+
+  1. データ値を C から Python に変換する。
+
+  2. 変換された値を使って Python インタフェースルーチンの
+     関数呼び出しを行い、
+
+  3. 呼び出しで得られたデータ値 Python から C に変換する。
+
+一見して分かるように、データ変換のステップは、言語間でデータを
+転送する方向が変わったのに合わせて単に入れ替えただけです。
+唯一の相違点は、データ変換の間にあるルーチンです。 拡張を行う際には C
+ルーチンを呼び出しますが、埋め込みの 際には Python
+ルーチンを呼び出します。
+
+この章では、Python から C へ、そしてその逆へとデータを変換する
+方法については議論しません。また、正しい参照の使い方やエラーの
+扱い方についてすでに理解しているものと仮定します。
+これらの側面についてはインタプリタの拡張と何ら変わるところが
+ないので、必要な情報については以前の章を参照できます。
+
+
+File: python-ext-jp.info,  Node: 純粋な埋め込み,  Next: 埋め込まれた Python の拡張,  Prev: 超高水準の埋め込みから踏み出す 概要,  Up: 他のアプリケーションへの Python の埋め込み
+
+純粋な埋め込み
+==============
+
+最初に例示するプログラムは、Python スクリプト内の関数を実行する
+ためのものです。超高水準インタフェースに関する節で挙げた
+例と同様に、Python インタプリタはアプリケーションと直接
+やりとりはしません (が、次の節でやりとりするよう変更します)。
+
+Python スクリプト内で定義されている関数を実行するための
+コードは以下のようになります:
+
+`run-func.c'
+
+このコードは`argv[1]' を使って Python スクリプトをロードし、 `argv[2]'
+内に指定された名前の関数を呼び出します。 関数の整数引数は `argv'
+配列中の他の値になります。 このプログラムをコンパイルしてリンクし
+(できた実行可能形式を `call' と呼びましょう)、以下のような Python
+スクリプトを実行することにします:
+
+     def multiply(a,b):
+         print "Will compute", a, "times", b
+         c = 0
+         for i in range(0, a):
+             c = c + b
+         return c
+
+実行結果は以下のようになるはずです:
+
+     $ call multiply multiply 3 2
+     Will compute 3 times 2
+     Result of call: 6
+
+この程度の機能を実現するにはプログラムがいささか大きすぎますが、
+ほとんどは Python から C へのデータ変換やエラー報告のための
+コードです。Python の埋め込みという観点から最も興味深い部分は
+以下のコード、
+
+         Py_Initialize();
+         pName = PyString_FromString(argv[1]);
+         /* pName のエラーチェックは省略している */
+         pModule = PyImport_Import(pName);
+
+から始まる部分です。
+
+インタプリタの初期化後、スクリプトは `PyImport_Import()'
+を使って読み込まれます。 このルーチンは Python
+文字列を引数に取る必要があり、
+データ変換ルーチン`PyString_FromString()' で 構築します。
+
+         pFunc = PyObject_GetAttrString(pModule, argv[2]);
+         /* pFunc は新たな参照 */
+     
+         if (pFunc && PyCallable_Check(pFunc)) {
+             ...
+         }
+         Py_XDECREF(pFunc);
+
+ひとたびスクリプトが読み込まれると、 `PyObject_GetAttrString()'
+を使って必要な名前を取得
+できます。名前がスクリプト中に存在し、取得したオブジェクトが
+呼び出し可能オブジェクトであれば、このオブジェクトが関数であると
+考えて差し支えないでしょう。そこでプログラムは定石どおりに引数の
+タプル構築に進みます。その後、Python 関数を以下のコードで 呼び出します:
+
+         pValue = PyObject_CallObject(pFunc, pArgs);
+
+関数が処理を戻す際、`pValue' は `NULL' になるか、
+関数の戻り値への参照が入っています。
+値を調べた後には忘れずに参照を解放してください。
+
+
+File: python-ext-jp.info,  Node: 埋め込まれた Python の拡張,  Next: C++による Python の埋め込み,  Prev: 純粋な埋め込み,  Up: 他のアプリケーションへの Python の埋め込み
+
+埋め込まれた Python の拡張
+==========================
+
+ここまでは、埋め込み Python インタプリタはアプリケーション本体の
+機能にアクセスする手段がありませんでした。 Python API
+を使うと、埋め込みインタプリタを拡張することで
+アプリケーション本体へのアクセスを可能にします。
+つまり、アプリケーションで提供されているルーチンを使って、
+埋め込みインタプリタを拡張するのです。
+複雑なことのように思えますが、それほどひどいわけではありません。
+さしあたって、アプリケーションが Python インタプリタを起動したと
+いうことをちょっと忘れてみてください。その代わり、アプリケーションが
+サブルーチンの集まりで、あたかも普通の Python 拡張モジュールを
+書くかのように、Python から各ルーチンにアクセスできるようにする
+グルー(glue, 糊) コードを書くと考えてください。例えば以下のようにです:
+
+     static int numargs=0;
+     
+     /* アプリケーションのコマンドライン引数の個数を返す */
+     static PyObject*
+     emb_numargs(PyObject *self, PyObject *args)
+     {
+         if(!PyArg_ParseTuple(args, ":numargs"))
+             return NULL;
+         return Py_BuildValue("i", numargs);
+     }
+     
+     static PyMethodDef EmbMethods[] = {
+         {"numargs", emb_numargs, METH_VARARGS,
+          "Return the number of arguments received by the process."},
+         {NULL, NULL, 0, NULL}
+     };
+
+上のコードを `main()' 関数のすぐ上に挿入します。
+また、以下の二つの文を`Py_Initialize()' の直後 に挿入します:
+
+         numargs = argc;
+         Py_InitModule("emb", EmbMethods);
+
+これら二つの行は`numargs' 変数を初期化し、 埋め込み Python
+インタプリタから`emb.numargs()' 関数に
+アクセスできるようにします。これらの拡張モジュール関数を使うと、 Python
+スクリプトは
+
+     import emb
+     print "Number of arguments", emb.numargs()
+
+のようなことができます。
+
+実際のアプリケーションでは、こうしたメソッドでアプリケーション内の API
+を Python に公開することになります。
+
+
+File: python-ext-jp.info,  Node: C++による Python の埋め込み,  Next: リンクに関する要件,  Prev: 埋め込まれた Python の拡張,  Up: 他のアプリケーションへの Python の埋め込み
+
+C++による Python の埋め込み
+===========================
+
+C++ プログラム中にも Python を埋め込めます; 厳密に言うと、
+どうやって埋め込むかは使っているC++ 処理系の詳細に依存します;
+一般的には、メインプログラムをC++で書き、C++ コンパイラ
+を使ってプログラムをコンパイル・リンクする必要があるでしょう。 Python
+自体を C++でコンパイルしなおす必要はありません。
+
+
+File: python-ext-jp.info,  Node: リンクに関する要件,  Prev: C++による Python の埋め込み,  Up: 他のアプリケーションへの Python の埋め込み
+
+リンクに関する要件
+==================
+
+Python ソースと一緒についてくる`configure' スクリプトは
+動的にリンクされる拡張モジュールが必要とするシンボルを公開するよう
+ただしく Python をビルドしますが、この機能は Python
+ライブラリを静的に埋め込むようなアプリケーションには
+継承されません。少なくとも UNIXではそうです。
+これは、アプリケーションが静的な実行時ライブラリ (`libpython.a')
+にリンクされていて、かつ (`.so' ファイルとして実装されている)
+動的ロードされるような拡張モジュールをロードする必要がある場合に
+起きる問題です。
+
+問題になるのは、拡張モジュールが使うあるエントリポイントが Python
+ランタイムだけで定義されているという状況です。
+埋め込みを行うアプリケーション側がこうしたエントリポイントを
+全く使わない場合、リンカによってはエントリポイントを最終的に
+生成される実行可能形式のシンボルテーブル内に含めません。
+こうした場合、リンカに追加のオプションを与えて、これらのシンボルを
+除去しないよう教える必要があります。
+
+プラットフォームごとに正しいオプションを決めるのはかなり困難です、
+とはいえ、幸運なことに、オプションは Python のビルド設定内にすでに
+あります。インストール済みの Python インタプリタからオプションを
+取り出すには、対話インタプリタを起動して、以下のような短い
+セッションを実行します:
+
+     >>> import distutils.sysconfig
+     >>> distutils.sysconfig.get_config_var('LINKFORSHARED')
+     '-Xlinker -export-dynamic'
+
+表示された文字列の内容が、ビルド時に使うべきオプションです。
+文字列が空であれば、特に追加すべきオプションはありません。
+`LINKFORSHARED' の定義内容は、 Python のトップレベル `Makefile'
+内の同名の変数に対応しています。
+
+
+File: python-ext-jp.info,  Node: バグ報告,  Next: 歴史とライセンス,  Prev: 他のアプリケーションへの Python の埋め込み,  Up: Top
+
+バグ報告
+********
+
+Python is a mature programming language which has established a
+reputation for stability.  In order to maintain this reputation, the
+developers would like to know of any deficiencies you find in Python or
+its documentation.
+
+Before submitting a report, you will be required to log into
+SourceForge; this will make it possible for the developers to contact
+you for additional information if needed.  It is not possible to submit
+a bug report anonymously.
+
+All bug reports should be submitted via the Python Bug Tracker on
+SourceForge (<http://sourceforge.net/bugs/?group_id=5470>).  The bug
+tracker offers a Web form which allows pertinent information to be
+entered and submitted to the developers.
+
+The first step in filing a report is to determine whether the problem
+has already been reported.  The advantage in doing so, aside from
+saving the developers time, is that you learn what has been done to fix
+it; it may be that the problem has already been fixed for the next
+release, or additional information is needed (in which case you are
+welcome to provide it if you can!).  To do this, search the bug
+database using the search box near the left side of the page.
+
+If the problem you're reporting is not already in the bug tracker, go
+back to the Python Bug Tracker
+(<http://sourceforge.net/bugs/?group_id=5470>).  Select the "Submit a
+Bug" link at the top of the page to open the bug reporting form.
+
+The submission form has a number of fields.  The only fields that are
+required are the "Summary" and "Details" fields.  For the summary,
+enter a _very_ short description of the problem; less than ten words is
+good.  In the Details field, describe the problem in detail, including
+what you expected to happen and what did happen.  Be sure to include
+the version of Python you used, whether any extension modules were
+involved, and what hardware and software platform you were using
+(including version information as appropriate).
+
+The only other field that you may want to set is the "Category" field,
+which allows you to place the bug report into a broad category (such as
+"Documentation" or "Library").
+
+Each bug report will be assigned to a developer who will determine what
+needs to be done to correct the problem.  You will receive an update
+each time action is taken on the bug.
+
+See also:
+     `How to Report Bugs Effectively'{Article which goes into some
+     detail about how to create a useful bug report.  This describes
+     what kind of information is useful and why it is useful.}
+
+     `Bug Writing Guidelines'{Information about writing a good bug
+     report.  Some of this is specific to the Mozilla project, but
+     describes general good practices.}
+
+
+File: python-ext-jp.info,  Node: 歴史とライセンス,  Next: 日本語訳について,  Prev: バグ報告,  Up: Top
+
+歴史とライセンス
+****************
+
+* Menu:
+
+* History of the software::
+* Terms and conditions for accessing or otherwise using Python::
+
+
+File: python-ext-jp.info,  Node: History of the software,  Next: Terms and conditions for accessing or otherwise using Python,  Prev: 歴史とライセンス,  Up: 歴史とライセンス
+
+History of the software
+=======================
+
+Python was created in the early 1990s by Guido van Rossum at Stichting
+Mathematisch Centrum (CWI, see <http://www.cwi.nl/>) in the Netherlands
+as a successor of a language called ABC.  Guido remains Python's
+principal author, although it includes many contributions from others.
+
+In 1995, Guido continued his work on Python at the Corporation for
+National Research Initiatives (CNRI, see
+<http://www.cnri.reston.va.us/>) in Reston, Virginia where he released
+several versions of the software.
+
+In May 2000, Guido and the Python core development team moved to
+BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
+year, the PythonLabs team moved to Digital Creations (now Zope
+Corporation; see <http://www.zope.com/>).  In 2001, the Python Software
+Foundation (PSF, see <http://www.python.org/psf/>) was formed, a
+non-profit organization created specifically to own Python-related
+Intellectual Property.  Zope Corporation is a sponsoring member of the
+PSF.
+
+All Python releases are Open Source (see <http://www.opensource.org/>
+for the Open Source Definition).  Historically, most, but not all,
+Python releases have also been GPL-compatible; the table below
+summarizes the various releases.
+
+Release        Derived from   Year           Owner          GPL
+                                                            compatible?
+------         ------         ------         ------         ------
+0.9.0 thru     n/a            1991-1995      CWI            yes
+1.2                                                         
+1.3 thru       1.2            1995-1999      CNRI           yes
+1.5.2                                                       
+1.6            1.5.2          2000           CNRI           no
+2.0            1.6            2000           BeOpen.com     no
+1.6.1          1.6            2001           CNRI           no
+2.1            2.0+1.6.1      2001           PSF            no
+2.0.1          2.0+1.6.1      2001           PSF            yes
+2.1.1          2.1+2.0.1      2001           PSF            yes
+2.2            2.1.1          2001           PSF            yes
+2.1.2          2.1.1          2002           PSF            yes
+2.1.3          2.1.2          2002           PSF            yes
+2.2.1          2.2            2002           PSF            yes
+2.2.2          2.2.1          2002           PSF            yes
+2.2.3          2.2.2          2002-2003      PSF            yes
+2.3            2.2.2          2002-2003      PSF            yes
+2.3.1          2.3            2002-2003      PSF            yes
+2.3.3          2.3.2          2004           PSF            yes
+2.3.4          2.3.3          2004           PSF            yes
+2.3.5          2.3.4          2005           PSF            yes
+
+_Note:_ GPL-compatible doesn't mean that we're distributing Python
+under the GPL.  All Python licenses, unlike the GPL, let you distribute
+a modified version without making your changes open source. The
+GPL-compatible licenses make it possible to combine Python with other
+software that is released under the GPL; the others don't.
+
+Thanks to the many outside volunteers who have worked under Guido's
+direction to make these releases possible.
+

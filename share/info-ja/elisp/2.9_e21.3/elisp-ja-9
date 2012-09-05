@@ -1,0 +1,2066 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Global Break Condition
+
+グローバルブレーク条件
+......................
+
+"グローバルブレーク条件"（global break condition）は、指定した条件が満
+たされると、その場所に関わらず、実行を停止させます。edebugは各停止位置
+においてグローバルブレーク条件を評価します。これが`nil'以外の値であると、
+ブレークポイントに達したかのように、実行モードに依存して実行を停止する
+か休止します。条件の評価中にエラーが発生しても実行は停止しません。
+
+条件式は`edebug-global-break-condition'に保存されます。コマンド`X'で新
+たな条件式を指定できます（`edebug-set-global-break-condition'）。
+
+グローバルブレーク条件は、読者のコードのどこでイベントが発生するかを調
+べるもっとも簡単な方法ですが、コードの実行速度をかなり遅くします。です
+から、使用しない場合には条件を`nil'に再設定すべきです。
+
+
+
+File: elisp-ja, Node: Source Breakpoints
+
+ソース上のブレークポイント
+..........................
+
+定義内のすべてのブレークポイントは、定義を処置し直すたびに失われます。
+ブレークポイントを失いたくない場合には、"ソース上のブレークポイント
+（source breakpoint）を指定できます。これはソースコード上で関数
+`edebug'を呼び出すだけです。もちろん、条件付けして呼び出せます。たとえ
+ば、関数`fac'において、引数がゼロの場合に停止するには、以下に示すように
+最初の行を挿入します。
+
+     (defun fac (n)
+       (if (= n 0) (edebug))
+       (if (< 0 n)
+           (* n (fac (1- n)))
+         1))
+
+関数`fac'を処置してこの関数を呼び出すと、`edebug'の呼び出しはブレークポ
+イントのように動作します。実行モードに応じて、edebugはその箇所で停止す
+るか休止します。
+
+`edebug'を呼び出したコードが処置済みでなければ、この関数は`debug'を呼び
+出します。
+
+
+
+File: elisp-ja, Node: Trapping Errors
+
+エラーの捕捉
+------------
+
+Emacsは、通常、エラーが通知されても`condition-case'で処理されなかった
+場合、エラーメッセージを表示します。
+edebugが活性であり処置済みのコードを実行していると、
+edebugは処理されなかったエラーすべてに反応します。
+この動作を`edebug-on-error'と`edebug-on-quit'で
+カスタマイズできます。
+*Note Edebug Options::。
+
+edebugがエラーに反応すると、エラーを起こすまえ出会った最後の停止位置を
+表示します。この位置は、実際にエラーを起こした処置してない関数の呼び出
+し位置である場合もあります。未束縛な変数のエラーでは、最後の停止位置は、
+当該変数の参照位置からかなり離れている場合があります。そのような場合に
+は、完全なバックトレースを表示したいでしょう（*Note Edebug Misc::）。
+
+edebugが活性なときに`debug-on-error'や`debug-on-quit'を変更しても、
+edebugが不活性になったときにそれらの変更を取り消してしまいます。さらに、
+edebugの再帰編集中は、これらの変数はedebugの外側での値に束縛されます。
+
+
+
+File: elisp-ja, Node: Edebug Views
+
+edebugのビュー
+--------------
+
+これらのedebugのコマンドは、edebugに入るまえのバッファやウィンドウの状
+態を調べるものです。外部ウィンドウ構成は、edebugの外側でのウィンドウの
+集まりや内容に関するものです。
+
+`v'
+     外部ウィンドウ構成を一時的に見る（`edebug-view-outside'）。
+
+`p'
+     edebugの外側でのカレントバッファと外側でのポイント位置を一時的に表
+     示する（`edebug-bounce-point'）。前置引数Nは、かわりに休止秒数を指
+     定する。
+
+`w'
+     ソースコードバッファで現在の停止位置にポイント位置を戻す
+     （`edebug-where'）。
+
+     同じバッファを表示している別のウィンドウでこのコマンドを使うと、そ
+     れ以後、そのウィンドウに現在の定義が表示されるようになる。
+
+`W'
+     edebugが外部ウィンドウ構成を保存／復元するかどうかをトグルする
+     （`edebug-toggle-save-windows'）。
+
+     前置引数を指定すると選択したウィンドウだけの保存／復元をトグルする。
+     ソースコードバッファを表示していないウィンドウを指定するには、グロー
+     バルキーマップの`C-x X W'を使う必要がある。
+
+`v'で外部ウィンドウ構成を見ることができます。
+あるいは、（edebugの外側での）カレントバッファが表示されていなくても
+`p'でカレントバッファのポイント位置を見ることができます。
+ポイント位置を移動したら、
+`w'でソースコードバッファの停止位置へ戻れます。
+
+外部ウィンドウ構成を保存*しない*ように`W'を使うたびに、edebugは保存して
+おいた外部ウィンドウ構成を破棄します。そのため、保存*する*ように戻して
+も、（プログラムを続行することで）edebugを抜けると、現在のウィンドウ構
+成は変更されません。しかし、`*edebug*'と`*edebug-trace*'の自動再表示は、
+十分なウィンドウが開いてないと、読者が見たいバッファと衝突するかもしれ
+ません。
+
+
+
+File: elisp-ja, Node: Edebug Eval
+
+評価
+----
+
+edebugの内側では、edebugが動作していないがごとく式を評価できます。
+edebugは、式の評価と表示に対して見えないようにします。edebugが明示的に
+保存／復元する場合を除いて、副作用を持つ式の評価も期待どおり動作します。
+この処理に関して詳しくは*Note The Outside Context::。
+
+`e EXP RET'
+     edebugの外側の文脈で式EXPを評価する（`edebug-eval-expression'）。
+     つまり、edebugは評価への干渉を最小限にとどめようとする。
+
+`M-: EXP RET'
+     edebug自身の文脈で式EXPを評価する。
+
+`C-x C-e'
+     edebugの外側の文脈でポイント位置のまえの式を評価する
+     （`edebug-eval-last-sexp'）。
+
+edebugは`cl.el'（版2.03以降）内の構文`lexical-let'、`macrolet'、
+`symbol-macrolet'で作成されるレキシカル（テキスト上の）束縛を参照する式
+の評価を扱えます。
+
+
+
+File: elisp-ja, Node: Eval List
+
+評価リストバッファ
+------------------
+
+`*edebug*'と呼ばれる"評価リストバッファ"を使って、式を対話的に評価でき
+ます。さらに、edebugが表示を更新するたびに自動的に評価される式の"評価リ
+スト"を設定することもできます。
+
+`E'
+     評価リストバッファ`*edebug*'へ切り替える
+     （`edebug-visit-eval-list'）。
+
+バッファ`*edebug*'では、以下の特別なコマンドに加えてlisp対話モード
+（*Note lisp対話バッファ: (emacs)Lisp Interaction.）のコマンドも使えま
+す。
+
+`C-j'
+     外側の文脈でポイント位置のまえの式を評価し、その値をバッファに挿入
+     する（`edebug-eval-print-last-sexp'）。
+
+`C-x C-e'
+     edebugの外側の文脈でポイント位置のまえの式を評価する
+     （`edebug-eval-last-sexp'）。
+
+`C-c C-u'
+     バッファの内容から新たな評価リストを構築する
+     （`edebug-update-eval-list'）。
+
+`C-c C-d'
+     ポイント位置にある評価リストグループを削除する
+     （`edebug-delete-eval-item'）。
+
+`C-c C-w'
+     ソースコードバッファに切り替え現在の停止位置に戻る
+     （`edebug-where'）。
+
+`*scratch*'で行うのと同様に、評価リストウィンドウでは`C-j'や`C-x C-e'で
+式を評価できますが、それらはedebugの外側の文脈で評価されます。
+
+実行を継続すると、対話的に入力した式（やその結果）は破棄されますが、実
+行を停止するたびに評価される式から成る"評価リスト"（evaluation list）を
+設定できます。
+
+これを行うには、評価リストバッファにて、1つ以上の"評価リストグループ
+（evaluation list group）を書きます。評価リストグループは、1つ以上の
+Lisp式から成ります。グループはコメント行で区切ります。
+
+コマンド`C-c C-u'（`edebug-update-eval-list'）は、バッファを走査して各
+グループの最初の式を使って評価リストを再構築します。（各グループの2番目
+の式は計算結果を表示した値とみなす。）
+
+edebugに入るたびに、各式に続けてその現在値をバッファに挿入することで評
+価リストを再表示します。このとき、各式がそれぞれグループになるようにコ
+メント行も挿入します。したがって、バッファのテキストを変更せずに再度
+`C-c C-u'と打つと、評価リストは実質的には変更されません。
+
+評価リストの評価中にエラーが発生すると、エラーメッセージを評価結果とみ
+なして文字列で表示します。したがって、現在の文脈では不正な変数を式に使っ
+ても読者のデバッグを遮ることはありません。
+
+評価リストウィンドウに数個の式を追加したときのようすを以下に示します。
+
+     (current-buffer)
+     #<buffer *scratch*>
+     ;---------------------------------------------------------------
+     (selected-window)
+     #<window 16 on *scratch*>
+     ;---------------------------------------------------------------
+     (point)
+     196
+     ;---------------------------------------------------------------
+     bad-var
+     "Symbol's value as variable is void: bad-var"
+     ;---------------------------------------------------------------
+     (recursion-depth)
+     0
+     ;---------------------------------------------------------------
+     this-command
+     eval-last-sexp
+     ;---------------------------------------------------------------
+
+グループを削除するには、そこへポイントを移動して`C-c C-d'と打ちます。あ
+るいは、グループのテキストを単に削除してから`C-c C-u'で評価リストを更新
+します。評価リストに新たに式を追加するには、適切な位置に式を挿入し、新
+たなコメント行を挿入します。（コメント行にマイナス記号を挿入する必要は
+ない。コメントの内容は関係ない。）そして、`C-c C-u'と打ちます
+
+`*edebug*'を選択したあとは、`C-c C-w'でソースコードバッファへ戻れます。
+読者が実行を継続するとバッファ`*edebug*'は削除され、つぎに必要なときに
+再度作成されます。
+
+
+
+File: elisp-ja, Node: Printing in Edebug
+
+edebugでの出力
+--------------
+
+読者のプログラムの式が循環したリスト構造を含む値を作り出す場合、edebug
+がそれを出力しようとするとエラーになります。
+
+循環構造を扱う1つの方法は、出力を切り詰めるために
+`print-length'や`print-level'を設定することです。
+edebugが読者のためにこれを行います。
+それらが`nil'であると、
+edebugは`print-length'と`print-level'を50に束縛します。
+（実際は、edebugが使う値は
+`e-debug-print-length'と`e-debug-print-level'が指定する。）
+*Note Output Variables::。
+
+ -- User Option: edebug-print-length
+     `nil'以外であると、edebugが結果を出力するときには、これを
+     `print-length'に束縛する。デフォルト値は`50'。
+
+ -- User Option: edebug-print-level
+     `nil'以外であると、edebugが結果を出力するときには、これを
+     `print-level'に束縛する。デフォルト値は`50'。
+
+パッケージ`cust-print'を使えば、循環構造や要素を共有する構造をより的確
+に出力することもできます。
+
+`cust-print'をロードしてedebugでのみこの特別な出力を使うようにするには、
+単にコマンド`M-x edebug-install-custom-print'を使うだけです。標準の出力
+関数に戻すには、`M-x edebug-uninstall-custom-print'を使います。
+
+循環構造を作るコードの例を示します。
+
+     (setq a '(x y))
+     (setcar a a)
+
+特別な出力ではこれを`Result: #1=(#1# y)'と出力します。`#1='の記法は、こ
+れに続く構造に`1'というラベルを付けます。また、`#1#'の記法はすでにラベ
+ル付けした構造を参照します。この記法は、リストやベクトルの任意の共有さ
+れた要素に使われます。
+
+ -- User Option: edebug-print-circle
+     `nil'以外であると、edebugが結果を出力するときには、これを
+     `print-circle'に束縛する。デフォルト値は`nil'。
+
+他のプログラムでもこの特別な出力を使えます。詳しくは、`cust-print.el'を
+参照してください。
+
+
+
+File: elisp-ja, Node: Trace Buffer
+
+トレースバッファ
+----------------
+
+edebugは、実行トレースを`*edebug-trace*'というバッファに保存することで
+それらを記録できます。
+これは、関数名とそれらの引数、戻り値から成る
+関数呼び出しとその戻りの記録です。
+トレース記録を有効にするには、
+`edebug-trace'に`nil'以外の値を設定します。
+
+トレースバッファを作成することとトレース実行モードとは同じではありませ
+ん（*Note Edebug Execution Modes::）。
+
+トレース記録を有効にしていると、各関数へ入るときと出るときに、トレース
+バッファに行が追加されます。関数へ入るときの記録は、`::::{'に関数名と引
+数値が続きます。関数から出るときの記録は、`::::}'に関数名とその結果が続
+きます。
+
+入るときの`:'の個数は、再帰の深さを表します。関数呼び出しの対応する開始
+や対応する終了を探すためにトレースバッファでは中括弧を使えます。
+
+関数`edebug-print-trace-before'と`edebug-print-trace-after'を再定義すれ
+ば、関数へ入ったときと出るときのトレース記録をカスタマイズできます。
+
+ -- Macro: edebug-tracing STRING BODY...
+     このマクロはフォームBODYの周りにトレース情報を追加する。
+     引数STRINGは、トレースバッファに入れるテキストを指定する。
+     すべての引数を評価する。
+     `edebug-tracing'はBODYの最後のフォームの値を返す。
+
+ -- Function: edebug-trace FORMAT-STRING &rest FORMAT-ARGS
+     この関数はトレースバッファにテキストを挿入する。テキストは`(apply
+     'format FORMAT-STRING FORMAT-ARGS)'で計算する。区切りとして改行も
+     挿入する。
+
+`edebug-tracing'と`edebug-trace'は、edebugが活性でない場合であっても呼
+ばれるとトレースバッファに行を挿入します。トレースバッファにテキストを
+挿入するとき、挿入した最後の行が見えるようにウィンドウをスクロールしま
+す。
+
+
+
+File: elisp-ja, Node: Coverage Testing
+
+カバレッジテスト
+----------------
+
+edebugでは、初歩的なカバレッジテストや実行頻度を表示できます。
+
+カバレッジテストでは、各式の結果を以前の結果と比較します。現在のEmacsセッ
+ションでカバレッジテストを始めて以降、プログラムの各フォームが異なる2つ
+の値を返せば、当該フォームを『カバーした』とみなします。したがって、読
+者のプログラムについてカバレッジテストを行うには、さまざまな条件でそれ
+を実行して正しく動作しているか注意します。読者が各フォームが異なる2つの
+値を返すように試行し終れば、edebugはそのように通知します。
+
+カバレッジテストは実行速度を遅くするので、`edebug-test-coverage'が
+`nil'以外の場合にのみテストします。すべての処置済み関数の実行に関する頻
+度数計測は、非停止実行モードであってもカバレッジテストのオン／オフに関
+わらず行います。
+
+ある定義に関するカバレッジテストと頻度数計測を表示するには
+`M-x edebug-display-freq-count'を使います。
+
+ -- コマンド: edebug-display-freq-count
+     このコマンドは、現在の定義の各行について頻度数データを表示する。
+
+     頻度数は、コードの各行のあとにコメント行として表示され、コマンド
+     `undo'でそれらのコメント行の挿入をアンドゥできる。頻度数は、式のま
+     えの`('や式のうしろの`)'の直下、あるいは、変数の最後の文字に表示さ
+     れる。表示を簡素にするために、頻度数が同じ行のまえのほうの式の頻度
+     数と同じであると表示しない。
+
+     式の頻度数に続く文字`='は、その式を評価するたびに同じ値を返したこ
+     とを意味する。いいかえれば、カバレッジテストとしては、その式はまだ
+     『カバーして』いないことになる。
+
+     ある定義に関する頻度数計測とカバレッジデータをクリアするには、
+     `eval-defun'で単に再処置すればよい。
+
+たとえば、`edebug-test-coverage'を`t'とし、ソース上のブレークポイントを
+設定して`(fac 5)'を評価すると、ブレークポイントに達したときの頻度数デー
+タはつぎのようになります。
+
+     (defun fac (n)
+       (if (= n 0) (edebug))
+     ;#6           1      0 =5
+       (if (< 0 n)
+     ;#5         =
+           (* n (fac (1- n)))
+     ;#    5               0
+         1))
+     ;#   0
+
+コメント行は、`fac'が6回呼ばれたことを表します。
+最初の`if'文は、5回とも同じ結果を返したのです。
+2番目の`if'についても同じです。
+`fac'の再帰呼び出しは1度も戻っていません。
+
+
+
+
+File: elisp-ja, Node: The Outside Context
+
+外側の文脈
+----------
+
+edebugは、読者がデバッグ中のプログラムに対しては透過であるように努めま
+すが、完全にうまくいくとは限りません。また、`e'で読者が式を評価するとき
+や評価リストバッファでも、外側の文脈を一時的に復元して透過であるように
+努めます。本節では、edebugが復元する文脈について正確に説明し、edebugが
+透過にならない場合についても説明します。
+
+* Menu:
+
+* Checking Whether to Stop::	When Edebug decides what to do.
+* Edebug Display Update::	When Edebug updates the display.
+* Edebug Recursive Edit::	When Edebug stops execution.
+
+
+
+File: elisp-ja, Node: Checking Whether to Stop
+
+停止すべきかどうかの検査
+........................
+
+edebugに入ると、トレース情報を作るのかプログラムを停止するのかを決定す
+るまえであってもある種のデータを保存／復元する必要がつねにあります。
+
+   * edebugがスタックに与える影響を軽減するために、
+     `max-lisp-eval-depth'と`max-specpdl-size'を一度増加する。しかし、
+     こうしてもedebugを使うときにスタックを使い切ってしまうことがある。
+
+   * キーボードマクロの実行状態を保存し復元する。
+     edebugが活性であると、`executing-macro'は
+     `edebug-continue-kbd-macro'に束縛される。
+
+
+
+
+
+File: elisp-ja, Node: Edebug Display Update
+
+edebugの表示の更新
+..................
+
+edebugが（トレースモードなどで）なにかを表示する必要があると、edebugの
+『外側』の現在のウィンドウ構成を保存します（*Note Window
+Configurations::）。（プログラムを続行して）edebugを抜けるときには、以
+前のウィンドウ構成を復元します
+
+Emacsは休止するときにのみ表示を更新します。通常、プログラムを続行しても、
+休止したり入力を読むことなくブレークポイントやステップ実行によりedebug
+へ戻ります。そのような場合、Emacsには（edebugの）『外側』のようすを再表
+示する機会が与えられません。見かけ上、ウィンドウの表示は直前にedebugが
+活性であったときと同じになります。
+
+なにかを表示するためにedebugに入っても以下のデータを保存／復元しますが、
+エラーや中断が起こると、故意に復元しないものもあります。
+
+   * カレントであるバッファと、そのバッファ内のポイントとマークは保存／
+     復元される。
+
+   * `edebug-save-windows'が`nil'以外ならば、外側でのウィンドウ構成を保
+     存／復元する（*Note Edebug Display Update::）。
+
+     エラーや中断が起こるとウィンドウ構成は復元されない。しかし、
+     `save-excursion'を使っていれば、エラーや中断が起こっても、外側で選
+     択していたウィンドウは選択*される*。`edebug-save-windows'の値がリ
+     ストであると、リストに指定したウィンドウのみを保存／復元する。
+
+     ソースコードバッファのウィンドウ開始位置やスクロールは復元しないが、
+     これは、edebug内での表示が統一されるようにするためである。
+
+   * `edebug-save-displayed-buffer-points'が`nil'以外であれば、表示され
+     ている各バッファのポイント位置の値を保存／復元する。
+
+   * 変数`overlay-arrow-position'と`overlay-arrow-string'は、保存／復元
+     される。そのため、同じバッファで再帰編集からedebugを起動しても安全
+     である。
+
+   * カーソルがウィンドウに表示されるように、
+     `cursor-in-echo-area'は`nil'にローカルに束縛する。
+
+
+
+File: elisp-ja, Node: Edebug Recursive Edit
+
+edebugの再帰編集
+................
+
+edebugに入ってユーザーコマンドを読み取るとき、以下のデータを保存し（の
+ちに復元し）ます。
+
+   * カレントマッチデータ。
+     *Note Match Data::。
+
+   * `last-command'、`this-command'、`last-command-char'、
+     `last-input-char'、`last-input-event'、`last-command-event'、
+     `last-event-frame'、`last-nonmenu-event'、`track-mouse'。edebug内
+     で使ったコマンドは、edebugの外側でのこれらの変数には影響しない。
+
+     `this-command-keys'が返すキー列はedebug内でコマンドを実行すると変
+     更されてしまい、Lispからキー列を設定し直す方法はない。
+
+     edebugは`unread-command-events'の値を保存／復元できない。この変数
+     に変な値が入っているときにedebugに入ると、読者がデバッグするプログ
+     ラムの実行に干渉することがある。
+
+   * edebug内で実行された複雑なコマンドは変数`command-history'に追加さ
+     れる。これにより実行結果を変更することはほとんどない。
+
+   * edebug内での再帰の深さは、edebugの外側での深さより1だけ深い。自動
+     的に更新される評価リストウィンドウではそうではない。
+
+   * `recursive-edit'は`standard-output'と`standard-input'を`nil'に束縛
+     するが、edebugは評価中にはそれらを一時的に復元する。
+
+   * キーボードマクロ定義の状態は保存／復元する。
+     edebuが活性であると、`defining-kbd-macro'は
+     `edebug-continue-kbd-macro'に束縛される。
+
+
+
+File: elisp-ja, Node: Instrumenting Macro Calls
+
+マクロ呼び出しの処置
+--------------------
+
+edebugがLispマクロを呼び出す式を処置するとき、それを正しく行うにはマク
+ロに関する余分な情報を必要とします。マクロ呼び出しのどの部分式が評価さ
+れるフォームであるかを明確に判定する方法がないからです。（マクロ本体で
+明示的に評価されるか、結果の展開形が評価されるときか、あるいは、さらに
+あと）
+
+したがって、edebugが出会う各マクロについて、当該マクロの呼び出し形式を
+記述するedebug用仕様を定義する必要があります。これには、
+`def-edebug-spec'を使います。
+
+ -- マクロ: def-edebug-spec MACRO SPECIFICATION
+     マクロMACROの呼び出しのどの式が評価されるかを指定する。単純なマク
+     ロでは、SPECIFICATIONはマクロ定義の仮引数リストに似ているが、その
+     指定はマクロ引数よりも汎用性がある。
+
+     引数MACROはマクロ名だけでなく任意のシンボルでよい。
+
+例題マクロ`for'（*Note Argument Evaluation::）のedebug用仕様の等価な定
+義例2つを示します。
+
+     (def-edebug-spec for
+       (symbolp "from" form "to" form "do" &rest form))
+
+     (def-edebug-spec for
+       (symbolp ['from form] ['to form] ['do body]))
+
+SPECIFICATIONに指定するものとその引数の処理方法は次表のとおりです。
+
+`t'
+     すべての引数を評価するように処置する。
+
+`0'
+     引数はいっさい処置しない。
+
+シンボル
+     edebug用仕様を持つシンボルをかわりに使う。この間接参照は別の種類の
+     仕様を得るまで繰り返す。これにより、別のマクロから仕様を継承できる。
+
+リスト
+     リストの各要素は、呼び出しフォームの引数の型を記述する。仕様リスト
+     の各要素については次節で述べる。
+
+* Menu:
+
+* Specification List::		How to specify complex patterns of evaluation.
+* Backtracking::		What Edebug does when matching fails.
+* Specification Examples::	To help understand specifications.
+
+
+
+
+File: elisp-ja, Node: Specification List
+
+仕様リスト
+..........
+
+マクロ呼び出しの引数のあるものは評価し別のものは評価しない場合には、
+edebug用仕様に"仕様リスト"（specification list）が必要になります。複数
+の引数に一致する仕様リストの要素もありますが、後続の要素の処理を修飾す
+る要素もあります。後者は"仕様キーワード"（specification keyword）と呼ば
+れ、（`&optional'のように）`&'で始まるシンボルです。
+
+仕様リストには、それ自体がリストである引数に一致する部分リストやグルー
+プ化に使うベクトルを含んでもかまいません。部分リストやグループは仕様リ
+ストを階層に分けます。仕様キーワードはそれらを含む部分リストやグループ
+の残りに適用されます。
+
+仕様リストに選択肢や繰り返しが含まれる場合、実際のマクロ呼び出しに一致
+させるにはバックトラックが必要な場合もあります。詳しくは*Note
+Backtracking::。
+
+edebug用仕様では、正規表現による一致と文脈自由文法の構文を使えます。対
+応した括弧に囲まれた部分リスト、フォームの再帰的処理、間接仕様による再
+帰です。
+
+仕様リストの要素に指定できるものとそれらの意味を以下に示します。
+
+`sexp'
+     処置しない評価しない1つのLispオブジェクト。
+
+`form'
+     処置した評価する1つの式。
+
+`place'
+     Common Lispの`setf'構文のように値を格納する場所。
+
+`body'
+     `&rest form'の省略形。以下の`&rest'を参照。
+
+`function-form'
+     関数フォーム。クォートした関数シンボル、クォートしたラムダ式、ある
+     いは、（関数シンボルやラムダ式に評価される）フォーム。これは、ラム
+     ダ式である引数が、`function'ではなく`quote'でクォートされるときに
+     有用である。というのは、ラムダ式の本体をいずれかの方法で処置するか
+     らである。
+
+`lambda-expr'
+     クォートしていないラムダ式。
+
+`&optional'
+     この仕様リスト内の後続の要素すべては省略可能。一致しないと、
+     edebugはただちにこのレベルの一致を止める。
+
+     数個の省略可能な要素に省略不可な要素を続けるには、`[&optional
+     SPECS...]'を使う。数個の要素がすべて一致するかまったく一致しないこ
+     とを指定するには、`&optional [SPECS...]'を使う。以下の`defun'の例
+     を参照。
+
+`&rest'
+     この仕様リスト内の後続の要素すべてを0回以上繰り返す。最後の繰り返
+     しでは、仕様リストの要素すべてに一致するまえに式を使い尽くしても問
+     題にはならない。
+
+     数個の要素のみを繰り返すには`[&rest SPECS...]'を使う。
+     各繰り返しですべてが一致するような数個の要素を指定するには、
+     `&rest [SPECS...]'を使う。
+
+`&or'
+     仕様リスト内の後続の各リストは選択肢を表す。選択肢の1つに一致しな
+     ければ、仕様`&or'は失敗。
+
+     `&or'に続く各要素は1つの選択肢を表す。複数の要素を1つの選択肢とし
+     てグループにまとめるには、それらを`[...]'で囲む。
+
+`&not'
+     `&or'を使ったかように後続の要素を選択肢として一致させるが、どれか
+     が一致すると仕様は失敗。どれにも一致しなければ、仕様`&not'は成功。
+
+`&define'
+     仕様は定義フォームに対するものであることを表す。定義フォームそのも
+     のは処置しない（つまり、edbugは定義フォームの前後で停止しない）が、
+     この内側にあるフォームは典型的には処置される。キーワード`&define'
+     はリスト仕様の最初の要素である必要がある。
+
+`nil'
+     現在の引数リストのレベルにおいて一致する引数がなければ成功する。さ
+     もなければ失敗。部分リスト仕様と以下のバッククォートの例を参照。
+
+`gate'
+     いかなる引数とも一致しないが、このゲートを通ると、このレベルの仕様
+     の残りの部分と一致を調べる際にはバックトラックを禁止する。これは主
+     により詳しい構文エラーメッセージを生成するために使う。詳しくは
+     *Note Backtracking::を参照。例については以下の`let'を参照。
+
+`その他のシンボル'
+     仕様リストのその他のシンボルは述語であるか間接仕様である。
+
+     シンボルにedebug用仕様があれば、この"間接仕様"は、シンボルのかわり
+     に使われる仕様リストであるか、引数を処理するために呼び出される関数
+     であること。仕様は、マクロ向けに`def-edebug-spec'で定義した仕様で
+     あってもよい。以下の`defun'の例を参照。
+
+     さもなければ、シンボルは述語であること。述語は引数で呼び出され、述
+     語が`nil'を返すと仕様は失敗する。いずれの場合でも、当該引数は処置
+     されない。
+
+     適当な述語には、`symbolp'、`integerp'、
+     `stringp'、`vectorp'、`atom'がある。
+
+`[ELEMENTS...]'
+     要素のベクトルは要素群を単一の"グループ仕様"にまとめる。この意味は
+     ベクトルの意味とは関係ない。
+
+`"STRING"'
+     引数はSTRINGという名前のシンボルであること。この仕様は、SYMBOLの名
+     前がSTRINGであるクォートとしたシンボル`'SYMBOL'と等価であるが、文
+     字列のほうが望ましい。
+
+`(vector ELEMENTS...)'
+     引数は、仕様内のELEMENTSに一致するものを要素とするベクトルであるこ
+     と。以下のバッククォートの例を参照。
+
+`(ELEMENTS...)'
+     その他のリストは"部分リスト仕様"であり、引数は仕様ELEMENTSに一致す
+     るものを要素とするリストであること。
+
+     部分リスト仕様はドット対リストでもよく、その場合、対応するリスト引
+     数はドット対リストである。あるいは、ドット対リスト仕様の最後のCDR
+     は（`(spec .  [(more specs...)])'などのグループや間接仕様を介した）
+     別の部分リスト仕様であってもよいが、それらの要素はドット対ではない
+     リスト引数に一致する。これは、以下のバッククォートの例のような再帰
+     仕様に有用である。このような再帰を終らせるうえの仕様`nil'も参照。
+
+     `(specs .  nil)'や
+     `(specs . (sublist-elements...))'のような部分リスト仕様は
+     `(specs sublist-elements...)'と等価であることに注意。
+
+
+`&define'のうしろに追加できる仕様の一覧を以下に示します。以下の`defun'
+の例を参照してください。
+
+`name'
+     引数はシンボルであり、定義フォームの名前である。
+
+     定義フォームには単一の名前フィールドがある必要はなく、複数の名前
+     フィールドを持っていてもよい。
+
+`:name'
+     この構造は引数には実際には一致しない。`:name'に続く要素はシンボル
+     であること。定義に対する追加の名前要素として使う。定義の名前に一意
+     で静的な要素を追加するために使う。複数あってもよい。
+
+`arg'
+     引数はシンボルであり、定義フォームの引数の名前である。しかし、ラム
+     ダリストキーワード（`&'で始まるシンボル）は許されない。
+
+`lambda-list'
+     ラムダリスト、すなわち、ラムダ式の引数リストに一致する。
+
+`def-body'
+     引数は、定義内のコード本体である。これは、上に述べた`body'に似てい
+     るが、定義本体は定義に関連した情報を調べる異なるedebug呼び出しで処
+     置する必要がある。定義内のフォームの最上位レベルのリストには
+     `def-body'を使う。
+
+`def-form'
+     引数は、定義内の単一の最上位レベルのフォームである。これは
+     `def-body'に似ているが、フォームのリストではなく単一のフォームに一
+     致するものに使う。特別な場合として、`def-form'はフォームを実行した
+     ときにトレース情報を出力しないことを意味する。以下の`interactive'
+     の例を参照。
+
+
+
+File: elisp-ja, Node: Backtracking
+
+仕様内でのバックトラック
+........................
+
+仕様の一致がある箇所で失敗しても、必ずしも構文エラーが通知されるとは限
+りません。そのかわりに、選択肢すべてを試し尽くすまで"バックトラック"し
+ます。最終的に、引数リストの各要素は仕様内のいずれかの要素に一致する必
+要があり、仕様内の各必須要素はいずれかの引数に一致する必要があります。
+
+構文エラーを検出しても、より高いレベルの選択肢を使い切るまでは報告され
+ず、実際のエラー箇所から離れた箇所にポイントが置かれます。しかし、エラー
+発生時にバックトラックが禁止されていれば、ただちにエラーが報告されます。
+さまざまな状況でバックトラックが自動的に再許可されることに注意してくだ
+さい。`&optional'や`&rest'や`&or'で新たに選択肢が指定されたり、部分リス
+トやグループや間接仕様を処理し始めると、自動的に再許可されます。バック
+トラックの許可／禁止の効果は、現在処理しているレベルやそれより低いレベ
+ルに限定されます。
+
+任意のフォーム仕様（つまり、`form'、`body'、`def-form'、`def-body'）の
+一致処理中には、バックトラックを禁止します。これらの仕様は任意のフォー
+ムに一致するので、エラーはより上のレベルではなくフォーム自身にあるはず
+です。
+
+また、クォートしたシンボルや文字列の仕様に一致するとバックトラックを禁
+止します。というのは、通常、これは構造を認識したことを意味するからです。
+しかし、すべてが同一シンボルで始まる選択肢を指定する場合には、`["foo"
+&or [first case] [second case] ...]'のように、そのシンボルを選択肢から
+括り出せばバックトラックするようにできます。
+
+多くの場合では、バックトラックを自動的に禁止するこれらの2つの方法で十分
+ですが、仕様`gate'を使ってバックトラックを明示的に禁止すると有用な場合
+もあります。上位の選択肢が適用できないとわかっている場合に有用です。仕
+様`let'の例を参照してください。
+
+
+
+File: elisp-ja, Node: Specification Examples
+
+仕様の例
+........
+
+以下の例を参考にするとedebug用仕様を理解しやすいでしょう。
+
+スペシャルフォーム`let'には束縛と本体の並びがあります。各束縛は、シンボ
+ル、あるいは、シンボルと省略可能な式から成る部分リストです。以下の
+edebug用仕様では、部分リストの内側にある`gate'で、部分リストを一度みつ
+けるとバックトラックを禁止していることに注意してください。
+
+     (def-edebug-spec let
+       ((&rest
+         &or symbolp (gate symbolp &optional form))
+        body))
+
+edebugは、`defun'と`defmacro'、および、対応する引数リストと仕様
+`interactive'に対しては、以下のedebug用仕様を使います。式の引数は実際に
+は関数本体の外側で評価されるので、対話宣言フォームを特別扱いする必要が
+あります。
+
+     (def-edebug-spec defmacro defun) ; 仕様`defun'の間接参照
+     (def-edebug-spec defun
+       (&define name lambda-list
+                [&optional stringp]   ; あれば、説明文字列に一致する
+                [&optional ("interactive" interactive)]
+                def-body))
+
+     (def-edebug-spec lambda-list
+       (([&rest arg]
+         [&optional ["&optional" arg &rest arg]]
+         &optional ["&rest" arg]
+         )))
+
+     (def-edebug-spec interactive
+       (&optional &or stringp def-form))    ; `def-form'を参照
+
+以下のバッククォートに対する仕様は、ドット対リストの一致の仕方と再帰を
+終らせる`nil'の使い方を示します。また、ベクトルの要素の一致の仕方も示し
+ます。（edebugが実際に定義している仕様では、失敗の可能性がある非常に深
+い再帰をもたらすためドット対リストを扱わない。）
+
+     (def-edebug-spec ` (backquote-form))   ; わかりやすいように別名を付ける
+
+     (def-edebug-spec backquote-form
+       (&or ([&or "," ",@"] &or ("quote" backquote-form) form)
+            (backquote-form . [&or nil backquote-form])
+            (vector &rest backquote-form)
+            sexp))
+
+
+
+
+File: elisp-ja, Node: Edebug Options
+
+edebugのオプション
+------------------
+
+以下のオプションはedebugの動作に影響します。
+
+ -- User Option: edebug-setup-hook
+     edebugを使うまえに呼び出す関数群。
+     新たな値に設定されるたびに、edebugはこれらの関数を呼び出し、
+     そのあとで`edebug-setup-hook'を`nil'に再設定する。
+     これを用いて、edebugを使用する場合にのみ、
+     使用するパッケージに対応するedebug用仕様をロードできる。
+     *Note Instrumenting::。
+
+ -- User Option: edebug-all-defs
+     これが`nil'以外であると、
+     `defun'や`defmacro'のような定義フォームを普通に評価すると、
+     edebug用にそれらを処置する。
+     これは、`eval-defun'、`eval-region'、`eval-buffer'、
+     `eval-current-buffer'にも適用される。
+
+     このオプションの値をトグルするにはコマンド`M-x edebug-all-defs'を使う。
+     *Note Instrumenting::。
+
+ -- User Option: edebug-all-forms
+     これがcode{nil}以外であると、コマンド`eval-defun'、`eval-region'、
+     `eval-buffer'、`eval-current-buffer'は、定義しないフォームの場合で
+     あってもすべてのフォームを処置する。これは、ロードやミニバッファで
+     の評価には適用されない。
+
+     このオプションの値をトグルするにはコマンド`M-x edebug-all-forms'を使う。
+     *Note Instrumenting::。
+
+ -- User Option: edebug-save-windows
+     これが`nil'以外であると、edebugはウィンドウ構成を保存／復元する。
+     これには時間がかかるので、読者のプログラムがウィンドウ構成に依存し
+     ないのならば、この変数は`nil'に設定しておくほうがよい。
+
+     値がリストであると、リスト内のウィンドウのみを保存／復元する。
+
+     edebugのコマンド`W'を使ってこの変数を対話的に変更できる。
+     *Note Edebug Display Update::。
+
+ -- User Option: edebug-save-displayed-buffer-points
+     これが`nil'以外であると、edebugは表示されているすべてのバッファの
+     ポイントを保存／復元する。
+
+     選択していないウィンドウに表示されたバッファのポイントを変更するコー
+     ドをデバッグ中には、別のバッファのポイントを保存／復元する必要があ
+     る。edebugやユーザーが当該ウィンドウを選択すると、そのバッファのポ
+     イントはウィンドウのポイント位置に移動する。
+
+     すべてのバッファでポイントを保存／復元するには
+     各ウィンドウを2度選択する必要があるため手間がかかる。
+     そのため、必要な場合にのみこの機能を有効にする。
+     *Note Edebug Display Update::。
+
+ -- User Option: edebug-initial-mode
+     この変数が`nil'以外であれば、
+     edebugが初めて動作するときの初期の動作モードを指定する。
+     可能な値は、
+     `step'、`next'、`go'、`Go-nonstop', `trace'、
+     `Trace-fast'、`continue'、`Continue-fast'。
+
+     デフォルト値は`step'。
+     *Note Edebug Execution Modes::。
+
+ -- User Option: edebug-trace
+     `nil'以外であると、関数へ入るときと出るときのトレースを表示するこ
+     とを意味する。トレース出力は、`*edebug-trace*'という名前のバッファ
+     に、関数へ入るときと出るときを各行に再帰の深さで字下げして表示する。
+
+     デフォルト値は`nil'。
+
+     *Note Trace Buffer::の`edebug-tracing'も参照。
+
+ -- User Option: edebug-test-coverage
+     `nil'以外であれば、edebugはデバッグ対象のすべての式のカバレッジ
+     テストを行う。
+     *Note Coverage Testing::。
+
+ -- User Option: edebug-continue-kbd-macro
+     `nil'以外であれば、edebugの外側で実行するキーボードマクロを定義し
+     たり実行する。デバッグしないので注意してこのオプションを使うこと。
+
+ -- User Option: edebug-on-error
+     `debug-on-error'の以前の値が`nil'であると、
+     edebugは`debug-on-error'にこの値を束縛する。
+     *Note Trapping Errors::。
+
+ -- User Option: edebug-on-quit
+     `debug-on-quit'の以前の値が`nil'であると、
+     edebugは`debug-on-quit'にこの値を束縛する。
+     *Note Trapping Errors::。
+
+edebugが動作中に`edebug-on-error'や`edebug-on-quit'の値を変更しても、新
+たなコマンドでedebugを*つぎに*起動するまではこれらの値は使用されない。
+
+ -- User Option: edebug-global-break-condition
+     `nil'以外であると、各停止位置で検査される式である。
+     結果が`nil'以外であるとブレークする。
+     エラーは無視する。
+     *Note Global Break Condition::。
+
+
+
+File: elisp-ja, Node: Syntax Errors, Next: Compilation Errors, Prev: Debugger, Up: Debugging
+
+不正なLisp構文のデバッグ
+========================
+
+Lispリーダは不正な構文を報告しますが、どこに問題があるかは報告できませ
+ん。たとえば、式を評価中のエラー『End of file during parsing』（構文解
+析中にファイルの終り）は、開き括弧（あるいは開き角括弧）が多すぎること
+を表します。Lispリーダは括弧が対応していないことをファイルの末尾で検出
+しますが、どこに閉じ括弧があるべきかは判断できません。同様に、
+『Invalid read syntax: ")"』（不正な構文：")"）は閉じ括弧が多すぎるか開
+き括弧が足りないことを表しますが、どこに括弧が足りないかは判断できませ
+ん。それでは、どこを変更すべきかどのように調べるのでしょう？
+
+問題が単純な括弧の非対応でなければ、各関数定義の先頭で`C-M-e'を試し、関
+数定義の末尾に移動するかどうかをみるのは有用な技法です。正しく移動しな
+ければ、その関数に問題があります。
+
+Lispによくある構文エラーは括弧の非対応なので、これらの場面について詳し
+い助言を述べておきます。（さらに、対応括弧表示モードをオンにしてポイン
+トを移動すると非対応を探しやすい。）
+
+* Menu:
+
+* Excess Open::     How to find a spurious open paren or missing close.
+* Excess Close::    How to find a spurious close paren or missing open.
+
+
+
+File: elisp-ja, Node: Excess Open, Next: Excess Close, Prev: Syntax Errors, Up: Syntax Errors
+
+開き括弧の過剰
+--------------
+
+最初の手順は、括弧が対応していない関数定義を探すことです。開き括弧が過
+剰であれば、ファイルの末尾に閉じ括弧を挿入し`C-M-b'（`backward-sexp'）
+を打ちます。こうすると、括弧が対応していない関数定義の先頭へ移動します。
+（そうしたら、`C-SPC C-_ C-u C-SPC'と打って、当該箇所にマークを設定して
+から閉じ括弧の挿入を取り消し、最終的にマークへ戻る。）
+
+つぎの手順は、なにが悪いか正確に判断することです。プログラムを調べる以
+外にこれを確実に行う方法はありませんが、しばしば、既存の字下げが括弧の
+ありかたを予想する鍵になります。これを利用するもっとも簡単な方法は
+`C-M-q'で字下げし直し、どのようになるか見ることです。*まだやらないでく
+ださい！*` ' まず読み進んてください。
+
+これを行うまえに、関数定義に充分な数の閉じ括弧があることを確認してくだ
+さい。さもないと、`C-M-q'がエラーになったり、ファイルの末尾までを字下げ
+し直してしまいます。ですから、関数定義の末尾へ移動して閉じ括弧を挿入し
+ておきます。`C-M-e'を使って移動しないでください。というのは、関数定義の
+括弧の対応が取れていないと失敗するからです。
+
+関数定義の先頭へ移動して`C-M-q'を打ちます。
+通常、ある場所から関数の末尾までの行が右へずれます。
+その場所の近くで、閉じ括弧が足りなかったり開き括弧が多すぎるのです。
+（しかし、これが正しいと仮定してはならない。
+コードを調べて確認すること。）
+不具合箇所がみつかったならば、
+意図した括弧に対しては古い字下げが適しているでしょうから
+`C-_'で`C-M-q'をアンドゥします。
+
+問題を解決できたと思ったら、再度`C-M-q'を使います。
+古い字下げが意図した括弧の入れ子に対応していて、
+必要な括弧を挿入できているならば、
+`C-M-q'はなにも変えないはずです。
+
+
+
+File: elisp-ja, Node: Excess Close, Prev: Excess Open, Up: Syntax Errors
+
+閉じ括弧の過剰
+--------------
+
+過剰な閉じ括弧に対処するには、まず、ファイルの先頭に開き括弧を挿入し、
+その括弧のまえで`C-M-f'を打って、括弧が対応していない関数定義の末尾を探
+します。（そして、`C-SPC C-_ C-u C-SPC'と打って、当該箇所にマークを設定
+して開き括弧の挿入をアンドゥし、最終的にマークへ戻る。）
+
+その関数定義の先頭で`C-M-f'と打って、実際に対応している閉じ括弧を探しま
+す。これにより、関数定義が終るべき場所より手前の箇所に移動するはずです。
+この付近に余分な閉じ括弧がみつかることもあるでしょう。
+
+その場所に問題がなければ、つぎにすべきことは、
+関数定義の先頭で`C-M-q'と打つことです。
+ある範囲の行が左にずれるでしょう。
+もしそうならば、開き括弧が足りないか余分な閉じ括弧は、
+そのような行の先頭付近にあるでしょう。
+（しかし、これが正しいと仮定してはならない。
+コードを調べて確認すること。）
+不具合箇所がみつかったならば、
+意図した括弧に対しては古い字下げが適しているでしょうから
+`C-_'で`C-M-q'をアンドゥします。
+
+問題を解決できたと思ったら、再度`C-M-q'を使います。
+古い字下げが意図した括弧の入れ子に対応していて、
+必要な括弧を挿入できているならば、
+`C-M-q'はなにも変えないはずです。
+
+
+
+File: elisp-ja, Node: Compilation Errors, Prev: Syntax Errors, Up: Debugging
+
+コンパイル時の問題のデバッグ
+============================
+
+バイトコンパイル時にエラーが発生したときは、通常、読者がコンパイルして
+いるプログラムの不正な構文に原因があります。コンパイラはバッファ
+`*Compile-Log*'に適切なエラーメッセージを表示してから停止します。メッセー
+ジにはエラーとなった関数の名前があったりなかったりします。いずれにして
+も、つぎのようにしてファイルのどこでエラーが生じたかを調べます。
+
+まず、バッファ` *Compiler Input*'に切り替えます。（バッファ名が空白で始
+まり、そのため、`M-x list-buffers'では表示されないことに注意。）このバッ
+ファにはコンパイルしたプログラムが入っていて、ポイント位置はバイトコン
+パイラがどこまで読み取ったかを表します。
+
+エラーの原因が不正なLisp構文であるならば、ポイント位置が不正構文を*検出
+した*箇所を正確に表します。エラー原因が近くにあるとは限りません！` ' エ
+ラーを探すために前節の方法を使ってください。
+
+正しく読み取ったフォームのコンパイル中にエラーを検出したときには、ポイ
+ントはそのフォームの末尾に位置しています。この場合、この方法ではエラー
+箇所を正確に判別できませんが、どの関数を確認すべきかを示しています。
+
+
+File: elisp-ja, Node: Read and Print, Next: Minibuffers, Prev: Debugging, Up: Top
+
+Lispオブジェクトの読み取りと表示
+********************************
+
+"表示"（printing）とはLispオブジェクトをテキスト表現へ変換する操作であ
+り、"読み取り"（reading）は逆の変換操作です。これには、*Note Lisp Data
+Types::で述べた表示表現と入力構文を用います。
+
+本章では、読み取りや表示を行うLisp関数について述べます。
+また、（読み取るときに）テキストをどこから得たり、
+（表示するときに）どこへ出すかを指定する
+"ストリーム"（stream）についても述べます。
+
+* Menu:
+
+* Streams Intro::     Overview of streams, reading and printing.
+* Input Streams::     Various data types that can be used as input streams.
+* Input Functions::   Functions to read Lisp objects from text.
+* Output Streams::    Various data types that can be used as output streams.
+* Output Functions::  Functions to print Lisp objects as text.
+* Output Variables::  Variables that control what the printing functions do.
+
+
+
+File: elisp-ja, Node: Streams Intro, Next: Input Streams
+
+読み取りと表示の概要
+====================
+
+Lispオブジェクトの"読み取り"とは、
+テキスト表現のLisp式を解析して対応するLispオブジェクトを生成することを
+意味します。
+これにより、プログラムはLispコードのファイルからLispへ取り込まれます。
+テキストをオブジェクトの"入力構文"（read syntax）と呼びます。
+たとえば、テキスト`(a . 5)'は、
+CARが`a'でありCDRが数5であるコンスセルの入力構文です。
+
+Lispオブジェクトの"表示"とは、オブジェクトを表現するテキストを生成する
+ことを意味します。つまり、オブジェクトをその"表示表現" （*Note Printed
+Representation::）に変換します。上に述べたコンスセルを表示するとテキス
+ト`(a . 5)'を生成します。
+
+読み取りと表示は、多かれ少なかれ、逆操作です。与えられたテキスト断片を
+読み取ることで得られたオブジェクトを表示すると、しばしば、同じテキスト
+を生成します。オブジェクトを表示することによって得られたテキストを読み
+取ると、通常、似たようなオブジェクトを生成します。たとえば、シンボル
+`foo'を表示するとテキスト`foo'を生成し、そのテキストを読み取るとシンボ
+ル`foo'が返されます。要素が`a'と`b'であるリストを表示するとテキスト`(a
+b)'を生成し、そのテキストを読み取ると要素が`a'と`b'である（もとと同じで
+はないが）リストを生成します。
+
+しかし、これら2つの操作は厳密には逆操作ではありません。3種類の例外があ
+ります。
+
+   * 表示では、読み取れないテキストを生成することがある。たとえば、バッ
+     ファ、ウィンドウ、フレーム、サブプロセス、マーカは、`#'で始まるテ
+     キストとして表示されるが、これを読み取ろうとするとエラーになる。こ
+     れらのデータ型を読み取る方法は存在しない。
+
+   * 1つのオブジェクトには複数のテキスト表現がありえる。たとえば、`1'と
+     `01'は同じ整数を表し、`(a b)'と`(a . (b))'は同じリストを表す。読み
+     取りではいずれの表現も受け付けるが、表示では1つの表現を選ぶ。
+
+   * オブジェクトを読み取る途中にコメントが現れてもよく、しかも読み取り
+     結果にはまったく影響しない。
+
+
+
+File: elisp-ja, Node: Input Streams, Next: Input Functions, Prev: Streams Intro
+
+入力ストリーム
+==============
+
+テキストを読み取るほとんどのLisp関数は、"ストリーム"（stream）を引数と
+して受け付けます。入力ストリームは、読み取るべきテキストの文字をどこか
+らどのように得るのかを指定します。入力ストリームとして使える型は以下の
+とおりです。
+
+BUFFER
+     入力文字はバッファBUFFERのポイント直後の文字から読み取られる。1文
+     字読むごとにポイントを進める。
+
+MARKER
+     入力文字は、マーカMARKERがあるバッファのマーカ直後の文字から読み取
+     られる。1文字読むごとにマーカ位置を進める。ストリームがマーカであ
+     るときには、バッファのポイント位置は影響しない。
+
+STRING
+     入力文字は文字列STRINGの先頭文字から必要な文字数だけ読み取られる。
+
+FUNCTION
+     入力文字は関数FUNCTIONが生成する。この関数は2種類の呼び出し方を扱
+     える必要がある。
+
+        * 引数なしで呼ばれると、つぎの文字を返す。
+
+        * 1つの（つねに文字である）引数で呼ばれると、FUNCTIONは引数を保
+          存し、つぎに呼ばれたときにそれを返すように準備する。これを文
+          字の"読み戻し"（unreading）と呼ぶ。これは、Lispリーダが1文字
+          多く読みすぎたので『読み取った場所へ戻し』たいときに発生する。
+          このとき、FUNCTIONが返す値はなんでもよい。
+
+`t'
+     ストリームとして`t'を使うと、ミニバッファから読み取ることを意味す
+     る。実際には、ミニバッファを表示しユーザーが指定したテキストから成
+     る文字列を作り、それを入力ストリームとして使う。
+
+`nil'
+     入力ストリームとして`nil'を指定すると、
+     `standard-input'の値をかわりに使うことを意味する。
+     その値は"デフォルト入力ストリーム"であり、
+     `nil'以外の入力ストリームであること。
+
+SYMBOL
+     入力ストリームとしてのシンボルは、そのシンボルの（あれば）関数定義
+     と等価である。
+
+バッファであるストリームからの読み取りの例を読み取り前後のポイント位置
+を含めて示します。
+
+     ---------- Buffer: foo ----------
+     This-!- is the contents of foo.
+     ---------- Buffer: foo ----------
+
+     (read (get-buffer "foo"))
+          => is
+     (read (get-buffer "foo"))
+          => the
+
+     ---------- Buffer: foo ----------
+     This is the-!- contents of foo.
+     ---------- Buffer: foo ----------
+
+最初の読み取りでは空白を読み飛ばしていることに注意してください。読み取
+りでは、意味あるテキストのまえにある白文字はいくつでも読み飛ばします。
+
+つぎは、マーカをストリームとして読み取る例です。マーカの初期位置は下に
+示したバッファの先頭にあります。読み取った値はシンボル`This'です。
+
+
+     ---------- Buffer: foo ----------
+     This is the contents of foo.
+     ---------- Buffer: foo ----------
+
+     (setq m (set-marker (make-marker) 1 (get-buffer "foo")))
+          => #<marker at 1 in foo>
+     (read m)
+          => This
+     m
+          => #<marker at 5 in foo>   ;; 最初の空白の直前
+
+つぎは文字列の内容から読み取ります。
+
+     (read "(When in) the course")
+          => (When in)
+
+以下の例は、ミニバッファから読み取ります。
+プロンプトは`Lisp expression: 'です。
+（ストリーム`t'から読むとつねにこのプロンプトが使われる。）
+ユーザーの入力はプロンプトに続けて示してあります。
+
+     (read t)
+          => 23
+     ---------- Buffer: Minibuffer ----------
+     Lisp expression: 23 RET
+     ---------- Buffer: Minibuffer ----------
+
+最後は、`useless-stream'という名前の関数をストリームにした例です。この
+ストリームを使うまえに、変数`useless-list'を文字のリストで初期化します。
+そうすると、関数`useless-stream'を呼び出すたびにリスト内のつぎの文字を
+返すか、リストの先頭に追加して文字を読み戻します。
+
+     (setq useless-list (append "XY()" nil))
+          => (88 89 40 41)
+
+     (defun useless-stream (&optional unread)
+       (if unread
+           (setq useless-list (cons unread useless-list))
+         (prog1 (car useless-list)
+                (setq useless-list (cdr useless-list)))))
+          => useless-stream
+
+つぎのようにしてストリームを使って読み取ります。
+
+     (read 'useless-stream)
+          => XY
+
+     useless-list
+          => (40 41)
+
+リストには開き括弧と閉じ括弧が残っていることに注意してください。
+Lispリーダが開き括弧に出会うとこれで入力を終えると決定し、
+それを読み戻すのです。
+この時点で読み取りを試みると、
+`()'を読み取って`nil'を返します。
+
+ -- Function: get-file-char
+     この関数は、関数`load'で開いた入力ファイルから読み取るための入力ス
+     トリームとして内部的に使われる。読者はこの関数を使ってはならない。
+
+
+
+File: elisp-ja, Node: Input Functions, Next: Output Streams, Prev: Input Streams
+
+入力関数
+========
+
+本節では読み取りに関係するLisp関数や変数について述べます。
+
+以下の関数では、STREAMは入力ストリーム（前節参照）を表します。
+STREAMが`nil'であったり省略すると、
+`standard-input'の値をデフォルトにします。
+
+読み取り中に閉じていないリストやベクトル、文字列に出会うと、エラー
+`end-of-file'を通知します。
+
+ -- Function: read &optional STREAM
+     この関数はSTREAMから1つのLisp式のテキスト表現を読み取り、それを
+     Lispオブジェクトとして返す。これは基本的なLisp入力関数である。
+
+ -- Function: read-from-string STRING &optional START END
+     この関数はSTRINGのテキストから先頭のLisp式のテキスト表現を読み取る。
+     読み取った式をCAR、文字列に残っているつぎの文字（つまり読み取って
+     いない最初の文字）の位置を表す整数をCDR とするコンスセルを返す。
+
+     STARTが指定してあると、文字列のSTARTで添字付け（先頭文字の添字は0）
+     されるところから読み始める。ENDを指定すると、その添字位置の直前で
+     読み取りを終らせ、文字列には残りの文字がないかのように扱う。
+
+     例：
+
+          (read-from-string "(setq x 55) (setq y 5)")
+               => ((setq x 55) . 11)
+          (read-from-string "\"A short string\"")
+               => ("A short string" . 16)
+
+          ;; 最初の文字から読み始める
+          (read-from-string "(list 112)" 0)
+               => ((list 112) . 10)
+          ;; 2番目の文字から読み始める
+          (read-from-string "(list 112)" 1)
+               => (list . 5)
+          ;; 7番目の文字から読み始め、9番目の文字で読み終える
+          (read-from-string "(list 112)" 6 8)
+               => (11 . 8)
+
+ -- Variable: standard-input
+     この変数はデフォルトの入力ストリーム、つまり、引数STREAMが`nil'で
+     ある場合に`read'が使うストリームを保持する。
+
+
+
+File: elisp-ja, Node: Output Streams, Next: Output Functions, Prev: Input Functions
+
+出力ストリーム
+==============
+
+出力ストリームは表示で生成した文字群をどのように扱うかを指定します。ほ
+とんどの表示関数は省略可能な引数として出力ストリームを受け付けます。出
+力ストリームとして使える型は以下のとおりです。
+
+BUFFER
+     出力文字はバッファBUFFERのポイント位置に挿入される。文字が挿入され
+     るたびにポイント位置は進められる。
+
+MARKER
+     出力文字はマーカMARKERがあるバッファのマーカ位置に挿入される。文字
+     を挿入するたびにマーカ位置は進められる。ストリームがマーカであると
+     きには、バッファのポイント位置は影響せず、この種の表示ではポイント
+     を移動しない。
+
+FUNCTION
+     出力文字は関数FUNCTIONに渡され、この関数が文字の保存に責任を持つ。
+     1つの文字を引数として出力する文字数の回数だけ呼び出され、読者の望
+     む場所に文字を保存する責任を持つ。
+
+`t'
+     出力文字はエコー領域に表示される。
+
+`nil'
+     出力ストリームとして`nil'を指定すると、
+     `standard-output'の値をかわりに使うことを意味する。
+     その値は"デフォルト出力ストリーム"であり、
+     `nil'以外であること。
+
+SYMBOL
+     出力ストリームとしてのシンボルは、そのシンボルの（あれば）関数定義
+     と等価である。
+
+正当な出力ストリームの多くは、入力ストリームとしても正当です。入力スト
+リームと出力ストリームの違いは、オブジェクト型の違いというよりは、読者
+がLispオブジェクトをどのように使うかです。
+
+バッファを出力ストリームとして使った例を示します。ポイントの初期位置は
+以下に示すように`the'の`h'の直前にあります。終了後でも、ポイントは同じ
+`h'の直前に位置しています。
+
+     ---------- Buffer: foo ----------
+     This is t-!-he contents of foo.
+     ---------- Buffer: foo ----------
+
+     (print "This is the output" (get-buffer "foo"))
+          => "This is the output"
+
+     ---------- Buffer: foo ----------
+     This is t
+     "This is the output"
+     -!-he contents of foo.
+     ---------- Buffer: foo ----------
+
+つぎは、マーカを出力ストリームとして用いた例です。バッファ`foo'のマーカ
+の初期位置は、単語`the'の`t'と`h'のあいだにあります。終了後には、マーカ
+は挿入したテキストを越えて同じ`h'の直前に位置します。ポイント位置はなん
+の影響もないことに注意してください。
+
+     ---------- Buffer: foo ----------
+     This is the -!-output
+     ---------- Buffer: foo ----------
+
+     (setq m (copy-marker 10))
+          => #<marker at 10 in foo>
+
+     (print "More output for foo." m)
+          => "More output for foo."
+
+     ---------- Buffer: foo ----------
+     This is t
+     "More output for foo."
+     he -!-output
+     ---------- Buffer: foo ----------
+
+     m
+          => #<marker at 34 in foo>
+
+つぎは、エコー領域への出力の例です。
+
+     (print "Echo Area output" t)
+          => "Echo Area output"
+     ---------- Echo Area ----------
+     "Echo Area output"
+     ---------- Echo Area ----------
+
+最後は、関数を出力ストリームとして使った例を示します。関数`eat-output'
+は与えられた文字を受け取り、それをリスト`last-output'の先頭にコンスしま
+す（*Note Building Lists::）。終了後には、リストがすべての出力文字を保
+持していますが逆順です。
+
+     (setq last-output nil)
+          => nil
+
+     (defun eat-output (c)
+       (setq last-output (cons c last-output)))
+          => eat-output
+
+     (print "This is the output" 'eat-output)
+          => "This is the output"
+
+     last-output
+          => (10 34 116 117 112 116 117 111 32 101 104
+         116 32 115 105 32 115 105 104 84 34 10)
+
+リストの順番を逆にすれば正しい順序の出力になります。
+
+     (concat (nreverse last-output))
+          => "
+     \"This is the output\"
+     "
+
+`concat'を呼び出してリストを文字列に変換し、内容を読みやすいようにしま
+した。
+
+
+
+File: elisp-ja, Node: Output Functions, Next: Output Variables, Prev: Output Streams
+
+出力関数
+========
+
+本節ではLispオブジェクトを表示する、つまり、オブジェクトを表示表現に変
+換するLisp関数について述べます。
+
+Emacsの表示関数のなかには、正しく読み取れるようにクォート文字を出力に追
+加するものがあります。使用されるクォート文字は`"'と`\'です。これらは、
+文字列とシンボルを区別したり、文字列やシンボル内の句読点文字を読み取る
+ときに区切り文字として扱うことを防ぎます。詳しくは*Note Printed
+Representation::。出力関数を選べば、クォートのありなしを指定できます。
+
+テキストをLispシステムへ読み取る意図がある場合には、曖昧さを避けるため
+にクォート文字付きで表示するべきです。Lispプログラマに対してLispオブジェ
+クトを明確に記述する場合も同様です。しかし、人間向けの見やすい出力が目
+的であれば、クォートせずに表示するのが普通はよいでしょう。
+
+Lispオブジェクトはそれ自身を参照できます。自己参照しているオブジェクト
+を普通の方法で表示するには無限のテキストが必要であり、そのような試みは
+無限再帰をもたらします。Emacsはそのような再帰を検出し、すでに表示したオ
+ブジェクトを再帰的に表示するかわりに`#LEVEL'を表示します。たとえば、
+`#0'は、現在の表示操作においてレベル0のオブジェクトを再帰的に参照するこ
+とを示します。
+
+     (setq foo (list nil))
+          => (nil)
+     (setcar foo foo)
+          => (#0)
+
+以下の関数では、STREAMは出力ストリームを表します。
+（出力ストリームについては前節を参照。）
+STREAMが`nil'であったり省略すると、
+`standard-output'の値をデフォルトにします。
+
+ -- Function: print OBJECT &optional STREAM
+     関数`print'は便利な表示方法である。オブジェクトOBJECTの表示表現を
+     ストリームSTREAMに出力し、OBJECTの前後に改行を1つずつ表示する。
+     クォート文字を使う。`print'はOBJECTを返す。たとえばつぎのとおり。
+
+          (progn (print 'The\ cat\ in)
+                 (print "the hat")
+                 (print " came back"))
+               -|
+               -| The\ cat\ in
+               -|
+               -| "the hat"
+               -|
+               -| " came back"
+               -|
+               => " came back"
+
+ -- Function: prin1 OBJECT &optional STREAM
+     この関数はオブジェクトOBJECTの表示表現を
+     ストリームSTREAMに出力する。
+     `print'のようには出力を区切る改行を表示しないが、
+     `print'と同様にクォート文字を用いる。
+     OBJECTを返す。
+
+          (progn (prin1 'The\ cat\ in)
+                 (prin1 "the hat")
+                 (prin1 " came back"))
+               -| The\ cat\ in"the hat"" came back"
+               => " came back"
+
+ -- Function: princ OBJECT &optional STREAM
+     この関数はオブジェクトOBJECTの表示表現を
+     ストリームSTREAMに出力する。
+     OBJECTを返す。
+
+     この関数は、`read'ではなく人が読みやすい出力を意図しており、クォー
+     ト文字を挿入せず、文字列を囲むダブルクォートも出力しない。空白も追
+     加しない。
+
+          (progn
+            (princ 'The\ cat)
+            (princ " in the \"hat\""))
+               -| The cat in the "hat"
+               => " in the \"hat\""
+
+ -- Function: terpri &optional STREAM
+     この関数はストリームSTREAMに改行を出力する。関数名は『terminate
+     print』の略。
+
+ -- Function: write-char CHARACTER &optional STREAM
+     この関数は文字CHARACTERをストリームSTREAMへ出力する。
+     CHARACTERを返す。
+
+ -- Function: prin1-to-string OBJECT &optional NOESCAPE
+     この関数は同じ引数に対して`prin1'が表示するであろうテキストから成
+     る文字列を返す。
+
+          (prin1-to-string 'foo)
+               => "foo"
+          (prin1-to-string (mark-marker))
+               => "#<marker at 2773 in strings.texi>"
+
+     NOESCAPEが`nil'以外であると、出力にはクォート文字を使わない。（こ
+     の引数は、Emacs 19版以降で使える。）
+
+          (prin1-to-string "foo")
+               => "\"foo\""
+          (prin1-to-string "foo" t)
+               => "foo"
+
+     文字列としてのLispオブジェクトの表示表現を得るための別の方法については、
+     *Note String Conversion::の`format'を参照。
+
+ -- Macro: with-output-to-string BODY...
+     このマクロは、`standard-output'を文字列への出力と設定してフォーム
+     BODYを実行する。そして、その文字列を返す。
+
+     たとえば、カレントバッファの名前が`foo'であると
+
+          (with-output-to-string
+            (princ "The buffer is ")
+            (princ (buffer-name)))
+
+     は`"The buffer is foo"'を返す。
+
+
+
+File: elisp-ja, Node: Output Variables, Prev: Output Functions
+
+出力に影響する変数
+==================
+
+ -- Variable: standard-output
+     この変数の値はデフォルトの出力ストリーム、つまり、引数STREAMが
+     `nil'の場合に表示関数が用いるストリーム。
+
+ -- Variable: print-escape-newlines
+     この変数が`nil'以外であると、文字列内の改行文字を`\n'、ページ送り
+     文字を`\f'と表示する。通常、これらの文字は実際の改行やページ送りと
+     して表示される。
+
+     この変数は、クォート付きで表示する表示関数`prin1'や
+     `print'に影響を与える。
+     `princ'には影響しない。
+     `prin1'を用いた例を示す。
+
+          (prin1 "a\nb")
+               -| "a
+               -| b"
+               => "a
+          b"
+
+          (let ((print-escape-newlines t))
+            (prin1 "a\nb"))
+               -| "a\nb"
+               => "a
+          b"
+
+     2番目の式では、`prin1'の呼び出し中には`print-escape-newlines'のロー
+     カル束縛が有効であるが、結果を表示するときには有効ではない。
+
+ -- Variable: print-escape-nonascii
+     この変数が`nil'以外であると、クォート付きで表示する出力関数
+     `prin1'や`print'は、文字列内のユニバイト非ASCII文字を無条件でバッ
+     クスラッシュ列として表示する。
+
+     これらの関数は、出力ストリームがマルチバイトバッファやマルチバイト
+     バッファのマーク位置であると、この変数の値に関係なくユニバイト非
+     ASCII文字に対してバックスラッシュ列を用いる。
+
+ -- Variable: print-escape-multibyte
+     この変数が`nil'以外であると、クォート付きで表示する表示関数
+     `prin1'や`print'は、文字列内のマルチバイト非ASCII文字を無条件でバッ
+     クスラッシュ列として表示する。
+
+     これらの関数は、出力ストリームがユニバイトバッファやユニバイトバッ
+     ファのマーク位置であると、この変数の値に関係なくマルチバイト非
+     ASCII文字に対してバックスラッシュ列を用いる。
+
+ -- Variable: print-length
+     この変数の値は、任意のリスト、ベクトル、ブールベクトルを表示すると
+     きの最大要素数である。表示するオブジェクトがこれより多くの要素を持
+     つと、「…」で省略する。
+
+     値が`nil'（デフォルト）であると無制限。
+
+          (setq print-length 2)
+               => 2
+          (print '(1 2 3 4 5))
+               -| (1 2 ...)
+               => (1 2 ...)
+
+ -- Variable: print-level
+     この変数の値は、表示するときの括弧や角括弧の入れ子の最大の深さ。こ
+     の制限を越える任意のリストやベクトルは「…」で省略する。値が`nil'
+     （デフォルト）であると無制限。
+
+
+File: elisp-ja, Node: Minibuffers, Next: Command Loop, Prev: Read and Print, Up: Top
+
+ミニバッファ
+************
+
+"ミニバッファ"（minibuffer）は、単純な数値前置引数ではなく、より複雑な
+引数を読み取るためにEmacsのコマンドが使う特別なバッファです。これらの引
+数には、ファイル名、バッファ名、（`M-x'での）コマンド名があります。ミニ
+バッファは、エコー領域と同様に、フレームの最下行に表示されますが、引数
+を読み取るときにのみ表示されます。
+
+* Menu:
+
+* Intro to Minibuffers::      Basic information about minibuffers.
+* Text from Minibuffer::      How to read a straight text string.
+* Object from Minibuffer::    How to read a Lisp object or expression.
+* Minibuffer History::	      Recording previous minibuffer inputs
+				so the user can reuse them.
+* Completion::                How to invoke and customize completion.
+* Yes-or-No Queries::         Asking a question with a simple answer.
+* Multiple Queries::	      Asking a series of similar questions.
+* Reading a Password::	      Reading a password from the terminal.
+* Minibuffer Misc::           Various customization hooks and variables.
+
+
+
+File: elisp-ja, Node: Intro to Minibuffers, Next: Text from Minibuffer, Prev: Minibuffers, Up: Minibuffers
+
+ミニバッファの紹介
+==================
+
+ほとんどの意味において、ミニバッファはEmacsの普通のバッファです。
+編集コマンドなどのバッファ*内*でのほとんどの操作は、
+ミニバッファでも普通に動作します。
+しかし、バッファを操作するコマンドの多くは、
+ミニバッファには適用できません。
+ミニバッファの名前はつねに`*Minibuf-NUMBER'という形式であって、
+変更できません。
+ミニバッファはミニバッファ専用の特別なウィンドウだけに表示されます。
+これらのウィンドウはつねにフレームの最下行に現れます。
+（ミニバッファを持たないフレームや、
+ミニバッファ用ウィンドウのみの特殊なフレームもある。
+*Note Minibuffers and Frames::を参照。）
+
+ミニバッファ用のウィンドウは通常は1行だけです。ウィンドウサイズを変更す
+るコマンドで一時的に大きさを変えられますが、ミニバッファから抜けると通
+常サイズに戻ります。ミニバッファ用ウィンドウのサイズを恒久的に変更する
+には、ミニバッファを使っていないときに、フレームの別のウィンドウにおい
+てウィンドウサイズを変更するコマンドを使います。ミニバッファだけを持つ
+フレームの場合、フレームのサイズを変更すればミニバッファのサイズを変更
+できます。
+
+すでにミニバッファが活性であるときにコマンドがミニバッファを使用することを
+"再帰ミニバッファ"と呼びます。
+最初のミニバッファの名前は` *Minibuf-0*'です。
+再帰ミニバッファは、名前の最後の数を増やして命名します。
+（名前は空白で始まるため、通常のバッファの一覧には表示されない。）
+再帰ミニバッファの中で、もっとも内側の（つまりもっとも再帰が深い）ものが
+活性なミニバッファです。
+これを単にミニバッファと呼びます。
+変数`enable-recursive-minibuffers'を設定すれば、
+再帰ミニバッファを許可したり禁止できます。
+あるいは、コマンドシンボルにこの名前の属性を入れます
+（*Note Minibuffer Misc::）。
+
+他のバッファと同様に、ミニバッファは複数のローカルキーマップ（*Note
+Keymaps::）を使うことがあります。これらには、さまざまな終了コマンドや補
+完コマンド（*Note Completion::）が含まれます。
+
+   * `minibuffer-local-map'は（補完なしの）普通の入力用。
+
+   * `minibuffer-local-ns-map'も同様だが、RETと同様にSPCで抜ける。これ
+     は主にMocklisp互換用に使われる。
+
+   * `minibuffer-local-completion-map'は弱い補完用。
+
+   * `minibuffer-local-completion-map'は強い補完や慎重な補完用。
+
+
+
+File: elisp-ja, Node: Text from Minibuffer, Next: Object from Minibuffer, Prev: Intro to Minibuffers, Up: Minibuffers
+
+ミニバッファでのテキスト文字列の読み取り
+========================================
+
+多くの場合、テキストを文字列として読み取るためにミニバッファを使います。
+Lispオブジェクトのテキスト表現を読み取るためにも使えます。
+ミニバッファでの入力のもっとも基本的な関数は
+`read-from-minibuffer'であり、どちらの目的にも使えます。
+
+多くの場合、Lisp関数の途中でミニバッファの入力関数を呼ぶべきではありません。
+そのかわりに、`interactive'の指定で、
+コマンドの引数を読み取る操作の一部として
+すべてのミニバッファ入力を行います。
+*Note Defining Commands::。
+
+ -- Function: read-from-minibuffer PROMPT-STRING &optional INITIAL-CONTENTS KEYMAP READ HIST DEFAULT INHERIT-INPUT-METHOD
+     この関数は、ミニバッファから入力を得るもっとも汎用の方法である。デ
+     フォルトでは、任意のテキストを受け取り文字列として返す。しかし、
+     READが`nil'以外であれば、`read'を用いてテキストをLispオブジェクト
+     へ変換する（*Note Input Functions::）。
+
+     この関数がまず行うことは、ミニバッファを活性にし、プロンプト
+     PROMPT-STRINGとともに表示することである。PROMPT-STRINGは文字列であ
+     ること。これで、ユーザーはミニバッファでテキストを編集できるように
+     なる。
+
+     ユーザーがミニバッファを抜けるコマンドを打つと、
+     `read-from-minibuffer'はミニバッファ内のテキストから戻り値を構築す
+     る。通常、当該テキストを含む文字列を返す。しかし、READが`nil'以外
+     であると、`read-from-minibuffer'はテキストを読み取った結果である
+     Lispオブジェクトを評価せずに返す。（読み取りについては*Note Input
+     Functions::。）
+
+     引数DEFAULTは、履歴コマンドで使うデフォルト値を指定する。これは文
+     字列か`nil'であること。READが`nil'以外である場合、ユーザーの入力が
+     空であるときには、`read'への入力としてもDEFAULTを用いる。しかし、
+     （READが`nil'である）通常の場合、ユーザーの入力が空のとき、
+     `read-from-minibuffer'はDEFAULTを返さずに空文字列`""'を返す。この
+     意味において、この関数は本章の他のミニバッファ用入力関数と異なる。
+
+     KEYMAPが`nil'以外であると、ミニバッファのローカルキーマップとして
+     用いる。KEYMAPを省略したり`nil'であると、`minibuffer-local-map'の
+     値をキーマップとして用いる。キーマップを指定することは、補完などの
+     さまざまな応用向けにミニバッファをカスタマイズするもっとも重要な方
+     法である。
+
+     引数HISTは、ミニバッファでの入力を保存し履歴コマンドを使用可能に
+     するために用いる履歴リスト変数を指定する。
+     デフォルトは`minibuffer-history'である。
+     *Note Minibuffer History::。
+
+     変数`minibuffer-allow-text-properties'が`nil'以外であると、返され
+     る文字列には、ミニバッファで指定されたテキスト属性が含まれる。さも
+     なければ、値を返すときにすべてのテキスト属性を取り除く。
+
+     引数INHERIT-INPUT-METHODが`nil'以外であると、ミニバッファに入るま
+     えにどのバッファにいたかに関わらず、そのバッファから現在の入力方式
+     （*Note Input Methods::）と`enable-multibyte-characters'（*Note
+     Text Representations::）の設定を継承する。
+
+     INITIAL-CONTENTSが文字列であれば、`read-from-minibuffer'は、ユーザー
+     がテキスト編集を始めるまえに、この文字列をミニバッファに挿入しその
+     末尾にポイントを置く。この文字列を初期内容とするミニバッファが現れ
+     る。
+
+     あるいは、INITIAL-CONTENTSは、`(STRING . POSITION)'という形式のコ
+     ンスセルでもよい。これは、文字列STRINGをミニバッファに挿入し、ポイ
+     ントは末尾にではなく先頭からPOSITION番目の文字に置くことを意味する。
+
+     *使用上の注意：*` ' 引数INITIAL-CONTENTSとDEFAULTは、多かれ少なか
+     れ同じことを行う代替方法を提供する。`read-from-minibuffer'の1つの
+     呼び出しにおいて、両者の機能を同時に使うことに意味はない。一般には、
+     DEFAULTを使うことを勧める。というのは、ユーザーがデフォルト値を望
+     む場合にはデフォルト値を挿入でき、それ以外の場合にはデフォルト値を
+     削除しなくてもよいからである。
+
+ -- Function: read-string PROMPT &optional INITIAL HISTORY DEFAULT INHERIT-INPUT-METHOD
+     この関数はミニバッファから文字列を読み取り、それを返す。引数
+     PROMPTとINITIALは、`read-from-minibuffer'と同様に使われる。使用す
+     るキーマップは`minibuffer-local-map'である。
+
+     省略可能な引数HISTORYは、`nil'以外であると、履歴リストと（省略可能
+     な）リスト内での初期位置を指定する。省略可能な引数DEFAULTは、ユー
+     ザー入力が空の場合に返されるデフォルト値であり、文字列であること。
+     省略可能な引数INHERIT-INPUT-METHODは、カレントバッファの入力方式を
+     継承するかどうかを指定する。
+
+     この関数は関数`read-from-minibuffer'のインターフェイスを単純化した
+     ものである。
+
+          (read-string PROMPT INITIAL HISTORY DEFAULT INHERIT)
+          ==
+          (let ((value
+                 (read-from-minibuffer PROMPT INITIAL nil nil
+                                       HISTORY DEFAULT INHERIT)))
+            (if (equal value "")
+                DEFAULT
+              value))
+
+ -- Variable: minibuffer-allow-text-properties
+     この変数が`nil'であると、`read-from-minibuffer'はミニバッファで指
+     定されたすべてのテキスト属性を返すまえに取り除く。すべてのミニバッ
+     ファが`read-from-minibuffer'を使うので、この変数はすべてのミニバッ
+     ファ入力に適用される。
+
+     この変数の値に関わらず、補完関数は無条件にテキスト属性を廃棄するこ
+     とに注意。
+
+ -- Variable: minibuffer-local-map
+     ミニバッファから読み取るときのデフォルトのローカルキーマップ。デフォ
+     ルトでは、以下のバインディングである。
+
+     `C-j'
+          `exit-minibuffer'
+
+     RET
+          `exit-minibuffer'
+
+     `C-g'
+          `abort-recursive-edit'
+
+     `M-n'
+          `next-history-element'
+
+     `M-p'
+          `previous-history-element'
+
+     `M-r'
+          `next-matching-history-element'
+
+     `M-s'
+          `previous-matching-history-element'
+
+ -- Function: read-no-blanks-input PROMPT &optional INITIAL INHERIT-INPUT-METHOD
+     この関数はミニバッファから文字列を読み取るが、
+     入力には白文字を許さず、白文字は入力を終らせる。
+     引数PROMPT、INITIAL、INHERIT-INPUT-METHODは、
+     `read-from-minibuffer'と同様に使われる。
+
+     これは関数`read-from-minibuffer'のインターフェイスを単純化したもの
+     であり、引数KEYMAPとして`minibuffer-local-ns-map'の値を渡す。キー
+     マップ`minibuffer-local-ns-map'では`C-q'を再バインドしないため、
+     クォートすれば空白を文字列に含めることが*できる*。
+
+          (read-no-blanks-input PROMPT INITIAL)
+          ==
+          (read-from-minibuffer PROMPT INITIAL minibuffer-local-ns-map)
+
+ -- Variable: minibuffer-local-ns-map
+     この組み込み変数は、関数`read-no-blanks-input'がミニバッファ用のロー
+     カルキーマップとして使うキーマップである。デフォルトでは、
+     `minibuffer-local-map'のバインディングに加えて以下のバインディング
+     である。
+
+     SPC
+          `exit-minibuffer'
+
+     TAB
+          `exit-minibuffer'
+
+     `?'
+          `self-insert-and-exit'
+
+
+
+File: elisp-ja, Node: Object from Minibuffer, Next: Minibuffer History, Prev: Text from Minibuffer, Up: Minibuffers
+
+ミニバッファでのLispオブジェクトの読み取り
+==========================================
+
+本節では、ミニバッファでLispオブジェクトを読み取る関数について述べます。
+
+ -- Function: read-minibuffer PROMPT &optional INITIAL
+     この関数はミニバッファを用いてLispオブジェクトを読み取り、
+     それを評価せずに返す。
+     引数PROMPTとINITIALは、
+     `read-from-minibuffer'と同様に使われる。
+
+     これは関数`read-from-minibuffer'のインターフェイスを単純化したもの
+     である。
+
+          (read-minibuffer PROMPT INITIAL)
+          ==
+          (read-from-minibuffer PROMPT INITIAL nil t)
+
+     初期入力として文字列`"(testing)"'を与えた例を示す。
+
+          (read-minibuffer
+           "Enter an expression: " (format "%s" '(testing)))
+
+          ;; 以下のようにミニバッファが表示される
+
+          ---------- Buffer: Minibuffer ----------
+          Enter an expression: (testing)-!-
+          ---------- Buffer: Minibuffer ----------
+
+     デフォルトとして初期入力を使うには、ユーザーはただちにRETを打てば
+     よい。あるいは、入力を編集する。
+
+ -- Function: eval-minibuffer PROMPT &optional INITIAL
+     この関数はミニバッファを用いてLisp式を読み取り、
+     それを評価してその結果を返す。
+     引数PROMPTとINITIALは、
+     `read-from-minibuffer'と同様に使われる。
+
+     この関数は`read-from-minibuffer'のインターフェイスを単純化したもの
+     である。
+
+          (eval-minibuffer PROMPT INITIAL)
+          ==
+          (eval (read-minibuffer PROMPT INITIAL))
+
+ -- Function: edit-and-eval-command PROMPT FORM
+     この関数はミニバッファを用いてLisp式を読み取り、それを評価する。
+     このコマンドと`eval-minibuffer'との違いは、
+     初期フォームFORMを省略できないことであり、
+     このフォームをテキスト文字列としではなく表示表現に
+     変換するLispオブジェクトとして扱うことである。
+     `prin1'を用いて表示するので、
+     これが文字列であると初期テキストにはダブルクォート文字（`"'）が現れる。
+     *Note Output Functions::。
+
+     `edit-and-eval-command'はまず、PROMPTをプロンプトとしてミニバッファ
+     を活性にする。続いて、ミニバッファにFORMの表示表現を挿入し、ユーザー
+     に編集させる。ユーザーがミニバッファから抜けると、編集後のテキスト
+     を`read'で読み取り評価する。評価結果が`edit-and-eval-command'の値
+     になる。
+
+     以下の例では、すでに正しいフォームである初期テキストの式をユーザー
+     に提示する。
+
+          (edit-and-eval-command "Please edit: " '(forward-word 1))
+
+          ;; 上の式を評価後には、ミニバッファは以下のようになる
+
+          ---------- Buffer: Minibuffer ----------
+          Please edit: (forward-word 1)-!-
+          ---------- Buffer: Minibuffer ----------
+
+     ただちにRETを打つと、ミニバッファから抜けて式を評価するので、ポイ
+     ントを1単語分先へ進めることになる。この例では、
+     `edit-and-eval-command'は`nil'を返す。
+
+
+
+File: elisp-ja, Node: Minibuffer History, Next: Completion, Prev: Object from Minibuffer, Up: Minibuffers
+
+ミニバッファの履歴
+==================
+
+"ミニバッファ履歴リスト"（minibuffer history list）はミニバッファでの以
+前の入力を記録し、ユーザーがそれらを手軽に再利用できるようにします。履
+歴リストは実際にはシンボルでありリストではありません。最新のものが先頭
+にある（以前の入力の）文字列のリストを値とする変数です。
+
+異なる種類の入力に用いる多くの別々の履歴リストがあります。ミニバッファ
+を利用するたびに適した履歴リストを指定するのは、Lispプログラマの責任で
+す。
+
+基本的なミニバッファ入力関数`read-from-minibuffer'と`completing-read'の
+両者は、読者が指定する履歴リストを省略可能な引数HISTとして受け付けます。
+指定可能な値はつぎのとおりです。
+
+VARIABLE
+     変数VARIABLE（シンボル）を履歴リストとして用いる。
+
+(VARIABLE . STARTPOS)
+     変数VARIABLE（シンボル）を履歴リストとして用い、初期履歴位置を
+     STARTPOS （履歴リストの最新要素を0とする整数）と仮定する。
+
+     STARTPOSを指定した場合、整合性を保つために、履歴リストの当該要素を
+     ミニバッファの初期内容にも指定すること。
+
+HISTを指定しなければ、デフォルトの履歴リスト`minibuffer-history'を用い
+る。その他の標準的な履歴リストについては以下を参照。読者が独自の履歴リ
+スト変数を作成してもよい。初めて使用するまえに単に`nil'で初期化しておく。
+
+`read-from-minibuffer'と`completing-read'の両者は履歴リストに新たな要素
+を自動的に追加し、リスト上の要素を再利用するためのコマンドをユーザーに
+提供する。履歴リストを使うために読者のプログラムで行うべきことは、履歴
+リストを初期化し必要なときにその名前を入力関数に渡すだけである。ミニバッ
+ファ入力関数が履歴リストを使用していないときには、履歴リストを変更して
+も安全である。
+
+標準的なミニバッファ履歴リスト変数を以下にあげておく。
+
+ -- Variable: minibuffer-history
+     ミニバッファの履歴入力用のデフォルトの履歴リスト。
+
+ -- Variable: query-replace-history
+     `query-replace'（および同様のコマンド）の引数用の履歴リスト。
+
+ -- Variable: file-name-history
+     ファイル名引数用の履歴リスト。
+
+ -- Variable: buffer-name-history
+     バッファ名引数用の履歴リスト。
+
+ -- Variable: regexp-history
+     正規表現引数用の履歴リスト。
+
+ -- Variable: extended-command-history
+     拡張コマンド名である引数用の履歴リスト。
+
+ -- Variable: shell-command-history
+     シェルコマンドである引数用の履歴リスト。
+
+ -- Variable: read-expression-history
+     Lisp式として評価する引数用の履歴リスト。
+
+
+

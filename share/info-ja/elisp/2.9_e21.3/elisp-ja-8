@@ -1,0 +1,1991 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Dynamic Loading, Next: Eval During Compile, Prev: Docs and Compilation, Up: Byte Compilation
+
+個別関数の動的ロード
+====================
+
+ファイルをコンパイルするとき、"動的関数ロード"（dynamic function
+loading、"遅延ロード"（lazy loading）ともいう）機能を指定できます。動的
+関数ロードでは、ロードするときにファイル内の関数定義をすべて読むわけで
+はありません。そのかわりに、各関数定義には、そのファイルを指す埋め草が
+入っています。それぞれの関数を初めて呼び出したときに、その完全な定義を
+ファイルから読み取り、埋め草を置き換えます。
+
+動的関数ロードの利点は、ファイルをロードするよりかなり速いことです。ユー
+ザーが呼び出せる数多くの別々の関数を収めたファイルにおいては、それらの
+1つだけを使って残りのものを使わないのであれば、これは有利なことです。キー
+ボードコマンドを提供する特別なモードには、しばしばこのような使い方のパ
+ターンがあります。ユーザーがモードを起動しても、提供するコマンドの一部
+しか使わないのです。
+
+動的関数ロードの機能には、ある種の欠点もあります。
+
+   * コンパイルしたファイルをロードしたあとにそのファイルを削除したり移
+     動したりすると、未ロードの残りの関数定義をEmacsはロードできない。
+
+   * コンパイルしたファイルを（新版をコンパイルするなどして）変更すると、
+     未ロードの関数をロードすると、無意味な結果になる。
+
+Emacsのファイル群をインストールした普通の状況では、このような問題は起き
+ないはずです。しかし、Lispファイルを読者が変更すると起こりえます。これ
+らの問題を回避するもっとも簡単な方法は、再コンパイルするたびに新たにコ
+ンパイルしたファイルをただちに再ロードすることです。
+
+バイトコンパイラは、コンパイル時に変数`byte-compile-dynamic'が`nil'以外
+であれば、動的関数ロードの機能を使います。動的ロードは特定のファイルで
+必要なだけですから、この変数をグローバルに設定しないでください。そのか
+わりにファイルにローカルな変数束縛を使って特定のソースファイルだけでこ
+の機能をオンにします。たとえば、ソースファイルの先頭行につぎのテキスト
+を書けば、そのようにできます。
+
+     -*-byte-compile-dynamic: t;-*-
+
+ -- Variable: byte-compile-dynamic
+     これが`nil'以外であると、バイトコンパイラは、動的関数ロードを使う
+     ように設定したコンパイル済みのファイルを生成する。
+
+ -- Function: fetch-bytecode FUNCTION
+     FUNCTIONを完全にロードしていないと、バイトコンパイルしたファイルか
+     らただちにFUNCTIONの定義をロードする。引数FUNCTIONは、バイトコード
+     関数オブジェクトか関数名である。
+
+
+
+File: elisp-ja, Node: Eval During Compile, Next: Byte-Code Objects, Prev: Dynamic Loading, Up: Byte Compilation
+
+コンパイル時の評価
+==================
+
+プログラムのコンパイル時に評価されるようなコードを書くための機能です。
+
+ -- Special form: eval-and-compile BODY
+     このフォームは、コンパイルしたり実行したり
+     （コンパイルしてあってもしてなくても）するときに
+     BODYを評価するように印を付ける。
+
+     BODYを別のファイルに収め、そのファイルを`require'で参照しても
+     同じ結果を得ることができる。
+     BODYが大きい場合には、そのほうが好ましい。
+
+ -- Special form: eval-when-compile BODY
+     このフォームは、コンパイルしたプログラムをロードするときではなく、
+     プログラムのコンパイル時にBODYを評価するように印を付ける。
+     コンパイラが評価した結果は、コンパイルしたプログラム内に定数として現れる。
+     ソースファイルをコンパイルせずにロードすると、
+     BODYを普通どおり評価する。
+
+     *Common Lispに関した注意：*` ' トップレベルでは、Common Lispの
+     `(eval-when (compile eval) ...)'の常套句に似ている。それ以外の箇所
+     では、Common Lispの`#.'リーダマクロは（解釈実行時ではなければ）
+     `eval-when-compile'が行うことに近い。
+
+
+
+File: elisp-ja, Node: Byte-Code Objects, Next: Disassembly, Prev: Eval During Compile, Up: Byte Compilation
+
+バイトコード関数オブジェクト
+============================
+
+バイトコンパイルした関数は、特別なデータ型、
+"バイトコード関数オブジェクト"（byte-code function objects）です。
+
+内部的には、バイトコード関数オブジェクトはベクトルによく似ています。し
+かし、評価時にこのデータ型が呼び出すべき関数として現れると、特別に扱い
+ます。バイトコード関数オブジェクトの表示表現はベクトルに似ていますが、
+開き角括弧`['のまえに余分に`#'が付きます。
+
+バイトコード関数オブジェクトには、少なくとも4つの要素が必要です。最大個
+数に制限はありませんが、最初の6つ個の要素にだけ普通の用途があります。つ
+ぎのとおりです。
+
+引数リスト
+     引数シンボルのリスト。
+
+バイトコード
+     バイトコード命令を収めた文字列。
+
+定数群
+     バイトコードが参照するLispオブジェクトのベクトル。関数名や変数名と
+     して使われるシンボルを含む。
+
+スタックサイズ
+     この関数に必要なスタックサイズの最大値。
+
+説明文字列
+     （あれば）説明文字列。さもなければ`nil'。説明文字列がファイルに収
+     めてあれば、値は数かリストである。実際の説明文字列を取得するには関
+     数`documentation'を使う（*Note Accessing Documentation::）。
+
+対話指定
+     （あれば）対話指定。これは文字列かLisp式。対話的でない関数では
+     `nil'。
+
+バイトコード関数オブジェクトの例を表示表現でつぎに示します。
+
+     #[(&optional arg)
+       "^H\204^F^@\301^P\302^H[!\207"
+       [arg 1 forward-sexp]
+       2
+       254435
+       "p"]
+
+バイトコードオブジェクトを作る基本的な方法は、
+`make-byte-code'を使うことです。
+
+ -- Function: make-byte-code &rest ELEMENTS
+     この関数は、ELEMENTSを要素とするバイトコード関数オブジェクトを作成
+     し返す。
+
+バイトコード関数の要素を自分で作ったりしないでください。それらに整合性
+がないと、その関数を呼び出すとEmacsがクラッシュすることもあります。これ
+らのオブジェクトの作成は、バイトコンパイラに任せるべきです。バイトコン
+パイラは整合した要素を作成します（と期待する）。
+
+バイトコードオブジェクトの要素は`aref'で参照できます。同じ要素群のベク
+トルを`vconcat'で作ることもできます。
+
+
+
+File: elisp-ja, Node: Disassembly, Prev: Byte-Code Objects, Up: Byte Compilation
+
+バイトコードの逆アセンブル
+==========================
+
+人間はバイトコードを書きません。それはバイトコンパイラの仕事です。しか
+し、好奇心を満たすために逆アセンブラを用意してあります。逆アセンブラは
+バイトコンパイルしたコードを人が読める形式に変換します。
+
+バイトコードインタープリタは、単純なスタックマシンとして実装してありま
+す。値を自前のスタックに積み、計算に使うためにスタックから取り出し、計
+算結果そのものはスタックにまた積みます。バイトコード関数から戻るときに
+は、スタックから値を取り出して関数値としてその値を返します。
+
+スタックに加えて、変数とスタックのあいだで値を転送することで、バイトコー
+ド関数は、普通のLisp変数を使ったり、束縛したり、値を設定できます。
+
+ -- コマンド: disassemble OBJECT &optional STREAM
+     この関数はOBJECTの逆アセンブルしたコードを出力する。STREAMを指定す
+     ると、そこへ出力する。さもなければ、逆アセンブルしたコードはストリー
+     ム`standard-output'へ出力する。引数OBJECTは関数名かラムダ式である。
+
+     特別な例外として、この関数を対話的に使うと、
+     `*Disassemble*'という名前のバッファへ出力する。
+
+`disassemble'関数の使用例を2つ示します。バイトコードとLispソースとの対
+応を取れるように特別なコメントを追加してありますが、これらは
+`disassemble'の出力には現れません。これらの例は、最適化してないバイトコー
+ドです。現在、バイトコードは、普通、最適化しますが、目的は果たせるので、
+例を書き換えてありません。
+
+     (defun factorial (integer)
+       "Compute factorial of an integer."
+       (if (= 1 integer) 1
+         (* integer (factorial (1- integer)))))
+          => factorial
+
+     (factorial 4)
+          => 24
+
+     (disassemble 'factorial)
+          -| byte-code for factorial:
+      doc: Compute factorial of an integer.
+      args: (integer)
+
+     0   constant 1              ; スタックに1を積む
+
+     1   varref   integer        ; 環境から`integer'の値を取得し、
+                                 ; スタックに積む
+
+     2   eqlsign                 ; スタックの先頭から2つの値を
+                                 ; 取りさって比較し、
+                                 ; 結果をスタックに積む
+
+     3   goto-if-nil 10          ; スタックの先頭から値を取りさり
+                                 ; 検査する。`nil'ならば10へ飛び、
+                                 ; さもなければつぎへ進む
+
+     6   constant 1              ; スタックに1を積む
+
+     7   goto     17             ; 17へ飛ぶ（この場合、関数は1を返す）
+
+     10  constant *              ; スタックにシンボル`*'を積む
+
+     11  varref   integer        ; スタックに`integer'の値を積む
+
+     12  constant factorial      ; スタックに`factorial'を積む
+
+     13  varref   integer        ; スタックに`integer'の値を積む
+
+     14  sub1                    ; スタックから`integer'を取りさり、
+                                 ; 減した新たな値をスタックに積む
+
+                                 ; スタックの現在の内容はつぎのとおり
+                                 ; - `integer'を減らした値
+                                 ; - `factorial'
+                                 ; - `integer'の値
+                                 ; - `*'
+
+     15  call     1              ; スタックの最初（先頭）要素を使って
+                                 ; 関数`factorial'を呼び出す
+                                 ; 戻り値をスタックに積む
+
+                                 ; スタックの現在の内容はつぎのとおり
+                                 ; - `factorial'の
+                                 ;      再帰呼び出しの結果
+                                 ; - `integer'の値
+                                 ; - `*'
+
+     16  call     2              ; スタックの最初の要素の2つ
+                                 ; （先頭の2つ）を引数として
+                                 ; 関数`*'を呼び出し
+                                 ; 結果をスタックに積む
+
+     17  return                  ; スタックの先頭要素を返す
+          => nil
+
+関数`silly-loop'は、少々複雑です。
+
+     (defun silly-loop (n)
+       "Return time before and after N iterations of a loop."
+       (let ((t1 (current-time-string)))
+         (while (> (setq n (1- n))
+                   0))
+         (list t1 (current-time-string))))
+          => silly-loop
+
+     (disassemble 'silly-loop)
+          -| byte-code for silly-loop:
+      doc: Return time before and after N iterations of a loop.
+      args: (n)
+
+     0   constant current-time-string  ; `current-time-string'を
+                                       ; スタックの先頭に積む
+
+     1   call     0              ; 引数なしで`current-time-string'を
+                                 ; 呼び出し、結果をスタックに積む
+
+     2   varbind  t1             ; スタックから値を取りさり、
+                                 ; `t1'に束縛する
+
+     3   varref   n              ; 環境から`n'の値を取得し、
+                                 ; 値をスタックに積む
+
+     4   sub1                    ; スタックの先頭から1を引く
+
+     5   dup                     ; スタックの先頭の値を複製する
+                                 ; つまり、スタックの先頭の値を
+                                 ; コピーして、それをスタックに積む
+
+     6   varset   n              ; スタックの先頭から値を取りさり、
+                                 ; 値を`n'に束縛する
+
+                                 ; つまり、`dup varset'は
+                                 ; スタックの先頭の値を取りさらずに
+                                 ; `n'にコピーする
+
+     7   constant 0              ; スタックに0を積む
+
+     8   gtr                     ; スタックから2つの値を取りさり、
+                                 ; Nが0より大きいか調べ、
+                                 ; 結果をスタックに積む
+
+     9   goto-if-nil-else-pop 17 ; `n' <= 0ならば17へ飛ぶ
+                                 ; （whileループから抜ける）
+                                 ; さもなければ、スタックの先頭から
+                                 ; 値を取りさり、つぎへ進む
+
+     12  constant nil            ; スタックに`nil'を積む
+                                 ; （これはループの本体）
+
+     13  discard                 ; ループの本体の結果を捨てる
+                                 ; （whileループは副作用のために}
+                                 ; つねに評価される
+
+     14  goto     3              ; whileループの先頭へ飛ぶ
+
+     17  discard                 ; スタックの先頭の値を取りさって、
+                                 ; whileループの結果を捨てる。
+                                 ; これは、9での飛び越しのために
+                                 ; 取りさっていない値`nil'
+
+     18  varref   t1             ; `t1'の値をスタックに積む
+
+     19  constant current-time-string  ; `current-time-string'を
+                                       ; スタックに積む
+
+     20  call     0              ; ふたたび`current-time-string'を
+                                 ; 呼び出す
+
+     21  list2                   ; スタックの先頭から2つの値を取りさり
+                                 ; それらのリストを作り、
+                                 ; リストをスタックに積む
+
+     22  unbind   1              ; ローカルの環境の`t1'の束縛を解く
+
+     23  return                  ; スタックの先頭の値を返す
+
+          => nil
+
+
+
+
+File: elisp-ja, Node: Advising Functions, Next: Debugging, Prev: Byte Compilation, Up: Top
+
+Emacs Lisp関数のアドバイス *(2003/10/30)*
+*****************************************
+
+"アドバイス"（advice）機能により、関数の既存の定義に追加できます。これ
+は、Emacsの他の部分で定義された関数をライブラリにおいてカスタマイズする
+見通しのよい方法です。関数全体を再定義するよりも見通しがよいのです。
+
+各関数は、個別に定義した複数の"アドバイス断片"を持てます。それぞれのア
+ドバイス断片は、明示的に"有効"にしたり無効にできます。任意の関数で有効
+にされたすべてのアドバイス断片が実際にその効果を発揮するのは、当該関数
+のアドバイスを"活性にした"ときか当該関数を定義したり再定義したときです。
+ここで、アドバイス断片を「有効にすること」と「活性にすること」は同じこ
+とでないので注意が必要です。
+
+*使用上の注意：*` ' アドバイスは、既存関数の既存の呼び出しのふるまいを
+変更するのに有用である。新たな呼び出しやキーバインドの新たなふるまいが
+必要な場合には、既存関数を使う新たな関数（や新たなコマンド）を定義する
+ほうが見通しがよい。
+
+* Menu:
+
+* Simple Advice::           A simple example to explain the basics of advice.
+* Defining Advice::         Detailed description of `defadvice'.
+* Around-Advice::           Wrapping advice around a function's definition.
+* Computed Advice::         ...is to `defadvice' as `fset' is to `defun'.
+* Activation of Advice::    Advice doesn't do anything until you activate it.
+* Enabling Advice::         You can enable or disable each piece of advice.
+* Preactivation::           Preactivation is a way of speeding up the
+                              loading of compiled advice.
+* Argument Access in Advice:: How advice can access the function's arguments.
+* Subr Arguments::          Accessing arguments when advising a primitive.
+* Combined Definition::     How advice is implemented.
+
+
+
+File: elisp-ja, Node: Simple Advice, Next: Defining Advice
+
+単純なアドバイスの例 *(2003/10/30)*
+===================================
+
+コマンド`next-line'は、ポイントを垂直に複数行移動します。標準バインドは
+`C-n'です。バッファの最終行で使うと、`next-line-add-newlines'が`nil'以
+外の場合(デフォルトは`nil') このコマンドは行を作るために改行を挿入し、
+その行に移動します。
+
+同様な機能を`previous-line'に追加したいとします。つまり、バッファの先頭
+に新たな行を挿入し、その行へ移動するのです。どのようにすればよいでしょ
+う？
+
+当該関数を再定義すればできますが、それではモジュール性がよくありません。
+アドバイス機能が見通しのよい代替方法を提供します。既存の関数定義を実際
+に変更したりその定義を参照することなく、関数定義に読者のコードを実質的
+に追加できます。つぎのように行います。
+
+     (defadvice previous-line (before next-line-at-end (arg))
+       "Insert an empty line when moving up from the top line."
+       (if (and next-line-add-newlines (= arg 1)
+                (save-excursion (beginning-of-line) (bobp)))
+           (progn
+             (beginning-of-line)
+             (newline))))
+
+この式は、関数`previous-line'に対する"アドバイス断片"を定義します。
+このアドバイス断片には`next-line-at-end'という名前が付きます。
+シンボル`before'により、
+`previous-line'の通常の定義を実行するまえに実行する
+"事前アドバイス"（before-advice）であることを意味します。
+`(arg)'は、アドバイス断片がどのように関数の引数を参照するかを指定します。
+
+このアドバイス断片が実行されると、必要な場面では新たに行を作りますが、
+その行へはポイントを移動しません。これはアドバイスを書く正しいやりかた
+です。というのは、通常の定義がこのあとに実行され、新たに挿入した行へ移
+動します。
+
+アドバイスを定義しても関数`previous-line'をただちには変更しません。つぎ
+のようにアドバイスを"活性にする"と変わります。
+
+     (ad-activate 'previous-line)
+
+これにより、関数`previous-line'に対して定義してあるアドバイスを使い始め
+ます。これ以降、`C-p'や`M-x'でユーザーが起動したのかLispから呼ばれたの
+かに関わらず、この関数を起動すると、まずアドバイスを実行してから関数の
+通常の定義を実行します。
+
+この例は、アドバイスの1つの"クラス"である事前アドバイスの例であり、関数
+の元定義のまえに実行されます。他に2つのアドバイスクラスがあります。元定
+義のあとに実行される"事後アドバイス"（after-advice）と元定義の起動を包
+み込む式を指定する"包囲アドバイス"（around-advice）です。
+
+
+
+File: elisp-ja, Node: Defining Advice, Next: Around-Advice, Prev: Simple Advice
+
+アドバイス定義 *(2003/10/30)*
+=============================
+
+アドバイス断片を定義するには、マクロ`defadvice'を使います。`defadvice'
+の呼び出しはつぎのような構文です。`defun'や`defmacro'の構文を基にしてい
+ますが、追加部分があります。
+
+     (defadvice FUNCTION (CLASS NAME
+                              [POSITION] [ARGLIST]
+                              FLAGS...)
+       [DOCUMENTATION-STRING]
+       [INTERACTIVE-FORM]
+       BODY-FORMS...)
+
+ここで、FUNCTIONはアドバイス対象となる関数（やマクロやスペシャルフォー
+ム）です。以後、アドバイスする対象を単に『関数』と書きますが、これには
+つねにマクロやスペシャルフォームを含みます。
+
+CLASSはアドバイスの"クラス"を指定し、
+`before'、`after'、`around'のいずれかです。
+事前アドバイス（`before'）は関数そのもののまえに実行されます。
+事後アドバイス（`after'）は関数そのもののあとに実行されます。
+包囲アドバイス（`around'）は関数自身の実行を包み込みます。
+事後アドバイスと包囲アドバイスでは、
+`ad-return-value'に設定することで戻り値を変更できます。
+
+ -- Variable: ad-return-value
+     アドバイスを実行しているとき、関数の元定義の実行を完了したあとでは、
+     この変数はその戻り値を保持する。すべてのアドバイスを完了すると、最
+     終的には、この値を呼び出し側へ返す。事後アドバイスと包囲アドバイス
+     では、この変数に別の値を設定することで戻り値を変更できる。
+
+引数NAMEはアドバイスの名前であり、`nil'以外のシンボルです。アドバイス名
+は、FUNCTIONの特定クラスのすべてのアドバイス断片から1つのアドバイス断片
+を一意に識別します。名前でアドバイス断片を参照でき、それを再定義したり
+有効にしたり無効にできます。
+
+通常の関数定義の引数リストのかわりに、アドバイス定義では異なる情報を必
+要とします。
+
+省略可能なPOSITIONは、指定したCLASSの現在のアドバイスリストのどこに新た
+なアドバイスを置くかを指定します。`first'、`last'、あるいは、0から数え
+始める位置を指定する数である必要があります（`first'は0と等価）。位置を
+指定しないとデフォルトは`first'です。当該クラスの既存位置の範囲を超えて
+いる場合には、先頭か末尾のどちらか近いほうになります。既存のアドバイス
+断片を再定義する場合には、値POSITIONは無視されます。
+
+省略可能なARGLISTは、アドバイスが使う引数リストを定義するために使います。
+これは、アドバイスを実行するために生成される結合定義（*Note Combined
+Definition::）の引数リストになります。その結果、アドバイスの式では、引
+数の値を参照するためにこのリストの引数変数を使えます。
+
+この引数リストは、関数の実際の呼び出し方を扱えるように、もとの関数の引
+数リストと互換性がある必要があります。2つ以上のアドバイス断片で引数リス
+トを指定している場合、すべてのアドバイスクラスの中で最初のもの（位置が
+最小のもの）を使います。
+
+残りの要素FLAGSは、このアドバイス断片の使い方に関する情報を指定するシン
+ボルです。正しいシンボルとそれらの意味はつぎのとおりです。
+
+`activate'
+     FUNCTIONに対するアドバイスをただちに活性にする。関数のアドバイスに
+     対する変更は、当該関数のアドバイスを活性にすると効果を持つようにな
+     る。このフラグは、FUNCTIONに対するこのアドバイス断片を定義した直後
+     にそのようにすることを指示する。
+
+     FUNCTIONが未定義（"未定義のアドバイス"（forward advice）と呼ぶ状況）
+     であるとこのフラグがすぐに効果を表すことはない。というのは、未定義
+     関数のアドバイスは活性にできないからである。しかし、FUNCTIONを定義
+     するとそのアドバイスは自動的に活性にされる。
+
+`protect'
+     このアドバイス断片をそれよりまえに実行されるコードやアドバイスによる
+     非ローカル脱出やエラーに対して保護する。
+     保護したアドバイス断片は、
+     フォーム`unwind-protect'の中に後始末として置かれ、
+     それよりまえに実行されるコードでエラーが発生したり`throw'を使っても
+     実行される。
+     *Note Cleanups::。
+
+`compile'
+     アドバイスの実行に使われる結合定義をコンパイルする。
+     `activate'とともに指定しないと、このフラグは無視する。
+     *Note Combined Definition::。
+
+`disable'
+     このアドバイス断片を当初は無効にしておき、
+     のちに明示的に有効にしない限り使われない。
+     *Note Enabling Advice::。
+
+`preactivate'
+     この`defadvice'をコンパイルしたりマクロ展開したときに、FUNCTIONに
+     対するアドバイスを活性にする。これにより現在のアドバイスの状態に応
+     じたアドバイス定義をコンパイルし、必要に応じて使われるようになる。
+     *Note Preactivation::。
+
+     この`defadvice'をバイトコンパイルする場合にのみ意味を持つ。
+
+省略可能なDOCUMENTATION-STRINGは、このアドバイス断片の説明文字列になり
+ます。FUNCTIONに対するアドバイスが活性であると、（`documentation'が返す）
+FUNCTIONの説明文は、関数の元定義の説明文字列とFUNCTIONのアドバイスすべ
+ての説明文字列の合成になります。
+
+省略可能なINTERACTIVE-FORMは、元関数の対話的ふるまいを変更するために指
+定します。2つ以上のアドバイス断片でINTERACTIVE-FORMを指定している場合、
+すべてのアドバイスの中で最初のもの（位置が最小のもの）が優先します。
+
+空リストでもかまわないBODY-FORMSは、アドバイスの本体です。アドバイスの
+本体では、引数、戻り値、束縛環境を参照／変更したり、いかなる種類の副作
+用を起こせます。
+
+*警告：*` ' マクロをアドバイスする場合、マクロはプログラムのコンパイル
+時に展開されるのであって、コンパイルしたプログラムの実行時に展開される
+のではないことに注意。アドバイスが使用するすべてのサブルーティンは、バ
+イトコンパイラがマクロを展開するときに必要になる。
+
+ -- コマンド: ad-unadvise FUNCTION
+     このコマンドはFUNCTIONからアドバイスを削除する。
+
+ -- コマンド: ad-unadvise-all
+     このコマンドはすべての関数からすべてのアドバイス断片を削除する。
+
+
+
+File: elisp-ja, Node: Around-Advice, Next: Computed Advice, Prev: Defining Advice
+
+包囲アドバイス *(2003/10/30)*
+=============================
+
+包囲アドバイスにより、関数の元定義を包み込むLisp式を書けます。関数の元
+定義を実行する場所を特別なシンボル`ad-do-it'で指定します。包囲アドバイ
+スの本体に現れたこのシンボルは、元定義（と内側の包囲アドバイス本体）の
+フォームを含んだ`progn'で置き換えられます。例を示しましょう。
+
+     (defadvice foo (around foo-around)
+       "Ignore case in `foo'."
+       (let ((case-fold-search t))
+         ad-do-it))
+
+これは、`foo'の元定義を実行するときに大文字小文字を区別しないで探索する
+ことを保証します。
+
+ -- Variable: ad-do-it
+     これは実際には変数ではないが、包囲アドバイス内では変数のように用い
+     る。関数の元定義と『より内側の』包囲アドバイスを実行する場所を指定
+     する。
+
+包囲アドバイスで`ad-do-it'を用いなければ、関数の元定義を実行しません。
+これは、元定義を完全に無効にする手段です。（さらに、内側の包囲アドバイ
+ス断片も無効にする）
+
+もし包囲アドバイスが`ad-do-it'を1つ以上用いていれば、関数の元定義がそれ
+ぞれの場所で実行される。これにより、包囲アドバイスは元の関数(とその中の
+関数に含まれる包囲アドバイス断片)を何度も実行できる。このように、元の関
+数を複数回実行するには、ループの中で`ad-do-it'を用いても可能である。
+
+
+
+File: elisp-ja, Node: Computed Advice, Next: Activation of Advice, Prev: Around-Advice
+
+計算アドバイス *(2003/10/30)*
+=============================
+
+マクロ`defadvice'は`defun'に似ていて、アドバイスのコードやアドバイスに
+関する他のすべての情報をソースコードで明示します。関数`ad-add-advice'を
+用いると、その詳細を計算で求めたアドバイスを作成できます。
+
+ -- Function: ad-add-advice FUNCTION ADVICE CLASS POSITION
+     `ad-add-advice'を呼び出すと、関数FUNCTIONに対するクラスCLASSのアド
+     バイス断片としてADVICEを追加する。引数ADVICEはつぎの形式である。
+
+          (NAME PROTECTED ENABLED DEFINITION)
+
+     ここで、PROTECTEDとENABLEDはフラグであり、DEFINITIONはアドバイスの
+     動作を指定する式である。ENABLEDが`nil'であると、このアドバイス断片
+     は当初は無効になる（*Note Enabling Advice::）。
+
+     FUNCTIONに指定したクラスCLASSのアドバイス断片がすでにあると、
+     POSITIONは新しいアドバイス断片をリストのどこに置くかを指定する。
+     POSITIONの値は、`first'、`last'、あるいは、（リストの先頭を0から数
+     えた）数である。範囲外の数はその範囲の先頭か末尾のどちらか近いほう
+     になる。また、POSITIONの値はすでに存在するアドバイス断片を再定義し
+     た時には無視される。
+
+     FUNCTIONに同じ名前のアドバイス断片ADVICEがすでにあると、引数
+     POSITIONは無視され、古いアドバイス断片を新しいもので置き換える。
+
+
+
+File: elisp-ja, Node: Activation of Advice, Next: Enabling Advice, Prev: Computed Advice
+
+アドバイスの活性化 *(2003/10/30)*
+=================================
+
+デフォルトでは、アドバイスを定義してもその効果は発揮されません。アドバ
+イスした関数のアドバイスを"活性"にして始めて効果を発揮します。
+`defadvice'でフラグ`activate'を指定すれば、関数にアドバイスを定義したと
+きに活性にできます。しかし、普通は、関数`ad-activate'や以下の活性化コマ
+ンドを呼び出すことで、関数のアドバイスを活性にします。
+
+アドバイスの定義操作と活性化操作を区別することで、アドバイスを追加する
+たびに関数を再定義することなる、関数に複数のアドバイス断片を効率よく追
+加できます。さらに重要なことは、関数を実際に定義するまえでも関数にアド
+バイスを定義できることです。
+
+関数のアドバイスを初めて活性にすると、関数の元定義を保存してから、関数
+に対する有効なアドバイス断片すべてを元定義と結合して新たな定義を作り出
+します。（現在無効にしてあるアドバイス断片は使用しない。*Note Enabling
+Advice::。）この定義をインストールし、以下に述べる条件に応じてバイトコ
+ンパイルする場合もあります。
+
+アドバイスを活性にするコマンドすべてにおいて、COMPILEが`t'であると、ア
+ドバイスを実装する結合定義をコンパイルします。
+
+ -- コマンド: ad-activate FUNCTION &optional COMPILE
+     このコマンドはFUNCTIONに対するアドバイスを活性にする。
+
+ -- コマンド: ad-deactivate FUNCTION
+     このコマンドはFUNCTIONのアドバイスを不活性にする。
+
+ -- コマンド: ad-deactivate-all
+     このコマンドはすべての関数に対するアドバイスを不活性にする。
+
+ -- コマンド: ad-update-all &optional COMPILE
+     このコマンドは、すでにアドバイスが活性になっているすべての関数のア
+     ドバイスを活性化させる。いくつかの関数のアドバイスを変更した時に役
+     に立つ。
+
+ -- コマンド: ad-activate-regexp REGEXP &optional COMPILE
+     このコマンドはREGEXPに一致する名前のすべてのアドバイス断片を活性に
+     する。より正確には、REGEXPに一致する名前のアドバイス断片を持つ任意
+     の関数のすべてのアドバイスを活性にする。
+
+ -- コマンド: ad-deactivate-regexp REGEXP
+     このコマンドはREGEXPに一致する名前のすべてのアドバイス断片を不活性
+     にする。より正確には、REGEXPに一致する名前のアドバイス断片を持つ任
+     意の関数のすべてのアドバイスを不活性にする。
+
+ -- コマンド: ad-update-regexp REGEXP &optional COMPILE
+     このコマンドはREGEXPに一致する名前のアドバイス断片を活性にするが、
+     すでにアドバイスが活性になっている関数に対するものだけである。
+
+     関数に対するアドバイスの再活性化は、
+     アドバイスを活性にしたあとに行った当該アドバイスの変更すべて
+     （有効にしたり無効にしたアドバイス断片を含む。
+     *Note Enabling Advice::）が効果を持つようにするのに便利である。
+
+ -- コマンド: ad-start-advice
+     関数を定義したり再定義したときにアドバイスを自動的に活性にする。こ
+     のモードをオンにすると、アドバイスを定義するとただちに効果を持つよ
+     うになる。
+
+ -- コマンド: ad-stop-advice
+     関数を定義したり再定義してもアドバイスを自動的には活性にしない。
+
+ -- User Option: ad-default-compilation-action
+     この変数は、関数に対するアドバイスを活性にした結果作られる結合定義
+     をコンパイルするかどうか制御します。
+
+     値が`always'であれば、無条件にコンパイルします。`nil'であれば常に
+     コンパイルしない。
+
+     値が`maybe'であれば、バイトコンパイラがすでに読み込まれていればコ
+     ンパイルを行う。値が`like-original'であれば、アドバイスされる関数
+     の元定義がコンパイルされていたり、組み込み関数(built-in function)
+     であれば、コンパイルを行う。
+
+     この変数は`ad-activate'(あるいは他の上記にあげた関数)のCOMPILE引数
+     が`nil'の場合のみ有効になります。もしその引数が`nil'でなければ、そ
+     のアドバイスがこの変数の値に関わらずコンパイルされます。
+
+『予約活性』（*Note Preactivation::）中にアドバイス定義を作成するとその
+定義はすでにコンパイルされているはずです。というのは、`preactivate'フラ
+グを指定した`defadvice'を含むファイルをバイトコンパイル中にそれが定義さ
+れたはずだからです。
+
+
+
+File: elisp-ja, Node: Enabling Advice, Next: Preactivation, Prev: Activation of Advice
+
+アドバイスの有効化と無効化 *(2003/10/30)*
+=========================================
+
+各アドバイス断片には、それを有効にするか無効にするかを指定するフラグが
+あります。アドバイス断片を有効にしたり無効にすることで、アドバイス断片
+を未定義にしたり再定義することなくオン／オフできます。たとえば、関数
+`foo'に対するアドバイス断片`my-advice'を無効にするには、つぎのようにし
+ます。
+
+     (ad-disable-advice 'foo 'before 'my-advice)
+
+この関数自身は、アドバイス断片の有効化フラグを変更するだけです。
+アドバイスした関数でこの変更の効果を発揮するには、
+`foo'のアドバイスを再度活性にする必要があります。
+
+     (ad-activate 'foo)
+
+ -- コマンド: ad-disable-advice FUNCTION CLASS NAME
+     このコマンドはFUNCTIONに対するクラスCLASS内の
+     NAMEで指名したアドバイス断片を無効にする。
+
+ -- コマンド: ad-enable-advice FUNCTION CLASS NAME
+     このコマンドはFUNCTIONに対するクラスCLASS内の
+     NAMEで指名したアドバイス断片を有効にする。
+
+正規表現を用いて、さまざまな関数に対する多数のアドバイス断片を一度に無
+効にすることもできます。この場合も、当該関数のアドバイスを再度活性にす
+ることで、その効果が発揮されます。
+
+ -- コマンド: ad-disable-regexp REGEXP
+     このコマンドは、すべての関数のすべてのクラスの
+     REGEXPに一致するアドバイス断片すべてを無効にする。
+
+ -- コマンド: ad-enable-regexp REGEXP
+     このコマンドは、すべての関数のすべてのクラスの
+     REGEXPに一致するアドバイス断片すべてを有効にする。
+
+
+
+File: elisp-ja, Node: Preactivation, Next: Argument Access in Advice, Prev: Enabling Advice
+
+予約活性 *(2003/10/30)*
+=======================
+
+アドバイスを実行するための結合定義を作成することは、
+ある程度手間がかかります。
+ライブラリで多数の関数をアドバイスしていると、
+ライブラリのロードが遅くなります。
+そのような場合、あらかじめ適切な結合定義を作成する
+"予約活性"（preactivation）を使えます。
+
+予約活性を使うには、`defadvice'でアドバイスを定義するときに
+フラグ`preactivate'を指定します。
+このような`defadvice'の呼び出しでは、
+（有効か無効に関わらず）このアドバイス断片と
+当該関数に対して現在有効になっている他のアドバイスを元定義
+に結合した定義を作成します。
+`defadvice'をコンパイルすると、その結合定義もコンパイルします。
+
+のちに関数のアドバイスを活性にしたとき、関数に対する有効にしたアドバイ
+スがこの結合定義の作成に使用したものに一致すると既存の結合定義を使いま
+す。そのため、新たに結合定義を作成する必要がなくなります。したがって、
+予約活性はけっしてまちがった結果を生じませんが、予約活性に用いたアドバ
+イスと活性にした有効なアドバイスが一致しないと利点はなくなります。
+
+不一致のために予約活性が正しく動作していない兆候の例を示します。
+
+   * アドバイスした関数の活性に通常より長くかかる。
+   * アドバイスした関数を活性にするとバイトコンパイラがロードされる。
+   * バイトコンパイラを意図して使っていないのに、
+     `features'の値に`byte-compile'が含まれる。
+
+関数自体が定義されるまえであってもコンパイル済みの予約活性したアドバイ
+スは正しく動作します。しかし、予約活性したアドバイスを*コンパイル*する
+ときには関数は定義済みである必要があります。
+
+予約活性したアドバイスが使われない理由を調べるよい方法はありません。で
+きることは、関数のアドバイスを活性にするまえに、（関数
+`trace-function-background'で）関数`ad-cache-id-verification-code'をト
+レースすることです。活性にしたあと、当該関数に対して
+`ad-cache-id-verification-code'が返した値を調べます。`verified'ならば予
+約活性したアドバイスが使われています。これ以外の値は、アドバイスが不適
+切と判断された理由に関する情報を与えます。
+
+*警告：*` ' 予約活性が失敗する場合が1つ知られている。現在のアドバイスの
+状態に一致しなくても、あらかじめ作成した結合定義を使ってしまう。これは、
+同一関数に対する同じクラスの同一名称であるが異なるアドバイス断片を2つの
+パッケージで定義している場合に発生する。このようなことは避けること。
+
+
+
+File: elisp-ja, Node: Argument Access in Advice, Next: Subr Arguments, Prev: Preactivation
+
+アドバイスからの引数の参照 *(2003/10/30)*
+=========================================
+
+アドバイス断片の本体からアドバイスする関数の引数を参照するもっとも簡単
+な方法は、関数定義で用いているものと同じ名前を使うことです。これには、
+元関数の引数の変数名を知る必要があります。
+
+多くの場合、この単純な方法で十分ですが、欠点もあります。アドバイス内に
+引数名を直接書き込むために、堅牢ではありません。関数の元定義が変更され
+ると、アドバイスは動作しません。
+
+他の方法は、アドバイスそのものに引数リストを指定することです。これは関
+数の元定義の引数名を知る必要はありませんが、制約もあります。関数に対す
+るすべてのアドバイスで同一の引数リストを使う必要があります。なぜなら、
+すべてのアドバイスに実際に使われる引数リストは、当該関数のアドバイス断
+片の最初のものだからです。
+
+より堅牢な方法は、活性にするときに、つまり、アドバイスを結合した定義を
+作成するときに適切なフォームに展開されるマクロを使うことです。参照用マ
+クロは、関数の引数変数への実引数の分配方法に依存しない実引数の位置で参
+照します。Emacs Lispにおいては、引数の意味は引数リスト内での位置で決ま
+るため、これは堅牢です。
+
+ -- Macro: ad-get-arg POSITION
+     位置POSITIONにある実引数を返す。
+
+ -- Macro: ad-get-args POSITION
+     位置POSITIONから始まる実引数のリストを返す。
+
+ -- Macro: ad-set-arg POSITION VALUE
+     位置POSITIONにある実引数の値を設定する。
+
+ -- Macro: ad-set-args POSITION VALUE-LIST
+     位置POSITIONから始まる実引数のリストにVALUE-LISTを設定する。
+
+例を示します。関数`foo'の定義はつぎのとおりであり、
+
+     (defun foo (x y &optional z &rest r) ...)
+
+つぎのように呼ばれるとします。
+
+     (foo 0 1 2 3 4 5 6)
+
+そうすると、`foo'の本体では、Xは0、Yは1、Zは2、Rは`(3 4 5 6)'です。この
+とき、`ad-get-arg'や`ad-get-args'は、つぎの値を返します。
+
+     (ad-get-arg 0) => 0
+     (ad-get-arg 1) => 1
+     (ad-get-arg 2) => 2
+     (ad-get-arg 3) => 3
+     (ad-get-args 2) => (2 3 4 5 6)
+     (ad-get-args 4) => (4 5 6)
+
+この例では、引数に値を設定できます。
+
+     (ad-set-arg 5 "five")
+
+の効果は、6番目の引数を`"five"'に変更します。`foo'の本体を実行するまえ
+にこのアドバイスが実行されると、本体内ではRは`(3 4 "five" 6)'になります。
+
+つぎは引数リストを変更する例です。
+
+     (ad-set-args 0 '(5 4 3 2 1 0))
+
+`foo'の本体を実行するまえにこのアドバイスが実行されると、
+`foo'の本体内では、
+Xは5、Yは4、Zは3、Rは`(2 1 0)'になります。
+
+これらの引数参照は、実際にはLispマクロとしての実装ではありません。アド
+バイス機構で特別に実装してあります。
+
+
+
+File: elisp-ja, Node: Subr Arguments, Next: Combined Definition, Prev: Argument Access in Advice
+
+subr引数リストの定義 *(2003/10/30)*
+===================================
+
+アドバイス機能が結合定義を作成するとき、元関数の引数リストを知る必要が
+あります。基本関数に対しては、これはつねに可能とは限りません。アドバイ
+スが引数リストを決定できないときには、`(&rest ad-subr-args)'を使います。
+これはつねに動作しますが、引数値のリストを作成するために効率的ではあり
+ません。`ad-define-subr-args'を使って、基本関数に対する適当な引数名を宣
+言できます。
+
+ -- Function: ad-define-subr-args FUNCTION ARGLIST
+     この関数は、関数FUNCTIONの引数リストとして
+     ARGLISTを使うことを指定する。
+
+たとえば、
+
+     (ad-define-subr-args 'fset '(sym newdef))
+
+は、関数`fset'の引数リストを指定します。
+
+
+
+File: elisp-ja, Node: Combined Definition, Prev: Subr Arguments
+
+結合定義 *(2003/10/30)*
+=======================
+
+関数には、N個(0からN-1として数えられる)の事前アドバイス
+（before-advice）、M個の包囲アドバイス（around-advice）、K個の事後アド
+バイス（after-advice）があるとします。保護したアドバイス断片はないと仮
+定すると、関数のアドバイスを実装するために作成される結合定義はつぎのよ
+うになります。
+
+     (lambda ARGLIST
+       [ [ADVISED-DOCSTRING] [(interactive ...)] ]
+       (let (ad-return-value)
+         before-0-body-form...
+              ....
+         before-N-1-body-form...
+         around-0-body-form...
+            around-1-body-form...
+                  ....
+               around-M-1-body-form...
+                  (setq ad-return-value
+                        apply original definition to ARGLIST)
+               end-of-around-M-1-body-form...
+                  ....
+            end-of-around-1-body-form...
+         end-of-around-0-body-form...
+         after-0-body-form...
+               ....
+         after-K-1-body-form...
+         ad-return-value))
+
+マクロはマクロとして再定義します。つまり、結合定義の先頭に`macro'を追加
+します。
+
+元関数やアドバイス断片のどれかに対話宣言があれば、対話宣言フォームが入
+ります。対話的な基本関数をアドバイスした場合には、アドバイスは特別な方
+法を使います。つまり、基本関数を`call-interactively'で呼び出して、基本
+関数自身が引数を読み取るようにします。この場合、アドバイスからは引数を
+参照できません。
+
+各クラスのさまざまなアドバイスの本体フォームは、それらの指定された順に
+組み立てられます。包囲アドバイスL（around-advice L）のフォーム群は、包
+囲アドバイスL - 1（around-advice L - 1）のフォームの1つに入ります。
+
+包囲アドバイスのもっとも内側では、
+
+     元定義をARGLISTに適用
+
+しますが、そのフォームは元関数の種類に依存します。変数
+`ad-return-value'には、その戻り値が設定されます。この変数はすべてのアド
+バイス断片から見えるので、アドバイスした関数から実際に戻るまえに、これ
+を参照したり変更できます。
+
+保護したアドバイス断片を含むアドバイスした関数の構造も同じです。唯一の
+違いは、フォーム`unwind-protect'により、アドバイス断片でエラーを起こし
+たり非ローカル脱出を行っても、保護したアドバイスが実行されることを保証
+します。包囲アドバイスを1つでも保護していると、その結果として、包囲アド
+バイス全体が保護されます。
+
+
+
+File: elisp-ja, Node: Debugging, Next: Read and Print, Prev: Advising Functions, Up: Top
+
+Lispプログラムのデバッグ
+************************
+
+Emacs Lispプログラムの問題点を調べるには、問題が発生したときにどのよう
+にプログラムを使っているかに依存して、3つの方法があります。
+
+   * プログラムを実行したときに問題が発生した場合には、実行中に何が起こっ
+     ているかを調べるためにLispデバッガを使える。通常のデバッガに加えて、
+     Emacsにはソースレベルデバッガedebugもある。本章では両者について述
+     べる。
+
+   * 構文的な問題があるためにLispがプログラムを読み取れないときには、
+     EmacsのLisp編集機能を使ってその場所を特定する。
+
+   * プログラムをバイトコンパイラでコンパイルするときに問題が発生すると
+     きには、コンパイラの入力バッファの調べ方を知る必要がある。
+
+* Menu:
+
+* Debugger::            How the Emacs Lisp debugger is implemented.
+* Edebug::		A source-level Emacs Lisp debugger.
+* Syntax Errors::       How to find syntax errors.
+* Compilation Errors::  How to find errors that show up in byte compilation.
+
+他の有用なデバッグツールは、ドリブルファイルです。
+ドリブルファイルをオープンしてあると、
+Emacsはすべてのキーボード入力をこのファイルにコピーします。
+あとでこのファイルを調べれば、どんな入力があったかわかります。
+*Note Terminal Input::。
+
+端末設定に関した問題を解決するには、
+関数`open-termscript'が有用です。
+*Note Terminal Output::。
+
+
+
+File: elisp-ja, Node: Debugger, Next: Syntax Errors, Prev: Debugging, Up: Debugging
+
+Lispデバッガ
+============
+
+通常の"Lispデバッガ"は、フォームの評価を一時停止する機能を提供します。
+評価を一時停止しているあいだ（"ブレーク"（break）と呼ばれる状態）は、
+実行時スタックを調べたり、ローカルやグローバル変数の値を調べたり、
+それらの値を変更できます。
+ブレークは再帰編集なので、Emacsの通常の編集機能すべてを使えます。
+デバッガを再帰的に起動するようなプログラムを実行することさえできます。
+*Note Recursive Editing::。
+
+* Menu:
+
+* Error Debugging::       Entering the debugger when an error happens.
+* Infinite Loops::	  Stopping and debugging a program that doesn't exit.
+* Function Debugging::    Entering it when a certain function is called.
+* Explicit Debug::        Entering it at a certain point in the program.
+* Using Debugger::        What the debugger does; what you see while in it.
+* Debugger Commands::     Commands used while in the debugger.
+* Invoking the Debugger:: How to call the function `debug'.
+* Internals of Debugger:: Subroutines of the debugger, and global variables.
+
+
+
+File: elisp-ja, Node: Error Debugging, Next: Infinite Loops, Prev: Debugger, Up: Debugger
+
+エラーによるデバッガの起動
+--------------------------
+
+デバッガへ入るもっとも重要な時期は、Lispエラーが発生したときです。これ
+により、エラーの直接原因を調べることができます。
+
+しかし、デバッガに入るのは、エラーの通常の帰結ではありません。多くのコ
+マンドは（バッファの末尾で`C-f'を使うなどの）不適切に起動されるとしばし
+ばLispエラーを生じますが、通常の編集ではそのたびにデバッガに入ったので
+はとても不便です。そのため、エラーによってデバッガに入りたい場合には、
+変数`debug-on-error'に`nil'以外を設定します。（コマンド
+`toggle-debug-on-error'はこれを簡単に行う。）
+
+ -- User Option: debug-on-error
+     この変数は、エラーが通知され処理されないときに
+     デバッガを呼び出すかどうか決定する。
+     `debug-on-error'が`t'であると、
+     すべての種類のエラー（`debug-ignored-errors'に指定したものを除く）
+     はデバッガを呼び出す。
+     `nil'であるとデバッガを呼び出さない。
+
+     その値はデバッガを呼び出すエラー条件のリストでもよい。たとえば、リ
+     スト`(void-variable)'にすると、「値を持たない変数に関したエラー」
+     のみがデバッガを起動する。
+
+     この変数が`nil'以外であると、
+     Emacsはプロセスのフィルタ関数や番兵に対してエラーハンドラを作成しない。
+     したがって、これらの関数でのエラーもデバッガを起動する。
+     *Note Processes::。
+
+ -- User Option: debug-ignored-errors
+     この変数は、デバッガに入らないエラーの種類を指定する。その値はエラー
+     条件シンボルや正規表現のリストである。エラーにこれらの条件シンボル
+     が含まれるかエラーメッセージが正規表現の1つに一致する場合には、
+     `debug-on-error'の値に関わらず当該エラーではデバッガに入らない。
+
+     この変数の通常の値は、編集ではしばしば発生するが、Lispプログラムの
+     バグではほとんど発生しないようなエラー群のリストである。しかし、
+     『ほとんど』は『けっして』ではない。このリストに一致するようなエラー
+     で読者のプログラムが失敗する場合、エラーをデバッグするにはこのリス
+     トを変更する必要がある。もっとも簡単な方法は、
+     `debug-ignored-errors'に`nil'を設定することである。
+
+ -- User Option: debug-on-signal
+     通常、`condition-case'で捕捉したエラーは、
+     たとえ`debug-on-error'が`nil'以外であっても、
+     けっしてデバッガを起動しない。
+     いいかえれば、デバッガを起動するまえに、
+     `condition-case'はエラー処理の機会を得るのである。
+
+     `debug-on-signal'に`nil'以外の値を設定すると、各エラーごとにデバッ
+     ガがまず機会を得る。`debug-on-error'と`debug-ignored-errors'の値で
+     指定される条件に一致すれば、`condition-case'に関わらずエラーはデバッ
+     ガを起動する。
+
+     *警告：*` ' この変数は強力な処方である！` ' Emacsのさまざまな部分
+     では通常の動作としてエラーを処理し、読者にはエラーが発生したことさ
+     えわからない。`debug-on-signal'に`nil'以外の値を設定するとそれらの
+     エラーでデバッガに入る。
+
+     *警告：*` '
+     `debug-on-error'が`nil'であると、
+     `debug-on-signal'は意味を持たない。
+
+ファイル`.emacs'をロード中に発生するエラーをデバッグするには、オプショ
+ン`--debug-init'を使います。これにより、`.emacs'のロード中は
+`debug-on-error'を`t'に束縛し、初期化ファイルでのエラーを捕捉する
+`condition-case'を迂回します。
+
+読者のファイル`.emacs'で`debug-on-error'を設定しても、その効果は
+`.emacs'のロードを終ると持続しません。（これはコマンド行オプション
+`--debug-init'の実装における好ましくない特性である。）`.emacs'で
+`debug-on-error'を恒久的に設定する最良の方法は、つぎのように、
+`after-init-hook'を用いることです。
+
+     (add-hook 'after-init-hook
+               '(lambda () (setq debug-on-error t)))
+
+
+
+File: elisp-ja, Node: Infinite Loops, Next: Function Debugging, Prev: Error Debugging, Up: Debugger
+
+無限ループのデバッグ
+--------------------
+
+プログラムが無限にループし戻ってこないときには、まず、ループを停止する
+必要があります。ほとんどのオペレーティングシステムでは、中断を意味する
+`C-g'を使います。
+
+普通に中断したのでは、プログラムが無限ループした理由に関する情報は得ら
+れません。より詳しい情報を得るには、変数`debug-on-quit'に`nil'以外を設
+定します。`C-g'による中断はエラーとは扱わないため、`C-g'の処理に関して
+`debug-on-error'はなんの効果もありません。同様に、`debug-on-quit'はエラー
+に関してなんの効果もありません。
+
+無限ループの途中でデバッガを起動できれば、デバッガでステップ実行コマン
+ドを使って先へ進めます。ループひとまわりをステップ実行すれば、問題を解
+決するに十分な情報を得られるはずです。
+
+ -- User Option: debug-on-quit
+     この変数は、`quit'が通知され処理されなかった場合に、
+     デバッガを呼び出すかどうかを決定する。
+     `debug-on-quit'が`nil'以外である場合、
+     （`C-g'を打って）中断するとデバッガを呼び出す。
+     `debug-on-quit'が`nil'であると、
+     中断してもデバッガを呼び出さない。
+     *Note Quitting::。
+
+
+
+File: elisp-ja, Node: Function Debugging, Next: Explicit Debug, Prev: Infinite Loops, Up: Debugger
+
+関数呼び出し時のデバッガの起動
+------------------------------
+
+プログラムの途中で発生する問題点を調べるための1つの有用な技法は、ある関
+数を呼び出すたびにデバッガに入ることです。問題を生じる関数に対してこの
+ようにしておき、当該関数をステップ実行するか、あるいは、問題が発生する
+直前に呼ばれる関数に対してこのようにしておき、その関数の呼び出しを終え
+てから、呼び出し側をステップ実行します。
+
+ -- コマンド: debug-on-entry FUNCTION-NAME
+     この関数は、FUNCTION-NAMEが呼び出されるたびにデバッガを起動するよ
+     うにする。当該関数の定義の最初のフォームとしてフォーム`(debug
+     'debug)'を挿入することでこれを行う。
+
+     Lispコードで定義した任意の関数は、解釈実行コードであろうとコンパイ
+     ル済みのコードであろうと、関数に入るときにブレークするようにできる。
+     関数がコマンドであると、Lispから呼ばれたときや対話的に呼ばれたとき
+     に（引数を読み取ってから）デバッガに入る。（Cで書いた）基本関数は、
+     この方法ではデバッグできない。
+
+     `debug-on-entry'を対話的に呼び出すと、
+     ミニバッファでFUNCTION-NAMEを問い合わせる。
+     その関数がすでに呼び出し時にデバッガを起動するようになっていると、
+     `debug-on-entry'はなにもしない。
+     `debug-on-entry'はつねにFUNCTION-NAMEを返す。
+
+     *注意：*` ' `debug-on-entry'を使ったあとに当該関数を再定義すると、
+     デバッガに入るためのコードがなくなる。実質的には、関数を再定義する
+     と呼び出し時にブレークする機能を取り消すことになる。
+
+          (defun fact (n)
+            (if (zerop n) 1
+                (* n (fact (1- n)))))
+               => fact
+          (debug-on-entry 'fact)
+               => fact
+          (fact 3)
+
+          ------ Buffer: *Backtrace* ------
+          Entering:
+          * fact(3)
+            eval-region(4870 4878 t)
+            byte-code("...")
+            eval-last-sexp(nil)
+            (let ...)
+            eval-insert-last-sexp(nil)
+          * call-interactively(eval-insert-last-sexp)
+          ------ Buffer: *Backtrace* ------
+
+          (symbol-function 'fact)
+               => (lambda (n)
+                    (debug (quote debug))
+                    (if (zerop n) 1 (* n (fact (1- n)))))
+
+ -- コマンド: cancel-debug-on-entry FUNCTION-NAME
+     この関数は、FUNCTION-NAMEに対する`debug-on-entry'の効果（呼び出し
+     時にブレークする）を取り消す。対話的に呼び出すと、ミニバッファで
+     FUNCTION-NAMEを問い合わせる。FUNCTION-NAMEが`nil'であったり空文字
+     列であると、すべての関数について、呼び出し時にブレークすることを取
+     り消す。
+
+     呼び出し時にブレークする設定をしていない関数に対して
+     `cancel-debug-on-entry'を呼び出してもなにもしない。つねに
+     FUNCTION-NAMEを返す。
+
+
+
+File: elisp-ja, Node: Explicit Debug, Next: Using Debugger, Prev: Function Debugging, Up: Debugger
+
+デバッガの明示的な起動
+----------------------
+
+読者のプログラムに式`(debug)'を書くと、その箇所でデバッガを呼び出すこと
+ができます。つまり、ソースファイルを訪問して適当な箇所にテキスト
+`(debug)'を挿入し、`C-M-x'と打ちます。*警告：*` ' 一時的なデバッグ目的
+でこれを行う場合には、ファイルを保存するまえにこの挿入箇所をもとに戻す
+こと！
+
+`(debug)'を挿入する箇所は、余分なフォームを評価してもその値を無視できる
+場所でなければなりません。（`(debug)'の値が無視されないと、プログラムの
+実行を変えてしまう！）もっとも適した一般的な場所は`progn'や暗黙の
+`progn'の内側です（*Note Sequencing::）。
+
+
+
+File: elisp-ja, Node: Using Debugger, Next: Debugger Commands, Prev: Explicit Debug, Up: Debugger
+
+デバッガの使い方
+----------------
+
+デバッガに入ると、それまで選択していたバッファをあるウィンドウに、
+`*Backtrace*'という名前のバッファを別のウィンドウに表示します。バックト
+レースバッファでは、各行は現在実行中のLisp関数の各レベルです。このバッ
+ファの先頭には、デバッガを起動するに至った理由（エラーで起動されたとき
+にはエラーメッセージと関連データ）を表すメッセージがあります。
+
+バックトレースバッファは読み出し専用であり、各文字をデバッガコマンドで
+あると定義した特別なメジャーモード、debuggerモードを使います。Emacsの通
+常の編集コマンドも使えます。したがって、エラー発生時に編集していたバッ
+ファを調べるためにウィンドウを切り替えたり、バッファを切り替えたり、ファ
+イルを訪れたり、その他のどんな編集でもできます。しかし、デバッガは再帰
+編集レベル（*Note Recursive Editing::）であるので、デバッグを終えるとき
+には、バックトレースバッファに戻ってからデバッガを（コマンド`q'で）終了
+するのが賢い方法です。デバッガを終了すると、再帰編集から抜けバックトレー
+スバッファを削除します。
+
+バックトレースバッファでは、実行中の関数とその引数の値を表示します。ま
+た、スタックフレームを記述する行へポイントを移動することでスタックフレー
+ムを指定できます。（スタックフレームとは、Lispインタープリタが関数の起
+動に関する情報を記録しておく場所である。）ポイントがある行に対応するフ
+レームを"カレントフレーム"（current frame）と呼びます。デバッガのある種
+のコマンドはカレントフレームに作用します。
+
+デバッガ自身はバイトコンパイルしたものを実行する必要があります。という
+のは、デバッガ自身が使用するスタックフレームのサイズを仮定しているから
+です。解釈実行だとこの仮定が成り立ちません。
+
+
+
+
+File: elisp-ja, Node: Debugger Commands, Next: Invoking the Debugger, Prev: Using Debugger, Up: Debugger
+
+デバッガコマンド
+----------------
+
+デバッガ内（debuggerモード）では、通常のカーソル移動コマンドに加えて以
+下の特別なコマンドを使えます。（ウィンドウやバッファの切り替えなどの
+Emacsの通常の機能も使えることに留意。）
+
+デバッガコマンドのもっとも重要な使い方はステップ実行であり、これにより
+制御の流れを調べることです。デバッガは、解釈実行版の関数の制御構造をス
+テップ実行できますが、バイトコンパイルした関数ではできません。バイトコ
+ンパイルした関数をステップ実行したい場合には、同じ関数を解釈実行版の定
+義に置き換える必要があります。（これには、関数のソースを訪れて、その定
+義内で`C-M-x'と打つ。）
+
+debuggerモードのコマンド一覧を以下に示します。
+
+`c'
+     デバッガを終了し実行を継続する。継続可能であれば、（デバッガ内で行っ
+     た変数値やデータ構造に対する変更などの副作用を除いて）デバッガを起
+     動しなかったかのようにプログラムの実行を再開する。
+
+     継続が可能なのは、関数呼び出し時や終了時、明示的な起動、中断により
+     デバッガに入った場合である。エラーが原因でデバッガが起動されたとき
+     には継続できない。
+
+`d'
+     実行を継続するが、任意のLisp関数を呼び出すとデバッガに入る。これに
+     より、式の部分式をステップ実行して部分式が計算する値やその動作を調
+     べることができる。
+
+     このようにしてデバッガを起動した関数呼び出しのスタックフレームには
+     自動的に印が付き、そのスタックから抜けるとデバッガがふたたび呼び出
+     される。この印を消すにはコマンド`u'を使う。
+
+`b'
+     フレームから抜けるとデバッガに入るようにカレントフレームに印を付け
+     る。このように印を付けたフレームには、バックトレースバッファでは星
+     印が付く。
+
+`u'
+     カレントフレームから抜けるときにデバッガに入らない。これは、当該フ
+     レームに対するコマンド`b'を取り消す。視覚的にはバックトレースバッ
+     ファの当該行から星印が取られる。
+
+`e'
+     ミニバッファでLisp式を読み取り、それを評価し、その値をエコー領域に
+     表示する。この操作の一環として、デバッガは重要なある種の変数やカレ
+     ントバッファを変更する。`e'はそれらの値をデバッガの外側の値に一時
+     的に復元するので、それらを調べたり変更したりできる。これによりデバッ
+     ガは透過的になる。対照的に、`M-:'はデバッガ内で特別なことは行わな
+     い。デバッガ内での変数値を表示する。
+
+`R'
+     `e'と同様であるが、バッファ`*Debugger-record*'での評価結果も保存す
+     る。
+
+`q'
+     デバッグ中のプログラムを終了する。Emacsのトップレベルのコマンド実
+     行へ戻る。
+
+     `C-g'でデバッガへ入ったが、実際には中断したいのであってデバッグは
+     したくない場合にはコマンド`q'を使う。
+
+`r'
+     デバッガから値を指定して戻る。その値は、ミニバッファで式を読み取り、
+     それを評価して得る。
+
+     （`b'で指定したり`d'でフレームに入ることで）Lispの呼び出しフレーム
+     から抜けでたためにデバッガが起動された場合に、コマンド`r'は有用で
+     ある。コマンド`r'で指定した値は、当該フレームの値として使われる。
+     このコマンドは、`debug'を呼び出してその戻り値を使う場合にも有用で
+     ある。さもなければ、`r'は`c'と同じ効果であり、指定した戻り値は関係
+     ない。
+
+     エラーでデバッガに入った場合には`r'は使えない。
+
+
+
+File: elisp-ja, Node: Invoking the Debugger, Next: Internals of Debugger, Prev: Debugger Commands, Up: Debugger
+
+デバッガの起動
+--------------
+
+ここでは、デバッガを起動するために使われる関数`debug'の詳細を述べます。
+
+ -- Function: debug &rest DEBUGGER-ARGS
+     この関数はデバッガに入る。`*Backtrace*'（あるいはデバッガの第2レベ
+     ルに再帰的に入ると`*Backtrace*<2>'など）という名前のバッファに切り
+     替え、Lisp関数の呼び出しスタックに関する情報でこのバッファを満たす。
+     そして再帰編集に入りdebuggerモードのバックトレースバッファを表示す
+     る。
+
+     debuggerモードのコマンド`c'や`r'で再帰編集から抜けだし、`debug'は
+     それ以前のバッファに切り替え`debug'を呼び出したところへ戻る。これ
+     は、関数`debug'が呼び出し側へ戻る唯一の手段である。
+
+     DEBUGGER-ARGSの使い途は、`debug'が引数の残りをバッファ
+     `*Backtrace*'の先頭に表示し、ユーザーが読めるようにすることである。
+     以下に述べる場合を除いて、これがこれらの引数の*唯一*の用途である。
+
+     `debug'の第1引数が特定の値を持つ場合、特別な意味がある。（通常、こ
+     れらの値はEmacs内部で用いるだけであり、プログラマが`debug'を呼ぶと
+     きには使わない。）以下にこれらの特別な値を示す。
+
+     `lambda'
+          第1引数が`lambda'であると、`debug-on-next-call'が`nil'以外で
+          あるために関数に入るときに`debug'を呼び出したことを意味する。
+          デバッガはバッファの先頭にテキスト行`Entering:'を表示する。
+
+     `debug'
+          第1引数が`debug'であると、関数に入るときにデバッガを起動する
+          ようになっていたために`debug'を呼び出したことを示す。デバッガ
+          は、`lambda'の場合と同様に、`Entering:'を表示する。さらに、当
+          該関数のスタックフレームに関数から戻るときにデバッガを起動す
+          るように印を付ける。
+
+     `t'
+          第1引数が`t'であると、`debug-on-next-call'が`nil'以外であると
+          きにフォームの並びを評価したために`debug'を呼び出したことを示
+          す。デバッガはバッファの先頭行につぎの行を表示する。
+
+               Beginning evaluation of function call form:
+
+     `exit'
+          第1引数が`exit'であると、スタックフレームから抜けるときにデバッ
+          ガを呼び出すように印を付けたスタックフレームから抜けたことを
+          示す。この場合、`debug'の第2引数はフレームからの戻り値である。
+          デバッガはバッファの先頭行に`Return value:'に続けて戻り値を表
+          示する。
+
+     `error'
+          第1引数が`error'であると、エラーや`quit'が通知されたが処理さ
+          れないためにデバッガに入ったことを示し、`Signaling:'に続けて
+          通知されたエラーと`signal'の引数を表示する。たとえばつぎのと
+          おり。
+
+               (let ((debug-on-error t))
+                 (/ 1 0))
+
+               ------ Buffer: *Backtrace* ------
+               Signaling: (arith-error)
+                 /(1 0)
+               ...
+               ------ Buffer: *Backtrace* ------
+
+          エラーが通知されたときには、変数`debug-on-error'は`nil'以外で
+          あるはずである。`quit'が通知されたときには、変数
+          `debug-on-quit'は`nil'以外であるはずである。
+
+     `nil'
+          明示的にデバッガに入るときには、DEBUGGER-ARGSの先頭として
+          `nil'を使う。DEBUGGER-ARGSの残りはバッファの先頭行に表示され
+          る。この機能を用いてメッセージを表示でき、たとえば、`debug'を
+          呼び出した条件の覚え書きにする。
+
+
+
+File: elisp-ja, Node: Internals of Debugger, Prev: Invoking the Debugger, Up: Debugger
+
+デバッガの内部
+--------------
+
+本節では、デバッガが内部的に使用する関数や変数について述べます。
+
+ -- Variable: debugger
+     この変数の値は、デバッガを起動するために呼び出す関数である。その値
+     は、可変個数の引数を取る関数（あるいは典型的には関数名）であること。
+     その関数でなんらかのデバッガに入ると仮定する。この変数のデフォルト
+     値は`debug'。
+
+     Lispが関数に渡す最初の引数で、呼び出した理由を表す。引数の規約は
+     `debug'に記述してある。
+
+ -- コマンド: backtrace
+     この関数は、現在活性なLisp関数呼び出しのトレースを表示する。これは、
+     `debug'がバッファ`*Backtrace*'を満たすために用いる関数である。どの
+     関数呼び出しが活性であるかを判断するためにスタックを参照する必要が
+     あるためCで書いてある。戻り値はつねに`nil'。
+
+     以下の例では、Lisp式で明示的に`backtrace'を呼び出す。これにより、
+     バックトレースをストリーム`standard-output'に出力する。ここではバッ
+     ファ`backtrace-output'に出力する。バックトレースの各行は、1つの関
+     数呼び出しを表す。関数の引数値すべてが判ればそれらを行に表示する。
+     それらが計算途中であれば、その旨を行に表示する。スペシャルフォーム
+     の引数は省略する。
+
+          (with-output-to-temp-buffer "backtrace-output"
+            (let ((var 1))
+              (save-excursion
+                (setq var (eval '(progn
+                                   (1+ var)
+                                   (list 'testing (backtrace))))))))
+
+               => nil
+
+          ----------- Buffer: backtrace-output ------------
+            backtrace()
+            (list ...computing arguments...)
+            (progn ...)
+            eval((progn (1+ var) (list (quote testing) (backtrace))))
+            (setq ...)
+            (save-excursion ...)
+            (let ...)
+            (with-output-to-temp-buffer ...)
+            eval-region(1973 2142 #<buffer *scratch*>)
+            byte-code("...  for eval-print-last-sexp ...")
+            eval-print-last-sexp(nil)
+          * call-interactively(eval-print-last-sexp)
+          ----------- Buffer: backtrace-output ------------
+
+     文字`*'は、抜け出るときにデバッガを起動する印が付いているフレーム
+     を表す。
+
+
+ -- Variable: debug-on-next-call
+     この変数が`nil'以外であると、つぎに`eval'、`apply'、`funcall'を呼
+     び出すまえにデバッガを呼び出すことを指定する。デバッガに入ると
+     `debug-on-next-call'を`nil'に設定する。
+
+     デバッガのコマンド`d'は、この変数を設定することで動作する。
+
+ -- Function: backtrace-debug LEVEL FLAG
+     この関数は、LEVELの深さのスタックフレームに値FLAGに応じてフレーム
+     から抜け出るときのデバッガ呼び出しの印を付ける。FLAGが`nil'以外で
+     あると、のちに当該フレームから抜けるとデバッガに入る。非ローカルな
+     脱出で当該フレームから抜けるときにもデバッガに入る。
+
+     この関数はデバッガのみが使用する。
+
+ -- Variable: command-debug-status
+     この変数は、現在の対話的コマンドのデバッグ状況を記録する。コマンド
+     が対話的に呼び出されるたびに、この変数は`nil'に束縛される。デバッ
+     ガはこの変数に設定することで、同じコマンドの起動中にデバッガが将来
+     起動された場合に備えて情報を残すことができる。
+
+     デバッガにとっては、通常のグローバル変数ではなくこの変数を使う利点
+     は、以降のコマンド起動にデータが繰り越さないことである。
+
+ -- Function: backtrace-frame FRAME-NUMBER
+     関数`backtrace-frame'は、Lispデバッガで使うことを意図している。深
+     さFRAME-NUMBERのスタックフレームで進行中の計算に関する情報を返す。
+
+     当該フレームで引数の評価を完了していなければ（あるいはスペシャル
+     フォーム）、値は`(nil FUNCTION ARG-FORMS...)'。
+
+     当該フレームで引数の評価を完了し関数を呼び出していれば、値は`(t
+     FUNCTION ARG-VALUES...)'。
+
+     戻り値において、FUNCTIONは評価したリストのCARであるか、マクロ呼び
+     出しでは`lambda'式である。関数に引数`&rest'があれば、リスト
+     ARG-VALUESの残りで表現される。
+
+     FRAME-NUMBERが範囲外であると、`backtrace-frame'は`nil'を返す。
+
+
+
+
+
+
+File: elisp-ja, Node: Edebug, Next: Syntax Errors, Prev: Debugger, Up: Debugging
+
+edebug
+======
+
+edebugはEmacs Lispプログラムのソースレベルデバッガであり、つぎのことを
+行えます。
+
+   * 各式の前後で停止して評価をステップ実行する。
+
+   * 条件付きブレークポイント、無条件ブレークポイントを設定する。
+
+   * 指定した条件が真の場合に停止する（グローバルブレークイベント）。
+
+   * 各停止位置や各ブレークポイントで停止し低速／高速トレースする。
+
+   * edebugの外側であるかのように、式の結果を表示したり式を評価する。
+
+   * edebugが表示を更新するたびに、自動的に式の並びを再評価しその結果を
+     表示する。
+
+   * 関数の出入りに関するトレース情報を出力する。
+
+   * エラーが発生すると停止する。
+
+   * edebug自身のフレームを省いて、バックトレースを表示する。
+
+   * マクロや定義フォームに対して引数の評価を指定する。
+
+   * 基本的なカバレッジテストや頻度数計測を行う。
+
+以下の最初の3つの節では、edebugを使うのに十分な情報を与えます。
+
+* Menu:
+
+* Using Edebug::		Introduction to use of Edebug.
+* Instrumenting::		You must instrument your code
+				  in order to debug it with Edebug.
+* Modes: Edebug Execution Modes. Execution modes, stopping more or less often.
+* Jumping::			Commands to jump to a specified place.
+* Misc: Edebug Misc.		Miscellaneous commands.
+* Breakpoints::			Setting breakpoints to make the program stop.
+* Trapping Errors::		trapping errors with Edebug.
+* Views: Edebug Views.		Views inside and outside of Edebug.
+* Eval: Edebug Eval.			Evaluating expressions within Edebug.
+* Eval List::			Expressions whose values are displayed
+				  each time you enter Edebug.
+* Printing in Edebug::		Customization of printing.
+* Trace Buffer::		How to produce trace output in a buffer.
+* Coverage Testing::		How to test evaluation coverage.
+* The Outside Context::		Data that Edebug saves and restores.
+* Instrumenting Macro Calls::	Specifying how to handle macro calls.
+* Options: Edebug Options.	Option variables for customizing Edebug.
+
+
+
+File: elisp-ja, Node: Using Edebug
+
+edebugの使い方
+--------------
+
+edebugでLispプログラムをデバッグするには、デバッグしたいLispコードをま
+ず"処置"（instrument）しておく必要があります。これを行う簡単な方法は、
+関数やマクロの定義にポイントを移動してから、`C-u C-M-x'（前置引数を指定
+した`eval-defun'）を実行します。コードを処置する別の方法については、
+*Note Instrumenting::。
+
+関数をいったん処置しておけば、当該関数を呼び出すとedebugを活性にします。
+edebugが活性になると実行を停止し、
+読者が選択したedebugの実行モードに応じて、
+関数をステップ実行したりデバッグコマンドを検査しながら
+表示を更新しつつ実行を継続します。
+デフォルトの実行モードはステップ実行であり、
+いったん実行を停止します。
+*Note Edebug Execution Modes::。
+
+edebugでは、デバッグ中のLispコードのソースを表示したEmacsバッファを読者
+は見ます。このバッファを"ソースコードバッファ"と呼びます。このバッファ
+は一時的に読み出し専用です。
+
+左端の矢印は、関数の実行中の行を表します。ポイントの初期位置は関数の実
+行中の行にありますが、読者自身がポイントを移動すると変わります。
+
+（以下の）`fac'の定義を処置してから`(fac 3)'を実行したとすると、つぎの
+ようになります。ポイントは`if'のまえの開き括弧にあります。
+
+     (defun fac (n)
+     =>-!-(if (< 0 n)
+           (* n (fac (1- n)))
+         1))
+
+edebugが関数内で実行を停止できる箇所を"停止位置"（stop point）と呼びま
+す。これらは、リストである各部分式の前後と各変数参照のうしろにあります。
+関数`fac'の中にある停止位置をピリオドで示します。
+
+     (defun fac (n)
+       .(if .(< 0 n.).
+           .(* n. .(fac (1- n.).).).
+         1).)
+
+ソースコードバッファでは、Emacsのlispモードのコマンドに加えてedebugの特
+別なコマンドを使えます。たとえば、つぎの停止位置まで実行するにはedebug
+コマンドSPCを打ちます。`fac'に入ったあとでSPCを1回打つと、つぎのような
+表示になります。
+
+     (defun fac (n)
+     =>(if -!-(< 0 n)
+           (* n (fac (1- n)))
+         1))
+
+式のうしろでedebugが実行を停止すると、式の値をエコー領域に値を表示しま
+す。
+
+多用される他のコマンドには、停止位置にブレークポイントを設定する`b'、ブ
+レークポイントに達するまで実行する`g'、edebugを終了してトップレベルのコ
+マンドループへ戻る`q'があります。edebugのコマンド一覧を表示するには`?'
+を打ちます。
+
+
+
+File: elisp-ja, Node: Instrumenting
+
+edebug向けの処置
+----------------
+
+Lispコードのデバッグにedebugを使うためには、コードをまず"処置"する必要
+があります。コードを処置すると、適当な箇所でedebugを起動する追加のコー
+ドを挿入します。
+
+いったんedebugをロードすると、コマンド`C-M-x'（`eval-defun'）は再定義さ
+れます。定義内で前置引数を指定して起動すると定義を評価するまえに処置す
+るようになります。（ソースコード自体は変更しない。）変数
+`edebug-all-defs'が`nil'以外であると、前置引数の意味を逆にします。つま
+り、前置引数を指定し*ない限り*、`C-M-x'は関数定義を処置します。変数
+`edebug-all-defs'のデフォルト値は`nil'です。コマンド`M-x
+edebug-all-defs'は変数`edebug-all-defs'の値をトグルします。
+
+`edebug-all-defs'が`nil'以外であると、コマンド`eval-region'、
+`eval-current-buffer'、`eval-buffer'もそれらが評価する定義を処置します。
+同様に、`edebug-all-forms'は、定義以外のフォームであっても
+`eval-region'が*任意*のフォームを処置するかどうか制御します。これは、ミ
+ニバッファでのロードや評価には適用されません。コマンド`M-x
+edebug-all-forms'はこのオプションをトグルします。
+
+別のコマンド`M-x edebug-eval-top-level-form'は、`edebug-all-defs'と
+`edebug-all-forms'の値に関わらず任意のトップレベルのフォームを処置する
+ために使えます。
+
+edebugが動作中は、コマンド`I'（`edebug-instrument-callee'）で、ポイント
+のうしろのフォームから呼ばれる関数やマクロの定義を処置済みでなければ処
+置できます。これは、edebugが当該関数のソースを探せる場合にのみ可能です。
+edebugをロード後には、`eval-region'は、処置していないものも含めて、評価
+した各定義の位置を記録しています。関数を処置後に呼び出してステップ実行
+するコマンド`i'（*Note Jumping::）も参照してください。
+
+edebugは、標準のスペシャルフォームすべて、式を引数とする
+`interactive'フォーム、無名ラムダ式、他の定義フォームをどのように処置す
+るかわかっています。edebugは、マクロ呼び出しを引数に持つユーザー定義マ
+クロをどのように処置すべきかわかりませんから、読者がそれを指示する必要
+があります。詳しくは、*Note Instrumenting Macro Calls::。
+
+edebugは、あるセッションで初めてコードを処置する場合、フック
+`edebug-setup-hook'を実行してからそれに`nil'を設定します。これを利用す
+ると、読者が使用するパッケージに対応したedebug用仕様（*Note
+Instrumenting Macro Calls::）をedebugを使用する場合にのみロードするよう
+にできます。
+
+定義から処置を取り除くには、処置しないような方法でその定義を単に再評価
+するだけです。けっして処置せずにフォームを評価する方法は2つあります。ファ
+イルを`load'するか、ミニバッファで`eval-expression'（`M-:'）を使います。
+
+edebugが処置中に構文エラーを検出すると、コードのエラー箇所にポイントを
+置いて、エラー`invalid-read-syntax'を通知します。
+
+edebugの内側で使える他の評価関数については*Note Edebug Eval::。
+
+
+
+File: elisp-ja, Node: Edebug Execution Modes
+
+edebugの実行モード
+------------------
+
+edebugには読者がデバッグしているプログラムを実行するための実行モードが
+複数あります。これらを"edebugの実行モード"と呼びます。これらをメジャー
+モードやマイナモードと混同しないでください。edebugの実行モードは、停止
+するまでにどの程度edebugが実行を継続するか、たとえば、各停止位置で停止
+するのかつぎのブレークポイントまで継続するのか、また、停止するまでに評
+価の進行状況をどの程度edebugが表示するのかを決定します。
+
+通常、あるモードにおいて、プログラムを継続するコマンドを打つことで
+edebugの実行モードを指定します。以下にそれらのコマンドの一覧を示します。
+`S'を除くすべてのコマンドは、少なくともある程度プログラムの実行を再開し
+ます。
+
+`S'
+     停止：` 'プログラムをいっさい実行せずに、edebugコマンドの入力を待
+     つ（`edebug-stop'）。
+
+`SPC'
+     ステップ実行：` 'つぎに出会う停止位置で止まる
+     （`edebug-step-mode'）。
+
+`n'
+     つぎ：` '式のうしろでつぎに出会う停止位置で止まる
+     （`edebug-next-mode'）。
+     *Note Edebug Misc::の`edebug-forward-sexp'も参照。
+
+`t'
+     トレース：` 'edebugの各停止位置で1秒間休止する
+     （`edebug-trace-mode'）。
+
+`T'
+     高速トレース：` '各停止位置で表示を更新するが休止しない
+     （`edebug-Trace-fast-mode'）。
+
+`g'
+     実行：` 'つぎのブレークポイントまで実行する
+     （`edebug-go-mode'）。
+     *Note Breakpoints::。
+
+`c'
+     継続：` '各ブレークポイントで1秒間休止してから継続する
+     （`edebug-continue-mode'）。
+
+`C'
+     高速継続：` '各ブレークポイントへポイントを移動するが休止しない
+     （`edebug-Continue-fast-mode'）。
+
+`G'
+     非停止実行：` 'ブレークポイントを無視する
+     （`edebug-Go-nonstop-mode'）。
+     `S'や編集コマンドを打てば停止できる。
+
+一般に、上記一覧の上にある実行モードほど下にあるものに比べるとプログラ
+ムをゆっくり実行、つまり、早く停止します。
+
+実行中やトレース中には、edebugコマンドをなにか打てば実行に割り込めます。
+edebugはつぎの停止位置でプログラムを止め、読者が打ったコマンドを実行し
+ます。たとえば、実行中に`t'を打てば、つぎの停止位置でトレースモードに切
+り替わります。単に実行を停止するには`S'を使います。
+
+読者の関数が入力を読み取る場合、実行に割り込むつもりで打った文字を関数
+が読み取ってしまうかもしれません。読者のプログラムがいつ入力するかに注
+意していれば、このような意図しない結果を避けることができます。
+
+本節で述べたコマンドを含むキーボードマクロは動作しません。つまり、プロ
+グラムを再開するためにedebugから抜けるとキーボードマクロの制御を失って
+しまいます。これを修正するのは簡単ではありません。また、edebugの外側で
+キーボードマクロを定義したり実行しても、edebug内のコマンドにはなんの影
+響もありません。これは普通は利点です。しかし、オプション
+`edebug-continue-kbd-macro' （*Note Edebug Options::）も参照してくださ
+い。
+
+edebugの新たなレベルに入ると、変数`edebug-initial-mode'の値を実行モード
+の初期値とします。デフォルトでは、これはステップ実行モードを指定します。
+処置した関数を1つのコマンドから複数回呼び出すなどしてedebugの同一レベル
+に再度入ることができることに注意してください。
+
+
+
+
+File: elisp-ja, Node: Jumping
+
+ジャンプ
+--------
+
+本節で述べるコマンドは、指定した位置に達するまで実行します。`i'を除くす
+べてのものは、停止する場所に一時的なブレークポイントを設定してから実行
+モードに移行します。意図したブレークポイントより先に別のブレークポイン
+トに達しても実行を停止します。ブレークポイントについて詳しくは*Note
+Breakpoints::。
+
+非ローカル脱出は、読者が意図したプログラムの停止すべき一時的なブレーク
+ポイントを迂回するため、これらのコマンドは非ローカル脱出があると意図し
+たように動作しません。
+
+`h'
+     ポイント位置付近の停止位置まで進む（`edebug-goto-here'）。
+
+`f'
+     プログラムの式1つ分先へ進む（`edebug-forward-sexp'）。
+
+`o'
+     囲んでいるS式の終りまでプログラムを実行する。
+
+`i'
+     ポイントのあとのフォームから呼ばれる関数やマクロへ進む。
+
+コマンド`h'は、一時的なブレークポイントを使って、ポイント位置付近の停止
+位置まで進みます。ブレークポイントについて詳しくは*Note Breakpoints::。
+
+コマンド`f'は、プログラムの式1つ分先へ進みます。より正確には、`C-M-f'に
+よる移動箇所へ一時的なブレークポイントを設定し、プログラムがブレークポ
+イントで停止するような実行モードで実行します。
+
+前置引数Nを指定すると、ポイント位置からN個先のS式に一時的なブレークポイ
+ントを設定します。囲んでいるリストの残り要素数がNより少なければ、囲んで
+いる式の末尾で停止します。
+
+`C-M-f'の移動先はプログラムが実際に停止するであろう箇所です。これが正し
+くない場合もあり、たとえば、`cond'では正しくありません。
+
+コマンド`f'は、柔軟性のために、停止位置ではなくポイント位置で
+`forward-sexp'を使います。*現在の停止位置から*式1つだけ実行したい場合に
+は、まず`w'と打ってポイントを停止位置に移動してから`f'を打ちます。
+
+コマンド`o'は式から『出る』まで実行します。ポイントを含むS式の末尾に一
+時的なブレークポイントを置きます。このS式が関数定義そのものである場合に
+は、`o'は定義の最後のS式の手前まで実行します。現在この箇所にいた場合に
+は、関数から戻ってから停止します。いいかえれば、最後のS式のあとに位置し
+ていない限り、このコマンドは現在実行中の関数から抜けません。
+
+コマンド`i'は、ポイント位置のあとにあるリストフォームから呼ばれる関数や
+マクロへ進み、最初に出会った停止位置で止まります。そのフォームはこれか
+ら評価されるフォームである必要はありません。しかし、評価されるフォーム
+が関数呼び出しである場合には、引数を評価するまえにこのコマンドを使うこ
+とを覚えておいてください。さもないとこのコマンドを使う時期が遅すぎます。
+
+コマンド`i'は、呼び出す関数やマクロが処置されていないとそれらを処置しま
+す。これは便利ですが、それらの関数やマクロは、明示的に処置を取り除かな
+い限り、処置したままになります。
+
+
+
+File: elisp-ja, Node: Edebug Misc
+
+edebugのその他のコマンド
+------------------------
+
+edebugの他のコマンドを以下に示します。
+
+`?'
+     edebugのヘルプメッセージを表示する（`edebug-help'）。
+
+`C-]'
+     1つまえのレベルのコマンドレベルへ戻る（`abort-recursive-edit'）。
+
+`q'
+     エディタのトップレベルのコマンドループへ戻る（`top-level'）。
+     edebugのすべての動作中のレベルを含めて、すべての再帰編集レベルから
+     抜ける。しかし、フォーム`unwind-protect'や`condition-case'で保護し
+     た処置済みのコードがあるとデバッガを再開する。
+
+`Q'
+     `q'と同様であるが保護したコードでも停止しない
+     （`top-level-nonstop'）。
+
+`r'
+     もっとも最近の式の既知の結果をエコー領域に再表示する
+     （`edebug-previous-result'）。
+
+`d'
+     わかりやすいようにedebug自体の関数を除外してバックトレースを表示す
+     る（`edebug-backtrace'）。
+
+     edebugのバックトレースバッファでは、標準のデバッガのようにはデバッ
+     ガのコマンドを使えない。
+
+     実行を継続するとバックトレースバッファは自動的に削除される。
+
+edebugの再帰編集から、edebugを再帰的に活性にするコマンドを起動できます。
+edebugが活性であるときにはいつでも`q'でトップレベルへ戻るか、`C-]'で1つ
+の再帰編集レベルを抜けることができます。保留している評価すべてのバック
+トレースは`d'で表示できます。
+
+
+
+File: elisp-ja, Node: Breakpoints
+
+ブレークポイント
+----------------
+
+edebugのステップ実行モードは、つぎの停止位置に達すると実行を停止します。
+edebugが実行を止める方法は3つあります。ブレークポイント、グローバルブレー
+ク条件、ソースのブレークポイントです。
+
+edebugを使用中には、読者がテスト中のプログラムに"ブレークポイント"
+（breakpoint）、つまり、実行を停止すべき箇所を設定できます。*Note
+Using Edebug::で定義した任意の停止位置にブレークポイントを設定できます。
+ブレークポイントの設定や解除において対象となる停止位置は、ソースコード
+バッファのポイント位置かそのあとにある停止位置です。ブレークポイントに
+関するedebugコマンドはつぎのとおりです。
+
+`b'
+     ポイント位置かそのうしろにある停止位置にブレークポイントを設定する
+     （`edebug-set-breakpoint'）。前置引数を指定すると、一時的なブレー
+     クポイントになる（そこでプログラムが停止すると解除される）。
+
+`u'
+     ポイント位置かそのうしろにある停止位置の（あれば）ブレークポイント
+     を解除する（`edebug-unset-breakpoint'）。
+
+`x CONDITION RET'
+     CONDITIONが`nil'以外の値に評価される場合にのみプログラムを停止する
+     条件付きブレークポイントを設定する
+     （`edebug-set-conditional-breakpoint'）。前置引数を指定すると、一
+     時的なブレークポイントになる。
+
+`B'
+     現在の定義内にあるつぎのブレークポイントにポイント位置を移動する
+     （`edebug-next-breakpoint'）。
+
+edebug内では、`b'でブレークポイントを設定し、`u'で解除できます。まず目
+的のedegugの停止位置にポイント位置を移動し、`b'を打ってその箇所にブレー
+クポイントを設定したり、`u'を打ってその箇所のブレークポイントを解除しま
+す。設定されていないブレークポイントを解除しても、なにも起こりません。
+
+定義を再評価したり再処置すると、その中のブレークポイントすべてを解除し
+ます。
+
+"条件付きブレークポイント"（conditional breakpoint）は、プログラムがこ
+の箇所に達するたびに条件を検査します。条件を評価中に発生するどんなエラー
+も無視し、`nil'として扱います。条件付きブレークポイントを設定するには
+`x'を使い、条件式はミニバッファで指定します。すでに条件付きブレークポイ
+ントを設定してある停止位置に条件付きブレークポイントを設定し直すと、そ
+れまでの条件式がミニバッファに入るので編集できます。
+
+ブレークポイントを設定するコマンドに前置引数を指定すると、条件付き／無
+条件ブレークポイントを"一時的"なものにできます。一時的ブレークポイント
+でプログラムが停止すると、そのブレークポイントは自動的に解除されます。
+
+edebugのモードが非停止実行でなければ、edebugはブレークポイントでつねに
+停止するか休止します。非停止実行モードでは、ブレークポイントを完全に無
+視します。
+
+ブレークポイントの場所を確認するには、コマンド`B'を使います。同じ関数内
+のポイント箇所のうしろにあるブレークポイントか、後続のものがなければ最
+初のブレークポイントにポイント位置を移動します。このコマンドは実行を継
+続しません。バッファ内で単にポイントを移動するだけです。
+
+* Menu:
+
+* Global Break Condition::	Breaking on an event.
+* Source Breakpoints::	Embedding breakpoints in source code.
+
+
+
+

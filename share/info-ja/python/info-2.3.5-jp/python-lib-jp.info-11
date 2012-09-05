@@ -1,0 +1,1267 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: 進んだ使い方,  Next: ドキュメンテーション文字列内の例をどうやって認識するのか?,  Prev: 例外については?,  Up: doctest
+
+進んだ使い方
+------------
+
+doctest をどのように動作させるかを制御する、いくつかのモジュール
+レベルの関数が利用できます。
+
+`debug(module, name)'
+     doctest を含む単一のドキュメンテーション文字列をデバッグします。
+
+     デバッグしたいドキュメンテーション文字列の入った MODULE
+     (またはドットで区切ったモジュール名) と、(モジュール内の)
+     デバッグしたいドキュメンテーション文字列を持つオブジェクトの NAME
+     を指定してください。
+
+     doctest の例が展開され (`testsource()' 関数を参照してください)、
+     一次ファイルに書き込まれます。次に Python デバッガ `pdb'
+     がこのファイルに対して起動されます。 _Added in Python version 2.3_
+
+`testmod()'
+     この関数は doctest への基本的なインタフェース提供します。
+     この関数は  `Tester' のローカルなインスタンスを生成し、
+     このクラスの適切なメソッドを動作させ、結果をグローバルな `Tester'
+     インスタンスである `master' に統合します。
+
+     `testmod()' が提供するよりも細かい制御を行うには、 `Tester'
+     のインスタンスを自作のポリシで作成するか、 `master'
+     のメソッドを直接呼び出します。詳細は `Tester.__doc__'
+     を参照してください。
+
+`testsource(module, name)'
+     doctest の例をドキュメンテーション文字列から展開します。
+
+     展開したいテストの入った MODULE  (またはドットで区切られた
+     モジュールの名前) と、展開したいテストの入った docstring を
+     持つオブジェクトの (モジュール内の) NAME を与えます。
+
+     doctest 内の例は Python コードの入った文字列として返されます。
+     例中での予想される出力のブロックは Python のコメントに変換
+     されます。 _Added in Python version 2.3_
+
+`DocTestSuite([module])'
+     モジュールにおける doctest のテストプログラムを
+     ``unittest'.TestSuite' に変換します。
+
+     返される `TestSuite' は unittest フレームワークで動作する
+     ためのもので、モジュール内の各 doctest を走らせます。 doctest
+     のいずれかが失敗すると、生成された unittest が失敗し、
+     該当するテストを含むファイルと (時に近似の) 行番号を表示する
+     `DocTestTestFailure' 例外が送出されます。
+
+     オプションの MODULE 引数はテストするモジュールを与えます。
+     この値はモジュールオブジェクトか (場合によってはドットで区切られた)
+     モジュール名となります。指定されていなければ、この関数を呼び出している
+     モジュールが使われます。
+
+     `unittest' モジュールが `TestSuite' を
+     利用する数多くの方法のうちの一つを使った例を以下に示します:
+
+              import unittest
+              import doctest
+              import my_module_with_doctests
+          
+              suite = doctest.DocTestSuite(my_module_with_doctests)
+              runner = unittest.TextTestRunner()
+              runner.run(suite)
+
+     _Added in Python version 2.3_ _この関数は現在のところ `M.__test__'
+     を検索せず、 その検索テクニックはあらゆる点で `testmod()'
+     と合致しません。
+     将来のバージョンではこれら二つを収斂させる予定です。_
+
+
+File: python-lib-jp.info,  Node: ドキュメンテーション文字列内の例をどうやって認識するのか?,  Next: 注意事項,  Prev: 進んだ使い方,  Up: doctest
+
+ドキュメンテーション文字列内の例をどうやって認識するのか?
+---------------------------------------------------------
+
+ほとんどの場合、対話コンソールセッション上でのコピー／ペーストはうまく
+動作します -- 先頭部の空白が厳密に一貫性があるようにしてください
+(きちんとやるのが面倒ならタブとスペースを混在させることはできますが、
+`doctest' はあなたにとってのタブがどういう意味を持つのかを推測
+するようなことはしません)。
+
+     >>> # comments are ignored
+     >>> x = 12
+     >>> x
+     12
+     >>> if x == 13:
+     ...     print "yes"
+     ... else:
+     ...     print "no"
+     ...     print "NO"
+     ...     print "NO!!!"
+     ...
+     no
+     NO
+     NO!!!
+     >>>
+
+出力結果例  (expected output) は、コードを含む最後の `'>`>'>~'' or
+`'...~'' 行の直下に続きます。 また、出力結果例 (がある場合) は、次の
+`'>`>'>~'' 行か、全て空白文字の行まで続きます。
+
+細目事項:
+
+   * 出力結果例には、全て空白の行が入っていては
+     なりません。そのような行は出力結果例の終了を表すと見なされるからです。
+
+   * stdout への出力は取り込まれますが、stderr は取り込まれません (例外
+     発生時のトレースバックは別の方法で取り込まれます)。
+
+   *
+     対話セッションにおいて、バックスラッシュを用いて次の行に続ける場合や、
+     その他の理由でバックスラッシュを用いる場合、ドキュメンテーション文字列内
+     ではバックスラッシュを二重にしておく必要があります。これは、単に例を
+     記述しているのが文字列内であり、バックスラッシュをそのままにしておく
+     ためにはエスケープする必要があるからです。例えば以下のように:
+
+          >>> if "yes" == \\
+          ...     "y" +   \\
+          ...     "es":
+          ...     print 'yes'
+          yes
+
+   * 開始カラムはどこでもかまいません:
+
+            >>> assert "Easy!"
+                  >>> import math
+                      >>> math.floor(1.9)
+                      1.0
+
+     出力結果例の先頭部にある空白文字列は、出力をトリガしている
+     `'>`>'>~'' 行の先頭にある空白文字列と同じだけはぎとられます。
+
+
+File: python-lib-jp.info,  Node: 注意事項,  Next: 提言,  Prev: ドキュメンテーション文字列内の例をどうやって認識するのか?,  Up: doctest
+
+注意事項
+--------
+
+  1. `doctest' は出力結果例が厳密に一致するように厳しく要求します。 1
+     文字でも一致しないと、テストは失敗します。このため、Python が出力に
+     関して何を保証していて、何を保証していないかを正確に知っていないと
+     幾度か混乱させられることでしょう。
+     例えば、辞書を出力する際、Python はキーと値のペアが常に特定の順番で
+     並ぶよう保証してはいません。従って、以下のようなテスト
+
+          >>> foo()
+          {"Hermione": "hippogryph", "Harry": "broomstick"}
+          >>>
+
+     は脆弱です!  回避法としては、
+
+          >>> foo() == {"Hermione": "hippogryph", "Harry": "broomstick"}
+          True
+          >>>
+
+     としてください。別のやり方としては、
+
+          >>> d = foo().items()
+          >>> d.sort()
+          >>> d
+          [('Harry', 'broomstick'), ('Hermione', 'hippogryph')]
+
+     のようにします。
+
+     他のやり方もありますが、自分で考えてみてください。
+
+     もう一つのよくない発想は、
+
+          >>> id(1.0) # certain to fail some of the time
+          7948648
+          >>>
+
+     のようなオブジェクトアドレスの埋め込みです。
+
+     Python は浮動小数点の書式化をプラットフォームの C
+     ライブラリにゆだねて おり、C
+     ライブラリはこの点においてプラットフォーム間で非常に違いが大きい
+     ので、浮動小数点数もまたプラットフォーム間での微妙な出力の違いの原因となり
+     ます。
+
+          >>> 1./7  # risky
+          0.14285714285714285
+          >>> print 1./7 # safer
+          0.142857142857
+          >>> print round(1./7, 6) # much safer
+          0.142857
+
+     `I/2.**J' の形式になる数値は全てのプラットフォームで
+     安全であり、私はしばしば doctest の例にはその形式の数値を
+     使っています:
+
+          >>> 3./4  # utterly safe
+          0.75
+
+     単純な分数は人が理解し易いこともあり、よりよいドキュメント記述に
+     なります。
+
+  2. 一度だけしか実行してはならないコードには気をつけてください。
+
+     一度だけしか実行してはならないようなモジュールレベルのコードが
+     あるなら、`_test()' のフールプルーフ性の高い定義は
+
+          def _test():
+              import doctest, sys
+              doctest.testmod()
+
+     のようになります。
+
+
+File: python-lib-jp.info,  Node: 提言,  Prev: 注意事項,  Up: doctest
+
+提言
+----
+
+doctst の最初の言葉が "doc" になっていますが、この言葉、すなわち
+ドキュメントを最新に保つこと: こそが、作者が doctest を書いた理由です。
+たまたま doctest はテスト環境として面白いユニットになっていますが、
+それが第一目的なわけではありません。
+
+docstring の例は注意深く作成してください。これには学習を必要とする
+一種の芸術が存在します -- 最初はすんなりできないでしょう。
+例というものはドキュメントに紛れ無しの価値を与えます。よい例は
+しばしばいくつもの言葉に値します。可能なら、通常の場合の例、境界条件的な
+場合の例、興味深い微妙な例を示し、そして送出されうる例外各々について
+の例を示してください。おそらく境界条件的な例や微妙な例を対話シェル
+でテストしていることでしょう: doctest ではこうしたセッションを
+取り込み、かつ今後ずっと設計通りに動作するよう検証する作業を
+可能な限り簡単にしたいと思っています。
+
+注意深くやれば、例はユーザにとってはあまり意味のないものになるかも
+しれませんが、歳を経るにつれて、あるいは "状況が変わった" 際に
+何度も何度も正しく動作させるためにかかることになる時間を節約する
+形で見返りは選られます。私は今でも、自分の doctest で処理した例が
+"たいした事のない" 変更を行った際にうまく動作しなくなることに
+驚いています。
+
+網羅的なテストや、ドキュメントに対する付加価値のまったくない退屈な例の
+テストについては、`__test__' 辞書の方に定義してください。 `__test__'
+はそのための辞書です。
+
+
+File: python-lib-jp.info,  Node: unittest,  Next: test,  Prev: doctest,  Up: 各種サービス
+
+単体テストフレームワーク
+========================
+
+単体テストフレームワーク
+
+_Added in Python version 2.1_
+
+このPython単体テストフレームワーク は"PyUnit"とも呼ばれ、Kent Beck と
+Erich GammaによるJUnitのPython版です。JUnitはまたKentのSmalltalk用テスト
+フレームワークのJava版で、どちらもそれぞれの言語で業界標準の単体テストフ
+レームワークとなっています。
+
+PyUnitでは、テストの自動化・初期設定と終了処理の共有・テストの分類・テス
+ト実行と結果レポートの分離などの機能を提供しており、`unittest'の
+クラスを使って簡単にたくさんのテストを開発できるようになっています。
+
+PyUnitでは、テストを以下のような構成で開発します。
+
+"Fixture"
+     "test
+     fixture(テスト設備)"とは、テスト実行のために必要な準備や終了処
+     理を指します。例:テスト用データベースの作成・ディレクトリ・サーバプロセ
+     スの起動など。
+
+"テストケース"
+     "テストケース"はテストの最小単位で、各入力に対する結果をチェックしま
+     す。PyUnitでは、`TestCase'を基底クラスとしてテストケースを作成しま
+     す。
+
+"テストスイート"
+     "テストスイート"はテストケースとテストスイートの集まりで、同時に実行
+     しなければならないテストをまとめる場合に使用します。
+
+"テストランナー"
+     "テストランナー"はテストの実行と結果表示を管理するコンポーネントで
+     す。ランナーはグラフィカルインターフェースでもテキストインターフェースで
+     も良いですし、何も表示せずにテスト結果を示す値を返すだけの場合もありま
+     す。
+
+PyUnitでは、テストケースとfixtureを、`TestCase'クラスと
+`FunctionTestCase'クラスで提供しています。`TestCase'クラスは
+新規にテストを作成する場合に使用し、`FunctionTestCase'は既存のテス
+トをPyUnitに組み込む場合に使用します。fixtureの設定処理と終了処理は、
+`TestCase'では`setUp()'メソッドと`tearDown()'をオー
+バーライドして記述し、`FunctionTestCase'では初期設定・終了処理を行
+う既存の関数をコンストラクタで指定します。テスト実行時、まずfixtureの初
+期設定が最初に実行されます。初期設定が正常終了した場合、テスト実行後には
+テスト結果に関わらず終了処理が実行されます。`TestCase'の各インスタ
+ンスが実行するテストは一つだけで、fixtureは各テストごとに新しく作成され
+ます。
+
+テストスイートは`TestSuite'クラスで実装されており、複数のテストと
+テストスイートをまとめる事ができます。テストスイートを実行すると、スイー
+トと子スイートに追加されている全てのテストが実行されます。
+
+テストランナーは`run()'メソッドを持つオブジェクトで、
+`run()'は引数として`TestCase'か`TestSuite'オブジェク
+トを受け取り、テスト結果を`TestResult'オブジェクトで戻します。
+PyUnitではデフォルトでテスト結果を標準エラーに出力する
+`TextTestRunner'をサンプルとして実装しています。これ以外のランナー
+(グラフィックインターフェース用など)を実装する場合でも、特定のクラスから
+派生する必要はありません。
+
+See also:
+     `PyUnit Web Site'{The source for further information on PyUnit.}
+     `Simple Smalltalk Testing: With Patterns'{Kent Beck's original
+     paper on testing frameworks using the pattern shared by
+     `unittest'.}
+
+* Menu:
+
+* 基礎的な例::
+* テストの構成::
+* 既存テストコードの再利用::
+* クラスと関数 2::
+* TestCase オブジェクト::
+* TestSuite オブジェクト::
+* TestResultオブジェクト::
+* TestLoader オブジェクト::
+
+
+File: python-lib-jp.info,  Node: 基礎的な例,  Next: テストの構成,  Prev: unittest,  Up: unittest
+
+基礎的な例
+----------
+
+`unittest'モジュールには、テストの開発や実行の為の優れたツールが
+用意されており、この節では、その一部を紹介します。ほとんどのユーザとって
+は、ここで紹介するツールだけで十分でしょう。
+
+以下は、`random'モジュールの三つの関数をテストするスクリプトです。
+
+     import random
+     import unittest
+     
+     class TestSequenceFunctions(unittest.TestCase):
+     
+         def setUp(self):
+             self.seq = range(10)
+     
+         def testshuffle(self):
+             # make sure the shuffled sequence does not lose any elements
+             random.shuffle(self.seq)
+             self.seq.sort()
+             self.assertEqual(self.seq, range(10))
+     
+         def testchoice(self):
+             element = random.choice(self.seq)
+             self.assert_(element in self.seq)
+     
+         def testsample(self):
+             self.assertRaises(ValueError, random.sample, self.seq, 20)
+             for element in random.sample(self.seq, 5):
+                 self.assert_(element in self.seq)
+     
+     if __name__ == '__main__':
+         unittest.main()
+
+テストケースは、`unittest.TestCase'のサブクラスとして作成します。メ
+ソッド名が`test'で始まる三つのメソッドがテストです。テストランナー
+はこの命名規約によってテストを行うメソッドを検索します。
+
+これらのテスト内では、予定の結果が得られていることを確かめるために
+`assertEqual()'を、条件のチェックに`assert_()'を、例外が発
+生する事を確認するために`assertRaises()'をそれぞれ呼び出していま
+す。`assert'文の代わりにこれらのメソッドを使用すると、テストラン
+ナーでテスト結果を集計してレポートを作成する事ができます。
+
+`setUp()'メソッドが定義されている場合、テストランナーは各テストを
+実行する前に`setUp()'メソッドを呼び出します。同様に、
+`tearDown()'メソッドが定義されている場合は各テストの実行後に呼び
+出します。上のサンプルでは、それぞれのテスト用に新しいシーケンスを作成するため
+に`setUp()'を使用しています。
+
+サンプルの末尾が、簡単なテストの実行方法です。`unittest.main()'は、
+テストスクリプトのコマンドライン用インターフェースです。コマンドラインか
+ら起動された場合、上記のスクリプトから以下のような結果が出力されます:
+
+     ...
+     ----------------------------------------------------------------------
+     Ran 3 tests in 0.000s
+     
+     OK
+
+簡略化した結果を出力したり、コマンドライン以外からも起動する等のより細かい
+制御が必要であれば、`unittest.main()'を使用せずに別の方法でテストを
+実行します。例えば、上記サンプルの最後の2行は以下のように書くことができ
+ます:
+
+     suite = unittest.TestSuite()
+     suite.addTest(unittest.makeSuite(TestSequenceFunctions))
+     unittest.TextTestRunner(verbosity=2).run(suite)
+
+変更後のスクリプトをインタープリタや別のスクリプトから実行すると、以下の
+出力が得られます:
+
+     testchoice (__main__.TestSequenceFunctions) ... ok
+     testsample (__main__.TestSequenceFunctions) ... ok
+     testshuffle (__main__.TestSequenceFunctions) ... ok
+     
+     ----------------------------------------------------------------------
+     Ran 3 tests in 0.110s
+     
+     OK
+
+以上が`unittest'モジュールでよく使われる機能で、ほとんどのテスト
+ではこれだけでも十分です。基礎となる概念や全ての機能については以降の章を
+参照してください。
+
+
+File: python-lib-jp.info,  Node: テストの構成,  Next: 既存テストコードの再利用,  Prev: 基礎的な例,  Up: unittest
+
+テストの構成
+------------
+
+単体テストの基礎となる構築要素は、"テストケース" -- セットアップと
+正しさのチェックを行う、独立したシナリオ -- です。PyUnitでは、テスト
+ケースは`unittest'モジュールの`TestCase'クラスのインスタ
+ンスで示します。テストケースを作成するには`TestCase'のサブクラスを
+記述するか、または`FunctionTestCase'を使用します。
+
+`TestCase'から派生したクラスのインスタンスは、このオブジェクトだけ
+で一件のテストと初期設定・終了処理を行います。
+
+`TestCase'インスタンスは外部から完全に独立し、単独で実行する事も、
+他の任意のテストと一緒に実行する事もできなければなりません。
+
+以下のように、`runTest()'をオーバライドし、必要なテスト処理を記述するだけで簡単
+なテストケースを書くことができます:
+
+     import unittest
+     
+     class DefaultWidgetSizeTestCase(unittest.TestCase):
+         def runTest(self):
+             widget = Widget("The widget")
+             self.failUnless(widget.size() == (50,50), 'incorrect default size')
+
+何らかのテストを行う場合、ベースクラス`TestCase'の `assert*()' か
+`fail*()'メソッドを使用してください。テスト
+ケース実行時、テストが失敗すると例外が送出され、テストフレームワークはテ
+スト結果を"failure"とします。`assert*()' と`fail*()'以
+外からの例外が発生した場合、テスト結果は"errors"となります。
+
+テストの実行方法については後述とし、まずはテストケースインスタンスの作成
+方法を示します。テストケースインスタンスは、以下のように引数なしでコンス
+トラクタを呼び出して作成します。
+
+     testCase = DefaultWidgetSizeTestCase()
+
+似たようなテストを数多く行う場合、同じ環境設定処理を何度も必要となりま
+す。例えば上記のようなWidgetのテストが100種類も必要な場合、それぞれのサ
+ブクラスで"Widget"オブジェクトを生成する処理を記述するのは好ましくあり
+ません。
+
+このような場合、初期化処理は`setUp()'メソッドに切り出し、テスト実
+行時にテストフレームワークが自動的に実行するようにすることができます:
+
+     import unittest
+     
+     class SimpleWidgetTestCase(unittest.TestCase):
+         def setUp(self):
+             self.widget = Widget("The widget")
+     
+     class DefaultWidgetSizeTestCase(SimpleWidgetTestCase):
+         def runTest(self):
+             self.failUnless(self.widget.size() == (50,50),
+                             'incorrect default size')
+     
+     class WidgetResizeTestCase(SimpleWidgetTestCase):
+         def runTest(self):
+             self.widget.resize(100,150)
+             self.failUnless(self.widget.size() == (100,150),
+                             'wrong size after resize')
+
+テスト中に`setUp()'メソッドで例外が発生した場合、テストフレーム
+ワークはテストを実行することができないとみなし、`runTest()'を実行
+しません。
+
+同様に、終了処理を`tearDown()'メソッドに記述すると、
+`runTest()'メソッド終了後に実行されます:
+
+     import unittest
+     
+     class SimpleWidgetTestCase(unittest.TestCase):
+         def setUp(self):
+             self.widget = Widget("The widget")
+     
+         def tearDown(self):
+             self.widget.dispose()
+             self.widget = None
+
+`setUp()'が正常終了した場合、`runTest()'の結果に関わり無く
+`tearDown()'が実行されます。
+
+このような、テストを実行する環境を"fixture"と呼びます。
+
+JUnitでは、多数の小さなテストケースを同じテスト環境で実行する場合、全て
+のテストについて`DefaultWidgetSizeTestCase'のような
+`SimpleWidgetTestCase'のサブクラスを作成する必要があります。これは
+時間のかかる、うんざりする作業ですので、PyUnitではより簡単なメカニズムを
+用意しています:
+
+     import unittest
+     
+     class WidgetTestCase(unittest.TestCase):
+         def setUp(self):
+             self.widget = Widget("The widget")
+     
+         def tearDown(self):
+             self.widget.dispose()
+             self.widget = None
+     
+         def testDefaultSize(self):
+             self.failUnless(self.widget.size() == (50,50),
+                             'incorrect default size')
+     
+         def testResize(self):
+             self.widget.resize(100,150)
+             self.failUnless(self.widget.size() == (100,150),
+                             'wrong size after resize')
+
+この例では`runTest()'がありませんが、二つのテストメソッドを定義し
+ています。このクラスのインスタンスは`test*()'メソッドのどちらか一
+方の実行と、`self.widget'の生成・解放を行います。この場合、テスト
+ケースインスタンス生成時に、コンストラクタの引数として実行するメソッド名
+を指定します:
+
+     defaultSizeTestCase = WidgetTestCase("testDefaultSize")
+     resizeTestCase = WidgetTestCase("testResize")
+
+PyUnitでは`テストスイート'によってテストケースインスタンスをテスト
+対象の機能によってグループ化することができます。`テストスイート'
+は、`unittest'の`TestSuite'クラスで作成します。
+
+     widgetTestSuite = unittest.TestSuite()
+     widgetTestSuite.addTest(WidgetTestCase("testDefaultSize"))
+     widgetTestSuite.addTest(WidgetTestCase("testResize"))
+
+各テストモジュールで、テストケースを組み込んだテストスイートオブジェクト
+を作成する呼び出し可能オブジェクトを用意しておくと、テストの実行や参照が
+容易になります:
+
+     def suite():
+         suite = unittest.TestSuite()
+         suite.addTest(WidgetTestCase("testDefaultSize"))
+         suite.addTest(WidgetTestCase("testResize"))
+         return suite
+
+または:
+
+     class WidgetTestSuite(unittest.TestSuite):
+         def __init__(self):
+             unittest.TestSuite.__init__(self,map(WidgetTestCase,
+                                                   ("testDefaultSize",
+                                                    "testResize")))
+
+(小心者は前者を使うべし)
+
+一般的に、`TestCase'のサブクラスには良く似た名前のテスト関数が複数
+定義されます。そこで`unittest'モジュールには、テストケースクラ
+スの全テストケースを使ってテストスイートを作成する`makeSuite()'
+関数を用意しています。
+
+     suite = unittest.makeSuite(WidgetTestCase,'test')
+
+`makeSuite()'でテストスイートを作成した場合、テストケースの実行
+順序はテストケース関数名を`cmp()'組み込み関数でソートした順番と
+なります。
+
+システム全体のテストを行う場合など、テストスイートをさらにグループ化した
+い場合がありますが、このような場合、`TestSuite'インスタンスには
+`TestSuite'と同じように`TestSuite'を追加する事ができます。
+
+     suite1 = module1.TheTestSuite()
+     suite2 = module2.TheTestSuite()
+     alltests = unittest.TestSuite((suite1, suite2))
+
+テストケースやテストスイートは (`widget.py' のような)
+テスト対象のモジュール内にも記述すできますが、テストは
+(`widgettests.py' のような) 独立したモジュールに置いた方が
+以下のような点で有利です:
+
+   * テストモジュールだけをコマンドラインから実行することができる。
+
+   * テストコードと出荷するコードを分離する事ができる。
+
+   *
+     テストコードを、テスト対象のコードに合わせて修正する誘惑に駆られにくい。
+
+   * テストコードは、テスト対象コードほど頻繁に更新されない。
+
+   * テストコードをより簡単にリファクタリングすることができる。
+
+   *
+     Cで書いたモジュールのテストは、どっちにしろ独立したモジュールとなる。
+
+   * テスト戦略を変更した場合でも、ソースコードを変更する必要がない。
+
+
+File: python-lib-jp.info,  Node: 既存テストコードの再利用,  Next: クラスと関数 2,  Prev: テストの構成,  Up: unittest
+
+既存テストコードの再利用
+------------------------
+
+既存のテストコードが有るとき、このテストをPyUnitで実行しようとする為に古
+いテスト関数をいちいち`TestCase'クラスのサブクラスに変換するのは大
+変です。
+
+このような場合は、`TestCase'のサブクラスである
+`FunctionTestCase'クラスを使い、既存のテスト関数をラップします。初
+期設定と終了処理をラップする事もできます。
+
+以下のテストコードがあった場合:
+
+     def testSomething():
+         something = makeSomething()
+         assert something.name is not None
+         # ...
+
+テストケースインスタンスは次のように作成します:
+
+     testcase = unittest.FunctionTestCase(testSomething)
+
+初期設定、終了処理が必要な場合は、次のように指定します:
+
+     testcase = unittest.FunctionTestCase(testSomething,
+                                          setUp=makeSomethingDB,
+                                          tearDown=deleteSomethingDB)
+
+_Note:_ PyUnitは`AssertionError'によるテストの失敗検出もサポート
+していますが、推奨されません。将来のバージョンでは、
+`AssertionError'は別の目的に使用される可能性が有ります。
+
+
+File: python-lib-jp.info,  Node: クラスと関数 2,  Next: TestCase オブジェクト,  Prev: 既存テストコードの再利用,  Up: unittest
+
+クラスと関数
+------------
+
+`TestCase()'
+     `TestCase'クラスのインスタンスは、テストの最小実行単位を示しま
+     す。このクラスをベースクラスとして使用し、必要なテストを具象サブクラス
+     に実装します。`TestCase'クラスでは、テストランナーがテストを実行
+     するためのインターフェースと、各種のチェックやテスト失敗をレポートする
+     ためのメソッドを実装しています。
+
+
+`FunctionTestCase(testFunc[, setUp[, tearDown[, description]]])'
+     このクラスでは`TestCase'インターフェースの内、テストランナーがテ
+     ストを実行するためのインターフェースだけを実装しており、テスト結果のチ
+     ェックやレポートに関するメソッドは実装していません。既存のテストコード
+     を`unittest'によるテストフレームワークに組み込むために使用し ます。
+
+`TestSuite([tests])'
+     このクラスは、個々のテストケースやテストスイートの集約を示します。通常
+     のテストケースと同じようにテストランナーで実行すると、テストスイート内
+     の全てのテストケースとテストスイートを実行します。テストケース・テスト
+     スイートを追加するためのメソッドを用意しています。TESTSには、ス
+     イートに追加するテストのシーケンスを指定する事ができます。
+
+
+`TestLoader()'
+     モジュールまたは`TestCase'クラスから、指定した条件に従ってテスト
+     をロードし、`TestSuite'にラップして返します。モジュールからテス
+     トをロードする場合、全ての`TestCase'派生クラスを抽出し、名前が
+     `test'で始まる全てのメソッドのインスタンスを作成します。
+
+`defaultTestLoader'
+     `TestLoader'のインスタンスで、共用する事ができます。
+     `TestLoader'をカスタマイズする必要がなければ、新しい
+     `TestLoader'オブジェクトを作らずにこのインスタンスを使用します。
+
+`TextTestRunner([stream[, descriptions[, verbosity]]])'
+     実行結果を標準結果に出力する、単純なテストランナー。いくつかの設定項目
+     がありますが、非常に単純です。グラフィカルなテスト実行アプリケーション
+     では、独自のテストランナーを作成してください。
+
+`main([module[, defaultTest[, argv[, testRunner[, testRunner]]]]])'
+     テストを実行するためのコマンドラインプログラム。この関数を使えば、次の
+     ように簡単に実行可能なテストモジュールを作成する事ができます。
+
+          if __name__ == '__main__':
+              unittest.main()
+
+
+場合によっては、`doctest' モジュールを使って書かれた
+既存のテストがあります。その場合、モジュールは 既存のテストコードから
+`unittest.TestSuite' インスタンスを 自動的に構築できる `DocTestSuite'
+クラスを提供します。 _Added in Python version 2.3_
+
+
+File: python-lib-jp.info,  Node: TestCase オブジェクト,  Next: TestSuite オブジェクト,  Prev: クラスと関数 2,  Up: unittest
+
+TestCase オブジェクト
+---------------------
+
+`TestCase'クラスのインスタンスは個別のテストをあらわすオブジェクト
+ですが、`TestCase'の具象サブクラスには複数のテストを定義する事がで
+きます -- 具象サブクラスは、特定のfixture(テスト設備)を示している、と考
+えてください。fixtureは、それぞれのテストケースごとに作成・解放されま
+す。
+
+`TestCase'インスタンスには、次の3種類のメソッドがあります:テストを
+実行するためのメソッド・条件のチェックやテスト失敗のレポートのためのメソ
+ッド・テストの情報収集に使用する問い合わせメソッド。
+
+テストを実行するためのメソッドを以下に示します:
+
+`setUp()'
+     テストを実行する直前に、fixtureを作成する為に呼び出されます。このメソ
+     ッドを実行中に例外が発生した場合、テストの失敗ではなくエラーとされま
+     す。デフォルトの実装では何も行いません。
+
+
+`tearDown()'
+     テストを実行し、結果を記録した直後に呼び出されます。テスト実行中に例外
+     が発生しても呼び出されますので、内部状態に注意して処理を行ってくださ
+     い。メソッドを実行中に例外が発生した場合、テストの失敗ではなくエラーと
+     みなされます。このメソッドは、`setUp()'が正常終了した場合にはテ
+     ストメソッドの実行結果に関わり無く呼び出されます。デフォルトの実装では
+     何も行いません。
+
+`run([result])'
+     テストを実行し、テスト結果をRESULTに指定されたテスト結果オブジェ
+     クトに収集します。RESULTがNoneか省略された場合、一時的な結果オブ
+     ジェクトを生成して使用しますが呼び出し元には渡されません。このメソッド
+     は、`TestCase'インスタンスの呼び出しと等価です。
+
+`debug()'
+     テスト結果を収集せずにテストを実行します。例外が呼び出し元に通知される
+     ため、テストをデバッガで実行することができます。
+
+テスト結果のチェックとレポートには、以下のメソッドを使用してください。
+
+`assert_(expr[, msg])'
+
+`failUnless(expr[, msg])'
+     EXPRが偽の場合、テスト失敗を通知します。MSGにはエラーの説
+     明を指定するか、または`None'を指定してください。
+
+`assertEqual(first, second[, msg])'
+
+`failUnlessEqual(first, second[, msg])'
+     FIRSTとSECONDEXPRが等しくない場合、テスト失敗を通知
+     します。エラー内容はMSGに指定された値か、または`None'となり
+     ます。`failUnlessEqual()'ではMSGのデフォルト値は
+     FIRSTとSECONDを含んだ文字列となりますので、
+     `failUnless()'の第一引数に比較の結果を指定するよりも便利です。
+
+`assertNotEqual(first, second[, msg])'
+
+`failIfEqual(first, second[, msg])'
+     FIRSTとSECONDEXPRが等しい場合、テスト失敗を通知しま
+     す。エラー内容はMSGに指定された値か、または`None'となりま
+     す。`failUnlessEqual()'ではMSGのデフォルト値はFIRST
+     とSECONDを含んだ文字列となりますので、`failUnless()'の第
+     一引数に比較の結果を指定するよりも便利です。
+
+`assertAlmostEqual(first, second[, places[, msg]])'
+
+`failUnlessAlmostEqual(first, second[, places[, msg]])'
+     FIRST と SECOND を PLACES で与えた小数位で値を丸めて差分を計算し、
+     ゼロと比較することで、近似的に等価であるかどうかをテストします。
+     指定小数位の比較というものは指定有効桁数の比較ではないので注意してください。
+     値の比較結果が等しくなかった場合、テストは失敗し、MSG で与えた
+     説明か、`None' を返します。
+
+`assertNotAlmostEqual(first, second[, places[, msg]])'
+
+`failIfAlmostEqual(first, second[, places[, msg]])'
+     FIRST と SECOND を PLACES で与えた小数位で値を丸めて差分を計算し、
+     ゼロと比較することで、近似的に等価でないかどうかをテストします。
+     指定小数位の比較というものは指定有効桁数の比較ではないので注意してください。
+     値の比較結果が等しかった場合、テストは失敗し、MSG で与えた
+     説明か、`None' を返します。
+
+`assertRaises(exception, callable, ...)'
+
+`failUnlessRaises(exception, callable, ...)'
+     CALLABLEを呼び出し、発生した例外をテストします。
+     `assertRaises()'には、任意の位置パラメータとキーワードパラメー
+     タを指定する事ができます。EXCEPTIONで指定した例外が発生した場合
+     はテスト成功とし、それ以外の例外が発生するか例外が発生しない場合にテス
+     ト失敗となります。複数の例外を指定する場合には、例外クラスのタプルを
+     EXCEPTIONに指定します。
+
+`failIf(expr[, msg])'
+     `failIf()'は`failUnless()'の逆で、EXPRが真の場合、
+     テスト失敗を通知します。エラー内容はMSGに指定された値か、または
+     `None'となります。
+
+`fail([msg])'
+     無条件にテスト失敗を通知します。エラー内容はMSGに指定された値
+     か、または`None'となります。
+
+`failureException'
+     `test()'メソッドが送出する例外を指定するクラス属性。テストフ
+     レームワークで追加情報を持つ等の特殊な例外を使用する場合、この例外のサ
+     ブクラスとして作成します。この属性の初期値は`AssertionError' です。
+
+テストフレームワークは、テスト情報を収集するために以下のメソッドを使用し
+ます:
+
+`countTestCases()'
+     テストオブジェクトに含まれるテストの数を返します。`TestCase'イン
+     スタンスは常に`1'を返します。`TestSuite'クラスでは`1'
+     以上を返します。
+
+`defaultTestResult()'
+     オブジェクトが実行するテストの、デフォルトのテスト結果オブジェクトの型
+     を返します。
+
+`id()'
+     テストケースを特定する文字列を返します。通常、IDはモジュール名・
+     クラス名を含む、テストメソッドのフルネームを指定します。
+
+`shortDescription()'
+     テストの説明を一行分、または説明がない場合には`None'を返します。
+     デフォルトでは、テストメソッドのdocstringの先頭の一行、または
+     `None'を返します。
+
+
+File: python-lib-jp.info,  Node: TestSuite オブジェクト,  Next: TestResultオブジェクト,  Prev: TestCase オブジェクト,  Up: unittest
+
+TestSuite オブジェクト
+----------------------
+
+`TestSuite'オブジェクトは`TestCase'とよく似た動作をします
+が、実際のテストは実装せず、一まとめにに実行するテストのグループをまとめ
+るために使用します。`TestSuite'には以下のメソッドが追加されていま す:
+
+`addTest(test)'
+     `TestCase'又は`TestSuite'のインスタンスをスイートに追加し ます。
+
+`addTests(tests)'
+     シーケンスTESTに含まれる全ての`TestCase'又は
+     `TestSuite'のインスタンスをスイートに追加します。
+
+`run()'メソッドは`TestCase'の`run()'メソッドと若干異 なります:
+
+`run(result)'
+     スイート内のテストを実行し、結果をRESULTで指定した結果オブジェク
+     トに収集します。`TestCase.run()'と異なり、
+     `TestSuite.run()'では必ず結果オブジェクトを指定する必要がありま
+     す。
+
+通常、`TestSuite'の`run()'メソッドは`TestRunner'が起
+動するため、ユーザが直接実行する必要はありません。
+
+
+File: python-lib-jp.info,  Node: TestResultオブジェクト,  Next: TestLoader オブジェクト,  Prev: TestSuite オブジェクト,  Up: unittest
+
+TestResultオブジェクト
+----------------------
+
+`TestResult'は、複数のテスト結果を記録します。`TestCase'クラ
+スと`TestSuite'クラスのテスト結果を正しく記録しますので、テスト開
+発者が独自にテスト結果を管理する処理を開発する必要はありません。
+
+`unittest'を利用したテストフレームワークでは、
+`TestRunner.run()'が返す`TestResult'インスタンスを参照し、
+テスト結果をレポートします。
+
+`TestResult'インスタンスは、テストの実行件数と、テスト中に発生した
+失敗・エラーの情報を`(TESTCASE, TRACEBACK)'のタプルで保
+持します。TRACEBACKは例外のトレースバック情報をフォーマットした文
+字列です。
+
+以下の属性は、テストの実行結果を検査する際に使用することができます:
+
+`errors'
+     テスト中に発生した例外の内、テスト失敗ではなくエラーとなった例外の情報
+     のリスト。リストの要素は、`TestCase'と例外のトレースバック情報を
+     フォーマットした文字列の組となります。_Changed in Python version
+     sys.exc_info()_の結果ではなく、フォーマットしたトレースバッ
+     クを保存]{2.2}
+
+`failures'
+     テスト中に発生した失敗の情報のリスト。リストの要素は、`TestCase'
+     と例外のトレースバック情報をフォーマットした文字列の組となります。
+     _Changed in Python version 2.2_
+
+`testsRun'
+     開始したテストの数。
+
+`wasSuccessful()'
+     これまでに実行したテストが全て成功していればTrueを、それ以外ならFalse
+     を返す。
+
+以下のメソッドは内部データ管理用のメソッドですが、対話的にテスト結果をレ
+ポートするテストツールを開発する場合などにはサブクラスで拡張することがで
+きます。
+
+`startTest(test)'
+     TESTを実行する直前に呼び出されます。
+
+`stopTest(test)'
+     TESTの実行直後に、テスト結果に関わらず呼び出されます。
+
+`addError(test, err)'
+     テスト実行中に、テストの失敗以外の例外が発生した場合に呼び出されます。
+     ERRは`sys.exc_info()'が返すタプル`(TYPE, VALUE, TRACEBACK)'です。
+
+`addFailure(test, err)'
+     テストが失敗した場合に呼び出されます。ERRは
+     `sys.exc_info()'が返すタプル`(TYPE, VALUE, TRACEBACK)'です。
+
+`addSuccess(test)'
+     テストが失敗しなかった場合に呼び出されます。TESTには、テストケー
+     スオブジェクトが指定されます。
+
+`TestResult'オブジェクトには、さらにもう一つのメソッドがあります:
+
+`stop()'
+     テスト中断のシグナルを送ります。このメソッドが呼び出されると、テストラ
+     ンナーは以降のテスト実行を中止し、呼び出し元に復帰します。
+     `TextTestRunner'ではキーボードからの割り込みでテストを中断するた
+     めにこのメソッドを使用しており、独自のランナーを実装する場合にも同じよ
+     うに使用することができます。
+
+
+File: python-lib-jp.info,  Node: TestLoader オブジェクト,  Prev: TestResultオブジェクト,  Up: unittest
+
+TestLoader オブジェクト
+-----------------------
+
+`TestLoader'クラスは、クラスやモジュールからテストスイートを作成す
+るために使用します。通常はこのクラスのインスタンスを作成する必要はなく、
+`unittest'モジュールのモジュール属性`defaultTestLoader'を
+共用インスタンスとして使用することができます。
+
+`TestLoader' オブジェクトには以下のメソッドがあります:
+
+`loadTestsFromTestCase(testCaseClass)'
+     `TestCase'の派生クラス`testCaseClass'に含まれる全テスト
+     ケースのスイートを返します。
+
+`loadTestsFromModule(module)'
+     指定したモジュールに含まれる全テストケースのスイートを返します。このメ
+     ソッドはMODULE内の`TestCase'派生クラスを検索し、見つかった
+     クラスのテストメソッドごとにクラスのインスタンスを作成します。
+
+     _`Testcase'クラスを基底クラスとしてクラス階層を構築する
+     とfixtureや補助的な関数をうまく共用することができますが、基底クラスに
+     直接インスタンス化できないテストメソッドがあると、この
+     `loadTestsFromModule'を使うことができません。この場合でも、
+     fixtureが全て別々で定義がサブクラスにある場合は使用することができま
+     す。_
+
+`loadTestsFromName(name[, module])'
+     文字列で指定される全テストケースを含むスイートを返します。
+
+     NAMEには"ドット修飾名"でモジュールかテストケースクラス、または
+     `TestCase'か`TestSuite'のインスタンスを返す呼び出し可能オ
+     ブジェクトを指定します。例えば`SampleTests'モジュールに
+     `TestCase'から派生した`SampleTestCase'クラスがあり、
+     `SampleTestCase'にはテストメソッド`test_one()'・
+     `test_two()'・`test_three()'があるとします。この場合、
+     NAMEに`'SampleTests.SampleTestCase''と指定すると、
+     `SampleTestCase'の三つのテストメソッドを実行するテストスイートが
+     作成されます。`'SampleTests.SampleTestCase.test_two''と指定すれ
+     ば、`test_two()'だけを実行するテストスイートが作成されます。イ
+     ンポートされていないモジュールやパッケージ名を含んだ名前を指定した場合
+     は自動的にインポートされます。
+
+     また、MODULEを指定した場合、MODULE内のNAMEを取得しま す。
+
+`loadTestsFromNames(names[, module])'
+     `loadTestsFromName()'と同じですが、名前を一つだけ指定するのでは
+     なく、複数の名前のシーケンスを指定する事ができます。戻り値は
+     NAMES中の名前で指定されるテスト全てを含むテストスイートです。
+
+`getTestCaseNames(testCaseClass)'
+     TESTCASECLASS中の全てのメソッド名を含むソート済みシーケンスを返
+     します。
+
+以下の属性は、サブクラス化またはインスタンスの属性値を変更して`TestLoader'をカスタマイズする場合に使用します。
+
+`testMethodPrefix'
+     テストメソッドの名前と判断されるメソッド名の接頭語を示す文字列。デフォ
+     ルト値は`'test''です。
+
+`sortTestMethodsUsing'
+     `getTestCaseNames()'でメソッド名をソートする際に使用する比較関
+     数。デフォルト値は組み込み関数`cmp()'です。`None'を指定
+     するとソートを行いません。
+
+`suiteClass'
+     テストのリストからテストスイートを構築する呼び出し可能オブジェクト。メ
+     ソッドを持つ必要はありません。デフォルト値は`TestSuite'です。
+
+
+File: python-lib-jp.info,  Node: test,  Next: math,  Prev: unittest,  Up: 各種サービス
+
+Python用回帰テストパッケージ
+============================
+
+Python用テストスイートを含む回帰テストパッケージ。
+
+`test' パッケージには、Python 用の全ての回帰テストと、
+`test.test_support'および`test.regrtest' モジュール
+が入っています。`test.test_support' はテストを充実させる
+ために使い、`test.regtest' はテストスイートを駆動するのに 使います。
+
+`test'パッケージ内の各モジュールのうち、名前が`test_'
+で始まるものは、特定のモジュールや機能に対するテストスイートです。
+新しいテストはすべて`unittest'モジュールを使って書くように
+してください; 必ずしも`unittest' を使う必要はないのですが、 `unittest'
+はテストをより柔軟にし、メンテナンスをより簡単に
+します。古いテストのいくつかは`doctest' を利用しており、 "伝統的な"
+テスト形式になっています。これらのテスト形式をカバー
+する予定はありません。
+
+See also:
+     *Note unittest:: PyUnit 回帰テストを書く。 *Note doctest::
+     ドキュメンテーション文字列に埋め込まれたテスト。
+
+* Menu:
+
+* testパッケージのためのユニットテストを書く::
+* testregrtestを使ってテストを実行する::
+* testtest_support --- テストのためのユーティリティ関数::
+
+
+File: python-lib-jp.info,  Node: testパッケージのためのユニットテストを書く,  Next: testregrtestを使ってテストを実行する,  Prev: test,  Up: test
+
+`test'パッケージのためのユニットテストを書く
+--------------------------------------------
+
+`test' パッケージ用のテストを書く場合、`unittest'
+モジュールを使い、以下のいくつかのガイドラインに従うよう推奨します。
+一つは、テストモジュールの名前と同様、すべてのテストメソッドの
+名前を`'test_''で始めることです。これはテスト駆動プログラムに
+そのメソッドをテストメソッドとして認識させるためです。
+また、テストメソッドにはドキュメンテーション文字列を入れるべきでは
+ありません。 テストメソッドのドキュメント記述には、 (`# True あるいは
+False だけを返すテスト関数' のような) コメントを使ってください。
+これは、ドキュメンテーション文字列が存在する場合にはその内容が出力
+されるため、どのテストを実行しているのかをいちいち表示しなくするためです。
+
+以下のような基本的な決まり文句を使います:
+
+     import unittest
+     from test import test_support
+     
+     class MyTestCase1(unittest.TestCase):
+     
+         # Only use setUp() and tearDown() if necessary
+     
+         def setUp(self):
+             ... code to execute in preparation for tests ...
+     
+         def tearDown(self):
+             ... code to execute to clean up after tests ...
+     
+         def test_feature_one(self):
+             # Test feature one.
+             ... testing code ...
+     
+         def test_feature_two(self):
+             # Test feature two.
+             ... testing code ...
+     
+         ... more test methods ...
+     
+     class MyTestCase2(unittest.TestCase):
+         ... same structure as MyTestCase1 ...
+     
+     ... more test classes ...
+     
+     def test_main():
+         test_support.run_unittest(MyTestCase1,
+                                   MyTestCase2,
+                                   ... list other tests ...
+                                  )
+     
+     if __name__ == '__main__':
+         test_main()
+
+この定型的なコードによって、テストスイートを`regrtest.py'
+から起動できると同時に、スクリプト自体からも実行できるようになります。
+
+回帰テストの目的はコードの分解です。
+そのためには以下のいくつかのガイドラインに従ってください:
+
+   * テストスイートはすべてのクラス、関数および定数を用いるべきです。
+     これは外部に公開される外部APIだけでなく"非公開"コードも含んでいます。
+
+   * ホワイトボックス・テスト (テストを書くときに対象のコードをすぐ
+     テストする) を推奨します。ブラックボックス・テスト
+     (最終的に公開された ユーザーインターフェイスだけをテストする)
+     は、すべての境界条件と
+     極端条件を確実にテストするには完全ではありません。
+
+   * 無効な値を含み、すべての取りうる値を確実にテストするように
+     してください。そうすることで、全ての有効な値を受理するだけでなく、
+     不適切な値を正しく処理することも確認できます。
+
+   * できる限り多くのコード経路を網羅してください。分岐が生じる
+     テストし、入力を調整して、コードの全体に渡って取りえる限りの個々の
+     処理経路を確実にたどらせるようにしてください。
+
+   * テスト対象のコードにどんなバグが発見された場合でも、明示的な
+     テスト追加するようにしてください。そうすることで、将来コードを変更した
+     際にエラーが再発しないようにできます。
+
+   * (一時ファイルをすべて閉じたり削除したりするといった) テストの
+     後始末を必ず行ってください。
+
+   * import するモジュールをできるかぎり少なくし、可能な限り 早期に
+     import を行ってください。そうすることで、てテストの外部依存性を
+     最小限にし、モジュールの import
+     による副作用から生じる変則的な動作を 最小限にできます。
+
+   * コードの再利用を最大限に行うようにしてください。時として、
+     テストの多様性はどんな型の入力を受け取るかの違いまで小さくなります。
+     例えば以下のように、入力が指定されたサブクラスで基底テストクラスを
+     サブクラス化して、コードの複製を最小化します:
+          class TestFuncAcceptsSequences(unittest.TestCase):
+          
+              func = mySuperWhammyFunction
+          
+              def test_func(self):
+                  self.func(self.arg)
+          
+          class AcceptLists(TestFuncAcceptsSequences):
+              arg = [1,2,3]
+          
+          class AcceptStrings(TestFuncAcceptsSequences):
+              arg = 'abc'
+          
+          class AcceptTuples(TestFuncAcceptsSequences):
+              arg = (1,2,3)
+
+
+See also:
+     `Test Driven Development'{コードより前にテストを書く
+     方法論に関する Kent Beck の著書}
+
+
+File: python-lib-jp.info,  Node: testregrtestを使ってテストを実行する,  Next: testtest_support --- テストのためのユーティリティ関数,  Prev: testパッケージのためのユニットテストを書く,  Up: test
+
+`test.regrtest'を使ってテストを実行する
+---------------------------------------
+
+`test.regrtest' を使うと Python の回帰テストスイートを駆動
+できます。スクリプトを単独で実行すると、自動的に`test'
+パッケージ内のすべての回帰テストを実行し始めます。パッケージ内の
+名前が`test_'で始まる全モジュールを見つけ、それをインポートし、
+もしあるなら関数 `test_main' を実行してテストを行います。
+実行するテストの名前もスクリプトに渡される可能性もあります。
+単一の回帰テストを指定 (`python regrtest.py' `test_spam.py') すると、
+出力を最小限にします。テストが成功したかあるいは失敗したかだけを出力
+するので、出力は最小限になります。
+
+直接 `test.regrtest' を実行すると、テストに利用するリソースを
+設定できます。これを行うには、`-u'
+コマンドラインオプションを使います。すべてのリソースを使うには、
+`python regrtest.py' `-uall' を実行します。 `-u' のオプションに `all'
+を指定すると、 すべてのリソースを有効にします。(よくある場合ですが)
+何か一つを除く
+全てが必要な場合、カンマで区切った不要なリソースのリストを `all'
+の後に並べます。 コマンド`python regrtest.py' `-uall,-audio,-largefile'
+とすると、`audio' と `largefile' リソースを除く
+全てのリソースを使って`test.regrtest' を実行します。
+すべてのリソースのリストと追加のコマンドラインオプションを出力
+するには、`python regrtest.py' `-h' を実行 してください。
+
+テストを実行しようとするプラットフォームによっては、回帰テストを
+実行する別の方法があります。 UNIX では、Python
+をビルドしたトップレベルディレクトリで `make' `test' を実行できます。
+Windows上では、`PCBuild' ディレクトリから `rt.bat' を
+実行すると、すべての回帰テストを実行します。
+
+
+File: python-lib-jp.info,  Node: testtest_support --- テストのためのユーティリティ関数,  Prev: testregrtestを使ってテストを実行する,  Up: test
+
+`test.test_support' -- テストのためのユーティリティ関数
+-------------------------------------------------------
+
+Python 回帰テストのサポート
+
+`test.test_support' モジュールでは、 Python の回帰テストに対する
+サポートを提供しています。
+
+このモジュールは次の例外を定義しています:
+
+`TestFailed'
+     テストが失敗したとき送出される例外です。
+
+`TestSkipped'
+     `TestFailed'のサブクラスです。
+     テストがスキップされたとき送出されます。 テスト時に
+     (ネットワーク接続のような) 必要なリソースが利用
+     できないときに送出されます。
+
+`ResourceDenied'
+     `TestSkipped'のサブクラスです。
+     (ネットワーク接続のような)リソースが利用できないとき送出されます。
+     `requires'関数によって送出されます。
+
+`test.test_support' モジュールでは、以下の定数を定義しています:
+
+`verbose'
+     冗長な出力が有効な場合は`True' です。
+     実行中のテストについてのより詳細な情報が欲しいときにチェックします。
+     VERBOSE は `test.regrtest' によって設定されます。
+
+`have_unicode'
+     ユニコードサポートが利用可能ならば`True' になります。
+
+`is_jython'
+     実行中のインタプリタが Jython ならば`True' になります。
+
+`TESTFN'
+     一時ファイルを作成するパスに設定されます。
+     作成した一時ファイルは全て閉じ、unlink (削除) せねばなりません。
+
+`test.test_support' モジュールでは、以下の関数を定義しています:
+
+`forget(module_name)'
+     モジュール名MODULE_NAMEを`sys.modules'から取り除き、
+     モジュールのバイトコンパイル済みファイルを全て削除します。
+
+`is_resource_enabled(resource)'
+     RESOURCE が有効で利用可能ならば`True'を返します。
+     利用可能なリソースのリストは、`test.regrtest'がテストを
+     実行している間のみ設定されます。
+
+`requires(resource[, msg])'
+     RESOURCE が利用できなければ、`ResourceDenied'を
+     送出します。その場合、MSGは `ResourceDenied' の引数に
+     なります。__NAME__ が `"__main__"' である関数にから
+     呼び出された場合には常に真を返します。 テストを`test.regrtest'
+     から実行するときに使われます。
+
+`findfile(filename)'
+     FILENAMEという名前のファイルへのパスを返します。
+     一致するものが見つからなければ、FILENAME 自体を返します。 FILENAME
+     自体もファイルへのパスでありえるので、 FILENAME
+     が返っても失敗ではありません。
+
+`run_unittest(*classes)'
+     渡された `unittest.TestCase' サブクラスを実行します。
+     この関数は名前が `test_' で始まるメソッドを探して、
+     テストを個別に実行します。
+     この方法をテストの実行方法として推奨しています。
+
+`run_suite(suite[, testclass=None])'
+     `unittest.TestSuite' のインスタンス SUITEを実行します。
+     オプション引数TESTCLASS はテストスイート内のテストクラスの
+     一つを受け取り、指定するとテストスイートが存在する場所についてさらに
+     詳細な情報を出力します。
+

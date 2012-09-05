@@ -1,0 +1,968 @@
+This is python-whatsnew23.info, produced by makeinfo version 4.5 from
+python-whatsnew23.texi.
+
+
+File: python-whatsnew23.info,  Node: New,  Next: Pymalloc A Specialized Object Allocator,  Prev: Other Language Changes,  Up: Top
+
+New, Improved, and Deprecated Modules
+*************************************
+
+As usual, Python's standard library received a number of enhancements
+and bug fixes.  Here's a partial list of the most notable changes,
+sorted alphabetically by module name. Consult the `Misc/NEWS' file in
+the source tree for a more complete list of changes, or look through
+the CVS logs for all the details.
+
+   * The `array' module now supports arrays of Unicode characters using
+     the `u' format character.  Arrays also now support using the `+='
+     assignment operator to add another array's contents, and the `*='
+     assignment operator to repeat an array.  (Contributed by Jason
+     Orendorff.)
+
+   * The `bsddb' module has been replaced by version 4.1.6 of the
+     PyBSDDB package, providing a more complete interface to the
+     transactional features of the BerkeleyDB library.
+
+     The old version of the module has been renamed to `bsddb185' and
+     is no longer built automatically; you'll have to edit
+     `Modules/Setup' to enable it.  Note that the new `bsddb' package
+     is intended to be compatible with the old module, so be sure to
+     file bugs if you discover any incompatibilities.  When upgrading
+     to Python 2.3, if the new interpreter is compiled with a new
+     version of the underlying BerkeleyDB library, you will almost
+     certainly have to convert your database files to the new version.
+     You can do this fairly easily with the new scripts `db2pickle.py'
+     and `pickle2db.py' which you will find in the distribution's
+     `Tools/scripts' directory.  If you've already been using the
+     PyBSDDB package and importing it as `bsddb3', you will have to
+     change your `import' statements to import it as `bsddb'.
+
+   * The new `bz2' module is an interface to the bz2 data compression
+     library.  bz2-compressed data is usually smaller than
+     corresponding `zlib'-compressed data. (Contributed by Gustavo
+     Niemeyer.)
+
+   * A set of standard date/type types has been added in the new
+     `datetime' module.  See the following section for more details.
+
+   * The Distutils `Extension' class now supports an extra constructor
+     argument named DEPENDS for listing additional source files that an
+     extension depends on.  This lets Distutils recompile the module if
+     any of the dependency files are modified.  For example, if
+     `sampmodule.c' includes the header file `sample.h', you would
+     create the `Extension' object like this:
+
+          ext = Extension("samp",
+                          sources=["sampmodule.c"],
+                          depends=["sample.h"])
+
+     Modifying `sample.h' would then cause the module to be recompiled.
+     (Contributed by Jeremy Hylton.)
+
+   * Other minor changes to Distutils: it now checks for the `CC',
+     `CFLAGS', `CPP', `LDFLAGS', and `CPPFLAGS' environment variables,
+     using them to override the settings in Python's configuration
+     (contributed by Robert Weber).
+
+   * Previously the `doctest' module would only search the docstrings
+     of public methods and functions for test cases, but it now also
+     examines private ones as well.  The `DocTestSuite(' function
+     creates a `unittest.TestSuite' object from a set of `doctest'
+     tests.
+
+   * The new `gc.get_referents(OBJECT)' function returns a list of all
+     the objects referenced by OBJECT.
+
+   * The `getopt' module gained a new function, `gnu_getopt()', that
+     supports the same arguments as the existing `getopt()' function
+     but uses GNU-style scanning mode.  The existing `getopt()' stops
+     processing options as soon as a non-option argument is
+     encountered, but in GNU-style mode processing continues, meaning
+     that options and arguments can be mixed.  For example:
+
+          >>> getopt.getopt(['-f', 'filename', 'output', '-v'], 'f:v')
+          ([('-f', 'filename')], ['output', '-v'])
+          >>> getopt.gnu_getopt(['-f', 'filename', 'output', '-v'], 'f:v')
+          ([('-f', 'filename'), ('-v', '')], ['output'])
+
+     (Contributed by Peter AA{strand}.)
+
+   * The `grp', `pwd', and `resource' modules now return enhanced
+     tuples:
+
+          >>> import grp
+          >>> g = grp.getgrnam('amk')
+          >>> g.gr_name, g.gr_gid
+          ('amk', 500)
+
+   * The `gzip' module can now handle files exceeding 2~Gb.
+
+   * The new `heapq' module contains an implementation of a heap queue
+     algorithm.  A heap is an array-like data structure that keeps
+     items in a partially sorted order such that, for every index K,
+     `heap[K] <= heap[2*K+1]' and `heap[K] <= heap[2*K+2]'.  This makes
+     it quick to remove the smallest item, and inserting a new item
+     while maintaining the heap property is O(lg~n).  (See
+     <http://www.nist.gov/dads/HTML/priorityque.html> for more
+     information about the priority queue data structure.)
+
+     The `heapq' module provides `heappush()' and `heappop()' functions
+     for adding and removing items while maintaining the heap property
+     on top of some other mutable Python sequence type.  Here's an
+     example that uses a Python list:
+
+          >>> import heapq
+          >>> heap = []
+          >>> for item in [3, 7, 5, 11, 1]:
+          ...    heapq.heappush(heap, item)
+          ...
+          >>> heap
+          [1, 3, 5, 11, 7]
+          >>> heapq.heappop(heap)
+          1
+          >>> heapq.heappop(heap)
+          3
+          >>> heap
+          [5, 7, 11]
+
+     (Contributed by Kevin O'Connor.)
+
+   * The IDLE integrated development environment has been updated using
+     the code from the IDLEfork project (<http://idlefork.sf.net>).
+     The most notable feature is that the code being developed is now
+     executed in a subprocess, meaning that there's no longer any need
+     for manual `reload()' operations.  IDLE's core code has been
+     incorporated into the standard library as the `idlelib' package.
+
+   * The `imaplib' module now supports IMAP over SSL.  (Contributed by
+     Piers Lauder and Tino Lange.)
+
+   * The `itertools' contains a number of useful functions for use with
+     iterators, inspired by various functions provided by the ML and
+     Haskell languages.  For example, `itertools.ifilter(predicate,
+     iterator)' returns all elements in the iterator for which the
+     function `predicate()' returns `True', and `itertools.repeat(obj,
+     N)' returns `obj' N times.  There are a number of other functions
+     in the module; see the package's reference documentation for
+     details.  (Contributed by Raymond Hettinger.)
+
+   * Two new functions in the `math' module, `degrees(RADS)' and
+     `radians(DEGS)', convert between radians and degrees.  Other
+     functions in the `math' module such as `math.sin()' and
+     `math.cos()' have always required input values measured in
+     radians.  Also, an optional BASE argument was added to
+     `math.log()' to make it easier to compute logarithms for bases
+     other than `e' and `10'.  (Contributed by Raymond Hettinger.)
+
+   * Several new POSIX functions (`getpgid()', `killpg()', `lchown()',
+     `loadavg()', `major()', `makedev()', `minor()', and `mknod()')
+     were added to the `posix' module that underlies the `os' module.
+     (Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S.
+     Otkidach.)
+
+   * In the `os' module, the `*stat()' family of functions can now
+     report fractions of a second in a timestamp.  Such time stamps are
+     represented as floats, similar to the value returned by
+     `time.time()'.
+
+     During testing, it was found that some applications will break if
+     time stamps are floats.  For compatibility, when using the tuple
+     interface of the `stat_result' time stamps will be represented as
+     integers.  When using named fields (a feature first introduced in
+     Python 2.2), time stamps are still represented as integers, unless
+     `os.stat_float_times()' is invoked to enable float return values:
+
+          >>> os.stat("/tmp").st_mtime
+          1034791200
+          >>> os.stat_float_times(True)
+          >>> os.stat("/tmp").st_mtime
+          1034791200.6335014
+
+     In Python 2.4, the default will change to always returning floats.
+
+     Application developers should enable this feature only if all their
+     libraries work properly when confronted with floating point time
+     stamps, or if they use the tuple API. If used, the feature should
+     be activated on an application level instead of trying to enable
+     it on a per-use basis.
+
+   * The `optparse' module contains a new parser for command-line
+     arguments that can convert option values to a particular Python
+     type and will automatically generate a usage message.  See the
+     following section for more details.
+
+   * The old and never-documented `linuxaudiodev' module has been
+     deprecated, and a new version named `ossaudiodev' has been added.
+     The module was renamed because the OSS sound drivers can be used
+     on platforms other than Linux, and the interface has also been
+     tidied and brought up to date in various ways. (Contributed by Greg
+     Ward and Nicholas FitzRoy-Dale.)
+
+   * The new `platform' module contains a number of functions that try
+     to determine various properties of the platform you're running on.
+     There are functions for getting the architecture, CPU type, the
+     Windows OS version, and even the Linux distribution version.
+     (Contributed by Marc-Andr'e Lemburg.)
+
+   * The parser objects provided by the `pyexpat' module can now
+     optionally buffer character data, resulting in fewer calls to your
+     character data handler and therefore faster performance.  Setting
+     the parser object's `buffer_text' attribute to `True' will enable
+     buffering.
+
+   * The `sample(POPULATION, K)' function was added to the `random'
+     module.  POPULATION is a sequence or `xrange' object containing
+     the elements of a population, and `sample()' chooses K elements
+     from the population without replacing chosen elements.  K can be
+     any value up to `len(POPULATION)'. For example:
+
+          >>> days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'St', 'Sn']
+          >>> random.sample(days, 3)      # Choose 3 elements
+          ['St', 'Sn', 'Th']
+          >>> random.sample(days, 7)      # Choose 7 elements
+          ['Tu', 'Th', 'Mo', 'We', 'St', 'Fr', 'Sn']
+          >>> random.sample(days, 7)      # Choose 7 again
+          ['We', 'Mo', 'Sn', 'Fr', 'Tu', 'St', 'Th']
+          >>> random.sample(days, 8)      # Can't choose eight
+          Traceback (most recent call last):
+            File "<stdin>", line 1, in ?
+            File "random.py", line 414, in sample
+                raise ValueError, "sample larger than population"
+          ValueError: sample larger than population
+          >>> random.sample(xrange(1,10000,2), 10)   # Choose ten odd nos. under 10000
+          [3407, 3805, 1505, 7023, 2401, 2267, 9733, 3151, 8083, 9195]
+
+     The `random' module now uses a new algorithm, the Mersenne
+     Twister, implemented in C.  It's faster and more extensively
+     studied than the previous algorithm.
+
+     (All changes contributed by Raymond Hettinger.)
+
+   * The `readline' module also gained a number of new functions:
+     `get_history_item()', `get_current_history_length()', and
+     `redisplay()'.
+
+   * The `rexec' and `Bastion' modules have been declared dead, and
+     attempts to import them will fail with a `RuntimeError'.
+     New-style classes provide new ways to break out of the restricted
+     execution environment provided by `rexec', and no one has interest
+     in fixing them or time to do so.  If you have applications using
+     `rexec', rewrite them to use something else.
+
+     (Sticking with Python 2.2 or 2.1 will not make your applications
+     any safer because there are known bugs in the `rexec' module in
+     those versions.  To repeat: if you're using `rexec', stop using it
+     immediately.)
+
+   * The `rotor' module has been deprecated because the algorithm it
+     uses for encryption is not believed to be secure.  If you need
+     encryption, use one of the several AES Python modules that are
+     available separately.
+
+   * The `shutil' module gained a `move(SRC, DEST)' function that
+     recursively moves a file or directory to a new location.
+
+   * Support for more advanced POSIX signal handling was added to the
+     `signal' but then removed again as it proved impossible to make it
+     work reliably across platforms.
+
+   * The `socket' module now supports timeouts.  You can call the
+     `settimeout(T)' method on a socket object to set a timeout of T
+     seconds.  Subsequent socket operations that take longer than T
+     seconds to complete will abort and raise a `socket.timeout'
+     exception.
+
+     The original timeout implementation was by Tim O'Malley.  Michael
+     Gilfix integrated it into the Python `socket' module and
+     shepherded it through a lengthy review.  After the code was checked
+     in, Guido van~Rossum rewrote parts of it.  (This is a good example
+     of a collaborative development process in action.)
+
+   * On Windows, the `socket' module now ships with Secure Sockets
+     Layer (SSL) support.
+
+   * The value of the C `PYTHON_API_VERSION' macro is now exposed at
+     the Python level as `sys.api_version'.  The current exception can
+     be cleared by calling the new `sys.exc_clear()' function.
+
+   * The new `tarfile' module allows reading from and writing to
+     `tar'-format archive files.  (Contributed by Lars Gust"abel.)
+
+   * The new `textwrap' module contains functions for wrapping strings
+     containing paragraphs of text.  The `wrap(TEXT, WIDTH)' function
+     takes a string and returns a list containing the text split into
+     lines of no more than the chosen width.  The `fill(TEXT, WIDTH)'
+     function returns a single string, reformatted to fit into lines no
+     longer than the chosen width.  (As you can guess, `fill()' is
+     built on top of `wrap()'.  For example:
+
+          >>> import textwrap
+          >>> paragraph = "Not a whit, we defy augury: ... more text ..."
+          >>> textwrap.wrap(paragraph, 60)
+          ["Not a whit, we defy augury: there's a special providence in",
+           "the fall of a sparrow. If it be now, 'tis not to come; if it",
+           ...]
+          >>> print textwrap.fill(paragraph, 35)
+          Not a whit, we defy augury: there's
+          a special providence in the fall of
+          a sparrow. If it be now, 'tis not
+          to come; if it be not to come, it
+          will be now; if it be not now, yet
+          it will come: the readiness is all.
+          >>>
+
+     The module also contains a `TextWrapper' class that actually
+     implements the text wrapping strategy.   Both the `TextWrapper'
+     class and the `wrap()' and `fill()' functions support a number of
+     additional keyword arguments for fine-tuning the formatting;
+     consult the module's documentation for details.  (Contributed by
+     Greg Ward.)
+
+   * The `thread' and `threading' modules now have companion modules,
+     `dummy_thread' and `dummy_threading', that provide a do-nothing
+     implementation of the `thread' module's interface for platforms
+     where threads are not supported.  The intention is to simplify
+     thread-aware modules (ones that _don't_ rely on threads to run) by
+     putting the following code at the top:
+
+          try:
+              import threading as _threading
+          except ImportError:
+              import dummy_threading as _threading
+
+     In this example, `_threading' is used as the module name to make
+     it clear that the module being used is not necessarily the actual
+     `threading' module. Code can call functions and use classes in
+     `_threading' whether or not threads are supported, avoiding an
+     `if' statement and making the code slightly clearer.  This module
+     will not magically make multithreaded code run without threads;
+     code that waits for another thread to return or to do something
+     will simply hang forever.
+
+   * The `time' module's `strptime()' function has long been an
+     annoyance because it uses the platform C library's `strptime()'
+     implementation, and different platforms sometimes have odd bugs.
+     Brett Cannon contributed a portable implementation that's written
+     in pure Python and should behave identically on all platforms.
+
+   * The new `timeit' module helps measure how long snippets of Python
+     code take to execute.  The `timeit.py' file can be run directly
+     from the command line, or the module's `Timer' class can be
+     imported and used directly.  Here's a short example that figures
+     out whether it's faster to convert an 8-bit string to Unicode by
+     appending an empty Unicode string to it or by using the
+     `unicode()' function:
+
+          import timeit
+          
+          timer1 = timeit.Timer('unicode("abc")')
+          timer2 = timeit.Timer('"abc" + u""')
+          
+          # Run three trials
+          print timer1.repeat(repeat=3, number=100000)
+          print timer2.repeat(repeat=3, number=100000)
+          
+          # On my laptop this outputs:
+          # [0.36831796169281006, 0.37441694736480713, 0.35304892063140869]
+          # [0.17574405670166016, 0.18193507194519043, 0.17565798759460449]
+
+   * The `Tix' module has received various bug fixes and updates for
+     the current version of the Tix package.
+
+   * The `Tkinter' module now works with a thread-enabled version of
+     Tcl.  Tcl's threading model requires that widgets only be accessed
+     from the thread in which they're created; accesses from another
+     thread can cause Tcl to panic.  For certain Tcl interfaces,
+     `Tkinter' will now automatically avoid this when a widget is
+     accessed from a different thread by marshalling a command, passing
+     it to the correct thread, and waiting for the results.  Other
+     interfaces can't be handled automatically but `Tkinter' will now
+     raise an exception on such an access so that you can at least find
+     out about the problem.  See
+     <http://mail.python.org/pipermail/python-dev/2002-December/031107.html>
+     for a more detailed explanation of this change.  (Implemented by
+     Martin von~L"owis.)
+
+   * Calling Tcl methods through `_tkinter' no longer returns only
+     strings. Instead, if Tcl returns other objects those objects are
+     converted to their Python equivalent, if one exists, or wrapped
+     with a `_tkinter.Tcl_Obj' object if no Python equivalent exists.
+     This behavior can be controlled through the `wantobjects()' method
+     of `tkapp' objects.
+
+     When using `_tkinter' through the `Tkinter' module (as most
+     Tkinter applications will), this feature is always activated. It
+     should not cause compatibility problems, since Tkinter would always
+     convert string results to Python types where possible.
+
+     If any incompatibilities are found, the old behavior can be
+     restored by setting the `wantobjects' variable in the `Tkinter'
+     module to false before creating the first `tkapp' object.
+
+          import Tkinter
+          Tkinter.wantobjects = 0
+
+     Any breakage caused by this change should be reported as a bug.
+
+   * The `UserDict' module has a new `DictMixin' class which defines
+     all dictionary methods for classes that already have a minimum
+     mapping interface.  This greatly simplifies writing classes that
+     need to be substitutable for dictionaries, such as the classes in
+     the `shelve' module.
+
+     Adding the mix-in as a superclass provides the full dictionary
+     interface whenever the class defines `__getitem__', `__setitem__',
+     `__delitem__', and `keys'.  For example:
+
+          >>> import UserDict
+          >>> class SeqDict(UserDict.DictMixin):
+          ...     """Dictionary lookalike implemented with lists."""
+          ...     def __init__(self):
+          ...         self.keylist = []
+          ...         self.valuelist = []
+          ...     def __getitem__(self, key):
+          ...         try:
+          ...             i = self.keylist.index(key)
+          ...         except ValueError:
+          ...             raise KeyError
+          ...         return self.valuelist[i]
+          ...     def __setitem__(self, key, value):
+          ...         try:
+          ...             i = self.keylist.index(key)
+          ...             self.valuelist[i] = value
+          ...         except ValueError:
+          ...             self.keylist.append(key)
+          ...             self.valuelist.append(value)
+          ...     def __delitem__(self, key):
+          ...         try:
+          ...             i = self.keylist.index(key)
+          ...         except ValueError:
+          ...             raise KeyError
+          ...         self.keylist.pop(i)
+          ...         self.valuelist.pop(i)
+          ...     def keys(self):
+          ...         return list(self.keylist)
+          ...
+          >>> s = SeqDict()
+          >>> dir(s)      # See that other dictionary methods are implemented
+          ['__cmp__', '__contains__', '__delitem__', '__doc__', '__getitem__',
+           '__init__', '__iter__', '__len__', '__module__', '__repr__',
+           '__setitem__', 'clear', 'get', 'has_key', 'items', 'iteritems',
+           'iterkeys', 'itervalues', 'keylist', 'keys', 'pop', 'popitem',
+           'setdefault', 'update', 'valuelist', 'values']
+
+     (Contributed by Raymond Hettinger.)
+
+   * The DOM implementation in `xml.dom.minidom' can now generate XML
+     output in a particular encoding by providing an optional encoding
+     argument to the `toxml()' and `toprettyxml()' methods of DOM nodes.
+
+   * The `xmlrpclib' module now supports an XML-RPC extension for
+     handling nil data values such as Python's `None'.  Nil values are
+     always supported on unmarshalling an XML-RPC response.  To
+     generate requests containing `None', you must supply a true value
+     for the ALLOW_NONE parameter when creating a `Marshaller' instance.
+
+   * The new `DocXMLRPCServer' module allows writing self-documenting
+     XML-RPC servers. Run it in demo mode (as a program) to see it in
+     action.   Pointing the Web browser to the RPC server produces
+     pydoc-style documentation; pointing xmlrpclib to the server allows
+     invoking the actual methods.  (Contributed by Brian Quinlan.)
+
+   * Support for internationalized domain names (RFCs 3454, 3490, 3491,
+     and 3492) has been added. The "idna" encoding can be used to
+     convert between a Unicode domain name and the ASCII-compatible
+     encoding (ACE) of that name.
+
+          >{}>{}> u"www.Alliancefranc,aise.nu".encode("idna")
+          'www.xn--alliancefranaise-npb.nu'
+
+     The `socket' module has also been extended to transparently
+     convert Unicode hostnames to the ACE version before passing them to
+     the C library.  Modules that deal with hostnames such as `httplib'
+     and `ftplib') also support Unicode host names; `httplib' also
+     sends HTTP `Host' headers using the ACE version of the domain
+     name.  `urllib' supports Unicode URLs with non-ASCII host names as
+     long as the `path' part of the URL is ASCII only.
+
+     To implement this change, the `stringprep' module, the
+     `mkstringprep' tool and the `punycode' encoding have been added.
+
+
+* Menu:
+
+* Date/Time Type::
+* optparse Module::
+
+
+File: python-whatsnew23.info,  Node: Date/Time Type,  Next: optparse Module,  Prev: New,  Up: New
+
+Date/Time Type
+==============
+
+Date and time types suitable for expressing timestamps were added as
+the `datetime' module.  The types don't support different calendars or
+many fancy features, and just stick to the basics of representing time.
+
+The three primary types are: `date', representing a day, month, and
+year; `time', consisting of hour, minute, and second; and `datetime',
+which contains all the attributes of both `date' and `time'.  There's
+also a `timedelta' class representing differences between two points in
+time, and time zone logic is implemented by classes inheriting from the
+abstract `tzinfo' class.
+
+You can create instances of `date' and `time' by either supplying
+keyword arguments to the appropriate constructor, e.g.
+`datetime.date(year=1972, month=10, day=15)', or by using one of a
+number of class methods.  For example, the `date.today()' class method
+returns the current local date.
+
+Once created, instances of the date/time classes are all immutable.
+There are a number of methods for producing formatted strings from
+objects:
+
+     >>> import datetime
+     >>> now = datetime.datetime.now()
+     >>> now.isoformat()
+     '2002-12-30T21:27:03.994956'
+     >>> now.ctime()  # Only available on date, datetime
+     'Mon Dec 30 21:27:03 2002'
+     >>> now.strftime('%Y %d %b')
+     '2002 30 Dec'
+
+The `replace()' method allows modifying one or more fields of a `date'
+or `datetime' instance, returning a new instance:
+
+     >>> d = datetime.datetime.now()
+     >>> d
+     datetime.datetime(2002, 12, 30, 22, 15, 38, 827738)
+     >>> d.replace(year=2001, hour = 12)
+     datetime.datetime(2001, 12, 30, 12, 15, 38, 827738)
+     >>>
+
+Instances can be compared, hashed, and converted to strings (the result
+is the same as that of `isoformat()').  `date' and `datetime' instances
+can be subtracted from each other, and added to `timedelta' instances.
+The largest missing feature is that there's no standard library support
+for parsing strings and getting back a `date' or `datetime'.
+
+For more information, refer to the module's reference documentation.
+(Contributed by Tim Peters.)
+
+
+File: python-whatsnew23.info,  Node: optparse Module,  Prev: Date/Time Type,  Up: New
+
+The optparse Module
+===================
+
+The `getopt' module provides simple parsing of command-line arguments.
+The new `optparse' module (originally named Optik) provides more
+elaborate command-line parsing that follows the Unix conventions,
+automatically creates the output for `--help', and can perform
+different actions for different options.
+
+You start by creating an instance of `OptionParser' and telling it what
+your program's options are.
+
+     import sys
+     from optparse import OptionParser
+     
+     op = OptionParser()
+     op.add_option('-i', '--input',
+                   action='store', type='string', dest='input',
+                   help='set input filename')
+     op.add_option('-l', '--length',
+                   action='store', type='int', dest='length',
+                   help='set maximum length of output')
+
+Parsing a command line is then done by calling the `parse_args()'
+method.
+
+     options, args = op.parse_args(sys.argv[1:])
+     print options
+     print args
+
+This returns an object containing all of the option values, and a list
+of strings containing the remaining arguments.
+
+Invoking the script with the various arguments now works as you'd
+expect it to.  Note that the length argument is automatically converted
+to an integer.
+
+     $ ./python opt.py -i data arg1
+     <Values at 0x400cad4c: {'input': 'data', 'length': None}>
+     ['arg1']
+     $ ./python opt.py --input=data --length=4
+     <Values at 0x400cad2c: {'input': 'data', 'length': 4}>
+     []
+     $
+
+The help message is automatically generated for you:
+
+     $ ./python opt.py --help
+     usage: opt.py [options]
+     
+     options:
+       -h, --help            show this help message and exit
+       -iINPUT, --input=INPUT
+                             set input filename
+       -lLENGTH, --length=LENGTH
+                             set maximum length of output
+     $
+
+See the module's documentation for more details.
+
+Optik was written by Greg Ward, with suggestions from the readers of
+the Getopt SIG.
+
+
+File: python-whatsnew23.info,  Node: Pymalloc A Specialized Object Allocator,  Next: Build and C API Changes,  Prev: New,  Up: Top
+
+Pymalloc: A Specialized Object Allocator
+****************************************
+
+Pymalloc, a specialized object allocator written by Vladimir
+Marangozov, was a feature added to Python 2.1.  Pymalloc is intended to
+be faster than the system `malloc()' and to have less memory overhead
+for allocation patterns typical of Python programs.  The allocator uses
+C's `malloc()' function to get large pools of memory and then fulfills
+smaller memory requests from these pools.
+
+In 2.1 and 2.2, pymalloc was an experimental feature and wasn't enabled
+by default; you had to explicitly enable it when compiling Python by
+providing the `--with-pymalloc' option to the `configure' script.  In
+2.3, pymalloc has had further enhancements and is now enabled by
+default; you'll have to supply `--without-pymalloc' to disable it.
+
+This change is transparent to code written in Python; however, pymalloc
+may expose bugs in C extensions.  Authors of C extension modules should
+test their code with pymalloc enabled, because some incorrect code may
+cause core dumps at runtime.
+
+There's one particularly common error that causes problems.  There are
+a number of memory allocation functions in Python's C API that have
+previously just been aliases for the C library's `malloc()' and
+`free()', meaning that if you accidentally called mismatched functions
+the error wouldn't be noticeable.  When the object allocator is
+enabled, these functions aren't aliases of `malloc()' and `free()' any
+more, and calling the wrong function to free memory may get you a core
+dump.  For example, if memory was allocated using `PyObject_Malloc()',
+it has to be freed using `PyObject_Free()', not `free()'.  A few
+modules included with Python fell afoul of this and had to be fixed;
+doubtless there are more third-party modules that will have the same
+problem.
+
+As part of this change, the confusing multiple interfaces for
+allocating memory have been consolidated down into two API families.
+Memory allocated with one family must not be manipulated with functions
+from the other family.  There is one family for allocating chunks of
+memory and another family of functions specifically for allocating
+Python objects.
+
+   * To allocate and free an undistinguished chunk of memory use the
+     "raw memory" family: `PyMem_Malloc()', `PyMem_Realloc()', and
+     `PyMem_Free()'.
+
+   * The "object memory" family is the interface to the pymalloc
+     facility described above and is biased towards a large number of
+     "small" allocations: `PyObject_Malloc', `PyObject_Realloc', and
+     `PyObject_Free'.
+
+   * To allocate and free Python objects, use the "object" family
+     `PyObject_New()', `PyObject_NewVar()', and `PyObject_Del()'.
+
+Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
+debugging features to catch memory overwrites and doubled frees in both
+extension modules and in the interpreter itself.  To enable this
+support, compile a debugging version of the Python interpreter by
+running `configure' with `--with-pydebug'.
+
+To aid extension writers, a header file `Misc/pymemcompat.h' is
+distributed with the source to Python 2.3 that allows Python extensions
+to use the 2.3 interfaces to memory allocation while compiling against
+any version of Python since 1.5.2.  You would copy the file from
+Python's source distribution and bundle it with the source of your
+extension.
+
+See also:
+    <http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/python/python/dist/src/Objects/obmalloc.c>
+          For the full details of the pymalloc implementation, see the
+          comments at the top of the file `Objects/obmalloc.c' in the
+          Python source code.  The above link points to the file within
+          the SourceForge CVS browser.
+
+
+
+File: python-whatsnew23.info,  Node: Build and C API Changes,  Next: Other Changes and Fixes,  Prev: Pymalloc A Specialized Object Allocator,  Up: Top
+
+Build and C API Changes
+***********************
+
+Changes to Python's build process and to the C API include:
+
+   * The C-level interface to the garbage collector has been changed to
+     make it easier to write extension types that support garbage
+     collection and to debug misuses of the functions.  Various
+     functions have slightly different semantics, so a bunch of
+     functions had to be renamed.  Extensions that use the old API will
+     still compile but will _not_ participate in garbage collection, so
+     updating them for 2.3 should be considered fairly high priority.
+
+     To upgrade an extension module to the new API, perform the
+     following steps:
+
+        * Rename `Py_TPFLAGS_GC' to `PyTPFLAGS_HAVE_GC'.
+
+        * Use `PyObject_GC_New' or `PyObject_GC_NewVar' to allocate
+          objects, and `PyObject_GC_Del' to deallocate them.
+
+        * Rename `PyObject_GC_Init' to `PyObject_GC_Track' and
+          `PyObject_GC_Fini' to `PyObject_GC_UnTrack'.
+
+        * Remove `PyGC_HEAD_SIZE' from object size calculations.
+
+        * Remove calls to `PyObject_AS_GC' and `PyObject_FROM_GC'.
+
+
+   * The cycle detection implementation used by the garbage collection
+     has proven to be stable, so it's now been made mandatory.  You can
+     no longer compile Python without it, and the `--with-cycle-gc'
+     switch to `configure' has been removed.
+
+   * Python can now optionally be built as a shared library
+     (`libpython2.3.so') by supplying `--enable-shared' when running
+     Python's `configure' script.  (Contributed by Ondrej Palkovsky.)
+
+   * The `DL_EXPORT' and `DL_IMPORT' macros are now deprecated.
+     Initialization functions for Python extension modules should now
+     be declared using the new macro `PyMODINIT_FUNC', while the Python
+     core will generally use the `PyAPI_FUNC' and `PyAPI_DATA' macros.
+
+   * The interpreter can be compiled without any docstrings for the
+     built-in functions and modules by supplying
+     `--without-doc-strings' to the `configure' script.  This makes the
+     Python executable about 10% smaller, but will also mean that you
+     can't get help for Python's built-ins.  (Contributed by Gustavo
+     Niemeyer.)
+
+   * The `PyArg_NoArgs()' macro is now deprecated, and code that uses
+     it should be changed.  For Python 2.2 and later, the method
+     definition table can specify the `METH_NOARGS' flag, signalling
+     that there are no arguments, and the argument checking can then be
+     removed.  If compatibility with pre-2.2 versions of Python is
+     important, the code could use `PyArg_ParseTuple(ARGS, "")'
+     instead, but this will be slower than using `METH_NOARGS'.
+
+   * A new function, `PyObject_DelItemString(MAPPING, char *KEY)' was
+     added as shorthand for `PyObject_DelItem(MAPPING,
+     PyString_New(KEY))'.
+
+   * File objects now manage their internal string buffer differently,
+     increasing it exponentially when needed.  This results in the
+     benchmark tests in `Lib/test/test_bufio.py' speeding up
+     considerably (from 57 seconds to 1.7 seconds, according to one
+     measurement).
+
+   * It's now possible to define class and static methods for a C
+     extension type by setting either the `METH_CLASS' or `METH_STATIC'
+     flags in a method's `PyMethodDef' structure.
+
+   * Python now includes a copy of the Expat XML parser's source code,
+     removing any dependence on a system version or local installation
+     of Expat.
+
+   * If you dynamically allocate type objects in your extension, you
+     should be aware of a change in the rules relating to the
+     `__module__' and `__name__' attributes.  In summary, you will want
+     to ensure the type's dictionary contains a `'__module__'' key;
+     making the module name the part of the type name leading up to the
+     final period will no longer have the desired effect.  For more
+     detail, read the API reference documentation or the source.
+
+
+* Menu:
+
+* Port-Specific Changes::
+
+
+File: python-whatsnew23.info,  Node: Port-Specific Changes,  Prev: Build and C API Changes,  Up: Build and C API Changes
+
+Port-Specific Changes
+=====================
+
+Support for a port to IBM's OS/2 using the EMX runtime environment was
+merged into the main Python source tree.  EMX is a POSIX emulation
+layer over the OS/2 system APIs.  The Python port for EMX tries to
+support all the POSIX-like capability exposed by the EMX runtime, and
+mostly succeeds; `fork()' and `fcntl()' are restricted by the
+limitations of the underlying emulation layer.  The standard OS/2 port,
+which uses IBM's Visual Age compiler, also gained support for
+case-sensitive import semantics as part of the integration of the EMX
+port into CVS.  (Contributed by Andrew MacIntyre.)
+
+On MacOS, most toolbox modules have been weaklinked to improve backward
+compatibility.  This means that modules will no longer fail to load if
+a single routine is missing on the curent OS version.  Instead calling
+the missing routine will raise an exception.  (Contributed by Jack
+Jansen.)
+
+The RPM spec files, found in the `Misc/RPM/' directory in the Python
+source distribution, were updated for 2.3.  (Contributed by Sean
+Reifschneider.)
+
+Other new platforms now supported by Python include AtheOS
+(<http://www.atheos.cx/>), GNU/Hurd, and OpenVMS.
+
+
+File: python-whatsnew23.info,  Node: Other Changes and Fixes,  Next: Porting to Python 23,  Prev: Build and C API Changes,  Up: Top
+
+Other Changes and Fixes
+***********************
+
+As usual, there were a bunch of other improvements and bugfixes
+scattered throughout the source tree.  A search through the CVS change
+logs finds there were 523 patches applied and 514 bugs fixed between
+Python 2.2 and 2.3.  Both figures are likely to be underestimates.
+
+Some of the more notable changes are:
+
+   * If the `PYTHONINSPECT' environment variable is set, the Python
+     interpreter will enter the interactive prompt after running a
+     Python program, as if Python had been invoked with the `-i'
+     option. The environment variable can be set before running the
+     Python interpreter, or it can be set by the Python program as part
+     of its execution.
+
+   * The `regrtest.py' script now provides a way to allow "all
+     resources except FOO."  A resource name passed to the `-u' option
+     can now be prefixed with a hyphen (`-') to mean "remove this
+     resource."  For example, the option ```-u'all,-bsddb'' could be
+     used to enable the use of all resources except `bsddb'.
+
+   * The tools used to build the documentation now work under Cygwin as
+     well as UNIX.
+
+   * The `SET_LINENO' opcode has been removed.  Back in the mists of
+     time, this opcode was needed to produce line numbers in tracebacks
+     and support trace functions (for, e.g., `pdb').  Since Python 1.5,
+     the line numbers in tracebacks have been computed using a
+     different mechanism that works with "python -O".  For Python 2.3
+     Michael Hudson implemented a similar scheme to determine when to
+     call the trace function, removing the need for `SET_LINENO'
+     entirely.
+
+     It would be difficult to detect any resulting difference from
+     Python code, apart from a slight speed up when Python is run
+     without `-O'.
+
+     C extensions that access the `f_lineno' field of frame objects
+     should instead call `PyCode_Addr2Line(f->f_code, f->f_lasti)'.
+     This will have the added effect of making the code work as desired
+     under "python -O" in earlier versions of Python.
+
+     A nifty new feature is that trace functions can now assign to the
+     `f_lineno' attribute of frame objects, changing the line that will
+     be executed next.  A `jump' command has been added to the `pdb'
+     debugger taking advantage of this new feature.  (Implemented by
+     Richie Hindle.)
+
+
+
+File: python-whatsnew23.info,  Node: Porting to Python 23,  Next: Acknowledgements,  Prev: Other Changes and Fixes,  Up: Top
+
+Porting to Python 2.3
+*********************
+
+This section lists previously described changes that may require
+changes to your code:
+
+   * `yield' is now always a keyword; if it's used as a variable name
+     in your code, a different name must be chosen.
+
+   * For strings X and Y, `X in Y' now works if X is more than one
+     character long.
+
+   * The `int()' type constructor will now return a long integer
+     instead of raising an `OverflowError' when a string or
+     floating-point number is too large to fit into an integer.
+
+   * If you have Unicode strings that contain 8-bit characters, you
+     must declare the file's encoding (UTF-8, Latin-1, or whatever) by
+     adding a comment to the top of the file.  See section~*Note PEP
+     278 Universal Newline Support:: for more information.
+
+   * Calling Tcl methods through `_tkinter' no longer returns only
+     strings. Instead, if Tcl returns other objects those objects are
+     converted to their Python equivalent, if one exists, or wrapped
+     with a `_tkinter.Tcl_Obj' object if no Python equivalent exists.
+
+   * Large octal and hex literals such as `0xffffffff' now trigger a
+     `FutureWarning'. Currently they're stored as 32-bit numbers and
+     result in a negative value, but in Python 2.4 they'll become
+     positive long integers.
+
+     There are a few ways to fix this warning.  If you really need a
+     positive number, just add an `L' to the end of the literal.  If
+     you're trying to get a 32-bit integer with low bits set and have
+     previously used an expression such as `~(1 << 31)', it's probably
+     clearest to start with all bits set and clear the desired upper
+     bits.  For example, to clear just the top bit (bit 31), you could
+     write `0xffffffffL {&}{~}(1L<<31)'.
+
+   * You can no longer disable assertions by assigning to `__debug__'.
+
+   * The Distutils `setup()' function has gained various new keyword
+     arguments such as DEPENDS.  Old versions of the Distutils will
+     abort if passed unknown keywords.  A solution is to check for the
+     presence of the new `get_distutil_options()' function in your
+     `setup.py' and only uses the new keywords with a version of the
+     Distutils that supports them:
+
+          from distutils import core
+          
+          kw = {'sources': 'foo.c', ...}
+          if hasattr(core, 'get_distutil_options'):
+              kw['depends'] = ['foo.h']
+          ext = Extension(**kw)
+
+   * Using `None' as a variable name will now result in a
+     `SyntaxWarning' warning.
+
+   * Names of extension types defined by the modules included with
+     Python now contain the module and a `.' in front of the type name.
+
+
+
+File: python-whatsnew23.info,  Node: Acknowledgements,  Next: Miscellaneous Index,  Prev: Porting to Python 23,  Up: Top
+
+Acknowledgements
+****************
+
+The author would like to thank the following people for offering
+suggestions, corrections and assistance with various drafts of this
+article: Jeff Bauer, Simon Brunning, Brett Cannon, Michael Chermside,
+Andrew Dalke, Scott David Daniels, Fred~L. Drake, Jr., David Fraser,
+Kelly Gerber, Raymond Hettinger, Michael Hudson, Chris Lambert, Detlef
+Lannert, Martin von~L"owis, Andrew MacIntyre, Lalo Martins, Chad Netzer,
+Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy, Francesco
+Ricciardi, Vinay Sajip, Neil Schemenauer, Roman Suzi, Jason Tishler,
+Just van~Rossum.
+
+
+File: python-whatsnew23.info,  Node: Miscellaneous Index,  Prev: Acknowledgements,  Up: Top
+
+Miscellaneous Index
+*******************
+
+* Menu:
+
+* PEP 255:                               PEP 255 Simple Generators.
+* PEP 273:                               PEP 273 Importing Modules from Zip Archives.
+* PEP 282:                               PEP 282 logging Package.
+* PEP 285:                               PEP 285 A Boolean Type.
+* PEP 302 <1>:                           PEP 302 New Import Hooks.
+* PEP 302 <2>:                           PEP 273 Importing Modules from Zip Archives.
+* PEP 302:                               PEP 302 New Import Hooks.
+* PEP 307:                               PEP 307 Pickle Enhancements.
+
+

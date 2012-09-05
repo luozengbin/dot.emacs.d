@@ -1,0 +1,1184 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: xmlrpclib,  Next: SimpleXMLRPCServer,  Prev: Cookie,  Up: インターネットプロトコルとその支援
+
+XML-RPC クライアントアクセス
+============================
+
+XML-RPC client access.
+
+_Added in Python version 2.2_
+
+XML-RPCはXMLを利用した遠隔手続き呼び出し(Remote Procedure Call)の一種
+で、HTTPをトランスポートとして使用します。XML-RPCではクライアントはリ
+モートサーバ(URIで指定されたサーバ)上のメソッドをパラメータを指定して呼
+び出し、構造化されたデータを取得します。このモジュールは、XML-RPCクライ
+アントの開発をサポートしており、Pythonオブジェクトに適合する転送用XMLの
+変換の全てを行います。
+
+`ServerProxy(uri[, transport[, encoding[, verbose[,  allow_none]]]])'
+     `ServerProxy'は、リモートのXML-RPCサーバとの通信を管理するオブジェ
+     クトです。最初のパラメータはURI(Uniform Resource
+     Indicator)で、通常は
+     サーバのURLを指定します。2番目のパラメータにはトランスポート・ファクトリ
+     を指定する事ができます。トランスポート・ファクトリを省略した場合、URLが
+     https: ならモジュール内部の`SafeTransport'インスタンスを使用し、そ
+     れ以外の場合にはモジュール内部の`Transport'インスタンスを使用しま
+     す。オプションの 3 番目の引数はエンコード方法で、デフォルトでは
+     UTF-8 です。オプションの 4 番目の引数はデバッグフラグです。
+     ALLOW_NONE が真の場合、Python の定数 `None' は XML に翻訳されます;
+     デフォルトの動作は `None' に対して `TypeError' を送出します。
+     この仕様は XML-RPC 仕様でよく用いられている拡張ですが、
+     全てのクライアントやサーバでサポートされているわけではありません;
+     詳細記述については <http://ontosys.com/xml-rpc/extensions.html>
+     を参照してください。
+
+     HTTP及びHTTPS通信の両方で、`http://user:pass@host:port/path'のよう
+     なHTTP基本認証のための拡張URL構文をサポートしています。`user:pass'
+     はbase64でエンコードしてHTTPの`Authorization'ヘッダとなり、XML-RPCメソッ
+     ド呼び出し時に接続処理の一部としてリモートサーバに送信されます。リモート
+     サーバが基本認証を要求する場合のみ、この機能を利用する必要があります。
+
+     生成されるインスタンスはリモートサーバへのプロクシオブジェクトで、RPC呼
+     び出しを行う為のメソッドを持ちます。リモートサーバがイントロスペクション
+     APIをサポートしている場合は、リモートサーバのサポートするメソッドを検索
+     (サービス検索)やサーバのメタデータの取得なども行えます。
+
+     `ServerProxy'インスタンスのメソッドは引数としてPythonの基礎型とオ
+     ブジェクトを受け取り、戻り値としてPythonの基礎型かオブジェクトを返しま
+     す。以下の型をXMLに変換(XMLを通じてマーシャルする)する事ができます(特別
+     な指定がない限り、逆変換でも同じ型として変換されます):
+
+     名前                               意味
+     ------                             -----
+     boolean                            定数`True'と`False'
+     整数                               そのまま
+     浮動小数点                         そのまま
+     文字列                             そのまま
+     配列                               変換可能な要素を含むPythonシーケンス。
+                                        戻り値はリスト。
+     構造体                             Pythonの辞書。キーは文字列のみ。全ての値は変換可能でな
+                                        くてはならない。
+     日付                               エポックからの経過秒数。引数として指定する時は
+                                        `DataTime'ラッパクラスのインスタンスを使用する。
+     バイナリ                           `Binary'ラッパクラスのインスタンス
+
+     上記のXML-RPCでサポートする全データ型を使用することができます。メソッド
+     呼び出し時、XML-RPCサーバエラーが発生すると`Fault'インスタンス
+     を送出し、HTTP/HTTPSトランスポート層でエラーが発生した場合には
+     `ProtocolError'を送出します。Python 2.2以降では組み込み型のサ
+     ブクラスを作成する事ができますが、現在のところxmlrpclibではそのようなサ
+     ブクラスのインスタンスをマーシャルすることはできません。
+
+     文字列を渡す場合、`<'・`>'・`&'などのXMLで特殊な意味を持
+     つ文字は自動的にエスケープされます。しかし、ASCII値0〜31の制御文字などの
+     XMLで使用することのできない文字を使用することはできず、使用するとその
+     XML-RPCリクエストはwell-formedなXMLとはなりません。そのような文字列を渡
+     す必要がある場合は、後述の`Binary'ラッパクラスを使用してください。
+
+     `Server'は、上位互換性の為に`ServerProxy'の別名として残され
+     ています。新しいコードでは`ServerProxy'を使用してください。
+
+See also:
+     `XML-RPC HOWTO'{A good description of XML operation and client
+     software in several languages.  Contains pretty much everything an
+     XML-RPC client developer needs to know.} `XML-RPC-Hacks
+     page'{Extensions for various open-source libraries to support
+     instrospection and multicall.}
+
+* Menu:
+
+* ServerProxy オブジェクト::
+* Boolean オブジェクト::
+* DateTime オブジェクト::
+* Binary オブジェクト::
+* Fault オブジェクト::
+* ProtocolError オブジェクト::
+* 補助関数::
+* クライアントのサンプル::
+
+
+File: python-lib-jp.info,  Node: ServerProxy オブジェクト,  Next: Boolean オブジェクト,  Prev: xmlrpclib,  Up: xmlrpclib
+
+ServerProxy オブジェクト
+------------------------
+
+`ServerProxy'インスタンスの各メソッドはそれぞれXML-RPCサーバの遠隔
+手続き呼び出しに対応しており、メソッドが呼び出されると名前と引数をシグネ
+チャとしてRPCを実行します(同じ名前のメソッドでも、異なる引数シグネチャに
+よってオーバロードされます)。RPC実行後、変換された値を返すか、または
+`Fault'オブジェクトもしくは`ProtocolError'オブジェクトでエ
+ラーを通知します。
+
+予約メンバ`system'から、XMLイントロスペクションAPIの一般的なメソ
+ッドを利用する事ができます。
+
+`system.listMethods()'
+     XML-RPCサーバがサポートするメソッド名(system以外)を格納する文字列のリス
+     トを返します。
+
+`system.methodSignature(name)'
+     XML-RPCサーバで実装されているメソッドの名前を指定し、利用可能なシグネチ
+     ャの配列を取得します。シグネチャは型のリストで、先頭の型は戻り値の型を示
+     し、以降はパラメータの型を示します。
+
+     XML-RPCでは複数のシグネチャ(オーバロード)を使用することができるので、単
+     独のシグネチャではなく、シグネチャのリストを返します。
+
+     シグネチャは、メソッドが使用する最上位のパラメータにのみ適用されます。例
+     えばあるメソッドのパラメータが構造体の配列で戻り値が文字列の場合、シグネ
+     チャは単に"文字列, 配列"
+     となります。パラメータが三つの整数で戻り値が文
+     字列の場合は"文字列, 整数, 整数, 整数"となります。
+
+     メソッドにシグネチャが定義されていない場合、配列以外の値が返ります。
+     Pythonでは、この値はlist以外の値となります。
+
+`system.methodHelp(name)'
+     XML-RPCサーバで実装されているメソッドの名前を指定し、そのメソッドを解説
+     する文書文字列を取得します。文書文字列を取得できない場合は空文字列を返し
+     ます。文書文字列にはHTMLマークアップが含まれます
+
+イントロスペクション用のメソッドは、PHP・C・Microsoft .NETのサーバなどで
+サポートされています。UserLand Frontierの最近のバージョンでもイントロス
+ペクションを部分的にサポートしています。Perl, Python, Javaでのイントロス
+ペクションサポートについてはXML-RPC Hacksを参照してください。
+
+
+File: python-lib-jp.info,  Node: Boolean オブジェクト,  Next: DateTime オブジェクト,  Prev: ServerProxy オブジェクト,  Up: xmlrpclib
+
+Boolean オブジェクト
+--------------------
+
+このクラスは全てのPythonの値で初期化することができ、生成されるインスタン
+スは指定した値の真偽値によってのみ決まります。Booleanという名前から想像
+される通りに各種のPython演算子を実装しており、`__cmp__()',
+`__repr__()', `__int__()', `__nonzero__()'で定義さ
+れる演算子を使用することができます。
+
+以下のメソッドは、主に内部的にアンマーシャル時に使用されます:
+
+`encode(out)'
+     出力ストリームオブジェクト `out'
+     に、XML-RPCエンコーディングのBoolean値を出力します。
+
+
+File: python-lib-jp.info,  Node: DateTime オブジェクト,  Next: Binary オブジェクト,  Prev: Boolean オブジェクト,  Up: xmlrpclib
+
+DateTime オブジェクト
+---------------------
+
+このクラスは、エポックからの秒数・時間タプル・ISO 8061形式の時間/日付文
+字列の何れかで初期化することができます。
+
+`decode(string)'
+     文字列をインスタンスの新しい時間を示す値として指定します。
+
+`encode(out)'
+     出力ストリームオブジェクト `out' に、XML-RPCエンコーディングの
+     DateTime値を出力します。
+
+また、`__cmp__'と`__repr__'で定義される演算子を使用するこ とができます。
+
+
+File: python-lib-jp.info,  Node: Binary オブジェクト,  Next: Fault オブジェクト,  Prev: DateTime オブジェクト,  Up: xmlrpclib
+
+Binary オブジェクト
+-------------------
+
+このクラスは、文字列(NULを含む)で初期化することができます。
+`Binary'の内容は、属性で参照します。
+
+`data'
+     `Binary'インスタンスがカプセル化しているバイナリデータ。このデータ
+     は8bitクリーンです。
+
+以下のメソッドは、主に内部的にマーシャル/アンマーシャル時に使用されます:
+
+`decode(string)'
+     指定されたbase64文字列をデコードし、インスタンスのデータとします。
+
+`encode(out)'
+     バイナリ値をbase64でエンコードし、出力ストリームオブジェクト `out'
+     に出力します。
+
+また、`__cmp__'で定義される演算子を使用することができます。
+
+
+File: python-lib-jp.info,  Node: Fault オブジェクト,  Next: ProtocolError オブジェクト,  Prev: Binary オブジェクト,  Up: xmlrpclib
+
+Fault オブジェクト
+------------------
+
+`Fault'オブジェクトは、XML-RPCのfaultタグの内容をカプセル化してお
+り、以下のメンバを持ちます:
+
+`faultCode'
+     失敗のタイプを示す文字列。
+
+`faultString'
+     失敗の診断メッセージを含む文字列。
+
+
+File: python-lib-jp.info,  Node: ProtocolError オブジェクト,  Next: 補助関数,  Prev: Fault オブジェクト,  Up: xmlrpclib
+
+ProtocolError オブジェクト
+--------------------------
+
+`ProtocolError'オブジェクトはトランスポート層で発生したエラー(URI
+で指定したサーバが見つからなかった場合に発生する404 `not found'など)の内
+容を示し、以下のメンバを持ちます:
+
+`url'
+     エラーの原因となったURIまたはURL。
+
+`errcode'
+     エラーコード。
+
+`errmsg'
+     エラーメッセージまたは診断文字列。
+
+`headers'
+     エラーの原因となったHTTP/HTTPSリクエストを含む文字列。
+
+
+File: python-lib-jp.info,  Node: 補助関数,  Next: クライアントのサンプル,  Prev: ProtocolError オブジェクト,  Up: xmlrpclib
+
+補助関数
+--------
+
+`boolean(value)'
+     Pythonの値を、XML-RPCのBoolean定数 `True'または`False'に変換し
+     ます。
+
+`binary(data)'
+     Python文字列をそのまま `Binary' オブジェクトに変換します。
+
+
+File: python-lib-jp.info,  Node: クライアントのサンプル,  Prev: 補助関数,  Up: xmlrpclib
+
+クライアントのサンプル
+----------------------
+
+     # simple test program (from the XML-RPC specification)
+     
+     # server = ServerProxy("http://localhost:8000") # local server
+     server = ServerProxy("http://betty.userland.com")
+     
+     print server
+     
+     try:
+         print server.examples.getStateName(41)
+     except Error, v:
+         print "ERROR", v
+
+
+File: python-lib-jp.info,  Node: SimpleXMLRPCServer,  Next: DocXMLRPCServer,  Prev: xmlrpclib,  Up: インターネットプロトコルとその支援
+
+基本的なXML-RPCサーバー
+=======================
+
+基本的なXML-RPCサーバーの実装。
+
+`SimpleXMLRPCServer'モジュールはPythonで記述された基本的なXML-RPC
+サーバーフレームワークを提供します。サーバーはスタンドアロンであるか、`SimpleXMLRPCServer'
+を使うか、`CGIXMLRPCRequestHandler' を使って CGI
+環境に組み込まれるかの、いずれかです。
+
+`SimpleXMLRPCServer(addr[, requestHandler[, logRequests]])'
+     新しくサーバーインスタンスを作成します。
+     引数REQUESTHANDLERには、リクエストハンドラーインスタンスのファクトリーを設定します。デフォルトは`SimpleXMLRPCRequestHandler'です。引数ADDRとREQUESTHANDLERは``SocketServer'.TCPServer'のコンストラクターに引き渡されます。もし引数LOGREQUESTSが真(true)であれば、(それがデフォルトですが、)リクエストはログに記録されます。偽(false)である場合にはログは記録されません。このクラスはXML-RPCプロトコルで呼ばれる関数の登録のためのメソッドを提供します。
+
+`CGIXMLRPCRequestHandler()'
+     CGI 環境における XML-RPC
+     リクエストハンドラーを、新たに作成します。_Added in Python version
+     2.3_
+
+`SimpleXMLRPCRequestHandler()'
+     新しくリクエストハンドラーインスタンスを作成します。このリクエストハンドラーは`POST'リクエストを受け持ち、`SimpleXMLRPCServer'のコンストラクターの引数LOGREQUESTSに従ったログ出力を行います。
+
+* Menu:
+
+* SimpleXMLRPCServer オブジェクト::
+* CGIXMLRPCRequestHandler::
+
+
+File: python-lib-jp.info,  Node: SimpleXMLRPCServer オブジェクト,  Next: CGIXMLRPCRequestHandler,  Prev: SimpleXMLRPCServer,  Up: SimpleXMLRPCServer
+
+SimpleXMLRPCServer オブジェクト
+-------------------------------
+
+`SimpleXMLRPCServer' クラスは `SocketServer.TCPServer'
+のサブクラスで、基本的なスタンドアロンの XML-RPC
+サーバーを作成する手段を提供します。
+
+`register_function(function[, name])'
+     XML-RPCリクエストに応じる関数を登録します。引数NAMEが与えられている場合はその値が、関数FUNCTIONに関連付けられます。これが与えられない場合は`FUNCTION.__name__'の値が用いられます。引数NAMEは通常の文字列でもユニコード文字列でも良く、Pythonで識別子として正しくない文字("
+     . "ピリオドなど )を含んでいても。
+
+
+`register_instance(instance[, allow_dotted_names])'
+     オブジェクトを登録し、そのオブジェクトの`register_function()'で登録されていないメソッドを公開します。もし、INSTANCEがメソッド`_dispatch()'を定義していれば、`_dispatch()'が、リクエストされたメソッド名とパラメータの組を引数として呼び出されます。そして、`_dispatch()'の返り値が結果としてクライアントに返されます。もし、INSTANCEがメソッド`_dispatch()'を定義していなければ、リクエストされたメソッド名がそのインスタンスに定義されているメソッド名から探されます。オプションの
+     ALLOW_DOTTED_NAMES 引数が真で、インスタンスに `_dispatch()'
+     メソッドがなければ、リクエストされたメソッド名がピリオドを含む場合は、（訳注：通常のPythonでのピリオドの解釈と同様に）階層的にオブジェクトを探索します。そして、そこで見つかったオブジェクトをリクエストから渡された引数で呼び出し、その返り値をクライアントに返します。
+
+     _Notice:_ [warning] ALLOW_DOTTED_NAMES
+     オプションを有効にすると、侵入者が
+     あなたの作成したモジュールのグローバル変数にアクセスできるように
+     なり、あなたのマシンで任意のコードを実行できてしまう可能性が
+     あります。このオプションはセキュアで閉じたネットワーク内でのみ
+     使うようにしてください。
+
+     _Changed in Python version 2.3.5, 2.4.1_
+
+
+`register_introspection_functions()'
+     XML-RPC
+     のイントロスペクション関数、`system.listMethods'、`system.methodHelp'、`system.methodSignature'
+     を登録します。 _Added in Python version 2.3_
+
+`register_multicall_functions()'
+     XML-RPC における複数の要求を処理する関数 system.multicall
+     を登録します。
+
+以下に例を示します。
+
+     class MyFuncs:
+         def div(self, x, y) : return x // y
+     
+     server = SimpleXMLRPCServer(("localhost", 8000))
+     server.register_function(pow)
+     server.register_function(lambda x,y: x+y, 'add')
+     server.register_introspection_functions()
+     server.register_instance(MyFuncs())
+     server.serve_forever()
+
+
+File: python-lib-jp.info,  Node: CGIXMLRPCRequestHandler,  Prev: SimpleXMLRPCServer オブジェクト,  Up: SimpleXMLRPCServer
+
+CGIXMLRPCRequestHandler
+-----------------------
+
+`CGIXMLRPCRequestHandler' クラスは、Python の CGI スクリプトに送られた
+XML-RPC リクエストを処理するときに使用できます
+
+`register_function(function[, name])'
+     XML-RPC リクエストに応じる関数を登録します。
+     引数NAMEが与えられている場合はその値が、関数FUNCTIONに関連付けられます。これが与えられない場合は`FUNCTION.__name__'の値が用いられます。引数NAMEは通常の文字列でもユニコード文字列でも良く、Pythonで識別子として正しくない文字("
+     . "ピリオドなど )を含んでもかまいません。
+
+`register_instance(instance)'
+     オブジェクトを登録し、そのオブジェクトの`register_function()'で登録されていないメソッドを公開します。もし、INSTANCEがメソッド`_dispatch()'を定義していれば、`_dispatch()'が、リクエストされたメソッド名とパラメータの組を引数として呼び出されます。そして、`_dispatch()'の返り値が結果としてクライアントに返されます。もし、INSTANCEがメソッド`_dispatch()'を定義していなければ、リクエストされたメソッド名がそのインスタンスに定義されているメソッド名から探されます。リクエストされたメソッド名がピリオドを含む場合は、（訳注：通常のPythonでのピリオドの解釈と同様に）階層的にオブジェクトを探索します。そして、そこで見つかったオブジェクトをリクエストから渡された引数で呼び出し、その返り値をクライアントに返します。
+
+`register_introspection_functions()'
+     XML-RPC
+     のイントロスペクション関数、`system.listMethods'、`system.methodHelp'、`system.methodSignature'
+     を登録します。
+
+`register_multicall_functions()'
+     XML-RPC における複数の要求を処理する関数 system.multicall
+     を登録します。
+
+`handle_request([request_text = None])'
+     XML-RPC リクエストを処理します。REQUEST_TEXT で渡されるのは、HTTP
+     サーバーに提供された POST
+     データです。何も渡されなければ標準入力からのデータが使われます。
+
+以下に例を示します。
+
+     class MyFuncs:
+         def div(self, x, y) : return div(x,y)
+     
+     handler = CGIXMLRPCRequestHandler()
+     handler.register_function(pow)
+     handler.register_function(lambda x,y: x+y, 'add')
+     handler.register_introspection_functions()
+     handler.register_instance(MyFuncs())
+     handler.handle_request()
+
+
+File: python-lib-jp.info,  Node: DocXMLRPCServer,  Next: asyncore,  Prev: SimpleXMLRPCServer,  Up: インターネットプロトコルとその支援
+
+セルフ-ドキュメンティング XML-RPC サーバ
+========================================
+
+セルフ-ドキュメンティング XML-RPC サーバの実装。
+
+_Added in Python version 2.3_
+
+`DocXMLRPCServer' モジュールは `SimpleXMLRPCServer' クラ
+スを拡張し、HTTP GET リクエストに対し HTML ドキュメントを返します。サー
+バは `DocXMLRPCServer' を使ったスタンドアロン環境、
+`DocCGIXMLRPCRequestHandler' を使った CGI 環境の2つがあります。
+
+`DocXMLRPCServer(addr[,  requestHandler[, logRequests]])'
+     当たなサーバ・インスタンスを生成します。各パラメータの内容は
+     `SimpleXMLRPCServer.SimpleXMLRPCServer' のものと同じですが、
+     REQUESTHANDLER のデフォルトは `DocXMLRPCRequestHandler' に
+     なっています。
+
+
+`DocCGIXMLRPCRequestHandler()'
+     CGI環境に XMR-RPC
+     リクエスト・ハンドラの新たなインスタンスを生成します。
+
+
+`DocXMLRPCRequestHandler()'
+     リクエスト・ハンドラの新たなインスタンスを生成します。このリクエスト・
+     ハンドラは XML-RPC POST リクエスト、ドキュメントの GET、そして
+     `DocXMLRPCServer' コンストラクタに与えられた LOGREQUESTS
+     パラメータ設定を優先するため、ロギングの変更をサポートします。
+
+
+* Menu:
+
+* DocXMLRPCServer オブジェクト::
+* DocCGIXMLRPCRequestHandler::
+
+
+File: python-lib-jp.info,  Node: DocXMLRPCServer オブジェクト,  Next: DocCGIXMLRPCRequestHandler,  Prev: DocXMLRPCServer,  Up: DocXMLRPCServer
+
+DocXMLRPCServer オブジェクト
+----------------------------
+
+`DocXMLRPCServer' は `SimpleXMLRPCServer.SimpleXMLRPCServer'
+の派生クラスで、セルフ- ドキュメンティングの手段と XML-RPC
+サーバ機能を提供します。HTTP POST リクエストは XML-RPC
+メソッドの呼び出しとして扱われます。HTTP GET リク エストは pydoc
+スタイルの HTML ドキュメント生成のリクエストとして扱わ
+れます。これはサーバが自分自身のドキュメントを Web ベースで提供可能で
+あることを意味します。
+
+`set_server_title(server_title)'
+     生成する HTML ドキュメントのタイトルをセットします。このタイトルは
+     HTML の title 要素として使われます。
+
+
+`set_server_name(server_name)'
+     生成する HTML ドキュメントの名前をセットします。この名前は HTML
+     冒頭の h1 要素に使われます。
+
+`set_server_documentation(server_documentation)'
+     生成する HTML ドキュメントの本文をセットします。この本文は
+     ドキュメント中の名前の下にパラグラフとして出力されます。
+
+
+
+File: python-lib-jp.info,  Node: DocCGIXMLRPCRequestHandler,  Prev: DocXMLRPCServer オブジェクト,  Up: DocXMLRPCServer
+
+DocCGIXMLRPCRequestHandler
+--------------------------
+
+`DocCGIXMLRPCRequestHandler' は
+`SimpleXMLRPCServer.CGIXMLRPCRequestHandler' の派生クラスで、セ ルフ-
+ドキュメンティングの手段と XML-RPC CGI スクリプト機能を提供しま
+す。HTTP POST リクエストは XML-RCP メソッドの呼び出しとして扱われます。
+HTTP GET リクエストは pydoc スタイルの HTML ドキュメント生成のリクエス
+トとして扱われます。これはサーバが自分自身のドキュメントを Web ベース
+で提供可能であることを意味します。
+
+`set_server_title(server_title)'
+     生成する HTML ドキュメントのタイトルをセットします。このタイトルは
+     HTML の title 要素として使われます。
+
+
+`set_server_name(server_name)'
+     生成する HTML ドキュメントの名前をセットします。この名前は HTML
+     冒頭の h1 要素に使われます。
+
+
+`set_server_documentation(server_documentation)'
+     生成する HTML ドキュメントの本文をセットします。この本文は
+     ドキュメント中の名前の下にパラグラフとして出力されます。
+
+
+
+File: python-lib-jp.info,  Node: asyncore,  Next: asynchat,  Prev: DocXMLRPCServer,  Up: インターネットプロトコルとその支援
+
+非同期ソケットハンドラ
+======================
+
+非同期なソケット制御サービスのためのベースクラス
+
+このモジュールは、非同期ソケットサービスのクライアント・サーバを開発する
+ための基盤として使われます。
+
+CPUが一つしかない場合、プログラムが"二つのことを同時に"実行する方法は
+二つしかありません。もっとも簡単で一般的なのはマルチスレッドを利用する方
+法ですが、これとはまったく異なるテクニックで、一つのスレッドだけでマルチ
+スレッドと同じような効果を得られるテクニックがあります。このテクニックは
+I/O処理が中心である場合にのみ有効で、CPU負荷の高いプログラムでは効果が無
+く、この場合にはプリエンプティブなスケジューリングが可能なスレッドが有効
+でしょう。しかし、多くの場合、ネットワークサーバではCPU負荷よりはIO負荷
+が問題となります。
+
+もしOSのI/Oライブラリがシステムコール `select()' をサポートし
+ている場合（ほとんどの場合はサポートされている）、I/O処理は"バックグラ
+ウンド"で実行し、その間に他の処理を実行すれば、複数の通信チャネルを同時
+にこなすことができます。一見、この戦略は奇妙で複雑に思えるかもしれません
+が、いろいろな面でマルチスレッドよりも理解しやすく、制御も容易です。
+`asyncore'は多くの複雑な問題を解決済みなので、洗練され、パフォー
+マンスにも優れたネットワークサーバとクライアントを簡単に開発することがで
+きます。とくに、`asynchat'のような、対話型のアプリケーションや
+プロトコルには非常に有効でしょう。
+
+基本的には、この二つのモジュールを使う場合は一つ以上のネットワーク
+_チャネル_を`asyncore.dispatcher'クラス、または
+`asynchat.async_chat'のインスタンスとして作成します。作成されたチ
+ャネルはグローバルマップに登録され、`loop()'関数で参照されま
+す。`loop()'には、専用のマップを渡す事も可能です。
+
+チャネルを生成後、`loop()'を呼び出すとチャネル処理が開始し、最
+後のチャネル（非同期処理中にマップに追加されたチャネルを含む）が閉じるま
+で継続します。
+
+`loop([timeout[, use_poll[, map]]])'
+     ポーリングループを開始し、全てのオープン済みチャネルがクローズされた場
+     合のみ終了します。全ての引数はオプションです。引数TIMEOUTは
+     `select()'または`poll()'の引数timeoutとして渡され、
+     秒単位で指定します。デフォルト値は30秒です。引数USE_POLLが真のと
+     き、`select()'ではなく`poll()'が使われます。デフォル
+     ト値は`False'です。引数MAPには、監視するチャネルをアイテム
+     として格納した辞書を指定します。MAPが省略された場合、グローバル
+     なマップが使用される。グローバルなマップは、チャネルクラスの
+     `__init__()'メソッドが呼び出されたときに自動的に更新されま す。-
+     この仕組みを利用するのであれば、チャネルクラスの
+     `__init__()'はオーバライドするのではなく、拡張しなければなりま
+     せん。
+
+
+`dispatcher()'
+     `dispatcher'クラスは、低レベルソケットオブジェクトの薄いラッ
+     パーです。便宜上、非同期ループから呼び出されるイベント処理メソッドを
+     追加していますが、これ以外の点では、non-blockingなソケットと同様で
+     す。
+
+     `dispatcher'クラスには二つのクラス属性があり、パフォーマンス向上
+     やメモリの削減のために更新する事ができます。
+
+    `ac_in_buffer_size'
+          非同期入力バッファのサイズ(デフォルト `4096')
+
+    `ac_out_buffer_size'
+          非同期出力バッファのサイズ(デフォルト `4096')
+
+     非同期ループ内で低レベルイベントが発生した場合、発生のタイミングやコネ
+     クションの状態から特定の高レベルイベントへと置き換えることができます。
+     例えばソケットを他のホストに接続する場合、最初の書き込み可能イベントが
+     発生すれば接続が完了した事が分かります(この時点で、ソケットへの書き込
+     みは成功すると考えられる)。このように判定できる高レベルイベントを以下
+     に示します：
+
+     イベント                           解説
+     ------                             -----
+     handle_connect()                   最初にwriteイベントが発生した時
+     handle_close()                     読み込み可能なデータなしでreadイベントが発生
+                                        した時
+     handle_accept()                    listen中のソケットでreadイベントが発生した時
+
+     非同期処理中、マップに登録されたチャネルの`readable()'メソッド
+     と`writable()'メソッドが呼び出され、`select()'か
+     `poll()'でread/writeイベントを検出するリストに登録するか否か
+     を判定します。
+
+
+このようにして、チャネルでは低レベルなソケットイベントの種類より多くの種
+類のイベントを検出する事ができます。以下にあげるイベントは、サブクラスで
+オーバライドすることが可能です：
+
+`handle_read()'
+     非同期ループで、チャネルのソケットの`read()'メソッドの呼び出しが
+     成功した時に呼び出されます。
+
+`handle_write()'
+     非同期ループで、書き込み可能ソケットが実際に書き込み可能になった時に呼
+     び出される。このメソッドは、パフォーマンスの向上のためバッファリングを
+     行う場合などに利用できます。例：
+          def handle_write(self):
+              sent = self.send(self.buffer)
+              self.buffer = self.buffer[sent:]
+
+
+`handle_expt()'
+     out of band
+     (OOB)データが検出された時に呼び出されます。OOBはあまりサポー
+     トされておらず、また滅多に使われないので、`handle_expt()'が呼び
+     出されることはほとんどありません。
+
+`handle_connect()'
+     ソケットの接続が確立した時に呼び出されます。"welcome"バナーの送信、プ
+     ロトコルネゴシエーションの初期化などを行います。
+
+`handle_close()'
+     ソケットが閉じた時に呼び出されます。
+
+`handle_error()'
+     捕捉されない例外が発生した時に呼び出されます。デフォルトでは、短縮したト
+     レースバック情報が出力されます。
+
+`handle_accept()'
+     listen中のチャネルがリモートホストからの`connect()'で接続され、
+     接続が確立した時に呼び出されます。
+
+`readable()'
+     非同期ループ中に呼び出され、readイベントの監視リストに加えるか否かを決
+     定します。デフォルトのメソッドでは`True'を返し、readイベントの発
+     生を監視します。
+
+`writable()'
+     非同期ループ中に呼び出され、writeイベントの監視リストに加えるか否かを
+     決定します。デフォルトのメソッドでは`True'を返し、writeイベントの
+     発生を監視します。
+
+さらに、チャネルにはソケットのメソッドとほぼ同じメソッドがあり、チャネル
+はソケットのメソッドの多くを委譲・拡張しており、ソケットとほぼ同じメソッ
+ドを持っています。
+
+`create_socket(family, type)'
+     引数も含め、通常のソケット生成と同じ。`socket'モジュールを参
+     照のこと。
+
+`connect(address)'
+     通常のソケットオブジェクトと同様、ADDRESSには一番目の値が接続先
+     ホスト、2番目の値がポート番号であるタプルを指定します。
+
+`send(data)'
+     リモート側の端点にDATAを送出します。
+
+`recv(buffer_size)'
+     リモート側の端点より、最大BUFFER_SIZEバイトのデータを読み込みま
+     す。長さ0の文字列が返ってきた場合、チャネルはリモートから切断された事
+     を示します。
+
+`listen(backlog)'
+     ソケットへの接続を待つ。引数BACKLOGは、キューイングできるコネク
+     ションの最大数を指定します(1以上)。最大数はシステムに依存でします（通
+     常は5)
+
+`bind(address)'
+     ソケットをADDRESSにバインドします。ソケットはバインド済みであっ
+     てはなりません。(ADDRESSの形式は、アドレスファミリに依存します。
+     `socket'モジュールを参照のこと。)
+
+`accept()'
+     接続を受け入れます。ソケットはアドレスにバインド済みであり、
+     `listen()'で接続待ち状態でなければなりません。戻り値は `(CONN,
+     ADDRESS)'のペアで、CONNはデータの送受信
+     を行うソケットオブジェクト、ADDRESSは接続先ソケットがバインドさ
+     れているアドレスです。
+
+`close()'
+     ソケットをクローズします。以降の全ての操作は失敗します。リモート端点で
+     は、キューに溜まったデータ以外、これ以降のデータ受信は行えません。ソケ
+     ットはガベージコレクト時に自動的にクローズされます。
+
+* Menu:
+
+* asyncoreの例：簡単なHTTPクライアント::
+
+
+File: python-lib-jp.info,  Node: asyncoreの例：簡単なHTTPクライアント,  Prev: asyncore,  Up: asyncore
+
+asyncoreの例：簡単なHTTPクライアント
+------------------------------------
+
+基本的なサンプルとして、以下に非常に単純なHTTPクライアントを示します。こ
+のHTTPクライアントは`dispatcher'クラスでソケットを利用しています。
+
+     class http_client(asyncore.dispatcher):
+         def __init__(self, host,path):
+             asyncore.dispatcher.__init__(self)
+             self.path = path
+             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+             self.connect( (host, 80) )
+             self.buffer = 'GET %s HTTP/1.0\r\n\r\n' % self.path
+     
+         def handle_connect(self):
+             pass
+     
+         def handle_read(self):
+             data = self.recv(8192)
+             print data
+     
+         def writable(self):
+             return (len(self.buffer) > 0)
+     
+         def handle_write(self):
+             sent = self.send(self.buffer)
+             self.buffer = self.buffer[sent:]
+
+
+File: python-lib-jp.info,  Node: asynchat,  Prev: asyncore,  Up: インターネットプロトコルとその支援
+
+非同期ソケット コマンド/レスポンス ハンドラ
+===========================================
+
+非同期コマンド/レスポンスプロトコルの開発サポート
+
+`asynchat'を使うと、`asyncore'を基盤とした非同期な
+サーバ・クライアントをより簡単に開発する事ができます。
+`asynchat'では、プロトコルの要素が任意の文字列で終了するか、ま
+たは可変長の文字列であるようなプロトコルを容易に制御できるようになってい
+ます。`asynchat'は、抽象クラス`async_chat'を定義してお
+り、`async_chat'を継承して`collect_incoming_data()'メソッド
+と`found_terminator()'メソッドを実装すれば使うことができます。
+`async_chat'と`asyncore'は同じ非同期ループを使用してお
+り、`asyncore.dispatcher'も`asynchat.async_chat'も同じチャネ
+ルマップに登録する事ができます。通常、`asyncore.dispatcher'はサー
+バチャネルとして使用し、リクエストの受け付け時に
+`asynchat.async_chat'オブジェクトを生成します。
+
+`async_chat()'
+     このクラスは、`asyncore.dispatcher'から継承した抽象クラスです。
+     使用する際には`async_chat'のサブクラスを作成し、
+     `collect_incoming_data()'と`found_terminator()'を定義し
+     なければなりません。`asyncore.dispatcher'のメソッドを使用する事
+     もできますが、メッセージ/レスポンス処理を中心に行う場合には使えないメ
+     ソッドもあります。
+
+     `asyncore.dispatcher'と同様に、`async_chat'も
+     `select()'呼出し後のソケットの状態からイベントを生成します。
+     ポーリングループ開始後、イベント処理フレームワークが自動的に
+     `async_chat'のメソッドを呼び出しますので、プログラマが処理を記述
+     する必要はありません。
+
+     `asyncore.dispatcher'と違い、`async_chat'では _プロデューサ_の
+     first-in-first-outキュー(fifo)を作成する事ができ
+     ます。プロデューサは`more()'メソッドを必ず持ち、このメソッドで
+     チャネル上に送出するデータを返します。プロデューサが枯渇状態
+     (_i.e._ これ以上のデータを持たない状態)にある場合、
+     `more()'は空文字列を返します。この時、`async_chat'は枯渇
+     状態にあるプロデューサをfifoから除去し、次のプロデューサが存在すればそ
+     のプロデューサを使用します。fifoにプロデューサが存在しない場合、
+     `handle_write()'は何もしません。リモート端点からの入力の終了や
+     重要な中断点を検出する場合は、`set_terminator()'に記述します。
+
+     `async_chat'のサブクラスでは、入力メソッド
+     `collect_incoming_data()'と`found_terminator()'を定義
+     し、チャネルが非同期に受信するデータを処理します。以下にメソッドの解説
+     を示します。
+
+
+`close_when_done()'
+     プロデューサfifoのトップに`None'をプッシュします。このプロデュー
+     サがポップされると、チャネルがクローズします。
+
+`collect_incoming_data(data)'
+     チャネルが受信した不定長のデータをDATAに指定して呼び出されます。
+     このメソッドは必ずオーバライドする必要があり、デフォルトの実装では、
+     `NotImplementedError' 例外を送出します。
+
+`discard_buffers()'
+     非常用のメソッドで、全ての入出力バッファとプロデューサfifoを廃棄します。
+
+`found_terminator()'
+     入力データストリームが、`set_terminator'で指定した終了条件と一
+     致した場合に呼び出されます。このメソッドは必ずオーバライドする必要があ
+     り、デフォルトの実装では、`NotImplementedError' 例外を送出し
+     ます。入力データを参照する必要がある場合でも引数としては与えられないた
+     め、入力バッファをインスタンス属性として参照しなければなりません。
+
+`get_terminator()'
+     現在のチャネルの終了条件を返します。
+
+`handle_close()'
+     チャネル閉じた時に呼び出されます。デフォルトの実装では単にチャネルのソ
+     ケットをクローズします。
+
+`handle_read()'
+     チャネルの非同期ループでreadイベントが発生した時に呼び出され、デフォル
+     トの実装では、`set_terminator()'で設定された終了条件をチェック
+     します。終了条件として、特定の文字列か受信文字数を指定する事ができま
+     す。終了条件が満たされている場合、`handle_read'は終了条件が成立
+     するよりも前のデータを引数として`collect_incoming_data()'を呼び
+     出し、その後`found_terminator()'を呼び出します。
+
+`handle_write()'
+     アプリケーションがデータを出力する時に呼び出され、デフォルトの実装では
+     `initiate_send()'を呼び出します。`initiate_send()'では
+     `refill_buffer()'を呼び出し、チャネルのプロデューサfifoからデー
+     タを取得します。
+
+`push(data)'
+     dataを持つ`simple_producer'(_後述_)オブジェクトを生成し、チ
+     ャネルの`producer_fifo'にプッシュして転送します。データをチャネル
+     に書き出すために必要なのはこれだけですが、データの暗号化やチャンク化な
+     どを行う場合には独自のプロデューサを使用する事もできます。
+
+`push_with_producer(producer)'
+     指定したプロデューサオブジェクトをチャネルのfifoに追加します。これより
+     前にpushされたプロデューサが全て枯渇した後、チャネルはこのプロデューサ
+     から`more()'メソッドでデータを取得し、リモート端点に送信しま す。
+
+`readable()'
+     `select()'ループでこのチャネルの読み込み可能チェックを行う場
+     合には、`True'を返します。
+
+`refill_buffer()'
+     fifoの先頭にあるプロデューサの`more()'メソッドを呼び出し、出力
+     バッファを補充します。先頭のプロデューサが枯渇状態の場合にはfifoからポ
+     ップされ、その次のプロデューサがアクティブになります。アクティブなプロ
+     デューサが`None'になると、チャネルはクローズされます。
+
+`set_terminator(term)'
+     チャネルで検出する終了条件を設定します。`term'は入力プロトコルデー
+     タの処理方式によって以下の3つの型の何れかを指定します。
+
+     term                               説明
+     ------                             -----
+     _string_                           入力ストリーム中でstringが検出された時、
+                                        `found_terminator()'を呼び出します。
+     _integer_                          指定された文字数が読み込まれた時、
+                                        `found_terminator()'を呼び出します。
+     `None'                             永久にデータを読み込みます。
+
+     終了条件が成立しても、その後に続くデータは、
+     `found_terminator()'の呼出し後に再びチャネルを読み込めば取得す
+     る事ができます。
+
+
+`writable()'
+     Should return `True' as long as items remain on the producer fifo,
+     or the channel is connected and the channel's output buffer is
+     non-empty.
+
+     プロデューサfifoが空ではないか、チャネルが接続中で出力バッファが空でな
+     い場合、`True'を返します。
+
+* Menu:
+
+* asynchat - 補助クラスと関数::
+* asynchat 使用例::
+
+
+File: python-lib-jp.info,  Node: asynchat - 補助クラスと関数,  Next: asynchat 使用例,  Prev: asynchat,  Up: asynchat
+
+asynchat - 補助クラスと関数
+---------------------------
+
+`simple_producer(data[, buffer_size=512])'
+     `simple_producer'には、一連のデータと、オプションとしてバッファ
+     サイズを指定する事ができます。`more()'が呼び出されると、その都
+     度BUFFER_SIZE以下の長さのデータを返します。
+
+`more()'
+     プロデューサから取得した次のデータか、空文字列を返します。
+
+`fifo([list=None])'
+     各チャネルは、アプリケーションからプッシュされ、まだチャネルに書き出さ
+     れていないデータを`fifo'に保管しています。`fifo'では、必
+     要なデータとプロデューサのリストを管理しています。引数LISTには、
+     プロデューサかチャネルに出力するデータを指定する事ができます。
+
+`is_empty()'
+     fifoが空のとき`True'を返します。
+
+`first()'
+     fifoに`push()'されたアイテムのうち、最も古いアイテムを返します。
+
+`push(data)'
+     データ(文字列またはプロデューサオブジェクト)をプロデューサfifoに追加します。
+
+`pop()'
+     fifoが空でなければ、`(True, first())'を返し、ポップされたアイテム
+     を削除します。fifoが空であれば`(False, None)'を返します。
+
+`asynchat'は、ネットワークとテキスト分析操作で使えるユーティリテ
+ィ関数を提供しています。
+
+`find_prefix_at_end(haystack, needle)'
+     文字列HAYSTACKの末尾がNEEDLEの先頭と一致するかを調べ、一致
+     した文字数を返します。ex)`find_prefix_at_end("abc12\r", "\r")'
+     は1を返します。
+
+
+File: python-lib-jp.info,  Node: asynchat 使用例,  Prev: asynchat - 補助クラスと関数,  Up: asynchat
+
+asynchat 使用例
+---------------
+
+以下のサンプルは、`async_chat'でHTTPリクエストを読み込む処理の一部
+です。Webサーバは、クライアントからの接続毎に
+`http_request_handler'オブジェクトを作成します。最初はチャネルの終
+了条件に空行を指定してHTTPヘッダの末尾までを検出し、その後ヘッダ読み込み
+済みを示すフラグを立てています。
+
+ヘッダ読み込んだ後、リクエストの種類がPOSTであればデータが入力ストリーム
+に流れるため、`Content-Length:'ヘッダの値を数値として終了条件に指定
+し、適切な長さのデータをチャネルから読み込みます。
+
+必要な入力データを全て入手したら、チャネルの終了条件に`None'を指定
+して残りのデータを無視するようにしています。この後、
+`handle_request()'が呼び出されます。
+
+     class http_request_handler(asynchat.async_chat):
+     
+         def __init__(self, conn, addr, sessions, log):
+             asynchat.async_chat.__init__(self, conn=conn)
+             self.addr = addr
+             self.sessions = sessions
+             self.ibuffer = []
+             self.obuffer = ""
+             self.set_terminator("\r\n\r\n")
+             self.reading_headers = True
+             self.handling = False
+             self.cgi_data = None
+             self.log = log
+     
+         def collect_incoming_data(self, data):
+             """Buffer the data"""
+             self.ibuffer.append(data)
+     
+         def found_terminator(self):
+             if self.reading_headers:
+                 self.reading_headers = False
+                 self.parse_headers("".join(self.ibuffer))
+                 self.ibuffer = []
+                 if self.op.upper() == "POST":
+                     clen = self.headers.getheader("content-length")
+                     self.set_terminator(int(clen))
+                 else:
+                     self.handling = True
+                     self.set_terminator(None)
+                     self.handle_request()
+             elif not self.handling:
+                 self.set_terminator(None) # browsers sometimes over-send
+                 self.cgi_data = parse(self.headers, "".join(self.ibuffer))
+                 self.handling = True
+                 self.ibuffer = []
+                 self.handle_request()
+
+
+File: python-lib-jp.info,  Node: インターネット上のデータの操作,  Next: 構造化マークアップツール,  Prev: インターネットプロトコルとその支援,  Up: Top
+
+インターネット上のデータの操作
+******************************
+
+この章ではインターネット上で一般的に利用されているデータ形式の
+操作をサポートするモジュール群について記述します．
+
+* Menu:
+
+* formatter::
+* email::
+* mailcap::
+* mailbox::
+* mhlib::
+* mimetools::
+* mimetypes::
+* MimeWriter::
+* mimify::
+* multifile::
+* rfc822::
+* base64::
+* binascii::
+* binhex::
+* quopri::
+* uu::
+* xdrlib::
+* netrc::
+* robotparser::
+* csv::
+
+
+File: python-lib-jp.info,  Node: formatter,  Next: email,  Prev: インターネット上のデータの操作,  Up: インターネット上のデータの操作
+
+汎用の出力書式化機構
+====================
+
+汎用の出力書式化機構およびデバイスインタフェース。
+
+このモジュールでは、二つのインタフェース定義を提供しており、
+それらの各インタフェースについて複数の実装を提供しています。
+_formatter_ インタフェースは `htmllib' モジュールの `HTMLParser'
+クラスで使われており、_writer_ インタフェースは formatter
+インタフェースを使う上で必要です。
+
+formatter オブジェクトはある抽象化された書式イベントの流れを writer
+オブジェクト上の特定の出力イベントに変換します。 formatter
+はいくつかのスタック構造を管理することで、writer
+オブジェクトの様々な属性を変更したり復元したりできるように しています;
+このため、writer は相対的な変更や "元に戻す" 操作
+を処理できなくてもかまいません。writer の特定のプロパティのうち、
+formatter オブジェクトを介して制御できるのは、水平方向の字揃え、
+フォント、そして左マージンの字下げです。
+任意の、非排他的なスタイル設定を writer に提供するための
+メカニズムも提供されています。さらに、段落分割のように、
+可逆でない書式化イベントの機能を提供するインタフェース もあります。
+
+writer オブジェクトはデバイスインタフェースをカプセル化します。
+ファイル形式のような抽象デバイスも物理デバイス同様にサポートされて
+います。ここで提供されている実装内容はすべて抽象デバイス上で
+動作します。デバイスインタフェースは formatter オブジェクトが
+管理しているプロパティを設定し、データを出力端に書き込める
+ようにします。
+
+* Menu:
+
+* formatter インタフェース::
+* formatter 実装::
+* writer インタフェース::
+* writer 実装::
+
+
+File: python-lib-jp.info,  Node: formatter インタフェース,  Next: formatter 実装,  Prev: formatter,  Up: formatter
+
+formatter インタフェース
+------------------------
+
+formatter を作成するためのインタフェースは、インスタンス化しようと
+する個々の formatter クラスに依存します。以下で解説するのは、
+インスタンス化された全ての formatter がサポートしなければならない
+インタフェースです。
+
+モジュールレベルではデータ要素を一つ定義しています:
+
+`AS_IS'
+     後に述べる `push_font()' メソッドでフォント指定をする時に
+     使える値です。また、その他の `push_PROPERTY()'
+     メソッドの新しい値として使うことができます。
+
+     `AS_IS' の値をスタックに置くと、どのプロパティが変更されたかの
+     追跡を行わずに、対応する `pop_PROPERTY()' メソッドが呼び
+     出されるようになります。
+
+formatter インスタンスオブジェクトには以下の属性が定義されています:
+
+`writer'
+     formatter とやり取りを行う writer インスタンスです。
+
+`end_paragraph(blanklines)'
+     開かれている段落があれば閉じ、次の段落との間に少なくとも
+     BLANKLINES が挿入されるようにします。
+
+`add_line_break()'
+     強制改行挿入します。既に強制改行がある場合は挿入しません。
+     論理的な段落は中断しません。
+
+`add_hor_rule(*args, **kw)'
+     出力に水平罫線を挿入します。現在の段落に何らかのデータがある
+     場合、強制改行が挿入されますが、論理的な段落は中断しません。
+     引数とキーワードは writer の `send_line_break()' メソッドに
+     渡されます。
+
+`add_flowing_data(data)'
+     空白を折りたたんで書式化しなければならないデータを提供します。
+     空白の折りたたみでは、直前や直後の `add_flowing_data' 呼び出しに
+     入っている空白も考慮されます。このメソッドに渡されたデータは
+     出力デバイスで行末の折り返し (word-wrap) されるものと想定されて
+     います。出力デバイスでの要求やフォント情報に応じて、writer
+     オブジェクト
+     でも何らかの行末折り返しが行われなければならないので注意してください。
+
+`add_literal_data(data)'
+     変更を加えずに writer に渡さなければならないデータを提供します。
+     改行およびタブを含む空白を DATA の値にしても問題ありません。
+
+`add_label_data(format, counter)'
+     現在の左マージン位置の左側に配置されるラベルを挿入します。この
+     ラベルは箇条書き、数字つき箇条書きの書式を構築する際に使われます。
+     FORMAT の値が文字列の場合、整数の値 COUNTER の
+     書式指定として解釈されます。
+
+     FORMAT の値が文字列の場合、整数の値をとる COUNTER の
+     書式化指定として解釈されます。書式化された文字列はラベルの値に
+     なります; FORMAT が文字列でない場合、ラベルの値として
+     直接使われます。ラベルの値は writer の `send_label_data()'
+     メソッドの唯一の引数として渡されます。非文字列のラベル値をどう
+     解釈するかは関連付けられた writer に依存します。
+
+     書式化指定は文字列からなり、 counter の値と合わせてラベルの値を算出
+     するために使われます。書式文字列の各文字はラベル値にコピーされます。
+     このときいくつかの文字は counter
+     値を変換を指すものとして認識されます。 特に、文字 `1'
+     はアラビア数字の counter 値を表し、 `A' と `a'
+     はそれぞれ大文字および小文字の アルファベットによる counter
+     値を表し、`I' と `i'
+     はそれぞれ大文字および小文字のローマ数字による counter 値を表し
+     ます。アルファベットおよびローマ字数字への変換の際には、counter の
+     値はゼロ以上である必要があるので注意してください。
+
+`flush_softspace()'
+     以前の `add_flowing_data()' 呼び出しでバッファされている
+     出力待ちの空白を、関連付けられている writer オブジェクトに送信
+     します。このメソッドは writer オブジェクトに対するあらゆる直接操作
+     の前に呼び出さなければなりません。
+
+`push_alignment(align)'
+     新たな字揃え (alignment) 設定を字揃えスタックの上にプッシュします。
+     変更を行いたくない場合には `AS_IS' にすることができます。
+     字揃え設定値が以前の設定から変更された場合、writer の
+     `new_alignment()' メソッドが ALIGN の値と共に呼び出されます。
+
+`pop_alignment()'
+     以前の字揃え設定を復元します。
+
+`push_font(`('size, italic, bold, teletype`)')'
+     writer
+     オブジェクトのフォントプロパティのうち、一部または全てを変更します。
+     `AS_IS' に設定されていないプロパティは引数で渡された値に
+     設定され、その他の値は現在の設定を維持します。writer の
+     `new_font()' メソッドは完全に設定解決されたフォント指定で
+     呼び出されます。
+
+`pop_font()'
+     以前のフォント設定を復元します。
+
+`push_margin(margin)'
+     左マージンのインデント数を一つ増やし、論理タグ MARGIN を
+     新たなインデントに関連付けます。マージンレベルの初期値は `0'
+     です。変更された論理タグの値は真値とならなければなりません;
+     `AS_IS' 以外の偽の値はマージンの変更としては不適切です。
+
+`pop_margin()'
+     以前のマージン設定を復元します。
+
+`push_style(*styles)'
+     任意のスタイル指定をスタックにプッシュします。全てのスタイルは
+     スタイルスタックに順番にプッシュされます。`AS_IS' 値を含み、
+     スタック全体を表すタプルは writer の `new_styles()' メソッド
+     に渡されます。
+
+`pop_style([n` = 1'])'
+     `push_style()' に渡された最新 N 個のスタイル指定を
+     ポップします。`AS_IS' 値を含み、変更されたスタックを表す タプルは
+     writer の `new_styles()' メソッドに渡されます。
+
+`set_spacing(spacing)'
+     writer の割り付けスタイル (spacing style) を設定します。
+
+`assert_line_data([flag` = 1'])'
+     現在の段落にデータが予期せず追加されたことを formatter
+     に知らせます。 このメソッドは writer
+     を直接操作した際に使わなければなりません。 writer
+     操作の結果、出力の末尾が強制改行となった場合、オプションの FLAG
+     引数を偽に設定することができます。
+
+
+File: python-lib-jp.info,  Node: formatter 実装,  Next: writer インタフェース,  Prev: formatter インタフェース,  Up: formatter
+
+formatter 実装
+--------------
+
+このモジュールでは、formatter オブジェクトに関して二つの実装を
+提供しています。ほとんどのアプリケーションではこれらのクラスを
+変更したりサブクラス化することなく使うことができます。
+
+`NullFormatter([writer])'
+     何も行わない formatter です。WRITER を省略すると、 `NullWriter'
+     インスタンスが生成されます。 `NullFormatter'
+     インスタンスは、writer のメソッドを 全く呼び出しません。writer
+     へのインタフェースを実装する場合には
+     このクラスのインタフェースを継承する必要がありますが、実装を
+     継承する必要は全くありません。
+
+`AbstractFormatter(writer)'
+     標準の formatter です。この formatter 実装は広範な writer
+     で適用できることが実証されており、ほとんどの状況で直接使うことが
+     できます。高機能の WWW
+     ブラウザを実装するために使われたこともあります。
+

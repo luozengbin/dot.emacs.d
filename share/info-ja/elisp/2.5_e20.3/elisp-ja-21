@@ -1,0 +1,1874 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Search and Replace, Next: Match Data, Prev: POSIX Regexps, Up: Searching and Matching
+
+探索と置換
+==========
+
+ -- Function: perform-replace FROM-STRING REPLACEMENTS QUERY-FLAG REGEXP-FLAG DELIMITED-FLAG &optional REPEAT-COUNT MAP
+     この関数は, `query-replace'と関連するコマンドの中身である.
+     FROM-STRINGの出現を探しだし, それらの一部やすべてを置き換える.
+     QUERY-FLAGが`nil'であると, すべての出現を置換する.  さもなければ,
+     1つ1つユーザーにどうするかを問い合わせる.
+
+     REGEXP-FLAGが`nil'以外であると, FROM-STRINGを正規表現として扱う. 
+     さもなければ, その字面とおりに一致する.  DELIMITED-FLAGが`nil'以
+     外であると, 単語区切りで囲まれたもののみを対象にする.
+
+     引数REPLACEMENTSは, 出現を置き換えるものを指定する.  それが文字列
+     であれば, その文字列を使う.  文字列のリストでもよく, 要素を巡回し
+     て使う.
+
+     REPEAT-COUNTが`nil'以外であれば, 整数であること.  これは,
+     REPLACEMENTSのリスト内の各文字列をつぎに進めるまえに何回使用する
+     かを指定する.
+
+     通常, キーマップ`query-replace-map'で, 可能なユーザーの応答を定義
+     する.  引数MAPが`nil'以外であれば, `query-replace-map'のかわりに
+     使うキーマップである.
+
+ -- Variable: query-replace-map
+     この変数は, `y-or-n-p'や`map-y-or-n-p'に加えて, `query-replace'や
+     関連する関数に対する正しいユーザー応答を定義する特別なキーマップ
+     を保持する.  2つの意味で普通のものではない.
+
+        * 『キーバインディング』はコマンドではなく, このキーマップを用
+          いる関数にのみ意味がある単なるシンボルである.
+
+        * プレフィックスキーは扱えない.  各キーバインディングは単一イ
+          ベントのキー列である必要がある.  これは, 関数では入力を得る
+          ために`read-key-sequence'を使わずに, 『自前』でイベントを読
+          み取り探索するからである.
+
+`query-replace-map'向けの意味のある『バインディング』をつぎに示します.
+`query-replace'と関連するものだけに意味のあるものもあります.
+
+`act'
+     当該動作を行う, いいかえれば『yes』.
+
+`skip'
+     この問いに対する動作は行わない, いいかえれば『no』.
+
+`exit'
+     この問いには『no』で答え, 残りの応答も『no』と仮定して一連の問い
+     を止める.
+
+`act-and-exit'
+     この問いには『yes』で答え, 残りの応答は『no』と仮定して一連の問い
+     を止める.
+
+`act-and-show'
+     この問いには『yes』で答えるが, 結果を表示する.  つぎの問いへは進
+     まない.
+
+`automatic'
+     この問いと以降の一連の問いに『yes』で答え, これ以降ユーザーに問い
+     合わせない.
+
+`backup'
+     問いに答えたまえの箇所へ戻る.
+
+`edit'
+     この問いに対処するために, 通常の動作のかわりに再帰編集に入る.
+
+`delete-and-edit'
+     対象のテキストを削除してから, それを置き換えるために再帰編集に入
+     る.
+
+`recenter'
+     ウィンドウの中央に位置決めして再表示してから, 同じ問いを問い直す.
+
+`quit'
+     ただちに中断する.  `y-or-n-p'と関連する関数でのみ, この応答を用い
+     る.
+
+`help'
+     ヘルプを表示してから, 再度問い直す.
+
+
+
+File: elisp-ja, Node: Match Data, Next: Searching and Case, Prev: Search and Replace, Up: Searching and Matching
+
+マッチデータ
+============
+
+Emacsは, 正規表現の探索中に捜し出したテキスト断片の開始／終了位置を記
+録しています.  つまり, たとえば, rmailメッセージ内で日付のような複雑な
+パターンを探索してから, パターンの制御をもとに一致した一部分を取り出せ
+るのです.
+
+マッチデータは, 通常, もっとも最近に行った探索のみを記述するので, あと
+で使用したい探索とそのマッチデータを使うあいだに, 不注意に別の探索を行
+わないように注意してください.  あいだで探索を行う必要がある場合には, 
+その周りでマッチデータを保存／復元してそれらが上書きされないようにしま
+す.
+
+* Menu:
+
+* Replacing Match::	  Replacing a substring that was matched.
+* Simple Match Data::     Accessing single items of match data,
+			    such as where a particular subexpression started.
+* Entire Match Data::     Accessing the entire match data at once, as a list.
+* Saving Match Data::     Saving and restoring the match data.
+
+
+
+File: elisp-ja, Node: Replacing Match, Next: Simple Match Data, Prev: Match Data, Up: Match Data
+
+一致したテキストの置換
+----------------------
+
+この関数は, 最後の探索で一致したテキストをREPLACEMENTで置換します.
+
+ -- Function: replace-match REPLACEMENT &optional FIXEDCASE LITERAL STRING SUBEXP
+     この関数は, 最後の探索で一致したバッファ内（あるいは文字列STRING）
+     のテキストを置換する.  当該テキストをREPLACEMENTで置き換える.
+
+     バッファで最後に探索を行った場合には, STRINGに`nil'を指定すること. 
+     そうすると, `replace-match'はバッファを編集することで置換を行い, 
+     置換したテキストの末尾にポイントを置き`t'を返す.
+
+     文字列で探索した場合には, STRINGに同じ文字列を渡すこと.  そうする
+     と, `replace-match'は新たな文字列を構築することで置換を行い, 新た
+     な文字列を返す.
+
+     FIXEDCASEが`nil'以外であると, 置換テキストの大文字小文字は変更し
+     ない.  さもなければ, 置換テキストの大文字小文字は, 対象テキストの
+     大文字小文字に応じて変換される.  元テキストがすべて大文字であると, 
+     置換テキストも大文字に変換される.  元テキストの最初の単語が大文字
+     で始まっていると, 置換テキストの最初の単語も大文字で始める.  元テ
+     キストが1単語のみであり, しかも, その単語が大文字1文字であると,
+     `replace-match'はすべてが大文字ではなく大文字で始まるとみなす.
+
+     `case-replace'が`nil'であると, FIXED-CASEの値に関わらず, 大文字小
+     文字変換を行わない.  *Note Searching and Case::.
+
+     LITERALが`nil'以外であると, 必要に応じて大文字小文字変換は行うも
+     ののREPLACEMENTをそのまま挿入する.  それが`nil'（デフォルト）であ
+     ると, 文字`\'を特別に扱う.  REPLACEMENTに`\'が現れるときには, つ
+     ぎの列のいずれかであること.
+
+     `\&'
+          `\&'は置換対象のテキスト全体を表す.
+
+     `\N'
+          Nを数字文字とすると`\N'は, もとの正規表現内のN番目の部分式に
+          一致したテキストを表す.  部分式とは, `\(...\)'で囲んでグルー
+          プ化した式である.
+
+     `\\'
+          `\\'は置換テキスト内で1つの`\'を表す.
+
+     SUBEXPが`nil'以外であると, 一致箇所全体ではなく正規表現のSUBEXP番
+     目の部分式に一致した箇所のみを置換することを指示する.  たとえば,
+     `foo \(ba*r\)'に一致させたあとで, SUBEXPに1を指定して
+     `replace-match'を呼び出すと, `\(ba*r\)'に一致したテキストのみを置
+     換することを意味する.
+
+
+
+File: elisp-ja, Node: Simple Match Data, Next: Entire Match Data, Prev: Replacing Match, Up: Match Data
+
+マッチデータの簡単な参照
+------------------------
+
+本節では, 最後の探索や一致操作においてなにに一致したのかを調べるための
+マッチデータの使い方を説明します.
+
+一致したテキスト全体や正規表現の括弧で括った特定の部分式に一致したテキ
+ストを調べることができます.  以下の関数の引数COUNTでどれかを指定します.
+COUNTがゼロであれば, 一致全体を調べることになります.  COUNTが正であれ
+ば, 望みの部分式を指定します.
+
+正規表現の部分式は, エスケープした括弧`\(...\)'でグループ化した式であ
+ることに注意してください.  COUNT番目の部分式は, 正規表現全体の先頭から
+`\('の出現を数えてみつけます.  最初の部分式は1, つぎは2, といった具合
+です.  部分式は正規表現だけにあります.  単純な文字列探索のあとでは, 利
+用可能な情報は一致全体に関するものだけです.
+
+探索に失敗すると, マッチデータを変更することもしないこともあります. 
+過去には探索に失敗しても変更しなかったのですが, 将来そうなります.
+
+ -- Function: match-string COUNT &optional IN-STRING
+     この関数は, 最後の探索や一致操作で一致したテキストを文字列として
+     返す.  COUNTがゼロであるとテキスト全体を返す.  COUNTが正であれば,
+     COUNT番目の括弧で囲んだ部分式に対応する部分のみを返す.  COUNTが範
+     囲を越えていたり, 当該部分式に一致するものがない場合には, 値は
+     `nil'である.
+
+     最後の探索や一致操作を`string-match'で文字列に対して行った場合に
+     は, 引数IN-STRINGとして同じ文字列を渡すこと.  バッファの探索や一
+     致のあとでは, IN-STRINGを省略するか`nil'を渡すこと.  ただし,
+     `match-string'を呼び出すときのカレントバッファが探索を行ったとき
+     のバッファであること.
+
+ -- Function: match-string-no-properties COUNT
+     この関数は`match-string'と同様であるが, 結果にはテキスト属性を含
+     まない.
+
+ -- Function: match-beginning COUNT
+     この関数は, 最後の正規表現探索やその部分式に一致したテキストの開
+     始位置を返す.
+
+     COUNTがゼロであると, 値は一致全体の開始位置である.  さもなければ,
+     COUNTは正規表現内の部分式を指定し, 関数の値は当該部分式に一致した
+     部分の開始位置である.
+
+     一致に利用されなかった選択肢`\|'内の部分式に対しては, 値は`nil'で
+     ある.
+
+ -- Function: match-end COUNT
+     この関数は`match-beginning'と同様であるが, 一致箇所の開始位置では
+     なく終了位置を返す点が異なる.
+
+コメントでテキスト内の位置を示しながらマッチデータの利用例を示します.
+
+     (string-match "\\(qu\\)\\(ick\\)"
+                   "The quick fox jumped quickly.")
+                   ;0123456789      
+          => 4
+
+     (match-string 0 "The quick fox jumped quickly.")
+          => "quick"
+     (match-string 1 "The quick fox jumped quickly.")
+          => "qu"
+     (match-string 2 "The quick fox jumped quickly.")
+          => "ick"
+
+     (match-beginning 1)       ; 一致箇所`qu'の先頭は
+          => 4                 ;   添字4
+
+     (match-beginning 2)       ; 一致箇所`ick'の先頭は
+          => 6                 ;   添字6
+
+     (match-end 1)             ; 一致箇所`qu'の末尾は
+          => 6                 ;   添字6
+
+     (match-end 2)             ; 一致箇所`ick'の末尾は
+          => 9                 ;   添字9
+
+別の例も示します.  ポイントは始めは行頭にあります.  探索によって, ポイ
+ントは空白と単語`in'のあいだに移動します.  一致箇所全体の先頭はバッファ
+の9番目の文字（`T'）であり, 最初の部分式の一致箇所の先頭は13番目の文字
+（`c'）です.
+
+     (list
+       (re-search-forward "The \\(cat \\)")
+       (match-beginning 0)
+       (match-beginning 1))
+         => (9 9 13)
+
+     ---------- Buffer: foo ----------
+     I read "The cat -!-in the hat comes back" twice.
+             ^   ^
+             9  13
+     ---------- Buffer: foo ----------
+
+（この例では, 返される添字はバッファ内位置であり, バッファの最初の文字
+を1と数える. ）
+
+
+
+File: elisp-ja, Node: Entire Match Data, Next: Saving Match Data, Prev: Simple Match Data, Up: Match Data
+
+マッチデータ全体を参照する
+--------------------------
+
+関数`match-data'と`set-match-data'は, マッチデータ全体を一度に読んだり
+書いたりします.
+
+ -- Function: match-data
+     この関数は, 最後の探索で一致したテキストに関するすべての情報を収
+     めた新たに構築したリストを返す.  要素0が式全体に一致した部分の先
+     頭位置であり, 要素1が式全体に一致した部分の終了位置である.  つぎ
+     の2つの要素は最初の部分式に一致した部分の先頭／終了位置, といった
+     具合である.  一般に, 要素番号2N は`(match-beginning N)'に対応し, 
+     要素番号2N + 1 は`(match-end N)'に対応する.
+
+     バッファで行った一致ではすべての要素はマーカか`nil'であり,
+     `string-match'により文字列で行った一致ではすべての要素は整数か
+     `nil'である.
+
+     探索関数の呼び出しとその探索結果としてのマッチデータを参照するた
+     めの`match-data'の呼び出しのあいだには, 別の探索があってはならな
+     い.
+
+          (match-data)
+               =>  (#<marker at 9 in foo>
+                    #<marker at 17 in foo>
+                    #<marker at 13 in foo>
+                    #<marker at 17 in foo>)
+
+ -- Function: set-match-data MATCH-LIST
+     この関数は, MATCH-LISTの要素からマッチデータを設定する.
+     MATCH-LISTは, 以前に`match-data'の呼び出しで得たリストであること.
+
+     MATCH-LISTが存在しないバッファを指していても, エラーにはならない. 
+     無意味な情報をマッチデータに設定するが, 害にはならない.
+
+     `store-match-data'はほぼ廃れている`set-match-data'の別名である.
+
+
+
+File: elisp-ja, Node: Saving Match Data, Next: Searching and Case, Prev: Entire Match Data, Up: Match Data
+
+マッチデータの保存と復元
+------------------------
+
+探索を行う可能性がある関数を呼び出す場合, あとで使うためにそれ以前の探
+索によるマッチデータを保存したいときには, 当該関数の呼び出しの周りでマッ
+チデータを保存し復元する必要があります.  つぎの例は, マッチデータを保
+存し損なった場合に生じる問題点を示しています.
+
+     (re-search-forward "The \\(cat \\)")
+          => 48
+     (foo)                   ; `foo'はさらに
+                             ;   探索する
+     (match-end 0)
+          => 61              ; 予期しない結果. 48でない！
+
+マッチデータの保存と復元は`save-match-data'で行えます.
+
+ -- Macro: save-match-data BODY...
+     このマクロは, 周りのマッチデータを保存し復元して, BODYを実行する.
+
+スペシャルフォーム`save-match-data'の効果をまねるために`match-data'と
+ともに`set-match-data'を使うこともできます.  つぎのようにします.
+
+     (let ((data (match-data)))
+       (unwind-protect
+           ...   ; もとのマッチデータを変更しても大丈夫
+         (set-match-data data)))
+
+プロセスフィルタ関数（*Note Filter Functions::）やプロセスの番兵
+（*Note Sentinels::）を実行するときには, Emacsは自動的にマッチデータを
+保存し復元します.
+
+
+
+
+File: elisp-ja, Node: Searching and Case, Next: Standard Regexps, Prev: Match Data, Up: Searching and Matching
+
+探索と大文字小文字
+==================
+
+デフォルトでは, Emacsの探索は探索対象テキストの大文字小文字を区別しま
+せん.  `FOO'を探す指定を行うと, `Foo'や`foo'にも一致するとみなします. 
+これは, 正規表現にも適用されます.  したがって, `[aB]'は, `a'や`A'や`b'
+や`B'に一致します.
+
+この機能を望まないときには, 変数`case-fold-search'に`nil'を設定します. 
+すると, すべての文字は大文字小文字を保ってそのとおりに一致します.  こ
+れはバッファローカルな変数ですから, 変数を変更してもカレントバッファだ
+けに影響します.  （*Note Intro to Buffer-Local::. ）あるいは,
+`default-case-fold-search'の値を変更します.  これは,
+`case-fold-search'を書き変えていないバッファ向けのデフォルト値です.
+
+ユーザーレベルのインクリメンタルサーチ機能では, 大文字小文字の区別は異
+なった扱い方をします.  小英文字を与えるとその大文字にも一致しますが, 
+大英文字を与えると大文字のみに一致します.  しかし, これはLispコードで
+使用している探索関数にはまったく関係ありません.
+
+ -- User Option: case-replace
+     この変数は, 置換関数が大文字小文字を保存するかどうかを決定する. 
+     変数が`nil'であると, 置換テキストをそのまま使うことを意味する.
+     `nil'以外の値であると, 置換対象のテキストに応じて置換テキストの大
+     文字小文字を変換することを意味する.
+
+     この変数が実際に効果を発揮するのは関数`replace-match'においてであ
+     る.  *Note Replacing Match::.
+
+ -- User Option: case-fold-search
+     このバッファローカルな変数は, 大文字小文字を区別して探索するかど
+     うかを決定する.  変数が`nil'であると大文字小文字を区別する.  さも
+     なければ大文字小文字を区別しない.
+
+ -- Variable: default-case-fold-search
+     この変数の値は, `case-fold-search'を書き変えていないバッファ向け
+     のデフォルト値である.  これは`(default-value 'case-fold-search)'
+     と同じである.
+
+
+
+File: elisp-ja, Node: Standard Regexps, Next: Syntax Tables, Prev: Searching and Case, Up: Searching and Matching
+
+編集に用いられる標準的な正規表現
+================================
+
+本節では, 編集上の特定目的に用いられる正規表現を保持している変数につい
+て述べます.
+
+ -- Variable: page-delimiter
+     これは, ページを区切る行頭を記述した正規表現である.  デフォルト値
+     は, `"^\014"'（つまり, `"^^L"'すなわち`"^\C-l"'）である.  これは
+     ページ送り文字で始まる行に一致する.
+
+つぎの2つの正規表現は, つねに行の先頭から一致が始まると仮定しては*いけ
+ません*.  一致の開始位置を固定する`^'を使うべきではありません.  ほとん
+どの場合, 段落コマンドは行の先頭でのみ一致を検査しますから, `^'は不必
+要であることを意味します.  幅0以外の左端余白があると, 段落コマンドは左
+端余白のうしろからの一致を受け入れます.  そのような場合, `^'は誤りです. 
+しかし, 左端余白をけっして使わないモードならば, `^'は無害です.
+
+ -- Variable: paragraph-separate
+     これは, 段落を区切る行の始まりを認識するための正規表現である. 
+     （これを変更したら, `paragraph-start'も変更すること. ）
+     デフォルト値は`"[ \t\f]*$"'であり, 
+     （左端余白に続く）空白やタブやページ送りだけから成る行に一致する. 
+
+ -- Variable: paragraph-start
+     これは, 段落を始める行や区切る行の始まりを認識するための正規表現である. 
+     デフォルト値は`"[ \t\n\f]"'であり, 
+     （左端余白に続く）空白やタブやページ送りだけから成る行に一致する. 
+
+ -- Variable: sentence-end
+     これは, 文末を記述する正規表現である.  （これに関わらず, 段落の区
+     切りも文末である. ）デフォルト値はつぎのとおりである.
+
+          "[.?!][]\"')}]*\\($\\| $\\|\t\\| \\)[ \t\n]*"
+
+     これは, ピリオド, 疑問符, 感嘆符のいずれかのあとに閉じ括弧文字が
+     続き（なくてもよい）, タブや空白や改行が続くことを意味する.
+
+     この正規表現の詳しい説明は, *Note Regexp Example::を参照.
+
+
+File: elisp-ja, Node: Syntax Tables, Next: Abbrevs, Prev: Searching and Matching, Up: Top
+
+構文テーブル
+************
+
+"構文テーブル"（syntax table）は, 各文字の構文的なテキスト上の機能を指
+定します.  この情報は, "構文解析関数"や複雑な移動を行うコマンドなどが
+単語やシンボルなどの構文要素がどこで始まりどこで終るかを調べるために使
+います.  現在の構文テーブルが, 本章の関数に加えて, 単語単位の移動関数
+（*Note Word Motion::）, リスト単位の移動関数（*Note List Motion::）の
+意味を制御します.
+
+* Menu:
+
+* Basics: Syntax Basics.     Basic concepts of syntax tables.
+* Desc: Syntax Descriptors.  How characters are classified.
+* Syntax Table Functions::   How to create, examine and alter syntax tables.
+* Syntax Properties::        Overriding syntax with text properties.
+* Motion and Syntax::	     Moving over characters with certain syntaxes.
+* Parsing Expressions::      Parsing balanced expressions
+                                using the syntax table.
+* Standard Syntax Tables::   Syntax tables used by various major modes.
+* Syntax Table Internals::   How syntax table information is stored.
+* Categories::               Another way of classifying character syntax.
+
+
+
+File: elisp-ja, Node: Syntax Basics, Next: Syntax Descriptors, Prev: Syntax Tables, Up: Syntax Tables
+
+構文テーブルの概念
+==================
+
+"構文テーブル"（syntax table）は, バッファ内の各文字の構文上の用途に関
+する情報をEmacsに与えます.  この情報は, "構文解析関数"や複雑な移動を行
+うコマンドなどが単語やシンボルなどの構文要素がどこで始まりどこで終るか
+を調べるために使います.  現在の構文テーブルが, 本章の関数に加えて, 単
+語単位の移動関数（*Note Word Motion::）, リスト単位の移動関数（*Note
+List Motion::）の意味を制御します.
+
+構文テーブルは文字テーブル（*Note Char-Tables::）です.  Cで添字付けら
+れる要素は, コードがCである文字について記述します.  要素の値は, 当該文
+字の構文上の機能を符号化したリストです.
+
+構文テーブルは, テキスト内を動き回るためにのみ使われ, EmacsのLispリー
+ダはこれを使いません.  Emacs LispがLisp式を読むときには, 組み込みの構
+文規則を使います.  （入力構文を再定義する方法を与えるLispシステムもあ
+るが, 単純であるようにEacs Lispではこの機能を省くことにした. ）
+
+各バッファには独自のメジャーモードがあり, 各メジャーモードはさまざまな
+文字の構文クラスを独自に扱います.  たとえば, lispモードでは文字`;'はコ
+メントを始めますが, Cモードでは文を終らせます.  このような多様性を扱う
+ために, Emacsは各バッファごとにローカルな構文テーブルを選びます.  典型
+的には, 各メジャーモードに独自の構文テーブルがあり, そのモードを使って
+いるバッファに当該構文テーブルをインストールします.  この構文テーブル
+を変更すると, 同じモードのバッファだけでなく将来そのモードになったバッ
+ファでも構文を変更してしまいます.  類似したモードでは1つの構文テーブル
+を共有することがあります.  構文テーブルの設定方法の例については, *Note
+Example Major Modes::.
+
+構文テーブルでは, 標準の構文テーブルから文字のデータを継承し, 一方でそ
+の他の文字に独自の指定を行えます.  構文クラスの『継承』とは, 『標準の
+構文テーブルから当該文字の構文を引き継ぐ』ことです.  ある文字に対して
+標準の構文を変更すると, それを継承するすべての構文テーブルに影響します.
+
+ -- Function: syntax-table-p OBJECT
+     この関数は, OBJECTが構文テーブルならば`t'を返す.
+
+
+
+File: elisp-ja, Node: Syntax Descriptors, Next: Syntax Table Functions, Prev: Syntax Basics, Up: Syntax Tables
+
+構文記述子
+==========
+
+本節では, 文字の構文を指定する構文クラスと構文フラグ, それらを"構文記
+述子"（syntax descriptor）としてどのように表現するかについて述べます. 
+構文記述子はLisp文字列であり, 望みの構文を指定するために
+`modify-syntax-entry'に渡します.
+
+構文テーブルは, 各文字の構文クラスを指定します.  ある構文テーブルでの
+文字のクラスと他の構文テーブルでの当該文字のクラスとのあいだにはなんの
+関係も必要ありません.
+
+各クラスはニーモニック文字（指定子）で区別します.  ニーモニック文字は, 
+クラスを指定する必要があるときにクラス名として働きます.  通常, 指定子
+の文字は当該クラスによく現れるものです.  しかしながら, 指定子としての
+意味は不変で, その文字の現在の構文とは独立です.
+
+構文記述子は, 構文クラス, （括弧のクラスの場合にのみ使われる）釣り合う
+文字, フラグを指定するLisp文字列です.  最初の文字は, 構文クラスを指定
+する文字（指定子）です.  2番目の文字はその文字に釣り合う文字ですが, 使
+用しない場合には空白です.  そのあとに望みのフラグが続きます.  釣り合う
+文字やフラグが必要なければ, 文字1つだけで十分です.
+
+たとえば, Cモードにおける文字`*'の構文記述子は
+`. 23'（句読点, 釣り合う文字なし, 
+コメント開始の2番目の文字, コメント終了の最初の文字）であり, 
+`/'は`. 14'（句読点, 釣り合う文字なし, 
+コメント開始の最初の文字, コメント終了の2番目の文字）です. 
+
+* Menu:
+
+* Syntax Class Table::      Table of syntax classes.
+* Syntax Flags::            Additional flags each character can have.
+
+
+
+File: elisp-ja, Node: Syntax Class Table, Next: Syntax Flags, Prev: Syntax Descriptors, Up: Syntax Descriptors
+
+構文クラス一覧
+--------------
+
+以下の一覧は, 構文クラス, そのクラスを表す文字（指定子）, そのクラスの
+意味, その使用例です.
+
+ -- 構文クラス: 白文字（whitespace CHARACTER）
+     "白文字"（` 'か`-'で指定）は, シンボルや単語を互いに区切る.  典型
+     的には, 白文字には他の構文上の意味はなく, 複数個の白文字は1つの白
+     文字と構文的には等価である.  ほとんどすべてのメジャーモードでは, 
+     空白, タブ, 改行, ページ送りは白文字である.
+
+ -- 構文クラス: 単語構成文字（word CONSTITUENT）
+     "単語構成文字"（`w'で指定）は普通の英単語の一部分であり, 典型的に
+     は, プログラムの変数やコマンド名に使われる.  すべての大英文字, 小
+     英文字, 数字文字は, 典型的には単語構成文字である.
+
+ -- 構文クラス: シンボル構成文字（symbol CONSTITUENT）
+     "シンボル構成文字"（`_'で指定）は, 単語構成文字に加えて, 変数やコ
+     マンド名に使われる追加の文字である.  たとえば, 英単語の一部分では
+     ないがシンボル名に使える特定の文字を指定するために, Lispモードで
+     はシンボル構成文字クラスを使う.  このような文字は`$&*+-_<>'である. 
+     標準のCでは, 単語構成文字でなくてシンボルに使える唯一の文字は下線
+     （`_'）である.
+
+ -- 構文クラス: 句読点文字（punctuation CHARACTER）
+     "句読点文字"（`.'で指定）は, 英文の句読点として使われたり, プログ
+     ラム言語でシンボルを区切るために使われる文字である.  emacs-lispモー
+     ドを含むほとんどのプログラム言語向けモードでは, シンボル構成文字
+     でも単語構成文字でもない少数の文字には別の用途があるため, このク
+     ラスの文字はない.
+
+ -- 構文クラス: 開き括弧文字（open PARENTHESIS CHARACTER）
+ -- 構文クラス: 閉じ括弧文字（close PARENTHESIS CHARACTER）
+     開き／閉じ"括弧文字"は, 文や式を囲む相異なる対として使われる文字
+     である.  そのようなグループ化は, 開き括弧文字で始まり閉じ括弧文字
+     で終る.  各開き括弧文字は特定の閉じ括弧文字に対応し, その逆もいえ
+     る.  Emacsは, 通常, 閉じ括弧文字を挿入すると対応する開き括弧文字
+     を短時間指し示す.  *Note Blinking::.
+
+     開き括弧文字クラスは`('で指定し, 閉じ括弧文字クラスは`)'で指定す
+     る.
+
+     英文向けのテキスト（text）モードとCモードでは, 括弧の対は, `()',
+     `[]', `{}'である.  Emacs Lispでは, リストとベクトルの区切り（`()'
+     と`[]'）は, 括弧文字としてクラス分けされる.
+
+ -- 構文クラス: 文字列クォート（string QUOTE）
+     "文字列クォート文字"（`"'で指定）は, LispやCを含む多くの言語で文
+     字列定数を区切るために使われる.  同じ文字列クォート文字が文字列の
+     最初と最後に現れる.
+
+     Emacsの構文解析機能では, 文字列を1つの字句とみなす.  文字列内の文
+     字の普通の構文的な意味は抑制される.
+
+     lisp向けのモードには文字列クォート文字が2つ, ダブルクォート（`"'）
+     と縦棒（`|'）がある.  `|'はEmacs Lispでは使わないがCommon Lispで
+     使う.  Cにも2つの文字列クォート文字, 文字列用のダブルクォートと文
+     字定数用のシングルクォート（`''）がある.
+
+     英文はプログラム言語ではないので, 英文には文字列クォート文字はな
+     い.  英文でも引用符は用いるが, その内側の文字の普通の構文的な属性
+     を抑制したくないのである.
+
+ -- 構文クラス: エスケープ（escape）
+     "エスケープ文字"（`\'で指定）は, Cの文字列や文字定数で使われるよ
+     うなエスケープシーケンスを開始する.  CとLispでは, 文字`\'はこのク
+     ラスに属する.  （Cではこの文字は文字列の内側だけで使われるが, Cモー
+     ドでつねにこのように扱っても問題ないことがわかった. ）
+
+     `words-include-escapes'が`nil'以外であると, このクラスの文字は単
+     語の一部分と解釈される.  *Note Word Motion::.
+
+ -- 構文クラス: 文字クォート（character QUOTE）
+     "文字クォート文字"（`/'で指定）は, 後続の1文字をクォートし, 通常
+     の構文上の意味を抑制する.  直後の1文字のみに影響するという点で, 
+     エスケープ文字と異なる.
+
+     `words-include-escapes'が`nil'以外であると, このクラスの文字は単
+     語の一部分と解釈される.  *Note Word Motion::.
+
+     このクラスは, TeXモードのバックスラッシュに使われる.
+
+ -- 構文クラス: 対になった区切り（paired DELIMITER）
+     "対になった区切り文字"（`$'）は文字列クォート文字と同様であるが, 
+     区切り文字のあいだにある文字の構文上の属性を抑制しない点が異なる. 
+     現在, 対になった区切りはTeXモードのみで使い, 数学モードに出入りす
+     る`$'である.
+
+ -- 構文クラス: 式前置子（expression PREFIX）
+     "式前置演算子"（`''）は, 式のまえに現れると式の一部であるとみなさ
+     れる構文上の演算子に使われる.  lisp向けのモードでは, （クォートす
+     る）アポストロフ`'', （マクロで使う）コンマ`,', （ある種のデータ
+     の入力構文に使われる）`#'の文字がそうである.
+
+ -- 構文クラス: コメント開始（comment STARTER）
+ -- 構文クラス: コメント終了（comment ENDER）
+     "コメント開始"文字と"コメント終了"文字は, さまざまな言語でコメン
+     トを区切るために用いられる.  これらのクラスは, それぞれ, `<'と`>'
+     で指定する.
+
+     英文にはコメント文字はない.  Lispでは, セミコロン（`;'）でコメン
+     トが始まり, 改行かページ送りで終る.
+
+ -- 構文クラス: 継承（inherit）
+     この構文クラスは特定の構文を指定しない.  標準の構文テーブルで当該
+     文字の構文を探す指定である.  この構文クラスは`@'で指定する.
+
+ -- 構文クラス: 汎用コメント区切り（generic COMMENT DELIMITER）
+     "汎用コメント区切り"文字は, 特別な種類のコメントを始めて終える文
+     字である.  *任意の*汎用コメント区切り文字は*任意の*汎用コメント区
+     切り文字に対応するが, 普通のコメント開始文字／コメント終了文字に
+     は対応しない.  汎用コメント区切り文字同士のみで対応する.
+
+     この構文クラスは, 主にテキスト属性`syntax-table' （*Note Syntax
+     Properties::）で使うことを意図したものである.  任意の範囲の文字が
+     コメントを形成すると印を付けるには, その範囲の先頭と末尾の文字に
+     それらが汎用コメント区切りであることを識別する属性`syntax-table'
+     を与える.
+
+ -- 構文クラス: 汎用文字列区切り（generic STRING DELIMITER）
+     "汎用文字列区切り"文字は, 文字列を始めて終える.  このクラスは文字
+     列クォートクラスと異なり, 汎用文字列区切りは他の汎用文字列区切り
+     に対応し, 普通の文字列クォート文字には対応しない.
+
+     この構文クラスは, 主にテキスト属性`syntax-table' （*Note Syntax
+     Properties::）で使うことを意図したものである.  任意の範囲の文字が
+     文字列定数を形成すると印を付けるには, その範囲の先頭と末尾の文字
+     にそれらが汎用文字列区切りであることを識別する属性`syntax-table'
+     を与える.
+
+
+
+File: elisp-ja, Node: Syntax Flags, Next: Syntax Table Functions, Prev: Syntax Class Table, Up: Syntax Descriptors
+
+構文フラグ
+----------
+
+構文テーブルの各文字には, 構文クラスに加えて, フラグも指定できます. 
+文字`1', `2', `3', `4', `b', `p'で表現される6つの可能なフラグがありま
+す.
+
+`p'を除くすべてのフラグは, 複数の文字から成るコメント区切りの記述に使
+います.  数字フラグは, 当該文字のクラスで表される構文上の属性に*加えて
+*, コメント列の一部分でもあることを示します.  フラグはクラスや他のフラ
+グとは独立であり, Cモードの`*'のような文字のためにあります.  Cモードの
+`*'は, 句読点文字である*とともに*, コメント開始列の2番目の文字`/*'*で
+も*あり, コメント終了列の最初の文字`*/'*でも*あります.
+
+文字Cに対して可能なフラグとそれらの意味を以下に示します.
+
+   * `1'は, Cが2文字のコメント開始列を始めることを意味する.
+
+   * `2'は, Cがそのような列の2番目の文字であることを意味する.
+
+   * `3'は, Cが2文字のコメント終了列を始めることを意味する.
+
+   * `4'は, Cがそのような列の2番目の文字であることを意味する.
+
+   * `b'は, コメント区切りとしてのCがもう1つの『b』形式のコメントに属
+     することを意味する.
+
+     Emacsでは, 任意の1つの構文テーブルで2つの形式のコメントを同時に扱
+     える.  これはC++のためである.  コメント構文の各形式には, 独自の開
+     始列と独自の終了列がある.  各コメントはどちらか1つの形式である必
+     要がある.  したがって, 『b』形式のコメント開始列で始まるものは, 
+     『b』形式のコメント終了列で終る必要がある.
+
+     2つのコメント開始列は同じ文字で始まる必要があり, 2文字目のみが異
+     なる.  『b』形式のコメント開始列の2番目の文字にフラグ`b'を付ける.
+
+     （1文字か2文字の）コメント終了列は, その最初の文字にフラグ`b'が付
+     いていると『b』形式に適用する.  さもなければ『a』形式に適用する.
+
+     C++向けの適切なコメント構文の設定はつぎのとおりである.
+
+     `/'
+          `124b'
+     `*'
+          `23'
+     newline
+          `>b'
+
+     これは4つのコメント区切り列を定義する.
+
+     `/*'
+          2文字目の`*'にはフラグ`b'がないので, これは『a』形式のコメン
+          ト開始列である.
+
+     `//'
+          2文字目の`/'にはフラグ`b'があるので, これは『b』形式のコメン
+          ト開始列である.
+
+     `*/'
+          2文字目の`*'にはフラグ`b'がないので, これは『a』形式のコメン
+          ト終了列である.
+
+     newline
+          改行にはフラグ`b'があるので, これは『b』形式のコメント終了列
+          である.
+
+   * `p'は, Lisp構文向けの追加の『前置文字』を示す.  これらの文字は式
+     のあいだに現れるときには白文字として扱う.  式の内側に現れると, そ
+     れらの通常の構文コードに従って扱われる.
+
+     関数`backward-prefix-chars'は後方へ向けて移動するときには, 構文ク
+     ラスが式前置子（`''）である文字に加えてこれらの文字も飛び越す.
+     *Note Motion and Syntax::.
+
+
+
+File: elisp-ja, Node: Syntax Table Functions, Next: Syntax Properties, Prev: Syntax Descriptors, Up: Syntax Tables
+
+構文テーブル向け関数
+====================
+
+本節では, 構文テーブルを作成／参照／変更するための関数について述べます.
+
+ -- Function: make-syntax-table
+     この関数は, 新たな構文テーブルを作成する.  英文字やコントロール文
+     字の構文は標準の構文テーブルから継承する.  他の文字の構文は標準の
+     構文テーブルからコピーする.
+
+     ほとんどのメジャーモードの構文テーブルはこのように作成する.
+
+ -- Function: copy-syntax-table &optional TABLE
+     この関数は, 構文テーブルTABLEのコピーを作成しそれを返す.  TABLEを
+     指定しないと（あるいは`nil'）, 現在の構文テーブルのコピーを返す.
+     TABLEが構文テーブルでないとエラーを通知する.
+
+ -- コマンド: modify-syntax-entry CHAR SYNTAX-DESCRIPTOR &optional TABLE
+     この関数は, 文字CHARの構文指定を構文記述子SYNTAX-DESCRIPTORとする. 
+     構文テーブルTABLEにおいてのみ構文を変更し, 他の構文テーブルは変更
+     しない.  TABLEのデフォルトはカレントバッファの構文テーブルである.
+     SYNTAX-DESCRIPTORで望みの構文を指定する.  これは, クラス指定子で
+     始まり, 必要に応じて釣り合う文字とフラグを含む文字列である.
+     *Note Syntax Descriptors::.
+
+     この関数はつねに`nil'を返す.  当該構文テーブルにおけるこの文字に
+     対する古い構文情報は破棄される.
+
+     構文記述子の最初の文字が12個の構文クラス指定子の1つでないとエラー
+     を通知する.  CHARが文字でなくてもエラーを通知する.
+
+     【例】
+
+          ;; 空白文字をクラス白文字にする
+          (modify-syntax-entry ?\  " ")
+               => nil
+
+          ;; `$'を開き括弧文字にする
+          ;;   対応する閉じる文字は`^'である
+          (modify-syntax-entry ?$ "(^")
+               => nil
+
+          ;; `^'を閉じ括弧文字にする
+          ;;   対応する開く文字は`$'である
+          (modify-syntax-entry ?^ ")$")
+               => nil
+
+          ;; `/'を句読点文字にする
+          ;;   コメント開始列の最初の文字, および, 
+          ;;   コメント終了列の2番目の文字にもする
+          ;;   これはCモードで用いられる
+          (modify-syntax-entry ?/ ". 14")
+               => nil
+
+ -- Function: char-syntax CHARACTER
+     この関数は, 文字CHARACTERの構文クラスを指定子で表したもので返す. 
+     これは構文クラス*のみ*を返し, 釣り合う文字や構文フラグは返さない.
+
+     CHARが文字でないとエラーを通知する.
+
+     つぎの例はCモードにあてはまる.  最初の例は, 空白の構文クラスが
+     （空白で表現される）白文字であることを示す.  2番目の例は, `/'の構
+     文が句読点であることを示す.  これは, この文字がコメント開始／終了
+     の一部分でもあることは示さない.  3番目の例は, 開き括弧は開き括弧
+     クラスであることを示す.  これは, この文字に釣り合う文字が`)'であ
+     ることは示さない.
+
+          (string (char-syntax ?\ ))
+               => " "
+
+          (string (char-syntax ?/))
+               => "."
+
+          (string (char-syntax ?\())
+               => "("
+
+     ここでは, `char-syntax'が返す文字を見やすくするために`string'を用
+     いた.
+
+ -- Function: set-syntax-table TABLE
+     この関数は, TABLEをカレントバッファの構文テーブルにする.  TABLEを
+     返す.
+
+ -- Function: syntax-table
+     この関数は, 現在の構文テーブル, つまり, カレントバッファの構文テー
+     ブルを返す.
+
+
+
+File: elisp-ja, Node: Syntax Properties, Next: Motion and Syntax, Prev: Syntax Table Functions, Up: Syntax Tables
+
+構文属性
+========
+
+言語の構文を指定するに十分なほど構文テーブルに柔軟性がないときには, バッ
+ファ内の特定の文字の出現に対して構文テーブルに優先するテキスト属性
+`syntax-table'を指定できます.  *Note Text Properties::.
+
+テキスト属性`syntax-table'の正しい値はつぎのとおりです.
+
+SYNTAX-TABLE
+     属性値が構文テーブルであると, 文字のこの出現に対する構文を判定す
+     るためにカレントバッファの構文テーブルのかわりにこのテーブルを用
+     いる.
+
+`(SYNTAX-CODE . MATCHING-CHAR)'
+     この形のコンスセルは, 文字のこの出現の構文を指定する.
+
+`nil'
+     属性が`nil'であると, 通常どおり, 現在の構文テーブルから文字の構文
+     を判定する.
+
+ -- Variable: parse-sexp-lookup-properties
+     これが`nil'以外であると, 構文を解析する関数は, テキスト属性による
+     構文指定に注意を払う.  さもなければ, 現在の構文テーブルのみを用い
+     る.
+
+
+
+File: elisp-ja, Node: Motion and Syntax, Next: Parsing Expressions, Prev: Syntax Properties, Up: Syntax Tables
+
+移動と構文
+==========
+
+本節では, 特定の構文クラスを持つ文字を越えて移動するための関数について
+述べます.
+
+ -- Function: skip-syntax-forward SYNTAXES &optional LIMIT
+     この関数は, SYNTAXESで指定される構文クラスを持つ文字を越えてポイ
+     ントを前方へ向けて移動する.  バッファの末尾, （指定されていれば）
+     LIMITの位置, 飛び越さない文字のいずれかに出会うと停止する.  戻り
+     値は移動距離であり非負整数である.
+
+ -- Function: skip-syntax-backward SYNTAXES &optional LIMIT
+     この関数は, SYNTAXESで指定される構文クラスである文字を越えてポイ
+     ントを後方へ向けて移動する.  バッファの先頭, （指定されていれば）
+     LIMITの位置, 飛び越さない文字のいずれかに出会うと停止する.
+
+     戻り値は移動距離である.  それはゼロか負の整数である.
+
+ -- Function: backward-prefix-chars
+     この関数は, 式前置子構文の文字を飛び越えてポイントを後方へ向けて
+     移動する.  式前置子クラスやフラグ`p'を持つ文字を飛び越す.
+
+
+
+File: elisp-ja, Node: Parsing Expressions, Next: Standard Syntax Tables, Prev: Motion and Syntax, Up: Syntax Tables
+
+釣り合った式の解析
+==================
+
+ここでは, 括弧が対になっている"S式"（sexp）とも呼ばれる釣り合った式を
+解析したり走査する関数について述べます.  構文テーブルで文字の解釈を制
+御することで, LispモードではLispの式に対して, CモードではCの式に対して
+これらの関数を用いることができます.  釣り合った式を飛び越えて移動する
+ための便利な上位レベルの関数については, *Note List Motion::.
+
+ -- Function: parse-partial-sexp START LIMIT &optional TARGET-DEPTH STOP-BEFORE STATE STOP-COMMENT
+     この関数は, カレントバッファのSTARTから始まるS式を解析するが,
+     LIMITを越えては走査しない.  位置LIMITで止まるか, 以下に述べる条件
+     が満たされると解析を停止し, 当該箇所にポイントを置く.  ポイントを
+     置いた箇所での解析状況を表す値を返す.
+
+     STATEが`nil'であると, 位置STARTは, 関数定義の先頭のような括弧の構
+     造のトップレベルであると仮定する.  あるいは, 構造の途中から解析を
+     再開したい場合もある.  それには, 解析の初期状態を引数STATEに指定
+     する必要がある.
+
+     3番目の引数TARGET-DEPTHが`nil'以外であると, 括弧の深さが
+     TARGET-DEPTHに等しくなると解析を停止する.  深さは0, あるいは,
+     STATEで指定された値から始まる.
+
+     4番目の引数STOP-BEFOREが`nil'以外であると, S式を始める文字に出会
+     うと解析を停止する.  STOP-COMMENTが`nil'以外であると, コメントの
+     始まりに出会うと解析を停止する.  STOP-COMMENTがシンボル
+     `syntax-table'であると, コメントや文字列の始まり, コメントや文字
+     列の終りのいずれかに出会ったあとで解析を停止する.
+
+     5番目の引数STATEは9要素のリストであり, 以下に述べるようにこの関数
+     の値と同じ形である.  （9番目の最後の要素は省いてもよい. ）
+     `parse-partial-sexp'の呼び出しの戻り値を, 別の
+     `parse-partial-sexp'の呼び出しの解析状態の初期値に使ってよい.
+
+     結果は, 解析の最終状態を記述した9要素のリストである.
+
+       0. 0から数えた括弧の深さ.
+
+       1. ポイントを停止した箇所を含むもっとも内側の括弧式の開始位置. 
+          なければ`nil'.
+
+       2. 閉じている最後の完全な部分式の開始位置.  なければ`nil'.
+
+       3. 文字列の内側であると`nil'以外である.  より正確には, これは文
+          字列を終える文字である.  あるいは, 汎用文字列区切り文字で終
+          えるときには`t'である.
+
+       4. （どちらかの形式の）コメントの内側であると`t'である.
+
+       5. ポイントがクォート文字の直後であると`t'である.
+
+       6. この解析中に出会った最小の括弧の深さ.
+
+       7. どの形式のコメントが活性であるかを表す.  『a』形式であると
+          `nil', 『b』形式であると`t', 汎用コメント区切り文字で終るコ
+          メントの場合には`syntax-table'である.
+
+       8. 文字列やコメントの開始位置.  コメントの内側であるときにはこ
+          れはコメントの開始位置であり, 文字列の内側であるときにはこれ
+          は文字列の開始位置である.  文字列やコメントの外側では, この
+          要素は`nil'である.
+
+     引数STATEでは, 要素0, 3, 4, 5, 7は重要である.
+
+     この関数は, 入れ子にあった括弧を持つ言語向けに字下げを計算するた
+     めにしばしば用いられる.
+
+ -- Function: scan-lists FROM COUNT DEPTH
+     この関数は, 位置FROMから前方へ向けてCOUNT個の釣り合った括弧のグルー
+     プを走査する.  走査を停止した位置を返す.  COUNTが負であると, 後方
+     へ向けて走査する.
+
+     DEPTHが0以外であると, 括弧の深さをその値から数え始める.  停止箇所
+     の候補位置は, 括弧の深さが0になる箇所である.  `scan-lists'は, そ
+     のような箇所をCOUNT回数えてから停止する.  したがって, DEPTHに正の
+     値を指定すると, 括弧のレベルをDEPTHレベルだけ抜けることを意味する.
+
+     `parse-sexp-ignore-comments'が`nil'以外であると, コメントを無視し
+     て走査する.
+
+     走査がバッファ（あるいはその参照可能部分）の先頭や末尾に達し, 深
+     さが0でないと, エラーを通知する.  深さは0であるが指定個数だけ数え
+     てない場合には, `nil'を返す.
+
+ -- Function: scan-sexps FROM COUNT
+     この関数は, 位置FROMから前方へ向けてCOUNT個のS式を走査する.  走査
+     を終えた位置を返す.  COUNTが負であると, 後方へ向けて移動する.
+
+     `parse-sexp-ignore-comments'が`nil'以外であると, コメントを無視し
+     て走査する.
+
+     走査が括弧によるグループの途中でバッファ（あるいはその参照可能部
+     分）の先頭や末尾に達すると, エラーを通知する.  指定個数だけ数える
+     まえに括弧によるグループのあいだで先頭や末尾に達した場合は`nil'を
+     返す.
+
+ -- Variable: parse-sexp-ignore-comments
+     値が`nil'以外であると, 本節の関数や`forward-sexp'は, コメントを白
+     文字として扱う.
+
+     Emacsの古い版では, コメントの終了が`*/'のような形であり, かつ, コ
+     メントの終了と思える場合にのみ, この機能は動作した.  改行でコメン
+     トを終える言語では, 改行すべてがコメントの終りではないために, こ
+     の変数を`nil'にする必要があった.  このような制限事項はすでにない.
+
+`forward-comment'を使うと, 1つのコメントや複数のコメントを飛び越えて前
+後に移動できます.
+
+ -- Function: forward-comment COUNT
+     この関数は, ポイントを前方へ向けて（COUNTが負ならば後方へ向けて）
+     COUNT個のコメントを飛び越えて移動する.  コメントか白文字以外のも
+     のに出会うと停止し, 当該箇所にポイントを置く.  COUNT個だけ数えた
+     あとにももちろん停止する.
+
+ポイントに続くすべてのコメントと白文字を飛び越えるには,
+`(forward-comment (buffer-size))'を使います.  バッファ内のコメントの個
+数は`(buffer-size)'を越えるはずがないので, 引数に使うには
+`(buffer-size)'はよいものです.
+
+
+
+File: elisp-ja, Node: Standard Syntax Tables, Next: Syntax Table Internals, Prev: Parsing Expressions, Up: Syntax Tables
+
+標準的な構文テーブル
+====================
+
+Emacsのほとんどのメジャーモードにはそれ独自の構文テーブルがあります. 
+それらのいくつかをつぎに示します.
+
+ -- Function: standard-syntax-table
+     この関数は, 基本（fundamental）モードで使用する構文テーブルである
+     標準の構文テーブルを返す.
+
+ -- Variable: text-mode-syntax-table
+     この変数の値は, テキスト（text）モードで使用する構文テーブルであ
+     る.
+
+ -- Variable: c-mode-syntax-table
+     この変数の値は, Cモードのバッファ向けの構文テーブルである.
+
+ -- Variable: emacs-lisp-mode-syntax-table
+     この変数の値は, 編集コマンドがemacs-lispモードで使用する構文テー
+     ブルである.  （これはLispの関数`read'にはなんの効果もない. ）
+
+
+
+File: elisp-ja, Node: Syntax Table Internals, Next: Categories, Prev: Standard Syntax Tables, Up: Syntax Tables
+
+構文テーブルの内部
+==================
+
+Lispプログラムでは普通は構文テーブルの要素を直接には操作しません.
+Lispレベルの構文テーブル関数は, 普通は構文記述子（*Note Syntax
+Descriptors::）を操作します.  ですが, 内部形式を明文化しておきます.
+
+構文テーブルの各要素は, `(SYNTAX-CODE . MATCHING-CHAR)'の形のコンスセ
+ルです.  CARのSYNTAX-CODEは, 構文クラスと構文フラグを符号化する整数で
+す.  釣り合う文字を指定してあると, CDRのMATCHING-CHARは`nil'以外です.
+
+つぎの表は, 各構文クラスに対応するSYNTAX-CODEの値です.
+
+                                                                                     
+    整数 クラス                整数 クラス                整数 クラス                
+                                                                      
+    0 whitespace          5 close parenthesis   10 character quote    
+                                                                                      
+    　 白文字                 　 閉じ括弧                　 文字クォート              
+                                                                      
+    1 punctuation         6 expression prefix   11 comment-start      
+                                                                                      
+    　 句読点                 　 式前置子                　 コメント開始              
+                                                                      
+    2 word                7 string quote        12 comment-end        
+                                                                                        
+    　 単語                  　 文字列クォート             　 コメント終了              
+                                                                      
+    3 symbol              8 paired delimiter    13 inherit            
+                                                                                       
+    　 シンボル                　 対になった区切り            　 継承                  
+                                                                      
+    4 open parenthesis    9 escape              14 comment-fence      
+                                                                                         
+    　 開き括弧                　 エスケープ               　 コメント区切り             
+                                                                      
+    15 string-fence                                                   
+                                                                             
+    　 文字列区切り                                                          
+
+たとえば, `('の普通の構文値は, `(4 . 41)'です.  （41は`)'の文字コー
+ド. ）
+
+フラグは, 最下位ビットから16番目のビットから始まる上位ビットに符号化し
+ます.  つぎの表は, 各構文フラグとそれに対応する2の巾です.
+
+                                                                                     
+    フラグ 2の巾               フラグ 2の巾               フラグ 2の巾               
+                                                                      
+    `1' `(lsh 1 16)'      `3' `(lsh 1 18)'      `p' `(lsh 1 20)'      
+                                                                      
+    `2' `(lsh 1 17)'      `4' `(lsh 1 19)'      `b' `(lsh 1 21)'      
+
+
+
+File: elisp-ja, Node: Categories, Next: Abbrevs, Prev: Syntax Table Internals, Up: Syntax Tables
+
+カテゴリ
+========
+
+"カテゴリ"（category）は, 文字を構文的に分類する別の方法です.  必要に
+応じて複数のカテゴリを定義できて, そうすると各文字に1つか複数のカテゴ
+リを独立に設定できます.  構文クラスと異なり, カテゴリは互いに排他的で
+はありません.  1つの文字が複数のカテゴリに属することは普通にあります.
+
+各バッファには"カテゴリテーブル"（category table）があり, どのカテゴリ
+が定義済みでどの文字がどのカテゴリに属するかを記録しています.  各カテ
+ゴリテーブルはそれ独自のカテゴリ群を定義しますが, それらは標準のカテゴ
+リテーブルをコピーして普通は初期化されます.  そのため, すべてのモード
+で標準のカテゴリを使えます.
+
+各カテゴリには名前があり, それは` 'から`~'までの
+範囲のASCII印字文字です. 
+`define-category'でカテゴリを定義するときにその名前を指定します. 
+
+カテゴリテーブルは実際には文字テーブル（*Note Char-Tables::）です.  カ
+テゴリテーブルの添字Cの要素は, "カテゴリ集合"（category set）です.  こ
+れはブールベクトルであり, 文字Cが属するカテゴリ群を表します.  このカテ
+ゴリ集合において, 添字CATの要素が`t'であると, CATは集合の要素であるこ
+とを意味し, 当該文字CはカテゴリCATに属することを意味します.
+
+ -- Function: define-category CHAR DOCSTRING &optional TABLE
+     この関数は, 名前をCHAR, 説明文字列をDOCSTRINGとして新たなカテゴリ
+     を定義する.
+
+     新たなカテゴリは, カテゴリテーブルTABLEに対して定義される.  TABLE
+     のデフォルトは, カレントバッファのカテゴリテーブルである.
+
+ -- Function: category-docstring CATEGORY &optional TABLE
+     この関数は, カテゴリテーブルTABLEのカテゴリCATEGORYの説明文字列を
+     返す.
+
+          (category-docstring ?a)
+               => "ASCII"
+          (category-docstring ?l)
+               => "Latin"
+
+ -- Function: get-unused-category TABLE
+     この関数は, カテゴリテーブルTABLEで現在定義されていない新たなカテ
+     ゴリ名（文字）を返す.  TABLEにおいて可能なすべてのカテゴリが使用
+     済みであると`nil'を返す.
+
+ -- Function: category-table
+     この関数は, カレントバッファのカテゴリテーブルを返す.
+
+ -- Function: category-table-p OBJECT
+     この関数は, OBJECTがカテゴリテーブルであると`t'を返し, さもなけれ
+     ば`nil'を返す.
+
+ -- Function: standard-category-table
+     この関数は, 標準のカテゴリテーブルを返す.
+
+ -- Function: copy-category-table &optional TABLE
+     この関数は, カテゴリテーブルTABLEのコピーを作成しそれを返す.
+     TABLEを指定しない（あるいは`nil'）と, 現在のカテゴリテーブルのコ
+     ピーを返す.  TABLEがカテゴリテーブルでないとエラーを通知する.
+
+ -- Function: set-category-table TABLE
+     この関数は, カレントバッファのカテゴリテーブルをTABLEとする.
+     TABLEを返す.
+
+ -- Function: make-category-set CATEGORIES
+     この関数は, 新たなカテゴリ集合, つまり, 文字列CATEGORIESに指定し
+     たカテゴリで内容を初期化したブールベクトルを返す.  CATEGORIESの要
+     素はカテゴリ名であること.  新たなカテゴリ集合では, CATEGORIESの各
+     カテゴリに対しては`t'をそれ以外のカテゴリに対しては`nil'を設定す
+     る.
+
+          (make-category-set "al")
+               => #&128"\0\0\0\0\0\0\0\0\0\0\0\0\2\20\0\0"
+
+ -- Function: char-category-set CHAR
+     この関数は, 文字CHARに対するカテゴリ集合を返す.  これは, 文字CHAR
+     が属するカテゴリ群を記録したブールベクトルである.  関数
+     `char-category-set'は, カテゴリテーブルに存在する同じブールベクト
+     ルを返すため, 新たな領域を割り付けない.
+
+          (char-category-set ?a)
+               => #&128"\0\0\0\0\0\0\0\0\0\0\0\0\2\20\0\0"
+
+ -- Function: category-set-mnemonics CATEGORY-SET
+     この関数は, カテゴリ集合CATEGORY-SETをこの集合に属するすべてのカ
+     テゴリの名前からなる文字列に変換する.
+
+          (category-set-mnemonics (char-category-set ?a))
+               => "al"
+
+ -- Function: modify-category-entry CHARACTER CATEGORY &optional TABLE RESET
+     この関数は, カテゴリテーブルTABLE（デフォルトはカレントバッファの
+     カテゴリテーブル）内の文字CHARACTERのカテゴリ集合を変更する.
+
+     普通, カテゴリ集合にCATEGORYを追加して変更する.  しかし, RESETが
+     `nil'以外であるとCATEGORYを削除する.
+
+
+File: elisp-ja, Node: Abbrevs, Next: Processes, Prev: Syntax Tables, Up: Top
+
+略語と略語の展開
+****************
+
+"略語"（abbrev）とは, より長い文字列へ展開される文字の列のことです. 
+ユーザーが略語の文字列を挿入すると, その展開形に自動的に置換されます. 
+これにより打鍵量を省けます.
+
+現在有効な略語の集まりは, "略語表"（abbrev table）に記録されています. 
+各バッファにはローカルな略語表がありますが, 通常, 同じメジャーモードの
+すべてのバッファは1つの略語表を共有します.  グローバルな略語表もありま
+す.  通常, 両方を使います.
+
+略語表は, 各略語に対するシンボルを収めたオブジェクト配列として表現され
+ます.  シンボルの名前が略語です.  その値は展開形であり, その関数定義は
+展開を行うフック関数です.  その属性リストのセルには略語を展開した回数
+である利用回数が入ります.  それらのシンボルは, 通常のオブジェクト配列
+にはインターンされませんから, Lisp式を読み取った結果には, それらはけっ
+して現れません.  実際, 略語を扱うコード以外では, それらはけっして使わ
+れません.  したがって, それらをかなり非標準的に使っても安全です.
+*Note Creating Symbols::.
+
+ユーザーレベルの略語コマンドについては, *Note 略語の利用法:
+(emacs-ja)Abbrevs.を参照してください.
+
+* Menu:
+
+* Abbrev Mode::                 Setting up Emacs for abbreviation.
+* Tables: Abbrev Tables.        Creating and working with abbrev tables.
+* Defining Abbrevs::            Specifying abbreviations and their expansions.
+* Files: Abbrev Files.          Saving abbrevs in files.
+* Expansion: Abbrev Expansion.  Controlling expansion; expansion subroutines.
+* Standard Abbrev Tables::      Abbrev tables used by various major modes.
+
+
+
+File: elisp-ja, Node: Abbrev Mode, Next: Abbrev Tables, Prev: Abbrevs, Up: Abbrevs
+
+略語（abbrev）モードの設定
+==========================
+
+略語（abbrev）モードは, 変数`abbrev-mode'の値で制御されるマイナモード
+です.
+
+ -- Variable: abbrev-mode
+     この変数の値が`nil'以外であると, バッファに略語が挿入されると自動
+     的に展開するようになる.  値が`nil'であると, 略語を定義することは
+     できるが, 自動的には展開されない.
+
+     この変数は設定されると自動的にバッファローカルになる.
+
+ -- Variable: default-abbrev-mode
+     これは, `abbrev-mode'を上書きしていないバッファ向けの
+     `abbrev-mode'の値である.  これは`(default-value 'abbrev-mode)'と
+     同じである.
+
+
+
+File: elisp-ja, Node: Abbrev Tables, Next: Defining Abbrevs, Prev: Abbrev Mode, Up: Abbrevs
+
+略語表
+======
+
+本節では, 略語表の作成方法と扱い方について述べます.
+
+ -- Function: make-abbrev-table
+     この関数は, 新たな空の略語表, つまり, シンボルを含まないオブジェ
+     クト配列を作成して返す.  ベクトルはゼロで埋められる.
+
+ -- Function: clear-abbrev-table TABLE
+     この関数は, 略語表TABLE内のすべての略語を未定義にして略語表を空に
+     する.  関数は`nil'を返す.
+
+ -- Function: define-abbrev-table TABNAME DEFINITIONS
+     この関数は, TABNAME（シンボル）を略語表の名前として定義する.  つ
+     まり, この変数としての値は略語表になる.  DEFINITIONSに従って略語
+     表に略語を定義する.  ここで, DEFINITIONSは`(ABBREVNAME EXPANSION
+     HOOK USECOUNT)'の形の要素から成るリストである.  戻り値はつねに
+     `nil'である.
+
+ -- Variable: abbrev-table-name-list
+     その値が略語表であるシンボルのリストである.
+     `define-abbrev-table'は, 新たな略語表の名前をこのリストに追加する.
+
+ -- Function: insert-abbrev-table-description NAME &optional HUMAN
+     この関数は, NAMEで指名される略語表の記述をポイントのまえに挿入す
+     る.  引数NAMEは, その値が略語表であるシンボルである.  戻り値はつ
+     ねに`nil'である.
+
+     HUMANが`nil'以外であると, この記述は人間向けである.  さもなければ, 
+     この記述はLisp式, つまり, NAMEの現在の定義どおりにNAMEを定義する
+     ような`define-abbrev-table'の呼び出しである.
+
+
+
+File: elisp-ja, Node: Defining Abbrevs, Next: Abbrev Files, Prev: Abbrev Tables, Up: Abbrevs
+
+略語を定義する
+==============
+
+これらの関数は, 指定した略語表に略語を定義します.  `define-abbrev'は下
+位レベルの基本的な関数ですが, `add-abbrev'はユーザーに情報を問い合わせ
+るコマンドが使います.
+
+ -- Function: add-abbrev TABLE TYPE ARG
+     この関数は, ユーザーからの情報に基づいて略語表TABLEに略語を追加す
+     る.  引数TYPEは, この略語の種類を英語で表した文字列である（典型的
+     には, `"global"'や`"mode-specific"'. ）この文字列はユーザーへのプ
+     ロンプトに使われる.  引数ARGは, 展開形の単語数である.
+
+     戻り値は, 新たな略語を内部的に表現するシンボルであるか, 既存の略
+     語を再定義することをユーザーが拒否したときには`nil'である.
+
+ -- Function: define-abbrev TABLE NAME EXPANSION HOOK
+     この関数は, 略語表TABLEにおいて, 略語NAMEをEXPANSIONに展開するよ
+     うに定義し, HOOKを呼び出すように定義する.  戻り値は, Emacs内部で
+     略語を表現するシンボルを返すが, その名前はNAMEである.
+
+     引数NAMEは文字列であること.  引数EXPANSIONは, 普通は, 目的の展開
+     形（文字列）であるが, 略語を未定義にするには`nil'である.  これが
+     文字列でも`nil'でもなければ, 略語を『展開する』ときにはHOOKだけを
+     実行する.
+
+     引数HOOKは, 関数か`nil'である.  HOOKが`nil'以外であると, 略語を
+     EXPANSIONに置換し終えてから引数なしで呼ばれる.  HOOKが呼ばれると
+     きには, ポイントはEXPANSIONの直後に置かれる.
+
+     略語の利用回数は0に初期化される.
+
+ -- User Option: only-global-abbrevs
+     この変数が`nil'以外であると, ユーザーはグローバルな略語だけを使う
+     意図があることを表す.  モード固有の略語を定義するコマンドに対して, 
+     グローバルな略語を定義するように指示する.  この変数は本節の関数の
+     ふるまいを変えることはないが, それらを呼び出す側でこの変数を検査
+     している.
+
+
+
+File: elisp-ja, Node: Abbrev Files, Next: Abbrev Expansion, Prev: Defining Abbrevs, Up: Abbrevs
+
+略語をファイルに保存する
+========================
+
+略語定義を保存したファイルは, 実際には, Lispコードのファイルです.  略
+語は, 同じ内容の同じ略語表を定義するLispプログラムの形で保存されます. 
+したがって, ファイルは`load'（*Note How Programs Do Loading::）でロー
+ドできます.  しかし, 関数`quietly-read-abbrev-file'がより便利なインター
+フェイスを提供します.
+
+`save-some-buffers'などのユーザーレベルの機能では, ここに述べた変数の
+制御のもとで, 略語をファイルに自動的に保存できます.
+
+ -- User Option: abbrev-file-name
+     これは, 略語を読み込んだり保存するデフォルトのファイル名である.
+
+ -- Function: quietly-read-abbrev-file FILENAME
+     この関数は, `write-abbrev-file'で書いておいたファイルFILENAMEから, 
+     略語定義を読み取る.  FILENAMEが`nil'であると, `abbrev-file-name'
+     で指定されるファイルを使う.  `save-abbrevs'に`t'を設定して, 変更
+     は保存されるようにする.
+
+     この関数はいっさいメッセージを表示しない.  `nil'を返す.
+
+ -- User Option: save-abbrevs
+     `save-abbrev'が`nil'以外の値であると, Emacsはファイルを保存すると
+     きに略語も保存する.  `abbrev-file-name'が略語を保存するファイルを
+     指定する.
+
+ -- Variable: abbrevs-changed
+     略語を定義したり変更すると, この変数は`nil'以外に設定される.  こ
+     れは, 読者の略語を保存する機会を与えるために, Emacsのさまざまなコ
+     マンドに対するフラグとして働く.
+
+ -- コマンド: write-abbrev-file FILENAME
+     ロードすると同じ略語を定義するようなLispプログラムの形で, ファイ
+     ルFILENAMEにすべての略語表のすべての略語定義を保存する.  この関数
+     は`nil'を返す.
+
+
+
+File: elisp-ja, Node: Abbrev Expansion, Next: Standard Abbrev Tables, Prev: Abbrev Files, Up: Abbrevs
+
+略語の探索と展開
+================
+
+通常, 略語は, `self-insert-command'を含む特定の対話的なコマンドによっ
+て展開されます.  本節では, データのやりとりに使う変数に加えて, そのよ
+うなコマンドを書くために使用するサブルーティンについて述べます.
+
+ -- Function: abbrev-symbol ABBREV &optional TABLE
+     この関数は, 名前ABBREVの略語を表すシンボルを返す.  そのような略語
+     が定義されていなければ, 戻り値は`nil'である.  省略可能な第2引数
+     TABLEは, 探索対象の略語表である.  TABLEが`nil'であると, この関数
+     は, まずカレントバッファのローカルな略語表を試し, つぎにグローバ
+     ルな略語表を試す.
+
+ -- Function: abbrev-expansion ABBREV &optional TABLE
+     この関数は, ABBREVが（カレントバッファで使用される略語表での定義
+     どおりに）展開されるであろう文字列を返す.  省略可能な引数TABLEは,
+     `abbrev-symbol'と同様に, 使用する略語表を指定する.
+
+ -- コマンド: expand-abbrev
+     このコマンドは, ポイントのまえの略語をあれば展開する.  略語の直後
+     にポイントがない場合, このコマンドはなにもしない.  このコマンドは, 
+     展開を行えば`t'を返し, さもなければ`nil'を返す.
+
+ -- コマンド: abbrev-prefix-mark &optional ARG
+     現在のポイント位置を略語の開始位置としてマークする.  つぎに
+     `expand-abbrev'を呼び出すと, 通常どおりにポイントのまえの単語を使
+     うかわりに, ここから（その時点での）ポイントまでのテキストを略語
+     として展開する.
+
+ -- User Option: abbrev-all-caps
+     これが`nil'以外であると, 大文字だけで入力された略語を大文字だけで
+     展開する.  さもなければ, 大文字だけで入力された略語は, 展開形の各
+     単語を大文字で始めるように展開される.
+
+ -- Variable: abbrev-start-location
+     これは, `expand-abbrev'がつぎに展開する略語の開始位置として使うバッ
+     ファ内位置である.  （`nil'であると, そのかわりにポイントのまえの
+     単語を使う意味である. ）`expand-abbrev'が呼び出されるたびに,
+     `abbrev-start-location'は`nil'に設定される.  この変数は,
+     `abbrev-prefix-mark'でも設定される.
+
+ -- Variable: abbrev-start-location-buffer
+     この変数の値は, `abbrev-start-location'が設定されたバッファである. 
+     別のバッファで略語を展開しようとすると`abbrev-start-location'はク
+     リアされる.  この変数は`abbrev-prefix-mark'が設定する.
+
+ -- Variable: last-abbrev
+     これは, もっとも最近に略語展開された`abbrev-symbol'
+     （略語を表すシンボル）である. 
+     この情報は, コマンド`unexpand-abbrev'向けに
+     `expand-abbrev'が残す
+     （*Note 略語展開の制御: (emacs-ja)Expanding Abbrevs..）
+     .
+
+ -- Variable: last-abbrev-location
+     これは, もっとも最近に略語展開した箇所である.  これは, コマンド
+     `unexpand-abbrev'向けに`expand-abbrev'が残した情報を保持する.
+
+ -- Variable: last-abbrev-text
+     これは, もっとも最近に略語展開したときの（あれば）大文字小文字変
+     換後の展開形のテキストである.  略語展開を取り消すと, この値は
+     `nil'である.  これは, コマンド`unexpand-abbrev'向けに
+     `expand-abbrev'が残した情報を保持する.
+
+ -- Variable: pre-abbrev-expand-hook
+     これは, 任意の略語を展開する直前に順に実行される関数を収めたノー
+     マルフックである.  *Note Hooks::.  ノーマルフックなので, フック関
+     数は引数を受け取らない.  しかし, バッファでポイントのまえを調べる
+     ことで展開すべき略語をみつけることができる.
+
+以下のコード例は, `pre-abbrev-expand-hook'の使い方を示します.  ユーザー
+が略語を句読点文字で終えると, フック関数が確認を求めます.  したがって, 
+このフックにより, ユーザーは展開の可否を決定でき, 了承しなかったときに
+は展開を止められます.
+
+     (add-hook 'pre-abbrev-expand-hook 'query-if-not-space)
+
+     ;; この関数は, `pre-abbrev-expand-hook'が起動する
+
+     ;; ユーザーが略語を空白で終えると, この関数はなにもしない
+     ;; （つまり, 略語を展開できるように戻る）
+     ;; ユーザーがその他の文字を入力したら, 
+     ;; この関数は展開するかどうかを問い合わせる
+
+     ;; ユーザーがプロンプトにyで答えたら, 
+     ;; （関数`not'を使っているので）この関数は`nil'を返すが
+     ;; 問題ない. 戻り値は展開には影響しない
+
+     (defun query-if-not-space ()
+       (if (/= ?\  (preceding-char))
+           (if (not (y-or-n-p "Do you want to expand this abbrev? "))
+               (error "Not expanding this abbrev"))))
+
+
+
+File: elisp-ja, Node: Standard Abbrev Tables, Next: Processes, Prev: Abbrev Expansion, Up: Abbrevs
+
+標準の略語表
+============
+
+Emacsにあらかじめロードされるメジャーモード向けの略語表を保持する変数
+一覧を示します.
+
+ -- Variable: global-abbrev-table
+     これは, モードに依存しない略語向けの略語表である.  これに定義され
+     た略語は, すべてのバッファに適用される.  各バッファにはローカルな
+     略語表もあり, それらの略語定義はグローバルな略語表の略語定義に優
+     先する.
+
+ -- Variable: local-abbrev-table
+     このバッファローカルな変数の値はカレントバッファの（モード固有の）
+     略語表である.
+
+ -- Variable: fundamental-mode-abbrev-table
+     これは, 基本（fundamental）モードで使われるローカルな略語表である. 
+     いいかえれば, 基本（fundamental）モードであるすべてのバッファのロー
+     カルな略語表である.
+
+ -- Variable: text-mode-abbrev-table
+     これは, テキスト（text）モードで使われるローカルな略語表である.
+
+ -- Variable: lisp-mode-abbrev-table
+     これは, lispモードとemacs-lispモードで使われるローカルな略語表で
+     ある.
+
+
+File: elisp-ja, Node: Processes, Next: Display, Prev: Abbrevs, Up: Top
+
+プロセス
+********
+
+オペレーティングシステムの用語では, "プロセス"（process）とは, プログ
+ラムを実行する空間のことです.  Emacsはプロセスとして動いています.
+Emacs Lispのプログラムでは, 独自のプロセスとして他のプログラムを起動で
+きます.  それらは, Emacsプロセスの"サブプロセス"（subprocess）とか"子
+プロセス"（child process）と呼ばれ, Emacsプロセスはそれらの"親プロセス
+"（parent process）です.
+
+Emacsのサブプロセスは, それを作成する方法に依存して, "同期"
+（synchronous）であるか"非同期"（asynchronous）です.  同期サブプロセス
+を作成すると, Lispプログラムは実行を継続するまえにそのサブプロセスの終
+了を待ちます.  非同期サブプロセスを作成すると, それはLispプログラムと
+並行して動作します.  この種のサブプロセスは, Emacs内部ではやはり『プロ
+セス』と呼ばれるLispオブジェクトで表現されます.  Lispプログラムはこの
+オブジェクトを用いてサブプロセスと通信したりそれを制御できます.  たと
+えば, シグナルを送ったり, 状態情報を取得したり, プロセスからの出力を受
+け取ったり, プロセスへ入力を送れます.
+
+ -- Function: processp OBJECT
+     この関数は, OBJECTがプロセスであれば`t'を返し, さもなければ`nil'
+     を返す.
+
+* Menu:
+
+* Subprocess Creation::      Functions that start subprocesses.
+* Shell Arguments::          Quoting an argument to pass it to a shell.
+* Synchronous Processes::    Details of using synchronous subprocesses.
+* Asynchronous Processes::   Starting up an asynchronous subprocess.
+* Deleting Processes::       Eliminating an asynchronous subprocess.
+* Process Information::      Accessing run-status and other attributes.
+* Input to Processes::       Sending input to an asynchronous subprocess.
+* Signals to Processes::     Stopping, continuing or interrupting
+                               an asynchronous subprocess.
+* Output from Processes::    Collecting output from an asynchronous subprocess.
+* Sentinels::                Sentinels run when process run-status changes.
+* Transaction Queues::	     Transaction-based communication with subprocesses.
+* Network::                  Opening network connections.
+
+
+
+File: elisp-ja, Node: Subprocess Creation, Next: Shell Arguments, Prev: Processes, Up: Processes
+
+サブプロセス作成関数
+====================
+
+プログラムを実行するために新たなサブプロセスを作る関数が3つあります. 
+その1つ`start-process'は, 非同期プロセスを作成してプロセスオブジェクト
+を返します（*Note Asynchronous Processes::）.  残りの2つ,
+`call-process'と`call-process-region'は同期プロセスを作成しますが, プ
+ロセスオブジェクトは返しません（*Note Synchronous Processes::）.
+
+同期／非同期プロセスについては以下の節に述べます.  3つの関数の呼び出し
+方は類似しているので, ここではそれらに共通な引数について述べます.
+
+いずれの場合でも, 関数の引数PROGRAMは, 実行すべきプログラムを指定しま
+す.  そのファイルがみつからなかったり実行できないと, エラーを通知しま
+す.  ファイル名が相対名であると, 変数`exec-path'は探索すべきディレクト
+リのリストを保持しています.  Emacsは起動時に環境変数`PATH'の値に基づい
+て`exec-path'を初期化します.  `~', `.', `..'のファイル名の標準的な書き
+方は, `exec-path'でも普通どおりに解釈されますが, （`$HOME'などの）環境
+変数の置換は認識しません.  それには`substitute-in-file-name'を使います
+（*Note File Name Expansion::）.
+
+サブプロセスを作成する各関数には, プログラムの標準出力の受け取り場所を
+指定する引数BUFFER-OR-NAMEがあります.  これはバッファかバッファ名であ
+る必要があります.  バッファ名であると, そのバッファが既存でなければ新
+たに作成します.  `nil'でもかまいませんが, その場合, フィルタ関数で処理
+しない限り出力を破棄します.  （*Note Filter Functions::と*Note Read
+and Print::）.  通常, 複数のプロセスの出力を同じバッファへは送らないよ
+うにします.  それらの出力がでたらめに混ざってしまうからです.
+
+サブプロセスを作成する3つの関数すべてに, `&rest'引数であるARGSがありま
+す.  ARGSはすべてが文字列である必要があり, それぞれを区切ってコマンド
+行引数としてPROGRAMに与えられます.  引数全体を指定されたプログラムへ直
+接渡すため, これらの引数ではワイルドカード文字や他のシェル構文の特別な
+意味はありません.
+
+*注意*：` '引数PROGRAMにはプログラムの名前だけを指定し, コマンド行引数
+はいっさい指定しない.  コマンド行引数はARGSで与えること.
+
+サブプロセスのカレントディレクトリは`default-directory'の値で決まりま
+す（*Note File Name Expansion::）.
+
+サブプロセスはEmacsから環境変数を継承しますが, 優先するものを
+`process-environment'で指定できます.  *Note System Environment::.
+
+ -- Variable: exec-directory
+     この変数の値は, Emaccsが起動することを意図したGNU Emacsとともに配
+     布されたプログラム群を収めたディレクトリ名（文字列）である.  プロ
+     グラム`movemail'はそのようなプログラムの例であり, inboxから新たな
+     メイルを取り出すためにrmailが利用する.
+
+ -- User Option: exec-path
+     この変数の値は, サブプロセスで実行するプログラムを探索するディレ
+     クトリのリストである.  各要素はディレクトリ名（文字列）であるか, 
+     デフォルトディレクトリ（つまり`default-directory'の値）を意味する
+     `nil'である.
+
+     引数PROGRAMが絶対ファイル名でないと, `call-process'と
+     `start-process'は`exec-path'の値を使う.
+
+
+
+File: elisp-ja, Node: Shell Arguments, Next: Synchronous Processes, Prev: Subprocess Creation, Up: Processes
+
+シェル引数
+==========
+
+Lispプログラムから, ユーザーが指定したファイル名を含んだコマンドを指定
+してシェルを実行する必要がときどきあります.  これらのプログラムでは, 
+任意の正しいファイル名を扱える必要があります.  しかし, シェルは, 特定
+の文字がファイル名として現れると特別に扱うので, そのような文字がシェル
+に混乱をもたらします.  そのような文字を扱うには, 関数
+`shell-quote-argument'を使います.
+
+ -- Function: shell-quote-argument ARGUMENT
+     この関数は, ARGUMENTを実際の内容とするシェル構文で表した引数を文
+     字列で返す.  この戻り値をシェルコマンドに連結し, 実行のためにシェ
+     ルに渡しても問題を生じないはずである.
+
+     この関数が行うことの詳細は読者のオペレーティングシステムに依存す
+     る.  この関数は通常のシェル構文に合うように設計してある.  非標準
+     のシェルを使う場合には, この関数を再定義する必要があろう.  MS-DOS
+     では, この関数はARGUMENTを無変更で返す.  MS-DOSのシェルにはクォー
+     トの機能がないため, これは本当は正しいことではないが最良のことで
+     ある.
+
+          ;; つぎの例はGNUとUNIXシステムのふるまいである
+          (shell-quote-argument "foo > bar")
+               => "foo\\ \\>\\ bar"
+
+     シェルコマンドを作る`shell-quote-argument'の使用例をつぎに示す.
+
+          (concat "diff -c "
+                  (shell-quote-argument oldfile)
+                  " "
+                  (shell-quote-argument newfile))
+
+
+
+File: elisp-ja, Node: Synchronous Processes, Next: Asynchronous Processes, Prev: Shell Arguments, Up: Processes
+
+同期プロセスの作成
+==================
+
+"同期プロセス"（synchronous process）を作成すると, Emacsは実行を続行す
+るまえにそのプロセスが終了するのを待ちます.  diredはその例です.  `ls'
+を同期プロセスで実行し, その出力を少々修正します.  プロセスは同期なの
+で, Emacsがなにかを行おうとするまえにディレクトリ一覧全部がバッファに
+届きます.
+
+Emacsは同期サブプロセスの終了を待ちますが, ユーザーは`C-g'と打って中断
+できます.  `C-g'はまずシグナル`SIGINT'でサブプロセスをキルしようとしま
+すが, 中断を完了するまえにサブプロセスが終了するのを待ちます.  その期
+間にユーザーがさらに`C-g'を打つと, `SIGKILL'でサブプロセスを即座にキル
+し, ただちに中断を完了します.  *Note Quitting::.
+
+同期サブプロセス作成関数は, そのプロセスがどのように終了したかを表すも
+のを返します.
+
+同期サブプロセスからの出力は, ファイルから読むテキストと同様に, コーディ
+ングシステムを用いて一般には復号化します.  `call-process-region'がサブ
+プロセスへ送る入力は, ファイルへ書くテキストと同様に, コーディングシス
+テムを用いて符号化します.  *Note Coding Systems::.
+
+ -- Function: call-process PROGRAM &optional INFILE DESTINATION DISPLAY &rest ARGS
+     この関数は, 別のプロセスでPROGRAMを呼び出し, それが終了するのを待
+     つ.
+
+     INFILEが`nil'でなければプロセスへの標準入力はINFILEであるが, さも
+     なければ`/dev/null'である.  引数DESTINATIONでプロセスの出力先をつ
+     ぎのように指定する.
+
+     バッファ
+          このバッファのポイントのまえに出力を挿入する.  これにはプロ
+          セスの標準出力と標準エラーの両者を含む.
+
+     文字列
+          文字列で指定した名前のバッファのポイントのまえに出力を挿入す
+          る.
+
+     `t'
+          カレントバッファのポイントのまえに出力を挿入する.
+
+     `nil'
+          出力を破棄する.
+
+     0
+          出力を破棄し, サブプロセスの終了を待たずにただちに戻る.
+
+          この場合, このプロセスはEmacsと並行して動作するので真のサブ
+          プロセスではない.  しかし, この関数から戻るとEmacsはサブプロ
+          セスの処理を本質的には終えたという意味で同期プロセスと考える
+          ことができる.
+
+     `(REAL-DESTINATION ERROR-DESTINATION)'
+          標準出力と標準エラーを分離し, REAL-DESTINATIONの指定に従って
+          通常の出力を扱い, ERROR-DESTINATIONに従ってエラー出力を処理
+          する.  ERROR-DESTINATIONが`nil'であるとエラー出力を破棄し,
+          `t'であると通常の出力に混ぜ, 文字列であるとその名前のファイ
+          ルにエラー出力を振り向ける.
+
+          エラー出力を入れるバッファを直接に指定することはできない. 
+          それを実装するのは難しすぎる.  しかし, エラー出力を一時ファ
+          イルへ送ってからそのファイルをバッファに挿入すれば, 同じ効果
+          を得られる.
+
+     DISPLAYが`nil'以外であると, `call-process'は, 出力が挿入されると
+     バッファを再表示する.  （しかし, コーディングシステムとして実際の
+     データからコーディングシステムを推定する`undecided'を指定している
+     と, 非ASCII文字に出会うと再表示を継続できない場合もある.  これを
+     修正するのが困難である根本的な理由がある. ）さもなければ, 関数
+     `call-process'は再表示しないので, Emacsが通常の過程でそのバッファ
+     を再表示するまでは, スクリーン上で結果は見えない.
+
+     残りの引数ARGSは, プログラムに対するコマンド行引数を指定する文字
+     列である.
+
+     （待たないように指示しない限り）`call-process'が返す値は, プロセ
+     スの終了理由を表す.  数でサブプロセスの終了状態を表し, 0は成功, 
+     それ以外の値は失敗を意味する.  プロセスがシグナルで終了すると,
+     `call-process'はシグナルを記述する文字列を返す.
+
+     つぎの例では, バッファ`foo'がカレントである.
+
+          (call-process "pwd" nil t)
+               => nil
+
+          ---------- Buffer: foo ----------
+          /usr/user/lewis/manual
+          ---------- Buffer: foo ----------
+
+          (call-process "grep" nil "bar" nil "lewis" "/etc/passwd")
+               => nil
+
+          ---------- Buffer: bar ----------
+          lewis:5LTsHm66CSWKg:398:21:Bil Lewis:/user/lewis:/bin/csh
+
+          ---------- Buffer: bar ----------
+
+     `insert-directory'の定義にある`call-process'のよい使用例をつぎに
+     示す.
+
+          (call-process insert-directory-program nil t nil SWITCHES
+                        (if full-directory-p
+                            (concat (file-name-as-directory file) ".")
+                          file))
+
+ -- Function: call-process-region START END PROGRAM &optional DELETE DESTINATION DISPLAY &rest ARGS
+     この関数は, PROGRAMを動かすプロセスの標準入力としてSTARTとENDのあ
+     いだのテキストを送る.  DELETEが`nil'以外であると, 送ったテキスト
+     を削除する.  これは, カレントバッファに送った入力のかわりに出力を
+     挿入することを意味するDESTINATIONが`t'であるときに有用である.
+
+     引数DESTINATIONとDISPLAYは, サブプロセスからの出力をどのように扱
+     い, 出力か到着するたびに表示を更新するかどうかを制御する.  詳しく
+     は, 上記の`call-process'の記述を参照.  DESTINATIONが整数0であると,
+     `call-process-region'は, サブプロセスの終了を待たずに出力を破棄し
+     てただちに`nil'を返す.
+
+     残りの引数ARGSは, プログラムに対するコマンド行引数を指定する文字
+     列である.
+
+     `call-process-region'の戻り値は`call-process'と同様であり, 待たず
+     に戻るように指示すると`nil'であり, さもなければサブプロセスの終了
+     状態を表す数か文字列である.
+
+     つぎの例では, バッファ`foo'の始めの5文字（単語`input'）を標準入力
+     としてユーティリティ`cat'を実行するために`call-process-region'を
+     使う.  `cat'は, 標準入力を標準出力へコピーする.  引数DESTINATION
+     が`t'であるので, 出力はカレントバッファに挿入される.
+
+          ---------- Buffer: foo ----------
+          input-!-
+          ---------- Buffer: foo ----------
+
+          (call-process-region 1 6 "cat" nil t)
+               => nil
+
+          ---------- Buffer: foo ----------
+          inputinput-!-
+          ---------- Buffer: foo ----------
+
+     コマンド`shell-command-on-region'は, つぎのように
+     `call-process-region'を使う.
+
+          (call-process-region 
+           start end         
+           shell-file-name      ; プログラムの名前
+           nil                  ; リージョンを削除しない
+           buffer               ; 出力は`buffer'へ入れる
+           nil                  ; 出力中は再表示しない
+           "-c" command)        ; シェルに対する引数
+
+ -- Function: shell-command-to-string COMMAND
+     この関数は, シェルコマンドとしてCOMMAND（文字列）を実行し, コマン
+     ドの出力を文字列として返す.
+
+
+

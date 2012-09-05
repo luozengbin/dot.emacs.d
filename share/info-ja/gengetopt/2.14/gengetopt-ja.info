@@ -1,0 +1,1439 @@
+-*- coding: utf-8 -*-
+   This file documents GNU Gengetopt, a tool to write option parsers
+for C programs.
+
+   This edition is for Gengetopt version 2.14.
+
+   Copyright (C) 2001-2005 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Free Software Foundation.
+
+
+File: gengetopt-ja.info,  Node: Top,  Next: Audience,  Prev: (dir),  Up: (dir)
+
+Gengetopt
+*********
+
+gengetoptは，Cプログラムのオプションを構文解析するコードを書くツールです．
+
+   これは，gengetoptマニュアルの2.14版です．
+
+   これは，GNU gengetoptのバージョン2.14のドキュメントです．
+
+* Menu:
+
+* Audience::                    What is gengetopt and who it is for.
+* Copying::                     Your rights.
+* Installation::                Download and Installation
+* Basic Usage::                 How to run Gengetopt; syntax of .ggo files
+* Invoking gengetopt::          gengetopt command line options
+* Terminology::                 Definitions of options, values, and so forth.
+* Group options::               Mutual exclusive options
+* Configuration files::         Parsing a configuration file
+* Multiple Options::            Multiple options
+* No getopt_long::              What if getopt_long is not available?
+* Bugs::                        What is lame and/or buggy in Gengetopt 2.14
+* Mailing Lists::               For discussions and announces
+* Index::                       Index.
+
+
+File: gengetopt-ja.info,  Node: Audience,  Next: Copying,  Prev: Top,  Up: Top
+
+読者の皆様へ
+************
+
+gengetoptは，すべてのCやC++プログラムの一部であるコマンドライン引数
+`argc'と`argv'を構文解析する，Cのコードを生成するツールです．
+生成されたコードは、実際にコマンドラインの構文解析を行うために，Cライブ
+ラリ関数の`getopt_long'を使用します．
+
+   このマニュアルは，CとC++のプログラマに対して書かれていて，特に_な
+まけもの_のためです．それなりのCプログラムを書いた経験があれば，引数の
+構文解析を処理する必要があったことでしょう．特に難しくもありませんが，
+興味深いことでもありません．それは，伝統的なプログラム行為_であり_，
+殆どのプログラミングの書籍で読者の訓練として残されているものです．
+gengetoptは，この作業からあなたを解放し，プログラムの興味深い部分に集中
+するべく自由をあたえてくれます．
+
+このように，プログラムでは，以下のようなコマンドラインオプションを処理
+することが可能になるでしょう．
+
+     myprog --input foo.c -o foo.o --no-tabs -i 100 *.class
+
+   また，長いオプション(`--'で始まるものです)と短いオプション
+(`-'で始まり，単一の文字となっています)の両方が処理されます(詳細は
+*Note Terminology::)．短いオプションと長いオプションに関する標準は，GNU
+Coding Standards (`http://www.gnu.org/prep/standards_toc.html')を
+参照してください．
+
+   gengetoptは，コマンドラインオプションをファイルに保存する関数 (*Note
+Basic Usage::)と，コマンドラインオプションをファイルから読みこむ関
+数(*Note Configuration files::) を生成することが可能です．もちろん，これ
+ら二種類のファイルは標準にしたがっています．
+
+
+File: gengetopt-ja.info,  Node: Copying,  Next: Installation,  Prev: Audience,  Up: Top
+
+gengetoptのコピー条件
+*********************
+
+gengetoptはフリーソフトウェアです．利用，共有，そして編集は，このマニュ
+アルに記載されているGNU General Public Licenseの元に自由にできます．
+
+gengetoptが生成したコードもフリーソフトウェアです．しかし，GPLやLGPLの
+代わりに，単純にすべてのことが許可されたライセンスで許可されています．
+生成されたコードは，独占的なソフトウェアに組み込んだり，リンクしたりす
+ることも自由です．
+
+   gengetoptは，最初にRoberto Arturo Tena
+Sanchezによって書かれました．現 在では，Lorenzo Bettini
+`http://www.lorenzobettini.it'がメンテナンスしています．
+
+   最初のバージョンの*Note Terminology::は，Adam
+Greenblattによって書かれま した．
+
+
+File: gengetopt-ja.info,  Node: Installation,  Next: Basic Usage,  Prev: Copying,  Up: Top
+
+1 インストール
+**************
+
+ビルドとインストールの説明の詳細は，ファイル`INSTALL'を参照してく
+ださい．ソースコードが付随しているLinuxソフトウェアをコンパイルするため
+にとりあえず使用したい場合，以下の一般的な手順に従って下さい．つまり，
+適当なディレクトリでダウンロードしたファイルを展開(untar)し，以下を実行
+します．
+
+     cd <source code main directory>
+     ./configure
+     make
+     make install
+
+   注意：`configure'の`--prefix'オプションで，別のインストー
+ルディレクトリを指定していない限り(例えば，`./configure --prefix=<your
+home>')，ルートで`make install'を実行する必要があり ます．
+
+   ファイルは，以下のディレクトリにインストールされます．
+
+`実行形式'
+     `/prefix/bin'
+
+`ドキュメント'
+     `/prefix/share/doc/gengetopt'
+
+`例'
+     `/prefix/share/doc/gengetopt/examples'
+
+`追加ファイル'
+     `/prefix/share/gengetopt'
+
+   PREFIXのデフォルトは`/usr/local'ですが，`configure'
+の`--prefix'オプションで変更してもかまいません．
+
+1.1 ダウンロード
+================
+
+GNUのFTPサイト`ftp://ftp.gnu.org/gnu/gengetopt'や，そのミラーの一
+つ(`http://www.gnu.org/prep/ftp.html'を参照してください)からダウン
+ロードすることが可能です．
+
+   Windows用のバイナリは，もはや配付していません．その理由は，
+`http://www.cygwin.com'で利用可能なCygnus C/C++ コンパイラを使用す
+ることで簡単にビルドすることが可能だからです．しかし，そのようなコンパ
+イラのダウンロードが自由にできない場合，バイナリを直接要求することが可
+能で，電子メール(ホームページでメールアドレスを探して下さい)を送っても
+らえればそれらを送付することが可能です．
+
+   私(Lorenzo Bettini)の電子署名は，GNU gpg (`http://www.gnupg.org')
+でなされていて，GPGの公開鍵はホームページ(`http://www.lorenzobettini.it')で見つかる
+はずです．
+
+特定のリリースが利用可能であれば，パッチの入手も可能です(以前のバージョ
+ンからのパッチは以下を参照してください)．
+
+1.2 匿名でのCVSアクセス
+=======================
+
+このプロジェクトのCVSリポジトリは，以下の手順で匿名(pserver)CVSから取り
+出すことが可能です．anoncvsのパスワード入力のプロンプトでは，単純に
+Enterキーを押してください．
+
+     cvs -d:pserver:anoncvs@subversions.gnu.org:/cvsroot/gengetopt login
+
+     cvs -z3 -d:pserver:anoncvs@subversions.gnu.org:/cvsroot/gengetopt \
+       co gengetopt
+
+   それ以上の手順は，以下のアドレスで見つかるはずです．
+
+   `http://savannah.gnu.org/projects/gengetopt'.
+
+この方法は，gengetoptの最新の開発バージョンを入手する方法で，不安定の可
+能性があることに注意してください．この手法は，このプログラムを修整した
+り拡張したりすることが目的の場合は最適です．最新のcvsリポジトリソースへ
+のパッチを送ったほうが良いでしょう．
+
+   反対に，該当するリリースのソースを入手したい場合，例えばバージョン
+X.Y.Zでは，cvsコマンドや`cvs update'コマンドを実行するとき，タグ
+`rel_X_Y_Z'を指定する必要があります．
+
+   cvsリポジトリから入手したソースをコンパイルするとき，`configure'と
+`make'コマンドの前に，少なくとも一度，以下のコマンドを実行してくだ
+さい．
+
+     sh reconf
+
+これで，autotoolsコマンドを正しい順序で実行し，足りない可能性があるファ
+イルもコピーします．これを成功させるため，最新バージョンの
+`automake'と`autoconf'をインストールすべきです．また，
+`flex'と`bison'も必要です．
+
+   注意：この慣習は，リリース2.14以降から維持されています．
+
+1.3 gengetoptのビルドに必要なもの
+=================================
+
+gengetoptは，GNU/Linuxで，gcc (C++)，bison (yacc)，そしてflex (lex)を使
+用して開発され，また`http://www.cygwin.com'で利用可能なCygnus
+C/C++コンパイラに移植されました．優秀なGNU AutoconfとGNU Automakeを使用
+しています．また，Autotools
+(`ftp://ftp.ugcs.caltech.edu/pub/elef/autotools')も利用しており，
+それは(GNU標準に準拠した)ソースツリーでのautoconfとautomakeを用いたスター
+トファイルを生成します．
+
+   さらに，_Gengen_
+(`http://www.lorenzobettini.it/software/gengen')をコマンドライン構
+文解析を生成するコードの自動生成で使用しています．
+
+実際，生成されたソースを提供しているので，ソースの重要部分を開発したい
+わけでは無いかぎり，ソースの重要部分をビルドするために，これらの上記の
+すべてのツールが必要だというわけではありません．
+
+   gengetoptで生成されるコードは，`getopt_long'関数に依存し，通常それ
+は標準のCライブラリに含まれています．しかし，それが含まれていないCライ
+ブラリの実装も存在する可能性があります．この状況では，プログラムをファ
+イル`getopt.c'と`getopt1.c'とともにgengetoptで生成されたファ
+イルを使用してプログラムをリンクし，プロジェクトに`gnugetopt.h'を
+含める必要があります．我々は明示的にこれらのファイルをユーティリティファ
+イルのディレクトリで提供しています(`<install
+prefix>/share/gengetopt')．これらのファイルはGNU Cライブラリの一部です．
+`getopt_long'のmanページを参照してください．
+
+   `getopt_long'がライブラリの一部かどうかを調査する方法と，足りない
+場合に(autoconfとautomakeを使用して)処理する方法の手順は，*Note No
+getopt_long::も参照してください．
+
+1.4 以前のバージョンからのパッチ
+================================
+
+`gengetopt-1.3-1.3.1-patch.gz' (例えば，バージョン1.3をバージョン
+1.3.1に変更するパッチ)といったパッチをダウンロードした場合，ディレクト
+リを以前のバージョンのソースディレクトリ(gengetopt-1.3)に移動し，以下を
+入力します．
+
+     gunzip -cd ../gengetopt-1.3-1.3.1.patch.gz | patch -p1
+
+   そして，コンパイル処理を再び開始してください(既に`configure'を
+実行している場合，単純に`make'してください)．
+
+
+File: gengetopt-ja.info,  Node: Basic Usage,  Next: Invoking gengetopt,  Prev: Installation,  Up: Top
+
+2 基本的な使用方法
+******************
+
+gengetoptが生成した関数で処理する必要があるコマンドラインオプションは，
+ファイル(通常は`.ggo'の拡張子)で指定します．このファイルは，以下の
+フォーマットの文で構築し，{}のコマンドはオプションです(1)．
+
+     package <packname>
+     version <version>
+
+     option <long> <short> <desc> {argtype} {typestr="<type descr>"} \
+         {default="<default value>"} {required} {argoptional} {multiple}
+     option <long> <short> <desc> {typestr="<type descr>"} \
+         {values="value1","value2",...} {default="<default value>"} \
+         {required} {argoptional} {multiple}
+     option <long> <short> <desc> flag <on/off>
+
+   これらの意味は以下のようになります．
+
+`package'
+     二重引用符で囲まれた文字列です．これは，autoconfが生成する
+     `PACKAGE'に優先します．
+
+`version'
+     二重引用符で囲まれた文字列です．これは，autoconfが生成する
+     `VERSION'に優先します．
+
+`purpose'
+     プログラムの目的で(一行以上でもかまいません)，ヘルプで出力されます．二
+     重引用符で囲まれた文字列です．
+
+`long'
+     長いオプションで，二重引用符で囲まれた文字列で，大文字と小文字，数字，
+     ダッシュ(`-')，そしてドット(`.')を使用します．スペースは利用
+     できません．引数を保存するために生成される変数の名前は(このセクションの
+     後の部分を参照してください)，正当なCの変数名に変換された長いオプション
+     になります．これは，`.'と`-'が両方とも`_'で置換されるこ
+     とを意味します．
+
+`short'
+     短いオプションで，単一の大文字や小文字，または数字です．`-'が指定
+     されている場合，短いオプションは，長いオプションに対するものとは考慮さ
+     れません(このため，関聯する短いオプションが無い長いオプションが可能にな
+     ります)．
+
+`desc'
+     二重引用符で囲まれた文字列で，大文字と小文字，数字，ダッシュ(`-')，
+     そしてドット(`.')を使用します．最初の文字はスペースにしてはいけま
+     せん．この記述は，`--help'の出力で表示されます．改行は自動的に行わ
+     れ，`\n'は改行が要求されているものと解釈されます．
+
+`argtype'
+     `string'，`int'，`short'，`long'，`float'，
+     `double'，`longdouble'，または`longlong'です．型が指定さ
+     れていない場合，オプションは引数を受けつけません．
+
+`typestr'
+     オプション値の型の記述です．これは，`--help'の出力で使用されます
+     (例えば，単純な`STRING'の代わりに`"filename"'，単純な
+     `INT'の代わりに`"portnumber"')．
+
+`values'
+     オプションに渡すことが可能な利用可能なすべての値を含む文字列のリストで
+     す．型は文字列だと考慮され，指定してはなりません．
+
+`default'
+     オプションに対する追加のデフォルト値です．値は常に二重引用符で囲まれた
+     文字列として指定する必要があります．
+
+`required'
+     `yes'または`no'です．これは，そのオプションがプログラムの呼び
+     出しごとに能える必要があるかどうかを指定します．
+
+`argoptional'
+     このフラグが指定されている場合，このオプションは追加の引数を取ります．
+     この状況では，コマンドラインで引数を指定するとき，長いオプションの使用
+     時には`='を使用し，短いオプションの場合はスペースを入れないで下さ
+     い．例えば，追加の引数があるオプションでは，以下のコマンドラインの構文
+     を使用して下さい．`-B15'または`--bar=15'で，`-B 15'でも `--bar
+     15'でも_ありません_．
+
+`multiple'
+     このフラグが指定されている場合，このオプションはコマンドラインで一度以
+     上指定することが可能になります．このオプションのすべての値が配列に保存
+     されます．*Note Multiple Options::を参照して下さい．
+
+`on/off'
+     `on'または`off'です．これは，プログラム開始時のフラグの状態と
+     なります．ユーザがオプション指定している場合，フラグは切替えられます．
+
+
+   コメントは行の任意の場所の`#'で始まり，行の終わりで終了となります．
+
+   オプション`-h,--help'と`-V,--version'は自動的に追加されます．
+短い形式の`h'や，長い形式の`help'を独自のオプションとして指定
+した場合，追加されません(ヘルプオプションを手動で処理する必要がありま
+す)．`-V,--version'も同じです．
+
+オプションはセクションの一部にすることが可能で，オプションのより意味の
+ある記述を提供します．_section_は以下の構文で定義され
+(`sectiondesc'はオプションです)，，セクション宣言が続くすべてのオ
+プションは，セクションの一部と考慮されます．
+
+     section "section name" {sectiondesc="optional section description"}
+
+オプションに渡す値のリストを指定することも可能です(その状況では，オプショ
+ンの型は`string'です)．値が渡されたリストに無い場合，エラーとなり
+ます．そのようなオプションは_列挙型_オプションだと考えることができ
+ます．
+
+   以下は，そのようなファイルの例です(ファイルは`sample1.ggo'としま
+す)．
+
+     # file sample1.ggo
+     option  "str-opt"     s "A string option, for a filename" \
+          string typestr="filename" no
+     option  "my-opt"      m "Another integer option, \
+          this time the description of the \
+          option should be quite long to require wrapping... possibly \
+          more than one wrapping :-) especially if I\nrequire a line break" int no
+     option  "int-opt"     i "A int option"         int        yes
+     section "more involved options" \
+          sectiondesc="the following options\nare more complex"
+     option  "flag-opt"    - "A flag option"        flag       off
+     option  "funct-opt"   F "A function option"    no
+     section "last option section"
+     option  "long-opt"    - "A long option"        long       no
+     option  "def-opt"     - "A string option with default" \
+          string default="Hello" no
+     option  "enum-opt"    - "A string option with list of values" \
+          values="foo","bar","hello" default="hello" no
+
+gengetoptを使用するもっとも簡単な方法は，このファイルを標準入力として渡
+す方法です．すなわち以下のようにします．
+
+     gengetopt < sample1.ggo
+
+   デフォルトで，gengetoptは`cmdline.h'と`cmdline.c'を生成します．
+それ以外では，これらの名前をコマンドラインオプションで指定することが可
+能です．
+
+     gengetopt < sample1.ggo --file-name=cmdline1 --unamed-opts
+
+   オプション`--unamed-opts'で生成するコマンドライン構文解析器にも名
+前を付けることが可能となり，オプションが無い場合(例えば，その前にオプショ
+ンが無ければファイル名を渡すことが可能で，そこでは，`*.c'，
+`foo*.?'などのようなワイルドカードを使用することが可能です)．これ
+らは_パラメータ_とも呼ばれています(*note Terminology::)．これらの
+追加の名前に，追加の記述を指定することが可能です(デフォルトは
+`FILES'です)．
+
+   ファイル`cmdline1.h'で，生成されるCの構造体を見つけましょう．
+
+     /* cmdline1.h */
+
+     /* File autogenerated by gengetopt version 2.14rc  */
+
+     #ifndef CMDLINE1_H
+     #define CMDLINE1_H
+
+     /* If we use autoconf.  */
+     #ifdef HAVE_CONFIG_H
+     #include "config.h"
+     #endif
+
+     #ifdef __cplusplus
+     extern "C" {
+     #endif /* __cplusplus */
+
+     #ifndef CMDLINE_PARSER_PACKAGE
+     #define CMDLINE_PARSER_PACKAGE "sample1"
+     #endif
+
+     #ifndef CMDLINE_PARSER_VERSION
+     #define CMDLINE_PARSER_VERSION "2.0"
+     #endif
+
+     struct gengetopt_args_info
+     {
+       char * str_opt_arg;       /* A string option, for a filename.  */
+       char * str_opt_orig;       /* A string option, for a filename original value given at command line.  */
+       int my_opt_arg;       /* Another integer option, this time the description of the option should be quite long to require wrapping... possibly more than one wrapping :-) especially if I\nrequire a line break.  */
+       char * my_opt_orig;       /* Another integer option, this time the description of the option should be quite long to require wrapping... possibly more than one wrapping :-) especially if I\nrequire a line break original value given at command line.  */
+       int int_opt_arg;       /* A int option.  */
+       char * int_opt_orig;       /* A int option original value given at command line.  */
+       int flag_opt_flag;       /* A flag option (default=off).  */
+       long long_opt_arg;       /* A long option.  */
+       char * long_opt_orig;       /* A long option original value given at command line.  */
+       char * def_opt_arg;       /* A string option with default (default='Hello').  */
+       char * def_opt_orig;       /* A string option with default original value given at command line.  */
+       char * enum_opt_arg;       /* A string option with list of values (default='hello').  */
+       char * enum_opt_orig;       /* A string option with list of values original value given at command line.  */
+
+       int help_given ;       /* Whether help was given.  */
+       int version_given ;       /* Whether version was given.  */
+       int str_opt_given ;       /* Whether str-opt was given.  */
+       int my_opt_given ;       /* Whether my-opt was given.  */
+       int int_opt_given ;       /* Whether int-opt was given.  */
+       int flag_opt_given ;       /* Whether flag-opt was given.  */
+       int funct_opt_given ;       /* Whether funct-opt was given.  */
+       int long_opt_given ;       /* Whether long-opt was given.  */
+       int def_opt_given ;       /* Whether def-opt was given.  */
+       int enum_opt_given ;       /* Whether enum-opt was given.  */
+
+       char **inputs ; /* unamed options */
+       unsigned inputs_num ; /* unamed options number */
+     } ;
+
+     int cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_info);
+     int cmdline_parser2 (int argc, char * const *argv, struct gengetopt_args_info *args_info, int override, int initialize, int check_required);
+     int cmdline_parser_file_save(const char *filename, struct gengetopt_args_info *args_info);
+
+     void cmdline_parser_print_help(void);
+     void cmdline_parser_print_version(void);
+
+     void cmdline_parser_init (struct gengetopt_args_info *args_info);
+     void cmdline_parser_free (struct gengetopt_args_info *args_info);
+
+     int cmdline_parser_required (struct gengetopt_args_info *args_info, const char *prog_name);
+
+     extern char *cmdline_parser_enum_opt_values[] ;       /* Possible values for enum-opt.  */
+
+
+     #ifdef __cplusplus
+     }
+     #endif /* __cplusplus */
+     #endif /* CMDLINE1_H */
+
+   `<option>_given'フィールドは，`<option>'の引数が指定されてい
+るとき，0以外の値が設定されます．オプションが引数を受け入れ，
+`flag'の型ではない場合，`<option>_arg'フィールドはコマンドラ
+インで渡された値に設定されます．`<option>_arg'フィールドは，
+gengetoptに渡されたファイルで指定されている，対応するCの型を持ちます．
+追加のフィールド`<option>_orig'は常に，コマンドラインで渡された元
+の値を含む文字列です．これは，例えば数値の引数の状況では異なる可能性が
+あります．gengetoptは渡された値(文字列)を対応する数値の型に変換します．
+変換のため，浮動小数点表現などになり，これは，コマンドラインで渡された
+元の値とは正確に一致しない可能性があります．ユーザは，
+`<option>_arg'の代わりに`<option>_orig'を使用することで，この
+元の値にアクセスすることが，足元を見るのと同じくらい，いつでも可能です
+(2)．例えば，
+gengetopt自身，コマンドラインオプションをファイルに保存するとき，元の値
+を使用しています(以下の`_file_save'関数を参照して下さい)．
+
+   `flag'の型の場合，`<option>_flag'フィールドだけ生成されます．
+
+   `<option>_given'が0の場合でも，対応する`<option>_arg'はデフォ
+ルト値になります(`<option>'が指定されている場合)．しかし，この状況
+では，`<option>_orig'は`NULL'に設定されます．
+
+   デフォルトで，生成される関数は`cmdline_parser'と呼ばれ(この名前に
+優先させる方法は，以下のコマンドラインオプションを参照して下さい)，
+main関数が受け取る引数と，値が充填されている構造体へのポインタを受け取
+ります．
+
+   `cmdline_parser_free'は，文字列と複数回オプションの構文解析器で確
+保されたメモリを解放するために呼び出すことが可能です．
+
+この関数の呼び出し後，構文解析関数を呼び出してはならないことに注意して
+ください．
+
+   `cmdline_parser_init'は，構造体の初期化をするために呼び出すことが
+可能です(それは必須ではなく，その理由はコマンドライン構造解析器が自動的
+に行うためです)．
+
+`cmdline_parser_file_save'(3)は，コマンドラインオプションをファイルに保存するために使用する
+ことが可能です．このファイルの内容は，コンフィグレーションファイル
+(*Note Configuration
+files::)と両立します．オプションにデフォルト値がある
+場合，このオプションではコマンドラインで明示的に渡されたもの(または，コ
+ンフィグレーションファイルから読み込まれたもの)だけをファイルに保存する
+ことに注意してください．つまり，デフォルト値はファイルに保存されません．
+
+   以下は，これらの関数をmainプログラムで使用する方法を記述しています．
+
+     /* main1.cc */
+     /* we try to use gengetopt generated file in a C++ program */
+     /* we don't use autoconf and automake vars */
+
+     #include <iostream>
+     #include "stdlib.h"
+
+     #include "cmdline1.h"
+
+     using std::cout;
+     using std::endl;
+
+     int
+     main (int argc, char **argv)
+     {
+       gengetopt_args_info args_info;
+
+       cout << "This one is from a C++ program" << endl ;
+       cout << "Try to launch me with some options" << endl ;
+       cout << "(type sample1 --help for the complete list)" << endl ;
+       cout << "For example: ./sample1 *.* --funct-opt" << endl ;
+
+       /* let's call our cmdline parser */
+       if (cmdline_parser (argc, argv, &args_info) != 0)
+         exit(1) ;
+
+       cout << "Here are the options you passed..." << endl;
+
+       for ( unsigned i = 0 ; i < args_info.inputs_num ; ++i )
+         cout << "file: " << args_info.inputs[i] << endl ;
+
+       if ( args_info.funct_opt_given )
+         cout << "You chose --funct-opt or -F." << endl ;
+
+       if ( args_info.str_opt_given )
+         cout << "You inserted " << args_info.str_opt_arg << " for " <<
+           "--str-opt option." << endl ;
+
+       if ( args_info.int_opt_given )
+         cout << "This is the integer you input: " <<
+           args_info.int_opt_arg << "." << endl;
+
+       if (args_info.flag_opt_given)
+         cout << "The flag option was given!" << endl;
+
+       cout << "The flag is " << ( args_info.flag_opt_flag ? "on" : "off" ) <<
+         "." << endl ;
+
+       cout << args_info.def_opt_arg << "! ";
+
+       cout << "Have a nice day! :-)" << endl ;
+
+       cmdline_parser_free (&args_info); /* release allocated memory */
+
+       return 0;
+     }
+
+   さて，`main1.cc'とgengetoptで生成した`cmdline1.c'をコンパイル
+し，`sample1'という実行形式を入手するために，すべてをリンクするこ
+とが可能となりました．
+
+     gcc -c cmdline1.c
+     g++ -c main1.cc
+     g++ -o sample1 cmdline1.o main1.o
+
+   (ここでは，`getopt_long'が標準Cライブラリからインクルードされてい
+ることを仮定しています．*Note Installation::と*Note No
+getopt_long::を参照 してください)
+
+   さて，このプログラムでテストしてみましょう．
+
+     $ ./sample1 -s "hello" --int-opt 1234
+     This one is from a C++ program
+     Try to launch me with some options
+     (type sample1 --help for the complete list)
+     For example: ./sample1 *.* --funct-opt
+     Here are the options you passed...
+     You inserted hello for --str-opt option.
+     This is the integer you input: 1234.
+     The flag is off.
+     Have a nice day! :-)
+
+たくさんのファイル名をコマンドラインに渡すことも可能です(これでもフラグ
+の動作方法が分かります)．
+
+     $ ./sample1 *.h -i -100 -x
+     This one is from a C++ program
+     Try to launch me with some options
+     (type sample1 --help for the complete list)
+     For example: ./sample1 *.* --funct-opt
+     Here are the options you passed...
+     file: cmdline1.h
+     file: cmdline2.h
+     file: cmdline.h
+     file: getopt.h
+     This is the integer you input: -100.
+     The flag is on.
+     Have a nice day! :-)
+
+   そして，`--int-opt' (または，`-i')を省略してみると，それは必
+須なのでエラーになります．
+
+     $ ./sample1
+     This one is from a C++ program
+     Try to launch me with some options
+     (type sample1 --help for the complete list)
+     For example: ./sample1 *.* --funct-opt
+     sample1: `--int-opt' (`-i') option required!
+
+   以下は，`--help'の出力です．
+
+     sample1 2.0
+
+     Usage: sample1 -iINT|--int-opt=INT [-h|--help] [-V|--version]
+              -sfilename|--str-opt=filename -mINT|--my-opt=INT [--flag-opt]
+              [-F|--funct-opt] --long-opt=LONG --def-opt=STRING  [FILES]...
+
+       -h, --help              Print help and exit
+       -V, --version           Print version and exit
+       -s, --str-opt=filename  A string option, for a filename
+       -m, --my-opt=INT        Another integer option, this time the description of
+                                 the option should be quite long to require
+                                 wrapping... possibly more than one wrapping :-)
+                                 especially if I
+                                 require a line break
+       -i, --int-opt=INT       A int option
+
+     more involved options:
+     the following options
+     are more complex
+           --flag-opt          A flag option  (default=off)
+       -F, --funct-opt         A function option
+
+     last option section:
+           --long-opt=LONG     A long option
+           --def-opt=STRING    A string option with default  (default=`Hello')
+           --enum-opt=STRING   A string option with list of values  (possible
+                                 values="foo", "bar", "hello" default=`hello')
+
+   オプション`--str-opt'に対して，`STRING'ではなく
+`filename'が出力されること(`typestr'が`sample1.ggo'ファ
+イルで使用されています)，`--my-opt'の記述が80文字でおりかえされて
+いること，そして，`\n'が実際に改行が要求されていることとして解釈さ
+れていることに注目してください．
+
+   心配であれば，生成されたCファイル`cmdline1.c'を見てください．
+
+   `/prefix/share/doc/gengetopt/examples'や，ソースのtarballの
+`tests'で他の例も見つかるでしょう．
+
+   ---------- Footnotes ----------
+
+   (1) 長す
+ぎるコマンドラインは複数の行に`\'で分割します．もちろん，これらの
+コマンドは，いずれにせよ一行だけであたえることになります．
+
+   (2) `<option>_orig'は，リリース2.14で導入されました
+
+   (3) この関数はリリース2.14で導入さ れました
+
+
+File: gengetopt-ja.info,  Node: Invoking gengetopt,  Next: Terminology,  Prev: Basic Usage,  Up: Top
+
+3 gengetoptの呼び出し
+*********************
+
+以下は`gengetopt --help'の出力です．
+
+     gengetopt
+
+     This program generates a C function that uses getopt_long function
+     to parse the command line options, validate them and fill a struct.
+
+     Usage: gengetopt [OPTIONS]...
+
+       -h, --help                  Print help and exit
+       -V, --version               Print version and exit
+       -i, --input=filename        input file (default std input)
+       -f, --func-name=name        name of generated function
+                                     (default=`cmdline_parser')
+       -a, --arg-struct-name=name  name of generated args info struct
+                                     (default=`gengetopt_args_info')
+       -F, --file-name=name        name of generated file  (default=`cmdline')
+       -c, --c-extension=ext       extension of c file  (default=`c')
+       -H, --header-extension=ext  extension of header file  (default=`h')
+       -l, --long-help             long usage line in help
+       -u, --unamed-opts[=STRING]  accept options without names (e.g., file names)
+                                     (default=`FILES')
+       -n, --no-handle-help        do not handle --help|-h automatically
+       -N, --no-handle-version     do not handle --version|-V automatically
+       -e, --no-handle-error       do not exit on errors
+       -g, --gen-version           put gengetopt version in the generated file
+                                     (default=on)
+       -C, --conf-parser           generate a config file parser
+           --set-package=STRING    set the package name (override package defined in
+                                     the .ggo file)
+           --set-version=STRING    set the version number (override version defined
+                                     in the .ggo file)
+           --show-help             show the output of --help instead of generating
+                                     code
+           --show-version          show the output of --version instead of
+                                     generating code
+
+   オプションは，特に，はっきりとさせておくべきでしょう．
+
+`--func-name'
+     `--func-name'があたえられていない場合，`cmdline_parser'がデフォ
+     ルトになります．
+
+`--arg-struct-name'
+     コマンドライン引数に対応して生成される構造体の名前を指定することが可能
+     です(デフォルトは`gengetopt_args_info')．
+
+`--long-help'
+     "Usage"行で，すべてのオプションを表示します．これは，オプションが多い
+     場合，よろこばしくない可能性があります．
+
+`--unamed-opts'
+     プログラムは，名前の無いオプションも受け入れ，それはほとんどの状況で，
+     プログラムに多くのファイル名を渡すことが可能になることを意味します
+     (`sample1 *.h'を呼び出している*Note Basic Usage::の例を参照して下さ
+     い)．これらの追加の名前にオプションの記述を指定することが可能です(デフォ
+     ルトは`FILES'です)．
+
+`--no-handle-help'
+`--no-handle-version'
+     `--no-handle-help' (`--no-handle-version')が与えられている場
+     合，コマンドラインオプション`--help|-h' (`--version|-V')は，
+     自動的に処理されないので，プログラマはそれ以外のオプションを出力するこ
+     とが可能になります．標準的なヘルプ(バージョン)に対応して出力する関数は
+     使用可能です．この関数は，`<parser-name>_print_help'
+     (`<parser-name>_print_version')と呼ばれ，`<parser-name>'の名
+     前は，`--func-name'で指定されたもの，またはデフォルトの
+     `cmdline_parser'になります．
+
+`--no-handle-error'
+     `--no-handle-error'が与えられている場合，構文解析時のエラーで，プ
+     ログラムの終了コードが呼び出されません．その代わりに，構文解析関数は，
+     エラー時には0以外の値を返し，プログラムはヘルプメッセージを出力し，
+     gengetopt自身がエラー時に行うことと同じようになります(試してみてください！)．
+
+`--gen-version'
+     これはフラグ(デフォルトでon)で，利用不可能なときは出力ファイルに
+     gengetoptのバージョンを書き出しません(テスト目的で役に立ちます)．
+
+
+既にお分かりかもしれませんが，gengetoptはgengetopt自身を，コマンドライ
+ンオプションに対して使用していて，その仕様が書かれているファイルはソー
+スディレクトリの`cmdline.ggo'です．特に，gengetopt自身のコマンドラ
+インは，以下のコマンドで生成されています．
+
+     gengetopt --input=cmdline.ggo --no-handle-version \
+               --no-handle-help --no-handle-error
+
+   実際，`--help|-h'がコマンドラインで渡されると，gengetoptは
+`cmdline_parser_print_help()'を呼び出し，バグ報告の行が表示されま
+す．`--version|-V'が渡されるとき，
+`cmdline_parser_print_version()'が呼び出され，著作権が出力されます．
+エラーが生じた場合，画面にメッセージが出力されます．
+
+     $ ./gengetopt --zzzz
+     ./gengetopt: unrecognized option `--zzzz'
+     Run gengetopt --help to see the list of options.
+
+
+File: gengetopt-ja.info,  Node: Terminology,  Next: Group options,  Prev: Invoking gengetopt,  Up: Top
+
+4 用語集
+********
+
+"引数(argument)"とは，CやC++プログラムにオペレーティングシステムから渡さ
+れる`argv'配列の要素です．
+
+   "オプション(option)"とは，`-'や`--'で始まる引数です．
+
+   "値(value)"とは，引数または引数の一部で，特定のオプションに関連付け
+られたものです(オプションは引数を受け付けなくてもかまいません)．例えば
+以下を考えます．
+
+     > ls --width=80
+
+`ls'は一つの引数`--width=80'で呼び出され，それは値
+`80'を持つオプションです．一方以下を考えます．
+
+     > ls --width 80
+
+`ls'は二つの引数で呼び出され，`--width'はオプションで，
+`80'は値かもしれませんし，そうでないかもしれません．この状況では，
+`80'が前置されている`--width'オプションに関聯する値として扱
+われるか，ファイル名のリストとして扱われるかは，`ls'が
+`--width'オプションを構文解析する方法に依存します．
+
+   オプションの順番を指定することは，_通常_重要ではありません．
+
+     > ls -a -l
+     > ls -l -a
+
+両方とも正確に同じことを行います．
+
+   "パラメータ(parameter)"は，引数でオプションではありません．例えば以
+下を考えます．
+
+     > cp --archive source dest
+
+`cp'は，三つの引数で呼び出され，それはオプション
+`--archive'，パラメータ`source'，そしてパラメータ
+`dest'です．オプションとは異なり．パラメータの順序の指定は，通常重
+要_です_．
+
+     > cp --archive --verbose source dest
+     > cp --verbose --archive source dest
+     > cp --archive source --verbose dest
+     > cp --archive --verbose dest source
+
+最初の三つの`cp'コマンドは同じことを行いますが，四番目のものは，
+全く異なります．
+
+gengetoptの初心者は，このセクションの残りを読まなくてもかまいません．オ
+プションの種類の詳細と，それらの構文解析に進んでいきます．
+
+   パラメータには，`-'で`--'で始めてもかまわないものがあるこ
+とに注意してください．特に，`-'や`--'で始まる_すべて
+の_引数はオプションです．以下を考えます．
+
+     > ls -- -file
+     > tar -c -f - . > ../foo.tar
+
+`ls'コマンドには二つの引数があります．最初のものは引数で，
+`--'は`ls'は無視しますが，これで`-file'引数はパラ
+メータとして解釈されます．`tar'コマンドは四つの引数があります．
+`-c'引数は，`tar'にアーカイブを作成するよう伝えます．
+`-f'引数は値を取り，それは`-'で，`tar'にアーカイブ
+を標準出力に書き込む用に伝え，四番目の引数`.'は，`tar'にアー
+カイブに含めるディレクトリを伝えます．(残りの二つの項目は`>'と
+`../foo.tar'で，シェルに`tar'コマンドの出力をファイル
+`../foo.tar'にリダイレクトするよう伝えます．`tar'コマンド
+が見ることはありません．)
+
+   GNUの慣習では，`-'自身は常にパラメータとして解釈されますが，最初
+の`--'自身は常に無視され，それ以降の全ての引数はパラメータとして
+解釈されます．gengetoptは常にこの方法で動作します．
+
+   "短いオプション(short option)"は`-'で始まるオプションです．
+前置するダッシュは含まれず，短いオプションは一文字の長さにする必要があ
+ります．
+
+     > ls -a -l -t --width=80
+
+`-a'，`-l'，そして`-t'オプションは，すべて短いオプ
+ションです．複数の短いオプションは，一つに組み合わせてもかまいません．
+
+     > ls -alt --width=80
+
+これは，上記の例と等価です．
+
+   "長いオプション(long option)"は，`-'や`--'で始まるオ
+プションです．前置される区切り文字(punctuation)は無視され，長いオプショ
+ンは，一文字以上の長さにしてもかまいません．
+
+     > ls --all -fs
+
+`ls'コマンドは，二つの引数があります．それは，長いオプション
+`--all'と，短いオプションの組`-fs'です．
+
+長いオプションに短いオプションの同義語を持たせる必要はありません．結局，
+`cc'のような複雑なプログラムでは，有効な短いオプション文字以上
+の数の長いオプションがあります．短いオプションをすべてに割り当てること
+は不可能でしょう．短いオプションが推奨されていますが，長いオプションの
+同義語を持たせることは必須ではありません．
+
+長いオプションは，省略しても不明瞭にならない限り，省略してもかまいませ
+ん．gengetoptは，明確な省略語を同義語として自動的に処理します．
+
+短いオプションは，長いオプションのように値を持たせてもかまいませんが，
+いくつかの短いオプションが一つの引数に纏められている場合，最後のものだ
+けが値を持つことができます．長いオプションの引数の値は等号で分離されて
+いて，短いオプションの引数の値は分離されていません．
+
+     > ls --width 60  # ok, value is "60"
+     > ls --width=60  # ok, value is "60"
+     > ls -w60        # ok, value is "60"
+     > ls -w 60       # ok, value is "60"
+     > ls -w=60       # unexpected, value is "=60"
+     > ls -T7 -w60    # ok, value for -T is 7, value for -w is 60
+     > ls -T7w60      # unexpected, value for -T is "7w60", no -w at all
+
+   "必須のオプション(required option)"は必要で，そうでなければエラーと
+なります．
+
+   "複数回オプション(multiple option)"とは，一度以上コマンドラインに書
+いてもかまわないオプションです．gengetoptは，複数回オプションに対して，
+小さな配列を作成します(複数回オプションの詳細は*Note Multiple
+Options::)．
+
+
+File: gengetopt-ja.info,  Node: Group options,  Next: Configuration files,  Prev: Terminology,  Up: Top
+
+5 グループオプション
+********************
+
+グループオプションも可能です．_グループ_に所属するオプションは，
+_お互いに排他的である_と考慮されます．この機能を使用するために，最
+初に`group'を定義する必要があり，その後で`groupoption'を定義
+することが可能になります．グループオプションは，基本的に標準的なオプショ
+ンの構文と同じですが，必須フラグを指定してはならず(同じグループのオプショ
+ンは，お互いに排他的なので，意味が無いでしょう)，オプションが所属するグ
+ループを指定する必要があります．
+
+     defgroup "<group name>" {groupdesc="<group description>"} {yes}
+     groupoption <long> <short> <desc> <argtype> group="<group name>" \
+          {argoptional} {multiple}
+
+グループが必須として定義されている場合，グループに所属している一つの(そ
+して，一つだけ)オプションを指定する必要があります．
+
+   以下は例です(テスト`test_group_cmd.ggo'から持ってきました)．
+
+     defgroup "my grp2"
+     defgroup "grp1" groupdesc="an option of this group is required" yes
+     groupoption "opta" a "string a" group="grp1" multiple
+     groupoption "optA" A "string A" string group="grp1" argoptional
+     groupoption "optAmul" M "string M" string group="grp1" argoptional multiple
+     groupoption "optb" b "string b" group="grp1"
+     groupoption "optc" - "string c" group="my grp2"
+     groupoption "optd" d "string d" group="my grp2"
+
+   グループ`grp1'は必須で，`--opta'または`--optb'を指定する
+必要があります(そしてそれは，どちらか一方だけです)．以下は何度か実行し
+た結果です．
+
+     $ ./test_groups
+     test_groups: 0 options of group grp1 were given. One is required
+     $ ./test_groups -a          OK
+     $ ./test_groups -a -a       OK (the same option given twice)
+     $ ./test_groups -a -b
+     test_groups: 2 options of group grp1 were given. One is required
+     $ ./test_groups -a -c       OK
+     $ ./test_groups -a --optc -d
+     test_groups: 2 options of group my grp2 were given. At most one is required
+
+
+File: gengetopt-ja.info,  Node: Configuration files,  Next: Multiple Options,  Prev: Group options,  Up: Top
+
+6 コンフィグレーションファイル
+******************************
+
+コマンドラインオプションを直接コンフィグレーションファイルで指定すると
+便利なときも多いので，オプションの値はコマンドラインオプションが与えら
+れていない場合，このファイルから読みこまれるようにします．コマンドライ
+ンオプション`--conf-parser'がgengetoptで与えられている場合，標準的
+なコマンドラインオプションの構文解析器以外に，以下の追加の構文解析器が
+生成されます(名前は`<commandline_parser>_configfile'です)．
+
+     int
+     <cmd_parser_name>_configfile (char * const filename,
+                                   struct gengetopt_args_info *args_info,
+                                   int override,
+                                   int initialize,
+                                   int check_required);
+
+   パラメータ`override'は，コンフィグレーションファイルから読み込まれ
+た値を，コマンドラインで指定されたものに優先させる必要があるかどうかを
+伝えます．`initialize'は，args_info構造体を初期化する必要があるか
+どうかを伝えます．
+
+重要：コンフィグレーションファイルの構文解析器を，標準のコマンドライン
+オプション構文解析器の前に呼び出す場合，明示的に`initialize'を真に
+設定する必要があり(例えば，0ではないもの)，そうしなければ予想できない結
+果が表示される可能性があります．
+
+   `check_required'は，必須のオプションを調査する必要があるかどうかを
+伝えます．
+
+コンフィグレーションファイルの構文解析器を標準のコマンドラインオプショ
+ンの構文解析器の前に呼び出す場合で，標準のコマンドラインの構文解析器を
+呼び出したい場合，以下の二番目のバージョンを使用する必要があり，コンフィ
+グレーションファイルで収集した値を失わないように，初期化で0を渡す必要が
+あります．
+
+     int
+     <cmd_parser_name>2 (int argc,
+                         char * const *argv,
+                         struct gengetopt_args_info *args_info,
+                         int override,
+                         int initialize,
+                         int check_required);
+
+注意：このバージョンを用いると，コマンドラインで渡すオプションをコンフィ
+グレーションファイルから読み込んだものに優先させる必要があるかどうかを
+指定することも可能です．`override'を0に設定し，コンフィグレーショ
+ンファイルから既に読み込まれているものに対し，コマンドラインオプション
+が与えられた場合，エラーが発生します．さらに，足りない必須オプションの
+調査をする必要があるかどうかを指定する必要があります．これは，必須グルー
+プのオプションにも関係します(*Note Group options::)．
+
+必須オプションの調査を要求しないことに決めた場合，コマンドラインの構文
+解析が，以下のように生成された関数を使用して戻った後で，手動で調査する
+ことが可能です．
+
+     int
+     <cmd_parser_name>_required (struct gengetopt_args_info *args_info,
+                                 const char *program_name);
+
+   ここで，`program_name'は実行形式の名前です(通常，引数として
+`argv[0]'で渡します)．関数が0以外の値を返す場合，必須オプションに
+足りないものがあります．エラーはこの関数で既に出力されています．これは，
+必須グループのオプションにも関係します(*Note Group options::)．
+
+コンフィグレーションファイルは，以下のような単純な構文になっています．
+`#'で始まる行はコメントと考慮されます．
+
+     <option_name> = {<option_val>}
+
+または，(オプションが引数を取らない場合)単純に以下のようになっています．
+
+     <option_name>
+
+これは，`option_name'が与えられていて，引数をうけいれる場合が値が
+`option_val'になっていることを意味します．`='は必須ではありま せん．
+
+例えば，この機能を使用している以下のプログラムを考えます(これはテストの
+`test_conf_parser'です)．
+
+     /* test_conf_parser.c test */
+
+     /* test all kinds of options and the conf file parser */
+
+     #include <stdlib.h>
+     #include <stdio.h>
+
+     #include "test_conf_parser_cmd.h"
+
+     static struct my_args_info args_info;
+
+     int
+     main (int argc, char **argv)
+     {
+       int i;
+       int result = 0;
+
+       if (test_conf_parser_cmd_parser (argc, argv, &args_info) != 0) {
+         result = 1;
+         goto stop;
+       }
+
+       /* override cmd options, but do not initialize args_info, check for required options */
+       if (test_conf_parser_cmd_parser_configfile
+           (args_info.conf_file_arg, &args_info, 1, 0, 1) != 0)
+         {
+           result = 1;
+           goto stop;
+         }
+
+       printf ("value of required: %s\n", args_info.required_arg);
+       printf ("value of string: %s\n", args_info.string_arg);
+       printf ("value of no-short_given: %d\n", args_info.no_short_given);
+       printf ("value of int: %d\n", args_info.int_arg);
+       printf ("value of float: %f\n", args_info.float_arg);
+
+       printf ("value of multi-string_given: %d\n", args_info.multi_string_given);
+       for (i = 0; i < args_info.multi_string_given; ++i)
+         printf ("  value of multi-string: %s\n", args_info.multi_string_arg [i]);
+
+       printf ("value of multi-string-def_given: %d\n",
+               args_info.multi_string_def_given);
+       for (i = 0; i < args_info.multi_string_def_given; ++i)
+         printf ("  value of multi-string-def: %s\n",
+                 args_info.multi_string_def_arg [i]);
+       if (!args_info.multi_string_def_given && args_info.multi_string_def_arg [0])
+         printf ("default value of multi-string-def: %s\n",
+                 args_info.multi_string_def_arg [0]);
+
+       printf ("value of opta: %s\n", args_info.opta_arg);
+
+       printf ("noarg given %d times\n", args_info.noarg_given);
+       printf ("noarg_noshort given %d times\n", args_info.noarg_noshort_given);
+
+       printf ("opt-arg given: %d\n", args_info.opt_arg_given);
+       printf ("opt-arg value: %s\n", (args_info.opt_arg_arg ? args_info.opt_arg_arg : "not given"));
+
+       if (args_info.file_save_given) {
+         if (test_conf_parser_cmd_parser_file_save (args_info.file_save_arg, &args_info) == EXIT_FAILURE)
+           result = 1;
+         else
+           printf ("saved configuration file %s\n", args_info.file_save_arg);
+       }
+
+      stop:
+       test_conf_parser_cmd_parser_free (&args_info);
+
+       return result;
+     }
+
+そして，以下のコンフィグレーションファイルを使用している状況を考えます．
+
+     # required option
+     required "this is a test"
+     float 3.14
+     no-short
+     string another
+
+そして，`test_conf_parser'を以下のように実行します．
+
+     ./test_conf_parser -r bar -i 100 --float 2.14 --conf-file test_conf.conf
+     value of required: this is a test
+     value of string: another
+     value of no-short: 1
+     value of int: 100
+     value of float: 3.140000
+
+代わりに，引数に優先させるため`test_conf_parser_cmd_parser_configfile'を0として呼び出す場合，以下のような結果になります．
+
+     value of required: bar
+     value of string: another
+     value of no-short: 1
+     value of int: 100
+     value of float: 2.140000
+
+この二番目の例では，二番目のバージョンのコマンドライン構文解析器を使用
+しています．最初にコンフィグレーションファイル構文解析器を呼び出し，そ
+れからコマンドライン構文解析器を呼び出します(コマンドラインオプションは，
+コンフィグレーションファイルのオプションに優先します)．
+
+     /* test_conf_parser_ov2.c test */
+
+     /* test all kinds of options and the conf file parser */
+     /* differently from test_conf_parser_ov.c, first scan the conf file and
+        then the command line */
+
+     #include <stdlib.h>
+     #include <stdio.h>
+
+     #include "test_conf_parser_cmd.h"
+
+     static struct my_args_info args_info;
+
+     int
+     main (int argc, char **argv)
+     {
+       /* do not override command line options, initialize args_info */
+       if (test_conf_parser_cmd_parser_configfile
+           ("./test_conf2.conf", &args_info, 0, 1, 0) != 0)
+         exit(1);
+
+       if (test_conf_parser_cmd_parser2 (argc, argv, &args_info, 1, 0, 1) != 0)
+         exit(1) ;
+
+       printf ("value of required: %s\n", args_info.required_arg);
+       printf ("value of string: %s\n", args_info.string_arg);
+       printf ("value of no-short_given: %d\n", args_info.no_short_given);
+       printf ("value of int: %d\n", args_info.int_arg);
+       printf ("value of float: %f\n", args_info.float_arg);
+
+       test_conf_parser_cmd_parser_free (&args_info);
+
+       return 0;
+     }
+
+以下のように呼び出したときの結果です．
+
+     ./test_conf_parser_ov2 -r "bar" --float 2.14 -i 100
+     value of required: bar
+     value of string: another
+     value of no-short: 1
+     value of int: 100
+     value of float: 2.140000
+
+6.1 コンフィグレーションファイルの構文解析器の詳細
+==================================================
+
+生成されるコンフィグレーションファイルの構文解析関数は，コンフィグレー
+ションファイルのそれぞれの行を読み込むとき，定数
+`CONFIG_FILE_LINE_SIZE'を使用しています．この定数のデフォルトは
+`2048'に設定されていて，ほとんどのアプリケーションで十分でしょう．
+アプリケーションで，それ以上の長さの行があるコンフィグレーションファイ
+ルを使用している場合，`gcc'の`-D'コマンドラインオプションを用
+いて，この定数の値を明示的に指定して，Cファイルのコンパイルをすることが
+可能です．
+
+
+File: gengetopt-ja.info,  Node: Multiple Options,  Next: No getopt_long,  Prev: Configuration files,  Up: Top
+
+7 複数回オプション
+******************
+
+オプションが`multiple'として指定されている場合，それをコマンドライ
+ンで複数回指定することが可能です．ここで，オプションを`foo'と仮定
+すると，生成される引数の構造体の`foo_given'フィールドには，指定さ
+れた回数が含まれ，生成される`foo_arg'フィールドは，このオプション
+で指定されたすべての値を含んでいる配列になります．
+
+複数回オプションのデフォルト値が指定されている場合，それ以外の値がコマ
+ンドラインで指定されていない場合だけ割り当てられることに注意してくださ
+い(そのときは，対応する`_given'フィールドは1に設定されます)．すな
+わち，デフォルト値は常に複数回オプションの値になるわけではありません．
+
+   例えば，gengetoptへのファイルが以下のものを考えます．
+
+     # test options that can be given more than once
+     option "string"      s "string option" string no multiple
+     option "int"         i "int option" int no multiple
+
+そして，コマンドラインオプションを以下のようにまとめることが可能です．
+
+
+プログラムが以下のコマンドラインオプションで呼び出されると仮定します．
+
+     /* test options that can be given more than once */
+
+     #include <stdlib.h>
+     #include <stdio.h>
+
+     #include "test_multiple_cmd.h"
+
+     static struct gengetopt_args_info args_info;
+
+     int
+     main (int argc, char **argv)
+     {
+       int i = 0;
+
+       if (test_multiple_cmd_parser (argc, argv, &args_info) != 0)
+         exit(1) ;
+
+       for (i = 0; i < args_info.string_given; ++i)
+         printf ("passed string: %s\n", args_info.string_arg[i]);
+
+       for (i = 0; i < args_info.int_given; ++i)
+         printf ("passed int: %d\n", args_info.int_arg[i]);
+
+       return 0;
+     }
+
+プログラムの出力は以下のようになります．
+
+     passed string: world
+     passed string: hello
+     passed string: bar
+     passed string: foo
+     passed int: 200
+     passed int: 100
+
+以下のように，複数回オプションにカンマで分離した引数を渡すことも可能で
+す．
+
+     ./test_multiple -s"foo","bar","hello" -i100,200 -s "world"
+
+
+File: gengetopt-ja.info,  Node: No getopt_long,  Next: Bugs,  Prev: Multiple Options,  Up: Top
+
+8 getopt_longが利用できない場合どうするの？
+*******************************************
+
+コマンドライン引数を構文解析するCの関数を生成するためgengetoptを使用し
+ている場合，これらの生成された関数が，実際にコマンドラインを読み込み，
+それを構文解析するために，`getopt_long'を使用していることを知って
+おく必要があります．この関数は，通常標準Cライブラリの一部ですが，実装に
+よっては含まれていない可能性があります．しかし，これは問題にはなりませ
+ん．我々は，getopt_long関数を実際に実装しているCのファイルを提供してい
+ます．`getopt.c'，`getopt1.c'そして`gnugetopt.h'です．こ
+れらのファイルは，`<install prefix>/share/gengetopt'ディレクトリで
+見つかり，`<install prefix>'はコンパイル時に指定したものになります．
+プレフィクスを指定しなかった場合は`/usr/local'がデフォルトです．バ
+イナリ形式のgengetoptをダウンロードした場合，プレフィクスは
+`/usr/local'または`/usr'になります．
+
+   `gnugetopt.h'を`getopt.h'に名前を変更し，これらのファイルをコ
+ンパイルし，プログラムの実行形式にリンクすることが可能です．しかし，
+automakeとautoconfを使用している場合，より簡潔な解決方法があります．以
+下のURLからマクロをダウンロードしてください．
+
+`http://www.gnu.org/software/ac-archive/m4source/adl_func_getopt_long.m4'
+
+   そして，`acinclude.m4'にそれを追加して下さい．このマクロは，
+gengetoptのソースの`acinclude.m4'にもあります．
+
+このマクロはgetopt_long関数がCライブラリかどうかを調査し，そうでない場
+合は`getopt.o'と`getopt1.o'を実行形式にリンクするオブジェクト
+ファイルに追加します(`LIBOBJS')．
+
+   そして，ソースディレクトリの`Makefile.am'で，`LIBOBJS'の内容
+に，getopt_longを使用する必要があるプログラムの`LDADD'を追加する必
+要があります．例えば，プログラム`foo'がgetopt_longを使用する必要が
+ある場合，以下の行を追加する必要があります．
+
+     foo_LDADD = @LIBOBJS@
+
+さて，これらのファイルはコンパイルされ，必要がある場合だけプログラムに
+リンクされます．
+
+   更に，`getopt.c'，`getopt1.c'，そして`gnugetopt.h'を配布
+物に追加する必要があります．これらのファイル名を`foo_SOURCES'の中
+身に書く必要はありませんが，`gnugetopt.h'は`EXTRA_DIST'に追加
+する必要があります．
+
+     EXTRA_DIST = gnugetopt.h
+
+   gengetoptの`configure.in'と`src/Makefile.am'を見てみると良い
+でしょう．それらは両方とも，ここで記述しているテクニックを使用していま
+す．
+
+
+File: gengetopt-ja.info,  Node: Bugs,  Next: Mailing Lists,  Prev: No getopt_long,  Up: Top
+
+9 既知のバグと制限
+******************
+
+`gengetopt'のバグを発見した場合，電子メールを以下に送って下さい．
+
+   `bug-gengetop@gnu.org'
+
+   `gengetopt --version'を実行すると分かるバージョン番号を含めて
+下さい．また，メッセージにプログラムが生成した出力と，期待したものを含
+めて下さい．
+
+   他に`gengetopt'に関する疑問，コメント，または提案がある場合，電
+子メールと利用して，作者と連絡を取って下さい(アドレスは
+`http://www.lorenzobettini.it'にあります)．作者は手助けしようとしますが，問題を解決
+するために十分な時間が取れないかもしれません．
+
+   TODOリストは`TODO'にあります．
+
+
+File: gengetopt-ja.info,  Node: Mailing Lists,  Next: Index,  Prev: Bugs,  Up: Top
+
+10 メーリングリスト
+*******************
+
+以下のメーリングリストが利用可能です．
+
+   `help-gengetopt@gnu.org'
+
+プログラムと一般的な議論と，それに関するヘルプをお願いするもの(オープン
+なメーリングリスト)．
+`http://mail.gnu.org/mailman/listinfo/help-gengetopt'
+
+   `info-gengetopt@gnu.org'
+
+新たなリリースや機能に関する情報を入手するためのもの(読むだけのメーリン
+グリスト)． `http://mail.gnu.org/mailman/listinfo/info-gengetopt'.
+
+メーリングリストに参加したい場合，URLに移動し手順に従うか，私に電子メー
+ルを送ってくれれば登録します．
+
+
+File: gengetopt-ja.info,  Node: Index,  Prev: Mailing Lists,  Up: Top
+
+索引
+****
+
+ [index ]
+* Menu:
+
+* argument, defined:                     Terminology.         (line   6)
+* Audience:                              Audience.            (line   6)
+* autoconf:                              No getopt_long.      (line   6)
+* automake:                              No getopt_long.      (line   6)
+* Conditions for copying Gengetopt:      Copying.             (line   6)
+* configuration files:                   Configuration files. (line   6)
+* Copying conditions:                    Copying.             (line   6)
+* CVS:                                   Installation.        (line  62)
+* download:                              Installation.        (line  41)
+* gengetopt options:                     Invoking gengetopt.  (line   6)
+* getopt_long:                           No getopt_long.      (line   6)
+* getting started with Gengetopt:        Basic Usage.         (line   6)
+* group options:                         Group options.       (line   6)
+* how to use Gengetopt:                  Basic Usage.         (line   6)
+* installation:                          Installation.        (line   6)
+* invoking:                              Invoking gengetopt.  (line   6)
+* Known Bugs:                            Bugs.                (line   6)
+* Limits:                                Bugs.                (line   6)
+* long option, defined:                  Terminology.         (line   6)
+* mailing list:                          Mailing Lists.       (line   6)
+* Misfeatures:                           Bugs.                (line   6)
+* multiple option, defined:              Terminology.         (line   6)
+* multiple options:                      Multiple Options.    (line   6)
+* option without name:                   Basic Usage.         (line 146)
+* option, defined:                       Terminology.         (line   6)
+* parameter:                             Basic Usage.         (line 146)
+* parameter, defined:                    Terminology.         (line   6)
+* patching:                              Installation.        (line 133)
+* required option, defined:              Terminology.         (line   6)
+* requirements:                          Installation.        (line 100)
+* short option, defined:                 Terminology.         (line   6)
+* Terminology:                           Terminology.         (line   6)
+* tutorial:                              Basic Usage.         (line   6)
+* value, defined:                        Terminology.         (line   6)
+* Who should use Gengetopt:              Audience.            (line   6)
+* wrapping:                              Basic Usage.         (line  49)
+
+
+
+Tag Table:
+Node: Top989
+Node: Audience2088
+Node: Copying3600
+Node: Installation4351
+Node: Basic Usage9614
+Ref: Basic Usage-Footnote-127010
+Ref: Basic Usage-Footnote-227148
+Ref: Basic Usage-Footnote-327204
+Node: Invoking gengetopt27252
+Node: Terminology32022
+Node: Group options36693
+Node: Configuration files38706
+Node: Multiple Options47639
+Node: No getopt_long49698
+Node: Bugs52016
+Node: Mailing Lists52684
+Node: Index53302
+
+End Tag Table

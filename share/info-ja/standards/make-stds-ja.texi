@@ -1,0 +1,875 @@
+@comment This file is included by both standards.texi and make.texinfo.
+@comment It was broken out of standards.texi on 1/6/93 by roland.
+
+@node Makefile Conventions
+@chapter Makefileの取り決め
+@comment standards.texi does not print an index, but make.texinfo does.
+@cindex makefile, conventions for
+@cindex conventions for makefiles
+@cindex standards for makefiles
+
+この
+@ifinfo
+節
+@end ifinfo
+@iftex
+@ifset CODESTD
+節
+@end ifset
+@ifclear CODESTD
+章
+@end ifclear
+@end iftex
+では、GNUプログラムのMakefileを執筆するための慣例について記述する。
+
+@menu
+* Makefile Basics::		Makefileの一般的な慣例
+* Utilities in Makefiles::	Makefileのユーティリティ
+* Command Variables::		コマンド指定の変数
+* Directory Variables::		インストール命令の変数
+* Standard Targets::		ユーザ用の標準的なターゲット
+* Install Command Categories::  `インストール'規則のコマンドの三つの部類:
+                                  normal、pre-install、そしてpost-install。
+@end menu
+
+@node Makefile Basics
+@section Makefileの一般的な慣例
+
+あらゆるMakefileは次の行を含むべきだ。
+
+@example
+SHELL = /bin/sh
+@end example
+
+@noindent
+@code{SHELL}変数が環境から受け継がれるようなシステム上での問題を避けるた
+めに。(これはGNU @code{make}では問題には決してならない。)
+
+異なる@code{make}プログラムは互換性のない接尾辞のリストと暗黙の規則を持
+ち、これはときどき混乱やおかしな挙動を生み出す。だから特定のMakefileで必
+要とする接尾辞だけを使用するのに、明示的に接尾辞のリストを設定するのは良
+い考えだ。
+
+@example
+.SUFFIXES:
+.SUFFIXES: .c .o
+@end example
+
+@noindent
+最初の行は接尾辞のリストを処分し、二番目はこのMakefileで暗黙の規則の対象
+になるかもしれない接尾辞すべてを導入する。
+
+@file{.}がコマンド実行のパスに入っていると仮定してはいけない。makeの間に
+あなたのパッケージの一部であるプログラムを走らせる必要があるとき、そのプ
+ログラムがmakeの一部として構築されるなら@file{./}を使い、もしファイルが
+ソース・コードの変更されない部分なら、@file{$(srcdir)/}を使うようにして
+ください。これらの接頭辞の一つを使わないと、現在の検索パスが使われる。
+
+@file{./}(@dfn{構築ディレクトリ})と@file{$(srcdir)/}(@dfn{ソース・ディレ
+クトリ})の区別は、ユーザは@file{configure}に@samp{--srcdir}オプションを
+使って別のディレクトリで構築することができるので、重要である。次の書式の
+規則は構築ディレクトリがソース・ディレクトリではないとき失敗する。
+@file{foo.man}と@file{sedscript}はソース・ディレクトリの中にあるからだ。
+
+@smallexample
+foo.1 : foo.man sedscript
+        sed -e sedscript foo.man > foo.1
+@end smallexample
+
+@noindent
+
+GNU @code{make}を使うとき、ソースファイルを見付けるのに@samp{VPATH}を頼
+りにすることは、単一の依存関係ファイルがある場合には上手く行くだろう。
+@code{make}の自動変数@samp{$<}は、ソースファイルがどこにあっても、それを
+表すから。(@code{make}のたくさんのバージョンは暗黙的規則でだけ@samp{$<}
+を設定する。)
+
+@smallexample
+foo.o : bar.c
+        $(CC) -I. -I$(srcdir) $(CFLAGS) -c bar.c -o foo.o
+@end smallexample
+
+@noindent
+このようなMakefileのターゲットは代わりに次のように書かれるべきだ。
+
+@smallexample
+foo.o : bar.c
+        $(CC) -I. -I$(srcdir) $(CFLAGS) -c $< -o $@@
+@end smallexample
+
+@noindent
+@samp{VPATH}が正しく働くようにするために。ターゲットが複数の依存関係を持
+つとき、明示的な@samp{$(srcdir)}を使うことがその規則を上手く働かせる一番
+簡単な方法だ。例えば、@file{foo.1}に対するターゲットは次のように書かれて
+るのが一番良い。
+
+@smallexample
+foo.1 : foo.man sedscript
+        sed -e $(srcdir)/sedscript $(srcdir)/foo.man > $@@
+@end smallexample
+
+GNUの配布物は普通ソースファイルではない、いくつかのファイルを含む。---例
+えば、InfoファイルやAutoconf、Automake、BisonやFlexからの出力だ。これら
+のファイルは通常ソース・ディレクトリに現れるので、それらは構築ディレクト
+リではなく、常にソース・ディレクトリに現れるべきだ。だからそれらを更新す
+るMakefileの規則はソース・ディレクトリに更新されたファイルを置くべきだ。
+
+しかしながら、もしファイルが配布物に現れないなら、Makefileはソース・ディ
+レクトリにそれを置くべきではない。なぜなら、普通の環境でプログラムを構築
+することで、どんな方法でもソース・ディレクトリを変更するべきではないから
+だ。
+
+構築とインストールのターゲットを少なくとも(そしてそれらのサブターゲッ
+ト全てが)並列@code{make}で正しく働くように試みなさい。
+
+@node Utilities in Makefiles
+@section Makefileのユーティリティ
+
+Makefileのコマンド(そして@code{configure}のようなシェル・スクリプト)を、
+@code{csh}ではなく、@code{sh}で走るように書きなさい。@code{ksh}や
+@code{bash}の特別な機能を一切使ってはいけない。
+
+@code{configure}スクリプトと構築とインストールのためのMakefileの規則は次
+のものを除いて、どんなユーティリティも直接使うべきではない。
+
+@c dd find
+@c gunzip gzip md5sum
+@c mkfifo mknod tee uname 
+
+@example
+cat cmp cp diff echo egrep expr false grep install-info
+ln ls mkdir mv pwd rm rmdir sed sleep sort tar test touch true
+@end example
+
+圧縮プログラムの@code{gzip}は@code{dist}規則で使って良い。
+
+これらのプログラムに対して、一般的にサポートされているオプションを守りな
+さい。例えば、あったら便利な、@samp{mkdir -p}はほとんどのシステムでサポー
+トしていないので使ってはいけない。
+
+少数のシステムではサポートしていないので、makefileではシンボリック・リン
+クを作らないようにするのは良い考えだ。
+
+構築とインストールのためのMakefileの規則はまたコンパイラや関連したプログ
+ラムを使っていいが、ユーザが代わりのものと換えられるように@code{make}変
+数を通して使うべきだ。我々が言っているプログラムをここでいくつか挙げる。
+
+@example
+ar bison cc flex install ld ldconfig lex
+make makeinfo ranlib texi2dvi yacc
+@end example
+
+これらのプログラムを走らせるのに次の@code{make}変数を使いなさい。
+
+@example
+$(AR) $(BISON) $(CC) $(FLEX) $(INSTALL) $(LD) $(LDCONFIG) $(LEX)
+$(MAKE) $(MAKEINFO) $(RANLIB) $(TEXI2DVI) $(YACC)
+@end example
+
+@code{ranlib}や@code{ldconfig}を使うとき、システムが当のプログラムを持っ
+ていなくても悪いことが何も起きないようにするべきだ。そのコマンドからのエ
+ラーを無視するように調整し、そのコマンドの前にユーザにこのコマンドの失敗
+が問題ではないことを伝えるメッセージを出力しなさい。(Autoconfの
+@samp{AC_PROG_RANLIB}マクロはこれを助けることができる。)
+
+もしシンボリック・リンクを使うなら、シンボリック・リンクを持たないシステ
+ム用に別手段を実装するべきだ。
+
+Make変数を通して使って良い別のユーティリティには次のものがある。
+
+@example
+chgrp chmod chown mknod
+@end example
+
+他のユーティリティを使うことは、あなたがそれらのユーティリティが存在する
+と知っている特定のシステムのためだけに、Makefileの一部(やスクリプト)が意
+図されているなら使って良い。
+
+@node Command Variables
+@section コマンド指定の変数
+
+Makefileはあるコマンドやオプションなどを上書きするために変数を提供するべ
+きだ。
+
+とりわけ、ほとんどのユーティリティ・プログラムを変数を通して走らせるべき
+だ。だから、もしBisonを使うなら、@code{BISON}と名付けられた、そのデフォ
+ルトの値が@samp{BISON = bison}と設定されている変数を持ち、Bisonを使う必
+要があるときにはいつでも@code{$(BISON)}を使ってそれを参照しなさい。
+
+@code{ln}、@code{rm}、@code{mv}などなどのようなファイル管理ユーティリティ
+はこのやり方の変数を通した参照をする必要はない。ユーザはそれらを他のプロ
+グラムと置き換える必要がないので。
+
+それぞれのプログラム名変数は、プログラムにオプションを与えるのに使われる
+オプション変数と一緒に使われるべきだ。オプション変数の名前を得るのにプロ
+グラム名変数の名前に@samp{FLAGS}を付け加えなさい。---例えば、
+@code{BISONFLAGS}のように。(Cコンパイラに対する@code{CFLAGS}、yaccに対す
+る@code{YFLAGS}、lexに対する@code{LFLAGS}の名前はこの規則には例外的だが、
+我々はそれらは標準的なのでそうしておく。) プリプロセッサを走らせるどのコ
+ンパイルのコマンドでも@code{CPPFLAGS}を使い、@code{ld}の直接的な使用だけ
+ではなく、リンクを行うどのコンパイルのコマンドでも@code{LDFLAGS}を使いな
+さい。
+
+もしあるファイルの適切なコンパイルに使われ@emph{なければならない}Cコンパ
+イラのオプションがあれば、@code{CFLAGS}にそれらを入れてはいけない。ユー
+ザは@code{CFLAGS}を自分で自由に指定できると期待する。代わりに、
+@code{CFLAGS}とは独立に必要なオプションをCコンパイラに渡すように調整しな
+さい。次のように、それらを明示的にコンパイルのコマンドに書くか、暗黙の規
+則を定義することによって。
+
+@smallexample
+CFLAGS = -g
+ALL_CFLAGS = -I. $(CFLAGS)
+.c.o:
+        $(CC) -c $(CPPFLAGS) $(ALL_CFLAGS) $<
+@end smallexample
+
+@samp{-g}オプションを@code{CFLAGS}に入れなさい。なぜなら、それは適切なコ
+ンパイルには@emph{必要}ではないからだ。それを単に推奨されるデフォルトで
+あると考えることができる。もしパッケージがデフォルトでGCCでコンパイルさ
+れるように設定されているなら、@code{CFLAGS}のデフォルトの値に@samp{-O}も
+入れてもいい。
+
+ユーザが他を上書きするのに@code{CFLAGS}を使うことができるので、
+@code{CFLAGS}をコンパイルのコマンドの最後、コンパイラのオプションを含む
+他の変数の後に置きなさい。
+
+@code{CFLAGS}は、コンパイルを行うのとリンクを行う両方の、Cコンパイラのあ
+らゆる起動で使われるべきだ。
+
+あらゆるMakefileは@code{INSTALL}という変数を定義するべきで、それはファイ
+ルをシステムにインストールするための基本的なコマンドである。
+
+あらゆるMakefileはまた@code{INSTALL_PROGRAM}と@code{INSTALL_DATA}という
+変数を定義するべきだ。(これらは各々デフォルトは@code{$(INSTALL)}であるべ
+きだ。) そして、これらの変数を実際のインストールのコマンドとして、それぞ
+れ実行ファイルと実行ファイルでないものに対して使うべきだ。これらの変数は
+次のように使いなさい。
+
+@example
+$(INSTALL_PROGRAM) foo $(bindir)/foo
+$(INSTALL_DATA) libfoo.a $(libdir)/libfoo.a
+@end example
+
+@noindent
+インストールのコマンドの二番目の引数として、ディレクトリ名ではなく、常に
+ファイル名を使いなさい。インストールされるそれぞれのファイルに対して、別々
+のコマンドを使いなさい。
+
+@node Directory Variables
+@section インストール命令の変数
+
+インストール命令は常に変数によって名前が付けられているべきだ。だから、標
+準的でない場所にインストールするのは簡単である。これらの変数の標準的な名
+前は以下で述べる。それらは標準的なファイルシステムの構造に基いている。そ
+れに似たものがSVR4、4.4BSD、Linux、Ultrix v4や他の現代的なオペレーティン
+グ・システムで使われている。
+
+これらの二つの変数はインストールのためのルートを設定する。他のインストー
+ル命令はすべてこれら二つのうちの一つのサブディレクトリであるべきで、これ
+ら二つのディレクトリへ直接インストールされるものがあるべきではない。
+
+@table @samp
+@item prefix
+以下で列挙する変数のデフォルトの値を作るのに使われる接頭辞。
+@code{prefix}のデフォルトの値は@file{/usr/local}であるべきだ。完全なGNU
+システムを構築するとき、接頭辞は空で、@file{/usr}は@file{/}へのシンボリッ
+ク・リンクになるだろう。(もしAutoconfを使っているなら、それを
+@samp{@@prefix@@}と書きなさい。)
+
+@item exec_prefix
+以下で列挙する変数の一部のデフォルトの値を作るのに使われる接頭辞。
+@code{exec_prefix}のデフォルトの値は@code{$(prefix)}であるべきだ。(もし
+Autoconfを使っているなら、それを@samp{@@exec_prefix@@}と書きなさい。)
+
+一般的に、@code{$(exec_prefix)}は(実行ファイルやサブルーチン・ライブラリ
+のような)マシンに特定のファイルを含むディレクトリに対して使われるが、
+@code{$(prefix)}は他のディレクトリに対して直接使われる。
+@end table
+
+実行プログラムは以下のディレクトリの一つにインストールされる。
+
+@table @samp
+@item bindir
+ユーザが走らせることができる実行プログラムをインストールするためのディレ
+クトリ。これは普通@file{/usr/local/bin}であるべきだが、それを
+@file{$(exec_prefix)/bin}と書きなさい。(もしAutoconfを使っているなら、そ
+れを@samp{@@bindir@@}と書きなさい。)
+
+@item sbindir
+シェルから走らせることができるが、普通はシステム管理者にだけ有用な実行プ
+ログラムをインストールするためのディレクトリ。これは通常
+@file{/usr/local/sbin}であるべきだが、それを@file{$(exec_prefix)/sbin}と
+書きなさい。(もしAutoconfを使っているなら、それを@samp{@@sbindir@@}と書
+きなさい。)
+
+@item libexecdir
+@comment This paragraph adjusted to avoid overfull hbox --roland 5jul94
+ユーザよりも他のプログラムに実行されるための実行プログラムをインストール
+するためのディレクトリ。このディレクトリは通常@file{/usr/local/libexec}
+であるべきだが、それを@samp{$(exec_prefix)/libexec}と書きなさい。(もし
+Autoconfを使っているなら、それを@samp{@@libexecdir@@}と書きなさい。)
+@end table
+
+実行中にプログラムによって使われるデータ・ファイルは二つの方法の部類に分
+けられる。
+
+@itemize @bullet
+@item
+一部のファイルは普通プログラムによって変更される。他のものは普通絶対に変
+更されない(ユーザはこれらのうち一部を編集するかもしれないけど)。
+
+@item
+一部のファイルはアーキテクチャに依存しておらず、あるサイトの全てのマシン
+に共有されうる。一部はアーキテクチャ依存で、同じ種類のマシンやオペレーティ
+ング・システムによってのみ共有されうる。他のものは二つのマシン間で決して
+共有できないかもしれない。
+@end itemize
+
+これは6つの異なる可能性をもたらす。しかしながら、我々は、オブジェクト・
+ファイルやライブラリは別にして、アーキテクチャ依存のファイルの使用をやめ
+させたい。他のデータ・ファイルをアーキテクチャ非依存にすることはずっとき
+れいで、普通は困難ではない。
+
+それゆえ、ここにMakefileがディレクトリを指定するのに使うべき変数を挙げる。
+
+@table @samp
+@item datadir
+読み込みだけのアーキテクチャに依存しないデータ・ファイルをインストールす
+るためのディレクトリ。これは通常@file{/usr/local/share}であるべきだが、
+それを@file{$(prefix)/share}と書きなさい。(もしAutoconfを使っているなら、
+それを@samp{@@datadir@@}と書きなさい。) 特別な例外として、以下の
+@file{$(infodir)}と@file{$(includedir)}を見なさい。
+
+@item sysconfdir
+一つのマシンに属する読み込みだけのデータ・ファイル--つまり、ホストを設定
+するためのファイル、をインストールするためのディレクトリ。メイラーやネッ
+トワークの設定ファイル、@file{/etc/passwd}などはここに属する。このディレ
+クトリの全てのファイルは普通のASCIIテキスト・ファイルであるべきだ。この
+ディレクトリは普通@file{/usr/local/etc}だが、それを@file{$(prefix)/etc}
+と書きなさい。(もしAutoconfを使っているなら、それを@samp{@@sysconfdir@@}
+と書きなさい。)
+
+このディレクトリに実行ファイルをインストールしてはいけない(それらおそら
+く@file{$(libexecdir)}か@file{$(sbindir)}に属する)。また、普通の方針で使っ
+ているときに変更するファイルはインストールしてはいけない(システムの設定
+を変更するための目的のプログラムは除く)。それらはおそらく
+@file{$(localstatedir)}に属する。
+
+@item sharedstatedir
+アーキテクチャに依存しない、プログラムが走る間に変更するデータ・ファイル
+をインストールするためのディレクトリ。これは普通@file{/usr/local/com}で
+あるべきだが、それを@file{$(prefix)/com}と書きなさい。(もしAutoconfを使っ
+ているなら、それを@samp{@@sharedstatedir@@}と書きなさい。)
+
+@item localstatedir
+プログラムが走る間に変更し、特定のマシンに属しているデータ・ファイルをイ
+ンストールするためのディレクトリ。ユーザは、パッケージの操作を設定するた
+めに、このディレクトリにあるファイルを変更する必要が決してあるべきではな
+い。そのような設定情報は@file{$(datadir)}や@file{$(sysconfdir)}に入る別
+のファイルに置きなさい。@file{$(localstatedir)}は通常
+@file{/usr/local/var}であるべきだが、それを@file{$(prefix)/var}と書きな
+さい。(もしAutoconfを使っているなら、それを@samp{@@localstatedir@@}と書
+きなさい。)
+
+@item libdir
+オブジェクト・ファイルやオブジェクト・コードのライブラリのためのディレク
+トリ。ここに実行ファイルをインストールしてはいけない。それらはおそらく代わ
+りに@file{$(libexecdir)}に入るべきだ。@code{libdir}の値は普通
+@file{/usr/local/lib}だが、それを@file{$(exec_prefix)/lib}と書きなさい。
+(もしAutoconfを使っているなら、それを@samp{@@libdir@@}と書きなさい。)
+
+@item infodir
+このパッケージのInfoファイルをインストールするためのディレクトリ。デフォ
+ルトでは、それは@file{/usr/local/info}であるべきだが、それは
+@file{$(prefix)/info}と書かれるべきだ。(もしAutoconfを使っているなら、そ
+れを@samp{@@infodir@@}と書きなさい。)
+
+@item lispdir
+このパッケージのどんなEmacs Lispファイルでもインストールためのディレクト
+リ。デフォルトでは、それは@file{/usr/local/share/emacs/site-lisp}である
+べきだが、それは@file{$(prefix)/share/emacs/site-lisp}と書かれるべきだ。
+
+もしAutoconfを使っているなら、デフォルトを@samp{@@lispdir@@}と書きなさい。
+@samp{@@lispdir@@}が働くようにするために、@file{configure.in}ファイルに
+以下の行が必要である。
+
+@example
+lispdir='$@{datadir@}/emacs/site-lisp'
+AC_SUBST(lispdir)
+@end example
+
+@item includedir
+@c rewritten to avoid overfull hbox --roland
+Cの@samp{#include}プリプロセッサ命令でユーザ・プログラムによってインクルー
+ドされるヘッダ・ファイルをインストールするためのディレクトリ。これは通常
+@file{/usr/local/include}であるべきだが、それを@file{$(prefix)/include}
+と書きなさい。(もしAutoconfを使っているなら、それを@samp{@@includedir@@}
+と書きなさい。)
+
+GCC以外のほとんどのコンパイラは@file{/usr/local/include}ディレクトリのヘッ
+ダ・ファイルを探さない。だからこの方法でヘッダ・ファイルをインストールす
+ることはGCCにだけ役に立つ。一部のライブラリはGCCで働くことだけを本当に意
+図しているので、これは時には問題ではない。しかし一部のライブラリは他のコ
+ンパイラと働くことを意図している。それらはヘッダ・ファイルを二つの場所、
+@code{includedir}に指定されるところと@code{oldincludedir}に指定されると
+ころにインストールするべきだ。
+
+@item oldincludedir
+GCC以外のコンパイラで使われるための@samp{#include}ヘッダ・ファイルをイン
+ストールするためのディレクトリ。これは通常@file{/usr/include}であるべき
+だ。(もしAutoconfを使っているなら、それを@samp{@@oldincludedir@@}と書く
+ことができる。)
+
+Makefileのコマンドは@code{oldincludedir}の値が空かどうか確認すべきだ。も
+しそうなら、それを使おうとするべきではない。ヘッダ・ファイルの二番目のイ
+ンストールを取りやめるべきだ。
+
+パッケージはこのディレクトリにすでにあるヘッダを、そのヘッダが同じパッケー
+ジに由来しているのでないなら、置き換えるべきではない。だから、もしあなた
+のFooパッケージがヘッダ・ファイルの@file{foo.h}を提供するなら、もし、
+(1)@file{foo.h}がないか、(2)すでにある@file{foo.h}がFooパッケージ由来か、
+のどちらかなら、@code{oldincludedir}ディレクトリにそのヘッダ・ファイルを
+インストールするべきだ。
+
+@file{foo.h}がFooパッケージ由来かどうかを見分けるために、そのファイルに
+魔法の文字列---コメントの一部---を置き、その文字列を@code{grep}しなさい。
+@end table
+
+Unix形式のmanページは次のうちの一つにインストールされる。
+
+@table @samp
+@item mandir
+このパッケージの(あれば)manページをインストールするための一番上のディレ
+クトリ。それは普通@file{/usr/local/man}だろう。しかしそれを
+@file{$(prefix)/man}と書くべきだ。(もしAutoconfを使っているなら、それを
+@samp{@@mandir@@}と書きなさい。)
+
+@item man1dir
+セクション1のmanページをインストールするためのディレクトリ。それを
+@file{$(mandir)/man1}と書きなさい。
+@item man2dir
+セクション2のmanページをインストールするためのディレクトリ。それを
+@file{$(mandir)/man2}と書きなさい。
+@item @dots{}
+
+@strong{どんなGNUソフトウェアの主要な解説書もmanページにしてはならない。
+代わりにTexinfoでマニュアルを書きなさい。manページは単にUnix上でGNUソフ
+トウェアを走らせる人々のためだけで、それは副次的なアプリケーションだけだ。}
+
+@item manext
+インストールされるmanページのファイル名拡張子。これは適切な数字が続くピ
+リオドを含むべきだ。それは普通@samp{.1}であるべきだ。
+
+@item man1ext
+セクション1にインストールされるmanページのためのファイル名拡張子。
+@item man2ext
+セクション2にインストールされるmanページのためのファイル名拡張子。
+@item @dots{}
+もしパッケージがマニュアルの2以上にmanページをインストールする必要がある
+なら、これらの名前を@samp{manext}の代わりに使いなさい。
+@end table
+
+そして最後に、以下の変数を設定するべきだ。
+
+@table @samp
+@item srcdir
+コンパイルされるソースのディレクトリ。この変数の値は通常@code{configure}
+シェル・スクリプトによって挿入される。(もしAutoconfを使っているなら、
+@samp{srcdir = @@srcdir@@}を使いなさい。)
+@end table
+
+例。
+
+@smallexample
+@c I have changed some of the comments here slightly to fix an overfull
+@c hbox, so the make manual can format correctly. --roland
+# Common prefix for installation directories.
+# NOTE: This directory must exist when you start the install.
+prefix = /usr/local
+exec_prefix = $(prefix)
+# Where to put the executable for the command `gcc'.
+bindir = $(exec_prefix)/bin
+# Where to put the directories used by the compiler.
+libexecdir = $(exec_prefix)/libexec
+# Where to put the Info files.
+infodir = $(prefix)/info
+@end smallexample
+
+もしあなたのプログラムが標準的なユーザ指定のディレクトリに、非常にたくさ
+んのファイルをインストールするなら、このプログラムに特定のサブディレクト
+リにそれらをまとめると有用かもしれない。もしこうするなら、これらのサブディ
+レクトリを作るための@code{install}規則を書くべきだ。
+
+上に挙げたどの変数の値にも、ユーザがサブディレクトリの名前を含めると期待し
+てはいけない。インストール・ディレクトリのための変数名の一組を持つという
+考えは、ユーザがいくつかの異なるGNUパッケージに正確に同じ値を指定できる
+ようにすることである。これを有用なものとするために、あらゆるパッケージは
+ユーザがそうするときに賢く働くように設計されなければならない。
+
+@node Standard Targets
+@section ユーザ用の標準的なターゲット
+
+全てのGNUプログラムはそれらのMakefileに以下のターゲットを持つべきだ。
+
+@table @samp
+@item all
+プログラム全体をコンパイルする。これはデフォルトのターゲットであるべきだ。
+このターゲットはどの解説ファイルも再構築しなくて良い。Infoファイルは通常
+配布物の中に含まれるべきで、DVIファイルは明示的に要求されたときにのみ作
+られるべきだ。
+
+デフォルトでは、Makeの規則は@samp{-g}付きでコンパイルしリンクするべきだ。
+こうして実行プログラムはデバッグのシンボルを持つ。無力なことを気にしない
+ユーザは、彼らが望むなら、その実行ファイルを後でstripすることができる。
+
+@item install
+プログラムをコンパイルし、実行ファイル、ライブラリなどを、それらが実際に
+使われるべきファイル名に複製する。もしプログラムが適切にインストールされ
+たことを確かめるための簡単な試験があるなら、このターゲットはその試験を走
+らせるべきだ。
+
+実行ファイルをインストールするときにstripしてはいけない。向こう見ずなユー
+ザはそうするために@code{install-strip}ターゲットを使うことができる。
+
+もし可能なら、@samp{make all}が終わっていたら、そのプログラムが構築され
+たディレクトリのどんなものも変更しないように@code{install}ターゲットの規
+則を書きなさい。これはあるユーザ名でプログラムを構築し、他のユーザ名でそ
+れをインストールするのに便利である。
+
+そのコマンドはファイルがインストールされるディレクトリを、もしまだなかっ
+たら、全て作成するべきである。これは必要とされるサブディレクトリ全てだけ
+でなく、変数@code{prefix}や@code{exec_prefix}の値で指定されるディレクト
+リも含む。これを行う一つの方法は以下で述べるような@code{installdirs}ター
+ゲットを使うことによる。
+
+manページをインストールためのどんなコマンドの前にも、@code{make}がどんな
+エラーも無視するように、@samp{-}を使いなさい。これはUnixのmanページ解説
+システムがインストールされてないシステムの場合である。
+
+Infoファイルをインストールする方法は、それらを@code{$(INSTALL_DATA)}
+(@pxref{Command Variables})で@file{$(infodir)}に複製することで、もしあれ
+ば、@code{install-info}プログラムを走らせる。@code{install-info}は与えら
+れたInfoファイルのメニュー項目を加えたり更新したりするためにInfoの
+@file{dir}ファイルを編集するプログラムである。それはTexinfoパッケージの
+一部だ。ここでInfoファイルをインストールする見本の規則を挙げる。
+
+@comment This example has been carefully formatted for the Make manual.
+@comment Please do not reformat it without talking to roland@gnu.ai.mit.edu.
+@smallexample
+$(infodir)/foo.info: foo.info
+        $(POST_INSTALL)
+# There may be a newer info file in . than in srcdir.
+        -if test -f foo.info; then d=.; \
+         else d=$(srcdir); fi; \
+        $(INSTALL_DATA) $$d/foo.info $@@; \
+# Run install-info only if it exists.
+# Use `if' instead of just prepending `-' to the
+# line so we notice real errors from install-info.
+# We use `$(SHELL) -c' because some shells do not
+# fail gracefully when there is an unknown command.
+        if $(SHELL) -c 'install-info --version' \
+           >/dev/null 2>&1; then \
+          install-info --dir-file=$(infodir)/dir \
+                       $(infodir)/foo.info; \
+        else true; fi
+@end smallexample
+
+@code{install}ターゲットを書くとき、三つの部類に全てのコマンドを分類しな
+ければならない。普通のものと、@dfn{pre-installation}コマンドと
+@dfn{post-installation}コマンドだ。@xref{Install Command Categories}。
+
+@item uninstall
+インストールされたファイル---@samp{install}ターゲットが作る複製---を全て
+削除する。
+
+この規則はコンパイルが行われたディレクトリを変更せず、ファイルがインストー
+ルされるディレクトリだけを変更するべきだ。
+
+アンインストールのコマンドはインストールのコマンドと同様、三つの部類に分
+けられる。@xref{Install Command Categories}。
+
+@item install-strip
+@code{install}に似ているが、実行ファイルをインストールする間にそれらを
+stripする。多くの場合、このターゲットの定義は非常に単純で良い。
+
+@smallexample
+install-strip:
+        $(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' \
+                install
+@end smallexample
+
+通常我々は、あなたがそのプログラムにバグがないと確信しているのでないなら、
+実行ファイルをstripすることを推奨しない。しかしながら、バグがある場合用
+にstripしていない実行ファイルを別のところに保存して、実際の実行用にstrip
+された実行ファイルをインストールすることは理に適っていることもあり得る。
+
+@comment The gratuitous blank line here is to make the table look better
+@comment in the printed Make manual.  Please leave it in.
+@item clean
+
+現在のディレクトリから、普通プログラムを構築することによって作られた全て
+のファイルを削除する。設定を記録するファイルは削除してはいけない。また、
+構築によって作ることができても、配布物から手に入るので普通は作らないファ
+イルは残しておきなさい。
+
+もし配布物の一部でないなら、@file{.dvi}ファイルは削除しなさい。
+
+@item distclean
+現在のディレクトリから、プログラムを設定したり、構築することによって作ら
+れた全てのファイルを削除する。もしソースを展開し、他のファイルを作らずに
+プログラムを構築しているなら、@samp{make distclean}は配布物にあったファ
+イルだけを残すべきである。
+
+@item mostlyclean
+@samp{clean}に似ているが、人々が通常再びコンパイルしたいとは思わない、少
+数のファイルは削除してなくて良い。例えば、GCCの@samp{mostlyclean}ターゲッ
+トは@file{libgcc.a}を削除しない。なぜなら、それを再びコンパイルすること
+は滅多に必要でなく、長い時間がかかるからだ。
+
+@item maintainer-clean
+現在のディレクトリから、このMakefileで復元され得る、ほとんど全てを削除す
+る。これは典型的には@code{distclean}によって削除される全てのものと、さら
+に、Bisonによって生み出されたCのソース・ファイル、タグの表、Infoファイル
+などなどを含む。
+
+``ほとんど全て''と言う理由は、コマンド@samp{make maintainer-clean}を走ら
+せることで、例え@file{configure}はMakefileの規則を使って再生できたとして
+も、@file{configure}を削除するべきでないということだ。もっと一般的に、
+@samp{make maintainer-clean}は@file{configure}を走らせるために、そしてプ
+ログラムを構築し始めるために存在する必要があるどんなものも削除するべきで
+はない。これが唯一の例外だ。@code{maintainer-clean}は再構築される得る他
+のものは全て削除するべきだ。
+
+@samp{maintainer-clean}ターゲットは、普通のユーザではなく、そのパッケー
+ジの管理者によって使われることが意図されている。@samp{make
+maintainer-clean}が削除するファイルの一部を復元するために、特別なツール
+を必要とするかもしれない。これらのファイルは普通配布物に含められるので、
+それらが簡単に復元することは気にしない。もし全配布物を再び展開する必要が
+あることを見出しても、我々を非難してはいけない。
+
+ユーザがこれに気付くのを助けるために、特別な@code{maintainer-clean}ター
+ゲットのためのコマンドはこれら二つで始まるべきだ。
+
+@smallexample
+@@echo 'This command is intended for maintainers to use; it'
+@@echo 'deletes files that may need special tools to rebuild.'
+@end smallexample
+
+@item TAGS
+このプログラムのタグ表を更新する。
+@c ADR: how?
+
+@item info
+必要とされるどのInfoファイルでも生成する。規則を書く最善の方法は次のよう
+だ。
+
+@smallexample
+info: foo.info
+
+foo.info: foo.texi chap1.texi chap2.texi
+        $(MAKEINFO) $(srcdir)/foo.texi
+@end smallexample
+
+@noindent
+Makefileに@code{MAKEINFO}という変数を定義してなければならない。それは
+@code{makeinfo}プログラムを走らせるべきで、それはTexinfo配布物の一部であ
+る。
+
+普通、GNU配布物はInfoファイルと一緒に手に入り、このことはInfoファイルが
+ソース・ディレクトリにあることを意味する。それゆえ、infoファイルのための
+Makeの規則はソース・ディレクトリでそれを更新するべきだ。ユーザがそのパッ
+ケージを構築するとき、普通のMakeはInfoファイルを更新しないだろう。なぜな
+ら、それらはすでに最新だろうから。
+
+@item dvi
+Texinfo解説書全てのDVIファイルを生成する。
+例えば、
+
+@smallexample
+dvi: foo.dvi
+
+foo.dvi: foo.texi chap1.texi chap2.texi
+        $(TEXI2DVI) $(srcdir)/foo.texi
+@end smallexample
+
+@noindent
+Makefileに@code{TEXI2DVI}という変数を定義してなければならない。それは
+@code{texi2dvi}というプログラムを走らせるべきで、それはTexinfo配布物の一
+部である。@footnote{@code{texi2dvi}は整形の実際の作業を行うために@TeX{}
+を使用する。@TeX{}はTexinfoと一緒配布されていない。} あるいは、単に依存
+関係だけを書き、GNU @code{make}がそのコマンドを提供できるようにしなさい。
+
+@item dist
+このプログラムの配布用tarファイルを作成する。tarファイルは、そのtarファ
+イルの中のファイル名が配布されるパッケージの名前のサブディレクトリ名で始
+まるように作り上げられるべきだ。この名前はバージョン・ナンバーを含んで良
+い。
+
+例えば、GCCのバージョン1.40の配布用tarファイルは@file{gcc-1.40}と名付け
+られたサブディレクトリに展開する。
+
+これを行う一番簡単な方法は適切に名付けられたサブディレクトリを作り、
+@code{ln}か@code{cp}でそれに適当なファイルをインストールし、そのサブディ
+レクトリに@code{tar}することである。
+
+そのtarファイルを@code{gzip}で圧縮しなさい。例えば、GCCのバージョン1.40
+の実際の配布ファイルは@file{gcc-1.40.tar.gz}と名付けられている。
+
+配布物にあるソースではないファイル全てを配布物中で最新にしておくために、
+@code{dist}ターゲットは明示的にそれらに依存すべきだ。
+@ifset CODESTD
+@xref{Releases, , Making Releases}.
+@end ifset
+@ifclear CODESTD
+@xref{Releases, , Making Releases, standards, GNU Coding Standards}.
+@end ifclear
+
+@item check
+(もしあれば)自己診断を行う。ユーザはその試験を走らせる前にプログラムを構
+築しなければならないが、そのプログラムをインストールする必要はない。その
+プログラムが構築されているがインストールされていないときに働くように自己
+診断を書くべきである。
+@end table
+
+以下のターゲットは、それらが有用であるプログラムに対して、慣習的な名前を
+提案している。
+
+@table @code
+@item installcheck
+(もしあれば)インストールの診断を行う。ユーザはその試験を走らせる前にその
+プログラムを構築しインストールしなければならない。@file{$(bindir)}が検索
+パスにあると仮定するべきではない。
+
+@item installdirs
+ファイルがインストールされるディレクトリとそれらの親ディレクトリを作成す
+るために、@samp{installdirs}という名前のターゲットを加えると役に立つ。こ
+のために便利である@file{mkinstalldirs}と名付けられたスクリプトがある。そ
+れはTexinfoパッケージの中で見付けることができる。
+@c It's in /gd/gnu/lib/mkinstalldirs.
+このような規則を使うことができる。
+
+@comment This has been carefully formatted to look decent in the Make manual.
+@comment Please be sure not to make it extend any further to the right.--roland
+@smallexample
+# Make sure all installation directories (e.g. $(bindir))
+# actually exist by making them if necessary.
+installdirs: mkinstalldirs
+        $(srcdir)/mkinstalldirs $(bindir) $(datadir) \
+                                $(libdir) $(infodir) \
+                                $(mandir)
+@end smallexample
+
+この規則はコンパイルがなされるディレクトリを変更するべきではない。インス
+トール用のディレクトリを作成する以外に何もするべきではない。
+@end table
+
+@node Install Command Categories
+@section インストールのコマンドの部類
+
+@cindex pre-installation commands
+@cindex post-installation commands
+@code{install}ターゲットを書くとき、三つの部類にそのコマンド全てを分類し
+なければならない。普通のものと、@dfn{pre-installation}コマンドと、
+@dfn{post-installation}コマンドに。
+
+普通のコマンドは適切な場所にファイルを移動し、それらのモードを設定する。
+それらはどんなファイルも、完全にそれらが属するパッケージから手に入るもの
+を除いて、変化させないのが良い。
+
+pre-installationとpost-installationのコマンドは他のファイルを変えても良
+い。特に、それらは大域的な設定ファイルやデータベースを編集して良い。
+
+pre-installationコマンドは典型的には普通のコマンドの前に実行され、
+post-installationコマンドは典型的には普通のコマンドの後に走らされる。
+
+post-installationコマンドの最も普通の利用は@code{install-info}を走らせる
+ことである。これは普通のコマンドでは行われ得ない。それは、完全には、そし
+てインストールされるパッケージだけからは手に入らないファイル(Infoディレ
+クトリ)を変化させる。それはパッケージのInfoファイルをインストールする普
+通のコマンドの後に行われる必要があるのでpost-installationコマンドである。
+
+ほとんどのプログラムはpre-installationコマンドを必要としないが、我々はそ
+れが必要とされる場合にだけその機能を持つ。
+
+@code{install}規則のコマンドをこれら三つの部類に分類するために、それらの
+中に@dfn{部類行}を挿入しなさい。部類行は次のコマンドの部類を指定する。
+
+部類行はタブと特別なMake変数への参照に加えて、最後に付加的なコメントから
+成る。それぞれの部類に対して一つ、使うことができる三つの変数がある。変数
+名は部類を指定する。部類行は、これら三つのMake変数は普通未定義(そして、
+それらをmakefileで定義する@emph{べきではない})ので、普通の実行では何も行
+わない。
+
+ここで、それぞれそれが何を意味するのか説明するコメントと共に、その三つの
+あり得る部類行を挙げる。
+
+@smallexample
+        $(PRE_INSTALL)     # @r{Pre-install commands follow.}
+        $(POST_INSTALL)    # @r{Post-install commands follow.}
+        $(NORMAL_INSTALL)  # @r{Normal commands follow.}
+@end smallexample
+
+もし@code{install}規則の始めに部類行を使わないなら、全てのコマンドは、最
+初の部類行まで普通のものと分類される。もしどの部類行も使わないなら、全て
+のコマンドは普通のものと分類される。
+
+これらは@code{uninstall}のための部類行である。
+
+@smallexample
+        $(PRE_UNINSTALL)     # @r{Pre-uninstall commands follow.}
+        $(POST_UNINSTALL)    # @r{Post-uninstall commands follow.}
+        $(NORMAL_UNINSTALL)  # @r{Normal commands follow.}
+@end smallexample
+
+典型的には、pre-uninstallコマンドはInfoディレクトリから項目を削除するた
+めに使われるだろう。
+
+もし@code{install}や@code{uninstall}ターゲットがインストールのサブルーチ
+ンとして振る舞う依存関係を持つなら、@emph{それぞれの}依存関係のコマンド
+を部類行で始めるべきで、主要なターゲットのコマンドも部類行で始めるべきだ。
+こうして、それぞれのコマンドが、依存関係のそれが実際に走るかどうかに関係
+なく、正しい部類に位置するように保証できる。
+
+pre-installationとpost-installationのコマンドはこれら以外のプログラムを
+走らせるべきではない。
+
+@example
+[ basename bash cat chgrp chmod chown cmp cp dd diff echo
+egrep expand expr false fgrep find getopt grep gunzip gzip
+hostname install install-info kill ldconfig ln ls md5sum
+mkdir mkfifo mknod mv printenv pwd rm rmdir sed sort tee
+test touch true uname xargs yes
+@end example
+
+@cindex binary packages
+この方法でコマンドを区別する理由はバイナリ・パッケージを作るためである。
+典型的にはバイナリ・パッケージは全ての実行ファイルとインストールされる必
+要がある他のファイルを含み、それらをインストールする、それ自身の方法を持
+つ---だから、それは普通のインストールのコマンドを走らせる必要がない。し
+かし、バイナリ・パッケージをインストールすることはpre-installationと
+post-installationのコマンドを走らせることを必要とする。
+
+バイナリ・パッケージを構築するためのプログラムはpre-installationと
+post-installationのコマンドを抜粋することによって働く。ここで
+pre-installationコマンドを抜粋する一つの方法を示す。
+
+@smallexample
+make -n install -o all \
+      PRE_INSTALL=pre-install \
+      POST_INSTALL=post-install \
+      NORMAL_INSTALL=normal-install \
+  | gawk -f pre-install.awk
+@end smallexample
+
+@noindent
+ここで@file{pre-install.awk}というファイルは次のものを含む。
+
+@smallexample
+$0 ~ /^\t[ \t]*(normal_install|post_install)[ \t]*$/ @{on = 0@}
+on @{print $0@}
+$0 ~ /^\t[ \t]*pre_install[ \t]*$/ @{on = 1@}
+@end smallexample
+
+pre-installationコマンドの結果生じるファイルはバイナリ・パッケージをイン
+ストールすることの一部として、シェル・スクリプトとして実行される。

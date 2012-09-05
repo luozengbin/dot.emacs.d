@@ -1,0 +1,5087 @@
+-*- coding: utf-8 -*-
+This is ../info/cl-j, produced by makeinfo version 4.13 from cl-j.texi.
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* CL: (cl-j).           Emacs Lispのための部分的なCommon Lispサポート
+END-INFO-DIR-ENTRY
+
+   このファイルはGNU Emacs Common
+Lispエミュレーションパッケージを文書化する。
+
+   Copyright (C) 1993 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public License"
+may be included in a translation approved by the author instead of in
+the original English.
+
+   このファイルは、emacs-21.2/man/cl.texiの日本語訳です。
+
+
+File: cl-j,  Node: Top,  Next: 概観,  Up: (dir)
+
+1 Common Lisp拡張
+*******************
+
+この文書はCommon Lispから借りたEmacs Lisp機能の集合を記述する。
+それらの機能のすべてはここに詳細に記述される。この文書はいかなる Common
+Lispの事前知識も仮定しないが、Emacs Lispの基本知識は仮定する。
+
+* Menu:
+
+* 概観::                 インストール、使用法、その他
+* プログラム構造::       引数リスト、`eval-when'、`defalias'
+* 述語::                 `typep'と`eql'、`equalp'
+* 制御構造::             `setf'、`when'、`do'、`loop'、その他
+* マクロ::               分配、`define-compiler-macro'
+* 宣言::                 `proclaim'、`declare'、その他
+* シンボル::             属性リスト、`gensym'
+* 数::                   述語、関数、乱数
+* 列::                   マッピング関数、検索、ソート
+* リスト::               `cadr'、`sublis'、`member*'、`assoc*'、その他
+* ハッシュ表::           `make-hash-table'、`gethash'、その他
+* 構造体::               `defstruct'
+* アサーション::         `check-type'、`assert'、`ignore-errors'
+
+* 効率の配慮::                  ヒントとテクニック
+* Common Lispとの互換性::       すべての既知のSteeleとの相違
+* 古いCLとの互換性::            すべての既知の古いcl.elとの相違
+* Common Lispの移植::           Common Lispコード移植のためのヒント
+
+* 関数索引::
+* 変数索引::
+
+
+File: cl-j,  Node: 概観,  Next: プログラム構造,  Prev: Top,  Up: Top
+
+2 概観
+********
+
+Common Lispは巨大な言語であり、Common Lispシステムは大規模できわめて
+複雑になりがちである。Emacs Lispは対照的に、プログラマに提供するLisp
+機能の選択に関してはむしろ最小主義者である。
+
+   Emacs Lispプログラマの数が増えるにつれ、そして彼らの書く
+アプリケーションがさらに野心的になるにつれ、Emacs LispはCommon Lispの
+多くの便利な機能から利益を得られることが明らかになってきた。
+
+   "CL"パッケージはかなりの数のCommon Lisp関数と制御構造をEmacs Lisp
+に加える。100%完全なCommon Lisp処理系ではないが、"CL"はEmacs Lisp
+プログラミングをかなり便利にするために十分な機能を加える。
+
+   いくつかのCommon Lisp機能はさまざまな理由でこのパッケージから
+省略された:
+
+   * いくつかの機能はEmacs
+     Lispプログラマにとって、その利益に比べてあまりに
+     複雑または大き過ぎる。CLOSとCommon Lispストリームはこのグループの
+     好例である。
+
+   * 他の機能はEmacs Lispインタプリタ自身の変更なしには実装できない;
+     多値戻し、レキシカルスコープ、大文字小文字の区別のないシンボル、そして
+     複素数。
+
+     "CL"パッケージは一般的にこれらの機能をエミュレートしようとしない。
+
+   * いくつかの機能はEmacs Lispに存在するものと衝突する。例えば、Emacsの
+     `assoc'関数はCommon Lispの`assoc'と非互換である。このような
+     場合、このパッケージは通常、Common Lisp版の関数名に接尾辞`*'を
+     加える(例えば、`assoc*')。
+
+   ここで記述されているパッケージはDave Gillespie,
+`daveg@synaptics.com'によって書かれた。それはCesar Quirozによる
+オリジナルの1986 `cl.el'パッケージの完全な書き直しである。
+
+   Quirozパッケージの多くの機能は保たれている; すべての非互換は下文の
+記述に注釈されている。この版では各関数は効率的に、簡潔に、そしてEmacs
+環境の残りの部分への影響を最小にするよう注意が払われている。
+
+* Menu:
+
+* 使用法::               CLパッケージの使い方
+* 構成::                 パッケージの5つの構成ファイル
+* インストール::         CLのコンパイルとインストール
+* 命名規約::             CL関数名に関する記録
+
+
+File: cl-j,  Node: 使用法,  Next: 構成,  Prev: 概観,  Up: 概観
+
+2.1 使用法
+=============
+
+"CL"パッケージの機能を使うLispコードは先頭に下記を含める:
+
+     (require 'cl)
+
+"CL"の新しい(Gillespieの)版が今あるものであることを
+確実にしたいのなら、付加的に`(require 'cl-19)'の呼び出しを 追加する:
+
+     (require 'cl)
+     (require 'cl-19)
+
+古い`cl.el'パッケージを使用中なら、2番目の呼び出しは ("`cl-19.el' not
+found"となって)失敗する。
+
+   "CL"をロードするように準備することはいつでも安全である、
+たとえばあなたの`.emacs'ファイルに。しかしそうしているとしても、
+コードに`(require 'cl)'を可搬性のために入れるのはよい考えである。
+
+
+File: cl-j,  Node: 構成,  Next: インストール,  Prev: 使用法,  Up: 概観
+
+2.2 構成
+==========
+
+Common Lispパッケージは4つのファイルで構成されている:
+
+`cl.el'
+     これは"主要な"ファイルであり、基本的関数とパッケージについての情報を
+     含む。このファイルは比較的コンパクト--約700行である。
+
+`cl-extra.el'
+     このファイルはより大きく、より複雑または通常ではない関数を含む。
+     `cadr'関数のようなCommon Lispの基礎だけを使いたいパッケージがより
+     高度な関数のロードのオーバーヘッドを払わなくてよいように
+     切り離されている。
+
+`cl-seq.el'
+     このファイルは、`delete-if'や`assoc*'のように列やリストに
+     作用する高度な関数の多くを含む。
+
+`cl-macs.el'
+     このファイルは関数ではなくマクロに関するパッケージの機能を含む。
+     マクロは実行時ではなく呼び出される側がコンパイルされるときに
+     展開するので、マクロは一般的にバイトコンパイラ実行時
+     (または`.emacs'ファイルのようにコンパイルされていないコード中で
+     使われるとき)のみ必要である。このパッケージのマクロの多くは、
+     コンパイルしない限りメモリを使わないように`cl-macs.el'に
+     分離されている。
+
+   `cl.el'ファイルはその他の3つのファイルの関数とマクロに
+必要なすべての`autoload'コマンドを含む。
+やらなければいけないことは、`(require 'cl)'と書き、`cl.el'が
+必要なときにその他のファイルを引っ張れるようにすることだけである。
+
+   別のファイル`cl-compat.el'があり、それは新しい
+パッケージにはもうない古い`cl.el'のいくつかのルーチンを
+定義している。これは`setelt'や`zip-lists'のような内部
+ルーチン、`defkeyword' のような非難された機能、そして古い
+スタイルの多値機能のエミュレーションを含む。*Note 古いCLとの互換性::.
+
+
+File: cl-j,  Node: インストール,  Next: 命名規約,  Prev: 構成,  Up: 概観
+
+2.3 インストール
+======================
+
+"CL"パッケージのインストールは単純である: 単に
+バイトコンパイルされたファイル`cl.elc'、`cl-extra.elc'、
+`cl-seq.elc'、`cl-macs.elc'、そして `cl-compat.elc'を
+`load-path'上のディレクトリに置くだけである。
+
+   このパッケージをコンパイルするための特殊な必要条件はない: ファイルは
+コンパイルされる前にロードされる必要はなく、ある特別の順序で
+コンパイルされる必要もない。
+
+   あなたの主要な`lisp/'ディレクトリにそのファイルを置いて、
+そこにあるオリジナルの`cl.el'を置き換えてもよいし、古い
+`cl.el'が実質的に隠されるように、`load-path'の`lisp/'の
+前に来るディレクトリにファイルを置いてもよい。
+
+   また`cl.texinfo'ファイルをフォーマットして、生じたInfoファイルを
+`info/'ディレクトリか別の適切な場所に置いてもよい。
+
+その代わりに専用のディレクトリにこのパッケージの構成要素をすべて置いて、
+そのディレクトリを`load-path'と(Emacs 19以降のみ)
+`Info-directory-list'に加えてもよい。古い"CL"パッケージとその
+文書が隠されるように、そのディレクトリをリストの先頭に加えること。
+
+
+File: cl-j,  Node: 命名規約,  Prev: インストール,  Up: 概観
+
+2.4 命名規約
+================
+
+注釈がある場合を除いて、このパッケージが定義するすべての関数はCommon
+Lispの相対物と同じ名前と呼び出し規約を持つ。
+
+   下記は、通常はEmacsとの衝突を避けるためCommon
+Lispから名前を変えた関数
+の完全なリストである。それぞれ、Emacs名を得るためにCommon Lisp名に
+`*'を付加している。
+
+     defun*        defsubst*     defmacro*     function*
+     member*       assoc*        rassoc*       get*
+     remove*       delete*       mapcar*       sort*
+     floor*        ceiling*      truncate*     round*
+     mod*          rem*          random*       last*
+
+   パッケージの内部関数と変数名は接頭辞`cl-'がついている。Common
+Lispからとられていない、接頭辞`cl-'が_ついていない_関数の
+完全なリストは以下の通り:
+
+     member        delete        remove        remq
+     rassoc        floatp-safe   lexical-let   lexical-let*
+     callf         callf2        letf          letf*
+     defsubst*     defalias      add-hook      eval-when-compile
+
+(これらの多くはEmacs 18ユーザへ提供されるEmacs 19機能か、`remq'の
+ように類似の機能との対称の理由で導入されるものである)
+
+   下記の単純関数とマクロは`cl.el'に定義されている; これらは
+`cl-extra'のような他の構成要素のロードを引き起こさない。
+
+     eql           floatp-safe   abs           endp
+     evenp         oddp          plusp         minusp
+     butlast       nbutlast                    caar .. cddddr
+     list*         ldiff         rest          first .. tenth
+     member [1]    copy-list     subst         mapcar* [2]
+     adjoin [3]    acons         pairlis       when
+     unless        pop [4]       push [4]      pushnew [3,4]
+     incf [4]      decf [4]      proclaim      declaim
+     add-hook
+
+[1] これはEmacs 19互換関数であり、`member*'ではない。
+
+[2] 1個の列引数か2個のリスト引数のみ。
+
+[3] `:test'が`eq'、`equal'、または指定されていない場合
+で、`:key'が使われていない場合のみ。
+
+[4] PLACEが単に変数名である場合のみ。
+
+
+File: cl-j,  Node: プログラム構造,  Next: 述語,  Prev: 概観,  Up: Top
+
+3 プログラム構造
+***********************
+
+この節は、プログラム全体に関係する"CL"パッケージの機能を記述する:
+関数の高度な引数リスト、そして`eval-when'構文要素。
+
+* Menu:
+
+* 引数リスト::           `&key'、`&aux'、`defun*'、`defmacro*'
+* 評価の時間::           `eval-when'構文要素
+* 関数別名::             `defalias'関数
+
+
+File: cl-j,  Node: 引数リスト,  Next: 評価の時間,  Prev: プログラム構造,  Up: プログラム構造
+
+3.1 引数リスト
+===================
+
+Emacs Lispの関数の引数リストの表記法はCommon Lisp表記法のサブセットで
+ある。よく知られた`&optional'と`&rest'マーカと同様に、Common
+Lispは付加引数に既定値を指定でき、追加のマーカ`&key'と`&aux'
+を提供する。
+
+   引数の構文解析はEmacsに組み込まれているため、このパッケージがCommon
+Lispの引数リストをシームレスに実装する方法はない。その代わりに、この
+パッケージはCommon Lisp引数リストが必要なら
+使わなければならないいくつかのLispフォームの代替を定義する。
+
+ -- Special Form: defun* name arglist body...
+     このフォームは、ARGLISTが完全なCommon Lisp引数リストであることを
+     許されていることを除いて正規の`defun'フォームと同一である。また、
+     関数本体はNAMEと呼ばれる暗黙のブロックに囲まれている; *note
+     ブロックと脱出::
+
+ -- Special Form: defsubst* name arglist body...
+     これは定義される関数が自動的に`inline'とグローバルに
+     宣言されることを除いて、ちょうど`defun*'と似ている、
+     すなわちそれへの呼び出しはバイトコンパイラでインラインコードへ
+     展開されるかもしれない。これはEmacs 19の`defsubst'フォームと
+     似ている; `defsubst*'はすべてのEmacsの版で動作し、幾分効率的な
+     インライン展開を生成する別の方法(コンパイラマクロ)を使う。特に、
+     `defsubst*'は可能ならばいつでもコンパイル時にキーワード引数、
+     既定値、その他を処理できるように準備する。
+
+ -- Special Form: defmacro* name arglist body...
+     これは、ARGLISTが完全な Common Lisp引数リストであることを
+     許されていることを除いて正規の`defmacro'フォームと同一である。
+     `&environment'キーワードはSteeleに記述されているように
+     サポートされている。`&whole'キーワードは分配リスト内のみで
+     サポートされている(下記参照); トップレベルの`&whole'は現在の Emacs
+     Lispインタプリタでは実装できない。マクロエクスパンダ本体は
+     NAMEと呼ばれる暗黙のブロックに囲まれている。
+
+ -- Special Form: function* symbol-or-lambda
+     これは、引数が`lambda'フォームならそのフォームは完全なCommon Lisp
+     引数リストを使ってよいことを除いて正規の`function'フォームと同一
+     である。
+
+   また、ARGLISTをその文法に含むこのパッケージで定義された
+(`defsetf'や`flet'のような)すべてのフォームは完全なCommon
+Lisp引数リストを許す。
+
+   あなたの関数から多くの"CL"機能にアクセスするために`defun*'を
+使う必要は_ない_ことに注意せよ。これらの機能は常に存在する;
+`defun*'と`defun'の相違は単により柔軟な引数リストとその暗黙
+のブロックである。
+
+   Common Lisp引数リストの完全なフォームは
+
+     (VAR...
+      &optional (VAR INITFORM SVAR)...
+      &rest VAR
+      &key ((KEYWORD VAR) INITFORM SVAR)...
+      &aux (VAR INITFORM)...)
+
+   5つの引数リスト節はそれぞれ付加的である。SVAR、INITFORM、
+そしてKEYWORD部分は付加的である; 省略するなら、
+`(VAR)'は単に`VAR'と書いてもよい。
+
+   第1節は0個かそれ以上の"必須"引数から成る。これらの引数は関数
+呼び出し時には常に指定しなければならない; 必須引数に関する限り、Emacs
+LispとCommon Lispに相違はない。
+
+   第2節は"付加"引数から成る。これらの引数は関数呼び出し時に
+指定してもよい; 指定されない場合、INITFORMは引数として使われる
+既定値を指定する。(INITFORMがない場合は既定値として`nil'を
+使うことを意味する) INITFORMは先立つ引数がすでに確立した
+束縛とともに評価される; `(a &optional (b (1+ a)))'は1個または
+2個の引数とマッチし、2番目の引数は1番目の引数に1を加えた値を
+既定値とする。SVARが指定されると、付加引数が指定された場合は
+`t'に、引数が省略された場合は`nil'に束縛される
+補助変数になる。SVARを使わない場合、引数なしで呼び出されたのか、
+引数として既定値を明示的に渡されたのかを知る方法はない。
+
+   第3節は1個の"rest"引数から成る。必須引数と付加引数が占めるより
+多くの引数が関数へ渡された場合、それらの余分な引数は1個のリストに
+集積され"rest"引数変数に束縛される。Common Lispの`&rest'は Emacs
+Lispのそれと同等である。Common Lispはマクロコンテキストで
+`&rest'の同義語として`&body'を受け入れる;
+このパッケージはいつでもそれを受け入れる。
+
+   第4節は"キーワード"引数から成る。これらは引数リスト中の
+位置ではなく名前で指定される付加引数である。たとえば、
+
+     (defun* foo (a &optional b &key c d (e 17)))
+
+は1個、2個、またはそれ以上の引数で呼び出してもよい関数を定義する。
+最初の2個の引数は通常の方法で`a'と`b'に束縛される。残りの
+引数は`:c'、`:d'、または`:e'に続いてその対応する
+引数変数に束縛される値であるようなフォームの対でなければならない。
+(その名前がコロンで始まるシンボルは"キーワード"と呼ばれ、
+`nil'や`t'同様に自己引用的である)
+
+   たとえば、呼び出し`(foo 1 2 :d 3 :c 4)'は5個の引数をそれぞれ1、
+2、4、3、そして17にセットする。同じキーワードが1度以上関数呼び出しに
+現れる場合、第1の出現が後の出現より優先する。付加引数`b'を
+指定することなくキーワード引数を指定することはできないことに注意せよ、
+なぜなら`(foo 1 :c 2)'は`b'をキーワード`:c'に束縛し、
+`2'は有効なキーワードではないためエラーを通知するからである。
+
+   KEYWORDシンボルが上のように引数リストに明示的に指定される場合、
+そのキーワードは1個のコロンを接頭辞とする単なる変数名の代わりに
+使われる。まったくコロンで始まらないKEYWORDシンボルを
+指定できるが、そのようなシンボルは自己引用的ではない; 関数呼び出し中で
+明示的にアポストロフィで引用しなければいけない。
+
+   通常、たとえば`(foo 1 2 :c 3 :goober 4)'のように、
+認められていないキーワードを関数に渡すことはエラーである。引数リストの
+キーワード節の後にマーカ`&allow-other-keys'を加えるか、呼び出し
+時に`nil'ではない値の`:allow-other-keys'引数を
+指定することで、認められていないキーワードを無視するようLispに
+求めることができる。関数が`&rest'と`&key'を同時に
+両方使うと、"rest"引数は呼び出し時に現れるキーワードリストに
+束縛される。たとえば:
+
+     (defun* find-thing (thing &rest rest &key need &allow-other-keys)
+       (or (apply 'member* thing thing-list :allow-other-keys t rest)
+           (if need (error "Thing not found"))))
+
+この関数はキーワード引数`:need'をとるが、関数`member*'へ
+渡される他のキーワード引数も受け入れる。`allow-other-keys'は
+`find-thing'と`member*'が互いのキーワード引数に不平を
+言わないようにするのに使われる。
+
+   (かなりの)性能最適化のために、このパッケージは"rest"引数中の
+キーワード検索に`memq'を呼び出すことでキーワード引数の走査を
+実装する。技術的には、`memq'は奇数個の値を偶数個のキーワードと
+同様に見るのでこれは正しくない。キーワードシンボルが同じ関数の有効な
+キーワード引数の名前と偶然同じ場合、キーワードシンボルを別のキーワード
+引数の_値_として偶然渡すと、キーワード構文解析部は
+混乱することになる。このあまり重要でないバグは、プログラム中で
+キーワードシンボルを一般用途のデータとして使うときにのみ影響がある
+場合がある; この習慣はEmacs Lispでは強く反対される。
+
+   引数リストの第5節は"補助変数"から成る。これらは実際にはまったく
+引数ではなく、関数実行時`nil'または指定されたINITFORMSに
+束縛される単なる変数である。スタイル上の好みの問題を除いて、下記の
+2個の関数間に相違はない:
+
+     (defun* foo (a b &aux (c (+ a b)) d)
+       BODY)
+
+     (defun* foo (a b)
+       (let ((c (+ a b)) d)
+         BODY))
+
+   引数リストは"分配"をサポートする。Common Lispでは、分配は
+`defmacro'でのみ許される;このパッケージは`defun*'や他の引数
+リストでも同様に許す。分配では、全引数変数(上のVAR)は変数の
+リストか、より一般的には再帰引数リストで置き換えることができる。
+対応する引数値は、その要素が再帰引数リストにマッチする
+リストでなければならない。たとえば:
+
+     (defmacro* dolist ((var listform &optional resultform)
+                        &rest body)
+       ...)
+
+   これは、`dolist'の第1引数は2個または3個の項目の
+リストでなければならないことを示す。このリスト同様に他の引数があれば、
+`body' に格納される。正規の引数リストで許されるすべての
+機能はこれらの再帰引数リストで許される。さらに、 `&whole
+VAR'節は再帰引数リストの先頭で許される。それは
+VARをマッチしたリスト全体に束縛する; したがって、 `(&whole all a
+b)'は2つのもののリストにマッチし、`a'は
+1番目のものに束縛され、`b'は2番目のものに束縛され、`all'
+はそのリスト自身に束縛される。(Common Lispはトップレベルの
+`defmacro'引数リストでも同様に`&whole'を許すが、Emacs Lisp
+はこの使用法をサポートしない)
+
+分配の最後の機能は、引数リストはドットでもよいということである、だから
+引数リスト`(a b . c)'は機能的には`(a b &rest c)'と同等である。
+
+   最適化品質`safety'に0が設定されると(*note 宣言::)、不正な引数の
+数や無効なキーワード引数のエラーチェックは無効である。既定では、引数
+リストは厳しくチェックされる。
+
+
+File: cl-j,  Node: 評価の時間,  Next: 関数別名,  Prev: 引数リスト,  Up: プログラム構造
+
+3.2 評価の時間
+===================
+
+通常、バイトコンパイラはコンパイルするファイルのフォームを実際には
+実行しない。たとえば、ファイルが`(setq foo t)'を含む場合、
+コンパイルすることは実際には`t'を`foo'に設定しない。
+`setq'がトップレベルフォーム(すなわち`defun'または他の
+フォームに囲まれていない)だったとしてもそれは真である。しかし、ある
+トップレベルフォームをコンパイル時に評価させたい場合がある。たとえば、
+ファイルの残りの部分が定義されたマクロを参照できるように、コンパイラは
+`defmacro'フォームをコンパイル時に実際に評価する。
+
+ -- Special Form: eval-when (situations...) forms...
+     このフォームは本体FORMSがいつ評価されるかを制御する。
+     SITUATIONSリストはシンボル`compile'、`load'、そして
+     `eval'(または長いANSIの同等物、`:compile-toplevel'、
+     `:load-toplevel'、そして`:execute')のいずれの集合を 含んでもよい。
+
+     `eval-when'フォームは、トップレベルフォームとして
+     コンパイルされているかどうかによって異なって扱われる。つまり、
+     `byte-compile-file'のようにファイルやコードのバッファを
+     コンパイルするコマンドによってコンパイルされているときに特別に扱われ、
+     文字通りファイルのトップレベルか`progn'の内部のトップレベルに
+     現れる。
+
+     コンパイルされたトップレベルの`eval-when'には、`compile'が
+     SITUATIONSリストにある場合には、FORMS本体はコンパイル時に
+     実行され、`load'がSITUATIONSリストにある場合には、
+     FORMSは(ロード時に実行されるように)ファイルに書かれる。
+
+     コンパイルされていないトップレベルフォームには、状況`eval'のみが
+     関係する。(これはインタプリタが実行するフォーム、
+     `byte-compile-file'ではなく`byte-compile'でコンパイルされた
+     フォーム、トップレベルではないフォームを含む。 ) `eval'が
+     指定された場合、`eval-when'は`progn'のように振る舞い、
+     そうでない場合は`nil'(FORMS本体を無視する)のように 振る舞う。
+
+     `eval-when'が入れ子の場合、規則はさらに微妙になる;
+     ぞっとするような詳細(そしてぞっとするような例)はSteele(第2版)を
+     調べること。
+
+     単純な例:
+
+          ;; top-level forms in foo.el:
+          (eval-when (compile)           (setq foo1 'bar))
+          (eval-when (load)              (setq foo2 'bar))
+          (eval-when (compile load)      (setq foo3 'bar))
+          (eval-when (eval)              (setq foo4 'bar))
+          (eval-when (eval compile)      (setq foo5 'bar))
+          (eval-when (eval load)         (setq foo6 'bar))
+          (eval-when (eval compile load) (setq foo7 'bar))
+
+     `foo.el'がコンパイルされると、これらの変数がコンパイル自身の間に設定される:
+
+          foo1  foo3  foo5  foo7      ; `compile'
+
+     `foo.elc'がロードされると、これらの変数が設定される:
+
+          foo2  foo3  foo6  foo7      ; `load'
+
+     ロードされた`foo.el'がコンパイルされていないと、これらの変数が設定される:
+
+          foo4  foo5  foo6  foo7      ; `eval'
+
+     仮にこれら7個の`eval-when'が`defun'内部にあれば、最初の3個は
+     `nil'と同等であり、最後の4個は対応する`setq'と同等である。
+
+     `(eval-when (load eval) ...)'はあらゆるコンテキストで `(progn
+     ...)'と同等であることに注意せよ。コンパイラは
+     `defmacro'(多少)や`require'のようないくつかの
+     トップレベルフォームを`(eval-when (compile load eval) ...)'で
+     包まれているかのように扱う。
+
+   Emacs 19は`eval-when'と関係がある2個の特殊形式を含む。そのうちの
+1個である`eval-when-compile'は、どの`eval-when'構文要素と
+完全に同等ではなく以下に記述される。このパッケージはEmacs 18
+ユーザのために`eval-when-compile'の1個の版を定義する。
+
+   他方のフォーム`(eval-and-compile ...)'は `(eval-when (compile load
+eval) ...)'と正確に同等なので、それ
+自身はこのパッケージで定義されていない。
+
+ -- Special Form: eval-when-compile forms...
+     FORMSはコンパイル時に評価される;実行時、このフォームは結果として
+     生じる値の引用された定数のように振る舞う。トップレベルで使われると、
+     `eval-when-compile'はちょうど`eval-when (compile eval)'
+     のようである。他のコンテキストでは、`eval-when-compile'は効率
+     その他の理由でコードがコンパイル時に1度だけ評価されることを許す。
+
+     このフォームは真のCommon Lispの`#.'文法に類似している。
+
+ -- Special Form: load-time-value form
+     FORMはロード時に評価される; 実行時、このフォームは結果として
+     生じる値の引用された定数のように振る舞う。
+
+     初期のCommon Lispはこれに類似した`#,'文法を持っていたが、ANSI
+     Common Lispは`load-time-value'で置き換えてよりよく定義された
+     意味論を与えた。
+
+     コンパイルされたファイルでは、`load-time-value'はFORMが
+     `.elc'ファイルがロードされたときに評価され引用された定数だったか
+     のように使われるように準備する。`byte-compile-file'ではなく
+     `byte-compile'でコンパイルされたコードでは、効果は
+     `eval-when-compile'と同一である。コンパイルされていないコードでは、
+     `eval-when-compile'と`load-time-value'は正確に`progn'の
+     ように振る舞う。
+
+          (defun report ()
+            (insert "This function was executed on: "
+                    (current-time-string)
+                    ", compiled on: "
+                    (eval-when-compile (current-time-string))
+                    ;; or '#.(current-time-string) in real Common Lisp
+                    ", and loaded on: "
+                    (load-time-value (current-time-string))))
+
+     バイトコンパイルされると、上のdefunの例は下記のコード
+     (またはもちろんそのコンパイルされた同等のもの)を`.elc'ファイルに
+     生じる:
+
+          (setq --temp-- (current-time-string))
+          (defun report ()
+            (insert "This function was executed on: "
+                    (current-time-string)
+                    ", compiled on: "
+                    '"Wed Jun 23 18:33:43 1993"
+                    ", and loaded on: "
+                    --temp--))
+
+
+File: cl-j,  Node: 関数別名,  Prev: 評価の時間,  Up: プログラム構造
+
+3.3 関数別名
+================
+
+この節は、このパッケージがEmacsのGNU Emacs 19以外の版で
+利用できるようにするGNU Emacs 19からの機能を記述する。
+
+ -- Function: defalias symbol function
+     この関数はFUNCTIONをSYMBOLの関数セルに設定する。それは、 GNU Emacs
+     19では後に`unload-feature'で元に戻せるように
+     `load-history'に設定を記録することを除いて`fset'と同等である。
+
+     Emacsの他の版では、`defalias'は`fset'の同義語である。
+
+
+File: cl-j,  Node: 述語,  Next: 制御構造,  Prev: プログラム構造,  Up: Top
+
+4 述語
+********
+
+この節はさまざまな事実が真か偽かをテストするための関数を記述する。
+
+* Menu:
+
+* データ型の述語::       `typep'、`deftype'、そして`coerce'
+* 等値の述語::           `eql'と`equalp'
+
+
+File: cl-j,  Node: データ型の述語,  Next: 等値の述語,  Prev: 述語,  Up: 述語
+
+4.1 データ型の述語
+=========================
+
+"CL"パッケージはCommon Lispの`typep'述語のある版を定義する。
+
+ -- Function: typep object type
+     OBJECTが型TYPEかチェックする。TYPEはCommon Lisp
+     によって使われる(引用された)型名である。たとえば、 `(typep foo
+     'integer)'は`(integerp foo)'と同等である。
+
+   上の関数への引数TYPEはシンボルまたはシンボルで始まるリストである。
+
+   *
+     型名がシンボルの場合、Emacsはその型をテストするための述語関数の名前を
+     形成するために`-p'をシンボル名に付加する。(適切な場合はその名前が
+     `-p'でなく`p'で終わる組み込み述語が使われる)
+
+   * 型シンボル`t'はすべての型の和を表わす。 `(typep OBJECT
+     t)'は常に真である。同様に、型シンボル
+     `nil'はまったくの空を表わし、 `(typep OBJECT nil)'は 常に偽である。
+
+   * 型シンボル`null'はシンボル`nil'を表わす。したがって、 `(typep
+     OBJECT 'null)'は`(null OBJECT)'と同等で ある。
+
+   * 型シンボル`real'は`number'の同義語であり、`fixnum'は
+     `integer'の同義語である。
+
+   * 型シンボル`character'と`string-char'は0から255までの範囲の
+     整数とマッチする。
+
+   * 型シンボル`float'は`floatp'ではなくこのパッケージで
+     定義された述語`floatp-safe'を使うので、浮動小数点サポートがない
+     版のEmacsでも正しく動作する。
+
+   * 型リスト`(integer LOW HIGH)'はLOW以上HIGH
+     以下の全整数を表現する。どちらの範囲も、その値を含まない境界を指定する
+     単精度整数のリストか、無境界を指定する`*'でもよい。 型`(integer *
+     *)'はしたがって`integer'と同等である。
+
+   * 同様に、`float'、`real'、または`number'で始まるリストは
+     特別の範囲に入る型の数を表現する。
+
+   * `and'、`or'、そして`not'で始まるリストは型の結合を形成
+     する。たとえば、`(or integer (float 0 *))'は整数または
+     非負浮動小数点数であるすべてのオブジェクトを表現する。
+
+   * `member'または`member*'で始まるリストは続く値のいずれかに
+     `eql'であるオブジェクトを表現する。たとえば、 `(member 1 2 3
+     4)'は`(integer 1 4)'と同等であり、 `(member
+     nil)'は`null'と同等である。
+
+   * フォーム`(satisfies PREDICATE)'のリストは引数としてその
+     オブジェクトとともに呼び出されたときPREDICATEが真を返すすべての
+     オブジェクトを表現する。
+
+   下記の関数とマクロ(技術的には述語ではない)は`typep'と関係がある。
+
+ -- Function: coerce object type
+     この関数はOBJECTを指定されたTYPEへ変換を試みる。
+     OBJECTがすでに`typep'で決定されるその型の場合、それは単純に
+     戻る。そうでなければ、ある変換型が作られる: TYPEがいずれかの
+     列型(`string'、`list'、その他)の場合、OBJECTは
+     可能ならその型に変換される。TYPEが`character'の場合、長さ
+     1の文字列や1文字の名前のシンボルは強制型変換できる。TYPEが
+     `float'の場合、浮動小数点をサポートする版のEmacsでは整数は
+     強制型変換できる。その他すべての環境では、`coerce'はエラーを
+     通知する。
+
+ -- Special Form: deftype name arglist forms...
+     このマクロはNAMEと呼ばれる新しい型を定義する。それは多くの点で
+     `defmacro'と類似している; NAMEに型名として出会うと、本体
+     FORMSは評価され、その型と同等の型指定子を戻す。ARGLISTは
+     `defmacro*'によって受け入れられる種類のCommon Lisp引数
+     リストである。型指定子`(NAME ARGS...)'はこれらの
+     引数とともにエクスパンダを呼び出すことで展開される; 型シンボル
+     `NAME'は無引数でエクスパンダを呼び出すことで展開される。
+     明示的既定値のない付加引数は"default"既定値として`nil'の
+     代わりに`*'を使うことを除いて、ARGLISTは`defmacro*'と
+     同様に処理される。いくつかの例:
+
+          (deftype null () '(satisfies null))    ; predefined
+          (deftype list () '(or null cons))      ; predefined
+          (deftype unsigned-byte (&optional bits)
+            (list 'integer 0 (if (eq bits '*) bits (1- (lsh 1 bits)))))
+          (unsigned-byte 8)  ==  (integer 0 255)
+          (unsigned-byte)  ==  (integer 0 *)
+          unsigned-byte  ==  (integer 0 *)
+
+     最後の例は望むならどのようにCommon Lisp `unsigned-byte'型指定子を
+     実装できるかを示す; このパッケージは既定では`unsigned-byte'を実装
+     しない。
+
+   `typecase'や`check-type'マクロも型名を使う。 *Note
+条件付き実行::.*Note アサーション::.`map'、
+`concatenate'、そして`merge'関数は戻す列型を指定するために
+型名引数をとる。*Note 列::.
+
+
+File: cl-j,  Node: 等値の述語,  Prev: データ型の述語,  Up: 述語
+
+4.2 等値の述語
+===================
+
+このパッケージは2個のCommon Lisp述語、`eql'と`equalp'を定義 する。
+
+ -- Function: eql a b
+     この関数はほとんど`eq'と同じだが、AとBが同じ型の
+     数なら数の等値性を比較する(`eq'ではなく`equal'のように)点が
+     異なる。これはEmacs 19のような浮動小数点数サポートとともに
+     コンパイルされた版のEmacsでのみ相違が生じる。Emacsの浮動小数点数は
+     単なるコンスセルのように割り当てられたオブジェクトであり、それは
+     `(eq 3.0 3.0)'は真である必要がないことを意味する--2個の
+     `3.0'が別々に割り当てられたら、数は同じだがポインタは異なる。
+     しかし`(eql 3.0 3.0)'は常に真である。
+
+     引数の型はマッチしなければならないので、`(eql 3 3.0)'は
+     なお偽である。
+
+     Emacs整数は割り当てられているのではなく"ダイレクト"であり、それは
+     基本的に`(eq 3 3)'は常に真になることを意味することに注意せよ。
+     したがって`eq'と`eql'は浮動小数点に関係のある場合のみ
+     異なって振る舞い、浮動小数点数をサポートしない版のEmacsでは
+     区別がつかない。
+
+     正と負の0の扱いにCommon Lispとわずかな不一致がある。いくつかの
+     マシンは、特にIEEE標準算術のものは、`+0'と`-0'を別の値として
+     表現する。標準は`(= 0.0 -0.0)'は常に真だと指定しており、
+     これはまったくEmacs LispとCommon Lispが行なうことなので、通常これは
+     問題にならない。しかしCommon Lisp標準は`(eql 0.0 -0.0)'や `(equal
+     0.0 -0.0)'はIEEE的マシンでは偽になるべきだと述べている; Emacs
+     Lispはこれを行なわず、事実Emacs Lispで2種類の0を区別する既知の
+     方法は`format'して負号をチェックすることだけである。
+
+ -- Function: equalp a b
+     この関数は`equal'のより柔軟な版である。特に、それは文字列を
+     大文字小文字を区別せずに比較し、数を型を考慮せずに比較する(そのため
+     `(equalp 3 3.0)'は真である)。ベクタとコンスは再帰的に比較される。
+     他の全オブジェクトは`equal'と同様に比較される。
+
+     この関数はいくつかの点でCommon Lispの`equalp'と異なる。第1に、
+     Common Lispの`equalp'は_文字_も大文字小文字を区別せずに
+     比較するが、Emacsは整数と文字を区別しないのでこのパッケージには
+     非実用的である。Emacs Lispでは文字列はあまりベクタ的ではないという
+     考え方を保ち、このパッケージの`equalp'は文字列と整数のベクタも
+     比較しない。最後に、Common Lispの`equalp'はハッシュ表を順序を
+     考慮せずに比較するが、このパッケージはハッシュ表を単純にその下にある
+     構造に関して(このことはLucid Emacs
+     19のハッシュ表はベクタであり、他の
+     ハッシュ表はリストであることを意味する)比較する。
+
+   Common Lispの関数`member'と`assoc'は要素の比較に`eql'を
+使っているが、Emacs LispはMacLispの伝統に従いこれらの2個の関数に
+`equal'を使っていることにも注意せよ。Emacsでは比較に`eql'を
+使う関数を得るには`member*'や`assoc*'を使うこと。
+
+
+File: cl-j,  Node: 制御構造,  Next: マクロ,  Prev: 述語,  Up: Top
+
+5 制御構造
+**************
+
+下節に記述された機能は、強力な`setf'機能やかなりの数のループと
+条件付き実行構文要素を含むさまざまな高度な制御構造を実装する。
+
+* Menu:
+
+* 代入::                   `psetq'フォーム
+* 汎変数::                 `setf'、`incf'、`push'、その他
+* 変数束縛::               `progv'、`lexical-let'、`flet'、`macrolet'
+* 条件付き実行::           `when'、`unless'、`case'、`typecase'
+* ブロックと脱出::         `block'、`return'、`return-from'
+* 繰り返し::               `do'、`dotimes'、`dolist'、`do-symbols'
+* ループ機能::             Common Lisp `loop'マクロ
+* 多値::                   `values'、`multiple-value-bind'、その他
+
+
+File: cl-j,  Node: 代入,  Next: 汎変数,  Prev: 制御構造,  Up: 制御構造
+
+5.1 代入
+==========
+
+`psetq'フォームは`setq'に似ているが、多重代入が順次ではなく
+並列になされる点が異なる。
+
+ -- Special Form: psetq [symbol form]...
+     この特殊形式(実際はマクロ)は同時にいくつかの変数に代入するために
+     使われる。1個だけのSYMBOLとFORMを与えられると、`setq'
+     と同じ効果を持つ。いくつかのSYMBOLとFORMの対を
+     与えられると、すべてのFORMをあらかじめ評価し、その後対応する
+     変数へ格納する。
+
+          (setq x 2 y 3)
+          (setq x (+ x y)  y (* x y))
+          x
+               => 5
+          y                     ; `y'は`x'が設定された後に計算された。
+               => 15
+          (setq x 2 y 3)
+          (psetq x (+ x y)  y (* x y))
+          x
+               => 5
+          y                     ; `y'は`x'が設定される前に計算された。
+               => 6
+
+     最も単純な`psetq'の使用法は`(psetq x y y x)'であり、2個の
+     変数の値を交換する。(`rotatef'フォームは2個の変数の交換により
+     便利な方法を提供する; *note 修正マクロ::)
+
+     `psetq'は常に`nil'を返す。
+
+
+File: cl-j,  Node: 汎変数,  Next: 変数束縛,  Prev: 代入,  Up: 制御構造
+
+5.2 汎変数
+=============
+
+"汎変数"または"placeフォーム"は値を格納できるLispメモリ中の多くの
+場所の一つである。最も単純なplaceフォームは通常のLisp変数である。
+しかしリストのcarやcdr、配列の要素、シンボルの属性、そして多くの他の
+場所もLispの値が格納される場所である。
+
+   `setf'フォームは`setq'に似ているが、単なるシンボルではなく
+左辺に任意のplaceフォームを受け入れる点が異なる。たとえば、 `(setf (car
+a) b)'は`a'のcarを`b'に設定する。これは `(setcar a
+b)'と同じ作用だが、すべての場所型の設定と
+アクセスのために2個の別の関数を憶える必要がない。
+
+   汎変数はC言語の"左辺値"と類似しており、同じ表記法を使って `x =
+a[i]'は配列から要素を取得し`a[i] = x'は要素を格納する。
+Cでは`a[i]'のようなある種のフォームだけが左辺値になり得るが、Lisp
+には汎変数になり得るフォームの集合がある。
+
+* Menu:
+
+* 基本的setf::         `setf'とplaceフォーム
+* 修正マクロ::         `incf'、`push'、`rotatef'、`letf'、`callf'、その他
+* setf独自化::         `define-modify-macro'、`defsetf'、`define-setf-method'
+
+
+File: cl-j,  Node: 基本的setf,  Next: 修正マクロ,  Prev: 汎変数,  Up: 汎変数
+
+5.2.1 基本的setf
+-------------------
+
+`setf'マクロは汎変数に作用する最も基本的な方法である。
+
+ -- Special Form: setf [place form]...
+     このマクロはFORMを評価し、それをPLACEに格納する。
+     PLACEは有効な汎変数フォームでなければならない。いくつかの
+     PLACEとFORMの対がある場合、代入はちょうど`setq'
+     のように順に行なわれる。`setf'は最後のFORMの値を戻す。
+
+     下記のLispフォームは汎変数として働くので、`setf'のPLACE引数
+     に正しく現れてもよい:
+
+        * 変数を命名するシンボル。言い換えれば、`(setf x y)'は `(setq x
+          y)'と正確に同等であり、`setq'自身は`setf'が
+          存在する現在では厳密には冗長である。しかし、多くのプログラマは純粋に
+          スタイルまたは歴史的な理由で、単純変数の設定のためには`setq'を
+          好み続けている。マクロ`(setf x y)'は実際には`(setq x y)'へ
+          展開するので、コンパイルされたコードで使う場合に性能上の不利益はない。
+
+        * 下記のLisp関数のいずれかの呼び出し:
+
+               car                 cdr                 caar .. cddddr
+               nth                 rest                first .. tenth
+               aref                elt                 nthcdr
+               symbol-function     symbol-value        symbol-plist
+               get                 get*                getf
+               gethash             subseq
+
+          `nthcdr'と`getf'のためには、関数のリスト引数はそれ自身有効な
+          PLACEフォームでなければならないことに注意せよ。たとえば、
+          `(setf (nthcdr 0 foo) 7)'は`foo'自身に7を設定する。
+          `nthcdr'を場所とする`push'や`pop'はリストのどの位置にも
+          挿入や削除するために使うことができることに注意せよ。PLACE
+          フォームとして`nthcdr'を使うことは標準Common
+          Lispへの拡張である。
+
+        * 下記のEmacs特有関数も`setf'可能である(これらのいくつかはEmacs
+          19 またはLucid Emacsだけで定義されている)。
+
+               buffer-file-name                  marker-position
+               buffer-modified-p                 match-data
+               buffer-name                       mouse-position
+               buffer-string                     overlay-end
+               buffer-substring                  overlay-get
+               current-buffer                    overlay-start
+               current-case-table                point
+               current-column                    point-marker
+               current-global-map                point-max
+               current-input-mode                point-min
+               current-local-map                 process-buffer
+               current-window-configuration      process-filter
+               default-file-modes                process-sentinel
+               default-value                     read-mouse-position
+               documentation-property            screen-height
+               extent-data                       screen-menubar
+               extent-end-position               screen-width
+               extent-start-position             selected-window
+               face-background                   selected-screen
+               face-background-pixmap            selected-frame
+               face-font                         standard-case-table
+               face-foreground                   syntax-table
+               face-underline-p                  window-buffer
+               file-modes                        window-dedicated-p
+               frame-height                      window-display-table
+               frame-parameters                  window-height
+               frame-visible-p                   window-hscroll
+               frame-width                       window-point
+               get-register                      window-start
+               getenv                            window-width
+               global-key-binding                x-get-cut-buffer
+               keymap-parent                     x-get-cutbuffer
+               local-key-binding                 x-get-secondary-selection
+               mark                              x-get-selection
+               mark-marker
+
+          これらの多くは、`current-local-map'用の`use-local-map'や
+          `point'用の`goto-char'のように、ダイレクトに対応する"設定"
+          関数を持つ。`point-min'のようないくつかは、`setf'
+          されるとより長いコード列(この場合は `(narrow-to-region x
+          (point-max))')に展開する。
+
+        * フォーム`(substring SUBPLACE N [M])'の呼び出し
+          は、SUBPLACE自身が現在の値が文字列である正しい汎変数であり、格納
+          される値も文字列である。新たな文字列は宛先文字列の指定された
+          部分につながれる。たとえば:
+
+               (setq a (list "hello" "world"))
+                    => ("hello" "world")
+               (cadr a)
+                    => "world"
+               (substring (cadr a) 2 4)
+                    => "rl"
+               (setf (substring (cadr a) 2 4) "o")
+                    => "o"
+               (cadr a)
+                    => "wood"
+               a
+                    => ("hello" "wood")
+
+          上のリストの汎変数`buffer-substring'も、現バッファの一部を
+          置き換えることでこのように動作する。
+
+        * FUNCがその格納関数がSteeleの本に記述された意味で"適切な"場合、
+          フォーム`(apply 'FUNC ...)'または `(apply (function FUNC)
+          ...)'の呼び出し; 標準Emacsの place
+          関数はどれもこの意味で適切ではないので、この機能は
+          `define-setf-method'か`defsetf'の長いフォームで自身が
+          定義するplaceで使われる場合のみ興味あるものである。
+
+        * マクロ呼び出しであり、そのマクロが展開されて`setf'が結果として
+          生じるフォームに適用される場合。
+
+        * `defsetf'または`define-setf-method'がそのために
+          作られたすべてのフォーム。
+
+     `setf'へのPLACE引数にこれら以外のあらゆるフォームを使うと
+     エラーを通知する。
+
+     `setf'マクロは適正な左から右への順序ですべての部分フォームを
+     評価するように注意する; たとえば、
+
+          (setf (aref vec (incf i)) i)
+
+     は`(incf i)'を正確に一度、続く`i'へのアクセスの前に
+     評価するように見える; `setf'エクスパンダは`aref'
+     のためにどんなsetfメソッドが定義されても実際にこのように動作することを
+     確実にするために、必要な一時的変数を挿入する(この場合`aset'が
+     使われるだろうが、`aset'は便利な順序でその
+     引数をとるのでそのような手段は必要ないだろう)。
+
+     しかし、PLACEフォームが通常ではない順序でその引数を明示的に
+     評価するマクロの場合、この通常ではない順序は保存される。Steeleからの
+     例を改作して、以下があるとすれば
+
+          (defmacro wrong-order (x y) (list 'aref y x))
+
+     フォーム`(setf (wrong-order A B) 17)'は、ちょうど
+     `wrong-order'への実際の呼び出しのように、Bを最初に
+     評価しそれからAを評価する。
+
+
+File: cl-j,  Node: 修正マクロ,  Next: setf独自化,  Prev: 基本的setf,  Up: 汎変数
+
+5.2.2 修正マクロ
+---------------------
+
+このパッケージは`setf'の他にも、汎変数に作用する多くのマクロを
+定義する。PLACEが単に変数名である場合でも、多くは興味深く 有用である。
+
+ -- Special Form: psetf [place form]...
+     `psetq'が`setq'に対応するように、このマクロは`setf'に 対応する:
+     いくつかのPLACEとFORMを含むとき、代入は
+     順次にではなく並列に起こる。つまり、すべての部分フォームは左から右へ
+     評価され、それからすべての代入が(未定義の順序で)行なわれる。
+
+ -- Special Form: incf place &optional x
+     このマクロはPLACEに格納されている数を1だけ、または指定されている
+     場合はXだけ増やす。増やされた値が戻される。たとえば、 `(incf
+     i)'は`(setq i (1+ i))'と同等であり、 `(incf (car x) 2)'は`(setcar
+     x (+ (car x) 2))'と同等である。
+
+     もう一度、評価の"明白な"順序を保存するために注意が払われる。たとえば、
+
+          (incf (aref vec (incf i)))
+
+     は`i'を一度増やし、それから`i'でアドレスされる`vec'の
+     要素を増やすように現れる;
+     これは実に正確にそれが行なうことであり、上の
+     フォームは"明らかな"展開と同等では_ない_ことを意味し、
+
+          (setf (aref vec (incf i)) (1+ (aref vec (incf i))))   ; 間違い!
+
+     ではなく、むしろ何かより以下に似ているようなものである。
+
+          (let ((temp (incf i)))
+            (setf (aref vec temp) (1+ (aref vec temp))))
+
+     もう一度、これらすべては`incf'や他の汎変数マクロによって自動的に
+     注意が払われる。
+
+     `incf'のよりEmacs特有の例として、式`(incf (point) N)'
+     は`(forward-char N)'と本質的に同等である。
+
+ -- Special Form: decf place &optional x
+     このマクロはPLACEに格納されている数を1だけ、または指定されている
+     場合はXだけ減らす。
+
+ -- Special Form: pop place
+     このマクロはPLACEに格納されているリストの最初の要素を取り除いて
+     戻す。それは `(prog1 (car PLACE) (setf PLACE (cdr PLACE)))'
+     に類似しているが、すべての部分フォームを一度だけ評価するように注意する
+     点が異なる。
+
+ -- Special Form: push x place
+     このマクロはPLACEに格納されるリストの先頭にXを挿入する。
+     それは`(setf PLACE (cons(コンス) X PLACE))'に
+     類似しているが、部分フォームの評価が異なる。
+
+ -- Special Form: pushnew x place &key :test :test-not :key
+     このマクロはPLACEに格納されているリストの先頭にXを
+     挿入するが、Xがリストの存在するどの要素にも`eql'でない
+     場合に限られる。
+
+     付加キーワード引数は`adjoin'と同様に解釈される。 *Note
+     集合としてのリスト::.
+
+ -- Special Form: shiftf place... newvalue
+     このマクロは左へ1つPLACEをシフトし、NEWVALUEの値(それは
+     単なる汎変数ではなく、どんなLisp式でもよい)をシフトして入れ、最初の
+     PLACEからシフトして出された値を戻す。したがって、 `(shiftf A B C
+     D)'は以下と同等だが
+
+          (prog1
+              A
+            (psetf A B
+                   B C
+                   C D))
+
+     A、B、そしてCの部分フォームは明白な順序でそれぞれ
+     一度だけ実際には評価される点が異なる。
+
+ -- Special Form: rotatef place...
+     このマクロは循環的にPLACEを左へ一つ回転する。したがって、
+     `(rotatef A B C D)'は以下と同等だが
+
+          (psetf A B
+                 B C
+                 C D
+                 D A)
+
+     部分フォームの評価が異なる。`rotatef'は常に`nil'を戻す。 `(rotatef
+     A B)'はAとBを便利に 交換することに注意せよ。
+
+   下記のマクロはこのパッケージのために発明された; これらはCommon Lispに
+類似するものはない。
+
+ -- Special Form: letf (bindings...) forms...
+     このマクロは`let'に類似しているが、単なるシンボルではなく
+     汎変数用である。それぞれのBINDINGはフォーム `(PLACE
+     VALUE)'であるべきである; PLACEの
+     オリジナルの内容はセーブされ、VALUEがそれらに格納され、それから
+     本体FORMが実行される。その後、PLACESはオリジナルの
+     セーブされた内容へ設定し戻される。この大掃除は、FORMが
+     `throw'またはエラーのために正規でない脱出をした場合ですら起こる。
+
+     たとえば、
+
+          (letf (((point) (point-min))
+                 (a 17))
+            ...)
+
+     はバッファの先頭へ現バッファの"ポイント"を動かし、17へ`a'を
+     束縛する(通常の`let'と同様だが、`a'が単なる通常の
+     変数だからである)。本体が脱出した後、`a'はそのオリジナルの値に
+     設定し戻され、ポイントはそのオリジナルの位置へ戻る。
+
+     `(point)'の`letf'は`save-excursion'とはあまり似ていない
+     ことに注意せよ。なぜなら後者はバッファ内の挿入と削除を追跡するマーカを
+     効果的にセーブするからである。実際は、`(point-marker)'の
+     `letf'はこの振る舞いにずっと近い(`point'と
+     `point-marker'は`setf'場所としては同等である; どちらも格納値
+     として整数かマーカを受け入れる)。
+
+     汎変数はリストのように見えるため、BINDINGとして`(foo nil)'
+     のために`foo'を使用する`let'の簡略表記法は`letf'
+     ではあいまいになるので許されていない。
+
+     しかし、BINDING指定子は1要素のリスト`(PLACE)'でもよく、
+     それは`(PLACE PLACE)'に類似している。言い換えれば、
+     PLACEは本体へ入ることで乱されず、`letf'の効果はその後
+     PLACEのオリジナルの値を戻すことだけである (`(PLACE
+     PLACE)'の例により示唆された冗長なアクセスと
+     格納は実際には起こらない)。
+
+     多くの場合、PLACEは`letf'フォームに入るときによく定義された
+     値を持たなければならない。例外は単純変数と`symbol-value'や
+     `symbol-function'への呼び出しだけである。入るときにシンボルが束縛
+     されていない場合、脱出時に`makunbound'または`fmakunbound'で
+     単に未束縛にされる。
+
+ -- Special Form: letf* (bindings...) forms...
+     `let*'が`let'に対応するように、このマクロは`letf'に対応 する:
+     それは並列の順序ではなく順次に束縛を行なう。
+
+ -- Special Form: callf FUNCTION PLACE ARGS...
+     これは"汎用"修正マクロである。FUNCTIONを呼び出す。
+     FUNCTIONは引用符のない関数名、マクロ名、または
+     ラムダでなければならない。引数としてPLACEとARGSを渡し、
+     PLACEへ結果を代入し戻す。たとえば、 `(incf PLACE N)'は`(callf +
+     PLACE N)' と同じである。さらにいくつかの例:
+
+          (callf abs my-number)
+          (callf concat (buffer-name) "<" (int-to-string n) ">")
+          (callf union happy-people (list joe bob) :test 'same-person)
+
+     *Note setf独自化::, `define-modify-macro'、修正マクロのための幾分
+     簡潔な表記法を作るための方法。`callf'は標準Common Lispへの拡張で
+     あることに再度注意せよ。
+
+ -- Special Form: callf2 FUNCTION ARG1 PLACE ARGS...
+     このマクロは`callf'に似ているが、PLACEが関数の第1ではなく
+     _第2_引数である点が異なる。たとえば、 `(push X PLACE)'は `(callf2
+     cons X PLACE)'と同等である。
+
+   `callf'や`callf2'マクロは、`incf'、`pushnew'、
+そして`define-modify-macro'のような他のマクロのための
+ビルディングブロックとして役に立つ。`letf'や`letf*'マクロは
+シンボルマクロの処理に使われる; *note マクロ束縛::.
+
+
+File: cl-j,  Node: setf独自化,  Prev: 修正マクロ,  Up: 汎変数
+
+5.2.3 setf独自化
+-------------------
+
+Common Lispは、さまざまな方法で汎変数を拡張することをユーザに許す3個の
+マクロ、`define-modify-macro'、`defsetf'、そして
+`define-setf-method'を定義する。
+
+ -- Special Form: define-modify-macro name arglist function [doc-string]
+     このマクロは`incf'や`decf'に類似する"read-modify-write"
+     マクロを定義する。マクロNAMEはARGLISTによって記述される
+     追加の引数が続くPLACE引数をとるために定義される。呼び出し
+
+          (NAME PLACE ARGS...)
+
+     は下記に展開されるが
+
+          (callf FUNC PLACE ARGS...)
+
+     これは順に大まかに以下と同等である。
+
+          (setf PLACE (FUNC PLACE ARGS...))
+
+     たとえば:
+
+          (define-modify-macro incf (&optional (n 1)) +)
+          (define-modify-macro concatf (&rest args) concat)
+
+     `&key'はARGLISTの中には許されないが、`&rest'は関数へ
+     キーワードを渡すためには十分なことに注意せよ。
+
+     Common Lispで定義される修正マクロのほとんどは
+     `define-modify-macro'のパターンに正確には従っていない。たとえば、
+     `push'はよくない順序で引数をとり、`pop'は完全に変則である。
+     `get-setf-method'を使って"手で"これらのマクロを定義できるし、
+     内部の`setf'ビルディングブロックをどのように使うかを見るために
+     ソースファイル`cl-macs.el'を調べることもできる。
+
+ -- Special Form: defsetf access-fn update-fn
+     これは2個の`defsetf'フォームのより単純な方である。ACCESS-FN
+     が場所をアクセスする関数の名前である場合、これは対応する格納関数として
+     UPDATE-FNを宣言する。その後、
+
+          (setf (ACCESS-FN ARG1 ARG2 ARG3) VALUE)
+
+     は以下に展開される。
+
+          (UPDATE-FN ARG1 ARG2 ARG3 VALUE)
+
+     UPDATE-FNは真の関数か、関数のような方法でその引数を評価する
+     マクロであることが必須である。また、UPDATE-FNはその結果として
+     VALUEを戻すことを期待される。さもなければ、上の展開は`setf'
+     が振る舞うことになっていることのための規則に従わないだろう。
+
+     特殊な(非Common Lisp)拡張として、`defsetf'への`t'の第3引数は
+     `update-fn'の戻り値は適切でないと言っているので、上の`setf'
+     はより以下に似たようなものへ展開されるべきである。
+
+          (let ((temp VALUE))
+            (UPDATE-FN ARG1 ARG2 ARG3 temp)
+            temp)
+
+     setfメソッドの標準一式から引かれた、`defsetf'の使用のいくつかの
+     例は:
+
+          (defsetf car setcar)
+          (defsetf symbol-value set)
+          (defsetf buffer-name rename-buffer t)
+
+ -- Special Form: defsetf access-fn arglist (store-var) forms...
+     これは2番目の、より複雑な`defsetf'のフォームである。それは追加の
+     STORE-VAR引数を除いてむしろ`defmacro'と似ている。
+     FORMSは、ARGLISTによって記述された引数をともにする
+     ACCESS-FNへの呼び出しによって形成された汎変数にSTORE-VAR
+     の値を格納するLispフォームを戻すべきである。FORMSは`setf'
+     メソッドを文書化する文字列で始まってもよい(関数の先頭に現れる
+     文書文字列と類似している)。
+
+     たとえば、`defsetf'の単純なフォームは以下の簡略表記法である。
+
+          (defsetf ACCESS-FN (&rest args) (store)
+            (append '(UPDATE-FN) args (list store)))
+
+     戻されるLispフォームは制限されていない仕方でARGLISTや
+     STORE-VARからの引数へアクセスできる; このsetf-methodを起動する
+     `setf'や`incf'のようなマクロは、評価の明白な順序が
+     保存されることを確実にするために必要な一時的変数を挿入する。
+
+     標準パッケージから引かれた別の例:
+
+          (defsetf nth (n x) (store)
+            (list 'setcar (list 'nthcdr n x) store))
+
+ -- Special Form: define-setf-method access-fn arglist forms...
+     これは新しいplaceフォームを作るための最も一般的な方法である。
+     ARGLISTに記述された引数と一緒にACCESS-FNへの`setf'が
+     展開されると、FORMSは評価されて5項目のリストを
+     戻さなければならない:
+
+       1. "一時変数"のリスト。
+
+       2. 上の一時変数に対応する"値フォーム"のリスト。一時変数は
+          汎変数上のどんな作用の第1ステップとしてもこれらの値フォームへ
+          束縛される。
+
+       3. 正確に1個の"格納変数"のリスト(一般的に`gensym'への
+          呼び出しから得られる)。
+
+       4.
+          格納変数の内容を汎変数に格納するLispフォーム。一時変数は上述したように
+          束縛されていると仮定する。
+
+       5.
+          汎変数の内容にアクセスするLispフォーム。一時変数は束縛されていると
+          仮定する。
+          これは同じ名前のCommon
+     Lispマクロとほとんど同じだが、メソッドは5個の
+     値自身ではなく5個の値のリストを戻す点は異なる。それはEmacs Lispは
+     多重戻り値のCommon Lispの記法をサポートしていないからである。
+
+     もう一度、FORMSは文書文字列で始まってもよい。
+
+     setfメソッドは一時変数に関して最大限に保守的であるべきである。
+     `defsetf'によって生成されるsetfメソッドの中で、第2戻り値は単に
+     placeフォーム中の引数リストであり、第1戻り値は`gensym'によって
+     生成される対応する一時変数の数のリストである。`setf'や`incf'
+     のようにこのsetfメソッドを使うマクロは不要とわかった多くの一時変数を
+     最適化するので、setfメソッド自身を最適化する理由はほとんどない。
+
+ -- Function: get-setf-method place(場所) &optional env
+     この関数は、`defsetf'や`define-setf-method'によって以前に
+     記録された定義を呼び出すことで、PLACEのためのsetfメソッドを
+     戻す。結果は上述した5個の値のリストである。あなた自身の`incf'に
+     似た修正マクロを作るためにこの関数を使える(実際は内部関数
+     `cl-setf-do-modify'や`cl-setf-do-store'を使う方がよい。
+     少しだけ使いやすく、かなりの最適化も行なう; 単純な例として`incf'
+     関数のソースコードを調べよ)。
+
+     引数ENVは、`get-setf-method'がPLACEのマクロを展開する
+     必要がある場合に`macroexpand'へ渡される"環境"を指定する。それは
+     マクロへの`&environment'か、`get-setf-method'を呼んだsetf
+     メソッドから来るべきである。
+
+     `apply'や`substring'のためのsetfメソッドのソースコードも
+     参照のこと。それぞれはより単純な場合に`get-setf-method'を
+     呼び出すことによって動作し、それからさまざまな方法で結果を
+     マッサージする。
+
+   現代のCommon Lispは関数の`setf'の振る舞いを指定するための第2の、
+独立した方法を定義する。すなわち、その名前がシンボルではなくリスト
+`(setf NAME)'である"`setf'関数"である。たとえば、 `(defun (setf foo)
+...)'は、`setf'が`foo'に適用する
+際に使われる関数を定義する。このパッケージは、現在は`setf'関数を
+サポートしない。まだ`defsetf'されていないか宣言されていない
+フォームで`setf'を使うことはコンパイル時エラーである; より新しい Common
+Lispでは、関数`(setf FUNC)'は後で
+定義されるかもしれないのでこれはエラーではないだろう。
+
+
+File: cl-j,  Node: 変数束縛,  Next: 条件付き実行,  Prev: 汎変数,  Up: 制御構造
+
+5.3 変数束縛
+================
+
+これらのLispフォームは変数や関数の名前との束縛を作る。Lispの組み込み
+`let'フォームと類似している。
+
+   同じく変数束縛に関係する`letf'や`letf*'フォームは *Note 修正マクロ::.
+
+* Menu:
+
+* 動的束縛::             `progv'フォーム
+* レキシカルな束縛::     `lexical-let'とレキシカルクロージャ
+* 関数束縛::             `flet'と`labels'
+* マクロ束縛::           `macrolet'と`symbol-macrolet'
+
+
+File: cl-j,  Node: 動的束縛,  Next: レキシカルな束縛,  Prev: 変数束縛,  Up: 変数束縛
+
+5.3.1 動的束縛
+------------------
+
+標準`let'フォームは、コンパイル時にその名前が既知である変数を
+束縛する。`progv'フォームはその名前が実行時に計算される変数を
+束縛する容易な方法を提供する。
+
+ -- Special Form: progv symbols values forms...
+     このフォームは実行時に計算された変数の集合に、`let'スタイルの
+     変数束縛を確立する。式のSYMBOLSとVALUESは評価され、
+     それぞれシンボルと値のリストを戻さなければならない。シンボルは本体
+     FORMが続く限り、対応する値に束縛される。VALUESが
+     SYMBOLSより短い場合、終わりのいくつかのシンボルは本体内では
+     未束縛にされる(`makunbound'によってのように)。SYMBOLSが
+     VALUESより短い場合、余分の値は無視される。
+
+
+File: cl-j,  Node: レキシカルな束縛,  Next: 関数束縛,  Prev: 動的束縛,  Up: 変数束縛
+
+5.3.2 レキシカルな束縛
+------------------------------
+
+"CL"パッケージは、Common Lispの`let'フォームにより厳密に従う
+下記のマクロを定義する:
+
+ -- Special Form: lexical-let (bindings...) forms...
+     このフォームは、確立する束縛が純粋にレキシカルである点以外は`let'
+     とほぼ似ている。レキシカルな束縛はCのような言語の局所変数と
+     類似している: 物理的に`lexical-let'(マクロ展開後)の本体内の
+     コードだけが束縛変数を参照してよい。
+
+          (setq a 5)
+          (defun foo (b) (+ a b))
+          (let ((a 2)) (foo a))
+               => 4
+          (lexical-let ((a 2)) (foo a))
+               => 7
+
+     この例では、`a'の正規の`let'束縛は実際グローバル変数`a'
+     を一時的に変更するので、`foo'は2への`a'の束縛を
+     見ることができる。しかし`lexical-let'は実際本体内で使うために別の
+     局所変数`a'を作り、同名のグローバル変数にどんな影響もない。
+
+     レキシカルな束縛の最も重要な使用法は"クロージャ"を作ることである。
+     クロージャは外のレキシカル変数を参照する関数オブジェクトである。
+     たとえば:
+
+          (defun make-adder (n)
+            (lexical-let ((n n))
+              (function (lambda (m) (+ n m)))))
+          (setq add17 (make-adder 17))
+          (funcall add17 4)
+               => 21
+
+     呼び出し`(make-adder 17)'は引数に17を加える関数オブジェクトを
+     戻す。`let'が`lexical-let'の代わりに使われる場合、
+     関数オブジェクトは`make-adder'自身の呼び出しの間だけ17へ
+     束縛されているグローバルの`n'を参照するだろう。
+
+          (defun make-counter ()
+            (lexical-let ((n 0))
+              (function* (lambda (&optional (m 1)) (incf n m)))))
+          (setq count-1 (make-counter))
+          (funcall count-1 3)
+               => 3
+          (funcall count-1 14)
+               => 17
+          (setq count-2 (make-counter))
+          (funcall count-2 5)
+               => 5
+          (funcall count-1 2)
+               => 19
+          (funcall count-2)
+               => 6
+
+     ここで`make-counter'への各呼び出しは別の局所変数`n'を作る。
+     それは戻される関数オブジェクト用の私的なカウンターとして働く。
+
+     その上で閉じられたレキシカル変数は、ちょうど他のLispオブジェクトと
+     同様にそれへの最後の参照がなくなるまで存続する。たとえば、
+     `count-2'は変数`n'のインスタンスを参照する関数オブジェクトを
+     参照する; これはその変数への唯一の参照なので、 `(setq count-2
+     nil)'の後にはガベジコレクタは`n'のこの
+     インスタンスを削除できるだろう。もちろん、`lexical-let'が実際には
+     クロージャをまったく作らない場合、レキシカル変数は`lexical-let'が
+     戻るとすぐに自由である。
+
+     多くのクロージャはそれらが参照する束縛のエクステントの間だけ使われる;
+     これらはLisp語法では"downward
+     funargs"として知られている。クロージャ
+     がこのように使われる場合、正規のEmacs Lisp動的束縛で十分であり、
+     `lexical-let'クロージャより効率的だろう。
+
+          (defun add-to-list (x list)
+            (mapcar (function (lambda (y) (+ x y))) list))
+          (add-to-list 7 '(1 2 5))
+               => (8 9 12)
+
+     このラムダは`x'がまだ束縛されているときにのみ使われているので、
+     そのために真のクロージャを作ることは必要ではない。
+
+     名前付きクロージャを作るために`lexical-let'の内部で`defun'や
+     `flet'を使うことができる。いくつかのクロージャが1個の
+     `lexical-let'の本体で作られる場合、それらはすべてレキシカル変数の
+     同じインスタンスの上で閉じている。
+
+     `lexical-let'フォームはCommon Lispへの拡張である。真のCommon Lisp
+     では、すべての束縛はそうではないと宣言されない限りレキシカルである。
+
+ -- Special Form: lexical-let* (bindings...) forms...
+     このフォームはちょうど`lexical-let'と似ているが、束縛は
+     `let*'の方法のように順次に作られる点が異なる。
+
+
+File: cl-j,  Node: 関数束縛,  Next: マクロ束縛,  Prev: レキシカルな束縛,  Up: 変数束縛
+
+5.3.3 関数束縛
+------------------
+
+これらのフォームは変数の代わりに関数に`let'に似た束縛を作る。
+
+ -- Special Form: flet (bindings...) forms...
+     このフォームは値セルではなくシンボルの関数セルに`let'スタイルの
+     束縛を確立する。それぞれのBINDINGはフォーム `(NAME ARGLIST
+     FORMS...)'の リストでなければならない。それは正確に`defun*'
+     フォームであるかのように関数を定義する。関数NAMEは`flet'の
+     本体の間だけそれに応じて定義される; それから古い関数定義や
+     関数定義がないことが戻される。
+
+     Common Lispの`flet'はNAMEのレキシカルな束縛を確立するが、 Emacs
+     Lispの`flet'は動的束縛を作る。その結果、`flet'は
+     `flet'フォーム自身の内部での直接的な呼び出しと同様に間接的な関数
+     への呼び出しに影響する。
+
+     一時的な仕方で関数の振る舞いを無効にしたり修正したりするために
+     `flet'を使うことができる。これはEmacsプリミティブ上でも
+     動作するが、Emacs内部のプリミティブ関数へのいくつかの呼び出しは
+     シンボルの関数セルを通さずに行なわれるので、`flet'によって
+     影響されないことに注意せよ。たとえば、
+
+          (flet ((message (&rest args) (push args saved-msgs)))
+            (do-something))
+
+     このコードはメッセージを表示するのではなく、単にリストにセーブする
+     関数で組み込み関数`message'を置き換えようと試みる。`message'
+     のオリジナルの定義は`do-something'の脱出の後に戻される。この
+     コードは他のLispコードによって生成されるメッセージにはうまく働くが、
+     Emacs内部で直接生成されるメッセージはLispの`message'関数を
+     通じてではなくメッセージルーチンへの直接のC言語呼び出しを行なうので、
+     それらは捉えられない。
+
+     `flet'で定義された関数は`defun*'によってサポートされている
+     完全なCommon Lisp引数表記法を使ってもよい; また、関数本体は
+     `defun*'のように暗黙のブロックに囲まれる。*Note プログラム構造::.
+
+ -- Special Form: labels (bindings...) forms...
+     `labels'フォームは`flet'と似ているが、動的束縛ではなく
+     関数名のレキシカルな束縛を作る点が異なる。(真のCommon Lispでは、
+     `flet'と`labels'のどちらもわずかに異なる種類のレキシカルな
+     束縛を作る; Emacs Lispは既定では動的束縛なので、`flet'のためにも
+     動的束縛を使うことはより適切に見える。`labels'フォームは
+     レキシカルな束縛を持っており、Common Lispと完全に互換である。)
+
+     レキシカルスコープは、名付けられた関数へのすべての参照は物理的に
+     `labels'フォームの本体内に現れなくてはならないことを意味する。
+     参照は`labels'自身の本体FORMSの中にも関数自身の本体の中にも
+     現れてよい。したがって、`labels'は局所再帰関数や相互再帰関数の
+     集合を定義できる。
+
+     関数名への"参照"はその関数への呼び出しか、たとえば`mapcar'へ
+     渡されるために`quote'や`function'に引用されたその名前の
+     使用である。
+
+
+File: cl-j,  Node: マクロ束縛,  Prev: 関数束縛,  Up: 変数束縛
+
+5.3.4 マクロ束縛
+---------------------
+
+これらのフォームは局所マクロや"シンボルマクロ"を作る。
+
+ -- Special Form: macrolet (bindings...) forms...
+     このフォームは`flet'と類似しているが、関数の代わりにマクロ
+     用である。各BINDINGは`defmacro*'への引数と同じフォームの
+     リストである(すなわち、マクロ名、引数リスト、そして
+     マクロエクスパンダフォーム)。マクロは`macrolet'の本体内の使用に
+     応じて定義される。
+
+     マクロの性質のために、`macrolet'はEmacs Lisp内でさえも
+     レキシカルスコープである: `macrolet'束縛は、おそらく本体の他の
+     マクロの展開後、物理的に本体FORMS内に現れる呼び出しにのみ
+     影響する。
+
+ -- Special Form: symbol-macrolet (bindings...) forms...
+     このフォームは"シンボルマクロ"を作る。それは関数呼び出しよりも
+     変数参照のように見えるマクロである。各BINDINGはリスト `(VAR
+     EXPANSION)'である; 本体FORMS内の
+     VARへのすべての参照はEXPANSIONによって置き換えられる。
+
+          (setq bar '(5 . 9))
+          (symbol-macrolet ((foo (car bar)))
+            (incf foo))
+          bar
+               => (6 . 9)
+
+     シンボルマクロの`setq'は`setf'と同様に扱われる。すなわち、
+     上の`(setq foo 4)'は`(setf foo 4)'と同等であり、今度は `(setf (car
+     bar) 4)'へ展開する。
+
+     同様に、シンボルマクロを束縛する`let'や`let*'は`letf'や
+     `letf*'のように扱われる。これは、レキシカルスコープのルールは
+     `let'の束縛が`symbol-macrolet'の束縛をシャドウすることを
+     引き起こすような真のCommon Lispとは異なる。このパッケージでは、
+     `lexical-let'や`lexical-let*'だけがシンボルマクロを シャドウする。
+
+     シンボルマクロには`defmacro'に似たものはない; すべての
+     シンボルマクロは局所的である。`symbol-macrolet'の典型的な使用は
+     他のマクロの展開内である:
+
+          (defmacro* my-dolist ((x list) &rest body)
+            (let ((var (gensym)))
+              (list 'loop 'for var 'on list 'do
+                    (list* 'symbol-macrolet (list (list x (list 'car var)))
+                           body))))
+
+          (setq mylist '(1 2 3 4))
+          (my-dolist (x mylist) (incf x))
+          mylist
+               => (2 3 4 5)
+
+     この例では、`my-dolist'マクロは変数`x'はリストの要素上の真の
+     参照になる点を除いて`dolist'(*note 繰り返し::)に類似している。
+     ここで示された`my-dolist'呼び出しは下記に展開する。
+
+          (loop for G1234 on mylist do
+                (symbol-macrolet ((x (car G1234)))
+                  (incf x)))
+
+     これは今度は下記に展開する。
+
+          (loop for G1234 on mylist do (incf (car G1234)))
+
+     `loop'マクロの記述は*Note ループ機能::. このパッケージは
+     `my-dolist'とたいへん似た働きをする非標準`in-ref'ループ節を
+     定義する。
+
+
+File: cl-j,  Node: 条件付き実行,  Next: ブロックと脱出,  Prev: 変数束縛,  Up: 制御構造
+
+5.4 条件付き実行
+======================
+
+これらの条件付実行フォームはEmacs Lispの単純な`if'、`and'、
+`or'、そして`cond'フォームを増加させる。
+
+ -- Special Form: when test forms...
+     これは"else"フォームがなく、ことによるといくつかの"then"フォームが
+     ある`if'の別の形である。特に、
+
+          (when TEST A B C)
+
+     は完全に下記と同等である。
+
+          (if TEST (progn A B C) nil)
+
+ -- Special Form: unless test forms...
+     これは"then"フォームがなく、ことによるといくつかの"else"フォームが
+     ある`if'の別の形である:
+
+          (unless TEST A B C)
+
+     は完全に下記と同等である。
+
+          (when (not TEST) A B C)
+
+ -- Special Form: case keyform clause...
+     このマクロはKEYFORMを評価し、それからさまざまなCLAUSEの
+     中にリストされたのキーの値と比較する。キーにマッチする節はどれでも
+     実行される; 比較は`eql'によってなされる。どの節もマッチしない
+     場合、`case'フォームは`nil'を戻す。節は下記の フォームである。
+
+          (KEYLIST BODY-FORMS...)
+
+     ここでKEYLISTはキーの値のリストである。正確に1個の値がある場合、
+     かつコンスセルやシンボル`nil'または`t'ではない場合、リスト
+     内に囲まずにそれ自身をKEYLISTとして使うことができる。`case'
+     フォーム内のすべてのキーの値は別でなくてはならない。最後の節は他の節が
+     マッチしない場合にとられる既定節を示すためにKEYLISTの場所に
+     `t'を使ってもよい。(シンボル`otherwise'も`t'の場所に
+     認められる。実際のシンボル`t'、`nil'、または`otherwise'
+     とマッチする節を作るためには、リストの中にシンボルを囲むこと。)
+
+     たとえば、この式はキーストロークを読み、それが`a'、`b'、
+     <RET>または`C-j'、またはそれ以外のどれであるかによって4個の
+     事の内の1個を行なう。
+
+          (case (read-char)
+            (?a (do-a-thing))
+            (?b (do-b-thing))
+            ((?\r ?\n) (do-ret-thing))
+            (t (do-other-thing)))
+
+ -- Special Form: ecase keyform clause...
+     このマクロはちょうど`case'に似ているが、キーが節のどれにも
+     マッチしない場合は単に`nil'を戻すのではなくエラーを通知する点が
+     異なる。
+
+ -- Special Form: typecase keyform clause...
+     このマクロは値ではなく型をチェックする`case'の版である。
+     各CLAUSEはフォーム`(TYPE BODY...)'である。 型指定子の記述は*Note
+     データ型の述語::. たとえば、
+
+          (typecase x
+            (integer (munch-integer x))
+            (float (munch-float x))
+            (string (munch-integer (string-to-int x)))
+            (t (munch-anything x)))
+
+     型指定子`t'はオブジェクトのすべての型にマッチする; 語
+     `otherwise'も許される。いくつかの型のどれかにマッチする1個の節を
+     作るには、`(or ...)'型指定子を使うこと。
+
+ -- Special Form: etypecase keyform clause...
+     このマクロはちょうど`typecase'に似ているが、キーが節のどれにも
+     マッチしない場合は単に`nil'を戻すのではなくエラーを通知する点が
+     異なる。
+
+
+File: cl-j,  Node: ブロックと脱出,  Next: 繰り返し,  Prev: 条件付き実行,  Up: 制御構造
+
+5.5 ブロックと脱出
+=========================
+
+Common Lisp"ブロック"は`catch'と`throw'にとても
+類似している非局所脱出メカニズムを適用するが、それは動的
+スコープではなくレキシカルスコープである。このパッケージは実際には
+`catch'で`block'を実装する; しかし、ブロック本体が実際には
+ブロックから`return-from'しない場合、レキシカルスコープは最適化
+バイトコンパイラが高価な`catch'を省略することを許す。
+
+ -- Special Form: block name forms...
+     FORMSは`progn'によるかのように評価される。しかし、
+     FORMSのいずれかが`(return-from NAME)'を実行する場合、
+     それらは飛び出して`block'フォームからダイレクトに戻る。
+     `block'は、`return-from'が起こらないと最後のFORMの結果 を戻す。
+
+     `block'/`return-from'メカニズムは`catch'/`throw'
+     メカニズムと非常に類似している。主要な相違は、ブロックNAMEは
+     評価されないシンボルであり、実行時にタグへと評価するフォーム
+     (引用符のついたシンボルのように)ではない点である; そしてまた、
+     ブロックは`catch'/`throw'では動的スコープであるのに
+     レキシカルスコープである。これは、`catch'の本体から呼び出された
+     関数も`catch'へ`throw'できるが、ブロック名を参照する
+     `return-from'は物理的にブロックの本体を作るFORMSの中に
+     現れなければならないことを意味する。それらは他の呼び出された関数中に
+     現れてはならないが、マクロ展開の中や本体の`lambda'に
+     現れてもよい。ブロック名や`catch'名は独立した名前空間を形成する。
+
+     真のCommon Lispでは、`defun'や`defmacro'は関数やマクロと同じ
+     名前を持つ暗黙のブロックで関数やエクスパンダ本体を囲む。これはEmacs
+     Lispでは起こらないが、このパッケージは暗黙のブロックを作る
+     `defun*'や`defmacro*'フォームを提供する。
+
+     このパッケージによって定義される、`loop'や`dolist'のような Common
+     Lispループ構文要素も、Common Lispとちょうど同様の暗黙のブロック
+     を作る。
+
+     それらはEmacs Lispの`catch'や`throw'で実装されているので、
+     ブロックは実際の`catch'構文要素と同じオーバーヘッド(大まかに2度の
+     関数呼び出し)を持つ。しかし、ZawinskiとFurusethの最適化
+     バイトコンパイラ(Emacs 19の標準)は、ブロックが事実まったくそれへ
+     飛び出す`return'や`return-from'呼び出しを含まない場合、
+     `catch'を最適化し去る。これは、`return'を使わない`do'
+     ループや`defun*'関数はそれをサポートするためにオーバーヘッドを
+     払わないことを意味する。
+
+ -- Special Form: return-from name [result]
+     このマクロはNAMEという名前のブロックから戻る。NAMEは
+     (評価されない)シンボルでなければならない。RESULTフォームが
+     指定される場合、`block'から戻される結果を作るために評価される。
+     そうでなければ、`nil'が戻される。
+
+ -- Special Form: return [result]
+     このマクロは`(return-from nil RESULT)'と正確に同等である。
+     `do'や`dolist'のようなCommon Lispループは暗黙に`nil'
+     ブロックに自身を囲む。
+
+
+File: cl-j,  Node: 繰り返し,  Next: ループ機能,  Prev: ブロックと脱出,  Up: 制御構造
+
+5.6 繰り返し
+================
+
+ここで記述されるマクロは、Emacs Lispの基本的な`while'ループを補う
+ために、より洗練された高水準のループ構文要素を提供する。
+
+ -- Special Form: loop forms...
+     "CL"パッケージは、`loop'の単純で古いスタイルの意味と、
+     "ループマクロ"の"ループ機能"として知られるきわめて強力で柔軟な
+     機能をどちらもサポートする。このより高度な機能は下記の節で論じられる;
+     *note ループ機能::. `loop'の単純なフォームはここで記述される。
+
+     `loop'に0個またはそれ以上のLisp式が続く場合、 `(loop
+     EXPRS...)'は単純にその式を何度も何度も実行する
+     無限ループを作る。ループは暗黙の`nil'ブロックに囲まれている。
+     したがって、
+
+          (loop (foo) (if (no-more) (return 72)) (bar))
+
+     は正確に下記と同等である。
+
+          (block nil (while t (foo) (if (no-more) (return 72)) (bar)))
+
+     式のどれもが単なるシンボルの場合、loopはその代わりに後に記述される
+     ループマクロ仕様と解釈される。(これは実際は制限ではない。上記の
+     表記法での単なるシンボルは単純に変数の値にアクセスして
+     捨て去るからである。)
+
+ -- Special Form: do (spec...) (end-test [result...]) forms...
+     このマクロは一般的な繰り返しループを作る。それぞれのSPECは下記の
+     フォームである:
+
+          (VAR [INIT [STEP]])
+
+     ループは下記のように働く: 最初に、それぞれのVARは`let'
+     フォームによるかのように関連づけられたINITの値に束縛される。
+     それから、ループのそれぞれの繰り返しではEND-TESTが評価される;
+     真の場合、ループは終了する。そうでなければ、本体FORMSが
+     評価され、それぞれのVARは関連づけられたSTEP式に
+     (`psetq'フォームによるかのように)設定され、次の繰り返しが始まる。
+     一度END-TESTが真になると、RESULTフォームは`do'により
+     戻される結果を生成するために(VARはまだその値に束縛している
+     状態で)評価される。
+
+     `do'ループ全体は暗黙の`nil'ブロックに囲まれているので、
+     どんなときもループを中断して出るために`(return)'を使える。
+
+     RESULTフォームがない場合、ループは`nil'を戻す。与えられた
+     VARがSTEPフォームを持たない場合、INITの値に
+     束縛されるが、その他の点では`do'ループの間(コードが明示的に
+     修正しない限り)修正されない; この場合はループの周りに `(let ((VAR
+     INIT)) ...)'を置くことの単なる
+     簡略表記法である。INITも省略される場合その既定値は`nil'
+     であり、この場合は再び`let'との類似にしたがって単なる
+     `VAR'が`(VAR)'の場所に使うことができる。
+
+     この例(Steeleから)は、リスト`foo'と`bar'からの連続する値の
+     対に関数`f'を適用するループを説明する; それは呼び出し `(mapcar* 'f
+     foo bar)'と同等である。ループは本体FORMS
+     をまったく持たず、ループの残りの副作用としてすべての仕事をすることに
+     注意せよ。
+
+          (do ((x foo (cdr x))
+               (y bar (cdr y))
+               (z nil (cons (f (car x) (car y)) z)))
+            ((or (null x) (null y))
+             (nreverse z)))
+
+ -- Special Form: do* (spec...) (end-test [result...]) forms...
+     `let*'が`let'に対応するように、これは`do'に対応する。
+     特に、初期値は`let'によってのようにではなく`let*'
+     によってのように束縛され、stepは`psetq'によってのようにではなく
+     `setq'によってのように代入される。
+
+     上記のループを格別の方法は以下の通り:
+
+          (do* ((xp foo (cdr xp))
+                (yp bar (cdr yp))
+                (x (car xp) (car xp))
+                (y (car yp) (car yp))
+                z)
+            ((or (null xp) (null yp))
+             (nreverse z))
+            (push (f x y) z))
+
+ -- Special Form: dolist (var list [result]) forms...
+     これはリストの要素を横切って繰り返す、より特殊化されたループである。
+     LISTはリストへ評価されなければならない; 本体FORMSは
+     VARがそれぞれのリストの要素に順に束縛された状態で実行される。
+     最後に、RESULTフォーム(または`nil')がループから戻される
+     結果を生じるために、VARが`nil'に束縛された状態で
+     評価される。ループは暗黙の`nil'ブロックで囲まれる。
+
+ -- Special Form: dotimes (var count [result]) forms...
+     これは指定された回数繰り返す、より特殊化されたループである。本体は
+     VARがゼロ(を含む)からCOUNT(を含まない)までの整数に順に
+     束縛された状態で実行される。それから`result'フォームが
+     ループフォームの戻り値を得るために、VARが繰り返しの総回数に
+     束縛された状態(すなわち、`(max 0 COUNT)')で評価される。
+     ループは暗黙の`nil'ブロックで囲まれる。
+
+ -- Special Form: do-symbols (var [obarray [result]]) forms...
+     このループはすべてのinternされたシンボル上を繰り返す。OBARRAYが
+     指定され`nil'でない場合、そのobarray中のすべてのシンボル上をルー
+     プする。それぞれのシンボルに対して、本体FORMSはVARがそのシ
+     ンボルに束縛された状態で評価される。シンボルは不定の順序で訪問される。
+     その後、RESULTフォームがあれば戻り値を得るために(VARが
+     `nil'に束縛された状態で)評価される。ループは暗黙の`nil'ブロッ
+     クで囲まれる。
+
+ -- Special Form: do-all-symbols (var [result]) forms...
+     これはOBARRAY引数が省略されている点を除いて`do-symbols'と
+     同一である; 常に既定のobarrayの上で繰り返す。
+
+   ベクタやリスト上の繰り返し用のいくつかの他の関数は*Note
+列上のマッピング::.
+
+
+File: cl-j,  Node: ループ機能,  Next: 多値,  Prev: 繰り返し,  Up: 制御構造
+
+5.7 ループ機能
+===================
+
+Lispの伝統的なループ構文への共通の不平は、Common Lispの`dotimes'
+やEmacs Lispの`while'のようにあまりに単純または制限されているか、
+Common Lispの`do'ループのようにあまりに読みづらく
+不明瞭だということである。
+
+   これを治すために、Common Lispの最近の版は、使いやすいがとても強力で
+表現力に富む文法を持つ"ループ機能"または"`loop'マクロ"と
+呼ばれる新しい構文要素を加えた。
+
+* Menu:
+
+* ループの基本::          `loop'マクロ、基本的な節の構造
+* ループの例::            `loop'マクロの動作例
+* For節::                 `for'または`as'によって導入される節
+* 繰り返し節::            `repeat'、`while'、`thereis'、その他
+* 蓄積節::                `collect'、`sum'、`maximize'、その他
+* その他の節::            `with'、`if'、`initially'、`finally'
+
+
+File: cl-j,  Node: ループの基本,  Next: ループの例,  Prev: ループ機能,  Up: ループ機能
+
+5.7.1 ループの基本
+------------------------
+
+`loop'マクロは本質的に、Lisp内にループを記述するために特別に
+仕立てられたミニ言語を作る。この言語は正規のLispの標準からは少し奇妙に
+見えるが、とても学びやすく、その目的によく適していることがわかる。
+
+   `loop'はマクロなので、ループ言語のすべての構文解析は
+バイトコンパイル時に行なわれる; コンパイルされた`loop'は、
+手書きの同等の`while'ループとちょうど同じ効率である。
+
+ -- Special Form: loop clauses...
+     ループ構文要素はCLAUSEの連続から成り、それぞれは`for'や
+     `do'のようなシンボルによって導入される。節は単純に、最小の余分な
+     括弧とともに`loop'の引数リストに一列に一緒に並べられる。
+     さまざまな節の型は、一時変数の束縛のような初期化や、ループ内で
+     行なわれる実行、ステップ実行、最後の大掃除を指定する。
+
+     Common Lispはある一般的な節の順序をループ中に指定する:
+
+          (loop NAME-CLAUSE
+                VAR-CLAUSES...
+                ACTION-CLAUSES...)
+
+     NAME-CLAUSEは付加的にループを囲む暗黙のブロックに名前を与える。
+     既定では、暗黙のブロックは`nil'と名付けられる。VAR-CLAUSES
+     はループ中にどの変数が束縛されるかや、どのようにループの進行の間に
+     修正されたり繰り返されるかを指定する。ACTION-CLAUSESは、計算や
+     集積、値の戻しなど、ループの間になされることである。
+
+     `loop'マクロのEmacs版は節の順序について制限はより弱いが、実行節の
+     前に`with'や`for'、`repeat'のような変数束縛節を置く場合、
+     物事はほぼ予想されるように振る舞う。Common Lispと同様に、
+     `initially'と`finally'はどこにでも置ける。
+
+     ループは一般に既定では`nil'を戻すが、`collect'のような
+     蓄積節を使ったり、`always'のような終了テスト節を使ったり、暗黙の
+     ブロックから飛び出すための明示的な`return'節を持ったりすることで
+     値を戻すようにすることができる。(ループ本体は暗黙のブロックに
+     囲まれているから、ループから脱出するために正規Lispの`return'や
+     `return-from'を使うこともできる。)
+
+   下記の節は動作するループマクロのいくつかの例を与え、特別のループ節を
+非常に詳細に記述する。追加の議論や`loop'マクロの例はSteeleの "Common
+Lisp, the Language"第2版を調べること。
+
+
+File: cl-j,  Node: ループの例,  Next: For節,  Prev: ループの基本,  Up: ループ機能
+
+5.7.2 ループの例
+---------------------
+
+許されている節のすべての集合をリストする前に、単に`loop'言語の
+感じを掴むためにいくつかのループの例を見てみよう。
+
+     (loop for buf in (buffer-list)
+           collect (buffer-file-name buf))
+
+このループは、`buffer-list'によって戻されたリストを使いながら、
+すべてのEmacsバッファ上を繰り返す。それぞれのバッファ`buf'に
+対して、`buffer-file-name'を呼び出して結果をリストに集積する。
+リストはその後`loop'構文要素から戻される。結果はEmacsの
+メモリにあるすべてのバッファのファイル名のリストである。語`for'や
+`in'、`collect'は`loop'言語の中で予約語である。
+
+     (loop repeat 20 do (insert "Yowsa\n"))
+
+このループは現バッファに句"Yowsa"を20回挿入する。
+
+     (loop until (eobp) do (munch-line) (forward-line 1))
+
+このループは、バッファの終わりまでのすべての行で`munch-line'を
+呼び出す。ポイントがすでにバッファの終わりにある場合、ループはすぐに
+脱出する。
+
+     (loop do (munch-line) until (eobp) do (forward-line 1))
+
+このループは上述のものと類似しているが、`munch-line'は常に最低
+1度は呼び出される。
+
+     (loop for x from 1 to 100
+           for y = (* x x)
+           until (>= y 729)
+           finally return (list x (= y 729)))
+
+より複雑なこのループは、その2乗が729である数`x'を検索する。
+安全のために100までの`x'値だけを調べる; 句`to 100'を
+省略することは、ループが上方へ無制限に数えることを引き起こすだろう。
+2番目の`for'節はループの中で`x'の2乗になるように`y'を 定義する;
+`='記号の後の式はループを通して毎回再評価される。
+`until'節はループの終了用の条件を与え、`finally'節は
+ループが終わったとき何をするかを言う。(この特別の例は、単に
+説明のために、可能なものよりも簡潔ではなく書かれた。)
+
+   このループは、それ自身でループを定義するのに十分な3個の節(2個は
+`for'で1個は`until')を含んでいるが、それでも3重の入れ子の
+ループの一種ではなく1個のループをつくる。入れ子のループがほしい場合、
+明示的に`loop'構文要素を入れ子にしなければならない。
+
+
+File: cl-j,  Node: For節,  Next: 繰り返し節,  Prev: ループの例,  Up: ループ機能
+
+5.7.3 For節
+------------
+
+ほとんどのループは1個かそれ以上の`for'節に支配される。`for'
+節は束縛される変数を記述すると当時に、これらの変数がループ
+中にどのようにステップされるか、また通常はこれらの変数に基づいた
+終了条件を記述する。
+
+   語`as'は語`for'の同義語である。この語の後には変数名が続き、
+望む繰り返しの種類を記述する`from'や`across'のような語が 続く。Common
+Lispでは、句`being the'がときどき繰り返しの型の前に 来る;
+このパッケージでは`being'と`the'はともに付加的である。
+語`each'は`the'の同義語であり、それに続く語は単数でも 複数でもよい:
+`for x being the elements of y'や `for x being each element of
+y'のように。どちらのフォームを 使うかは純粋にスタイルの問題である。
+
+   変数は`let'によるかにようにループの周りで束縛される:
+
+     (setq i 'happy)
+     (loop for i from 1 to 10 do (do-something-with i))
+     i
+          => happy
+
+`for VAR from EXPR1 to EXPR2 by EXPR3'
+     この`for'節の型は数え上げのループを作る。3個の副項のそれぞれは
+     付加的だが、節が数え上げの節だとマークされるように少なくても1個の
+     項がなければならない。
+
+     3個の式はそれぞれ変数の開始値、終了値、ステップ値である。ループは、
+     EXPR1からEXPR2(を含む)までを既定では上方に(EXPR3は
+     正数でなければならない)数える。`from'項を省略した場合、ループは
+     0から数える; `to'項を省略した場合、ループは止まらずに永久に数える
+     (もちろん、他のループ節によって止まらない限り); `by'項を省略した
+     場合、ループは1のステップで数える。
+
+     ループの方向を示すために、語`from'を`upfrom'または
+     `downfrom'に置き換えることができる。同様に、`to'を
+     `upto'または`downto'に置き換えることができる。たとえば、 `for x
+     from 5 downto 1'は`x'が順に5から1までの整数を
+     持ちながら5回実行する。また、`to'を`below'または`above'
+     に置き換えることもできる。これは制限を含むのではないことを除いて
+     `upto'や`downto'にそれぞれ似ている:
+
+          (loop for x to 10 collect x)
+               => (0 1 2 3 4 5 6 7 8 9 10)
+          (loop for x below 10 collect x)
+               => (0 1 2 3 4 5 6 7 8 9)
+
+     数え下げのループのためであっても、`by'は常に正数である。
+     なんらかの種類の`from'値が数え下げのループのためには必須である;
+     `for x downto 5'はそれ自身まったく正しいループ節ではない。
+
+`for VAR in LIST by FUNCTION'
+     この節は、順にLISTのすべての要素でVARを繰り返す。`by'
+     項を指定した場合、FUNCTIONが`cdr'の代わりにリストを
+     横切るために使われる; それは1個の引数をとる関数でなければならない。
+     たとえば:
+
+          (loop for x in '(1 2 3 4 5 6) collect (* x x))
+               => (1 4 9 16 25 36)
+          (loop for x in '(1 2 3 4 5 6) by 'cddr collect (* x x))
+               => (1 9 25)
+
+`for VAR on LIST by FUNCTION'
+     この節はLISTのすべてのコンスセルでVARを繰り返す。
+
+          (loop for x on '(1 2 3 4) collect x)
+               => ((1 2 3 4) (2 3 4) (3 4) (4))
+
+     `by'がある場合、`on'式がリストでなければならないという
+     理由はない。たとえば:
+
+          (loop for x on first-animal by 'next-animal collect x)
+
+     ここでは`(next-animal x)'は"動物"Xをとり、動物の列
+     (と仮定されたもの)の中の次のものを戻すか、Xが列の最後の動物の
+     場合は`nil'を戻す。
+
+`for VAR in-ref LIST by FUNCTION'
+     これは普通の`in'節と似ているが、VARは単に一時変数ではなく、
+     リストの要素上の`setf'可能な"参照"になる。たとえば:
+
+          (loop for x in-ref my-list do (incf x))
+
+     は正しく`my-list'のそれぞれの要素の値を1つ増やす。この節は標準
+     Common Lispへの拡張である。
+
+`for VAR across ARRAY'
+     この節はARRAYのすべての要素でVARを繰り返す。ARRAYは
+     ベクタまたは文字列でなければならない。
+
+          (loop for x across "aeiou"
+                do (use-vowel (char-to-string x)))
+
+`for VAR across-ref ARRAY'
+     この節は、VARを要素上の`setf'可能な参照として配列上を 繰り返す;
+     上記の`in-ref'を参照のこと。
+
+`for VAR being the elements of SEQUENCE'
+     この節はSEQUENCEの要素上で繰り返す。SEQUENCEはリストか
+     ベクタ、文字列でなければならない。型は実行時に
+     決定されなければならないので、これは`in'または`across'
+     よりもいくぶん効率が悪い。節には、VAR2が要素の連続する
+     インデックスに束縛されるようにするために、追加の項 `using (index
+     VAR2)'が続いてもよい。
+
+     この節の型は`loop'マクロの古い版からとられており、最新のCommon
+     Lispにはない。より古いマクロの`using (sequence ...)'項は
+     サポートされていない。
+
+`for VAR being the elements of-ref SEQUENCE'
+     この節は、VARを要素上の`setf'可能な参照として列上を繰り返す;
+     上記の`in-ref'を参照のこと。
+
+`for VAR being the symbols [of OBARRAY]'
+     この節は、すべてのinternされたシンボルまたはOBARRAY中のすべての
+     シンボル上を繰り返す。ループは、VARを順にそれぞれのシンボルに
+     束縛して実行される。シンボルは不定の順序で訪問される。
+
+     一例として、
+
+          (loop for sym being the symbols
+                when (fboundp sym)
+                when (string-match "^map" (symbol-name sym))
+                collect sym)
+
+     は、`map'で始まる名前を持つすべての関数のリストを戻す。
+
+     Common Lispの語`external-symbols'や`present-symbols'も
+     認められるが、Emacs Lispでは`symbols'と同等である。
+
+     重要でない実装の制限のために、一つの`loop'の中にシンボル、
+     ハッシュ表、キーマップ、オーバレイ、インターバル上で繰り返す、
+     1つ以上の`for'節を持つと正しく動作しない。幸いにも、
+     そうすることが有用なことはきわめてまれだろう。`for ... to'や
+     `while'のような他の節とこれらの節の型の一つを混ぜることは正しい
+     _ことである_。
+
+`for VAR being the hash-keys of HASH-TABLE'
+     この節はHASH-TABLEのエントリ上で繰り返す。それぞれのハッシュ表
+     エントリに対して、VARはそのエントリのキーに束縛される。 `the
+     hash-values'をその代わりに書いた場合、VARはエントリの
+     値に束縛される。VARやVAR2がハッシュ表エントリの
+     2つのそれぞれの部分に束縛されるように、その節に追加の項 `using
+     (hash-values VAR2)'(`hash-values'は`the'
+     に続く語の反対の語である)が続いてもよい。
+
+`for VAR being the key-codes of KEYMAP'
+     この節はKEYMAPのエントリ上で繰り返す。GNU Emacs 18と19では、
+     キーマップは連想リストまたはベクタであり、キーコードは整数または
+     シンボルである。Lucid Emacs 19ではキーマップは特殊な新しいデータ
+     型であり、キーコードはシンボルまたはシンボルのリストである。繰り返しは
+     入れ子になったキーマップや受け継いだ親のキーマップには入らない。
+     キーコードではなくキーに束縛されたコマンドにアクセスするために
+     `the key-bindings'を使うことができる。コードと束縛の両方に
+     アクセスするために`using'節を加えることができる。
+
+`for VAR being the key-seqs of KEYMAP'
+     この節はKEYMAPとその入れ子になったキーマップで定義されるすべての
+     キー列上で繰り返す。VARはEmacs 18では文字列の値を、Emacs 19では
+     ベクタの値をとる。文字列やベクタはそれぞれの繰り返しで
+     再利用されるので、それらをいつまでも保ちたいならば
+     コピーしなければならない。同様にコマンド束縛を得るために `using
+     (key-bindings ...)'節を加えることができる。
+
+`for VAR being the overlays [of BUFFER] ...'
+     この節はEmacs 19の"オーバレイ"またはLucid Emacsのバッファの
+     "エクステント"上で繰り返す(節`extents'は`overlays'の
+     同義語である)。Emacs 18の元では、この節は1度も繰り返さない。`of'
+     項が省略された場合、現バッファが使われる。この節は、付加的な `from
+     POS'や`to POS'項も受け入れるが、指定した
+     リージョンを重ねるオーバレイへの節に制限する。
+
+`for VAR being the intervals [of BUFFER] ...'
+     この節は不変のテキスト属性を持つバッファのすべてのインターバル上で
+     繰り返す。変数VARは開始位置と終了位置のコンスに束縛され、
+     そこではある開始位置は常に前の終了位置と等しい。この節は`of'や
+     `from'、`to'、`property'項を許す。そこでは後の項は
+     指定された属性のみに検索を制限する。`of'項はバッファか文字列を
+     指定できる。この節はGNU Emacs 19のみで有用である;
+     他の版では、すべての バッファや文字列は1つのインターバルから成る。
+
+`for VAR being the frames'
+     この節はすべてのフレーム上、すなわちEmacsファイル上で開いている
+     Xウィンドウシステムのウィンドウで繰り返す。この節はEmacs
+     19の元でのみ
+     動作する。節`screens'は`frames'の同義語である。フレームは、
+     `selected-frame'から始まる`next-frame'の順序で訪問される。
+
+`for VAR being the windows [of FRAME]'
+     この節は現フレームか指定されたFRAMEの(Emacsの意味での)ウィンドウ
+     上で繰り返す(Emacs 18では常に1つのフレームだけがあり、`of'
+     項はそこでは許されない)。
+
+`for VAR being the buffers'
+     この節はEmacsのすべてのバッファ上で繰り返す。それは `for VAR in
+     (buffer-list)'と同等である。
+
+`for VAR = EXPR1 then EXPR2'
+     この節は一般の繰り返しを行なう。ループを最初に通るとき、VARは
+     EXPR1に束縛される。2回目やそれに続く繰り返しでは、それは
+     EXPR2(VARの古い値を参照してもよい)を評価した値に設定される。
+     たとえば、これらの2つのループは実際に同じである:
+
+          (loop for x on my-list by 'cddr do ...)
+          (loop for x = my-list then (cddr x) while x do ...)
+
+     この`for'の型はどんな種類の終端条件も含まないことに注意せよ;
+     上記の例は、いつループが終わるかを言うためにそれと`while'節を
+     結合する。
+
+     `then'項を省略した場合、EXPR1は初期設定とそれに続く設定の
+     両方に使われる:
+
+          (loop for x = (random) when (> x 0) return x)
+
+     このループは、正数を得るまで`(random)'関数から乱数を取得し続けて、
+     その後戻る。
+
+   1つの列にいくつかの`for'節を含む場合、それらは(`let*'や
+`setq'のように)順次に扱われる。節を結合するために代わりに
+語`and'を使うことができ、その場合は(`let'や`psetq'
+のように)並列に処理される。
+
+     (loop for x below 5 for y = nil then x collect (list x y))
+          => ((0 nil) (1 1) (2 2) (3 3) (4 4))
+     (loop for x below 5 and y = nil then x collect (list x y))
+          => ((0 nil) (1 0) (2 1) (3 2) (4 3))
+
+第1のループでは、`y'は前の節で設定されたばかりの`x'の値に
+基づいて設定される; 第2のループでは、`x'と`y'は同時に
+設定されるので、`y'はループを通して前回から残された`x'の値に
+基づいて設定される。
+
+   `loop'マクロの他の機能として"分配"があり、それは
+`defmacro'によって提供される分配と概念として類似している。
+すべての`for'節のVAR部分は、単なる変数の代わりに変数の
+リストとして与えることができる。ループ実行中に生成される値は
+リストでなければならない; リスト中の値は対応する変数に格納される。
+
+     (loop for (x y) in '((2 3) (4 5) (6 7)) collect (+ x y))
+          => (5 9 13)
+
+   ループ分配では、変数よりも多くの値がある場合は残りの値は無視され、
+値よりも多くの変数がある場合は残りの変数は値`nil'を取得する。
+`nil'が変数名として使われた場合、対応する値は無視される。分配は
+入れ子になってもよいし、`(x . y)'のような変数のドットリストも 許される。
+
+
+File: cl-j,  Node: 繰り返し節,  Next: 蓄積節,  Prev: For節,  Up: ループ機能
+
+5.7.4 繰り返し節
+---------------------
+
+`for'節は別にして、ループが作用する仕方を制御するいくつか他の
+ループ節がある。それらはそれら自身だけで使われてもよいし、
+1つまたはそれ以上の`for'節と結合してもよい。
+
+`repeat INTEGER'
+     この節は内部の一時変数を使って単純に指定された数まで数える。
+     このループは、
+
+          (loop repeat n do ...)
+          (loop for temp to n do ...)
+
+     2番目は実際には使わない変数のための名前を選ぶように強いることを除いて
+     同一である。
+
+`while CONDITION'
+     この節は、指定した条件(任意のLisp式)が`nil'になったらループを
+     止める。たとえば、下記の2つのループは同等だが、2つ目のループを囲む
+     暗黙の`nil'ブロックは異なる。
+
+          (while COND FORMS...)
+          (loop while COND do FORMS...)
+
+`until CONDITION'
+     この節は指定された条件が真、すなわち非`nil'のときにループを止める。
+
+`always CONDITION'
+     この節は指定された条件が`nil'のときにループを止める。`while'
+     とは違い、`return nil'を使ってループを止めるので`finally'
+     節は実行されない。すべての条件が非`nil'の場合、ループは`t'を 戻す:
+
+          (if (loop for size in size-list always (> size 10))
+              (some-big-sizes)
+            (no-big-sizes))
+
+`never CONDITION'
+     この節は`always'と似ているが、ループはすべての条件が偽なら
+     `t'を戻し、そうでなければ`nil'を戻す点が異なる。
+
+`thereis CONDITION'
+     この節は指定されたフォームが非`nil'のときにループを止める; この
+     場合、非`nil'の値を戻す。すべての値が`nil'の場合、ループは
+     `nil'を戻す。
+
+
+File: cl-j,  Node: 蓄積節,  Next: その他の節,  Prev: 繰り返し節,  Up: ループ機能
+
+5.7.5 蓄積節
+---------------
+
+これらの節は、ループが指定されたLispのFORMに関する情報を
+蓄積するようにする。蓄積された結果は、たとえば`return'節によって
+無効にされない限りループから戻される。
+
+`collect FORM'
+     この節はFORMの値をリストに集積する。`collect'のいくつかの
+     例がこのマニュアルの他のところで現れる。
+
+     語`collecting'は`collect'の同義語であり、同様に他の蓄積節の
+     同義語でもある。
+
+`append FORM'
+     この節は、`append'を使って値のリストを結果のリストへ集積する。
+
+`nconc FORM'
+     この節は、リストをコピーするのではなく破壊的に修正することで値のリスト
+     を結果のリストへ集積する。
+
+`concat FORM'
+     この節は指定されたFORMの値を文字列へ連結する。(これや下記の節は
+     標準Common Lispへの拡張である。)
+
+`vconcat FORM'
+     この節は指定されたFORMの値をベクタへ連結する。
+
+`count FORM'
+     この節は、指定されたFORMが非`nil'値へ評価される回数を数える。
+
+`sum FORM'
+     この節は指定されたFORMの値の合計を蓄積する。FORMは
+     評価されて数にならなければならない。
+
+`maximize FORM'
+     この節は指定されたFORMの値の最大値を蓄積する。FORMは
+     評価されて数にならなければならない。`maximize'が1度も
+     実行されなかった場合、戻り値は未定義である。
+
+`minimize FORM'
+     この節は指定されたFORMの最小値を蓄積する。
+
+   蓄積節は、無名の一時変数ではなく変数VAR(これはループ中に自動的に
+`let'束縛される)にデータを集積するようにするために、 `into
+VAR'を続けることができる。また`into'蓄積は、
+自動的には戻り値を含まない。蓄積された結果を戻すためには、ループは
+`finally return'のようななんらかの明示的なメカニズムを
+使わなければならない。
+
+   同じ型のいくつかの蓄積節が同じ場所に蓄積することは正しい。Steeleから:
+
+     (loop for name in '(fred sue alice joe june)
+           for kids in '((bob ken) () () (kris sunshine) ())
+           collect name
+           append kids)
+          => (fred bob ken sue alice joe kris sunshine june)
+
+
+File: cl-j,  Node: その他の節,  Prev: 蓄積節,  Up: ループ機能
+
+5.7.6 その他の節
+---------------------
+
+この節は残りのループ節を記述する。
+
+`with VAR = VALUE'
+     この節はループの周りである値をある変数に束縛するが、その他の点では
+     ループ中にその変数を孤立させる。下記のループは基本的に同等である:
+
+          (loop with x = 17 do ...)
+          (let ((x 17)) (loop do ...))
+          (loop for x = 17 then x do ...)
+
+     当然、変数VARはループの残りでなんらかの用途に
+     使われるかもしれない。たとえば:
+
+          (loop for x in my-list  with res = nil  do (push x res)
+                finally return res)
+
+     このループは、`res'に蓄積されている新しいリストの先頭に
+     `my-list'の要素を挿入し、それからループの終わりにリスト`res'
+     を戻す。その効果は`collect'節の効果と類似しているが、要素は
+     末尾にではなく`res'の先頭に置かれていくという事実のために
+     逆順になる。
+
+     `='項を省略した場合、その変数は`nil'に初期化される
+     (したがって上記の例の`= nil'は不要である)。
+
+     `with'によって作られる束縛は、`let*'によってのように、
+     既定では順次である。ちょうど`for'節のように、`with'節はその
+     代わりに束縛が`let'によって作られるようにするために`and'と
+     結合されえる。
+
+`if CONDITION CLAUSE'
+     この節は、指定された条件が真の場合だけ、それに続くループを実行する。
+     下記のCLAUSEは蓄積であるべきである; `do'や`return'、
+     `if'、`unless'節。いくつかの節は、それらを`and'で
+     切り離して結合されてもよい。
+
+     これらの節には、`else'と、条件が偽の場合に実行される1つまたは
+     複数の節が続いてもよい。すべての構文要素には、付加的に語`end'
+     (それは入れ子の`if'の中で`else'や`and'
+     をあいまいでなくするために使われてもよい)が続いてもよい。
+
+     実際の条件式の非`nil'の値は、"then"部の中で名前`it'として
+     利用できる。たとえば:
+
+          (setq funny-numbers '(6 13 -1))
+               => (6 13 -1)
+          (loop for x below 10
+                if (oddp x)
+                  collect x into odds
+                  and if (memq x funny-numbers) return (cdr it) end
+                else
+                  collect x into evens
+                finally return (vector odds evens))
+               => [(1 3 5 7 9) (0 2 4 6 8)]
+          (setq funny-numbers '(6 7 13 -1))
+               => (6 7 13 -1)
+          (loop <same thing again>)
+               => (13 -1)
+
+     2つの節を"then"部に置くための`and'の使用に注意せよ。その
+     1つはそれ自身`if'節である。`end'は、通常は付加的であるが、
+     `else'が最も外側の`if'節を参照することを
+     明らかにするためにここでは必要だったことにも注意せよ。第1の場合、
+     ループはXの奇数と偶数のリストのベクタを戻す。第2の場合、奇数7は
+     `funny-numbers'の一つなのでループは早く戻る; 実際の戻り値は、
+     `memq'呼び出しの結果に基づく。
+
+`when CONDITION CLAUSE'
+     この節は単に`if'の同義語である。
+
+`unless CONDITION CLAUSE'
+     `unless'節は、条件の意味が逆であることを除いてちょうど`if'に
+     似ている。
+
+`named NAME'
+     この節は、ループを囲む暗黙のブロックに`nil'以外の名前を与える。
+     NAMEはブロック名として使われるシンボルである。
+
+`initially [do] FORMS...'
+     このキーワードはループ自身が始まる前(しかし`for'や`with'に
+     要求されるすべての変数がその初期値に束縛された後)に実行される1つかそれ
+     以上のLispフォームを導入する。`initially'節はどこにでも
+     現れることができる; いくつかある場合、それらはループに現れる順に
+     実行される。キーワード`do'は付加的である。
+
+`finally [do] FORMS...'
+     これはループが終わった後(たとえば、`for'や`while'の要求で)に
+     実行されるLispフォームを導入する。`initially'や`finally'節は
+     ループ構文要素のどこに現れてもよいが、それらはループのそれぞれ始まりや
+     終わりに(指定された順序で)実行される。
+
+`finally return FORM'
+     これは、戻り値を得るためにループ終了後に実行されるべきFORM
+     について述べる(これや`collect'や`return'のようないくつか他の
+     節がないと、ループは単に`nil'を戻すだろう)。`for'や
+     `with'、`into'によって束縛された変数は、FORMが
+     実行されるときにその最後の値をまだ含んでいる。
+
+`do FORMS...'
+     語`do'には、ループ本体で暗黙の`progn'として実行される任意の
+     数のLisp式が続いてもよい。この節の例の多くは`do'の使用法を
+     説明する。
+
+`return FORM'
+     この節は、ループが直ちに戻るようにする。それに続くLispフォームは
+     評価され、`loop'フォームの戻り値を与える。`finally'節は、
+     もしあったとしても実行されない。もちろん、`return'は一般に
+     `if'や`unless'の内部で使われるが、それはトップレベルのループ
+     節での使用は、そのループは決して1度以上"ループ"に到達しないことを
+     意味するからである。
+
+     節`return FORM'は`do (return FORM)'(あるいは
+     ループが名付けられている場合は`return-from')と同等である。
+     しかし、`return'節は若干効率的に実装されている。
+
+   `loop'へユーザ拡張を加える(たとえば`setf'に対する
+`defsetf'に比較できるような)高水準の方法はないが、この
+パッケージは、与えられたシンボルがトップレベルループ節や`for'節に
+出会ったときにそれぞれ呼び出される関数である`cl-loop-handler'や
+`cl-loop-for-handler'と呼ばれる2つの属性を提供する。詳細は
+ファイル`cl-macs.el'のソースコードを調べよ。
+
+   このパッケージの`loop'マクロはCommon Lispのそれと互換だが、
+`loop-finish'やデータ型指定子のようないくつかの機能は
+実装されていない。当然、キーマップやオーバレイ、インターバル、
+フレーム、ウィンドウ、バッファ上で繰り返す`for'節はEmacs特有の
+拡張である。
+
+
+File: cl-j,  Node: 多値,  Prev: ループ機能,  Up: 制御構造
+
+5.8 多値
+==========
+
+Common Lisp関数は0個またはそれ以上の結果を戻すことができる。Emacs Lisp
+関数は、対称的に常に正確に1つの結果を戻す。このパッケージはCommon Lisp
+多重戻り値のエミュレートを試みない; 1つ以上の値を戻すCommon Lisp関数の
+Emacs版は、(`compiler-macroexpand'でのように)単に最初の値を
+戻すか、(`get-setf-method'でのように)値のリストを戻す。この
+パッケージは、多値とともに動作するCommon Lisp関数のための場所確保を
+定義_する_が、Emacs Lispでは、それらの関数はその代わりに単に
+リスト上で作用する。たとえば、`values'フォームはEmacsでは
+`list'の同義語である。
+
+ -- Special Form: multiple-value-bind (var...) values-form forms...
+     このフォームはVALUES-FORMを評価する。VALUES-FORMは値の
+     リストを戻さなければならない。それからVAR達を`let'
+     でのようにそれぞれの値で束縛し、本体FORMSを実行する。値より
+     多くのVAR達がある場合、余分のVAR達は`nil'に
+     束縛される。VAR達が値より少ない場合、余分の値は無視される。
+
+ -- Special Form: multiple-value-setq (var...) form
+     このフォームはFORMを評価する。FORMは値のリストを
+     戻さなければならない。それからVAR達に`setq'
+     でのようにそれぞれの値を設定する。余分のVAR達や値は
+     `multiple-value-bind'と同様に扱われる。
+
+   より古いQuirozのパッケージは、Common Lisp多値のより忠実な
+(しかしなお不完全な)エミュレーションを試みた。古い方法は"通常は"真の
+多値をきわめてうまくシミュレートしたが、ある条件下では、メモリ中に後に
+無関係な`multiple-value-bind'フォームが見るような偽の戻り値を 残す。
+
+   Emacs Lispでは完全なエミュレーションは実現不可能なので、この
+パッケージは可能な限り単純に、そして予測可能なようにすることを選んだ。
+
+
+File: cl-j,  Node: マクロ,  Next: 宣言,  Prev: 制御構造,  Up: Top
+
+6 マクロ
+***********
+
+このパッケージは、分配や`&environment'、`&body'のような
+`defmacro'のさまざまなCommon Lisp機能を実装する。トップレベルの
+`&whole'は、技術的困難のために`defmacro'のためには 実装されない。*Note
+引数リスト::.
+
+   分配は、下記のマクロを通してユーザに利用可能になっている:
+
+ -- Special Form: destructuring-bind arglist expr forms...
+     このマクロは、ARGLISTの中の変数がEXPRによって戻される値の
+     リストに束縛されている状態で、FORMSを実行するコードに展開する。
+     ARGLISTは、分配を含む`defmacro'引数リストのために
+     許されるすべての機能を含むことができる(`&environment'キーワードは
+     許されない)。マクロ展開は、EXPRが不正な引数の個数のリストを
+     戻したり、不正なキーワード引数がある場合はエラーを通知するだろう。
+
+   このパッケージは、Common Lispの`define-compiler-macro'機能も
+含んでおり、コンパイル時展開の定義や関数の最適化を許す。
+
+ -- Special Form: define-compiler-macro name(名前) arglist forms...
+     このフォームは`defmacro'と似ているが、コンパイル時にだけ
+     NAMEへの呼び出しへ展開される点が異なる; Lispインタプリタで
+     処理される呼び出しは展開されず、`macroexpand'関数によっても
+     展開されない。
+
+     引数リストは`&whole'キーワードと変数で始まってもよい。この変数は
+     マクロ呼び出しフォーム自身に、すなわちフォーム `(NAME
+     ARGS...)'のリストに束縛される。
+     マクロエクスパンダがこのフォームを変えずに戻す場合、コンパイラは通常の
+     関数呼び出しとして扱う。このことは、コンパイラマクロが、複雑な
+     場合はそのままにしながら、関数の特殊な場合のためのオブティマイザとして
+     働くことを許す。
+
+     たとえば、これはこのパッケージの標準部分として現れる単純化された定義の
+     版である:
+
+          (define-compiler-macro member* (&whole form a list &rest keys)
+            (if (and (null keys)
+                     (eq (car-safe a) 'quote)
+                     (not (floatp-safe (cadr a))))
+                (list 'memq a list)
+              form))
+
+     この定義は、Aが浮動小数点定数ではないような普通の場合に、
+     `(member* A LIST)'をより速い`memq'の呼び出しへ
+     変えることを引き起こす; Aがその他の場合か、呼び出しにキーワード
+     引数がある場合、オリジナルの`member*'呼び出しはそのまま残る
+     (実際の`member*'のためのコンパイラマクロは、共通の`:test'
+     述語を含むその他のかなりのものを最適化する)。
+
+ -- Function: compiler-macroexpand form
+     この関数は`macroexpand'に似ているが、通常のマクロではなく
+     コンパイラマクロを展開する点が異なる。コンパイラマクロがそのために
+     定義された関数の呼び出しではない場合、またはコンパイラマクロがその
+     `&whole'引数を戻すことでパントすることを決定した場合、FORM
+     を変えずに戻す。`macroexpand'のように、それ以上の展開が不可能な
+     フォームに達するまで繰り返し展開する。
+
+   `macrolet'の記述と"局所"マクロ定義作成のための
+`symbol-macrolet'フォームについては、*Note マクロ束縛::.
+
+
+File: cl-j,  Node: 宣言,  Next: シンボル,  Prev: マクロ,  Up: Top
+
+7 宣言
+********
+
+Common Lispは、特別の変数に格納されるデータの型や、それらの変数や
+関数がどのように使われるかについて特殊なヒントをコンパイラに
+与えることを許す、複雑で強力な"宣言"メカニズムを含む。この
+パッケージは、`declare' や`locally'、`proclaim'、
+`declaim'、`the'といったすべてのCommon Lisp宣言フォームの 版を定義する。
+
+   Common Lisp宣言のほとんどは、現在はEmacs Lispでは有用ではない。
+バイトコードシステムは型情報から利益を得る機会をほとんど
+提供していないし、`special'宣言は完全に動的スコープのLispでは
+冗長だからである。しかし、いくつかの宣言はEmacs 19の最適化
+バイトコンパイラが使われるときに意味がある。以前の非最適化
+コンパイラでは、これらの宣言は実際には無視される。
+
+ -- Function: proclaim decl-spec
+     この関数は、DECL-SPECによって指定された"グローバル"宣言を
+     記録する。`proclaim'は関数なので、DECL-SPECは評価され、
+     したがって通常は引用符をつけるべきである。
+
+ -- Special Form: declaim decl-specs...
+     このマクロは`proclaim'に似ているが、DECL-SPEC引数を
+     任意個数取ることと、引数は評価されず引用符はつけない点が異なる。
+     `declaim'マクロはまた、実行時と同様にコンパイル時にも
+     登録されるように、宣言の周りに `(eval-when (compile load eval)
+     ...)'を置く(このことはきわめて
+     重要である。宣言は通常、`declaim'フォームを含むファイルの残りを
+     コンパイラが扱う方法に影響するように意図しているからである)。
+
+ -- Special Form: declare decl-specs...
+     このマクロは、関数や他のコード内で宣言するために使われる。Common
+     Lisp
+     はさまざまな場所で、一般にLisp文法を通じて、関数本体や`let'本体、
+     その他のような多くの"暗黙の`progn'"の始まりで宣言を許す。現在
+     `declare'によって理解される唯一の宣言は`special'である。
+
+ -- Special Form: locally declarations... forms...
+     このパッケージでは、`locally'は`progn'と相違はない。
+
+ -- Special Form: the type form
+     `the'によって提供される型情報はこのパッケージでは無視される;
+     言い替えれば、`(the TYPE FORM)'はFORMと
+     同等である。最適化バイトコンパイラの将来の版はこの情報を
+     利用するかもしれない。
+
+     たとえば、`mapcar'はリストと配列の両方にマップできる。
+     列がリストか配列か前もってわからない限り、コンパイラが
+     コンパイラが`mapcar'をインラインループへ展開することは難しい。
+
+     `(mapcar 'car (the vector foo))'に対して、将来のコンパイラは、
+     ループをインラインに展開するための十分な情報を持つかもしれない。
+     今のところ、Emacs Lispは上記のコードを`(mapcar 'car foo)'と正確に
+     同等に扱う。
+
+   `proclaim'や`declaim'、`declare'のそれぞれの
+DECL-SPECは、どんな種類の宣言かを言うシンボルで始まる
+リストであるべきである。このパッケージは、現在は`special'や
+`inline'、`notinline'、`optimize'、`warn'宣言を
+理解する(`warn'宣言は標準Common Lispへの拡張である)。`type'
+や`ftype'のような他のCommon Lisp宣言は無言で無視される。
+
+`special'
+     Emacs Lispのすべての変数は(Common Lispの意味で)"スペシャル"
+     であるので、`special'宣言は単なる助言である。それらは単に、
+     指定された変数は意図的に関数本体で束縛されずに参照されることを最適化
+     バイトコンパイラに告げる。コンパイラは通常、そのような参照に警告を
+     発するが、それは局所変数への参照の誤記である可能性があるためである。
+
+     宣言`(declare (special VAR1 VAR2))'は最適化 コンパイラでは`(defvar
+     VAR1) (defvar VAR2)'と
+     同等であり、より古いコンパイラ(非局所参照を警告しない)ではまったく
+     何とも同等ではない。
+
+     トップレベルコンテキストでは、`(declaim (special VAR))'より
+     も`(defvar VAR)'と書く方が一般に優れている。`defvar'は
+     あなたの意図をより明らかにするからである。しかし古いバイトコンパイラは、
+     関数の内部に現れる`defvar'を扱えないが、 `(declare (special
+     VAR))'はすべてのコンパイラで正しく 働くよう注意が払われる。
+
+`inline'
+     `inline' DECL-SPECは、コンパイラが準備できるときはいつでも、
+     その本体を呼び出す関数に"インライン"に展開すべき1つまたはそれ以上の
+     関数をリストする。たとえば、Common Lisp関数`cadr'は、1回の
+     (比較的高価な)関数呼び出しを省くために、フォーム`(cadr X)'
+     はユーザ関数で呼び出される際に直接`(car (cdr X))'に
+     展開されるように、このパッケージによって`inline'と宣言される。
+
+     下記の宣言はすべて同等である。`defsubst'フォームは関数を定義して
+     それをインラインにするのをすべて1度に行なう便利な方法だが、Emacs
+     19で しか利用できないことに注意せよ。
+
+          (declaim (inline foo bar))
+          (eval-when (compile load eval) (proclaim '(inline foo bar)))
+          (proclaim-inline foo bar)      ; Lucid Emacs only
+          (defsubst foo (...) ...)       ; instead of defun; Emacs 19 only
+
+     *注意せよ:* この宣言は、含んでいるソースファイルが終わった後も
+     効果を残す。あなたが定義した関数がインラインになるべきと要求するために
+     使うことは正しいが、外部関数のインライン化を要求するために使うことは
+     無作法である。
+
+     Common Lispでは、ある関数への特別な呼び出しが単にその呼び出しを
+     インラインにする前に、`(declare (inline ...))'を使うことが
+     可能である; 現在のバイトコンパイラは、これを実装する方法を
+     提供していないので、`(declare (inline ...))'は現在はこの
+     パッケージによって無視される。
+
+`notinline'
+     `notinline'宣言は、結局インラインにすべきでない関数をリストする;
+     それは以前の`inline'宣言を取り消す。
+
+`optimize'
+     この宣言は、どのくらいの最適化がコンパイラによってなされるかを制御する。
+     当然、それは初期の非最適化コンパイラでは無視される。
+
+     語`optimize'には、`(speed 3)'や`(safety 2)'のように
+     任意の数のリストが続く。Commons Lispは、いつくかの最適化"品質"を
+     定義する; このパッケージは、`speed'と`safety'以外はすべて
+     無視する。品質の値は0から3までの整数であるべきである。
+     0は"重要でない"を、3は"とても重要である"を意味する。両者の品質の
+     既定レベルは1である。
+
+     このパッケージ中では、Emacs 19の最適化コンパイラの場合、`speed'
+     品質は`byte-compile-optimize'フラグに結びつけられ、 `(speed
+     0)'の場合は`nil'が、より高い設定の場合は`t'が 設定される;
+     また、`safety'品質は`byte-compile-delete-errors'
+     フラグに結びつけられ、`(safety 3)'の場合は`t'が、より
+     低いすべての設定の場合は`nil'が設定される(後者のフラグは、その
+     副作用のみがエラーを通知する可能性があるようなコードを最適化し
+     去るかどうか(たとえば`foo'が実行時に束縛されるかどうかが未知の
+     場合に`(progn foo bar)'を`bar'に書き直す)を制御する)。
+
+     `(safety 0)'でコンパイルしてさえ、Emacsのバイトコードシステムは、
+     真に害になることが起こらないようにするための十分なチェックを
+     提供することに注意せよ。たとえば、Emacs自身に重大なバグがなければ、
+     Emacsは単に完全に最適化されたLispプログラム中のエラーのために
+     セグメント違反でクラッシュすることはない。
+
+     `optimize'宣言は、通常はファイルのトップレベルの`proclaim'や
+     `declaim'で使われる; Common Lispは、与えられたフォームに局所的な
+     最適化のレベルを設定するために、`declare'と一緒に使われることを
+     許すが、これは最適化コンパイラの現在の版では正しく動作しないだろう
+     (`declare'は新たな最適化レベルを設定するだろうが、そのレベルは、
+     囲むフォームが終わった後に自動的には設定解除されないだろう)。
+
+`warn'
+     この宣言は、どんな種類の警告がバイトコンパイラによって生成されるかを
+     制御する。再度言うと、最適化コンパイラだけが警告を生成する。
+     語`warn'には、最適化品質に似た形式の任意個数の"警告品質"が
+     続く。現在サポートされている警告の型は、`redefine'や
+     `callargs'、`unresolved'、`free-vars'である; 現在の
+     システムでは、0の値はそれらの警告を無効にし、それ以上のすべての値は
+     有効にする。詳細は最適化バイトコンパイラの文書を見よ。
+
+
+File: cl-j,  Node: シンボル,  Next: 数,  Prev: 宣言,  Up: Top
+
+8 シンボル
+**************
+
+このパッケージは、Emacs Lispに無いいくつかのシンボル関連の機能を
+定義する。
+
+* Menu:
+
+* 属性リスト::           `get*'、`remprop'、`getf'、`remf'
+* シンボル生成::         `gensym'、`gentemp'
+
+
+File: cl-j,  Node: 属性リスト,  Next: シンボル生成,  Prev: シンボル,  Up: シンボル
+
+8.1 属性リスト
+===================
+
+これらの関数は、シンボルに付けられた属性に作用するように、標準Emacs
+Lisp関数`get'や`put'を増加させる。特定のシンボルに
+付けられていない、ファーストクラスデータ構造としての属性リストに
+作用する関数もある。
+
+ -- Function: get* symbol property &optional default
+     この関数は`get'に似ているが、属性がみつからない場合、
+     DEFAULT引数が戻り値を提供する点が異なる(Emacs Lispの`get'は
+     常に`nil'を既定として使う; このパッケージの`get*'はCommon
+     Lispの`get'と同等である)。
+
+     `get*'関数は`setf'可能である; このように使われる場合、
+     DEFAULT引数は許されるが無視される。
+
+ -- Function: remprop symbol property
+     この関数は、SYMBOLの属性リストから、PROPERTYのための
+     エントリを取り除く。属性が実際に見つかって取り除かれた場合は真の値を
+     戻し、そのような属性がない場合は`nil'を戻す(この関数は、
+     `get'はDEFAULTを許さなかったので、属性が
+     見つからないこととその値が`nil'である属性を区別することが
+     難しかったために、おそらく元のEmacsから省略されたのだろう;
+     したがって、属性を`nil'へ設定することは、ほとんどの用途で
+     `remprop'と十分に近かった)。
+
+ -- Function: getf place property &optional default
+     この関数は、リストPLACEを属性リスト、すなわち属性名と値の
+     交替するリストであるかのように走査する。PROPERTYと`eq'
+     であるPLACEの偶数番目の要素が見つかった場合、続く奇数番目の
+     要素が戻される。さもなければ、DEFAULT(既定が与えられていない
+     場合は`nil')が戻される。
+
+     特に、
+
+          (get sym prop)  ==  (getf (symbol-plist sym) prop)
+
+     `getf'を`setf'場所として使うことは正しい。その場合、
+     PLACE引数はそれ自身正しい`setf'場所でなければならない。
+     DEFAULT引数は、もしあれば、このコンテキストでは無視される。その
+     効果は、PROPERTYに対応するリスト中の値セルを(`setcar'
+     によって)変えるか、属性がまだ存在しない場合は、新しい属性と値の対を
+     リスト上にコンスする。
+
+          (put sym prop val)  ==  (setf (getf (symbol-plist sym) prop) val)
+
+     `get'や`get*'関数もまた`setf'可能である。`default'
+     が無視されるという事実はときには有用になり得る:
+
+          (incf (get* 'foo 'usage-count 0))
+
+     ここでは、シンボル`foo'の`usage-count'属性が、存在する場合は
+     1だけ増やされ、そうでなければ1(1だけ増やされた0)が設定される。
+
+     `setf'フォームとして使われない場合、`getf'は単に正規の関数で
+     あり、そのPLACE引数は実際にどんなLisp式であってもよい。
+
+ -- Special Form: remf place property
+     このマクロは、PLACEに格納された属性リストから、PROPERTYの
+     属性と値の対を取り除く。PLACEは任意の`setf'可能な場所の
+     式である。属性が見つかった場合は真を戻す。PROPERTYがたまたま
+     リストの先頭の場合、実際に`(setf PLACE (cddr PLACE))'
+     を行なうが、もっと後で生じた場合は、属性と値のセルをつなぐために単に
+     `setcdr'を使うことに注意せよ。
+
+
+File: cl-j,  Node: シンボル生成,  Prev: 属性リスト,  Up: シンボル
+
+8.2 シンボル生成
+======================
+
+これらの関数は、典型的には一時変数として使われる、ユニークなシンボルを
+作成する。
+
+ -- Function: gensym &optional x
+     この関数は、新しい、ユニークな名前を持つinternされていないシンボルを
+     (`make-symbol'を使って)作る(internされていないシンボルの名前は、
+     そのシンボルが印字されるときだけ関係がある)。既定では、名前は
+     `G1000'、`G1001'、`G1002'のように、増加する数列から
+     生成される。付加引数Xが文字列の場合、その文字列は`G'の
+     代わりに接頭辞として使われる。internされていないシンボルは、それらの
+     名前がユーザコード中の"本当の"変数と衝突しないことを
+     確実にするために、マクロ展開中に一時変数として使われる。
+
+ -- Variable: *gensym-counter*
+     この変数は、`gensym'名を生成するために使われるカウンターを
+     保持する。各`gensym'の使用後に1つ増やされる。Common Lisp
+     ではこれは0に初期化されるが、このパッケージは、そのコンパイル
+     中にそれぞれ`gensym'を使う2つのファイルが一緒にロードされたときに
+     トラブルを避けるため、ランダムな(時刻依存の)値で初期化する(intern
+     されていないシンボルは、コンパイラがそれらをファイルへ書き出してEmacs
+     ローダがロードするときにinternされるので、その名前は、intern
+     されていないシンボルはロード後もinternされないままであるCommon Lisp
+     よりも少しだけ、より注意深く扱われなければならない)。
+
+ -- Function: gentemp &optional x
+     この関数は`gensym'に似ているが、新しい_internされた_
+     シンボルを生成する点が異なる。生成されたシンボルがすでに存在する場合、
+     この関数はカウンタを1つずつ増やして、新たなシンボルが生成されるまで
+     再試行し続ける。
+
+   Quirozの`cl.el'パッケージも、自己引用キーワードシンボル作成用に
+`defkeyword'フォームを定義した。このパッケージは、`&key'
+引数指定子によって呼び出されるすべてのキーワードを自動的に作り、
+キーワード引数に無関係なデータとしてのキーワードの使用に反対するので、
+`defkeyword'フォームは中止した。
+
+
+File: cl-j,  Node: 数,  Next: 列,  Prev: シンボル,  Up: Top
+
+9 数
+*****
+
+この節は、Emacs Lispでは省かれた、数へのいくつかの単純なCommon Lisp
+演算を定義する。
+
+* Menu:
+
+* 数の述語::                    `plusp'、`oddp'、`floatp-safe'、その他
+* 数の関数::                    `abs'、`expt'、`floor*'、その他
+* 乱数::                        `random*'、`make-random-state'
+* 処理系パラメータ::            `most-positive-fixnum'、`most-positive-float'
+
+
+File: cl-j,  Node: 数の述語,  Next: 数の関数,  Prev: 数,  Up: 数
+
+9.1 数の述語
+================
+
+これらの関数は、指定された条件が数の引数で真の場合に`t'を戻し、
+さもなければ`nil'を戻す。
+
+ -- Function: plusp number
+     この述語は、NUMBERが正かどうかをテストする。引数が数でない場合は
+     エラーである。
+
+ -- Function: minusp number
+     この述語は、NUMBERが負かどうかをテストする。引数が数でない場合は
+     エラーである。
+
+ -- Function: oddp integer
+     この述語は、INTEGERが奇数かどうかをテストする。引数が整数でない
+     場合はエラーである。
+
+ -- Function: evenp integer
+     この述語は、INTEGERが偶数かどうかをテストする。引数が整数でない
+     場合はエラーである。
+
+ -- Function: floatp-safe object
+     この述語は、OBJECTが浮動小数点数かどうかをテストする。
+     浮動小数点数をサポートするシステムでは、これは`floatp'と
+     同等である。他のシステムでは、これは常に`nil'を戻す。
+
+
+File: cl-j,  Node: 数の関数,  Next: 乱数,  Prev: 数の述語,  Up: 数
+
+9.2 数の関数
+================
+
+これらの関数は、さまざまな数の算術演算を行なう。
+
+ -- Function: abs number(数)
+     この関数は、NUMBERの絶対値を戻す(より新しいEmacsの版は、これを
+     組み込み関数として提供する; このパッケージは、プリミティブとして
+     提供しないEmacs 18版用にだけ`abs'を定義する)。
+
+ -- Function: expt base power
+     この関数は、NUMBER乗したBASEを戻す(より新しいEmacsの版は、
+     これを組み込み関数として提供する;
+     このパッケージは、プリミティブとして 提供しないEmacs
+     18版用にだけ`expt'を定義する)。
+
+ -- Function: gcd &rest integers
+     この関数は、引数の最大公約数を戻す。引数が1つの場合、その引数の絶対値
+     を戻す。引数がない場合は0を戻す。
+
+ -- Function: lcm &rest integers
+     この関数は、引数の最小公倍数を戻す。引数が1つの場合、その引数の絶対値
+     を戻す。引数がない場合は1を戻す。
+
+ -- Function: isqrt integer
+     この関数は、その整数引数の"整数平方根"、すなわち、引数の真の
+     平方根より小さいか等しい最大の整数を計算する。
+
+ -- Function: floor* number &optional divisor
+     この関数は、Common Lispの`floor'関数を実装する。Emacs 19に
+     組み込みの単純な`floor'関数との名前の衝突を避けるため、
+     `floor*'と呼ばれる。
+
+     引数が1つの場合、`floor*'は2つの数のリストを戻す: 2つの数は、
+     整数へ(負の無限大方向へ)丸められた引数と、引数を再び生み出すために
+     第1の戻り値に加え戻す必要があるような"余り"である。引数が整数X
+     の場合、結果は常にリスト`(X 0)'である。引数がEmacs19の
+     浮動小数点数の場合、第1の結果はLisp整数であり、第2は0(含む)から
+     1(含まない)の間のLisp浮動小数点数である。
+
+     引数が2つの場合、`floor*'はDIVISORでNUMBERを割り、
+     商のfloorと、対応する余りを2つの数のリストとして戻す。 `(floor* X
+     Y)'が`(Q R)'を戻す場合、 Rを0(含む) からR(含まない)までとして、
+     `Q*Y + R = X'である。 `(floor* X)'は、正確に`(floor* X
+     1)'と同等である ことにも注意せよ。
+
+     この関数は、Common Lispの`floor'と完全に互換だが、Emacs Lispは
+     多値関数をサポートしていないので、リストに入った2つの結果を戻す点が
+     異なる。
+
+ -- Function: ceiling* number &optional divisor
+     この関数は、Common Lispの`ceiling'関数を実装する。`ceiling'
+     は、正の無限大方向へ引数または引数の商を丸める点を除いて、`floor'
+     と類似している。余りは0から負のRまでである。
+
+ -- Function: truncate* number &optional divisor
+     この関数は、Common Lispの`truncate'関数を実装する。
+     `truncate'は、0の方向へ引数または引数の商を丸める点を除いて、
+     `floor'と類似している。したがって、引数または商が正の場合は
+     `floor*'と、さもなければ`ceiling*'と同等である。余りは
+     NUMBERと同じ符号を持つ。
+
+ -- Function: round* number &optional divisor
+     この関数は、Common Lispの`round'関数を実装する。`round'は、
+     最も近い整数へ引数または引数の商を丸める点を除いて、`floor'と類似
+     している。タイ(引数または引数の商が正確に2つの整数の中間)の場合、偶数
+     へ丸める。
+
+ -- Function: mod* number divisor
+     この関数は、`floor'の2つ目の戻り値と同じ値を戻す。
+
+ -- Function: rem* number divisor
+     この関数は、`truncate'の2つ目の戻り値と同じ値を戻す。
+
+   これらの定義は、Quirozの`cl.el'パッケージと互換だが、この
+パッケージは、既存のEmacs Lisp関数との衝突を避けるために、ある種の
+関数名に`*'を付加している点と、多値戻しのメカニズムが異なる。
+
+
+File: cl-j,  Node: 乱数,  Next: 処理系パラメータ,  Prev: 数の関数,  Up: 数
+
+9.3 乱数
+==========
+
+このパッケージは、Common Lisp乱数ジェネレータの実装も提供する。独自の
+付加適合的アルゴリズムを使っており、多くの
+オペレーティングシステムによって提供される単純なジェネレータよりも、
+ずっと統計的にきれいな乱数をおそらく与える。
+
+ -- Function: random* number &optional state
+     この関数は、NUMBERより小さく同じ型(整数か浮動小数点数のどちらか)
+     の、負でない乱数を戻す。STATE引数は乱数ジェネレータの状態を保持
+     する`random-state'オブジェクトでなければならない。この関数は
+     副作用として、この状態オブジェクトを修正する。STATEが省略された
+     場合、変数`*random-state*'を既定とする。`*random-state*'は、
+     あらかじめ初期化された`random-state'オブジェクトを含む。
+
+ -- Variable: *random-state*
+     この変数は、システム"既定"の`random-state'オブジェクトを含み、
+     代替の状態オブジェクトを指定しない`random*'への呼び出しのために
+     使われる。Emacsプロセス内の任意の数のプログラムは、さしはさむような
+     仕方で`*random-state*'にアクセスしてもよいので、この変数から
+     生成される列は、意図や用途にかかわらず再現不能になるだろう。
+
+ -- Function: make-random-state &optional state
+     この関数は、`random-state'オブジェクトを作成またはコピーする。
+     STATEが省略されるか`nil'の場合、新しい`*random-state*'
+     のコピーを戻す。これは、`(random* N)'と `(random* N S)'(Sは新しい
+     ランダムステートオブジェクト)の呼び出しの将来の列は同一の乱数列を
+     戻すという意味でコピーである。
+
+     STATEが`random-state'オブジェクトの場合、この関数はその
+     オブジェクトのコピーを戻す。STATEが`t'の場合、この関数は
+     日時を種とする新しい`random-state'オブジェクトを戻す。Common Lisp
+     への拡張として、STATEは整数であってもよく、その場合は新しい
+     オブジェクトはその整数を種とする; それぞれ異なる整数の種は、完全に
+     異なる乱数列を生じるだろう。
+
+     `random-state'オブジェクトをバッファまたはファイルに印字して、
+     後に`read'で読み戻すことは正しい。プログラムが、デバッグ用に後に
+     再現させられるような疑似乱数の列を使いたい場合、新しい列を
+     取得するために`(make-random-state t)'を呼び出して、後にこの列を
+     ファイルへ印字することができる。プログラムが後で再実行される場合、
+     ファイルからオリジナルな実行のランダムステートを読むことができる。
+
+ -- Function: random-state-p object
+     この述語は、OBJECTが`random-state'オブジェクトの場合に
+     `t'を、さもなければ`nil'を戻す。
+
+
+File: cl-j,  Node: 処理系パラメータ,  Prev: 乱数,  Up: 数
+
+9.4 処理系パラメータ
+============================
+
+このパッケージは、数に関するいくつかの有用な定数を定義する。
+
+ -- Variable: most-positive-fixnum
+     この定数は、Lisp整数が保持できる最大値と等しい。典型的には
+     `2^23-1'または`2^25-1'である。
+
+ -- Variable: most-negative-fixnum
+     この定数は、Lisp整数が保持できる最小値(最も負の値)と等しい。
+
+   下記のパラメータは浮動小数点数と関係がある。このパッケージは、
+さまざまな方法で計算機の浮動小数点算術を用いてこれらの値を決定する。
+これらの演算は遅いかもしれないので、それらの初期化用のコードは、
+パラメータが使われる可能性がある前に呼び出されなければならない切り
+離された関数に保たれている。
+
+ -- Function: cl-float-limits
+     この関数は、`most-positive-float'のようなCommon Lisp浮動小数点
+     パラメータが初期化されていることを確実にする。この関数が呼び
+     出されるまで、これらのパラメータは`nil'だろう。このEmacsの版が
+     (たとえばEmacs
+     18のほとんどの版のように)浮動小数点数をサポートしない
+     場合、それらのパラメータは`nil'のままだろう。パラメータがすでに
+     初期化されている場合、この関数は直ちに戻る。
+
+     そのアルゴリズムはほとんどの現代のマシンに有効な仮定を置いているが、
+     マシンの算術が、たとえば10進法のようにきわめて普通でない場合は
+     失敗するだろう。
+
+   真のCommon Lispは、4つまでの異なる浮動小数点精度を持つので、
+`most-positive-single-float'や`most-positive-double-float'、
+`most-positive-long-float'などのような定数の一群を持つ。Emacsは
+1つの浮動小数点精度のみを持つので、このパッケージは定数名から精度の
+語を省略する。
+
+ -- Variable: most-positive-float
+     この定数は、Lisp浮動小数点数が保持できる最大値と等しい。算術が無限を
+     サポートするようなシステムでは、これは最大の_有限の_値である。
+     IEEEマシンでは、その値はおおよそ`1.79e+308'である。
+
+ -- Variable: most-negative-float
+     この定数は、Lisp浮動小数点数が保持できる最も負の数と等しい (`(-
+     most-positive-float)'と等しいと仮定される)。
+
+ -- Variable: least-positive-float
+     この定数は、0より大きい最小のLisp浮動小数点値と等しい。IEEEマシンでは、
+     非正規がサポートされている場合は約`4.94e-324'、そうでなければ
+     約`2.22e-308'である。
+
+ -- Variable: least-positive-normalized-float
+     この定数は、0より大きい最小の正規化されたLisp浮動小数点(すなわち、IEEE
+     非正規化が精度の損失を生じない最小の値)と等しい。IEEEマシンでは、この
+     値は約`2.22e-308'である。非正規化の概念や段階的なアンダーフローを
+     サポートしていないマシンでは、この定数は常に
+     `least-positive-float'と等しい。
+
+ -- Variable: least-negative-float
+     この定数は、`least-positive-float'
+
+ -- Variable: least-negative-normalized-float
+     この定数は、`least-positive-normalized-float'の負の相対物である。
+
+ -- Variable: float-epsilon
+     この定数は、別の値を生み出すために1.0に加えることができる、最小の正の
+     Lisp浮動小数点値である。より小さな数を1.0に加えても、丸めのために再び
+     1.0を生じる。IEEEマシンでは、epsilonは約`2.22e-16'である。
+
+ -- Variable: float-negative-epsilon
+     この定数は、別の値を生み出すために1.0から減じることができる、最小の正
+     の値である。IEEEマシンでは約`1.11e-16'である。
+
+
+File: cl-j,  Node: 列,  Next: リスト,  Prev: 数,  Up: Top
+
+10 列
+******
+
+Common Lispは、"列"に作用するかなりの数の関数を定義している。列は
+リストや文字列、ベクタのいずれかである。Emacs Lispはそれらのいくつか、
+特に`elt'や`length'を含む; このパッケージは、残りのほとんど を定義する。
+
+* Menu:
+
+* 列の基本::                 すべての列関数で共有される引数
+* 列上のマッピング::         `mapcar*'、`mapcan'、`map'、`every'、その他
+* 列関数::                   `subseq'、`remove*'、`substitute'、その他
+* 列の検索::                 `find'、`position'、`count'、`search'、その他
+* 列のソート::               `sort*'、`stable-sort'、`merge'
+
+
+File: cl-j,  Node: 列の基本,  Next: 列上のマッピング,  Prev: 列,  Up: 列
+
+10.1 列の基本
+=================
+
+列関数の多くはキーワード引数をとる; *note 引数リスト::. すべての
+キーワード引数は付加的であり、指定される場合は任意の順序に現れてよい。
+
+   `:key'引数は、`nil'あるいは1引数の関数を
+渡されなければならない。このキー関数は、それを通して列の要素が
+見えるようなフィルタとして使われる; たとえば、 `(find x y :key
+'car)'は`(assoc* x y)'と似ている: `x'
+自身に等しい要素ではなく、その`car'が`x'に等しいリストの
+要素を検索する。`:key'が省略されるか`nil'の場合、フィルタは
+実際には恒等関数である。
+
+   `:test'と`:test-not'引数は、`nil'あるいは2引数の
+関数でなければならない。テスト関数は、2つの列要素を比較するために、
+あるいは検索値と列要素を比較するために使われる(2つの値は、それから
+派生したオリジナルの列関数の引数と同じ順序で、両方が同じ列からくる
+場合は列に現れるのと同じ順序で、テスト関数に渡される)。`:test'
+引数は、マッチを示すために真(非`nil')を戻す関数を
+指定しなければならない; そのかわりに、マッチを示すために_偽_を
+戻す関数を与えるために`:test-not'を使ってもよい。既定のテスト
+関数は`:test 'eql'である。
+
+   ITEMと`:test'または`:test-not'をとる関数の多くには、
+変種`-if'や`-if-not'もある。そこでは、PREDICATE関数が
+ITEMの代わりに渡され、その述語が真(あるいは`-if-not'の
+場合は偽)を戻す場合、列の要素はマッチする。たとえば:
+
+     (remove* 0 seq :test '=)  ==  (remove-if 'zerop seq)
+
+は、列`seq'からすべての0を取り除く。
+
+   いくつかの演算は、引数列の部分列に働くことができる; これらの関数は、
+既定がそれぞれ0と列の長さである`:start'と`:end'引数をとる。
+START(含む)とEND(含まない)の間の要素だけが、その演算に
+影響される。END引数は、列の長さを表わすために`nil'を 渡されてもよい;
+さもなければ、STARTとENDはともに整数で、 `0 <= START <= END <= (length
+SEQ)' でなければならない。関数が2つの列引数をとる場合、制限は、第1の列は
+キーワード`:start1'と`:end1'で、第2の列はキーワード
+`:start2'と`:end2'で定義される。
+
+   いくつかの関数は、`:from-end'引数と`:count'引数を
+受け入れる。`:from-end'が非`nil'の場合、演算が左から
+右へではなく右から左へ列を通っていくことを引き起こし、`:count'
+は、取り除かれるか処理されるかする要素の最大数の整数を指定する。
+
+   列関数は、`:test'や`:test-not'、`:key'関数がさまざまな
+要素上で呼び出される順序を保証しない。したがって、これらの関数の
+副作用に依存するのは悪い考えである。たとえば、`:from-end'は列が
+実際に逆順で走査されることを引き起こすかもしれないし、正順で走査して、
+しかし後ろから走査されたように結果を計算してもよい(`mapcar*'や
+`every'のようないくつかの関数は、副作用がこれらの場合は完全に
+受け入れられるように、関数が呼び出される順序を正確に指定_する_)。
+
+   GNU Emacs 19の文字列は、文字データと同様に"テキスト属性"を
+含んでもよい。注がある場合を除いて、列関数によってテキスト属性が
+保存されるかどうかは未定義である。たとえば `(remove* ?A
+STR)'は、STRからコピーされて結果として
+生じた文字の属性を保存するかもしれないし、保存しないかもしれない。
+
+
+File: cl-j,  Node: 列上のマッピング,  Next: 列関数,  Prev: 列の基本,  Up: 列
+
+10.2 列上のマッピング
+=============================
+
+これらの関数は、リストまたは配列の要素上に、指定した関数を"マップ"
+する。それらはすべて、組み込み関数`mapcar'のテーマの変奏である。
+
+ -- Function: mapcar* function seq &rest more-seqs
+     この関数は、その引数列に連続する並列の要素の集合上でFUNCTIONを
+     呼び出す。1つのSEQ引数の場合、`mapcar'と同等である; N
+     列の場合、結果のリストの第1要素を生み出すために、それぞれの列の
+     第1要素をN引数として関数を呼び出す。それから第2要素以降にも
+     同様に呼び出す。マップは、最も短い列が尽きたらすぐに止まる。引数列は、
+     リストや文字列、ベクタのいずれの混合でもよい; 戻される列は常に
+     リストである。
+
+     Common Lispの`mapcar'は多重引数を受け入れるが、リスト上でのみ
+     動作する; Emacs Lispの`mapcar'は1つの列引数を受け入れる。この
+     パッケージの`mapcar*'は、両方に互換なスーパーセットとして
+     動作する。
+
+ -- Function: map result-type function seq &rest more-seqs
+     この関数は、ちょうど`mapcar*'のように、引数列の上にFUNCTION
+     をマップするが、リストではなく型RESULT-TYPEの列を戻す。
+     RESULT-TYPEは下記のシンボルの1つでなければならない:
+     `vector'、`string'、`list'(この場合、効果は
+     `mapcar*'と同じ)、または`nil'(この場合、結果は捨て去られ、
+     `map'は`nil'を戻す)。
+
+ -- Function: maplist function list &rest more-lists
+     この関数は、その引数リストのそれぞれの上でFUNCTIONを呼び出して、
+     それらのリストの`cdr'の上で呼び出して、というように最短のリストが
+     尽きるまで続く。結果はリストのフォーム中に戻される。したがって
+     `maplist'は、前進するポインタの`car'ではなく、リストの
+     ポインタ自身を通っていく点を除いて、`mapcar*'と似ている。
+
+ -- Function: mapc function seq &rest more-seqs
+     この関数は`mapcar*'と似ているが、FUNCTIONによって戻される
+     値はリストに集積されるのではなく、無視され捨て去られる点が異なる。
+     `mapc'の戻り値は、第1の列SEQである。
+
+ -- Function: mapl function list &rest more-lists
+     この関数は`maplist'に似ているが、FUNCTIONによって戻される
+     値を捨て去る点が異なる。
+
+ -- Function: mapcan function seq &rest more-seqs
+     この関数は`mapcar*'に似ているが、単に戻り値
+     (リストでなければならない)を集積するのではなく、`nconc'を使って
+     連結する点が異なる。
+
+ -- Function: mapcon function list &rest more-lists
+     この関数は`maplist'に似ているが、`nconc'を使って戻り値を
+     連結する点が異なる。
+
+ -- Function: some predicate seq &rest more-seqs
+     この関数は、順にSEQの各要素にPREDICATEを呼び出す;
+     PREDICATEが非`nil'を戻す場合、`some'はその値を戻し、
+     そうでなければ`nil'を戻す。いくつかの列引数が与えられる場合、
+     ちょうど`mapcar*'のように、最短の列が尽きるまで並列に列を通る。
+     左から右への順序で要素が訪問されることや、PREDICATEが
+     非`nil'を戻すとすぐにマッピングが止まるという事実に依存できる。
+
+ -- Function: every predicate seq &rest more-seqs
+     この関数は、順に列の各要素にPREDICATEを呼び出す; PREDICATE
+     がいずれかの要素で`nil'を戻すとすぐに`nil'を、述語がすべての
+     要素で真の場合に`t'を戻す。
+
+ -- Function: notany predicate seq &rest more-seqs
+     この関数は、順に列の各要素にPREDICATEを呼び出す; PREDICATE
+     がいずれかの要素で非`nil'を戻すとすぐに`nil'を、述語がすべて
+     の要素で`nil'の場合に`t'を戻す。
+
+ -- Function: notevery predicate seq &rest more-seqs
+     この関数は、順に列の各要素にPREDICATEを呼び出す; PREDICATE
+     がいずれかの要素で`nil'を戻すとすぐに非`nil'を、述語がすべて
+     の要素で真の場合に`t'を戻す。
+
+ -- Function: reduce function seq &key :from-end :start :end
+          :initial-value :key
+     この関数は、結合二項演算を使ってSEQの要素を結合する。
+     FUNCTIONが`*'でSEQがリスト`(2 3 4 5)'だと
+     仮定する。最初のリストの2つの要素は`(* 2 3) = 6'と結合される;
+     これは次の要素`(* 6 4) = 24'と結合され、最後の要素 `(* 24 5) =
+     120'と結合される。`*'関数はたまたま 自己縮約的なので、`(* 2 3 4
+     5)'は`reduce'への明示的な 呼び出しと同じ効果を持つことに注意せよ。
+
+     `:from-end'が真の場合、縮約は左結合の代わりに右結合である:
+
+          (reduce '- '(1 2 3 4))
+               == (- (- (- 1 2) 3) 4) => -8
+          (reduce '- '(1 2 3 4) :from-end t)
+               == (- 1 (- 2 (- 3 4))) => -2
+
+     `:key'が指定された場合、それは順に列の各要素上で呼び出される、
+     1引数の関数である。
+
+     `:initial-value'が指定された場合、それは実際に列の先頭に
+     (`:from-end'の場合は末尾に)加えられる。`:key'関数は初期値に
+     は適用され_ない_。
+
+     列が、初期値を含めて正確に1つの要素を持つ場合、その要素は決して
+     FUNCTIONを呼び出すことなしに戻される。列が空の(そして
+     初期値がない)場合、FUNCTIONは戻り値を得るために、引数なしで呼び
+     出される。
+
+   これらのマッピング演算はすべて、`loop'マクロで便利に
+表現することができる。コンパイルされたコードでは、関数呼び出しのない
+インラインコードとしてループを生成するので、`loop'の方が 速いだろう。
+
+
+File: cl-j,  Node: 列関数,  Next: 列の検索,  Prev: 列上のマッピング,  Up: 列
+
+10.3 列関数
+==============
+
+この節は、列に作用するかなりの数のCommon Lisp関数を記述する。
+
+ -- Function: subseq sequence start &optional end
+     この関数は、引数SEQUENCEの与えられた部分列を戻す。SEQUENCE
+     はリストや、文字列、ベクタでもよい。インデックスSTARTとEND
+     は範囲内でなければならず、STARTはENDより大きくてはならない。
+     ENDが省略された場合、列の長さを既定とする。戻り値は常にコピーで
+     ある; SEQUENCEと構造を共有しない。
+
+     Common Lispへの拡張として、STARTおよび/またはENDは負数でも
+     よい。その場合、それらは列の終わりからの距離を表現する。これは、Emacs
+     の`substring'関数と互換である。`subseq'は、負のSTARTや
+     ENDを許す_唯一の_列関数であることに注意せよ。
+
+     要素の指定した範囲を別の列の要素で置き換えるために、`subseq'
+     フォーム上で`setf'を使うことができる。置き換えは、以下に記述する
+     `replace'によってのように行なわれる。
+
+ -- Function: concatenate result-type &rest seqs
+     この関数は、型RESULT-TYPEの結果の列を形成するために、引数列を
+     一緒に連結する。RESULT-TYPEはシンボル`vector'または
+     `string'、`list'のいずれかである。引数は、結果が引数と
+     同一である`(concatenate 'list '(1 2 3))'のような場合ですら常に
+     コピーされる。
+
+ -- Function: fill seq item &key :start :end
+     この関数は、値ITEMで列の要素(あるいは列の指定された部分)を満たす。
+
+ -- Function: replace seq1 seq2 &key :start1 :end1 :start2 :end2
+     この関数は、SEQ2の一部をSEQ1の一部にコピーする。列
+     SEQ1は伸びたり縮んだりしない; コピーされるデータの量は、単に元と
+     先の(副)列の短い方である。この関数はSEQ1を戻す。
+
+     SEQ1とSEQ2が`eq'の場合、開始と終了引数で示される
+     範囲が重なっていても正しく動作する。しかし、SEQ1とSEQ2が、
+     記憶域を共有するが`eq'ではないリストであり、開始と終了引数が
+     重なる範囲を指定する場合、その効果は未定義である。
+
+ -- Function: remove* item seq &key :test :test-not :key :count :start
+          :end :from-end
+     これは、ITEMにマッチするすべての要素を取り除いたSEQの
+     コピーを戻す。結果は、ある状況ではSEQと記憶域を共有するか
+     `eq'であってもよいが、オリジナルのSEQは修正されない。
+     `:test'や`:test-not'、`:key'引数は使われる マッチテストを定義する;
+     既定では、ITEMと`eql'の要素が
+     取り除かれる。`:count'引数は、取り除かれてよいマッチする要素の
+     最大数を指定する(一番左のCOUNTマッチだけが取り除かれる)。
+     `:start'と`:end'引数は、要素が取り除かれるSEQの領域を 指定する;
+     領域の外の要素は、マッチしないか取り除かれない。
+     `:from-end'引数が真の場合、要素は先頭からではなく列の終わりから
+     削除されるべきだということを表わす(これはCOUNTも指定された
+     場合にだけ問題となる)。
+
+ -- Function: delete* item seq &key :test :test-not :key :count :start
+          :end :from-end
+     これは、ITEMにマッチするSEQのすべての要素を削除する。
+     それは破壊的な作用である。Emacs Lispは、伸縮可能な文字列やベクタを
+     サポートしないので、これはそれらの列型には`remove*'と同じである。
+     リストに対しては、`remove*'はオリジナルのリストを保存するために
+     必要な場合はリストをコピーするが、`delete*'は引数リストの
+     部分をつなぐ。`append'と`nconc'を比較せよ。これらは、Emacs
+     Lisp中にある類似の非破壊的/破壊的リスト演算である。
+
+   述語起源の関数`remove-if'や`remove-if-not'、`delete-if'、
+`delete-if-not'は同様に定義される。
+
+ -- Function: delete item list
+     このMacLisp互換の関数は、ITEMと`equal'なすべての要素を
+     LISTから削除する。`delete'関数は、Emacs 19へは組み込まれて いる;
+     このパッケージは、Emacs 18にそれを同等に定義する。
+
+ -- Function: remove item list
+     この関数は、ITEMと`equal'なすべての要素をLISTから
+     取り除く。`remove'はEmacs 19へは組み込まれていないが、
+     このパッケージは`delete'との対称のためにそれを定義する。
+
+ -- Function: remq item list
+     この関数は、ITEMと`eq'なすべての要素をLISTから
+     取り除く。`remq'はEmacs 19へは組み込まれていないが、
+     このパッケージは`delq'との対称のためにそれを定義する。
+
+ -- Function: remove-duplicates seq &key :test :test-not :key :start
+          :end :from-end
+     この関数は、重複要素を取り除いたSEQのコピーを戻す。つまり、
+     列からの2つの要素が`:test'や`:test-not'、`:key'引数に
+     従ってマッチする場合、一番右のものだけが保たれる。`:from-end'が
+     真の場合、一番左のものがその代わりに保たれる。`:start'または
+     `:end'が指定された場合、その部分列の要素だけが調べられるか
+     取り除かれる。
+
+ -- Function: delete-duplicates seq &key :test :test-not :key :start
+          :end :from-end
+     この関数は、SEQから重複要素を削除する。それは
+     `remove-duplicates'の破壊的版である。
+
+ -- Function: substitute new old seq &key :test :test-not :key :count
+          :start :end :from-end
+     この関数は、OLDとマッチするすべての要素をNEWと置き換えた
+     SEQのコピーを戻す。`:count'や`:start'、`:end'、
+     `:from-end'引数は、置き換えが行なわれる数を制限するために使われて
+     もよい。
+
+ -- Function: nsubstitute new old seq &key :test :test-not :key :count
+          :start :end :from-end
+     これは、`substitute'の破壊的版である; それは、列の変更されたコピー
+     を戻すのではなく、`setcar'や`aset'を使って置き換えを行なう。
+
+   `substitute-if'や`substitute-if-not'、`nsubstitute-if'、
+`nsubstitute-if-not'関数は同様に定義される。これらのために、
+PREDICATEがOLD引数の場所に与えられる。
+
+
+File: cl-j,  Node: 列の検索,  Next: 列のソート,  Prev: 列関数,  Up: 列
+
+10.4 列の検索
+=================
+
+これらの関数は、列の中で要素や部分列を検索する(`member*'や
+`assoc*'も参照; *note リスト::)。
+
+ -- Function: find item seq &key :test :test-not :key :start :end
+          :from-end
+     この関数は、ITEMとマッチする要素を見つけるためにSEQを検索
+     する。マッチが見つかった場合、マッチした要素を戻す。そうでなければ、
+     `nil'を戻す。`:from-end'が真でない場合、一番左のマッチを戻す。
+     `:from-end'が真の場合、一番右のマッチを戻す。`:start'や
+     `:end'引数は、検索される要素の範囲を制限するために使用してもよい。
+
+ -- Function: position item seq &key :test :test-not :key :start :end
+          :from-end
+     この関数は`find'と似ているが、項目自身ではなく、マッチする項目の
+     列の中の位置を示す整数を戻す点が異なる。`:start'が0でない
+     場合でさえ、位置は全体として列の開始から相対である。マッチする要素が
+     見つからない場合、この関数は`nil'を返す。
+
+ -- Function: count item seq &key :test :test-not :key :start :end
+     この関数は、ITEMとマッチするSEQの要素の数を戻す。結果は
+     常に負ではない整数である。
+
+   `find-if'や`find-if-not'、`position-if'、
+`position-if-not'、`count-if'、`count-if-not'は同様に 定義される。
+
+ -- Function: mismatch seq1 seq2 &key :test :test-not :key :start1
+          :end1 :start2 :end2 :from-end
+     この関数は、SEQ1とSEQ2の指定された部分を比較する。それらが
+     同じ長さで、対応する要素が(`:test'や`:test-not'、`:key'
+     に従って)マッチする場合、この関数は`nil'を戻す。ミスマッチがある
+     場合、この関数は第1のミスマッチ要素の(SEQ1に相対な)インデクスを
+     戻す。これは、マッチしない一番左の要素のペアか、2つの非マッチ列の短い
+     方が尽きた場所である。
+
+     `:from-end'が真の場合、要素は`(1- END1)'と `(1-
+     END2)'から始まり右から左へ比較される。列が異なる場合、
+     一番右の(SEQ1に相対な)相違のインデクスに1を加えた値が戻される。
+
+     興味深い例は`(mismatch str1 str2 :key 'upcase)'であり、これは
+     大文字小文字を区別せずに2つの文字列を比較する。
+
+ -- Function: search seq1 seq2 &key :test :test-not :key :from-end
+          :start1 :end1 :start2 :end2
+     この関数は、SEQ1(あるいは`:start1'や`:end1'で
+     指定された部分)とマッチする部分列を見つけるためにSEQ2を
+     検索する。`:start2'や`:end2'で定義される領域内に完全に入る
+     マッチのみが考慮される。戻り値は、SEQ2の開始に相対な一番左
+     マッチの一番左の要素のインデクスか、マッチが見つからない場合は
+     `nil'である。`:from-end'が真の場合、この関数は
+     _一番右の_マッチする部分列を見つける。
+
+
+File: cl-j,  Node: 列のソート,  Prev: 列の検索,  Up: 列
+
+10.5 列のソート
+====================
+
+ -- Function: sort* seq predicate &key :key
+     この関数は、要素の対を比較するためにPREDICATEを使って決定される
+     昇順にSEQをソートする。PREDICATEは、その第1引数がその第2
+     引数より小さい場合にのみ真(非`nil')を戻さなければならない。
+     たとえば`<'や`string-lessp'は、それぞれ数や文字列を
+     ソートするのに適切な述語関数である; `>'は昇順ではなく降順で数を
+     ソートするだろう。
+
+     この関数は、単なるリストにではなく、列のすべての型に作用できる点で、
+     Emacs組み込みの`sort'と異なる。また、PREDICATE関数へ
+     与えられるデータを前処理するのに使われる、`:key'引数を受け
+     入れる。たとえば、
+
+          (setq data (sort data 'string-lessp :key 'downcase))
+
+     は、大文字小文字を考慮せずにアルファベットの昇順に文字列の列DATA
+     をソートする。`car'の`:key'関数は、連想リストのソートに有用
+     だろう。
+
+     `sort*'関数は破壊的である; 適切な仕方で`cdr'ポインタを実際に
+     再配列することで、リストをソートする。
+
+ -- Function: stable-sort seq predicate &key :key
+     この関数は、SEQを"安定して"ソートする。"安定して"とは、
+     PREDICATEに関して等値な2つの要素は、ソートによってその元の
+     順序から再配列されないことが保証されているという意味である。
+
+     実際、`sort*'と`stable-sort'は、その下にある`sort'関数
+     が既定では安定なので、Emacs
+     Lispでは同等である。しかしこのパッケージは、
+     将来`sort*'のために非安定な方法を使う権利を予約する。
+
+ -- Function: merge type seq1 seq2 predicate &key :key
+     この関数は、それらの要素を差しはさむことで、2つの列SEQ1と
+     SEQ2をマージする。結果の列は、(`concatenate'の意味で)
+     TYPEの型を持ち、2つの入力列の長さの和と等しい長さを持つ。列は
+     破壊的に修正されるかもしれない。SEQ1とSEQ2内の要素の
+     順序は、差しはさみで保存される; 2つの列の要素は、(`sort'の 意味で)
+     PREDICATEで比較され、より小さい要素が結果の先に行く。
+     要素が等値の場合、結果ではSEQ1がSEQ2からの要素よりも
+     先にくる。従って、SEQ1とSEQ2がともにPREDICATEに
+     従ってソートされる場合、結果はPREDICATEに従って(安定に)
+     ソートされたマージ列だろう。
+
+
+File: cl-j,  Node: リスト,  Next: ハッシュ表,  Prev: 列,  Up: Top
+
+11 リスト
+************
+
+ここに記述される関数はリストに作用する。
+
+* Menu:
+
+* リスト関数::                    `caddr'、`first'、`last*'、`list*'、その他
+* 式の置き換え::                  `subst'、`sublis'、その他
+* 集合としてのリスト::            `member*'、`adjoin'、`union'、その他
+* 連想リスト::                    `assoc*'、`rassoc*'、`acons'、`pairlis'
+
+
+File: cl-j,  Node: リスト関数,  Next: 式の置き換え,  Prev: リスト,  Up: リスト
+
+11.1 リスト関数
+====================
+
+この節は、リスト上、すなわちコンスセルの連鎖上のかなりの数の単純な演算
+を記述する。
+
+ -- Function: caddr x
+     この関数は、`(car (cdr (cdr X)))'と同等である。同様にこの
+     パッケージは、XXXが4つまでの`a'および/または`d'
+     である、28個の`cXXXr'関数すべてを定義する。これらの
+     関数はすべて`setf'可能であり、それらへの呼び出しは、最大の
+     効率のためにバイトコンパイラでインラインに展開される。
+
+ -- Function: first x
+     この関数は、`(car X)'の同義語である。同様に、関数
+     `second'、`third'、...、`tenth'はリストXの 与えられた要素を戻す。
+
+ -- Function: rest x
+     この関数は、`(cdr X)'の同義語である。
+
+ -- Function: endp x
+     Common Lispは、この関数は`null'と同様に動作するが、`x'が
+     `nil'でもコンスセルでもない場合はエラーを通知するように定義する。
+     このパッケージは、単に`null'の同義語として`endp'を定義する。
+
+ -- Function: list-length x
+     この関数は、`(length X)'と正確に同じようにリストXの
+     長さを戻すが、Xが循環リスト(cdr連鎖が`nil'で
+     終端するのではなくループを形成する)の場合、この関数は`nil'を戻す
+     (正規の`length'関数は、循環リストを与えられた場合、はまりこんで
+     動けなくなるだろう)。
+
+ -- Function: last* x &option(付加)al n
+     この関数は、リストXの最後のコンスか、最後からN番目のコンス
+     を戻す。Nが省略された場合、1を既定とする。"最後のコンス"は、
+     その`cdr'が別のコンスセルではない、リストの最初のコンスセルを
+     意味する(通常のリストでは、最後のコンスの`cdr'は`nil'
+     である)。Xが`nil'またはNよりも短い場合、この関数は
+     `nil'を戻す。リストの最後の_要素_は、 `(car (last
+     X))'であることに注意せよ。
+
+     Emacs関数`last'は、付加引数Nを扱わないことを除いて 同じことをする。
+
+ -- Function: butlast x &optional n
+     この関数は、最後の要素、または最後のN個の要素を取り除いたリスト
+     Xを戻す。Nが0より大きい場合、オリジナルのリストに損害を
+     与えないように、リストのコピーを作る。一般に、 `(append (butlast X
+     N) (last X N))'は、 Xと等値なリストを戻す。
+
+ -- Function: nbutlast x &optional n
+     これは、リストのコピーを作るのではなく、適切な要素の`cdr'を破壊的
+     に修正することで動作する`butlast'の版である。
+
+ -- Function: list* arg &rest others
+     この関数は、その引数のリストを構成する。最後の引数は、構成される最後の
+     セルの`cdr'になる。従って、`(list* A B C)' は`(cons A (cons B
+     C))'と同等であり、 `(list* A B nil)'は`(list A B)'と 同等である。
+
+     (この関数は、Common Lispで実際に`list*'と呼ばれることに注意せよ;
+     `member*'や`defun*'のように、このパッケージのために
+     発明された名前ではない)
+
+ -- Function: ldiff list sublist
+     SUBLISTがLISTの副リストの場合、すなわち、LISTの
+     コンスセルの1つと`eq'の場合、この関数は、SUBLISTまでで
+     SUBLISTは含まないLISTの部分のコピーを戻す。たとえば、 `(ldiff x
+     (cddr x))'はリスト`x'の最初の2つの要素を戻す。結果 はコピーである;
+     オリジナルのLISTは修正されない。SUBLISTが
+     LISTの副リストでない場合、LIST全体のコピーが戻される。
+
+ -- Function: copy-list list
+     この関数は、リストLISTのコピーを戻す。それは、`(1 2 . 3)'の
+     ようなドットリストを正しくコピーする。
+
+ -- Function: copy-tree x &optional vecp
+     この関数は、コンスセルXの木のコピーを戻す。`cdr'方向沿いに
+     だけコピーする`copy-sequence'(やその別名である`copy-list')と
+     は異なり、この関数は`car'と`cdr'の両方の方向に沿って(再帰的
+     に)コピーする。Xがコンスセルではない場合、単にXを変えずに
+     戻す。付加的なVECP引数が真の場合、この関数はコンスセルと
+     同じように(再帰的に)ベクタをコピーする。
+
+ -- Function: tree-equal x y &key :test :test-not :key
+     この関数は、コンスセルの2つの木を比較する。XとYがともに
+     コンスセルの場合、それらの`car'と`cdr'が再帰的に比較される。
+     XもYもコンスセルではない場合、`eql'か指定されたテスト
+     に従って比較される。`:key'関数が指定された場合、両方の木の要素に
+     適用される。*Note 列::.
+
+
+File: cl-j,  Node: 式の置き換え,  Next: 集合としてのリスト,  Prev: リスト関数,  Up: リスト
+
+11.2 式の置き換え
+=======================
+
+これらの関数は、コンスセルの木全体で要素を置き換える。(リストの
+トップレベルの要素だけに作用する`substitute'関数に関しては、 *Note
+列関数::.)
+
+ -- Function: subst new old tree &key :test :test-not :key
+     この関数は、コンスセルの木であるTREEの中の、OLDの出現を
+     NEWで置き換える。置き換えられた木を戻す。木は、置き換えが
+     起こらなかった部分は引数TREEと記憶域を共有するかもしれない点は
+     除いて、コピーである。オリジナルのTREEは修正されない。この
+     関数は、構成要素のコンスセルの`car'と`cdr'両方に再帰し、
+     OLDに対して比較する。OLD自身がコンスセルの場合、木の中の
+     マッチするセルは、そのセル中は再帰的に置き換えられることなしに、
+     通常通り置き換えられる。OLDとの比較は、指定されたテスト(既定では
+     `eql')に従ってなされる。`:key'関数は、木の要素に
+     適用されるが、OLDには適用されない。
+
+ -- Function: nsubst new old tree &key :test :test-not :key
+     この関数は`subst'と似ているが、コピーするのではなく(`setcar'
+     または`setcdr'で)破壊的に修正することで動作する点が異なる。
+
+   `subst-if'や`subst-if-not'、`nsubst-if'、
+`nsubst-if-not'関数は同様に定義される。
+
+ -- Function: sublis alist tree &key :test :test-not :key
+     この関数は`subst'と似ているが、OLDとNEWの対の
+     連想リストを取る点が異なる。木の各要素は、(`:key'関数がある
+     場合はそれを適用後)ALISTの`car'と比較される; マッチする
+     場合、対応する`cdr'で置き換えられる。
+
+ -- Function: nsublis alist tree &key :test :test-not :key
+     これは`sublis'の破壊版である。
+
+
+File: cl-j,  Node: 集合としてのリスト,  Next: 連想リスト,  Prev: 式の置き換え,  Up: リスト
+
+11.3 集合としてのリスト
+================================
+
+これらの関数は、要素の集合を表現するリストに作用する。
+
+ -- Function: member item list
+     このMacLisp互換の関数は、ITEMと`equal'である要素を見つける
+     ためにLISTを検索する。`member'関数はEmacs 19へ組み込まれて いる;
+     このパッケージは、Emacs 18に同等にそれを定義する。Common Lisp互
+     換版の下記の関数を参照せよ。
+
+ -- Function: member* item list &key :test :test-not :key
+     この関数は、ITEMとマッチする要素を見つけるためにLISTを
+     検索する。マッチが見つかった場合、その`car'がマッチする要素である
+     コンスセルを戻す。さもなければ`nil'を戻す。要素は、既定では
+     `eql'で比較される; この振る舞いを修正するために、`:test'や
+     `:test-not'、`:key'引数を使ってもよい。*Note 列::.
+
+     この関数の名前は、Emacs 19に定義されている非互換な`member'関数を
+     避けるために、`*'で接尾辞づけられていることに注意せよ(その関数は
+     比較に`equal'を使う; それは `(member* ITEM LIST :test
+     'equal)'と同等である)。
+
+   `member-if'と`member-if-not'関数は同様に、与えられた述語を
+満たす要素を検索する。
+
+ -- Function: tailp sublist list
+     この関数は、SUBLISTがLISTの副リスト、すなわちSUBLIST
+     がLISTまたはその`cdr'のいずれかと`eql'である場合に、 `t'を戻す。
+
+ -- Function: adjoin item list &key :test :test-not :key
+     この関数は、ITEMがそのリストにまだ存在しない場合(`member*'
+     によって決定される)にだけ、`(cons ITEM LIST)'のように、
+     LISTの先頭にITEMをコンスする。`:key'引数が指定された
+     場合、ITEMがリストの一部に"なろうとしている"のを推理するために、
+     検索の間にLISTの要素と同様にITEMに適用される。
+
+ -- Function: union list1 list2 &key :test :test-not :key
+     この関数は、項目の集合を表現する2つのリストを結合し、それらの2つの集合
+     の和集合を表現するリストを戻す。結果のリストは、LIST1または
+     LIST2に現れるすべての項目を含み、それ以外は含まない。要素が
+     LIST1とLIST2にともに現れる場合、それは1度だけコピーされる。
+     項目がLIST1またはLIST2中で重複している場合、その重複が結果
+     のリストに生き残るかどうかは未定義である。結果のリスト中の要素の順序も
+     未定義である。
+
+ -- Function: nunion list1 list2 &key :test :test-not :key
+     これは`union'の破壊版である; コピーするのではなく、可能ならば引数
+     リストの記憶域を再利用しようと試みる。
+
+ -- Function: intersection list1 list2 &key :test :test-not :key
+     この関数は、LIST1とLIST2で表現される集合の積集合を計算する。
+     それは、LIST1とLIST2にともに現れる項目のリストを戻す。
+
+ -- Function: nintersection list1 list2 &key :test :test-not :key
+     これは`intersection'の破壊版である。コピーするのではなく、
+     LIST1の記憶域を再利用しようと試みる。LIST2の記憶域は再利用
+     し_ない_。
+
+ -- Function: set-difference list1 list2 &key :test :test-not :key
+     この関数は、LIST1とLIST2の"差集合"、すなわちLIST1
+     に現れるがLIST2には現れ_ない_要素の集合を計算する。
+
+ -- Function: nset-difference list1 list2 &key :test :test-not :key
+     これは破壊的な`set-difference'であり、可能ならLIST1を再利用
+     しようとする。
+
+ -- Function: set-exclusive-or list1 list2 &key :test :test-not :key
+     この関数は、LIST1とLIST2の"排他的論理和集合"、すなわち
+     LIST1とLIST2の正確に1つだけ現れる要素の集合を計算する。
+
+ -- Function: nset-exclusive-or list1 list2 &key :test :test-not :key
+     これは破壊的な`set-exclusive-or'であり、可能ならLIST1と
+     LIST2を再利用しようとする。
+
+ -- Function: subsetp list1 list2 &key :test :test-not :key
+     この関数は、LIST1がLIST2の部分集合を表現しているかどうか、
+     すなわちLIST1の各要素がLIST2にも現れるかどうかを チェックする。
+
+
+File: cl-j,  Node: 連想リスト,  Prev: 集合としてのリスト,  Up: リスト
+
+11.4 連想リスト
+====================
+
+"連想リスト"は、値の1つの集合から他の集合への写像を表現するリスト
+である; その要素がコンスセルであるすべてのリストは連想リストである。
+
+ -- Function: assoc* item a-list &key :test :test-not :key
+     この関数は、その`car'が与えられたITEMと(`:test'や
+     `:test-not'、`:key'の意味で、または`eql'での比較で)
+     マッチする要素を見つけるために、連想リストA-LISTを検索する。
+     マッチする要素がある場合はそれを、さもなければ`nil'を戻す。
+     コンスセルではないA-LISTの要素は無視する(これは、Emacs Lispでの
+     `assq'や`assoc'の振る舞いに対応する; Common Lispの
+     `assoc'は`nil'を無視するが、A-LISTのそれ以外の非コンス
+     要素はエラーとみなす)。
+
+ -- Function: rassoc* item a-list &key :test :test-not :key
+     この関数は、その`cdr'がITEMとマッチする要素を検索する。
+     A-LISTが写像を表現する場合、これはITEMへ逆写像を適用する。
+
+ -- Function: rassoc item a-list
+     この関数は、`equal'の`:test'引数を持つ`rassoc*'のように
+     検索する。それは、Emacs Lispの標準の`assoc'関数と類似している。
+     Emacs Lisp標準`assoc'関数はCommon Lispの伝統よりもMacLispに
+     由来する。
+
+   `assoc-if'や`assoc-if-not'、`rassoc-if'、
+`rassoc-if-not'関数は同様に定義される。
+
+   連想リストを構築する2つの単純な関数は:
+
+ -- Function: acons key value alist
+     これは`(cons (cons KEY VALUE) ALIST)'と 同等である。
+
+ -- Function: pairlis keys values &optional alist
+     これは `(nconc (mapcar* 'cons KEYS VALUES) ALIST)'と 同等である。
+
+
+File: cl-j,  Node: ハッシュ表,  Next: 構造体,  Prev: リスト,  Up: Top
+
+12 ハッシュ表
+******************
+
+"ハッシュ表"は、"値"に"キー"をマップするデータ構造である。
+キーと値は任意のLispデータオブジェクトであってよい。ハッシュ表は、
+与えられたキーを検索する時間がほぼ一定だという特性を持つ; より単純な
+連想リストのようなデータ構造は、リスト中のエントリ数に比例する
+時間がかかる。
+
+ -- Function: make-hash-table &key :test :size
+     この関数は、その要素比較用の関数が`:test'(既定では`eql')
+     であり、およそ`:size'の要素に合うように割り当てられたハッシュ表
+     オブジェクトを作成して戻す。`:size'引数は、単に助言を
+     与えるものである; より多くの要素を格納する場合、表は自動的に
+     大きくなる。`:size'が省略された場合、手頃な既定値が使われる。
+
+     Common Lispは、`eq'と`eql'、`equal'、`equalp'
+     だけを`:test'引数の正しい値として許す。このパッケージでは、
+     すべての適当な述語関数が動作するが、何か他のものを使う場合、あなたの
+     述語に適切なことを確実にするために、以下に記述するハッシュ関数の詳細を
+     チェックすべきである。
+
+     (Lucid Emacs 19のような)Emacsのある版は、組み込みのハッシュ表型を
+     含む; これらの版では、`eq'のテストを伴う`make-hash-table'
+     がこれらの組み込みのハッシュ表を使う。他のすべての場合では、先頭に
+     識別用の"タグ"シンボルを伴うリストのフォームを取る
+     ハッシュテーブルオブジェクトを戻す。このパッケージのすべての
+     ハッシュ表関数は、両方のハッシュ表の型に作用できる;
+     通常は、どちらの 型が使われているかを知ることは決してないだろう。
+
+     この関数は、付加的なCommon Lispキーワード`:rehash-size'と
+     `:rehash-threshold'を受け入れるが、その値は無視する。
+
+ -- Function: gethash key table &optional default
+     この関数は、TABLEの中でKEYを調べる。もし、表のテスト関数に
+     従って、存在するキーのいずれかにマッチするという意味で、KEYが
+     表に存在する場合、関連づけられた値が戻される。そうでなければ、
+     DEFAULT(または`nil')が戻される。
+
+     ハッシュ表に新しいデータを格納するためには、`gethash'への
+     呼び出しに`setf'を使う。KEYがすでに表に存在する場合、
+     対応する値は格納する値へ変更される。KEYがまだ存在しない場合、
+     新たなエントリが表へ加えられ、必要ならば表はより大きなサイズへ
+     再割り当てされる。DEFAULT引数は許されるが、この場合は
+     無視される。この状況は、`get*'のそれと正確に同じである; *note
+     属性リスト::.
+
+ -- Function: remhash key table
+     この関数は、TABLEからKEYのためのエントリを取り除く。
+     エントリが取り除かれた場合、`t'を戻す。KEYがテーブルに
+     現れない場合、何も行なわず`nil'を戻す。
+
+ -- Function: clrhash table
+     この関数は、TABLEからすべてのエントリを取り除き、空のハッシュ表
+     のままにしておく。
+
+ -- Function: maphash function table
+     この関数は、TABLEの各エントリに対してFUNCTIONを呼び出す。
+     それはFUNCTIONへ2つの引数、与えられたエントリのキーと値を渡す。
+     FUNCTIONの戻り値は無視される; MAPHASH自身は`nil'を
+     戻す。ハッシュ表上で繰り返す代替の方法は、*Note ループ機能::.
+
+ -- Function: hash-table-count table
+     この関数は、TABLE内のエントリ数を戻す。*警告:* Lucid Emacs
+     19のハッシュ表の現在の実装は、`remhash'がエントリを
+     取り除いたときに、格納された`count'を減らさない。従ってこの関数の
+     戻り値は、表で`remhash'を使い、かつ表のテストが`eq'の場合、
+     信頼できない。エントリを数えるためのより遅いけれども信頼できる方法は、
+     `(loop for x being the hash-keys of TABLE count t)'である。
+
+ -- Function: hash-table-p object
+     この関数は、OBJECTがハッシュ表の場合に`t'を、さもなければ
+     `nil'を戻す。これはハッシュ表の両方の型(Lucid Emacs組み込みの表と
+     特殊なリストで実装された表の両方)を認識する。
+
+   ハッシュ表を扱うときには、使われる"ハッシュ関数"を正確に知ることが
+有用である場合がある。このパッケージは、Emacs Lispの"obarray"を
+使ってハッシュ表を実装する。"obarray"は、Emacs Lispがシンボルの
+後をたどるために使うのと同じデータ構造である。それぞれのハッシュ表は、
+埋め込まれたobarrayを含む。`gethash'へ与えられるキーの値は、
+さまざまな手段で文字列へ変換され、それから`intern'や
+`intern-soft'を使ってobarrayの中を調べられる。与えられたキー
+文字列に対応するシンボルまたは"bucket"は、その`symbol-value'
+として、その文字列へハッシュしたすべてのキーと値の対の連想リストを
+含む。テスト関数によっては、多くのエントリを同じbucketへ
+ハッシュすることも可能である。たとえばテストが`eql'の場合、
+シンボル`foo'と2つの別々に組み立てられた文字列`"foo"'は、
+同じbucketに3つのエントリを作るだろう。検索時間はbucket内で
+線形なので、あまりに多くのものを同じハッシュに格納しないように準備する
+場合に、ハッシュ表は最も効果的だろう。
+
+下記のアルゴリズムが、Lispオブジェクトをハッシュ文字列へ変換するために
+使われる:
+
+   * 文字列は、直接ハッシュ文字列として使われる(しかしテスト関数が
+     `equalp'の場合、文字列はまず`downcase'される)。
+
+   * シンボルは、その`symbol-name'にしたがってハッシュされる。
+
+   * 整数は、その値を16で割った余りによって、16のbucketの1つに
+     ハッシュされる。浮動小数点数は、整数に切り捨てられて、16で割った
+     余りによってハッシュされる。
+
+   * コンスセルは、その`car'にしたがってハッシュされる; 空ではない
+     ベクタは、その第1要素にしたがってハッシュされる。
+
+   * すべての他のオブジェクトの型は、`"*"'と名付けられた1つのbucketへ
+     ハッシュする。
+
+したがって、たとえばハッシュ表の中の多くのバッファオブジェクトを
+検索することは、1つのbucketを通した(なおかなり速い)線形時間の検索へ
+帰するだろう。ところが、異なったシンボルを検索することは、各シンボルは
+一般にはそれ自身のbucketへハッシュするので、とても速いだろう。
+
+   ハッシュテーブルの中のobarrayの大きさは、要素の数が増えるにつれて
+自動的に調節される。
+
+   特別な場合として、0または1の`:size'引数を伴う
+`make-hash-table'は、多くのリストのobarrayではなく、1つの
+連想リストを使うハッシュ表オブジェクトを作る。とても小さい
+表のためには、調査がキーから文字列への変換またはobarrayの中の調査を
+必要としないので、この構造はより効率的である。しかしこのような表は、
+検索をするためにはその大きさに比例する時間がかかることが保証される。
+
+
+File: cl-j,  Node: 構造体,  Next: アサーション,  Prev: ハッシュ表,  Up: Top
+
+13 構造体
+************
+
+Common Lispの"構造体"メカニズムは、Cの`struct'型に類似する
+データ型を定義する一般的な方法を提供する。構造体は、いくつかの数の
+"スロット"を含むLispオブジェクトであり、スロットのそれぞれは任意の
+Lispデータオブジェクトを保持できる。スロットのアクセスや設定、構造体
+オブジェクトの作成やコピー、ある特定の構造体の型のオブジェクトを
+認識する関数が提供される。
+
+   真のCommon Lispでは、それぞれの構造体型は、すべての存在するLisp型とは
+別の新しい型である。下にあるEmacs Lispシステムは、新しい別の型を作る
+方法を提供しないので、このパッケージは、識別するための特殊な"タグ"
+シンボルを伴うベクタ(要求によってはリスト)として構造体を実装する。
+
+ -- Special Form: defstruct name slots...
+     `defstruct'フォームは、NAMEと呼ばれる、指定された
+     SLOTSを持つ新しい構造体型を定義する(SLOTSは構造体型を
+     記述する文字列で始まってもよい)。単純な場合、NAMEやSLOTS
+     のそれぞれはシンボルである。たとえば、
+
+          (defstruct person name age sex)
+
+     は、3つのスロットを含む、`person'と呼ばれる構造体型を定義する。
+     `person'オブジェクトPが与えられると、 `(person-name
+     P)'や`(person-age P)'、 `(person-sex
+     P)'を呼ぶことでそれらのスロットに
+     アクセスできる。これらのすべてのplaceフォームで`setf'を
+     使うことで、これらのスロットを変更することもできる:
+
+          (incf (person-age birthday-boy))
+
+     `make-person'を呼び出すことで、新しい`person'を
+     作ることができる。`make-person'は、新しいオブジェクトのスロットの
+     初期値を指定するために、キーワード引数`:name'と`:age'、
+     `:sex'を取る(これらの引数のいずれかを省略すると、Common Lisp
+     標準によれば、対応するスロットは"未定義"のままである; Emacs Lisp
+     では、このような初期化されていないスロットは`nil'で埋められる)。
+
+     `person'が与えられると、`(copy-person P)'は、その
+     スロットがPのそれと`eq'である同じ型の新しいオブジェクトを 作る。
+
+     任意のLispオブジェクトXが与えられると、`(person-p X)'
+     はXが`person'のように見える場合は真を、さもなければ偽を
+     戻す(再び、Common Lispではこの述語は正確だろう; Emacs Lispでできる
+     最善のことは、Xが正しいタグシンボルで始まる正しい長さの
+     ベクタであることを確かめることである)。
+
+     `person-name'のようなアクセサは、通常は(実際に`person-p'を
+     使って)それらの引数をチェックし、引数が不正な型の場合はエラーを
+     通知する。このチェックは、`(optimize (safety ...))'
+     宣言によって影響される。既定のSafetyレベル1は、すべての不正な引数を
+     見つける、いくぶん最適化されたチェックを使うが、無益な
+     エラーメッセージを使うかもしれない(たとえば、 "expected a
+     `person'"ではなく"expected a vector"のように)。
+     Safetyレベル0は、下にある`aref'呼び出しによって提供されるものを
+     除いて、すべてのチェックを省略する;
+     Safetyレベル2と3は、不正な入力に
+     対して常に記述的なエラーメッセージを印字する、厳しいチェックを行なう。
+     *Note 宣言::.
+
+          (setq dave (make-person :name "Dave" :sex 'male))
+               => [cl-struct-person "Dave" nil male]
+          (setq other (copy-person dave))
+               => [cl-struct-person "Dave" nil male]
+          (eq dave other)
+               => nil
+          (eq (person-name dave) (person-name other))
+               => t
+          (person-p dave)
+               => t
+          (person-p [1 2 3 4])
+               => nil
+          (person-p "Bogus")
+               => nil
+          (person-p '[cl-struct-person counterfeit person object])
+               => t
+
+     一般に、NAMEは名前のシンボルか、名前のシンボルの後に任意の数の
+     "構造体オプション"が続くリストである; それぞれのSLOTは、
+     スロットシンボルか、フォーム `(SLOT-NAME DEFAULT-VALUE
+     SLOT-OPTIONS...)'
+     のリストである。DEFAULT-VALUEは、スロットの値を指定せずに
+     構造体型のインスタンスが作られるすべてのときに評価されるLisp
+     フォームである。
+
+     Common Lispは、いくつかのスロットオプションを定義しているが、
+     このパッケージで実装されている唯一のものは`:read-only'である。
+     このオプションに対する非`nil'の値は、そのスロットは`setf'
+     可能であってはならないということを意味する; スロットの値は、
+     オブジェクトが作られたときに決定され、その後は変わらない。
+
+          (defstruct person
+            (name nil :read-only t)
+            age
+            (sex 'unknown))
+
+     `:read-only'以外のすべてのスロットオプションは無視される。
+
+     不明瞭な歴史的な理由のため、構造体オプションはスロットオプションと
+     異なるフォームを取る。構造体オプションは、キーワードシンボルか、
+     キーワードシンボルで始まり、ことによると引数が続くリストである
+     (対称的に、スロットオプションはリストで囲まれないキーと値の対である)。
+
+          (defstruct (person (:constructor create-person)
+                             (:type list)
+                             :named)
+            name age sex)
+
+     下記の構造体オプションが認められる。
+
+    `:conc-name'
+          引数は、その印字名がスロットアクセサ関数の名前のために接頭辞として
+          使われるシンボルである。既定は、構造体型の名前にハイフンが
+          続いたものである。オプション`(:conc-name p-)'は、この接頭辞を
+          `p-'に変える。引数として`nil'を指定することは接頭辞なしを
+          意味するので、スロット名自身がアクセサ関数を名付けるために使われる。
+
+    `:constructor'
+          単純な場合、このオプションは、コンストラクタ関数のために使われる代替の
+          名前である1つの引数を取る。既定は、たとえば`make-person'のように
+          `make-NAME'である。上記の例は、これを`create-person'に
+          変える。引数として`nil'を指定することは、標準の
+          コンストラクタはまったく生成されないことを意味する。
+
+          このオプションの完全なフォームでは、コンストラクタ名には任意の
+          引数リストが続く。Common
+          Lisp引数リストのフォーマットの記述は、 *Note
+          プログラム構造::.  `&rest'や`&key'のようなすべての
+          オプションがサポートされる。引数名はスロット名とマッチすべきである;
+          それぞれのスロットは、対応する引数で初期化される。その名前が引数
+          リストに現れないスロットは、スロット記述子のDEFAULT-VALUEに
+          基づいて初期化される。また、既定を指定しない`&optional'と
+          `&key'引数は、スロット記述子からその既定を取る。スロット名に
+          対応しない引数を含むことは正しい;
+          スロットに対応_する_付加引数や
+          キーワード引数、`&aux'引数のための既定で参照される場合、それらは
+          有用である。
+
+          1つの構造体に、完全なフォーマットの`:constructor'
+          オプションをいくつでも指定できる。単純フォーマットの
+          `:constructor'オプションで無効にしない限り、既定の
+          コンストラクタも同様に生成される。
+
+               (defstruct
+                (person
+                 (:constructor nil)   ; no default constructor
+                 (:constructor new-person (name sex &optional (age 0)))
+                 (:constructor new-hound (&key (name "Rover")
+                                               (dog-years 0)
+                                          &aux (age (* 7 dog-years))
+                                               (sex 'canine))))
+                name age sex)
+
+          ここでの第1のコンストラクタは、キーワードによってではなく、位置でその
+          引数を取る(公式なCommon
+          Lispの用語では、キーワードの代わりに引数の順序
+          によって働くコンストラクタは、"BOAコンストラクタ"と呼ばれる。いや、
+          私がこれをでっちあげているのではない)。たとえば、
+          `(new-person "Jane" 'female)'は、そのスロットがそれぞれ
+          `"Jane"'と0、`female'であるpersonを生成する。
+
+          第2のコンストラクタは、2つのキーワード引数を取る。`:name'は、
+          `name'スロットを初期化し、`"Rover"'を既定とする。
+          `:dog-years'は、それ自身があるスロットに対応するのではないが、
+          `age'スロットを初期化するために使われる。`sex'スロットは、
+          強制的にシンボル`canine'になり、それを無効にする文法を持たない。
+
+    `:copier'
+          引数は、この方のコピー関数の代替名である。既定は`copy-NAME'
+          である。`nil'はコピー関数を生成しないことを意味する(この実装では、
+          すべてのコピー関数は、単に`copy-sequence'の同義語である)。
+
+    `:predicate'
+          引数は、この型のオブジェクトを認識する述語の代替名である。既定は
+          `NAME-p'である。`nil'は述語関数を生成しないことを意味
+          する(`:type'オプションが、`:named'オプションなしで使われる
+          場合、述語は決して生成されない)。
+
+          真のCommon Lispでは、`:predicate'が使われても、`typep'は常に
+          構造体オブジェクトを認識できる。このパッケージでは、`typep'は単に
+          `TYPENAME-p'と呼ばれる関数を探すので、既定の述語名を使う
+          場合だけ構造体型に対して動作するだろう。
+
+    `:include'
+          このオプションは、とても制限されたC++スタイルの継承の形式を実装する。
+          引数は、前もって`defstruct'で作られた別の構造体型の名前である。
+          その効果は、新しい構造体型が、含められた構造体型のすべてのスロット
+          (加えて、もちろんこの構造体のスロット記述子で記述されたすべての新しい
+          スロットも)を受け継ぐようにすることである。新しい構造体は、含められた
+          構造体の"特殊化"と考えられる。事実、含められた型の述語や
+          スロットアクセサは、新しい型のオブジェクトも受け入れる。
+
+          含められた構造体名の後に、`:include'オプションへ余分の引数がある
+          場合、これらのオプションは、含められた構造体のスロットのための、
+          ことによると修正された既定値を伴うスロット記述子の置き換えとして
+          扱われる。Steeleから例を借りると:
+
+               (defstruct person name (age 0) sex)
+                    => person
+               (defstruct (astronaut (:include person (age 45)))
+                 helmet-size
+                 (favorite-beverage 'tang))
+                    => astronaut
+
+               (setq joe (make-person :name "Joe"))
+                    => [cl-struct-person "Joe" 0 nil]
+               (setq buzz (make-astronaut :name "Buzz"))
+                    => [cl-struct-astronaut "Buzz" 45 nil nil tang]
+
+               (list (person-p joe) (person-p buzz))
+                    => (t t)
+               (list (astronaut-p joe) (astronaut-p buzz))
+                    => (nil t)
+
+               (person-name buzz)
+                    => "Buzz"
+               (astronaut-name joe)
+                    => error: "astronaut-name accessing a non-astronaut"
+
+          したがって、`astronaut'が`person'の特殊化である場合、
+          すべての`astronaut'は`person'でもある(しかし逆は
+          真ではない)。すべての`astronaut'は、`person'のすべての
+          スロットを含み、加えてastronautに特有の特別なスロットを持つ。
+          (`person-name'のような)
+          people上で働く作用は、ちょうど他のpeople
+          のようにastronaut上で働く。
+
+    `:print-function'
+          完全なCommon
+          Lispでは、このオプションは、構造体型のインスタンスを
+          印字するために呼び出される関数を指定することを許す。Emacs Lisp
+          システムは、Lispプリンタ中にこのような機能を許すフックを
+          提供しないため、このパッケージは単に`:print-function'を無視する。
+
+    `:type'
+          引数は、シンボル`vector'または`list'
+          のどちらかでなければならない。これは、新しい構造体型を実装するために、
+          どちらの基礎となるLispデータ型が使われるべきかを語る。ベクタが既定で
+          使われるが、`(:type list)'は、その代わりに構造体オブジェクトが
+          リストとして格納されることを引き起こす。
+
+          構造体オブジェクト用にベクタ表現を使うことは、Emacs
+          Lispではベクタを
+          作ることはやや遅いとはいえ、すべての構造体スロットが素早く
+          アクセスできるという有利な点を持つ。リストは作りやすいが、後の方の
+          スロットをアクセスするのに比較的長い時間がかかる。
+
+    `:named'
+          この引数を取らないオプションは、特有の"タグ"シンボルが構造体
+          オブジェクトの先頭に格納されることを引き起こす。`:type'を使い、
+          かつ`:named'を使わないことは、構造体型が識別機能を持たない単なる
+          ベクタまたはリストとして格納される結果になる。
+
+          `:type'を明示的に指定しない場合、既定は名前付きベクタを
+          使うことである。したがって、`:named'は`:type'との結合にのみ
+          有用である。
+
+               (defstruct (person1) name age sex)
+               (defstruct (person2 (:type list) :named) name age sex)
+               (defstruct (person3 (:type list)) name age sex)
+
+               (setq p1 (make-person1))
+                    => [cl-struct-person1 nil nil nil]
+               (setq p2 (make-person2))
+                    => (person2 nil nil nil)
+               (setq p3 (make-person3))
+                    => (nil nil nil)
+
+               (person1-p p1)
+                    => t
+               (person2-p p2)
+                    => t
+               (person3-p p3)
+                    => error: function person3-p undefined
+
+          名前のない構造体はタグを持たないので、`defstruct'は、それを
+          認識するために有用な述語を作ることができない。
+          また、`person3-name'のようなアクセサは生成されるが、どんな型
+          チェックもできないだろう。たとえば`person3-name'関数は、この
+          場合は単に`car'の同義語である。対称的に、`person2-name'は
+          処理の前に、その引数が実際に`person2'オブジェクトであるかを
+          確かめることができる。
+
+    `:initial-offset'
+          引数は非負の整数でなければならない。それは、構造体の先頭で"空"
+          のままにしておくスロット数を指定する。構造体が名前付きの場合、タグが
+          リストまたはベクタの指定された位置に現れる;
+          さもなければ、第1の
+          スロットがその位置に現れる。より早い位置は、コンストラクタによって
+          `nil'で満たされ、それ以外は無視される。型が他の型を
+          `:include'する場合、`:initial-offset'は、含まれる型の最後の
+          スロットと最初の新しいスロットの間のスキップされるスロット数を
+          指定する。
+
+   注記されている場合を除いて、このパッケージの`defstruct'機能は Common
+Lispのそれと完全に互換である。
+
+
+File: cl-j,  Node: アサーション,  Next: 効率の配慮,  Prev: 構造体,  Up: Top
+
+14 アサーションとエラー
+*********************************
+
+この節は"アサーション"、すなわちプログラムが正しく働いている場合に
+真でなければならない条件をテストする2つのマクロを記述する。
+アサーションは、Lispプログラムの振る舞いに決して何も追加しない;
+すべてがそうあるべきであるように、単に"正気のチェック"
+をするだけである。
+
+   最適化属性`speed'が3にセットされており、`safety'が3より
+小さい場合、バイトコンパイラは、下記のアサーションを最適化し去る。
+アサーションは最適化し去られるかもしれないので、それらが副作用を
+含むことは悪い考えである。
+
+ -- Special Form: assert test-form [show-args string args...]
+     このフォームは、TEST-FORMが真である(すなわち評価して非`nil'
+     値になる)ことを確かめる。そうである場合、`nil'を戻す。テストが
+     満足されない場合、`assert'はエラーを通知する。
+
+     TEST-FORMを含む既定のエラーメッセージが得られる。STRING
+     引数と付加的な余分の引数を含むことで、異なるエラーメッセージを
+     指定できる。これらの引数は、エラーを通知するために単に`error'へ
+     渡される。
+
+     付加的な第2の引数SHOW-ARGSが`nil'ではなく`t'である場合、
+     エラーメッセージは(STRINGがあってもなくても)、トップレベル
+     FORMのあらゆる非定数引数を含む。たとえば:
+
+          (assert (> x 10) t "x is too small: %d")
+
+     このSHOW-ARGSの使用法は、Common Lispへの拡張である。真のCommon
+     Lispでは、第2引数は、エラーからの継続の前にユーザーによって`setf'
+     可能なPLACESのリストを与える。Emacs Lispは継続可能なエラーを
+     サポートしないので、PLACESを指定することは意味がない。
+
+ -- Special Form: check-type form type [string]
+     このフォームは、FORMは評価して型TYPEの値になるかを確かめる。
+     そうである場合、`nil'を戻す。そうでない場合、`check-type'は
+     `wrong-type-argument'エラーを通知する。既定のエラーメッセージは、
+     TYPEとFORM自身に加えて、誤った値をリストする。STRING
+     が指定される場合、それはエラーメッセージのTYPEの場所へ含められる。
+     たとえば:
+
+          (check-type x (integer 1 *) "a positive integer")
+
+     TYPEに使われてよい型指定子の記述は、*Note データ型の述語::.
+
+     Common Lispでは、`check-type'への第1引数は`setf'での使用に
+     適切なPLACEでなければならないことに注意せよ。なぜなら
+     `check-type'は、ユーザがPLACEを修正することを許す継続可能な
+     エラーを通知するからである。
+
+   下記のエラー関連マクロも定義される:
+
+ -- Special Form: ignore-errors forms...
+     これは、正確に`progn'のようにFORMSを実行するが、FORMS
+     の間はエラーが無視される点が異なる。より正確には、エラーが通知された
+     場合、`ignore-errors'は直ちにFORMSの実行を中止して`nil'
+     を戻す。FORMSが正常に終了する場合、`ignore-errors'は最後の
+     FORMの結果を戻す。
+
+
+File: cl-j,  Node: 効率の配慮,  Next: Common Lispとの互換性,  Prev: アサーション,  Up: Top
+
+Appendix A 効率の配慮
+**************************
+
+A.1 マクロ
+=============
+
+`defun*'や`loop'、`setf'のようなこのパッケージの高度な
+機能の多くは、Lispマクロとして実装されている。バイトコンパイルされた
+コードでは、これらの複雑な表記法は単純で効率のよい同等のLispコードに
+展開される。たとえば、フォーム
+
+     (incf i n)
+     (push x (car p))
+
+は、コンパイル時に下記のLispフォームへ展開される:
+
+     (setq i (+ i n))
+     (setcar p (cons x (car p)))
+
+これらは、Lispでそれぞれの作用を行なう最も効率的な方法である。
+したがって、コンパイルされたコードの中では、より読みやすい`incf'
+や`push'フォームを使うことに性能上の不利益はない。
+
+   他方、_インタプリトされた_コードは、実行されるたびにこれらの
+マクロを展開しなければならない。この理由により、マクロを猛烈に使う
+コードはコンパイルされることが強く推奨される(このマニュアルで"関数"
+ではなく"特殊フォーム"とラベルを付けられている機能はマクロである)。
+`incf'を100回使うループは、コンパイルされた場合はかなり速く
+実行し、マクロ展開が100回生成され、使用され、捨て去られる
+必要がないので、ガベジコレクションもより少なくなるだろう。
+
+   `cl-prettyexpand'関数を使うことで、どのようにマクロが展開するかを
+知ることができる。
+
+ -- Function: cl-prettyexpand form &optional full
+     この関数は、引数として1つのLispフォームを取り、現バッファ(字下げが
+     適正に働くようにLispモードでなければならない)にきちんと
+     フォーマットされたそのコピーを挿入する。フォーム中に現れるすべてのLisp
+     マクロも展開する。この関数を使う最も容易な方法は、`*scratch*'
+     バッファへ行き、たとえば以下をタイプして、
+
+          (cl-prettyexpand '(loop for x below 10 collect x))
+
+     閉じ括弧の直後で`C-x C-e'をタイプすることである; 展開
+
+          (block nil
+            (let* ((x 0)
+                   (G1004 nil))
+              (while (< x 10)
+                (setq G1004 (cons x G1004))
+                (setq x (+ x 1)))
+              (nreverse G1004)))
+
+     がバッファへ挿入されるだろう(`block'マクロはインタプリタと
+     コンパイラで異なって展開されるので、`cl-prettyexpand'
+     はそれをそのままにしている。一時変数`G1004'は`gensym'
+     によって作られた)。
+
+     付加引数FULLが真の場合、`block'や`eval-when'、
+     コンパイラマクロを含む_すべての_マクロが展開される。展開は、
+     FORMがコンパイルされるファイル中の
+     トップレベルフォームであるかのようになされる。たとえば、
+
+          (cl-prettyexpand '(pushnew 'x list))
+               -| (setq list (adjoin 'x list))
+          (cl-prettyexpand '(pushnew 'x list) t)
+               -| (setq list (if (memq 'x list) list (cons 'x list)))
+          (cl-prettyexpand '(caddr (member* 'a list)) t)
+               -| (car (cdr (cdr (memq 'a list))))
+
+     `adjoin'や`caddr'、`member*'はすべて、共通の
+     場合にそれらを最適化するための組み込みのコンパイラマクロを
+     持っていることに注意せよ。
+
+
+A.2 エラーチェック
+=========================
+
+Common Lispへの追従は一般に、効率を犠牲にしていない。いくつかの例外が、
+周辺的な非互換性を犠牲にして相当な利益が可能な場合になされた。一例は、
+キーワード引数を走査するための`memq'(これは
+バイトコンパイラによって非常に効率的に扱われる)の使用である; これは、
+キーワードシンボルがキーワードとデータの値に同時に使われるようなまれな
+場合に混乱する可能性がある。これが実用的なコードの中で
+起こることはきわめてありそうになく、`memq'の使用は、キーワード
+引数を伴う関数が`&optional'引数を使う関数とほとんど同じくらい
+速いことを許す。
+
+   (Steeleの本で具体化された)Common Lisp標準は、従うプログラム中では
+発生しないことになっている状況を示すために、句"その場合、それは
+エラーである"を使う; 処理系は、これらの状況中でエラーを
+通知することを、必須ではないが強く奨励される。
+このパッケージはときどき、コンパクトさと効率の利益のために、このような
+エラーチェックを省略する。たとえば、`do'変数指定子は、1つか2つ、
+あるいは3つのフォームのリストということになっている; 余分の
+フォームは、このパッケージでは文法エラーを通知するのではなく
+無視される。`endp'関数は単に、このパッケージでは`null'の
+同義語である。キーワード引数を取る関数は、奇数個の引数を受け入れ、
+値`nil'がそれに続くかのように末尾のキーワードを扱う。
+
+   (`defun*'やその友人によって処理されるとき)引数リストは、今述べた
+重要でない点を除いて、厳しくチェック_される_; 特に、キーワード
+引数は有効性をチェックされ、`&allow-other-keys'と
+`:allow-other-keys'は完全に実装されている。キーワード有効性
+チェックは、わずかに時間を消費する(しかしバイトコンパイルされた
+コードではそれほど悪くはない); チェックを省略するために
+`&allow-other-keys'を使える。`find'や`member*'
+のようなこのパッケージで定義された関数は、そのキーワード引数の有効性
+チェックを行なう。
+
+
+A.3 最適化コンパイラ
+============================
+
+Emacs 18に付属のバイトコンパイラは、ファイルのトップレベル位置
+(すなわち、`defun'や他の囲むフォームの外)に現れるマクロの展開に
+失敗する。これは、`defun*'や`eval-when'、`defstruct'
+のようなトップレベルマクロを使うプログラムに、悲惨な
+結果をもたらすだろう。この問題を回避するために、"CL"パッケージは、
+トップレベルマクロを展開するようにEmacs 18のコンパイラに
+パッチをあてる。あなた自身のマクロがトップレベルコンテキストで使われる
+場合も、このパッチが適用されるだろう。このパッチは、すでに類似の
+パッチが適用されたEmacs 18コンパイラの版に害を与えないし、 Jamie
+ZawinskiとHallvard Furusethによって書かれた最適化Emacs 19
+コンパイラには影響しない。パッチはEmacsのメモリ中の
+バイトコンパイラコードへ適用され、ディスク上の格納されている
+`bytecomp.elc'ファイルへ適用されるのでは_ない_。
+
+   (Emacs 18のための)Emacs 19コンパイラは、
+`archive.cis.ohio-state.edu'のようなさまざまなEmacs Lisp
+アーカイブサイトで利用できる。その使用は大いに推奨される; Common Lisp
+マクロの多くは、最適化により改善される可能性があるコードを発する。
+特に、`block'は(明示的であろうと、`defun*'や`loop'
+のような構文要素中に暗黙であろうと)かなりの実行時の不利益を持つ;
+最適化コンパイラは、ブロックの内部で`return'や`return-from'
+によって実際に参照されない`block'を取り除く。
+
+
+File: cl-j,  Node: Common Lispとの互換性,  Next: 古いCLとの互換性,  Prev: 効率の配慮,  Up: Top
+
+Appendix B Common Lispとの互換性
+*************************************
+
+下記は、このパッケージとSteele(第2版)に文書化されたCommon Lispとの間の
+すべての既知の非互換のリストである。
+
+   `member'や`assoc'、`floor'のようなある種の関数名は、 (非互換な)Emacs
+Lisp関数によってすでに取られていた; このパッケージは、
+これらの関数のCommon Lisp版の名前に`*'を付加する。
+
+   語`defun*'は、拡張されたCommon Lisp引数リストを関数で使うために、
+`defun'の代わりに必要である。同様に、`defmacro*'と
+`function*'は、これらのフォームの完全な機能の引数リストを理解する
+版である。`&whole'キーワードは、`defmacro'引数リストでは
+(再帰的引数リストの中を例外として)動作しない。
+
+   効率的な実装を許すために、キーワード引数は、キーワードシンボルが他の
+キーワード引数の_値_として渡された場合に混乱するかもしれない、
+わずかに下等な構文解析器を使う(つまり、 `(memq :KEYWORD
+REST-OF-ARGUMENTS)'が、与えられた
+キーワード引数の中を`:KEYWORD'を見つけようと走査するために 使われる)。
+
+   `eql'と`equal'述語は、IEEE浮動小数点の正の0と負の0を
+区別しない。`equalp'述語は、Common Lispといくつかの相違がある; *note
+述語::.
+
+   `setf'メカニズムは完全に互換だが、setf-methodは5つの値を
+直接戻すのではなく、5つの値のリストを戻す点が異なる。また、 (`(defun
+(setf foo) ...)'が典型的であるような)新しい
+"`setf'関数"の概念は実装されていない。
+
+   `do-all-symbols'フォームは、OBARRAY引数がない
+`do-symbols'と同じである。Common Lispでは、このフォームはすべての
+パッケージ中のすべてのシンボルの上で繰り返す。Emacsのobarrayは、
+ファーストクラスのパッケージメカニズムではないので、
+`do-all-symbols'が既定のobarray以外を確認する方法はない。
+
+   `loop'マクロは、`loop-finish'と型指定子が実装されていない
+点を除いて完全である。
+
+   多値戻し機能はリストを多値として扱うが、それはEmacs
+Lispは多重戻り値を
+直接サポートしないためである。`values'または`values-list'が、
+`multiple-value-bind'や他の多値受け取り側へ戻るために常に使われる
+場合、マクロはCommon Lispと互換だろう; `values'が
+`multiple-value-...'なしで使われたり、
+`multiple-value-...'が`values'なしで使われたりする場合、 効果はCommon
+Lispとは異なるだろう。
+
+   多くのCommon Lisp宣言は無視され、その他は概念としてはCommon
+Lisp標準に
+マッチするが、詳細はマッチしない。たとえば局所`special'宣言は、 Emacs
+Lispでは純粋に助言だが、Steeleの本に規定されたスコープ規則に
+厳密には従わない。
+
+   変数`*gensym-counter*'は、0ではなく疑似乱数値で開始する。これは、
+生成されたシンボルは、ファイルへ書かれ、ファイルからロードされたときに
+internされるという事実をうまく処理できる。
+
+   `defstruct'機能は互換だが、構造体は、ある特殊な別の型ではなく、
+既定では`:type vector :named'の型である点が異なる。
+また、`:type'スロットオプションは無視される。
+
+   `check-type'の第2引数は異なる扱いをされる。
+
+
+File: cl-j,  Node: 古いCLとの互換性,  Next: Common Lispの移植,  Prev: Common Lispとの互換性,  Up: Top
+
+Appendix C 古いCLとの互換性
+**********************************
+
+下記は、このパッケージとより古いQuirozの`cl.el'パッケージとの間の
+すべての既知の非互換のリストである。
+
+   このパッケージの関数の多重戻り値のエミュレーションは、より古い
+パッケージのそれと非互換である。あのパッケージは、真のCommon Lisp
+多重戻り値にできる限り近付くように試みた; 不幸にも、それは100%
+信頼できるものではなく、自由に使われた場合に時おり
+意外なことになりがちだった。このパッケージは、よりシンプルな方法を
+使う。すなわち、値のリストで多値を置き換える。それは、著しくCommon
+Lispとは相違するが、より予測可能である。
+
+   `defkeyword'フォームと`keywordp'関数は、このパッケージでは
+実装されていない。
+
+   `member'や`floor'、`ceiling'、`truncate'、
+`round'、`mod'、`rem'関数は、Emacs 18またはEmacs 19に
+存在する関数との衝突を避けるために、このパッケージでは接尾辞`*'が
+付けられる。より古いパッケージは、単にこれらの関数を再定義し、
+組み込みの意味を上書きして、Emacs 19で重大な可搬性の問題を引き
+起こした(いくつかのより最近のQuirozパッケージの版は、それらの名前を
+`cl-member'その他へ変えた; このパッケージは、`member*'
+その他への別名として後者の名前を定義する)。
+
+   古いパッケージのバグがあるかCommon Lisp標準と一致しないある種の
+関数は、このパッケージの準拠している版と非互換である。たとえば、
+`eql'や`member'は、あのパッケージでは`eq'や`memq'
+の同義語であったり、`setf'はその引数の評価の正しい順序を
+保存できなかったり、など。
+
+   最後に、より古いパッケージとは異なり、このパッケージは注意深く、
+内部名のすべてに接頭辞`cl-'を付けている。(`floatp-safe'や
+`letf'のような)追加の機能として明示的に定義されているいくつかの
+関数を除いて、このパッケージは、Common Lispの一部ではない、どんな
+非`cl-'シンボルも移出しない。
+
+
+C.1 `cl-compat'パッケージ
+==============================
+
+"CL"パッケージは、互換パッケージ`cl-compat'のフォームの中に、
+古い`cl.el'のいくつかの機能のエミュレーションを含む。それを
+使うためには、あなたのプログラムの中に`(require 'cl-compat)'を
+置くこと。
+
+   古いパッケージは、`cl-'接頭辞や他の表記法なしで、かなりの数の内部
+ルーチンを定義していた。これらのルーチンへの呼び出しが、既存のLisp
+コードに入り込んでしまっているかもしれない。`cl-compat'は、下記の
+内部ルーチンのエミュレーションを提供する: `pair-with-newsyms'、
+`zip-lists'、`unzip-lists'、`reassemble-arglists'、
+`duplicate-symbols-p'、`safe-idiv'.
+
+   いくつかの`setf'フォームは、ユーザコードが直接呼び出す
+かもしれない内部関数への呼び出しへ翻訳された。関数`setnth'や
+`setnthcdr'、`setelt'がこのカテゴリに入る; それらは
+`cl-compat'で定義されるが、最良の修正は`setf'を適正に
+使うように変えることである。
+
+   `cl-compat'ファイルは、キーワード関数`keywordp'や
+`keyword-of'、`defkeyword'を定義する。データとしての
+キーワードの使用には反対なので、それらは新しい"CL"
+パッケージによっては定義されない。
+
+   キーワード引数構文解析用の`build-klist'メカニズムは、
+`cl-compat'でエミュレートされている; しかし
+`with-keyword-args'はエミュレートされておらず、どんな場合でも、
+`defun*'によって提供されるより自然なキーワード引数処理を
+使うように変えるのが最良である。
+
+   多重戻り値は、2つのCommon Lispパッケージで異なって扱われる。古い
+パッケージの方法は、真のCommon Lispにより互換だったが、ある場合には
+偽の多重戻り値を報告することを引き起こす発見的方法を使った。
+`cl-compat'パッケージは、古いCLパッケージと互換の多重値マクロの
+集合を定義する; 再び、それらは本質的に発見的であるが、古いパッケージの
+マクロが動作するところならどこでも動作することが保証される。"公式の"
+多重値機能との名前の衝突を避けるため、`cl-compat'のそれは
+大文字で始まる名前を持つ: `Values'、`Values-list'、
+`Multiple-value-bind'など。
+
+   関数`cl-floor'や`cl-ceiling'、`cl-truncate'、
+`cl-round'は、古いスタイルの多値メカニズムを使うために、ちょうど
+それらが古いパッケージでしたのと同じように`cl-compat'で定義される。
+より新しい`floor*'や友人は、多値としてではなくリスト中にその2つの
+結果を戻す。古いパッケージの古い版は、ありのままの名前`floor'や
+`ceiling'その他を使ったことに注意せよ; それらはEmacs 19の組み込み
+のものと衝突するので、`cl-compat'はそれらの名前を使えない。
+
+
+File: cl-j,  Node: Common Lispの移植,  Next: 関数索引,  Prev: 古いCLとの互換性,  Up: Top
+
+Appendix D Common Lispの移植
+*******************************
+
+このパッケージは、Emacs Lispへの拡張として使われることを意図されており、
+真のCommon LispのEmacs実装としては意図されていない。Emacs LispとCommon
+Lispの間の残りの相違のいくつかは、大きなCommon Lispアプリケーションを
+Emacsへ移植することを難しくしている。一例として、このパッケージの機能
+のいくつかは、ANSIまたはSteeleに完全には従っていない; *note Common
+Lispとの互換性::. しかし、このパッケージがまったく
+提供しない機能もかなり多くある。ここには、Common LispコードをEmacsに
+持ってくるときに警戒したくなる、いくつかの主要な省略がある。
+
+   * 大文字小文字の区別がないこと。Common Lispのシンボルは、既定では
+     大文字小文字の区別がない。いくつかのプログラムは、ある関数または
+     変数をある場所では`foo'として、別の場所では`Foo'または
+     `FOO'として参照する。Emacs Lispはそれれを3つの別のシンボルとして
+     扱う。
+
+     いくつかのCommon
+     Lispコードは、完全に大文字で書かれている。一方Emacsは、
+     プログラム自身の関数や変数にこの規約を喜んで使わせるので、`if'や
+     `defun'のようなLisp組み込みへの呼び出しは、小文字に
+     変えなければならなくなるだろう。
+
+   * レキシカルスコープ。Common Lispでは、関数引数や`let'の束縛は、
+     物理的にその本体内(またはその本体のマクロ展開内)での参照にだけ
+     適用する。Emacs
+     Lispでは対照的に、本体から呼び出された関数の内側でさえ
+     変数への束縛が見える"動的スコープ"を使う。
+
+     Common Lispの変数は、`special'と宣言するか`defvar'を
+     使うことで動的スコープにすることができる。Emacs Lispでは、すべての
+     変数が`special'と宣言されているようなものである。
+
+     しばしば、動的スコープLispの中でさえレキシカルスコープのために書かれた
+     コードを使うことができるが、常にというわけではない。これは、Emacs
+     Lisp では失敗するCommon Lispコード断片の例である:
+
+          (defun map-odd-elements (func list)
+            (loop for x in list
+                  for flag = t then (not flag)
+                  collect (if flag x (funcall func x))))
+
+          (defun add-odd-elements (list x)
+            (map-odd-elements (function (lambda (a) (+ a x))) list))
+
+     Common Lispでは、2つの関数の`x'の使用法は完全に独立している。
+     Emacs Lispでは、`add-odd-elements'によって作られた`x'への
+     束縛は、`(+ a x)'関数が呼び出される間は`map-odd-elements'の
+     束縛で隠されるだろう。
+
+     (このパッケージは、自身のマッピング関数の中で内部的に`x'ではなく
+     `cl-x'のような名前を使うことで、このような問題を避ける; あなた
+     自身の変数のために`cl-'接頭辞を使わない限り、衝突は起こらない)
+
+     Common Lispスタイルのレキシカルな束縛を確立する`lexical-let'
+     フォームの記述と、Emacs正規の`let'とどのように
+     異なるかのいくつかの例は、*Note レキシカルな束縛::.
+
+   * リーダマクロ。Common
+     Lispは、個々の文字のレベルで働く第2のマクロの型を
+     含む。たとえば、Common Lispは`''と呼ばれるリーダマクロによって
+     引用符表記法を実装するが、Emacs
+     Lispの構文解析器は、単に引用符を特殊な
+     場合として扱う。いくつかのLispパッケージは、自身用の特殊文法を
+     作るためにリーダマクロを使うが、それをEmacs構文解析器は読めない。
+
+     ついでに言えば、リーダマクロの欠如は、Emacs Lispの普通ではない
+     バッククォート文法の背後にある理由である。バッククォートはLisp
+     パッケージとして実装されており、Emacs構文解析器に組み
+     込みではないので、標準の関数/マクロ呼び出し表記法と共に使われる、
+     ``'と名付けられた正規のマクロを使うように強いられる。
+
+   * その他の文法機能。Common Lispは、Emacs
+     Lisp構文解析器が理解できない、
+     `#'で始まるかなりの数の表記法を提供する。たとえば、 `#| ...
+     |#'は代替の注釈表記法であり、`#+lucid (foo)'は、 Lucid Common
+     Lisp内を除いて`(foo)'を無視するように構文解析器に 言う。
+
+   * パッケージ。Common Lispでは、シンボルは"パッケージ"に分けられる。
+     Lisp組み込みのシンボルは、典型的には1つのパッケージに格納される;
+     ベンダ拡張のシンボルは別のパッケージに置かれ、それぞれの
+     アプリケーションプログラムは、それ自身のシンボルのためのパッケージを
+     持つかもしれない。あるシンボルはパッケージによって"移出"され、他の
+     シンボルは内部的である;
+     あるパッケージは、他のパッケージの移出された
+     シンボルを"使用"または移入する。この移入と移出のために通常は
+     見えないかもしれないシンボルをアクセスするために、Common Lispは、
+     `package:symbol'または`package::symbol'のような文法を 提供する。
+
+     Emacs Lispは、すべてのinternされたシンボルに1つの名前空間を持ち、
+     名前の先頭に`cl-'のような接頭辞を置くという命名規約を使う。
+     いくつかのEmacsパッケージは、接頭辞として`cl:'や`cl::'を使う
+     Common Lispに似た規約を採用する。しかし、Emacs構文解析器はコロンを
+     理解せず、単にそれらをシンボル名の一部として扱う。したがって、
+     `mapcar'と`lisp:mapcar'はCommon Lispでは同じシンボルを
+     参照するかもしれないが、Emacs
+     Lispではそれらは完全に別のものである。
+     あるシンボルを、時には正式な名前で参照し、別の時には短い名前で参照する
+     Common Lispプログラムは、Emacsにはきれいに移植できないだろう。
+
+     Emacs Lispは"obarray"の概念を持っており、それはパッケージに似た
+     シンボルの集積だが、この機能は真のパッケージメカニズムとして使えるほど
+     十分に強力ではない。
+
+   * `format'関数は、Common LispとEmacs Lispの間でまったく違っている。
+     フォーマット文字列の前に、追加の"宛先"引数をとる。`nil'の宛先は、
+     Emacs Lispのように文字列をフォーマットすることを意味する; `t'の
+     宛先は、(Emacsの`message'のように)ターミナルへ書くことを
+     意味する。また、フォーマット制御文字列は完全に異なる;
+     フォーマットコードを導入するために、`%'の代わりに`~'を使い、
+     利用できるコードの集合はずっと豊富である。文字列リテラルの`\n'
+     のような表記法はない; その代わりに、`format'は"改行"
+     フォーマットコードである`~%'とともに使われる。より高度な
+     フォーマットコードは、パラグラフ詰め込み、大文字小文字変換、そして
+     ループや条件付き実行のような機能さえ提供する。
+
+     このパッケージで、Common Lispの`format'の大部分を実装することは
+     可能だったかもしれないとしても(もちろん`format*'の名のもとに)、
+     時間と労力をかけるだけの値打ちがないように思われた。`format*'
+     のかなりのサブセットを実装するためですら、巨大なコード量が
+     必要だっただろうし、さらに、Emacs Lispの`format'を越えて提供する
+     機能はめったに有用ではないだろう。
+
+   * ベクタ定数は、Emacs Lispでは角括弧を使うが、Common Lispでは `#(a b
+     c)'記法を使う。さらに問題を複雑にすることには、Emacs 19は、
+     何か完全に違うこと--属性を持つ文字列のために、それ自身の`#('
+     表記法を導入する。
+
+   * Common Lispでは、文字と整数は別である。文字定数の表記法も異なる:
+     `?A'の代わりに`#\A'である。また、`string='と `string-equal'はEmacs
+     Lispでは同義語だが、Common Lispでは後者は
+     大文字小文字を区別しない。
+
+   * データ型。いくつかのCommon Lispデータ型は、Emacs
+     Lispには存在しない。
+     有理数と複素数はなく、大きな整数もない(すべての整数は"fixnum"である)。
+     すべての配列は1次元である。リードテーブルやパス名はない;
+     ストリームは、
+     それら自身が新しいデータ型ではなく、存在するデータ型の集合である。
+     ハッシュ表やランダムステート、構造体、パッケージ(obarray)は別の
+     型ではなく、Lispベクタやリストから造られる。
+
+   * Common Lisp Object System(CLOS)とCommon
+     Lispコンディションシステムは実
+     装されていない。しかし、`ftp://ftp.ultranet.com/pub/zappo'のEIEIO
+     パッケージは、いくつかのCLOS機能を実装する。
+
+   * 異なる名前のEmacs Lisp機能と完全に重複するCommon Lisp機能は、一般に
+     実装されていない。たとえば、Emacs Lispが`defconst'を
+     使うところで、Common Lispは`defconstant'を使う。同様に、
+     `make-list'は2つのLispで異なった方法でその引数をとるが、正確に
+     同じことをするので、このパッケージはCommon Lispスタイルの
+     `make-list'をわざわざ実装しなかった。
+
+   * このパッケージに含まれていない、より注意が必要ないくつかのCommon
+     Lisp 機能は: `compiler-let'、`tagbody'、`prog'、
+     `ldb/dpb'、`parse-integer'、`cerror'。
+
+   * 再帰。再帰は、Emacs LispでちょうどCommon
+     Lispと同じように動作するが、 さまざまなEmacs
+     Lispシステムやコンパイラの詳細が、再帰を多くのLisp
+     よりも非効率的にしている。ある流派は、他のテクニックよりもLispで再帰を
+     使うことを好む; 彼らは、以下のようなものを使って数のリストを
+     合計するかもしれない:
+
+          (defun sum-list (list)
+            (if list
+                (+ (car list) (sum-list (cdr list)))
+              0))
+
+     そこでは、より繰り返し的に考えるプログラマは以下のフォームの1つを
+     書くかもしれない:
+
+          (let ((total 0)) (dolist (x my-list) (incf total x)) total)
+          (loop for x in my-list sum x)
+
+     これは、多くのCommon Lispではおもにスタイル上の選択だろうが、
+     Emacs Lispでは、繰り返しフォームは再帰よりもかなり速いことを
+     知っておくべきである。またLispプログラマは、現在のEmacs Lisp
+     コンパイラは末尾再帰を最適化しないことを注記したいだろう。
+
+
+File: cl-j,  Node: 関数索引,  Next: 変数索引,  Prev: Common Lispの移植,  Up: Top
+
+関数索引
+************
+
+ [index ]
+* Menu:
+
+* abs:                                   数の関数.            (line   9)
+* acons:                                 連想リスト.          (line  35)
+* adjoin:                                集合としてのリスト.  (line  34)
+* assert:                                アサーション.        (line  18)
+* assoc*:                                連想リスト.          (line  10)
+* assoc-if:                              連想リスト.          (line  29)
+* assoc-if-not:                          連想リスト.          (line  29)
+* block:                                 ブロックと脱出.      (line  14)
+* butlast:                               リスト関数.          (line  47)
+* caddr:                                 リスト関数.          (line  10)
+* callf:                                 修正マクロ.          (line 145)
+* callf2:                                修正マクロ.          (line 160)
+* case:                                  条件付き実行.        (line  30)
+* ceiling*:                              数の関数.            (line  54)
+* check-type:                            アサーション.        (line  39)
+* cl-float-limits:                       処理系パラメータ.    (line  22)
+* cl-prettyexpand:                       効率の配慮.          (line  38)
+* clrhash:                               ハッシュ表.          (line  56)
+* coerce:                                データ型の述語.      (line  61)
+* compiler-macroexpand:                  マクロ.              (line  56)
+* concatenate:                           列関数.              (line  25)
+* copy-list:                             リスト関数.          (line  74)
+* copy-tree:                             リスト関数.          (line  78)
+* count:                                 列の検索.            (line  25)
+* count-if:                              列の検索.            (line  28)
+* count-if-not:                          列の検索.            (line  28)
+* decf:                                  修正マクロ.          (line  44)
+* declaim:                               宣言.                (line  25)
+* declare:                               宣言.                (line  34)
+* defalias:                              関数別名.            (line  10)
+* define-compiler-macro:                 マクロ.              (line  25)
+* define-modify-macro:                   setf独自化.          (line  11)
+* define-setf-method:                    setf独自化.          (line  96)
+* defmacro*:                             引数リスト.          (line  33)
+* defsetf:                               setf独自化.          (line  41)
+* defstruct:                             構造体.              (line  19)
+* defsubst*:                             引数リスト.          (line  23)
+* deftype:                               データ型の述語.      (line  72)
+* defun*:                                引数リスト.          (line  17)
+* delete:                                列関数.              (line  73)
+* delete*:                               列関数.              (line  61)
+* delete-duplicates:                     列関数.              (line  98)
+* delete-if:                             列関数.              (line  69)
+* delete-if-not:                         列関数.              (line  69)
+* destructuring-bind:                    マクロ.              (line  14)
+* do:                                    繰り返し.            (line  32)
+* do*:                                   繰り返し.            (line  72)
+* do-all-symbols:                        繰り返し.            (line 114)
+* do-symbols:                            繰り返し.            (line 105)
+* dolist:                                繰り返し.            (line  89)
+* dotimes:                               繰り返し.            (line  97)
+* ecase:                                 条件付き実行.        (line  57)
+* endp:                                  リスト関数.          (line  24)
+* eql:                                   等値の述語.          (line   9)
+* equalp:                                等値の述語.          (line  37)
+* etypecase:                             条件付き実行.        (line  77)
+* eval-when:                             評価の時間.          (line  16)
+* eval-when-compile:                     評価の時間.          (line  86)
+* evenp:                                 数の述語.            (line  22)
+* every:                                 列上のマッピング.    (line  65)
+* expt:                                  数の関数.            (line  14)
+* fill:                                  列関数.              (line  32)
+* find:                                  列の検索.            (line  11)
+* find-if:                               列の検索.            (line  28)
+* find-if-not:                           列の検索.            (line  28)
+* first:                                 リスト関数.          (line  17)
+* flet:                                  関数束縛.            (line   9)
+* floatp-safe:                           数の述語.            (line  26)
+* floor*:                                数の関数.            (line  32)
+* function*:                             引数リスト.          (line  42)
+* gcd:                                   数の関数.            (line  20)
+* gensym:                                シンボル生成.        (line  10)
+* gentemp:                               シンボル生成.        (line  31)
+* get*:                                  属性リスト.          (line  12)
+* get-setf-method:                       setf独自化.          (line 132)
+* getf:                                  属性リスト.          (line  31)
+* gethash:                               ハッシュ表.          (line  37)
+* hash-table-count:                      ハッシュ表.          (line  66)
+* hash-table-p:                          ハッシュ表.          (line  74)
+* ignore-errors:                         アサーション.        (line  58)
+* incf:                                  修正マクロ.          (line  16)
+* intersection:                          集合としてのリスト.  (line  54)
+* isqrt:                                 数の関数.            (line  28)
+* labels:                                関数束縛.            (line  43)
+* last*:                                 リスト関数.          (line  36)
+* lcm:                                   数の関数.            (line  24)
+* ldiff:                                 リスト関数.          (line  66)
+* letf:                                  修正マクロ.          (line  97)
+* letf*:                                 修正マクロ.          (line 141)
+* lexical-let:                           レキシカルな束縛.    (line  10)
+* lexical-let*:                          レキシカルな束縛.    (line  94)
+* list*:                                 リスト関数.          (line  57)
+* list-length:                           リスト関数.          (line  29)
+* load-time-value:                       評価の時間.          (line  95)
+* locally:                               宣言.                (line  41)
+* loop <1>:                              ループの基本.        (line  15)
+* loop:                                  繰り返し.            (line  10)
+* macrolet:                              マクロ束縛.          (line   9)
+* make-hash-table:                       ハッシュ表.          (line  13)
+* make-random-state:                     乱数.                (line  27)
+* map:                                   列上のマッピング.    (line  24)
+* mapc:                                  列上のマッピング.    (line  39)
+* mapcan:                                列上のマッピング.    (line  48)
+* mapcar*:                               列上のマッピング.    (line  10)
+* mapcon:                                列上のマッピング.    (line  53)
+* maphash:                               ハッシュ表.          (line  60)
+* mapl:                                  列上のマッピング.    (line  44)
+* maplist:                               列上のマッピング.    (line  32)
+* member:                                集合としてのリスト.  (line   9)
+* member*:                               集合としてのリスト.  (line  15)
+* member-if:                             集合としてのリスト.  (line  26)
+* member-if-not:                         集合としてのリスト.  (line  26)
+* merge:                                 列のソート.          (line  39)
+* minusp:                                数の述語.            (line  14)
+* mismatch:                              列の検索.            (line  33)
+* mod*:                                  数の関数.            (line  72)
+* multiple-value-bind:                   多値.                (line  17)
+* multiple-value-setq:                   多値.                (line  24)
+* nbutlast:                              リスト関数.          (line  53)
+* nintersection:                         集合としてのリスト.  (line  58)
+* notany:                                列上のマッピング.    (line  70)
+* notevery:                              列上のマッピング.    (line  75)
+* nset-difference:                       集合としてのリスト.  (line  67)
+* nset-exclusive-or:                     集合としてのリスト.  (line  75)
+* nsublis:                               式の置き換え.        (line  36)
+* nsubst:                                式の置き換え.        (line  23)
+* nsubst-if:                             式の置き換え.        (line  26)
+* nsubst-if-not:                         式の置き換え.        (line  26)
+* nsubstitute:                           列関数.              (line 110)
+* nsubstitute-if:                        列関数.              (line 113)
+* nsubstitute-if-not:                    列関数.              (line 113)
+* nunion:                                集合としてのリスト.  (line  50)
+* oddp:                                  数の述語.            (line  18)
+* pairlis:                               連想リスト.          (line  38)
+* plusp:                                 数の述語.            (line  10)
+* pop:                                   修正マクロ.          (line  48)
+* position:                              列の検索.            (line  19)
+* position-if:                           列の検索.            (line  28)
+* position-if-not:                       列の検索.            (line  28)
+* proclaim:                              宣言.                (line  20)
+* progv:                                 動的束縛.            (line  11)
+* psetf:                                 修正マクロ.          (line  10)
+* psetq:                                 代入.                (line  10)
+* push:                                  修正マクロ.          (line  54)
+* pushnew:                               修正マクロ.          (line  59)
+* random*:                               乱数.                (line  12)
+* random-state-p:                        乱数.                (line  48)
+* rassoc:                                連想リスト.          (line  24)
+* rassoc*:                               連想リスト.          (line  20)
+* rassoc-if:                             連想リスト.          (line  29)
+* rassoc-if-not:                         連想リスト.          (line  29)
+* reduce:                                列上のマッピング.    (line  81)
+* rem*:                                  数の関数.            (line  75)
+* remf:                                  属性リスト.          (line  62)
+* remhash:                               ハッシュ表.          (line  51)
+* remove:                                列関数.              (line  78)
+* remove*:                               列関数.              (line  46)
+* remove-duplicates:                     列関数.              (line  89)
+* remove-if:                             列関数.              (line  69)
+* remove-if-not:                         列関数.              (line  69)
+* remprop:                               属性リスト.          (line  21)
+* remq:                                  列関数.              (line  83)
+* replace:                               列関数.              (line  35)
+* rest:                                  リスト関数.          (line  21)
+* return:                                ブロックと脱出.      (line  56)
+* return-from:                           ブロックと脱出.      (line  50)
+* rotatef:                               修正マクロ.          (line  82)
+* round*:                                数の関数.            (line  66)
+* search:                                列の検索.            (line  49)
+* set-difference:                        集合としてのリスト.  (line  63)
+* set-exclusive-or:                      集合としてのリスト.  (line  71)
+* setf:                                  基本的setf.          (line   9)
+* shiftf:                                修正マクロ.          (line  67)
+* some:                                  列上のマッピング.    (line  57)
+* sort*:                                 列のソート.          (line   7)
+* stable-sort:                           列のソート.          (line  29)
+* sublis:                                式の置き換え.        (line  30)
+* subseq:                                列関数.              (line   9)
+* subsetp:                               集合としてのリスト.  (line  79)
+* subst:                                 式の置き換え.        (line  11)
+* subst-if:                              式の置き換え.        (line  26)
+* subst-if-not:                          式の置き換え.        (line  26)
+* substitute:                            列関数.              (line 103)
+* substitute-if:                         列関数.              (line 113)
+* substitute-if-not:                     列関数.              (line 113)
+* symbol-macrolet:                       マクロ束縛.          (line  21)
+* tailp:                                 集合としてのリスト.  (line  30)
+* the:                                   宣言.                (line  44)
+* tree-equal:                            リスト関数.          (line  86)
+* truncate*:                             数の関数.            (line  59)
+* typecase:                              条件付き実行.        (line  62)
+* typep:                                 データ型の述語.      (line   9)
+* union:                                 集合としてのリスト.  (line  41)
+* unless:                                条件付き実行.        (line  20)
+* when:                                  条件付き実行.        (line  10)
+
+
+File: cl-j,  Node: 変数索引,  Prev: 関数索引,  Up: Top
+
+変数索引
+************
+
+ [index ]
+* Menu:
+
+* *gensym-counter*:                      シンボル生成.         (line 20)
+* *random-state*:                        乱数.                 (line 20)
+* float-epsilon:                         処理系パラメータ.     (line 68)
+* float-negative-epsilon:                処理系パラメータ.     (line 73)
+* least-negative-float:                  処理系パラメータ.     (line 62)
+* least-negative-normalized-float:       処理系パラメータ.     (line 65)
+* least-positive-float:                  処理系パラメータ.     (line 50)
+* least-positive-normalized-float:       処理系パラメータ.     (line 55)
+* most-negative-fixnum:                  処理系パラメータ.     (line 13)
+* most-negative-float:                   処理系パラメータ.     (line 46)
+* most-positive-fixnum:                  処理系パラメータ.     (line  9)
+* most-positive-float:                   処理系パラメータ.     (line 41)
+
+
+
+Tag Table:
+Node: Top1290
+Node: 概観2853
+Node: 使用法5516
+Node: 構成6328
+Node: インストール8514
+Node: 命名規約9985
+Node: プログラム構造12304
+Node: 引数リスト12787
+Node: 評価の時間23865
+Node: 関数別名31012
+Node: 述語31647
+Node: データ型の述語31986
+Node: 等値の述語37353
+Node: 制御構造41025
+Node: 代入41873
+Node: 汎変数43200
+Node: 基本的setf44602
+Node: 修正マクロ52518
+Node: setf独自化60991
+Node: 変数束縛69221
+Node: 動的束縛69841
+Node: レキシカルな束縛70847
+Node: 関数束縛75550
+Node: マクロ束縛79243
+Node: 条件付き実行82579
+Node: ブロックと脱出86226
+Node: 繰り返し89981
+Node: ループ機能96562
+Node: ループの基本97645
+Node: ループの例100560
+Node: For節103167
+Node: 繰り返し節116820
+Node: 蓄積節118830
+Node: その他の節121376
+Node: 多値128260
+Node: マクロ130474
+Node: 宣言134261
+Node: シンボル144296
+Node: 属性リスト144637
+Node: シンボル生成148397
+Node: 数151062
+Node: 数の述語151579
+Node: 数の関数152742
+Node: 乱数157065
+Node: 処理系パラメータ160318
+Node: 列164456
+Node: 列の基本165243
+Node: 列上のマッピング169243
+Node: 列関数175575
+Node: 列の検索182408
+Node: 列のソート185666
+Node: リスト188475
+Node: リスト関数188980
+Node: 式の置き換え194140
+Node: 集合としてのリスト196238
+Node: 連想リスト200882
+Node: ハッシュ表202813
+Node: 構造体210895
+Node: アサーション228563
+Node: 効率の配慮232132
+Node: Common Lispとの互換性240098
+Node: 古いCLとの互換性243832
+Node: Common Lispの移植249432
+Node: 関数索引261218
+Node: 変数索引276578
+
+End Tag Table

@@ -1,0 +1,2061 @@
+Info file: eintr-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-lisp-intro.texi.patched'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELisp-Intro-ja: (eintr-ja).       Emacs-Lisp入門ガイド
+END-INFO-DIR-ENTRY
+
+
+これはプログラマではない人のための `Emacs Lisp プログラミング' 解説書で
+ある．
+
+Edition 2.04, 2001 Dec 17
+
+Copyright (C) 1990, '91, '92, '93, '94, '95, '97, 2001 Free Software
+Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Section being the Preface, with the Front-Cover Texts being
+no Front-Cover Texts, and with the Back-Cover Texts being no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File: eintr-ja, Node: message, Prev: Void Function, Up: Lisp History
+
+関数`message' *(2004/01/17)*
+----------------------------
+
+`+'のように、関数`message'は任意個数の引数を取る。この関数はユーザーに
+メッセージを表示するために使うので、ここで説明しておくのがよいであろう。
+
+メッセージはエコー領域に表示される。たとえば、つぎのリストを評価すると、
+エコー領域にメッセージが表示される。
+
+     (message "This message appears in the echo area!")
+
+二重引用符のあいだの文字列は1つの引数であり、一塊で表示される
+（ここでの例では、エコー領域に表示されるメッセージは二重引用符で囲まれる。
+これは、関数`message'が返した値を見ているからである。
+プログラム内での`message'のほとんどの使い方では、
+副作用としてエコー領域にテキストが表示されるので、
+表示には引用符は含まれない。
+このような例について詳しくは、
+*Note multiply-by-seven in detail::）。
+
+さて、文字列の中に`%s'がある場合、関数`message'は`%s'をそのとおりに表示
+することはなく、文字列のあとに続く引数を調べる。第2引数を評価し、その値
+を文字列の`%s'の位置に表示する。
+
+つぎの式の直後にカーソルを置いて`C-x C-e'とタイプしてみる。
+
+     (message "The name of this buffer is: %s." (buffer-name))
+
+Infoでは、エコー領域に`"The name of this buffer is: *info*."'と表示され
+るはずである。関数`buffer-name'はバッファ名を文字列として返し、それを関
+数`message'が`%s'の位置に挿入する。
+
+値を整数として表示するには`%s'のかわりに`%d'を使う。たとえば、
+`fill-column'の値を含んだメッセージをエコー領域に表示するにはつぎの式を
+評価する。
+
+     (message "The value of fill-column is %d." fill-column)
+
+筆者のシステムでは、このリストを評価するとエコー領域に`"The value of
+fill-column is 72."'と表示される (1) (*Note message-Footnotes::)。
+
+文字列の中に複数の`%s'があれば、文字列のあとに続く最初の引数の値が最初
+の`%s'の位置に表示され、2番目の引数の値が2番目の`%s'の位置に表示される
+と続く。
+
+たとえば、つぎの式を評価すると
+
+     (message "There are %d %s in the office!"
+              (- fill-column 14) "pink elephants")
+
+エコー領域に少々妙なメッセージが表示される。筆者のシステムでは`"There
+are 58 pink elephants in the office!"'となる。
+
+式`(- fill-column 14)'が評価され、その結果の数が`%d'の位置に挿入される。
+二重引用符の中の文字列`"pink elephants"'は1つの引数として扱われて`%s'の
+位置に挿入される（つまり、数と同様に、二重引用符で囲まれた文字列を評価
+するとそれ自身となる）。
+
+最後は少々複雑な例で、数の計算を示すとともに、
+`%s'と置き換わるテキストを生成する式を式の内側で使う方法を示す。
+
+     (message "He saw %d %s"
+              (- fill-column 34)
+              (concat "red "
+                      (substring
+                       "The quick brown foxes jumped." 16 21)
+                      " leaping."))
+
+この例では、`message'には、文字列`"He saw %d %s"'、
+式`(- fill-column 32)'、関数`concat'で始まる式の3つの引数がある。
+`(- fill-column 32)'を評価した結果は`%d'の位置に挿入され、
+`concat'で始まる式の値は`%s'の位置に挿入される。
+
+筆者の場合、この式を評価するとエコー領域に
+`"He saw 38 red foxes leaping."'と表示される。
+
+
+File: eintr-ja  Node: message-Footnotes, Up: message
+
+(1) 実際には，`%s' を数を表示するために使うことができる．それは特
+別なことではない．`%d' は整数部分だけを表示し，数ではない
+
+
+
+File: eintr-ja, Node: set & setq, Next: How to Evaluate, Prev: Lisp History, Up: PrePreface
+
+変数への値の設定 *(2004/01/17)*
+===============================
+
+変数に値を与える方法はいくつかある。1つの方法は関数`set'か関数`setq'を
+使うことである。別の方法は`let'（*Note let::）を使うことである（この過
+程を専門用語では変数を値に"束縛（bind）"するという）。
+
+つぎの節では`set'と`setq'の動作を説明するとともに、引数がどのように渡さ
+れるかも説明する。
+
+* Menu:
+
+* Using set::                   Setting values.
+* Using setq::                  Setting a quoted value.
+* Counting::                    Using `setq' to count.
+
+
+
+File: eintr-ja, Node: Using set, Prev: Void Function, Up: Lisp History
+
+`set'の使い方 *(2004/01/17)*
+----------------------------
+
+シンボル`flowers'の値としてリスト`'(rose violet daisy buttercup)'を設定
+するには、つぎの式の直後にカーソルを移動して`C-x C-e'とタイプして式を評
+価する。
+
+     (set 'flowers '(rose violet daisy buttercup))
+
+エコー領域には、リスト`(rose violet daisy buttercup)'が表示される。これ
+は、関数`set'が*返した*ものである。副作用として、シンボル`flowers'にリ
+ストが束縛される。つまり、シンボル`flowers'は変数とみなされ、その値とし
+てリストが与えられるのである（値を設定するこの過程は、Lispインタープリ
+タにとっては副作用であるが、人間にとっては興味のある主要な効果である。
+各Lisp関数はエラーがなければ値を返す必要があるが、関数の目的は副作用だ
+けの場合もある）。
+
+`set'式を評価したあとは、シンボル`flowers'を評価することができ、設定し
+た値が返される。つぎのシンボルの直後にカーソルを置いて`C-x C-e'とタイプ
+する。
+
+     flowers
+
+`flowers'を評価すると、エコー領域にリスト`(rose violet daisy
+buttercup)'が表示される。
+
+`'flowers'、つまり、直前にクオートを置いた変数を評価すると、エコー領域
+にはシンボル`flowers'そのものが表示される。つぎの例を試してみよう。
+
+     'flowers
+
+`set'を使う場合、いずれの引数も評価してほしくない場合には、両方の引数を
+クオートする必要があることに注意してほしい。上の例では、変数`flowers'も
+リスト`(rose violet daisy buttercup)'も評価したくないので、両者をクオー
+トした（`set'の第1引数をクオートせずに使うと、まず最初に第1引数が評価さ
+れる。上の例でこれを行うと、`flowers'には値がないので、`Symbol's value
+as variable is void'というエラーメッセージを得る。一方、`flowers'を評価
+して値が返される場合には、`set'はその返された値に値を設定しようとする。
+このように関数を動作させたい場面もあるが、そのような場面は少ない）。
+
+
+
+File: eintr-ja, Node: Using setq, Prev: Void Function, Up: Lisp History
+
+`setq'の使い方 *(2004/01/17)*
+-----------------------------
+
+実用上、`set'の第1引数をほとんどつねにクオートするはずである。`set'で第
+1引数をクオートする組み合わせは多用されるので、スペシャルフォーム
+`setq'が用意してある。このスペシャルフォームは`set'とほとんど同じである
+が、第1引数を自動的にクオートするので、引用符をタイプする必要はない。さ
+らに、便利なように、`setq'では、複数の異なる変数に異なる値を1つの式で設
+定することもできる。
+
+`setq'を用いて、変数`carnivores'の値をリスト`'(lion tiger leopard)'とす
+るには、つぎの式を使う。
+
+     (setq carnivores '(lion tiger leopard))
+
+これは`set'を用いた場合とほぼ同じであるが、`setq'では第1引数を自動的に
+クオートするのが異なる（`setq'の`q'は、クオート（`quote'）を意味する）。
+
+`set'を用いる場合は、つぎのようにする。
+
+     (set 'carnivores '(lion tiger leopard))
+
+さらに、`setq'は、複数の異なる変数に異なる値を代入するためにも使える。
+第1引数には第2引数の値を束縛し、第3引数には第4引数の値を束縛し、……と
+続く。たとえば、シンボル`trees'に樹木名のリストを、シンボル
+`herbivores'にハーブの名前のリストを代入するにはつぎのようにする。
+
+     (setq trees '(pine fir oak maple)
+           herbivores '(gazelle antelope zebra))
+
+（式を1行に書いてもよいが、ページの幅に収まらない。人間には、適切にフォー
+マットしたリストは読みやすいものである。）
+
+「代入」という用語を用いたが、`set'や`setq'の動作を考える別の方法もある。
+つまり、`set'や`setq'は、シンボルがリストを*指す（point）* ようにするの
+である。この考え方は非常によく使われ、うしろの章では、名前の一部に
+「pointer」があるシンボルを見ることになる。この名称は、シンボルには特に
+リストなどの値が結び付けらている、あるいは、シンボルがリストを「指す」
+ように設定されていることに由来する。
+
+
+
+File: eintr-ja, Node: Counting, Prev: Void Function, Up: Lisp History
+
+数え上げ *(2004/01/17)*
+-----------------------
+
+ここではカウンタで`setq'を使う方法を示そう。プログラムのある部分を何回
+繰り返したかを数え上げるために使える。まず、変数に0を設定する。そして、
+プログラムを繰り返すたびに1を加える。そのためには、カウンタの役割を果た
+す変数と2つの式、つまり、カウンタ変数を0に初期化する`setq'を用いた式と、
+評価するたびにカウンタを増加する`setq'を用いた式が必要である。
+
+     (setq counter 0)                ; 初期化式
+
+     (setq counter (+ counter 1))    ; 増加式
+
+     counter                         ; カウンタ
+
+（`;'以降のテキストは注釈である。
+*Note Change a defun::。）
+
+これらの最初の式、つまり、初期化式`(setq counter 0)'を評価してから3番目
+の式`counter'を評価すると、エコー領域には数`0'が表示される。続いて、2番
+目の式、増加式`(setq counter (+ counter 1))'を評価すると、カウンタの値
+は1になる。そのため、ふたたび`counter'を評価するとエコー領域には数`1'が
+表示される。2番目の式を評価するたびに、カウンタの値は増加する。
+
+増加式`(setq counter (+ counter 1))'を評価するとき、Lispインタープリタ
+は、もっとも内側のリスト、つまり、加算を最初に評価する。このリストを評
+価するには、変数`counter'と数`1'を評価する必要がある。変数`counter'を評
+価するとその現在値が得られる。この値と数`1'が`+'に渡され加算される。こ
+の合計値がもっとも内側のリストの値として返され、さらに、変数`counter'に
+この新しい値を設定する`setq'へ渡される。したがって、変数`counter'の値が
+変更されるのである。
+
+
+
+File: eintr-ja, Node: Summary, Next: How to Evaluate, Prev: Lisp History, Up: PrePreface
+
+まとめ *(2004/03/28)*
+=====================
+
+Lispを学ぶことは、登り始めがもっとも険しい小山を登るようなものである。
+読者はもっとも困難な部分を登り終えたのであり、あとは、先へ進むほど楽に
+なる。
+
+本章をまとめるとつぎのようになる。
+
+
+   * Lispプログラムは式から成り立ち、式とはリストやアトムである。
+
+   * リストは、0個以上のアトムやリストを空白で区切って括弧で囲ったもの
+     である。リストは空でもよい。
+
+   * アトムとは、`forward-paragraph'のような複数個の文字のシンボル、
+     `+'のような1文字のシンボル、二重引用符で囲った文字列、あるいは、数である。
+
+   * 数を評価するとそれ自身になる。
+
+   * 二重引用符で囲った文字列を評価するとそれ自身になる。
+
+   * シンボルそのものを評価すると、その値が返される。
+
+   * リストを評価するとき、Lispインタープリタはリストの先頭のシンボルを
+     調べ、そのシンボルに束縛された関数定義を探す。そして、関数定義の命
+     令列を実行する。
+
+   * 引用符`''は、Lispインタープリタに対して続く式を字面のとおりに返す
+     ことを指示し、引用符がない場合のようには評価しない。
+
+   * 引数とは関数へ渡される情報である。関数への引数は、関数を先頭要素と
+     するリストの残りの要素を評価することで計算される。
+
+   * 関数を評価すると（エラーがなければ）つねに値を返す。さらに、「副作
+     用」と呼ばれるなんらかの動作を伴うこともある。多くの場合、関数の主
+     要な目的は副作用を起こすことである。
+
+
+
+File: eintr-ja, Node: Error Message Exercises, Next: How to Evaluate, Prev: Lisp History, Up: PrePreface
+
+演習問題
+========
+
+簡単な演習問題をあげておく。
+
+   * 括弧の中にはない適当なシンボルを評価してエラーメッセージを生成して
+     みよ。
+
+   * 括弧の中に置いた適当なシンボルを評価してエラーメッセージを生成して
+     みよ。
+
+   * 1つずつではなく2つずつ増やすカウンタを作成せよ。
+
+   * 評価するとエコー領域にメッセージを表示する式を書いてみよ。
+
+
+
+File: eintr-ja, Node: Practicing Evaluation, Next: Counting Words, Prev: PrePreface, Up: Top
+
+評価の練習 *(2004/03/28)*
+*************************
+
+Emacs Lispにおける関数定義の書き方を学ぶまえに、これまでに説明してきた
+さまざまな式の評価に時間を割いてみるのも有益であろう。リストの先頭（あ
+るいは唯一）の要素が関数であるようなリストである。バッファに関する関数
+は、単純でしかも興味深いので、これらから始めよう。本節では、それらのい
+くつかを評価してみる。他の節では、バッファに関連した数個の別の関数のコー
+ドを調べて、それらがどのように書かれているかを見てみる。
+
+* Menu:
+
+* How to Evaluate::             Typing editing commands or `C-x C-e'
+                                  causes evaluation.
+* Buffer Names::                Buffers and files are different.
+* Getting Buffers::             Getting a buffer itself, not merely its name.
+* Switching Buffers::           How to change to another buffer.
+* Buffer Size & Locations::     Where point is located and the size of
+                                the buffer.
+* Evaluation Exercise::
+
+
+
+File: eintr-ja, Node: How to Evaluate, Next: Evaluation Exercise, Prev: Lisp History, Up: PrePreface
+
+How to Evaluate
+===============
+
+Emacs Lispに、カーソルの移動や画面上のスクロールなどの
+編集コマンドを与えるたびに、先頭要素が関数である式を評価している。
+Emacsはこのようにして動いている。
+
+キーをタイプすると、Lispインタープリタに式を評価させることになり、
+そのようにして操作しているのである。
+テキストをタイプした場合でさえも、Emacs Lispの関数を評価しており、
+タイプした文字を単に挿入する関数`self-insert-command'を使った
+関数を評価しているのである。
+キーをタイプすることで評価される関数は、
+"対話的（interactive）"関数とか"コマンド（commands）"と呼ばれる。
+関数を対話的にする方法については、関数定義の書き方の章で例を示す。
+*Note Interactive::。
+
+キーボードコマンドをタイプする以外にも、式を評価する方法についてはすで
+に説明した。すなわち、リストの直後にカーソルを置いて`C-x C-e'とタイプす
+るのである。本節の残りでは、この方法を用いる。これ以外にも式を評価する
+方法があり、必要に応じて他の節で説明する。
+
+これからの数節で説明する関数は、評価を練習すること以外にも、それ自体、
+重要なものである。これらの関数を学ぶことで、バッファとファイルの違い、
+バッファを切り替える方法、バッファ内での位置を調べる方法が明らかになる。
+
+
+
+File: eintr-ja, Node: Buffer Names, Next: Evaluation Exercise, Prev: How to Evaluate, Up: PrePreface
+
+バッファ名 *(2004/01/17)*
+=========================
+
+2つの関数、`buffer-name'と`buffer-file-name'が、
+ファイルとバッファの違いを示してくれる。
+式`(buffer-name)'を評価すると、エコー領域にバッファ名が表示される。
+`(buffer-file-name)'を評価すると、
+バッファが参照するファイル名がエコー領域に表示される。
+通常、`(buffer-name)'が返す名前は、
+そのバッファが参照するファイルの名前と同じであり、
+`(buffer-file-name)'が返す名前はファイルの完全パス名である。
+
+ファイルとバッファは異なる2つの実体である。ファイルは（削除しない限り）
+コンピュータに恒久的に記録された情報である。一方、バッファはEmacsの内部
+にある情報であり、（バッファを削除するか）編集作業を終了すると消えてし
+まう。通常、バッファにはファイルからコピーした情報が収められている。こ
+れを、バッファがファイルを"訪れる（visiting）"という。このコピーを処理
+したり修正したりしているのである。バッファを変更しても保存しない限り、
+ファイルは変更されない。バッファを保存すると、バッファはファイルにコピー
+され、その結果、恒久的に保存されるのである。
+
+GNU EmacsのInfoを使って読んでいる場合には、つぎのそれぞれの式の直後にカー
+ソルを置いて`C-x C-e'とタイプすれば、それぞれの式を評価できる。
+
+     (buffer-name)
+
+     (buffer-file-name)
+
+筆者がこれを行うと、`(buffer-name)'を評価して返される値は
+`"introduction.texinfo"'であり、
+`(buffer-file-name)'を評価して返される値は
+`"/gnu/work/intro/introduction.texinfo"'である。
+前者はバッファ名であり、後者はファイル名である
+（各式には括弧があるので、Lispインタープリタは`buffer-name'と
+`buffer-file-name'を関数として扱う。
+括弧がないと、インタープリタは変数としてシンボルを評価しようとする。
+*Note Variables::）。
+
+ファイルとバッファの違いにもかかわらず、バッファを意味してファイルといっ
+たり、その逆のいい方をする場合が多い。もちろん、ほとんどの人は、「すぐ
+にファイルに保存するバッファを編集している」というよりは、「ファイルを
+編集している」という。その人が何を意図しているかは、ほとんどの場合、文
+脈から明らかである。しかし、コンピュータプログラムに関していえば、コン
+ピュータは人間のように賢くはないので、つねに違いを心にとめておく必要が
+ある。
+
+ところで、用語「バッファ（buffer）」は、衝突力を弱めるクッションを意味
+する語に由来する。初期のコンピュータでは、ファイルとコンピュータの中央
+処理装置のあいだの相互作用のクッションがバッファであった。ファイルを格
+納するドラムやテープと中央処理装置とは、互いに大きく異なる装置であり、
+それぞれ固有の動作速度で動いていた。バッファにより、これらが効率よく協
+調動作することが可能であった。しだいに、バッファは、中間の一時的な保管
+場所から、実際の処理を行う場所へと進展していった。これは、小さな港が大
+都市に発展したり、貨物を船に積み込むまえの一時的な保管倉庫がその重要性
+のためにビジネスや文化の中心に進展したことに似ている。
+
+すべてのバッファがファイルに関連付けられるわけではない。たとえば、ファ
+イル名をいっさい指定せずにコマンド`emacs'だけをタイプしてEmacsを開始し
+た場合には、画面にはバッファ`*scratch*'が表示されてEmacsが動き出す。こ
+のバッファはいかなるファイルも訪問していない。同様に、バッファ`*Help*'
+にはいかなるファイルも関連付けられていない。
+
+バッファ`*scratch*'に切り替えてから、`(buffer-name)'と入力してその直後
+にカーソルを置いて`C-x C-e'とタイプしてこの式を評価すると、名前
+`"*scratch*"'が返されてエコー領域に表示される。`"*scratch*"'がバッファ
+の名前である。しかし、バッファ`*scratch*'で`(buffer-file-name)'とタイプ
+してこれを評価すると、エコー領域には`nil'と表示される。`nil'の語源はラ
+テン語の「無（nothing）」を意味する単語であり、この場合、バッファ
+`*scratch*'にはいかなるファイルも関連付けられていないことを意味する
+（Lispでは、`nil'は「偽（false）」をも意味し、空リスト`()'の同義語でも
+ある）。
+
+バッファ`*scratch*'を使っているときに、式の評価結果をエコー領域ではなく
+バッファ`*scratch*'そのものに表示したい場合には、`C-x C-e'のかわりに
+`C-u C-x C-e'とタイプする。これにより、式の直後に返された値が表示される。
+バッファはつぎのようになる。
+
+     (buffer-name)"*scratch*"
+
+Infoは読み出し専用なのでバッファの内容を変更できないため、Infoではこの
+方法を使えない。しかし、編集可能なバッファならば、この方法を使える。コー
+ドや（本書のような）文書を書くときには、この機能はとても便利である。
+
+
+
+File: eintr-ja, Node: Getting Buffers, Next: Evaluation Exercise, Prev: How to Evaluate, Up: PrePreface
+
+バッファの取得 *(2004/01/17)*
+=============================
+
+関数`buffer-name'は、バッファの*名前*を返す。バッファ*そのもの*を取得す
+るには、別の関数`current-buffer'が必要である。この関数をコードで使うと、
+バッファそのものを取得することになる。
+
+名前とその名前が表すオブジェクトや実体とは互いに異なるものである。読者
+自身は読者の名前ではない。読者は、その名前で他人が参照する「人」である。
+読者がGeorgeと話したいと頼んだときに、`G'、`e'、`o'、`r'、`g'、`e'と文
+字が書かれたカードを渡されたら、驚くであろうが、満足はしないであろう。
+名前と話をしたいのではなくて、その名前で参照される人と話をしたいのであ
+る。バッファも同様である。一時的バッファの名前は`*scratch*'であるが、名
+前そのものがバッファではない。バッファそのものを得るには
+`current-buffer'のような関数を使う必要がある。
+
+しかし、多少込み入った事情もある。ここで試すように、式で
+`current-buffer'を評価するとバッファの内容ではなくバッファの表示形式が
+表示される。Emacsがこのように動作する理由は2つある。バッファには数千も
+の行が含まれることもあるので、これを簡便に表示するには長すぎる。また、
+バッファの内容は同じであっても、名前が異なるバッファもありえるので、そ
+れらを区別できる必要がある。
+
+例を示そう。
+
+     (current-buffer)
+
+いつものようにこの式を評価すると、エコー領域には`#<buffer *info*>'と表
+示される。バッファ名ではなく、バッファそのものを表す特殊な表示形式であ
+る。
+
+数やシンボルはプログラムに入力できるが、
+バッファの表示形式を入力することはできない。
+バッファそのものを得る唯一の方法は、
+`current-buffer'のような関数を使うことである。
+
+関連する関数として`other-buffer'がある。
+これは、現在使用しているバッファの直前に選択していたバッファを返す。
+たとえば、バッファ`*scratch*'から現在のバッファに切り替えた場合には、
+`other-buffer'はバッファ`*scratch*'を返す。
+
+つぎの式を評価してみよう。
+
+     (other-buffer)
+
+エコー領域には、`#<buffer *scratch*>'、あるいは、今のバッファに切り替え
+るまえのバッファの表示形式が表示される (1) (*Note Getting
+Buffers-Footnotes::)。
+
+
+File: eintr-ja  Node: Getting Buffers-Footnotes, Up: Getting Buffers
+
+(1) 実際には，デフォルトでは切り替える前のバッファが他のウィンドウで表
+示されている時，`other-buffer' は非表示のバッファの中で極最近選択
+したものを選ぶ．これについては私はいつも忘れてしまうのだ
+
+
+
+File: eintr-ja, Node: Switching Buffers, Next: Evaluation Exercise, Prev: How to Evaluate, Up: PrePreface
+
+バッファの切り替え *(2004/03/28)*
+=================================
+
+関数`other-buffer'の目的は、バッファそのものを引数に必要とする関数にバッ
+ファを与えることである。別のバッファに切り替えるため`other-buffer'と
+`switch-to-buffer'とを使ってみよう。
+
+まず、関数`switch-to-buffer'の概要を説明しておこう。`(buffer-name)'を評
+価するためにInfoからバッファ`*scratch*'へ切り替えるときには、`C-x b'と
+タイプし、ミニバッファに表示された切り替え先バッファ名のプロンプトに
+`*scratch*'と入力したであろう (1) (*Note Switching
+Buffers-Footnotes::)。`C-x b'とタイプすると、Lispインタープリタは
+Emacs Lispの対話的関数`switch-to-buffer'を評価する。すでに説明した
+ように、Emacsはこのように動作する。キー列が異なれば、異なる関数を呼び出
+す、つまり、実行するのである。たとえば、`C-f'とタイプすると
+`forward-char'を呼び出し、`M-e'とタイプすると
+`forward-sentence'を呼び出すなどである。
+
+`switch-to-buffer'を書いた式に切り替え先のバッファを指定すれば、
+`C-x b'と同じようにバッファを切り替えられる。
+
+たとえば、つぎのLispの式である。
+
+     (switch-to-buffer (other-buffer))
+
+リストの先頭要素はシンボル`switch-to-buffer'であるので、Lispインタープ
+リタはこれを関数として扱い、それに結び付けられている命令列を実行する。
+しかし、そのまえに、インタープリタは`other-buffer'が括弧の内側にあるこ
+とを検出して、まずそのシンボルを処理する。`other-buffer'はこのリストの
+先頭（かつ唯一の）要素なので、Lispインタープリタはこの関数を呼び出す。
+これは別のバッファを返す。続いて、インタープリタは、この別のバッファを
+引数として`switch-to-buffer'に渡して実行し、そのバッファへ切り替える。
+Infoで読んでいる場合には、この式を評価してみてほしい（Infoのバッファに
+戻るには`C-x b RET'とタイプする）。 (2) (*Note Switching
+Buffers-Footnotes::) この場合，`other-buffer'への最初の引数は現在のバッ
+ファをスキップさせることを指示しています．そして，2番目の引数は
+`other-buffer' は他のフレームなどで表示されているバッファを表示すること
+を許可します．`switch-to-buffer' は大抵表示されているバッファへの移動は
+`C-x o' (`other-window') を使うので非表示のバッファへ移動することになり
+ます．}
+
+本書の以降の節のプログラム例では、関数`switch-to-buffer'よりも関数
+`set-buffer'を多用する。これは、コンピュータプログラムと人間との違いに
+よるものである。人間には目があるので、端末画面で作業中のバッファを見る
+ことを期待する。これは当然のことであり、これ以上説明する必要はなかろう。
+一方、プログラムに目はない。コンピュータプログラムがバッファを処理する
+ときに、端末画面でバッファが見えている必要はない。
+
+`switch-to-buffer'は人間向けに考えられたものであり、異なる2つのことを行
+う。Emacsの注意をバッファに向けることと、ウィンドウに表示するバッファを
+そのバッファに切り替えることである。一方、`set-buffer'は1つのことだけを
+行い、コンピュータプログラムの注意をそのバッファに向けるだけである。画
+面上のバッファは変更しない（もちろん、コマンドが終了するまでは、何も起
+こらない）。
+
+ここでは、新たな専門用語"呼び出し（call）"も使った。リストの先頭のシン
+ボルが関数であるようなリストを評価すると、その関数を呼び出すのである。
+この用語は、鉛管工を「呼ぶ」とパイプの洩れを修理してくれるのと同じよう
+に、関数は、「呼び出す」と何かを行ってくれる実体であるという考え方から
+きている。
+
+
+File: eintr-ja  Node: Switching Buffers-Footnotes, Up: Switching Buffers
+
+(1) あるいは，タイプを簡略にするために，`*sc'のように名前の一部を
+入力し，補完するために`TAB'を入力するだろう．そして，`RET'を押
+して選択するのだ
+
+(2) この記述は表示されていない最も最近表示したバッファに移動します．も
+し最近選択したバッファを表示したいのであれば，以下の式を評価する必要が
+あります．
+
+     (switch-to-buffer (other-buffer (current-buffer) t))
+
+@noindent
+
+
+
+File: eintr-ja, Node: Buffer Size & Locations, Next: Evaluation Exercise, Prev: How to Evaluate
+PrePreface Size and the Location of Point
+バッファサイズとポイントの位置
+==============================
+*(2004/03/28)* size ファサイズrather simple functions, `point-min',
+and about the size of a buffer and 最後に、`buffer-size'、`point'、
+`point-min'、`point-max' などの比較的単純な関数を見てみよう。これらによ
+り、バッファのサイズやバッファ内のポイントの位置に関する情報を得ること
+ができる。
+
+関数`buffer-size'は、カレントバッファのサイズを返す。つまり、バッファ内
+の文字の個数を返す。
+
+     (buffer-size)
+
+いつものように、この式の直後にカーソルを置いて`C-x C-e'とタイプすれば、
+この式を評価できる。
+
+Emacsでは、カーソルの現在位置を"ポイント（point）"と呼ぶ。式`(point)'は、
+バッファの先頭からポイントまでの文字の個数として、カーソルの位置を返す。
+
+いつものようにつぎの式を評価すると、バッファ内でのポイントまでの文字数
+を調べることができる。
+
+     (point)
+
+筆者の場合、この値は65724であった。本書の例では、関数`point'を多用して
+いる。
+
+ポイントの値は、当然であるが、バッファ内での位置に依存する。ここでつぎ
+の式を評価すると、より大きな数になる。
+
+     (point)
+
+筆者の場合、ポイントの値は66043となり、2つの式のあいだには（空白を含め
+て）319文字あることがわかる。
+
+関数`point-min'は、`point'とほぼ同じであるが、カレントバッファにおいて
+取ることが可能なポイントの最小値を返す。"ナロイング（narrowing）"してい
+なければ、これは数1である（ナロイング（偏狭化）とは、プログラムなどで操
+作するバッファの範囲を制限する機構である。*Note Narrowing &
+Widening::）。同じように、関数`point-max'は、カレントバッファにおいて取
+ることが可能なポイントの最大値を返す。
+
+
+
+File: eintr-ja, Node: Evaluation Exercise, Next: Primitive Functions, Prev: How to Evaluate, Up: PrePreface
+
+演習問題
+========
+
+適当なファイルを読み込み、その中ほどに移動する。バッファ名、ファイル名、
+長さ、ファイル内での位置のそれぞれを調べてみよ。
+
+
+
+File: eintr-ja, Node: Writing Defuns, Next: Counting Words, Prev: PrePreface, Up: Top
+
+関数定義の書き方 *(2004/08/04)*
+*******************************
+
+リストを評価するとき、Lispインタープリタは、リストの先頭のシンボルに関
+数定義が結び付けられているかどうかを調べる。いいかえれば、シンボルが関
+数定義を指すかどうかを調べる。そうならば、コンピュータは定義内の命令列
+を実行する。関数定義を持つシンボルを、単に関数と呼ぶ（しかし、正確には、
+定義が関数であり、シンボルはそれを指すだけである）。
+
+* Menu:
+
+* Primitive Functions::
+* defun::                       The `defun' special form.
+* Install::                     Install a function definition.
+* Interactive::                 Making a function interactive.
+* Interactive Options::         Different options for `interactive'.
+* Permanent Installation::      Installing code permanently.
+* let::                         Creating and initializing local variables.
+* if::                          What if?
+* else::                        If--then--else expressions.
+* Truth & Falsehood::           What Lisp considers false and true.
+* save-excursion::              Keeping track of point, mark, and buffer.
+* Review::
+* defun Exercises::
+
+
+
+File: eintr-ja, Node: Primitive Functions, Next: let, Prev: Evaluation Exercise, Up: PrePreface
+
+An Aside about Primitive Functions
+==================================
+
+すべての関数は別の関数を用いて定義されているが、プログラミング言語Cで書
+かれた少数の"基本操作（primitive）"関数はそうではない。関数の定義を書く
+ときには、他の関数を構成部品として用いてEmacs Lispで書く。そのとき使用
+する関数は、それ自身Emacs Lispで（読者自身が）書いたものであったり、Cで
+書かれた基本操作関数である。基本操作関数は、Emacs Lispで書いたものとまっ
+たく同じように使え、そのように動作する。これらをCで書いてあるのは、Cが
+動く十分な能力を持ったコンピュータならば容易にGNU Emacsを動作できるよう
+にするためである。
+
+強調しておくが、Emacs Lispでコードを書くとき、Cで書いた関数の使い方と
+Emacs Lispで書いた関数の使い方とは区別しない。両者の違いは無関係なので
+ある。わざわざ言及したのは、興味深いと考えたからである。既存の関数が
+Emacs Lispで書いてあるのか、Cで書いてあるのかは、特に調べない限りわから
+ない。
+
+
+
+File: eintr-ja, Node: defun, Next: let, Prev: Primitive Functions, Up: PrePreface
+
+スペシャルフォーム`defun' *(2004/03/28)*
+========================================
+
+Lispでは、`mark-whole-buffer'のようなシンボルには、
+関数として呼ばれたときにコンピュータが実行するコードが結び付けられている。
+このコードを"関数定義（function definition）"と呼び、
+シンボル`defun'（*define function（関数を定義する）*の略）で始まる
+Lispの式を評価することで作成する。
+`defun'は、その引数を通常のようには評価しないので、
+"スペシャルフォーム（special form）"と呼ばれる。
+
+以下の節では、`mark-whole-buffer'のようなEmacsのソースコードの関数定義
+を調べる。本節では、関数定義がどのようなものかを理解してもらうために、
+簡単な関数定義を説明する。例を簡単にするために、算術演算を使った関数定
+義を取り上げる。算術演算を使った例が嫌いな人もいるであろうが、落胆しな
+いでほしい。残りの節で説明するコードには、算術演算や数学はほとんどない。
+そのほとんどは、テキストを扱う。
+
+関数定義は、単語`defun'に続く最大で5つの部分から成る。
+
+  1. 関数定義を結び付けるシンボルの名前。
+
+  2. 関数に渡される引数のリスト。関数に引数を渡さない場合には、空リスト
+     `()'を指定する。
+
+  3. 関数の説明文（省略できるが、付けることを強く推奨する）。
+
+  4. `M-x'に続けて関数名を入力したり、適当なキー列をタイプして使えるよ
+     うに、関数を対話的にするための式。省略できる。
+
+  5. コンピュータに動作を命じるコード。関数定義の"本体（body）"。
+
+関数定義の5つの部分を、つぎのような雛型にまとめて考えるとわかりやすい。
+
+     (defun 関数名 (引数...)
+       "省略可能な関数の説明文..."
+       (interactive 引数に関する情報) ;    省略可能
+       本体...)
+
+例として、引数を7倍する関数のコードを示す（この例は、対話的関数ではない。
+これについては、*Note Interactive::）。
+
+     (defun multiply-by-seven (number)
+       "Multiply NUMBER by seven."
+       (* 7 number))
+
+この定義は、括弧とシンボル`defun'で始まり、関数名が続く。
+
+関数名のあとには、関数に渡される引数のリストが続く。このリストを、"引数
+リスト（argument list）"と呼ぶ。この例では、リストには1つの要素、シンボ
+ル`number'のみがある。関数が使われると、関数への引数として使われた値が
+このシンボルに束縛される。
+
+引数の名前としては、単語`number'のかわりに別の名前を指定してもよい。た
+とえば、単語`multiplicand'でもよい。引数の値の種類がわかるように単語
+`number'を選んだ。同様に、関数の実行において引数の役割を表す
+`multiplicand'（被乗数）を選んでもよかった。引数を`foogle'とも書けるが、
+これでは何を意味するか不明なのでよくない。名前の選択はプログラマの責任
+であり、関数の意味を明らかにするように選ぶべきである。
+
+引数リストのシンボルにはどんな名前を選んでもよく、他の関数で使っている
+シンボルの名前でもよい。引数リストに使用した名前は、その定義において私
+的である。つまり、その定義において名前で参照した実体は、その関数定義の
+外部で同じ名前で参照する実体とは別である。たとえば、家族のあいだでは読
+者の愛称は「ショーティ」だとしよう。家族の誰かが「ショーティ」といった
+場合には、読者のことである。しかし、別の家族が「ショーティ」といった場
+合には、別の誰かのことである。引数リスト中の名前は関数定義に私的なので、
+関数本体の内側でそのようなシンボルの値を変更しても、関数の外部の値には
+影響しない。`let'式でも同様な効果が得られる（*Note let::）。
+
+
+引数リストには、関数の説明文である文字列が続く。
+`C-h f'に続けて関数名をタイプしたときに表示されるのは、
+この文字列である。
+`apropos'などのある種のコマンドでは複数行の説明文のうち最初の1行のみを
+表示するので、関数の説明文を書く場合には、最初の1行を1つの文にすべきである。
+また、`C-h f'（`describe-function'）で表示した場合に、
+表示が変にならないように、説明文の2行目以降を字下げしないこと。
+説明文は省略できるが、あると有益なので、
+読者が書くほとんどの関数には指定するべきである。
+
+上の例の3行目は関数定義の本体である（当然、ほとんどの関数の定義は、この
+例よりも長いはずである）。ここでは、本体はリスト`(* 7 number)'であり、
+NUMBERの値を7倍する（Emacs Lispでは、`+'が加算であるように、`*'は乗算で
+ある）。
+
+関数`multiply-by-seven'を使うときには、
+引数`number'は読者が指定した実際の数に評価される。
+`multiply-by-seven'の使い方を示すが、まだ、評価しないでほしい。
+
+     (multiply-by-seven 3)
+
+関数を実際に使用すると、次節の関数定義に指定したシンボル`number'には、
+値3が与えられる、つまり、「束縛」される。関数定義では`number'は括弧の内
+側にあるが、関数`multiply-by-seven'に渡される引数は括弧の内側にはないこ
+とに注意してほしい。関数定義において引数を括弧で囲むのは、コンピュータ
+が引数リストの終わりと関数定義の残りの部分を区別できるようにするためで
+ある。
+
+さて、この例を評価すると、エラーメッセージを得る（実際に試してみるとよ
+い）。これは、関数定義を書いたけれども、その定義をコンピュータに与えて
+いないからである。つまり、関数定義をEmacsにインストール（あるいは、ロー
+ド）していないからである。関数のインストールとは、Lispインタープリタに
+関数の定義を教える操作である。次節では、インストールについて説明する。
+
+
+
+File: eintr-ja, Node: Install, Next: let, Prev: Primitive Functions, Up: PrePreface
+
+関数定義のインストール
+======================
+
+EmacsのInfoで読んでいる場合には、`multiply-by-seven'の関数定義を評価し
+てから`(multiply-by-seven 3)'を評価すれば、関数`multiply-by-seven'を試
+すことができる。関数定義をもう一度つぎにあげておく。関数定義の最後の括
+弧の直後にカーソルを置いて`C-x C-e'とタイプする。すると、エコー領域に
+`multiply-by-seven'と表示される（関数定義を評価すると、その値として定義
+された関数の名前が返される）。同時に、この操作で関数定義がインストール
+されるのである。
+
+     (defun multiply-by-seven (number)
+       "Multiply NUMBER by seven."
+       (* 7 number))
+
+この`defun'を評価すると、Emacsに`multiply-by-seven'をインストール
+したことになる。
+これで、`forward-word'や編集関数などと同じく、
+この関数もEmacsの一部である
+（Emacsを終了するまで、`multiply-by-seven'はインストールされたままである。
+Emacs起動時に自動的にコードをロードするには
+*Note Permanent Installation::を参照）。
+
+
+* Menu:
+
+* Effect of installation::
+* Change a defun::              How to change a function definition.
+
+
+
+File: eintr-ja, Node: Effect of installation, Prev: Primitive Functions, Up: Primitive Functions
+
+The effect of installation
+--------------------------
+
+つぎの例を評価すれば、`multiply-by-seven'をインストールした効果がわかる。
+つぎの式の直後にカーソルを置いて`C-x C-e'とタイプする。エコー領域に数
+21が表示されるはずである。
+
+     (multiply-by-seven 3)
+
+必要ならば、`C-h f'（`describe-function'）に続けて関数名`
+multiply-by-seven'をタイプすれば、関数の説明文を読むことができる。これ
+を行うと、つぎのような内容のウィンドウ`*Help*'が画面に現れる。
+
+     multiply-by-seven:
+     Multiply NUMBER by seven.
+
+（画面を単一のウィンドウに戻すには、`C-x 1'とタイプする。）
+
+
+
+File: eintr-ja, Node: Change a defun, Prev: Effect of installation, Up: Primitive Functions
+
+関数定義の変更
+--------------
+
+`multiply-by-seven'のコードを変更するには、書き変えればよい。旧版のかわ
+りに新版をインストールするには、関数定義を再度評価する。Emacsではこのよ
+うにコードを修正すればよく、非常に簡単である。
+
+例として、7を掛けるかわりに、数そのものを7回足すように関数
+`multiply-by-seven'を変更する。同じ結果を得るが、その方法が異なる。同時
+に、コードに注釈を加えよう。注釈とは、Lispインタープリタは無視するテキ
+ストであるが、人には有用であり意味を明らかにする。この例では、「第2版」
+が注釈である。
+
+     (defun multiply-by-seven (number)       ; 第2版
+       "Multiply NUMBER by seven."
+       (+ number number number number number number number))
+
+セミコロン`;'に続けて注釈を書く。Lispでは、行の中でセミコロンに続くもの
+はすべて注釈である。注釈は行末で終わる。2行以上にわたる注釈は、各行をセ
+ミコロンで始める。
+
+注釈に関してより詳しくは、
+*Note Comments: (elisp)Commentsや
+*Note Beginning a .emacs File::。
+
+この版の関数`multiply-by-seven'をインストールするには、最初の版を評価し
+たのと同じように評価すればよい。すなわち、最後の括弧の直後にカーソルを
+置いて`C-x C-e'とタイプする。
+
+まとめると、Emacs Lispでコードを書くには、関数を書いてインストールして
+テストし、必要に応じて、修正や機能強化して再インストールする。
+
+
+
+File: eintr-ja, Node: Interactive, Next: let, Prev: Primitive Functions, Up: PrePreface
+
+関数を対話的にする
+==================
+
+関数を対話的にするには、
+関数の説明文のあとにスペシャルフォーム`interactive'で始まるリストを置く。
+こうすれば、`M-x'に続けて関数名をタイプするか、
+関数に束縛したキー列をタイプすれば対話的関数を起動できる。
+たとえば、`next-line'を起動するには`C-n'とタイプし、
+`mark-whole-buffer'を起動するには`C-x h'とタイプする。
+
+対話的関数を対話的に呼び出した場合には、関数が返した値は自動的にはエコー
+領域に表示されない。これは、対話的関数を呼び出すのは、単語単位や行単位
+の移動などの副作用のためであり、返された値は必要ないからである。キーを
+タイプするたびに返された値をエコー領域に表示すると、とても煩わしい。
+
+* Menu:
+
+* Interactive multiply-by-seven::  An overview.
+* multiply-by-seven in detail::  The interactive version.
+
+
+
+File: eintr-ja, Node: Interactive multiply-by-seven, Prev: Effect of installation, Up: Primitive Functions
+
+対話的`multiply-by-seven'
+-------------------------
+
+`multiply-by-seven'の対話的な版を作って、スペシャルフォーム
+`interactive'の使い方とエコー領域に値を表示する1つの方法を示そう。
+
+コードはつぎのとおりである。
+
+     (defun multiply-by-seven (number)       ; 対話的版
+       "Multiply NUMBER by seven."
+       (interactive "p")
+       (message "The result is %d" (* 7 number)))
+
+このコードの直後にカーソルを置いて`C-x C-e'とタイプして、
+このコードをインストールする。
+エコー領域には関数名が表示されるはずである。
+そうすれば、`C-u'、数、`M-x multiply-by-seven'とタイプして
+RETを押せば、このコードを使うことができる。
+エコー領域には、
+`The result is ...'に続けて乗算結果が表示されるはずである。
+
+より一般的には、このような関数を起動する方法は2つある。
+
+  1. `C-u 3 M-x forward-sentence'のように、関数に渡すべき数を含む前置引
+     数をタイプしてから、`M-x'に続けて関数名をタイプする。あるいは、
+
+  2. `C-u 3 M-e'のような関数にバインドされたキー列をタイプする。
+
+上のキー列の例は、どちらもポイントを文単位に3つ進める
+（`multiply-by-seven'にはキーがバインドされていないので、キーバインドを
+使う例としては使えない）。
+
+（コマンドをキーにバインドする方法については
+*Note Keybindings::。）
+
+前置引数を対話的関数に渡すには、`M-3 M-e'のようにキーMETAに続けて数をタ
+イプするか、`C-u 3 M-e'のように`C-u'に続けて数をタイプする（数をタイプ
+せずに`C-u'だけをタイプすると、デフォルトは4）。
+
+
+
+File: eintr-ja, Node: multiply-by-seven in detail, Prev: Effect of installation, Up: Primitive Functions
+
+対話的 `multiply-by-seven'
+--------------------------
+
+
+スペシャルフォーム`interactive'と関数`message'の使い方を
+`multiply-by-seven'で見てみよう。関数定義はつぎのとおりであった。
+
+     (defun multiply-by-seven (number)       ; 対話的版
+       "Multiply NUMBER by seven."
+       (interactive "p")
+       (message "The result is %d" (* 7 number)))
+
+この関数では、式`(interactive "p")'は、要素2個のリストである。`"p"'は、
+前置引数を関数に渡すことをEmacsに指示するもので、その値を関数への引数と
+して使う。
+
+引数は数である。つまり、つぎの行のシンボル`number'には数が束縛される。
+
+     (message "The result is %d" (* 7 number))
+
+たとえば、前置引数が5であったとすると、Lispインタープリタはつぎのような
+行であるとして評価する（GNU Emacsで読んでいる場合には、読者自身がこの式
+を評価してほしい）。
+
+     (message "The result is %d" (* 7 5))
+
+まず、インタープリタは内側のリスト`(* 7 5)'を評価する。値35が返される。
+つぎに、インタープリタは外側のリストを評価するが、それには、リストの第
+2要素以降の値を関数`message'に渡す。
+
+すでに説明したように、`message'はユーザーに1行のメッセージを表示するた
+めに考えられたEmacs Lispの関数である（*Note message::）。すなわち、関数
+`message'は、`%d'や`%s'や`%c'を除いて、第1引数を字面のとおりにエコー領
+域に表示する。`%d'や`%s'や`%c'の制御文字列があると、2番目以降の引数を調
+べてその値を対応する制御文字列の位置に表示する。
+
+対話的関数`multiply-by-seven'では、制御文字列としては`%d'を使っており、
+これは数を必要とする。`(* 7 5)'を評価した結果は数35である。したがって、
+`%d'の位置に数35が表示されるので、メッセージは`The result is 35'となる。
+
+（関数`multiply-by-seven'を呼んだときは、メッセージには二重引用符が付か
+ないが、`message'を呼んだときには、二重引用符のあいだにテキストが表示さ
+れることに注意してほしい。`message'を先頭要素とする式を評価したときには、
+`message'が返した値がエコー領域に表示されるが、関数内で用いた場合には、
+副作用として`message'が二重引用符なしでテキストを表示するからである。）
+
+
+
+File: eintr-ja, Node: Interactive Options, Next: let, Prev: Primitive Functions, Up: PrePreface
+
+`interactive'の他のオプション
+=============================
+
+上の例の`multiply-by-seven'では、`interactive'の引数として`"p"'を用いた。
+この引数は、ユーザーがタイプした`C-u'やMETAに続く数を、関数への引数とし
+て渡すコマンドとして解釈するようにEmacsに指示する。Emacsでは、あらかじ
+め定義された20個以上の文字を`interactive'に指定できる。ほとんどの場合、
+これらのオプションを指定すれば、必要な情報を関数へ対話的に渡せる
+（*Note Code Characters for `interactive': (elisp)Interactive Codes）。
+
+たとえば、文字`r'を指定すると、Emacsは、リージョンの開始位置と終了位置
+（ポイントとマークの現在値）を2つの引数として関数へ渡す。つぎのように使
+う。
+
+     (interactive "r")
+
+一方、`B'を指定すると、Emacsは関数にバッファ名を渡す。`B'をみると、
+Emacsは、`"BAppend to buffer: "'のような`B'に続く文字列をプロンプトとし
+てミニバッファに表示して、ユーザーに名前を問い合わせる。Emacsはプロンプ
+トを表示するだけでなく、TABが押されると名前を補完する。
+
+2つ以上の引数を取る関数では、`interactive'に続く文字列に要素を追加すれ
+ば各引数に情報を渡せる。このとき、各引数に情報を渡す順番は、リスト
+`interactive'に指定した順番と同じである。文字列の各部分は、改行`\n'で区
+切る。たとえば、`"BAppend to buffer: "'に続けて、`\n'と`r'を指定する。
+こうすると、Emacsはバッファ名を問い合わせることに加えて、ポイントとマー
+クの値を関数に渡す。つまり、引数は全部で3つである。
+
+この場合、関数定義はつぎのようになり、`buffer'、`start'、`end'の各シン
+ボルには、バッファ、リージョンの開始位置、終了位置の現在値を
+`interactive'が束縛する。
+
+     (defun 関数名 (buffer start end)
+       "説明文..."
+       (interactive "BAppend to buffer: \nr")
+       関数の本体...)
+
+（プロンプトのコロンのうしろの空白は、
+プロンプトを表示したときに見やすくするためのものである。
+関数`append-to-buffer'でもこのようにしている。
+*Note append-to-bufferm::。）
+
+引数がない関数の場合には、`interactive'には何も指定しなくてよい。そのよ
+うな関数では、単に式`(interactive)'を指定する。関数`mark-whole-buffer'
+は、このようになっている。
+
+読者のアプリケーションにおいて、あらかじめ定義した文字では不十分な場合
+には、`interactive'にリストを指定すれば、独自の引数を渡せる。この技法に
+ついて詳しくは、*Note Using `Interactive': (elisp)interactive。
+
+
+
+File: eintr-ja, Node: Permanent Installation, Next: let, Prev: Primitive Functions, Up: PrePreface
+
+コードの恒久的インストール
+==========================
+
+関数定義を評価して関数定義をインストールすると、Emacsを終了するまでは関
+数定義は有効である。新たにEmacsを起動したときには、関数定義を再度評価す
+るまでは関数定義はインストールされない。
+
+新たにEmacsを起動するたびに、自動的にコードをインストールしたくなるであ
+ろう。これにはいくつかの方法がある。
+
+   * 個人用のコードの場合には、
+     個人用の初期化ファイル`.emacs'に関数定義のコードを入れておく。
+     Emacsを起動すると、個人用の`.emacs'が自動的に評価され、
+     その中のすべての関数定義がインストールされる。
+     *Note Emacs Initialization::。
+
+   * あるいは、インストールしたい関数定義をいくつかのファイルに収めておき、
+     関数`load'を用いてEmacsに各ファイルの関数定義を評価させインストールする。
+     *Note Loading Files::。
+
+   * 読者のサイト全体で使用するコードの場合には、Emacsを構築する際にロー
+     ドするファイル`site-init.el'にコードを収める。こうすると、サイトの
+     ユーザーなら誰でもコードを使えるようになる（Emacsのディストリビュー
+     ションに含まれるファイル`INSTALL'を参照のこと）。
+
+最後に、Emacsのすべてのユーザーが使いそうなコードがあれば、ネットワーク
+に投稿するかFree Software Foundationに送付することができる（こうする場
+合には、投稿するまえに他の人が実行・コピー・学習・修正・再配布できるよ
+うに許可したライセンスを入れてほしい．）。Free Software Foundationにコー
+ドを送付すると，適切なライセンスで保護されていれば，Emacsの次期リリース
+にコードが含まれるかもしれない。このような「寄贈行為」によりEmacsが成長
+してきたのである。
+
+
+
+File: eintr-ja, Node: let, Next: save-excursion, Prev: Primitive Functions, Up: PrePreface
+
+`let' *(2004/03/28)*
+====================
+
+`let'式はLispのスペシャルフォームであり、ほとんどの関数定義で使う必要が
+ある。
+
+`let'はシンボルに値を結び付ける、すなわち、束縛するのであるが、関数の内
+部と外部で同じ名前の変数を使ってもLispインタープリタが混乱しないような
+方法でこれを行う。
+
+このスペシャルフォームが必要な理由を理解するために、
+「家を塗装し直す必要がある」などのように一般的に「家」と呼ぶような
+家屋を所有している状況を仮定してみよう。
+読者が友人宅を訪問したときに、友人が「家」といったときには、
+*友人の*家を意味しているのであって、読者の家ではないだろう。
+
+友人は彼の家を意味しているのに、読者が読者の家を意味していると考えると、
+混乱が生じる。ある関数の内部で使う変数と別の関数の内部で使う変数が同じ
+名前でも、同じ値を参照する意図がないのであれば、Lispでも同じことが起こ
+る。`let' はこの種の混乱を防ぐ．
+
+* Menu:
+
+* Prevent confusion::
+* Parts of let Expression::
+* Sample let Expression::
+* Uninitialized let Variables::
+
+
+
+File: eintr-ja, Node: Prevent confusion, Prev: let, Up: let
+
+`let' で混乱を避ける
+--------------------
+
+スペシャルフォーム`let'はこの種の混乱を防ぐ。
+`let'は、`let'式の外側にある同じ名前を隠すような
+"ローカル変数（local variable）"としての名前を作り出す。
+これは、友人が「家」といった場合、彼は読者のではなく彼の家を意味していると
+理解することに似ている
+（引数リストに使われるシンボルも同じように働く。
+*Note defun::）。
+
+`let'式が作るローカル変数は、`let'式の内側（と`let'式から呼ばれた式の内
+側）でのみそれらの値を保持する。ローカル変数は、`let'式の外側にはまった
+く影響しない。
+
+`let' は 一次的なローカルの `setq' のようなものとも理解できるだろう．
+`let' により定義された値は `let' が終わると自動的に解除されます．`let'
+はその境界の中でだけ有効になるのです．コンピュータ科学用語辞典では
+「`let' でよばれた関数でだけシンボル割り当てを見ることができます．
+Emacs Lisp ではスコープは動的で静的ではないのです．」となっています．
+
+`let'では一度に複数個の変数を作れる。また、`let'で各変数を作るときには、
+指定した値か`nil'を初期値として設定できる（専門用語では、「変数に値を束
+縛する」という）。`let'で変数を作って束縛すると、`let'の本体のコードを
+実行し、`let'式全体の値として本体の最後の式の値を返す（「実行
+（execute）」とは、リストを評価することを意味する専門用語である。これは、
+「実質的な効果を与える」という単語の用法（`Oxford English Dictionary'）
+からきている。ある動作を行わせるために式を評価するので、「実行
+（execute）」は「評価（evaluate）」の同義語である）。
+
+
+
+
+File: eintr-ja, Node: Parts of let Expression, Prev: let, Up: let
+
+`let'式の構造 *(2004/03/28)*
+----------------------------
+
+`let'式は、3つの要素からなるリストである。第一の部分は、シンボル`let'で
+ある。第二の部分は、"変数リスト（varlist）"と呼ばれるリストであり、その
+個々の要素は、単独のシンボルであるか、第1要素がシンボルであるような2要
+素リストである。`let'式の第3の部分は、`let'の本体である。通常、本体は複
+数個のリストである。
+
+     (let VARLIST BODY...)
+
+変数リストの各シンボルは、スペシャルフォーム`let'で初期値を設定された変
+数である。単独のシンボルの場合、初期値は`nil'である。第1要素がシンボル
+であるような2要素リストである場合、そのシンボルには、Lispインタープリタ
+が第2要素を評価した結果を束縛する。
+
+したがって、変数リストは`(thread (needles 3))'のようになる。この`let'式
+では、Emacsは、シンボル`thread'には初期値`nil'を、シンボル`needles'には
+初期値3を束縛する。
+
+`let'式を書くときには、
+`let'式の雛型の適当な項目に必要な式を書き込めばよい。
+
+変数リストが2要素リストだけから成る場合には、
+`let'式の雛型はつぎのようになる。
+
+     (let ((VARIABLE VALUE)
+           (VARIABLE VALUE)
+           ...)
+       BODY...)
+
+
+
+File: eintr-ja, Node: Sample let Expression, Prev: let, Up: let
+
+`let'式の例 *(2004/03/28)*
+--------------------------
+
+つぎの式では、2つの変数`zebra'と`tiger'を作り、
+それぞれに初期値を与える。
+`let'式の本体は、関数`message'を呼ぶリストである。
+
+     (let ((zebra 'stripes)
+           (tiger 'fierce))
+       (message "One kind of animal has %s and another is %s."
+                zebra tiger))
+
+変数リストは`((zebra 'stripes) (tiger 'fierce))'である。
+
+2つの変数は、`zebra'と`tiger'である。各変数は2要素リストの先頭要素であ
+り、個々の値は2要素リストの第2要素である。変数リストでは、Emacsは、変数
+`zebra'には値`stripes'を、変数`tiger'には値`fierce'を束縛する。この例で
+は、どちらの値も引用符を直前に付けたシンボルである。これらの値は、リス
+トであっても文字列であってもよい。変数を保持するリストのあとには、
+`let'式の本体が続く。この例では、エコー領域に文字列を表示する関数
+`message'を使ったリストが本体である。
+
+これまでのように、例の最後の括弧の直後にカーソルを置いて`C-x C-e'とタイ
+プすれば例を評価できる。そうすると、エコー領域にはつぎのように表示され
+るはずである。
+
+     "One kind of animal has stripes and another is fierce."
+
+これまでに見てきたように、関数`message'は`%s'を除いて第1引数を表示する。
+この例では、変数`zebra'の値が最初の`%s'の位置に、変数`tiger'の値が2番目
+の`%s'の位置に表示される。
+
+
+
+File: eintr-ja, Node: Uninitialized let Variables, Prev: let, Up: let
+
+`let'式の非初期化変数 *(2004/03/28)*
+------------------------------------
+
+`let'式において特に初期値を束縛していない変数には、自動的に初期値として
+`nil'を束縛する。つぎの例を見てほしい。
+
+     (let ((birch 3)
+           pine
+           fir
+           (oak 'some))
+       (message
+        "Here are %d variables with %s, %s, and %s value."
+        birch pine fir oak))
+
+変数リストは`((birch 3) pine fir (oak 'some))'である。
+
+いつものようにこの式を評価すると、エコー領域にはつぎのように表示される。
+
+     "Here are 3 variables with nil, nil, and some value."
+
+この例では、Emacsは、シンボル`birch'に数3を、シンボル`pine'と`fir'に
+`nil'を、シンボル`oak'に`some'を束縛する。
+
+`let'の最初の部分では、変数`pine'と`fir'は括弧で囲んでない単独のアトム
+である。そのため、これらの変数は空リスト`nil'に束縛される。一方、`oak'
+は、リスト`(oak 'some)'の一部なので、`some'に束縛される。同様に、
+`birch'もリストの一部なので数3に束縛される（数はそれ自身に評価されるの
+で、数をクオートする必要はない。また、メッセージに数を表示するには`%s'
+のかわりに`%d'を使う）。4つの変数をまとめてリストにすることで、`let'の
+本体と区別できるようにする。
+
+
+
+File: eintr-ja, Node: if, Next: save-excursion, Prev: let, Up: PrePreface
+
+スペシャルフォーム`if' *(2004/03/28)*
+=====================================
+
+`defun'や`let'に続く3番目のスペシャルフォームは、条件分岐`if'である。こ
+のフォームは、コンピュータに判定を指示する。`if'を使わずに関数定義を書
+くことも可能であろうが、多くの場面で使用する重要なものなので、ここで説
+明しておこう。たとえば、関数`beginning-of-buffer'のコードで使っている。
+
+`if'の基本的な考え方は、「*もし（if）*条件が*真ならば（then）*式を評価
+する」である。条件が真でなければ、式を評価しない。たとえば、「もし（if）
+暑くて夏ならば（then）海へ行く！」のような判定に使う。
+
+* Menu:
+
+* if in more detail::
+* type-of-animal in detail::    An example of an `if' expression.
+
+
+
+File: eintr-ja, Node: if in more detail, Prev: let, Up: let
+
+`if' の詳細
+-----------
+
+Lispで`if'式を書く場合には、「then」を書かない。第1要素が`if'であるリス
+トの第2要素と第3要素のそれぞれに、判定条件と真の場合の動作を指定する。
+`if'式の条件を調べる部分を"判定条件（if-part）"、2番目の引数を"真の場合
+の動作（then-part）"と呼ぶ。
+
+また、`if'式を書くとき、判定条件はシンボル`if'と同じ行に書くが、真の場
+合の動作は2行目以降に書く。このようにすると`if'式が読みやすくなる。
+
+     (if 判定条件
+         真の場合の動作)
+
+判定条件は、Lispインタープリタが評価できればどんな式でもよい。
+
+いつものようにして評価できる例をつぎにあげよう。判定条件は、「数5は数4
+よりも大きいか」である。これは真なので、メッセージ`5 is greater than
+4!'が表示される。
+
+     (if (> 5 4)                             ; 判定条件
+         (message "5 is greater than 4!"))   ; 真の場合の動作
+
+（関数`>'は、第1引数が第2引数よりも大きいかどうかを調べ、そうならば真を
+返す。）
+
+実際のコードでは、`if'式の判定条件は、式`(> 5 4)'のように固定されていな
+い。判定条件に使われる少なくとも1つの変数に束縛された値は、あらかじめわ
+かっていないはずである（あらかじめ値がわかっていれば、テストする必要は
+ない）。
+
+たとえば、関数定義の引数に束縛された値を使う。つぎの関数定義では、関数
+に渡される値は動物の性質である。`characteristic'に束縛された値が
+`fierce'（獰猛な）の場合には、メッセージ`It's a tiger!'を表示する。そう
+でなければ、`nil'を返す。
+
+     (defun type-of-animal (characteristic)
+       "Print message in echo area depending on CHARACTERISTIC.
+     If the CHARACTERISTIC is the symbol `fierce',
+     then warn of a tiger."
+       (if (equal characteristic 'fierce)
+           (message "It's a tiger!")))
+
+GNU Emacsで読んでいる場合には、これまでのように関数定義を評価して定義を
+Emacsにインストールし、つぎの2つの式を評価して結果を確認できる。
+
+     (type-of-animal 'fierce)
+
+     (type-of-animal 'zebra)
+
+
+`(type-of-animal 'fierce)'を評価すると、エコー領域にはメッセージ`"It's
+a tiger!"'が表示される。`(type-of-animal 'zebra)'を評価すると、エコー領
+域には`nil'と表示される。
+
+
+
+File: eintr-ja, Node: type-of-animal in detail, Prev: let, Up: let
+
+関数`type-of-animal'の詳細 *(2004/03/28)*
+-----------------------------------------
+
+関数`type-of-animal'を詳しく見てみよう。
+
+`type-of-animal'の関数定義は、関数定義の雛型と`if'式の雛型を埋めて書い
+たものである。
+
+これらは対話的関数の雛型ではない。
+
+     (defun 関数名 (引数リスト)
+       "説明文..."
+       本体...)
+
+この雛型に対応する関数の部分はつぎのとおりである。
+
+     (defun type-of-animal (characteristic)
+       "Print message in echo area depending on CHARACTERISTIC.
+     If the CHARACTERISTIC is the symbol `fierce',
+     then warn of a tiger."
+       本体( `if'式))
+
+関数名は`type-of-animal'であり、渡される引数は1つである。引数リストのあ
+とには複数行の説明文字列が続いている。各関数定義に説明文を付加しておく
+のはよい習慣なので、この例でも説明文を付けておいた。関数定義の本体は
+`if'式から成る。
+
+`if'式の雛型はつぎのとおりである。
+
+     (if 判定条件
+         真の場合の動作)
+
+関数`type-of-animal'の`if'のコードはつぎのとおりである。
+
+     (if (equal characteristic 'fierce)
+         (message "It's a tiger!")))
+
+ここで、判定条件はつぎのとおり。
+
+     (equal characteristic 'fierce)
+
+Lispでは、`equal'は、第1引数が第2引数に等しいかどうかを調べる関数である。
+第2引数はクオートしたシンボル`'fierce'であり、第1引数はシンボル
+`characteristic'の値、つまり、この関数に渡された引数である。
+
+`type-of-animal'の最初の使用例では、引数`fierce'を`type-of-animal'に渡
+した。`fierce'は`fierce'に等しいので、式`(equal characteristic
+'fierce)'は真を返す。すると、`if'は第2引数、つまり、真の場合の動作
+`(message "It's a tiger!")'を評価する。
+
+一方、`type-of-animal'の2番目の使用例では、
+引数`zebra'を`type-of-animal'に渡した。
+`zebra'は`fierce'に等しくないので、真の場合の動作は評価されず、
+`if'式は`nil'を返す。
+
+
+
+File: eintr-ja, Node: else, Next: save-excursion, Prev: let, Up: PrePreface
+
+If--then--else式 *(2004/03/28)*
+===============================
+
+`if'式には第3引数を指定することもでき、判定条件が"偽の場合の動作
+（else-part）"である。判定条件が偽であると、`if'式の第2引数、つまり、真
+の場合の動作はいっさい評価*されず*、第3引数、つまり、偽の場合の動作が評
+価*される*。曇の場合を考慮して「もし（if）暑くて夏ならば（then）海へ行
+く、そうでなければ（else）読書する！」のような判定である。
+
+Lispのコードには「else」を書かない。偽の場合の動作は、`if'式の真の場合
+の動作のうしろに書く。偽の場合の動作は新しい行で始め、真の場合の動作よ
+りも字下げを少なくする。
+
+     (if TRUE-OR-FALSE-TEST
+         ACTION-TO-CARRY-OUT-IF-THE-TEST-RETURNS-TRUE
+       ACTION-TO-CARRY-OUT-IF-THE-TEST-RETURNS-FALSE)
+
+たとえば、つぎの`if'式では、いつものように評価するとメッセージ
+`4 is not greater than 5!'を表示する。
+
+     (if (> 4 5)                             ; 判定条件
+         (message "5 is greater than 4!")    ; 真の場合の動作
+       (message "4 is not greater than 5!")) ; 偽の場合の動作
+
+適当に字下げすると真の場合の動作と偽の場合の動作を
+区別しやすくなることに注意してほしい
+（GNU Emacsには、`if'式を自動的に正しく字下げするコマンドがある。
+*Note Typing Lists::）。
+
+`if'式に偽の場合の動作を追加するだけで、関数`type-of-animal'の機能を拡
+張できる。
+
+関数`type-of-animal'のつぎの版を評価して定義をインストールしてから、続
+く2つの式を評価するとこの拡張を理解できるであろう。
+
+      (defun type-of-animal (characteristic)  ; 第2版.
+       "Print message in echo area depending on CHARACTERISTIC.
+     If the CHARACTERISTIC is the symbol `fierce',
+     then warn of a tiger;
+     else say it's not fierce."
+       (if (equal characteristic 'fierce)
+           (message "It's a tiger!")
+         (message "It's not fierce!")))
+
+
+     (type-of-animal 'fierce)
+
+     (type-of-animal 'zebra)
+
+
+`(type-of-animal 'fierce)'を評価すると、
+エコー領域にメッセージ`"It's a tiger!"'が表示される。
+ところが、`(type-of-animal 'zebra)'を評価すると
+`"It's not fierce!"'と表示される。
+
+（CHARACTERISTICが`ferocious'（凶暴な）であれば、メッセージ`"It's not
+fierce!"'が表示されるが、これは誤解を招く。コードを書く際には、`if'で調
+べる値の可能な組み合わせを十分に考慮し、そのようにプログラムを書く必要
+がある。）
+
+
+
+File: eintr-ja, Node: Truth & Falsehood, Next: save-excursion, Prev: let, Up: PrePreface
+
+Emacs Lispの真偽値 *(2004/03/28)*
+=================================
+
+`if'式での判定条件が真かどうかの検査には重要な側面がある。これまで、述
+語の値としての「真（true）」と「偽（false）」を、新たなEmacs Lispオブジェ
+クトであるかのように使ってきた。実際には、「偽（false）」とは、すでに馴
+染みのある`nil'のことである。これ以外は、たとえ何であれ、「真（true）」
+である。
+
+判定条件の式では、評価結果が`nil'以外の値であれば、"真（true）"と解釈す
+る。いいかえれば、47などの数、`"hello"'のような文字列、（`nil'ではない）
+`flowers'などのシンボルやリスト、バッファでさえも、真と解釈する。
+
+* Menu:
+
+* nil explained::               `nil' has two meanings.
+
+
+
+File: eintr-ja, Node: nil explained, Prev: let, Up: let
+
+`nil' について
+--------------
+
+これらの例を示すまえに、`nil'について説明しておこう。
+
+Emacs Lispでは、シンボル`nil'には2つの意味がある。第一に、空リストを意
+味する。第二に、偽を意味し、判定条件が偽の場合に返される値でもある。
+`nil'は、空リスト`()'とも`nil'とも書ける。Lispインタープリタにとっては、
+`()'も`nil'も同じである。一方、人間向きには、偽は`nil'と、空リストは
+`()'と書く傾向がある。
+
+Emacs Lispでは、`nil'でない、つまり、空リストでない値は真と解釈する。つ
+まり、評価結果が空リスト以外であれば、`if'式の判定条件は真になる。たと
+えば、判定条件に数を書いた場合、数を評価するとその数そのものである。し
+たがって、`if'式の判定条件は真になる。式の評価結果が`nil'つまり空リスト
+の場合に限り、判定条件は偽になる。
+
+つぎの2つの式を評価すると理解できるだろう。
+
+最初の例では、`if'式の判定条件として数4を評価するが、その結果は数4であ
+る。したがって、式の真の場合の動作が評価され、その結果が返される。つま
+り、エコー領域には`true'と表示される。2番目の例では、`nil'は偽を意味す
+るので、偽の場合の動作が評価されその結果が返される。エコー領域には
+`false'と表示される。
+
+     (if 4
+         'true
+       'false)
+
+     (if nil
+         'true
+       'false)
+
+判定結果として真を表す有用な値がない場合には、Lispインタープリタは真と
+してシンボル`t'を返す。たとえば、つぎの例でわかるように、式`(> 5 4)'を
+評価すると`t'を返す。
+
+     (> 5 4)
+
+一方、偽の判定結果としては、この関数は`nil'を返す。
+
+     (> 4 5)
+
+
+
+File: eintr-ja, Node: save-excursion, Next: defun Exercises, Prev: let, Up: PrePreface
+
+`save-excursion' *(2004/03/28)*
+===============================
+
+関数`save-excursion'は、本章で説明する4番目で最後のスペシャルフォームで
+ある。
+
+エディタとしてのEmacs Lispプログラムでは、関数`save-excursion'を多用し
+ている。この関数は、ポイントとマークの位置を記録してから、関数の本体を
+実行し、ポイントやマークの位置が移動していれば実行前の状態に復元する。
+この関数の主要な目的は、ポイントやマークの予期しない移動によってユーザー
+が混乱したり煩わされないようにすることである。
+
+* Menu:
+
+* Point and mark::              A review of various locations.
+* Template for save-excursion::
+
+
+
+File: eintr-ja, Node: Point and mark, Prev: save-excursion, Up: save-excursion
+
+ポイントとマーク
+----------------
+
+`save-excursion'を説明するまえに、GNU Emacsのポイントとマークについて復
+習しておこう。"ポイント（point）"とは、カーソルの現在位置である。カーソ
+ルがどこにあろうとも、それがポイントである。端末画面上では、カーソルは
+文字に重なって表示されるが、ポインタはその文字の直前にある。Emacs Lisp
+では、ポイントは整数である。バッファの最初の文字は1、つぎの文字は2と数
+える。関数`point'はカーソルの現在位置を数で返す。各バッファごとに、個別
+のポイントがある。
+
+"マーク（mark）"も、バッファ内の位置を表す。
+`C-SPC'（`set-mark-command'）などのコマンドで、値を設定する。
+マークを設定してあれば、
+コマンド`C-x C-x'（`exchange-point-and-mark'）を用いて
+カーソルをマークに移動するとともに、
+カーソル移動前のポイント位置にマークを設定する。
+さらに、別のマークが設定してあった場合には、
+交換前のマークの位置をマークリングに保存する。
+このようにして複数個のマーク位置を保存できる。
+`C-u C-SPC'と数回タイプすると保存したマーク位置に移動できる。
+
+バッファのポイントとマークのあいだの部分を"リージョン（region）"と呼ぶ。
+`center-region'、`count-lines-region'、`kill-region'、
+`print-region'などのさまざまなコマンドはリージョンに作用する。
+
+スペシャルフォーム`save-excursion'は、ポイントとマークの位置を記録し、
+Lispインタープリタがスペシャルフォームの本体のコードを評価し終えると、
+それらの位置を復元する。したがって、テキストの始めの部分にポイントがあっ
+たときに、コードでポイントをバッファの最後に移動したとすると、
+`save-excursion'は、関数の本体の式を評価し終えるとポイントをもとの場所
+に戻す。
+
+Emacsでは、ユーザーが意図しなくても、関数の内部動作の過程でポイントを
+移動することが多い。
+たとえば、`count-lines-region'はポイントを移動する。
+（ユーザーの視点からは）予期しないような不必要なポイントの移動で
+ユーザーが混乱しないように、ポイントやマークがユーザーの期待どおりの位置に
+あるように`save-excursion'を多用する。
+`save-excursion'を使うと、正しく管理できる。
+
+正しく管理できるように、`save-excursion'の内側のコードで何か不都合なこ
+とが起こった場合（専門用語でいえば、「異常終了した場合」）でも、
+`save-excursion'はポイントとマークの値を復元する。この機能はとても役に
+立つ。
+
+ポイントとマークの値を記録することに加えて、`save-excursion'は、カレン
+トバッファも記録しておいて復元する。つまり、バッファを切り替えるような
+コードを書いた場合でも、`save-excursion'によりもとのバッファに戻れる。
+`append-to-buffer'では、このために`save-excursion'を使っている（*Note
+append-to-buffer::）。
+
+
+
+File: eintr-ja, Node: Template for save-excursion, Prev: save-excursion, Up: save-excursion
+
+`save-excursion'式の雛型 *(2004/03/28)*
+---------------------------------------
+
+`save-excursion'を使うコードの雛型は簡単である。
+
+     (save-excursion
+       本体...)
+
+関数の本体は、複数個の式であり、Lispインタープリタはそれらを順に評価す
+る。本体に複数個の式がある場合、最後の式の値が関数`save-excursion'の値
+として返される。本体のそれ以外の式は、副作用を得るためだけに評価される。
+`save-excursion'自体も（ポイントとマークの位置を復元するという）副作用
+を得るためだけに使われる。
+
+`save-excursion'式の雛型をより詳しく書くと、つぎのようになる。
+
+     (save-excursion
+       本体の最初の式
+       本体の2番目の式
+       本体の3番目の式
+        ...
+       本体の最後の式)
+
+ここで、式は単一のシンボルやリストである。
+
+Emacs Lispのコードでは、`save-excursion'式は`let'式の本体に現れることが
+多い。つぎのようになる。
+
+     (let 変数リスト
+       (save-excursion
+         本体...))
+
+
+
+File: eintr-ja, Node: Review, Next: defun Exercises, Prev: save-excursion, Up: PrePreface
+
+復　習 *(2004/08/04)*
+=====================
+
+これまでの章では、多数の関数やスペシャルフォームを紹介してきた。以下に
+は、説明しなかった同種の関数も含めて概要を記しておく。
+
+`eval-last-sexp'
+     ポイントの現在位置の直前にあるシンボリック式を評価する。引数を指定
+     せずにこの関数を起動した場合には、エコー領域に値を表示する。引数を
+     指定した場合には、カレントバッファに結果を表示する。このコマンドは
+     慣習的に`C-x C-e'にバインドされる。
+
+`defun'
+     関数を定義する。このスペシャルフォームは、多くても5つの部分から成
+     る。つまり、名前、関数に渡される引数の雛型、説明文、省略してもよい
+     対話的使用の宣言、定義の本体である。
+
+     例：
+
+          (defun back-to-indentation ()
+            "Move point to first visible character on line."
+            (interactive)
+            (beginning-of-line 1)
+            (skip-chars-forward " \t"))
+
+`interactive'
+     対話的に使える関数であることをインタープリタに対して宣言する。この
+     スペシャルフォームには、関数の引数に渡すべき情報を指定する文字列を
+     続けてもよい。これらの文字列には、インタープリタが使用するプロンプ
+     トも指定できる。文字列の各要素は改行`\n'で区切る。
+
+     よく使うコード文字はつぎのとおりである。
+
+     `b'
+          既存バッファの名前。
+
+     `f'
+          既存ファイルの名前。
+
+     `p'
+          数値の前置引数（「p」は小文字）。
+
+     `r'
+          2つの数値引数でポイントとマークを渡す。値が小さいほうを先に渡
+          す。これは、1つではなく2つの引数を渡す唯一のコード文字である。
+
+     コード文字の完全な一覧に
+     ついては、*Note Code Characters for `interactive': (elisp)Interactive Codes。
+
+`let'
+     `let'の本体で使用する変数のリストを宣言し、それらに`nil'や指定した
+     値を初期値として設定する。続いて、`let'の本体の式を評価し、その最
+     後の値を返す。`let'の本体の内側では、Lispインタープリタは`let'の外
+     側で同じ名前の変数に束縛された値を使うことはない。
+
+     例：
+
+          (let ((foo (buffer-name))
+                (bar (buffer-size)))
+            (message
+             "This buffer is %s and has %d characters."
+             foo bar))
+
+`save-excursion'
+     このスペシャルフォームの本体を評価するまえに、ポイントとマークの値、
+     カレントバッファを記録する。そのあとで、ポイントとマークの値、バッ
+     ファを復元する。
+
+     例：
+
+          (message "We are %d characters into this buffer."
+                   (- (point)
+                      (save-excursion
+                        (goto-char (point-min)) (point))))
+
+`if'
+     関数の第1引数を評価する。それが真ならば、第2引数を評価する。そうで
+     ない場合、第3引数があればそれを評価する。
+
+     スペシャルフォーム`if'は、"条件判定（conditional）"である。Emacsに
+     は別の条件判定もあるが、もっともよく使うのは`if'であろう。
+
+     例：
+
+          (if (string-equal
+               (number-to-string 21)
+               (substring (emacs-version) 10 12))
+              (message "This is version 21 Emacs")
+            (message "This is not version 21 Emacs"))
+
+`equal'
+`eq'
+     2つのオブジェクトが同じであるかどうかを調べる。`equal' は「同じ」
+     という意味で使うが `eq' はそうではない．`equal'は、2つのオブジェク
+     トが同じ本のコピーのように，同じ内容で同じ構造ならば真を返す。一方、
+     `eq'は、2つの引数が同一のオブジェクトならば真を返す。
+
+`<'
+`>'
+`<='
+`>='
+     関数`<'は、第1引数が第2引数より小さいかどうかを検査する。対応する
+     関数`>'は、第1引数が第2引数より大きいかどうかを検査する。同様に、
+     `<='は、第1引数が第2引数より小さいか等しいかどうかを検査し、`>='は、
+     第1引数が第2引数より大きいか等しいかどうかを検査する。いずれの場合
+     でも、2つの引数は数かマーカー(バッファの位置を示すマーカー)である
+     必要がある。
+
+`string<'
+`string-lessp'
+`string='
+`string-equal'
+     関数 `string-lessp' は最初の引数が二番目の引数よりも小さいかどうか
+     を確認します．同じ機能を持つ(`defalias' による)別の名は `string<'
+     です．
+
+     `string-lessp' の引数は文字列かシンボルでなければなりません．順序
+     は辞書的に付けられますので，大文字小文字は区別されます．シンボルの
+     名前はシンボル自身の代わりとして使われます．
+
+     `""' のような空文字は文字のない文字列ですので，どんな文字よりも小
+     さくなります．
+
+     `string-equal' は一致するかの確認を行います．別の名は `string=' です．
+     >，`>='，`<=' に相当する文字列用の関数はありません．
+
+`message'
+     エコー領域にメッセージを表示する。第1引数は文字列であり、文字列に
+     続く引数の値を表示するために`%s'や`%d'や`%c'を含んでもよい。`%s'で
+     使う引数は文字列かシンボルであること。`%d'で使う引数は数であること。
+     `%c'で使う引数も数(アスキーコード)であるが、その値のASCIIコードの
+     文字として表示される。
+
+`setq'
+`set'
+     関数`setq'は、第2引数の値を第1引数の値として設定する。第1引数は自
+     動的にクオートされる。連続する2つの引数ごとに同じことを行う。もう
+     一方の関数`set'は、2つの引数のみを取り、両者を評価してから、第2引
+     数の値を第1引数の値として設定する。
+
+`buffer-name'
+     引数はなく、バッファ名を文字列として返す。
+
+`buffer-file-name'
+     引数はなく、バッファが訪問しているファイル名を返す。
+
+`current-buffer'
+     Emacsが操作対象としているバッファを返す。このバッファが画面に表示
+     されているとは限らない。
+
+`other-buffer'
+     （`other-buffer'に引数として渡したバッファやカレントバッファ以外の）
+     もっとも最近に選択していたバッファを返す。
+
+`switch-to-buffer'
+     Emacsが操作対象とするバッファを指定し、同時に、カレントウィンドウ
+     に表示してユーザーが見られるようにする。通常、`C-x b'にバインドさ
+     れる。
+
+`set-buffer'
+     Emacsが操作対象とするバッファを切り替える。ウィンドウの表示は変更
+     しない。
+
+`buffer-size'
+     カレントバッファ内にある文字数を返す。
+
+`point'
+     バッファの先頭から現在のカーソル位置までの文字の個数を表す整数を返
+     す。
+
+`point-min'
+     カレントバッファで取りえるポイントの最小値を返す。ナロイングしてい
+     ない場合には、1である。
+
+`point-max'
+     カレントバッファで取りえるポイントの最大値を返す。ナロイングしてい
+     ない場合には、バッファの最後である。
+
+
+
+File: eintr-ja, Node: defun Exercises, Next: Finding More, Prev: save-excursion, Up: PrePreface
+
+演習問題
+========
+
+   * 数である引数の値を2倍する非対話的な関数を書いてみよ。さらにこの関
+     数を対話的にしてみよ。
+
+   * `fill-column'の現在の値が関数に渡した引数より大きいかどうか調べ、
+     そうならば適切なメッセージを表示するような関数を書いてみよ。
+
+
+
+File: eintr-ja, Node: Buffer Walk Through, Next: Counting Words, Prev: PrePreface, Up: Top
+
+バッファ関連の関数 *(2004/08/05)*
+*********************************
+
+本章では、GNU Emacsで使われている数個の関数を詳しく調べよう。つまり
+「ウォークスルー」をしてみよう。これらの関数はLispコードの例題として取
+り上げたが、仮想的な例題ではない。最初の簡略した関数定義を除いて、GNU
+Emacsで実際に使っているコードである。これらの定義から多くのことを学べる
+はずである。ここで説明する関数は、すべて、バッファに関連するものである。
+それ以外の関数についてはのちほど説明する。
+
+* Menu:
+
+* Finding More::                How to find more information.
+* simplified-beginning-of-buffer::  Shows `goto-char',
+                                `point-min', and `push-mark'.
+* mark-whole-buffer::           Almost the same as `beginning-of-buffer'.
+* append-to-buffer::            Uses `save-excursion' and
+                                `insert-buffer-substring'.
+* Buffer Related Review::       Review.
+* Buffer Exercises::
+
+
+
+File: eintr-ja, Node: Finding More, Next: Buffer Exercises, Prev: defun Exercises, Up: PrePreface
+
+詳しい情報を得る *(2004/08/04)*
+===============================
+
+このウォークスルーでは、個々の新しい関数を、あるときは詳しく、あるとき
+はその概要を説明する。Emacs Lisp関数に興味を持ったときには、`C-h f'に続
+けて関数名（とRET）を入力すれば、いつでもその関数の説明文を得られる。同
+様に、変数の説明文が必要な場合には、`C-h v'に続けて変数名（とRET）を入
+力すればよい。
+
+バージョン20以上では， Emacs Lisp で書かれた関数は `describe-function'
+で定義箇所を探すことができます．ファイル名の上にカーソルを置き，RET を
+入力すると，`help-follow' が実行され，Emacs で直接定義箇所へ移動するこ
+とができます．
+
+もっと一般的に、関数のソースファイルを見るには、関数`find-tags'を使いま
+す。`find-tags' はCやLisp だけでなく，プログラミング言語ではないテキス
+ト(TeXなど)まで，非常に多くの言語で利用できます．例えば，`find-tags'は
+Texinfoのソースファイルでさまざまなノードに簡単に移動することができます．
+
+関数 `find-tags' の動作は`find-tags' で移動するための関数や変数，他のア
+イテムを記録した「タグテーブル」に依存します．
+
+`find-tags' を使うためには，`M-.'（つまり、METAと同時にピリオドキーを押すか、
+ESCキーに続けてピリオドキー）をタイプし、
+`mark-whole-buffer'のようなソースコードを見たい関数の名前を
+プロンプトに対して入力し、RETをタイプする。
+Emacsはソースコードのバッファに切り替えて画面に表示する。
+もとのバッファに戻るには`C-x b RET'とタイプする(キーボードによっては
+META キーが ALT と表示されているかもしれません)．
+
+読者のEmacsの初期設定状態に依存して、`TAGS'と呼ばれる「タグテーブル
+（tags table）」のパスを指定する必要もあろう。例えば，Emacs のソースファ
+イルに興味があるなら，最も必要となるタグファイルは既に
+`/usr/local/share/emacs/' のサブディレクトリに作成されている．読者が使
+用するのはディレクトリ`emacs/src'であろうから、コマンド`M-x
+visit-tags-table'を使って、`/usr/local/share/emacs/21.0.100/lisp/TAGS'
+や`/usr/local/src/emacs/lisp/TAGS' のようなパス名を指定する。タグテーブ
+ル作成されていなければ，自身で作成する必要がある．
+
+特定のディレクトリに `TAGS' ファイルを作成するためには，`M-x cd' コマン
+ドを使ってそのディレクトリに切り替えるか，`C-x d' (`dired') でそのディ
+レクトリを表示させます．それから，`etags *.el' のようなコマンドをコンパ
+イルコマンドで実行します．
+
+     M-x compile RET etags *.el RET
+
+詳細については *Note Create Your Own `TAGS' File: etags を参照のこと．
+
+Emacs Lispに慣れてくると、ソースコードを読む際には`find-tags'を多用する
+ようになり、独自のタグテーブルを作成するようになるであろう。
+
+Lispコードを収めたファイルのことを"ライブラリ（libraries）"と呼ぶ。この
+用法は、法律図書や技術図書のような特化した図書（ライブラリ）からきてい
+る。各ライブラリ、つまり、ファイルには、ある特定の目的や動作に関連する
+関数群を収める。たとえば、`abbrev.el'は省略入力を、`help.el'はオンライ
+ンヘルプを扱うものである（ある1つの目的のために複数のライブラリがある場
+合もある。たとえば、`rmail...'のファイル群には、電子メールを読むための
+コードが収めてある）。`GNU Emacsマニュアル'には、「コマンド`C-h p'によ
+り、キーワードでEmacs Lispの標準ライブラリを検索できる」のような記述が
+ある。
+
+
+
+File: eintr-ja, Node: simplified-beginning-of-buffer, Next: Buffer Exercises, Prev: Finding More, Up: PrePreface
+
+`beginning-of-buffer'の簡略した定義 *(2004/08/04)*
+==================================================
+
+コマンド`beginning-of-buffer'には十分慣れていて理解しやすいであろうから、
+この関数から始めよう。対話的関数として使うと、`beginning-of-buffer'は、
+バッファの先頭にカーソルを移動し、それまでカーソルがあった位置にマーク
+を設定する。一般には`M-<'にバインドしてある。
+
+本節では、もっとも多く使われる形式に簡略した関数を説明する。簡略版の関
+数は正しく動作するが、複雑なオプションを処理するコードは含まない。別の
+節で、完全な関数を説明する（*Note beginning-of-buffer::）。
+
+コードを調べるまえに、関数定義には何が含まれるかを考えてみよう。`M-x
+beginning-of-buffer'や`M-<'のようなキー列で関数を呼べるように、関数を対
+話的にする式を含んでいる必要がある。バッファのもとの位置にマークを設定
+するコードが必要である。バッファの先頭にカーソルを移動するコードも必要
+である。
+
+では、簡略版の関数のコード全体を示そう。
+
+     (defun simplified-beginning-of-buffer ()
+       "Move point to the beginning of the buffer;
+     leave mark at previous position."
+       (interactive)
+       (push-mark)
+       (goto-char (point-min)))
+
+すべての関数定義と同様に、この定義でもスペシャルフォーム`defun'に続けて
+5つの部分がある。
+
+  1. 名前。ここでは、`simplified-beginning-of-buffer'である。
+
+  2. 引数のリスト。ここでは、空リスト`()'である。
+
+  3. 説明文の文字列。
+
+  4. 対話的にするための式。
+
+  5. 本体。
+
+この関数定義では、引数リストは空である。つまり、この関数は引数を必要と
+しない（関数の完全な定義では、省略可能な引数を取る）。
+
+`interactive'式は、関数が対話的に使われることをEmacsに伝える。
+`simplified-beginning-of-buffer'は引数を必要としないので、
+`interactive'に引数はない。
+
+関数の本体はつぎの2行である。
+
+     (push-mark)
+     (goto-char (point-min))
+
+最初の式は`(push-mark)'である。Lispインタープリタがこの式を評価すると、
+カーソルがどこにあってもその現在位置にマークを設定する。また、このマー
+クの位置はマークリングに保存される。
+
+つぎの行は`(goto-char (point-min))'である。
+この式はバッファで取りえるポイントの最小位置にカーソルを移動する。
+つまり、カーソルの先頭（あるいは、ナロイングしている場合には、
+バッファの参照可能な範囲の先頭。
+*Note Narrowing & Widening::）に移動する。
+
+式`(goto-char (point-min))'でカーソルをバッファの先頭に移動するまえに、
+コマンド`push-mark'でカーソルの位置にマークを設定する。そのため、必要な
+らば、`C-x C-x'とタイプすればもとの位置に戻れる。
+
+以上が関数定義のすべてである。
+
+`goto-char'のような知らない関数に出会ったときには、コマンド
+`describe-function'を使えば、何をする関数かを調べることができる。このコ
+マンドを使うには、`C-h f'に続けて関数名を入力してからRETを押す。コマン
+ド`describe-function'は、関数の説明文字列をウィンドウ`*Help*'に表示する。
+たとえば、`goto-char'の説明文はつぎのとおりである。
+
+     One arg, a number.  Set point to that number.
+     Beginning of buffer is position (point-min),
+     end is (point-max).
+
+（`describe-function'のプロンプトには、カーソル下かそのまえにあるシンボ
+ルが取り込まれる。したがって、関数の上かその直後にカーソルを置いて`C-h
+f RET'とタイプすれば、入力量を減らせる。）
+
+`end-of-buffer'の関数定義は、`beginning-of-buffer'と同じように
+書けるが、関数の本体には`(goto-char (point-min))'のかわりに
+`(goto-char (point-max))'を使う。
+
+
+

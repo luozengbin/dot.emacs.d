@@ -1,0 +1,1240 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: logging,  Prev: gettext,  Up: 汎用オペレーティングシステムサービス
+
+Python用ロギング機能
+====================
+
+PEP 282 に基づくPython 用のロギングモジュール。
+
+_Added in Python version 2.3_
+このモジュールでは、アプリケーションのための柔軟なエラーログ記録
+(logiing) システムを実装するための関数やクラスを定義しています。
+
+ログ記録は `Logger' クラスのインスタンス (以降 "ロガー" :logger)
+におけるメソッドを呼び出すことで行われます。各インスタンスは
+名前をもち、ドット (ピリオド) を区切り文字として表記することで、
+概念的には名前空間中の階層構造に配置されることになります。
+例えば、"scan" と名づけられたロガーは "scan.text"、"scan.html"、 および
+"scan.pdf" ロガーの親ロガーとなります。ロガー名には何をつけてもよく、
+ログに記録されるメッセージの生成元となるアプリケーション中の特定の
+領域を示すことになります。
+
+ログ記録されたメッセージにはまた、重要度レベル (level of importance)
+が関連付けられています。デフォルトのレベルとして提供されているものは
+`DEBUG'、`INFO'、`WARNING'、 `ERROR' および `CRITICAL'
+です。簡便性のために、 `Logger'
+の適切なメソッド群を呼ぶことで、ログに記録されたメッセージの
+重要性を指定することができます。それらのメソッドとは、デフォルトの
+レベルを反映する形で、`debug()'、 `info()'、 `warning()'、 `error()'
+および `critical()' となっています。
+これらのレベルを指定するにあたって制限はありません: `Logger' の
+より汎用的なメソッドで、明示的なレベル指定のための引数を持つ `log()'
+を使って自分自身でレベルを定義したり使用したりできます。
+
+レベルもロガーに関連付けることができ、デベロッパが設定することも、
+保存されたログ記録設定を読み込む際に設定することもできます。
+ロガーに対してログ記録メソッドが呼び出されると、ロガーは自らの
+レベルとメソッド呼び出しに関連付けられたレベルを比較します。
+ロガーのレベルがメソッド呼び出しのレベルよりも高い場合、実際の
+ログメッセージは生成されません。これはログ出力の冗長性を制御
+するための基本的なメカニズムです。
+
+ログ記録されるメッセージは `LogRecord' クラスのインスタンスとして
+コード化されます。ロガーがあるイベントを実際にログ出力すると決定した
+場合、ログメッセージから `LogRecord' インスタンスが生成されます。
+
+ログ記録されるメッセージは、ハンドラ ("handers") を通して、 処理機構
+(dispatch mechanism) にかけられます。ハンドラは `Handler'
+クラスのサブクラスのインスタンスで、ログ記録された (`LogRecord' 形式の)
+メッセージが、そのメッセージの伝達対象となる相手
+(エンドユーザ、サポートデスクのスタッフ、システム管理者、開発者)
+に行き着くようにする役割を持ちます。ハンドラには特定の行き先に方向付け
+られた `LogRecord' インスタンスが渡されます。各ロガーは
+ゼロ個、単一またはそれ以上のハンドラを (`Logger' の `addHandler'
+メソッド) で関連付けることができます。
+ロガーに直接関連付けられたハンドラに加えて、
+_ロガーの上位にあるロガー全てに関連付けられたハンドラ_
+がメッセージを処理する際に呼び出されます。
+
+ロガーと同様に、ハンドラは関連付けられたレベルを持つことができます。
+ハンドラのレベルはロガーのレベルと同じ方法で、フィルタとして働きます。
+ハンドラがあるイベントを実際に処理すると決定した場合、 `emit()'
+メソッドが使われ、メッセージを発送先に送信します。ほとんどの
+ユーザ定義の `Hnadler' のサブクラスで、この `emit()'
+をオーバライドする必要があるでしょう。
+
+基底クラスとなる `Handler' クラスに加えて、多くの有用なサブクラスが
+提供されています:
+
+  1. `StreamHandler' のインスタンスはストリーム (ファイル様
+     オブジェクト) にエラーメッセージを送信します。
+
+  2. `FileHandler' のインスタンスはディスク上のファイルに
+     エラーメッセージを送信します。 files.
+
+  3. `RotatingFileHandler' のインスタンスは最大ログファイルの
+     サイズ指定とログファイルの交替機能をサポートしながら、ディスク上のファイルに
+     エラーメッセージを送信します。
+
+  4. `SocketHandler' のインスタンスは TCP/IP
+     ソケットにエラーメッセージを送信します。 TCP/IP sockets.
+
+  5. `DatagramHandler' のインスタンスは UDP
+     ソケットにエラーメッセージを送信します。
+
+  6. `SMTPHandler'
+     のインスタンスは指定された電子メールアドレスにエラーメッセージを送信します。
+
+  7. `SysLogHandler' のインスタンスは遠隔を含むマシン上の syslog
+     デーモンにエラーメッセージを送信します。
+
+  8. `NTEventLogHandler' のインスタンスは Windows NT/2000/XP
+     イベントログにエラーメッセージを送信します。
+
+  9. `MemoryHandler'
+     のインスタンスはメモリ上のバッファにエラーメッセージを送信し、指定された条件でフラッシュされるようにします。
+
+ 10. `HTTPHandler' のインスタンスは `GET' か `POST'
+     セマンティクスを使って HTTP サーバにエラーメッセージを送信します。
+
+
+`StreamHandler' および `FileHandler' クラスは、中核となる
+ログ化機構パッケージ内で定義されています。他のハンドラはサブモジュール、
+`logging.handlers' で定義されています。 (サブモジュールには もうひとつ
+`logging.config' があり、これは環境設定機能の ためのものです。)
+
+ログ記録されたメッセージは `Formatter' クラスのインスタンスを
+介し、表示用に書式かされます。これらのインスタンスは % 演算子と辞書を
+使うのに適した書式化文字列で初期化されます。
+
+複数のメッセージの初期化をバッチ処理するために、 `BufferingFormatter'
+のインスタンスを使うことができます。 書式化文字列
+(バッチ処理で各メッセージに適用されます) に加えて、 ヘッダ (header)
+およびトレイラ (trailer) 書式化文字列が用意されて います。
+
+ロガーレベル、ハンドラレベルの両方または片方に基づいたフィルタリング
+が十分でない場合、`Logger' および `Handler' インスタンスに `Filter'
+のインスタンスを (`addFilter()' メソッドを介して)
+追加することができます。メッセージの処理を進める前に、ロガーとハンドラは
+ともに、全てのフィルタでメッセージの処理が許可されているか調べます。
+いずれかのフィルタが偽となる値を返した場合、メッセージの処理は
+行われません。
+
+基本的な `Filter' 機能では、指定されたロガー名でフィルタを
+行えるようになっています。この機能が利用された場合、名前付けされた
+ロガーとその下位にあるロガーに送られたメッセージがフィルタを通過
+できるようになり、その他のメッセージは捨てられます。
+
+上で述べたクラスに加えて、いくつかのモジュールレベルの関数が存在します。
+
+`getLogger([name])'
+     指定された名前のロガーを返します。名前が指定されていない場合、
+     ロガー階層のルート (root) にあるロガーを返します。
+
+     与えられた名前に対して、この関数はどの呼び出しでも同じロガーインスタンス
+     を返します。従って、ロガーインスタンスをアプリケーションの各部
+     でやりとりする必要はなくなります。
+
+`debug(msg[, *args[, **kwargs]])'
+     L レベル `DEBUG' のメッセージをルートロガーで記録します。 MSG
+     はメッセージの書式化文字列で、ARGS は MSG に
+     取り込むための引数です。キーワード文字列 KWARGS からは EXC_INFO
+     のみが調べられ、この値の評価値が偽でない場合、 (`sys.exc_info'
+     から得た) 例外情報がログメッセージに追加されます。
+
+`info(msg[, *args[, **kwargs]])'
+     レベル `INFO' のメッセージをルートロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`warning(msg[, *args[, **kwargs]])'
+     レベル `WARNING' のメッセージをルートロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`error(msg[, *args[, **kwargs]])'
+     レベル `ERROR' のメッセージをルートロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`critical(msg[, *args[, **kwargs]])'
+     レベル `CRITICAL' のメッセージをルートロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`exception(msg[, *args])'
+     レベル `ERROR' のメッセージをルートロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+     例外情報はログメッセージに追加されます。このメソッドは
+     例外ハンドラからのみ呼び出されます。
+
+`disable(lvl)'
+     全てのロガーに対して、ロガー自体のレベルに優先するような上書きレベル
+     LVL を与えます。アプリケーション全体にわたって一時的にログ出力の
+     頻度を押し下げる必要が生じた場合にはこの関数が有効です。
+
+`addLevelName(lvl, levelName)'
+     内部辞書内でレベル LVL をテキスト LEVELNAME に関連付け
+     ます。これは例えば `Formatter' でメッセージを書式化する
+     際のように、数字のレベルをテキスト表現に対応付ける際に用いられます。
+     この関数は自作のレベルを定義するために使うこともできます。
+     使われるレベル対する唯一の制限は、レベルは正の整数でなくては
+     ならず、メッセージの深刻さが上がるに従ってレベルの数も上がらなくては
+     ならないということです。
+
+`getLevelName(lvl)'
+     ログ記録レベル LVL のテキスト表現を返します。レベルが定義
+     済みのレベル `CRITICAL'、`ERROR'、 `WARNING'、 `INFO'、あるいは
+     `DEBUG' のいずれかである場合、対応する文字列が返されます。
+     `addLevelName()' を使ってレベルに名前を関連づけていた 場合、LVL
+     に関連付けられていた名前が返されます。そうでない 場合、文字列
+     "Level %s" % lvl が返されます。
+
+`makeLogRecord(attrdict)'
+     属性が ATTRDICT で定義された、新たな `LogRecord'
+     インスタンスを生成して返します。この関数は pickle 化された
+     `LogRecord' 属性の辞書を作成し、ソケットを介して送信し、受信端で
+     `LogRecord' インスタンスとして再構成する際に便利です。
+
+`makeLogRecord(attrdict)'
+     ATTRDICT で属性を定義した、新しい `LogRecord' インスタンスを
+     返します。この関数は、逆 pickle 化された `LogRecord' 属性辞書を
+     socket 越しに受け取り、受信端で `LogRecord' インスタンスに再構築す
+     る場合に有用です。
+
+`basicConfig()'
+     デフォルトのフォーマッタ (formatter) を持つ `StreamHandler'
+     を生成してルートロガーに追加し、ログ記録システムの基本的な環境設定を
+     行います。 関数 `debug()'、`info()'、`warning()'、
+     `error()'、および `critical()' は、ルートロガーに
+     ハンドラが定義されていない場合に自動的に `basicConfig()'
+     を呼び出します。
+
+`shutdown()'
+     ログ記録システムに対して、バッファのフラッシュを行い、全てのハンドラを
+     閉じることで順次シャットダウンを行うように告知します。
+
+`setLoggerClass(klass)'
+     ログ記録システムに対して、ロガーをインスタンス化する際にクラス
+     KLASS を使うように指示します。指定するクラスは引数として
+     名前だけをとるようなメソッド `__init__()' を定義して
+     いなければならず、`__init__()' では `Logger.__init__()'
+     を呼び出さなければなりません。典型的な利用法として、この関数は自作の
+     ロガーを必要とするようなアプリケーションにおいて、他のロガーが
+     インスタンス化される前にインスタンス化されます。
+
+See also:
+    *PEP282 A Logging System*
+          本機能を Python 標準ライブラリに含めるよう記述している提案書。
+
+     \seelink{http://www.red-dove.com/python_logging.html} {この
+     `logging' パッケージのオリジナル}
+     {オリジナルの`logging'パッケージ。このサイトにあるバー
+     ジョンのパッケージは、標準で`logging'パッケージを含まな
+     いPython2.1.xとPython2.2.xでも使用することができます}
+
+* Menu:
+
+* Logger オブジェクト::
+* Handler オブジェクト::
+* Formatter オブジェクト::
+* Filter オブジェクト::
+* LogRecord オブジェクト::
+* スレッド安全性::
+* 環境設定::
+* Using the logging package::
+
+
+File: python-lib-jp.info,  Node: Logger オブジェクト,  Next: Handler オブジェクト,  Prev: logging,  Up: logging
+
+Logger オブジェクト
+-------------------
+
+ロガーは以下の属性とメソッドを持ちます。ロガーを直接インスタンス化
+することはできず、常にモジュール関数 `logging.getLogger(name)'
+を介してインスタンス化するので注意してください。
+
+`propagate'
+     この値の評価結果が偽になる場合、ログ記録しようとするメッセージは
+     このロガーに渡されず、また子ロガーから上位の (親の) ロガーに
+     渡されません。コンストラクタはこの属性を 1 に設定します。
+
+`setLevel(lvl)'
+     このロガーの閾値を LVL に設定します。ログ記録しようとする
+     メッセージで、LVL よりも深刻でないものは無視されます。
+     ロガーが生成された際、レベルは `NOTSET' (全てのメッセージ
+     がルートロガーで処理されるか、非ルートロガーの場合には親ロガーに
+     処理を代行させる) に設定されます。
+
+`isEnabledFor(lvl)'
+     深刻さが LVL のメッセージが、このロガーで処理されることに
+     なっているかどうかを示します。このメソッドはまず、
+     `logging.disable(lvl)' で設定されるモジュールレベル
+     の深刻さレベルを調べ、次にロガーの実効レベルを
+     `getEffectiveLevel()' で調べます。
+
+`getEffectiveLevel()'
+     このロガーの実効レベルを示します。`NOTSET' 以外の値が `setLevel()'
+     で設定されていた場合、その値が返されます。
+     そうでない場合、`NOTSET' 以外の値が見つかるまでロガーの
+     階層をルートロガーの方向に追跡します。見つかった場合、その値が
+     返されます。
+
+`debug(msg[, *args[, **kwargs]])'
+     レベル `DEBUG' のメッセージをこのロガーで記録します。 MSG
+     はメッセージの書式化文字列で、ARGS は MSG に
+     取り込むための引数です。キーワード文字列 KWARGS からは EXC_INFO
+     のみが調べられ、この値の評価値が偽でない場合、 (`sys.exc_info'
+     から得た) 例外情報がログメッセージに追加されます。
+
+`info(msg[, *args[, **kwargs]])'
+     レベル `INFO' のメッセージをこのロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`warning(msg[, *args[, **kwargs]])'
+     レベル `WARNING' のメッセージをこのロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`error(msg[, *args[, **kwargs]])'
+     レベル `ERROR' のメッセージをこのロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`critical(msg[, *args[, **kwargs]])'
+     レベル `CRITICAL' のメッセージをこのロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+
+`log(lvl, msg[, *args[, **kwargs]])'
+     レベル LVL のメッセージをこのロガーで記録します。 その他の引数は
+     `debug()' と同じように解釈されます。
+
+`exception(msg[, *args])'
+     レベル `ERROR' のメッセージをこのロガーで記録します。 引数は
+     `debug()' と同じように解釈されます。
+     例外情報はログメッセージに追加されます。このメソッドは
+     例外ハンドラからのみ呼び出されます。
+
+`addFilter(filt)'
+     指定されたフィルタ FILT をこのロガーに追加します。
+
+`removeFilter(filt)'
+     指定されたフィルタ FILT をこのロガーから除去します。
+
+`filter(record)'
+     このロガーのフィルタをレコード (record) に適用し、レコードが
+     フィルタを透過して処理されることになる場合には真を返します。
+
+`addHandler(hdlr)'
+     指定されたハンドラ HDLR をこのロガーに追加します。
+
+`removeHandler(hdlr)'
+     指定されたハンドラ HDLR をこのロガーから除去します。
+
+`findCaller()'
+     呼び出し元のソースファイル名と行番号を調べます。ファイル名と行番号
+     を 2 要素のタプルで返します。
+
+`handle(record)'
+     レコードをこのロガーおよびその上位ロガーに (PROPAGATE の
+     値が偽になるまで)
+     さかのぼった関連付けられている全てのハンドラに渡して
+     処理します。このメソッドはソケットから受信した逆 pickle 化された
+     レコードに対してもレコードがローカルで生成された場合と同様に用いられます。
+     `filter()' によって、ロガーレベルでのフィルタが適用されます。
+
+`makeRecord(name, lvl, fn, lno, msg, args, exc_info)'
+     このメソッドは、特殊な `LogRecord' インスタンスを生成する
+     ためにサブクラスでオーバライドできるファクトリメソッドです。
+
+
+File: python-lib-jp.info,  Node: Handler オブジェクト,  Next: Formatter オブジェクト,  Prev: Logger オブジェクト,  Up: logging
+
+Handler オブジェクト
+--------------------
+
+ハンドラは以下の属性とメソッドを持ちます。`Handler'
+は直接インスタンス化されることはありません; このクラスは
+より便利なサブクラスの基底クラスとして働きます。しかしながら、
+サブクラスにおける `__init__()' メソッドでは、 `Handler.__init__()'
+を呼び出す必要があります。
+
+`__init__(level=`NOTSET')'
+     レベルを設定して、`Handler' インスタンスを初期化します。
+     空のリストを使ってフィルタを設定し、I/O 機構へのアクセスを
+     直列化するために (`createLock()' を使って) ロックを生成します。
+
+`createLock()'
+     スレッド安全でない根底の I/O 機能に対するアクセスを直列化
+     するために用いられるスレッドロック (thread lock) を初期化します。
+
+`acquire()'
+     `createLock()' で生成されたスレッドロックを獲得します。
+
+`release()'
+     `acquire()' で獲得したスレッドロックを解放します。
+
+`setLevel(lvl)'
+     このハンドラに対する閾値を LVL に設定します。
+     ログ記録しようとするメッセージで、LVL よりも深刻でないものは
+     無視されます。ハンドラが生成された際、レベルは `NOTSET'
+     (全てのメッセージが処理される) に設定されます。
+
+`setFormatter(form)'
+     このハンドラのフォーマッタを FORM に設定します。
+
+`addFilter(filt)'
+     指定されたフィルタ FILT をこのハンドラに追加します。
+
+`removeFilter(filt)'
+     指定されたフィルタ FILT をこのハンドラから除去します。
+
+`filter(record)'
+     このハンドラのフィルタをレコードに適用し、レコードが
+     フィルタを透過して処理されることになる場合には真を返します。
+
+`flush()'
+     全てのログ出力がフラッシュされるようにします。このクラスの
+     バージョンではなにも行わず、サブクラスで実装するためのものです。
+
+`close()'
+     ハンドラで使われている全てのリソースを始末します。このクラスの
+     バージョンではなにも行わず、サブクラスで実装するためのものです。
+
+`handle(record)'
+     ハンドラに追加されたフィルタの条件に応じて、指定されたログレコードを
+     発信します。このメソッドは I/O
+     スレッドロックの獲得/開放を伴う実際の ログ発信をラップします。
+
+`handleError()'
+     このメソッドは emit() の呼び出し中に例外に遭遇した際に
+     ハンドラから呼び出されます。デフォルトではこのメソッドは
+     何も行いません。すなわち、例外は暗黙のまま無視されます。
+     ほとんどのログ記録システムでは、これがほぼ望ましい機能です -
+     というのは、ほとんどのユーザはログ記録システム自体のエラーは
+     気にせず、むしろアプリケーションのエラーに興味があるからです。
+     しかしながら、望むならこのメソッドを自作のハンドラと置き換え
+     ることはできます。
+
+`format(record)'
+     レコードに対する書式化を行います - フォーマッタ
+     が設定されていれば、それを使います。そうでない場合、
+     モジュールにデフォルト指定されたフォーマッタを使います。
+
+`emit(record)'
+     指定されたログ記録レコードを実際にログ記録する際の全ての処理
+     を行います。このメソッドのこのクラスのバージョンはサブクラスで
+     実装するためのものなので、`NotImplementedError' を送出します。
+
+* Menu:
+
+* StreamHandler::
+* FileHandler::
+* RotatingFileHandler::
+* SocketHandler::
+* DatagramHandler::
+* SysLogHandler::
+* NTEventLogHandler::
+* SMTPHandler::
+* MemoryHandler::
+* HTTPHandler::
+
+
+File: python-lib-jp.info,  Node: StreamHandler,  Next: FileHandler,  Prev: Handler オブジェクト,  Up: Handler オブジェクト
+
+StreamHandler
+.............
+
+`StreamHandler' クラスはログ出力を SYS.STDOUT、 SYS.STDERR
+あるいは何らかのファイル類似オブジェクト
+(あるいは、もっと正確にいえば、`write()' および `flush()'
+メソッドをサポートする何らかのオブジェクト) といったストリーム
+に送信します。
+
+`StreamHandler([strm])'
+     `StreamHandler' クラスの新たなインスタンスを返します。 STRM
+     が指定された場合、インスタンスはログ出力先として
+     指定されたストリームを使います; そうでない場合、 SYS.STDERR
+     が使われます。
+
+`emit(record)'
+     フォーマッタが指定されていれば、フォーマッタを使ってレコードを書式化
+     します。次に、レコードがストリームに書き込まれ、末端に
+     改行がつけられます。例外情報が存在する場合、
+     `traceback.print_exception()' を使って書式化され、
+     ストリームの末尾につけられます。
+
+`flush()'
+     ストリームの `flush()' メソッドを呼び出してバッファを
+     フラッシュします。`close()' メソッドは `Handler' から
+     継承しているため何も行わないので、`flush()' 呼び出しを
+     明示的に行う必要があります。
+
+
+File: python-lib-jp.info,  Node: FileHandler,  Next: RotatingFileHandler,  Prev: StreamHandler,  Up: Handler オブジェクト
+
+FileHandler
+...........
+
+`FileHandler' クラスはログ出力をディスク上のファイルに
+送信します。このクラスは出力機能を  `StreamHandler' から継承
+しています。
+
+`FileHandler(filename[, mode])'
+     `FileHandler' クラスの新たなインスタンスを返します。
+     指定されたファイルが開かれ、ログ記録のためのストリームとして
+     使われます。MODE が指定されなかった場合、 `'a''
+     が使われます。デフォルトでは、ファイルは無制限に大きくなりつづけます。
+
+`close()'
+     ファイルを閉じます。
+
+`emit(record)'
+     RECORD をファイルに出力します。
+
+
+File: python-lib-jp.info,  Node: RotatingFileHandler,  Next: SocketHandler,  Prev: FileHandler,  Up: Handler オブジェクト
+
+RotatingFileHandler
+...................
+
+`RotatingFileHandler' クラスはディスク上のログファイルに対する
+ローテーション処理をサポートします。
+
+`RotatingFileHandler(filename[, mode[, maxBytes[, backupCount]]])'
+     `RotatingFileHandler' クラスの新たなインスタンスを返します。
+     指定されたファイルが開かれ、ログ記録のためのストリームとして
+     使われます。MODE が指定されなかった場合、 `"a"'
+     が使われます。デフォルトでは、ファイルは無制限に大きくなりつづけます。
+
+     あらかじめ決められたサイズでファイルをロールオーバ ("rollover")
+     させられるように、MAXBYTES および BACKUPCOUNT 値を
+     指定することができます。指定サイズを超えそうになると、ファイルは
+     閉じられ、暗黙のうちに新たなファイルが開かれます。ロールオーバは
+     現在のログファイルの長さが MAXBYTES に近くなると常に起きます。
+     BACKUPCOUNT が非ゼロの場合、システムは古いログファイルを
+     ファイル名に ".1", ".2" といった拡張子を追加して保存します．
+     例えば、BACKUPCOUNT が 5 で、基本のファイル名が `app.log' なら、
+     `app.log'、 `app.log.1'、 `app.log.2'、 ... と続き、 `app.log.5'
+     までを得ることになります。ログの書き込み対象になる ファイルは常に
+     `app.log' です。このファイルが満杯になると、
+     ファイルは閉じられ、`app.log.1' に名称変更されます。
+     `app.log.1'、`app.log.2' などが存在する場合、それらの
+     ファイルはそれぞれ`app.log.2'、`app.log.3' といった具合に
+     名前変更されます。
+
+`doRollover()'
+     上で記述したようにして、ロールオーバを行います。
+
+`emit(record)'
+     `setRollover()' で記述したようなロールオーバを行いながら、
+     レコードをファイルに出力します。
+
+
+File: python-lib-jp.info,  Node: SocketHandler,  Next: DatagramHandler,  Prev: RotatingFileHandler,  Up: Handler オブジェクト
+
+SocketHandler
+.............
+
+`SocketHandler' クラスはログ出力をネットワークソケットに
+送信します。基底クラスでは TCP ソケットを用います。
+
+`SocketHandler(host, port)'
+     アドレスが HOST および PORT で与えられた遠隔のマシン
+     と通信するようにした `SocketHandler' クラスのインスタンスを
+     生成して返します。
+
+`close()'
+     ソケットを閉じます。
+
+`handleError()'
+
+`emit()'
+     レコードの属性辞書を pickle 化し、バイナリ形式でソケットに書き込み
+     ます。ソケット操作でエラーが生じた場合、暗黙のうちにパケットは
+     捨てられます。前もって接続が失われていた場合、接続を再度確立
+     します。受信端でレコードを逆 pickle 化して LogRecord にするには、
+     `makeLogRecord' 関数を使ってください。
+
+`handleError()'
+     `emit()' の処理中に発生したエラーを処理します。
+     よくある原因は接続の消失です。次のイベント発生時に再度
+     接続確立を試みることができるようにソケットを閉じます。
+
+`makeSocket()'
+     サブクラスで必要なソケット形式を詳細に定義できるようにするための
+     ファクトリメソッドです。デフォルトの実装では、TCP ソケット
+     (`socket.SOCK_STREAM') を生成します。
+
+`makePickle(record)'
+     レコードの属性辞書を pickle 化して、長さを指定プレフィクス付きの
+     バイナリにし、ソケットを介して送信できるようにして返します。
+
+`send(packet)'
+     pickle 化された文字列 PACKET をソケットに送信します。
+     この関数はネットワークが処理待ち状態の時に発生しうる部分的送信を
+     行えます。
+
+
+File: python-lib-jp.info,  Node: DatagramHandler,  Next: SysLogHandler,  Prev: SocketHandler,  Up: Handler オブジェクト
+
+DatagramHandler
+...............
+
+`DatagramHandler' クラスは `SocketHandler' を
+継承しており、ログ記録メッセージを UDP ソケットを介して
+送れるようサポートしています。
+
+`DatagramHandler(host, port)'
+     アドレスが HOST および PORT で与えられた遠隔のマシン
+     と通信するようにした `DatagramHandler' クラスのインスタンスを
+     生成して返します。
+
+`emit()'
+     レコードの属性辞書を pickle 化し、バイナリ形式でソケットに書き込み
+     ます。ソケット操作でエラーが生じた場合、暗黙のうちにパケットは
+     捨てられます。前もって接続が失われていた場合、接続を再度確立
+     します。受信端でレコードを逆 pickle 化して LogRecord にするには、
+     `makeLogRecord' 関数を使ってください。
+
+`makeSocket()'
+     ここで `SocketHandler' のファクトリメソッドをオーバライド して UDP
+     ソケット (`socket.SOCK_DGRAM') を生成しています。
+
+`send(s)'
+     pickle 化された文字列をソケットに送信します。
+
+
+File: python-lib-jp.info,  Node: SysLogHandler,  Next: NTEventLogHandler,  Prev: DatagramHandler,  Up: Handler オブジェクト
+
+SysLogHandler
+.............
+
+`SysLogHandler' クラスでは、ログ記録メッセージを遠隔またはローカル の
+UNIX syslog に送信する機能をサポートしています。
+
+`SysLogHandler([address[, facility]])'
+     遠隔のUNIX マシンと通信するための、`SysLogHandler' クラスの
+     新たなインスタンスを返します。マシンのアドレスは `(HOST, PORT)'
+     のタプル形式をとる ADDRESS で与えられます。 ADDRESS
+     が指定されない場合、`('localhost', 514)' が 使われます。アドレスは
+     UDP ソケットを使って開かれます。 FACILITY
+     が指定されない場合、`LOG_USER' が使われます。
+
+`close()'
+     遠隔ホストのソケットを閉じます。
+
+`emit(record)'
+     レコードは書式化された後、syslog サーバに送信されます。
+     例外情報が存在しても、サーバには _送信されません_ 。
+
+`encodePriority(facility, priority)'
+     便宜レベル (facility) および優先度を整数に符号化します。値は文字列
+     でも整数でも渡すことができます。文字列が渡された場合、内部の
+     対応付け辞書が使われ、整数に変換されます。
+
+
+File: python-lib-jp.info,  Node: NTEventLogHandler,  Next: SMTPHandler,  Prev: SysLogHandler,  Up: Handler オブジェクト
+
+NTEventLogHandler
+.................
+
+`NTEventLogHandler' クラスでは、ログ記録メッセージをローカルな Windows
+NT、Windows 2000 、または Windows XP のイベントログ (event log)
+に送信する機能をサポートします。この機能を使えるようにするには、 Mark
+Hammond による Python 用 Win32 拡張パッケージをインストール
+する必要があります。
+
+`NTEventLogHandler(appname[, dllname[, logtype]])'
+     `NTEventLogHandler' クラスの新たなインスタンスを返します。 APPNAME
+     はイベントログに表示する際のアプリケーション名を定義する
+     ために使われます。この名前を使って適切なレジストリエントリが生成されます。
+     DLLNAME はログに保存するメッセージ定義の入った .dll または .exe
+     ファイルへの完全に限定的な (fully qualified) パス名を与えなければ
+     なりません (指定されない場合、`'win32service.pyd'' が 使われます -
+     このライブラリは Win32 拡張とともにインストールされ、
+     いくつかのプレースホルダとなるメッセージ定義を含んでいます)。
+     これらのプレースホルダを利用すると、メッセージの発信源全体がログに
+     記録されるため、イベントログは巨大になるので注意してください。
+     LOGTYPE は `'Application''、 `'System'' または `'Security''
+     のいずれかであるか、デフォルトの `'Application''
+     でなければなりません。
+
+`close()'
+     現時点では、イベントログエントリの発信源としての
+     アプリケーション名をレジストリから除去することができます。
+     しかしこれを行うと、イベントログビューアで意図したログをみることが
+     できなくなるでしょう - これはイベントログが .dll 名を取得するために
+     レジストリにアクセスできなければならないからです。現在のバージョン
+     ではこの操作を行いません (実際、このメソッドは何も行いません)。
+
+`emit(record)'
+     メッセージ ID、イベントカテゴリおよびイベント型を決定し、
+     メッセージを NT イベントログに記録します。
+
+`getEventCategory(record)'
+     レコードに対するイベントカテゴリを返します。自作のカテゴリを
+     指定したい場合、このメソッドをオーバライドしてください。
+     このクラスのバージョンのメソッドは 0 を返します。
+
+`getEventType(record)'
+     レコードのイベント型を返します。自作の型を指定したい場合、
+     このメソッドをオーバライドしてください。
+     このクラスのバージョンのメソッドは、ハンドラの TYPEMAP 属性を
+     使って対応付けを行います。この属性は `__init__()' で初期化
+     され、`DEBUG'、`INFO'、 `WARNING'、 `ERROR'、および `CRITICAL'
+     が入っています。
+     自作のレベルを使っているのなら、このメソッドをオーバライドするか、
+     ハンドラの TYPEMAP 属性に適切な辞書を配置する必要があるでしょう。
+
+`getMessageID(record)'
+     レコードのメッセージ ID を返します。自作のメッセージを使っているの
+     なら、ロガーに渡されるMSG を書式化文字列ではなく ID に
+     します。その上で、辞書参照を行ってメッセージ ID を得ます。
+     このクラスのバージョンでは 1 を返します。この値は
+     `win32service.pyd' における基本となるメッセージ ID です。
+
+
+File: python-lib-jp.info,  Node: SMTPHandler,  Next: MemoryHandler,  Prev: NTEventLogHandler,  Up: Handler オブジェクト
+
+SMTPHandler
+...........
+
+`SMTPHandler' クラスでは、SMTP を介したログ記録メッセージの
+送信機能をサポートします。
+
+`SMTPHandler(mailhost, fromaddr, toaddrs, subject)'
+     新たな `SMTPHandler' クラスのインスタンスを返します。
+     インスタンスは email の from および to アドレス行、および subject
+     行と ともに初期化されます。 TOADDRS はドメイン名 (MAILOST
+     )を含まない文字列からなるリストで なければなりません 非標準の SMTP
+     ポートを指定するには、MAILHOST 引数に (host, port)
+     のタプル形式を指定します。文字列を使った場合、標準の SMTP ポートが
+     使われます。
+
+`emit(record)'
+     レコードを書式化し、指定されたアドレスに送信します。
+
+`getSubject(record)'
+     レコードに応じたサブジェクト行を指定したいなら、このメソッドを
+     オーバライドしてください。
+
+
+File: python-lib-jp.info,  Node: MemoryHandler,  Next: HTTPHandler,  Prev: SMTPHandler,  Up: Handler オブジェクト
+
+MemoryHandler
+.............
+
+`MemoryHandler' では、ログ記録するレコードをメモリ上にバッファし、
+定期的にその内容をターゲット ("target") となるハンドラに
+フラッシュする機能をサポートしています。
+フラッシュ処理はバッファが一杯になるか、ある深刻さかそれ以上のレベル
+をもったイベントが観測された際に行われます。
+
+`MemoryHandler' はより一般的な抽象クラス、 `BufferingHandler'
+のサブクラスです。この抽象クラスでは、
+ログ記録するレコードをメモリ上にバッファします。各レコードがバッファに
+追加される毎に、`shouldFlush()' を呼び出してバッファをフラッシュ
+すべきかどうか調べます。フラッシュする必要がある場合、`flush()'
+が必要にして十分な処理を行うものと想定しています。
+
+`BufferingHandler(capacity)'
+     指定し許容量のバッファでハンドラを初期化します。
+
+`emit(record)'
+     レコードをバッファに追加します。 `shouldFlush()' が真を
+     返す場合、バッファを処理するために `flush()' を呼び出します。
+
+`flush()'
+     このメソッドをオーバライドして、自作のフラッシュ動作を実装することが
+     できます。このクラスのバージョンのメソッドでは、単にバッファの内容を
+     削除して空にします。
+
+`shouldFlush(record)'
+     バッファが許容量に達している場合に真を返します。このメソッドは
+     自作のフラッシュ処理方針を実装するためにオーバライドすることが
+     できます。
+
+`MemoryHandler(capacity[, flushLevel [, target]])'
+     `MemoryHandler' クラスの新たなインスタンスを返します。
+     インスタンスはサイズ CAPACITY のバッファとともに初期化されます。
+     FLUSHLEVEL が指定されていない場合、`ERROR' が使われます。 TARGET
+     が指定されていない場合、ハンドラが何らかの有意義な 処理を行う前に
+     `setTarget()' でターゲットを指定する必要があります。
+
+`close()'
+     `flush()' を呼び出し、ターゲットを `None' に
+     設定してバッファを消去します。
+
+`flush()'
+     `MemoryHandler' の場合、フラッシュ処理は単に、バッファされた
+     レコードをターゲットがあれば送信することを意味します。
+     違った動作を行いたい場合、オーバライドしてください。
+
+`setTarget(target)'
+     ターゲットハンドラをこのハンドラに設定します。
+
+`shouldFlush(record)'
+     バッファが満杯になっているか、 FLUSHLEVEL またはそれ以上の
+     レコードでないかを調べます。
+
+
+File: python-lib-jp.info,  Node: HTTPHandler,  Prev: MemoryHandler,  Up: Handler オブジェクト
+
+HTTPHandler
+...........
+
+`HTTPHandler' クラスでは、ログ記録メッセージを `GET' または `POST'
+セマンティクスを使って Web サーバに送信する機能をサポートしています。
+
+`HTTPHandler(host, url[, method])'
+     `HTTPHandler' クラスの新たなインスタンスを返します。
+     インスタンスはホストアドレス、URL および HTTP メソッドと
+     ともに初期化されます。METHOD が指定されなかった場合 `GET'
+     が使われます。
+
+`emit(record)'
+     レコードを URL エンコードされた辞書形式で Web サーバに送信します。
+
+
+File: python-lib-jp.info,  Node: Formatter オブジェクト,  Next: Filter オブジェクト,  Prev: Handler オブジェクト,  Up: logging
+
+Formatter オブジェクト
+----------------------
+
+`Formatter' は以下の属性とメソッドを持っています。 `Formatter' は
+`LogRecord' を (通常は) 人間か外部のシステム
+で解釈できる文字列に変換する役割を担っています。基底クラスの
+`Formatter' では書式化文字列を指定することができます。
+何も指定されなかった場合、`'%(message)s'' の値が使われます。
+
+Formatter は書式化文字列とともに初期化され、`LogRecord' 属性に
+入っている知識を利用できるようにします - 上で触れたデフォルトの
+値では、ユーザによるメッセージと引数はあらかじめ書式化されて、
+LogRecord の MESSAGE 属性に入っていることを利用しているようにです。
+この書式化文字列は、Python 標準の %
+を使った変換文字列で構成されます。文字列整形に関する詳細は *Note
+文字列フォーマット操作:: "String Formatting Operations"
+の章を参照してください。
+
+現状で、 LogRecord の有用な属性は以下に述べるようになっています:
+
+Format                               Description
+------                               -----
+%(name)s                             ロガー (ログ記録チャネル) の名前
+%(levelno)s                          メッセージのログ記録レベルを表す数字
+                                     (DEBUG, INFO, WARNING, ERROR,
+                                     CRITICAL)
+%(levelname)s                        メッセージのログ記録レベルを表す文字列
+                                     ("DEBUG",  "INFO", "WARNING",
+                                     "ERROR", "CRITICAL")
+%(pathname)s                         ログ記録の呼び出しが行われたソースファイルの
+                                     全パス名 (取得できる場合)
+%(filename)s                         パス名中のファイル名部分
+%(module)s                           モジュール名 (ファイル名の名前部分)
+%(lineno)d                           ログ記録の呼び出しが行われたソース行番号
+                                     (取得できる場合)
+%(created)f                          LogRecord が生成された時刻
+                                     (time.time() の返した値)
+%(asctime)s                          LogRecord
+                                     が生成された時刻を人間が読める書式で
+                                     表したもの。 デフォルトでは
+                                     "2003-07-08 16:49:45,896" 形式
+                                     (コンマ以降の数字は時刻のミリ秒部分)
+                                     です
+%(msecs)d                            `LogRecord'
+                                     が生成された時刻の、ミリ秒部分
+%(thread)d                           スレッド ID (取得できる場合)
+%(process)d                          プロセス ID (取得できる場合)
+%(message)s                          レコードが発信された際に処理された
+                                     `msg % args' の結果
+
+`Formatter([fmt[, datefmt]])'
+     `Formatter' クラスの新たなインスタンスを返します。インスタンスは
+     全体としてのメッセージに対する書式化文字列と、メッセージの
+     日付/時刻部分のための書式化文字列を伴って初期化されます。FMT
+     が指定されない場合、 `datefmt' が指定されない場合、ISO8601
+     日付書式が使われます。
+
+`format(record)'
+     レコードの属性辞書が、文字列を書式化する演算で被演算子として
+     使われます。書式化された結果の文字列を返します。
+     辞書を書式化する前に、二つの準備段階を経ます。 レコードの MESSAGE
+     属性が MSG % ARGS を使って 処理されます。書式化された文字列が
+     `'(asctime)'' を含む なら、 `formatTime()'
+     が呼び出され、イベントの発生時刻を
+     書式化します。例外情報が存在する場合、`formatException()'
+     を使って書式化され、メッセージに追加されます。
+
+`formatTime(record[, datefmt])'
+     このメソッドは、フォーマッタが書式化された時間を利用したい際に、
+     `format()' から呼び出されます。このメソッドは特定の要求を
+     提供するためにフォーマッタで上書きすることができますが、基本的な
+     振る舞いは以下のようになります: DATEFMT (文字列) が指定された
+     場合、レコードが生成された時刻を書式化するために `time.strftime()'
+     で使われます。そうでない場合、 ISO8601
+     書式が使われます。結果の文字列が返されます。
+
+`formatException(exc_info)'
+     指定された例外情報 (`sys.exc_info()' が返すような
+     標準例外のタプル) を文字列として書式化します。
+     デフォルトの実装は単に `traceback.print_exception()'
+     を使います。結果の文字列が返されます。
+
+
+File: python-lib-jp.info,  Node: Filter オブジェクト,  Next: LogRecord オブジェクト,  Prev: Formatter オブジェクト,  Up: logging
+
+Filter オブジェクト
+-------------------
+
+`Filter' は `Handler' と `Logger' によって利用され、
+レベルによる制御よりも洗練されたフィルタ処理を提供します。基底の
+フィルタクラスでは、ロガーの階層構造のある点よりも下層にあるイベント
+だけを通過させます。例えば、"A.B" で初期化されたフィルタは ロガー
+"A.B"、 "A.B.C"、 "A.B.C.D"、 "A.B.D" などでログ記録された
+イベントを通過させます。しかし、 "A.BB"、"B.A.B" などは通過させません。
+空の文字列で初期化された場合、全てのイベントを通過させます。
+
+`Filter([name])'
+     `Filter' クラスのインスタンスを返します。 NAME が指定されて
+     いれば、NAME
+     はロガーの名前を表します。指定されたロガーとその子ロガー
+     のイベントがフィルタを通過できるようになります。NAME が指定
+     されなければ、全てのイベントを通過させます。
+
+`filter(record)'
+     指定されたレコードがログされているか？ されていなければゼロを、
+     されていればゼロでない値を返します。適切と判断されれば、このメソッド
+     によってレコードは in place で修正されることがあります。
+
+
+File: python-lib-jp.info,  Node: LogRecord オブジェクト,  Next: スレッド安全性,  Prev: Filter オブジェクト,  Up: logging
+
+LogRecord オブジェクト
+----------------------
+
+何かをログ記録する際は常に LogRecord インスタンスが生成されます。
+インスタンスにはログ記録されることになっているイベントに関係する
+全ての情報が入っています。インスタンスに渡される主要な情報は MSG および
+ARGS で、これらは msg % args を使って
+組み合わせられ、レコードのメッセージフィールドを生成します。
+レコードはまた、レコードがいつ生成されたか、ログ記録がソースコード
+行のどこで呼び出されたか、あるいはログ記録すべき何らかの例外情報
+といった情報も含んでいます。
+
+LogRecord にはメソッドがありません; ログ記録イベントの情報を収めた
+ただの容器 (repository) です。このオブジェクトが辞書でなくクラスに
+なっている唯一の理由は、拡張を容易にするためです。
+
+`LogRecord(name, lvl, pathname, lineno, msg, args, exc_info)'
+     関係のある情報とともに初期化された `LogRecord' のインスタンスを
+     返します。NAME はロガーの名前です; LVL は数字で表された
+     レベルです; PATHNAME はログ記録呼び出しが見つかったソースファイル
+     の絶対パス名です。MSG はユーザ定義のメッセージ (書式化文字列)
+     です; ARGS はタプルで、MSG と合わせて、ユーザメッセージ
+     を生成します; EXC_INFO は例外情報のタプルで、 `sys.exc_info() '
+     を呼び出して得られたもの (または、 例外情報が取得できない場合には
+     `None') です。
+
+
+File: python-lib-jp.info,  Node: スレッド安全性,  Next: 環境設定,  Prev: LogRecord オブジェクト,  Up: logging
+
+スレッド安全性
+--------------
+
+LOGGING モジュールは、クライアントで特殊な作業を必要としない
+かぎりスレッド安全 (thread-safe) なようになっています。このスレッド
+安全性はスレッドロックによって達成されています;
+モジュールの共有データへのアクセスを直列化するためのロックが
+一つ存在し、各ハンドラでも根底にある I/O へのアクセスを直列化するために
+ロックを生成します。
+
+
+File: python-lib-jp.info,  Node: 環境設定,  Next: Using the logging package,  Prev: スレッド安全性,  Up: logging
+
+環境設定
+--------
+
+* Menu:
+
+* 環境設定のための関数::
+* 環境設定ファイルの書式::
+
+
+File: python-lib-jp.info,  Node: 環境設定のための関数,  Next: 環境設定ファイルの書式,  Prev: 環境設定,  Up: 環境設定
+
+環境設定のための関数
+....................
+
+以下の関数では、`logging' モジュールを環境設定できるようにします。
+これらの関数を使えるようにするには、`logging.config' を import
+しなければなりません。これらの関数の使用はオプションです - `logging'
+モジュールは全て、 (`logging' 自体で 定義されている) 主要な API
+を呼び出し、 `logging' か `logging.handlers'
+で宣言されているハンドラを定義することで 設定することができます。
+
+`fileConfig(fname[, defaults])'
+     ログ記録の環境設定をファイル名 FNAME の ConfigParser 形式ファイル
+     から読み出します。この関数はアプリケーションから何度も呼び出すことが
+     でき、これによって、(設定の選択と、選択された設定を読み出す機構を
+     デベロッパが提供していれば) 複数のお仕着せの設定からエンドユーザが
+     選択するようにできます。ConfigParser に渡すためのデフォルト値は
+     DEFAULTS 引数で指定できます。
+
+`listen([port])'
+     指定されたポートでソケットサーバを開始し、新たな設定を待ち受け
+     (listen) ます。ポートが指定されなければ、モジュールのデフォルト設定
+     である `DEFAULT_LOGGING_CONFIG_PORT' が使われます。
+     ログ記録の環境設定は `fileConfig()' で処理できるような
+     ファイルとして送信されます。 `Thread'
+     インスタンスを返し、サーバを開始するために `start()'
+     を呼び、適切な状況で `join()' を
+     呼び出すことができます。サーバを停止するには `stopListening()'
+     を呼んでください。
+
+`stopListening()'
+     `listen()' を呼び出して作成された、待ち受け中のサーバを
+     停止します。通常 `listen()' の戻り値に対して `join()'
+     が呼ばれる前に呼び出します。
+
+
+File: python-lib-jp.info,  Node: 環境設定ファイルの書式,  Prev: 環境設定のための関数,  Up: 環境設定
+
+環境設定ファイルの書式
+......................
+
+`fileConfig' が解釈できる環境設定ファイルの形式は、 ConfigParser
+の機能に基づいています。 ファイルには、`[loggers]'、
+`[handlers]'、および `[formatters]'
+といったセクションが入っていなければならず、
+各セクションではファイル中で定義されている各タイプのエンティティを
+名前で指定しています。こうしたエンティティの各々について、
+そのエンティティをどう設定するかを示した個別のセクションがあります。
+すなわち、`log01' という名前の `[loggers]' セクションにある
+ロガーに対しては、対応する詳細設定がセクション `[logger_log01]'
+に収められています。同様に、 `hand01' という名前の `[handlers]'
+セクションにあるハンドラは `[handler_hand01]'
+と呼ばれるセクションに設定をもつことになり、`[formatters]'
+セクションにある `form01' は `[formatter_form01]'
+というセクションで設定が指定されています。ルートロガーの 設定は
+`[logger_root]' と呼ばれるセクションで指定 されていなければなりません。
+
+ファイルにおけるこれらのセクションの例を以下に示します。
+
+     [loggers]
+     keys=root,log02,log03,log04,log05,log06,log07
+     
+     [handlers]
+     keys=hand01,hand02,hand03,hand04,hand05,hand06,hand07,hand08,hand09
+     
+     [formatters]
+     keys=form01,form02,form03,form04,form05,form06,form07,form08,form09
+
+ルートロガーでは、レベルとハンドラのリストを指定しなければ
+なりません。ルートロガーのセクションの例を以下に示します。
+
+     [logger_root]
+     level=NOTSET
+     handlers=hand01
+
+`level' エントリは `DEBUG, INFO, WARNING, ERROR, CRITICAL'
+のうちの一つか、`NOTSET' になります。ルートロガーの場合にのみ、
+`NOTSET' は全てのメッセージがログ記録されることを意味します。
+レベル値は `logging' パッケージの名前空間のコンテキストに おいて
+`eval()' されます。
+
+`handlers' エントリはコンマで区切られたハンドラ名からなる
+リストで、`[handlers]' セクションになくてはなりません。
+また、これらの各ハンドラの名前に対応するセクションが設定ファイルに
+存在しなければなりません。
+
+ルートロガー以外のロガーでは、いくつか追加の情報が必要になります。
+これは以下の例のように表されます。
+
+     [logger_parser]
+     level=DEBUG
+     handlers=hand01
+     propagate=1
+     qualname=compiler.parser
+
+`level' および `handlers' エントリはルートロガーのエントリ
+と同様に解釈されますが、非ルートロガーのレベルが `NOTSET'
+に指定された場合、ログ記録システムはロガー階層のより上位のロガー
+にロガーの実効レベルを問い合わせるところが違います。 `propagate'
+エントリは、メッセージをロガー階層におけるこの
+ロガーの上位のハンドラに伝播させることを示す 1 に設定されるか、
+メッセージを階層の上位に伝播*しない* ことを示す 0 に 設定されます。
+`qualname' エントリはロガーのチャネル名を階層的に表した
+もので、例えばアプリケーションがこのロガーを取得する際に使う
+名前になります。
+
+ハンドラの環境設定を指定しているセクションは以下の例のようになります。
+
+     [handler_hand01]
+     class=StreamHandler
+     level=NOTSET
+     formatter=form01
+     args=(sys.stdout,)
+
+`class' エントリはハンドラのクラス (`logging' パッケージの
+名前空間において `eval()' で決定されます) を示します。 `level'
+はロガーの場合と同じように解釈され、`NOTSET' は "全てを記録する (log
+everything)" と解釈されます。
+
+`formatter' エントリはこのハンドラのフォーマッタに対するキー名
+を表します。空文字列の場合、デフォルトのフォーマッタ
+(`logging._defaultFormatter') が使われます。名前が指定
+されている場合、その名前は `[formatters]' セクションになくては
+ならず、対応するセクションが設定ファイル中になければなりません。
+
+`args' エントリは、`logging' パッケージの名前空間の コンテキストで
+`eval()' される際、ハンドラクラスの
+コンストラクタに対する引数からなるリストになります。
+典型的なエントリがどうやって作成されるかについては、対応するハンドラのコンストラクタか、以下の例を参照してください。
+
+     [handler_hand02]
+     class=FileHandler
+     level=DEBUG
+     formatter=form02
+     args=('python.log', 'w')
+     
+     [handler_hand03]
+     class=handlers.SocketHandler
+     level=INFO
+     formatter=form03
+     args=('localhost', handlers.DEFAULT_TCP_LOGGING_PORT)
+     
+     [handler_hand04]
+     class=handlers.DatagramHandler
+     level=WARN
+     formatter=form04
+     args=('localhost', handlers.DEFAULT_UDP_LOGGING_PORT)
+     
+     [handler_hand05]
+     class=handlers.SysLogHandler
+     level=ERROR
+     formatter=form05
+     args=(('localhost', handlers.SYSLOG_UDP_PORT), handlers.SysLogHandler.LOG_USER)
+     
+     [handler_hand06]
+     class=NTEventLogHandler
+     level=CRITICAL
+     formatter=form06
+     args=('Python Application', '', 'Application')
+     
+     [handler_hand07]
+     class=SMTPHandler
+     level=WARN
+     formatter=form07
+     args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
+     
+     [handler_hand08]
+     class=MemoryHandler
+     level=NOTSET
+     formatter=form08
+     target=
+     args=(10, ERROR)
+     
+     [handler_hand09]
+     class=HTTPHandler
+     level=NOTSET
+     formatter=form09
+     args=('localhost:9022', '/log', 'GET')
+
+フォーマッタの環境設定を指定しているセクションは以下のような形式です。
+
+     [formatter_form01]
+     format=F1 %(asctime)s %(levelname)s %(message)s
+     datefmt=
+
+`format' エントリは全体を書式化する文字列で、`datefmt' エントリは
+`strftime()' 互換の日付/時刻書式化文字列です。
+空文字列の場合、パッケージによって ISO8601 形式の
+日付/時刻に置き換えられ、 日付書式化文字列 "ISO8601
+形式ではミリ秒も指定しており、上の書式化文字列の結果にカンマ
+で区切って追加されます。ISO8601 形式の時刻の例は `2003-01-23
+00:29:50,411' です。
+
+
+File: python-lib-jp.info,  Node: Using the logging package,  Prev: 環境設定,  Up: logging
+
+Using the logging package
+-------------------------
+
+* Menu:
+
+* Basic example - log to a file::
+
+
+File: python-lib-jp.info,  Node: Basic example - log to a file,  Prev: Using the logging package,  Up: Using the logging package
+
+Basic example - log to a file
+.............................
+
+ログをファイルに記録する例を、以下に示します。この例では `Logger'
+インスタンスを作り、その後 `FileHandler' と`Formatter' を作
+ります。続いて `FileHandler' に `Formatter' を付加し、 `Logger' に
+`FileHandler' を付加します。最後に、ロガーのデバ
+ッグ・レベルを設定します。
+
+     import logging
+     logger = logging.getLogger('myapp')
+     hdlr = logging.FileHandler('/var/tmp/myapp.log')
+     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+     hdlr.setFormatter(formatter)
+     logger.addHandler(hdlr)
+     logger.setLevel(logging.WARNING)
+
+このロガーオブジェクトを使うと、エントリをログファイルに書き出せます。
+
+     logger.error('We have a problem')
+     logger.info('While this is just chatty')
+
+書き出されたファイルの中には、次のように書かれているでしょう。
+     2003-07-08 16:49:45,896 ERROR We have a problem
+
+info メッセージは、ファイルに書き出されません。`setLevel' メソッドで
+`WARNING' 以上のログだけを要求したので、info
+メッセージは捨てられたのです。
+
+タイムスタンプは "year-month-day hour:minutes:seconds,milliseconds" 形
+式です。ミリ秒のフィールドは 3桁ありますが、全てのシステムにおいて、この
+精度で時刻を得られるわけではありません。
+
+
+File: python-lib-jp.info,  Node: オプションのオペレーティングシステムサービス,  Next: Unix独特のサービス,  Prev: 汎用オペレーティングシステムサービス,  Up: Top
+
+オプションのオペレーティングシステムサービス
+********************************************
+
+この章で説明するモジュールでは、
+特定のオペレーティングシステムでだけ利用できる
+オペレーティングシステム機能へのインターフェースを提供します。
+このインターフェースは、 おおむね UNIX や C
+のインターフェースにならってモデル化してありますが、
+他のシステム上（WindowsやNTなど）でも利用できることがあります。
+次に概要を示します。
+
+* Menu:
+
+* signal::
+* socket::
+* select::
+* thread::
+* threading::
+* dummy_thread::
+* dummy_threading::
+* Queue::
+* mmap::
+* anydbm::
+* dbhash::
+* whichdb::
+* bsddb::
+* dumbdbm::
+* zlib::
+* gzip::
+* bz2::
+* zipfile::
+* tarfile::
+* readline::
+* rlcompleter::
+

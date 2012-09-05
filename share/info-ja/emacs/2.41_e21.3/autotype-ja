@@ -1,0 +1,664 @@
+Info file: autotype-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `autotype-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Autotype-ja: (autotype-ja).       Emacs入力自動化ガイド
+END-INFO-DIR-ENTRY
+
+
+
+
+
+File: autotype-ja, Node: Top, Next: Using Skeletons, Prev: (dir), Up: (dir)
+
+Autotyping
+**********
+
+何度も何度も同じ文字を入力するようなことがありませんか．何度も同じ文字
+を入力することは手紙を書くことからプログラムを作るときまで起こり得ます．
+あるプロジェクトに特有なコメントやflow control constructs，マジックナン
+バーなどを何度も入力することはあらゆる時に起こります．Emacs は略称展開
+(*Note (emacs)Abbrevs::) の他にも退屈な繰り返しをするためのさまざま機能
+があります．
+
+一つの答えはskeletonを使うことです．これは，何を挿入して，何をするかを
+柔軟に定義できます．さまざまなプログラミング言語はすぐに使用できる
+skeletonがあります．そして，自分の必要性や好みに応じて合わせたり，新し
+く定義したりできます．
+
+他の機能はテンプレート機能です．これは新しいファイルにファイル名やモー
+ドに応じて適当なものを挿入します．挿入されるファイルか skelton あるいは
+呼び出される関数を持つことができるのです．それから，マジックナンバーを
+自動的に変更するようなスクリプトを保存時に実行することもできます．ある
+いは，著作権表示を保存するたびに更新することもできるのです．これは，ファ
+イルの更新時間の機能と似ています．
+
+カーソル付近の単語に応じてURLを挿入できます．挿入されるURLは柔軟に定義
+できます．meta-expansionの機能は代替補完とカーソル付近の文字に応じた展
+開との組を試すのに利用できます．
+
+* Menu:
+
+* Using Skeletons::             How to insert a skeleton into your text.
+* Wrapping Skeletons::          Putting existing text within a skeleton.
+* Skeletons as Abbrevs::        An alternative for issuing skeleton commands.
+* Skeleton Language::           Making skeleton commands insert what you want.
+* Inserting Pairs::             Typing one character and getting another
+                             after point.
+* Autoinserting::               Filling up empty files as soon as you visit them.
+* Copyrights::                  Inserting and updating copyrights.
+* Executables::                 Turning interpreter scripts into executables.
+* Timestamps::                  Updating dates and times in modified files.
+* QuickURL::                    Inserting URLs based on text at point.
+* Tempo::                       Flexible template insertion.
+* Hippie Expand::               Expansion of text trying various methods.
+
+* Concept Index::
+* Command Index::
+* Variable Index::
+
+
+
+
+
+File: autotype-ja, Node: Using Skeletons, Next: Wrapping Skeletons, Prev: Top, Up: Top
+
+Skeleton を使う *(2004/04/02)*
+******************************
+
+Emacsで一連の文字やプログラミング言語のコンストラクタを入力したい時、
+skeleton を活用できます。普通それぞれの skeleton には専用のコマンドがあ
+ります。そして、それらのコマンドは普通の方法(`M-x'やキー割り当てなど)で
+呼ぶことができます(*Note (emacs)Commands::)。さまざまなskeleton を利用
+できるモードでは`C-c'にキーが割当てられていることもあります。モードによっ
+ては`Insert'メニューや定義済みの abbrev もあるかもしれません(*Note
+Skeletons as Abbrevs::)。
+
+skeleton で最も単純なものはメジャーモードに応じたテキストを挿入し、編集
+する可能性のありそうな場所にカーソルを移動させることです。テンプレート
+によっては、ユーザに入力を求め、挿入されたテキストの中に埋めていくこと
+もあります。
+
+skeletonは何度も入力する文字を尋ねるかもしれません。skeleton はループ機
+能さえ持っており、ユーザが入力を終えたいと思うまで何度でも尋ねさせるこ
+とができるのです。何度も入力させるような例として「else if」があります。
+ループかどうかを確認するにはRETや`C-g'、`C-h' を利用します。単に RET と
+して空文字を入力すると、そこでループは終了します。一方、`C-g'で終了させ
+ると、ループだけでなくループ以降も実行されずに終了します。したがって、
+「else if」の例であれば「else」を閉じる処理は実行されません。ただし、中
+止させても構文上必要となるテキストは挿入されます。
+
+
+
+File: autotype-ja, Node: Wrapping Skeletons, Next: Skeletons as Abbrevs, Prev: Using Skeletons, Up: Top
+
+すでに存在するテキストを Skelton で加工 *(2004/04/02)*
+******************************************************
+
+こんなことはないだろうか。いくらかのコードが理由は何であれ突然条件節に
+変えたくなった。ちょっとしたテキストをある定型的な文書の中に入れたい。
+これらは skeleton を使えば可能になります。プログラミング言語で埋め込ま
+れたコードを再インデントすることでさえ可能なのです。
+
+skeleton はオプションで数引数(*Note (emacs)Arguments::) を取ります。こ
+の引数は正であれば順方向、負であれば逆方向という2種類に解釈されます。
+
+正引数の場合は後に続く語に skeleton を適用することになる。実際には、
+skeleton を挿入した後でカーソルがある場所にskeleton を適用している語を
+入れている(*Note Using Skeletons::)。そして、ポイント(*Note
+(emacs)Point::) は skeleton で次に入力すべき場所に移ります。
+
+負引数は前もってマークされた中間リージョン(*Note (emacs)Mark::) に対し
+て同様のことを行う。単純な例では、skeletonコマンドを実行する前に`M--'を
+入力すると、リージョン内のテキストを内包するように働く。これは、正引数
+がいくつかの単語を内包するように働くのに対応します。
+
+より小さな負引数を指定すると skeleton コマンドは連続して多くの中間リー
+ジョン(interregions)内文字を必要な場所へ埋め込み、カーソルを次に入力す
+べき場所へ移動します。ここでリージョンではなく、中間リージョン
+(interregions) という言葉を使ってきました。これは、skelton が見つかった
+順番に処理を行い、マークされたリージョンが順番に並んでいる時としか同じ
+にならないためです。
+
+つまり、A B C []([]はカーソル位置)というテキストがあって、アルファベッ
+ト順にマークしていったとします。そして、引数として `M-- 3' を与えて
+skeletonコマンドを実行したとします。すると、最初にskeltonの必要な場所へ
+AからBのテキストが入り、次にBからCまでが、3番目にCからポイントまでが入
+り、カーソルは4番目に入力すべき場所へ移動します。もし引数よりもマークが
+少ない、あるいはskeltonの定義場所が少ない時には、余分なものが無視されま
+す。
+
+一方、[] A C B というテキストをアルファベット順にマークしたとします。そ
+して、引数として `M-- 3' を与えてskeletonコマンドを実行すると、
+
+
+
+
+
+File: autotype-ja, Node: Skeletons as Abbrevs, Next: Skeleton Language, Prev: Wrapping Skeletons, Up: Top
+
+略称展開 *(2004/04/02)*
+***********************
+
+すべての skeleton コマンドをキーバインドを割り当てなくても，略称を定義
+する(*Note (emacs)Defining Abbrevs::) し，skeleton として展開(*Note
+(emacs)Expanding Abbrevs::) させることもできます．
+
+C言語で`ifst'を通常の構文の時に略称として登録したい場合には，`ifst' を
+空文字の略称とし，それからskeltonコマンドを呼ぶようにします．Emacs
+Lispでは`(define-abbrev c-mode-abbrev-table "ifst" "" 'c-if)' のように
+することができます．あるいは，`M-x list-abbrevs' から出力を以下のように
+編集することもできます．
+
+     (c-mode-abbrev-table)
+     "if"	       0    ""	       c-if
+
+(意味のない空行や他モードの略称との間にある空行は削除されます)
+
+
+
+
+File: autotype-ja, Node: Skeleton Language, Next: Inserting Pairs, Prev: Skeletons as Abbrevs, Up: Top
+
+Skeleton 言語 *(2004/04/02)*
+****************************
+
+skeleton はLispを少し拡張したもので，さまざまなアトムはカレントバッファ
+でコマンドや一部の作業を実行することができます．skeletonは
+`skeleton-insert' により処理されます．
+
+skelton とは相互に情報をやりとりするためのリストで，大抵はプロンプトに
+表示する文字になります．必要がなければ，`nil' になりますが，複雑な入力
+関数や計算した値を返すようなLisp言語でも構いません．リストの残りの部分
+は以下の表で説明する要素になります．
+
+`"STRING"', `?C', `?\C'
+     文字列や文字を挿入する．文字通りの文字列や文字は
+     `skeleton-transformation' が 非`nil' であれば，その関数で処理され
+     る．
+`?\n'
+     改行を挿入し，現在行に配置します．配置を調整するためには，`?\n' を
+     使います．
+`_'
+     ポイントを挿入する．連続するリージョンに対しスケルトンを使うような
+     時に，使われます．ポイント位置は最初の`_'の左になります．
+`>'
+     メジャーモードに応じてインデントを行います．続く要素が`_'で，そこ
+     を内包するような内部リージョンがあると，その内部リージョンをインデ
+     ントします．
+`&'
+     論理 AND．カーソルを移動させるような要素 (大抵は文字の挿入など)が
+     先にあると，続く要素を実行します．
+`|'
+     論理 OR．カーソルを移動させない要素(大抵は何も挿入しないようなも
+     の)が先にあると，続く要素を実行します．
+`-NUMBER'
+     number の数だけ先に続く文字を削除します．`skeleton-untabify' の値
+     に依存します．
+`()' or `nil'
+     無視されます．
+LISP-EXPRESSION
+     Lisp 式を評価して，戻り値をスケルトンの要素として再び評価します．
+`str'
+     これは特別な変数で，最初に評価されると，大抵入力を求めます．そして，
+     戻り値で値が設定されます．各サブスケルトンはこの値のローカルコピー
+     を持ちます．
+`v1', `v2'
+     スケルトンのローカルユーザ変数
+`'EXPRESSION'
+     Lisp 式を評価しますが，スケルトンの要素としての評価はされません．
+SKELETON
+     サブスケルトンが再帰的に挿入されます．一度だけでなく，ユーザがサブ
+     スケルトンとして何かを入力しただけ挿入されます．それにより，サブス
+     ケルトンには `str' が必ず存在します．入力を要素を返すような Lisp
+     式で行う場合には，これらを非対話的に使うこともできます．
+`resume:'
+     無視されます．スケルトンの解釈中にユーザが停止すると，ここで実行が
+     再開します．
+`quit'
+     ユーザによる中止のために `resume:' 部分が実行されると 非
+     `nil' な値となる定数．
+
+いくつかのモードでは，既に定義した他のスケルトンも使用します．例えば，
+shell スクリプトモードのスケルトンでは，`<' が後方への厳密なインデント
+になっていますし，CCモードでは`{' と `}' が自身を挿入する要素となってい
+ます．これらはバッファローカル変数である`skeleton-further-elements' で
+定義されており，スケルトンを解釈する際に利用されるリストになっています．
+
+マクロ `define-skeleton' はスケルトンを解釈するための関数を定義します．
+1番目の引数は関数名です．2番目は説明用のドキュメントで，残りは解釈子や
+スケルトンを共に形成するスケルトン要素になります．このスケルトンは関数
+と同じ名前の変数として作成され，`~/.emacs' ファイル(*Note (emacs)Init
+File::) で定義できます．
+
+訳者注：skelton.el には下記の例が載せられています．評価して M-x
+local-variables-section を試してみてください．
+
+     (define-skeleton local-variables-section
+       "Insert a local variables section.  Use current comment syntax if any."
+       (completing-read
+        "Mode: " obarray
+        (lambda (symbol)
+          (if (commandp symbol)
+              (string-match "-mode$" (symbol-name symbol))))
+        t)
+       '(save-excursion
+          (if (re-search-forward page-delimiter nil t)
+              (error "Not on last page")))
+       comment-start "Local Variables:" comment-end \n
+       comment-start "mode: " str
+       & -5 | '(kill-line 0) & -1 | comment-end \n
+       ((completing-read
+         (format "Variable, %s: " skeleton-subprompt)
+         obarray
+         (lambda (symbol)
+           (or (eq symbol 'eval)
+               (user-variable-p symbol)))
+         t)
+         comment-start str ": "
+         (read-from-minibuffer
+          "Expression: " nil read-expression-map nil
+          'read-expression-history) | _
+          comment-end \n)
+       resume:
+       "\n"
+       comment-start "End:" comment-end \n)
+
+
+
+File: autotype-ja, Node: Inserting Pairs, Next: Autoinserting, Prev: Skeleton Language, Up: Top
+
+文字のペアを挿入
+****************
+
+いくつかの文字は通常ペアで用いられます．例えば，開き括弧を挿入する時，
+プログラミング言語であれ散文であれ，大抵閉じ括弧を入力するでしょう．こ
+の両者を同時に入力し，カーソルを間に残すことで，Emacs はそのような括弧
+の釣り合いが取れていることを保証できるのです．そして，もし qwertyキーボー
+ドではなく，ある種のプログラミング言語においてシンボルを入力するのに指
+を無理に曲げないといけないような時でも，苦痛を取り除くこともできるでしょ
+う．
+
+これは `self-insert-command' の代わりに`skeleton-pair-insert-maybe' に
+バインドする(*Note (emacs)Rebinding::) ことで実現されています．「ひょっ
+とすると」最初はこの驚かされる挙動は初期時にはオフになっていることに端
+を発するのかもしれません．これを有効にするためには，`skeleton-pair' を
+非`nil' にしなければなりません．そして，正引数(*Note
+(emacs)Arguments::) を与えると，通常の挿入キー(*Note (emacs)Inserting
+Text::) と同じ動作になります．
+
+続く文字が単語の一部などで，ペアでの挿入が起こって欲しくなく，いつも釣
+り合いが取れたペアになるような挙動をやめたくなるような場合があります．
+そのような時でさえペアで挿入したい場合には，
+`skeleton-pair-on-word' を非 `nil' にします．
+
+ペアにすることはすべての文字で可能です．デフォルトでは丸括弧 `('，角括
+弧 `['，大括弧 `{'，`<'，逆引用符(バッククォート) ``' といった左右対象
+となるペアです．他のすべての文字のペアはその文字自身になっています．こ
+れは変数 `skeleton-pair-alist' で制御できます．実際には，これはスケルト
+ンのリストで (*Note Skeleton Language::)，各リストの最初は入力した文字
+に一致する部分になります．この位置は解釈する位置になりますが，`str' 要
+素は必要なく無視されます．
+
+いくつかのモードでは関数 `skeleton-pair-insert-maybe' を適切なキーに割
+り当てています．これらのモードではペアについても適切に設定しています．
+例えば，英語の散文を入力する時，逆引用符 (``') を入力すると，引用符
+(`'') とペアになることを期待するでしょう．Shell スクプトモードではペア
+でなければなりません．ある文脈ではペアにすることを禁止できます．例えば，
+エスケープするとその文字自身を意味します．
+
+
+
+File: autotype-ja, Node: Autoinserting, Next: Copyrights, Prev: Inserting Pairs, Up: Top
+
+新規ファイルへの自動挿入
+************************
+
+`M-x auto-insert' とすると，バッファの先頭にあらかじめ定義されたテキス
+トを挿入します．この関数は，その名前が示すように，主に新規作成時や空の
+ファイルを開いた時にだけ機能するように使います．これを実現するには，
+`(add-hook 'find-file-hook 'auto-insert)' を `~/.emacs' ファイルに追加
+します (*Note (emacs)Init File::)．
+
+訳者注：これで自動挿入が動作しない場合には `(auto-insert-mode t)' も追
+加してみてください．
+
+挿入されるものが何であっても変数 `auto-insert-alist' で定義されます．リ
+ストの CAR はモード名で，そのバッファがそのモードであれば，要素が実行さ
+れます．あるいは，リストの CAR が文字である場合には，バッファのファイル
+名が正規表現に一致するかどうかで適用するかどうかが決まります．これによ
+り同じモードを持ついろいろな種類のファイルを Emacs は区別できるのです．
+リストの CAR は上述したようなモード名や正規表現，さらなる記述成るコンス
+セルかもしれません．
+
+一致する要素があると，その CDR が何をするべきかを表します．それは，挿入
+されるファイルのファイル名かもしれません．もし，ファイルが
+`auto-insert-directory' にあるか絶対パスで存在していれば，そのファイル
+は挿入されます．そうでなければ，挿入されるべきスケルトンとして処理され
+ます (*Note Skeleton Language::) ．
+
+あるいは様々なことを行うための関数であるかもしれません．関数は単にいく
+つかのテキストを挿入することもできますし，スケルトンも利用できます
+(*Note Using Skeletons::)．例えば他の関数を呼ぶようなラムダ関数でも構い
+ません．また，そのような機能を順番に実行したければ，ベクトルを使うこと
+もできます．つまり，上記の要素を角括弧 (`[...]') で括ればいいのです．
+
+デフォルトでは C や C++ ヘッダファイルでは多重読み込みを避けるため，ファ
+イル名から得られたシンボル定義を挿入します．CやC++のソーソファイルでは
+ヘッダのインクルードを挿入します．Makefile では存在すれば makefile.inc
+を挿入します．
+
+TeX や bibTeX モードでは存在すれば tex-insert.tex を挿入します，一方，
+LaTeX モードのファイルでは典型的な `\documentclass' の枠組みを挿入しま
+す．html ファイルは最低限の枠組みをスケルトンで挿入します．
+
+Ada モードでは Ada のヘッダ挿入のためのスケルトンが実行されます．Emacs
+Lisp では通常のヘッダである `$ORGANIZATION' に応じたたものか FSF のコピー
+ライト，キーワード，内容の記述を挿入します．`bin' ディレクトリ(パスが通っ
+たところ)にあって，Emacs がモードを決定できない (*Note (emacs)Choosing
+Modes::) ファイルは shell スクリプトモードになります．
+
+Lisp 式では(*Note (emacs)Init File::)，関数 `define-auto-insert' を使う
+ことで `auto-insert-alist' に要素を追加したり編集したりできます．`C-h
+f auto-insert-alist' とすることで関数のドキュメントを参照ください．
+
+変数 `auto-insert' は`auto-insert' が非対話的に呼ばれた際(ファイルが空
+だった場合など)どうすべきかを決定します．
+`nil'
+     何もしない．
+`t'
+     もし可能なら何かを挿入します．つまり，`auto-insert-alist' に一致す
+     る要素があれば挿入します．
+other
+     可能なら何かを挿入するが，未変更のままとする．
+
+変数 `auto-insert-query' は何かを挿入する際に確認するかどうかを制御しま
+す．`nil' であれば，挿入は `M-x auto-insert' で実行した時だけになります．
+`function' であれば，空のファイルを開いた時や，上記の hook を設定した場
+合など，`auto-insert' が関数として呼ばれる時はいつでも確認されます．そ
+れ以外なら，いつも確認されます．
+
+確認時に変数 `auto-insert-prompt' の値が y-or-n タイプのプロンプトとし
+て使われます．もし，`%s'を含むと，選択された挿入規則で置き換えられます．
+これは説明文かバッファのモード名，ファイル名に一致した正規表現のいづれ
+かになります．
+
+
+
+File: autotype-ja, Node: Copyrights, Next: Executables, Prev: Autoinserting, Up: Top
+
+著作権表示の挿入と更新
+**********************
+
+`M-x copyright' はスケルトンの挿入コマンドで，ポイント位置に著作権表示
+を追加します．「by」部分には環境変数 `$ORGANIZATION' の値か設定されてい
+なければプロンプトで入力された値が使われます．バッファにコメントの記述
+方法 (*Note (emacs)Comments::) があれば，コメントとして挿入します．
+
+`M-x copyright-update' は `copyright-limit' で制限された箇所まで著作権
+表示を探し，必要なら更新します．現在年 (変数`copyright-current-year')
+が既存のものに同じ書式 (つまり，1994や' 94， 94) で追加されます．ダッシュ
+で区切られたリストに最新年があれば，現在年まで拡大するかカンマで区切ら
+れた年を追加します．前置引数をつけて実行した場合には元のものを置き換え
+ます．ヘッダが間違ったバージョンの GNU General Public License (*Note
+(emacs)Copying::) を参照している場合には，アップデートも行います．
+
+この関数は保存時に毎回実行するようにしておくと簡単でいいでしょう．これ
+は `(add-hook 'write-file-functions 'copyright-update)' を`~/.emacs' ファ
+イルに追加 (*Note (emacs)Init File::) することで実現できます．
+
+変数 `copyright-query' は著作権表示をアップデートするかを尋ねるかどうか
+を制御します．`nil' なら，`M-x copyright-update' を実行した時のみ更新さ
+れます．`function' なら，`write-file-functions' のように
+`copyright-update' が関数として呼ばれた時はいつでも更新されます．もしそ
+うでなければ，確認されます．
+
+
+
+File: autotype-ja, Node: Executables, Next: Timestamps, Prev: Copyrights, Up: Top
+
+スクリプトインタプリタの作成
+****************************
+
+Shell スクリプトモードや AWK モードのようにさまざまなインタプリタモー
+ドは自動的にバッファのマジックナンバや最初の行に置かれ `exec' シ
+ステムコールにスクリプトを実行させる方法を教えるための特別なコメントを
+挿入や更新します．保存時には自動的に `executable-chmod' を引数と
+してシステムの `chmod' コマンドを実行します．マジックナンバーは
+`executable-prefix' の値が置かれます．
+
+ファイル名が `executable-magicless-file-regexp' に一致するものはマジッ
+クナンバーがなく，実行可能にもしません．これは主にリソースファイル向け
+のもので，読み込み用のファイルに適用されます．
+
+変数 `executable-insert' は `executable-set-magic' が非対話的に実行され
+た時(ファイルにマジックナンバが無い時や間違っていた時など) にどう処理す
+るかを決定しています．
+`nil'
+     何もしません．
+`t'
+     マジックナンバを挿入し更新します．
+other
+     マジックナンバを挿入し更新しますは，未更新のままとします．
+
+変数 `executable-query' はマジックナンバーを挿入や更新する際に確認する
+かどうかを制御します．`nil' であれば，`M-x executable-set-magic' で実行
+した時のみ更新します．`function' であれば， `executable-set-magic' が
+shellスクリプトモードで呼ばれた時のように関数として実行された時はいつで
+も確認します．そうでなければ，いつでも確認します．
+
+  `M-x executable-self-display' adds a magic number to the buffer, which
+will turn it into a self displaying text file, when called as a Un*x command.
+The "interpreter" used is `executable-self-display' with argument
+`+2'.
+
+
+
+File: autotype-ja, Node: Timestamps, Next: QuickURL, Prev: Executables, Up: Top
+
+ファイルの変更時間を更新
+************************
+
+`time-stamp' はファイルを保存する時に新しい更新時間を自動的にある
+書式で更新するためのものです．`write-file-functions' に関数
+`time-stamp' を追加するようにカスタマイズします．
+
+更新時間は `time-stamp-active' がオンの時(デフォルト)のみ更新されます．
+`time-stamp-toggle-active' はこれをオン/オフできます．更新時間の書式は
+変数 `time-stamp-format' をカスタマイッズすることで変更できます．
+
+変数 `time-stamp-line-limit'，`time-stamp-start'，`time-stamp-end'，
+`time-stamp-count'，`time-stamp-inserts-lines' はテンプレートを探す方法
+を制御します．これらの変数は初期化ファイル(.emacs)で変更しない方がいい
+でしょう．さもないと，他の人が作成したファイルを編集する際に問題となり
+ます．変更する場合には，ファイルのローカル変数で変更しなければなりませ
+ん．
+
+通常は，テンプレートはファイルの8行目までに以下のような書式がなければな
+りません．
+
+     Time-stamp: <>
+     Time-stamp: " "
+
+更新時間は括弧や引用符の間に記入されます．
+
+     Time-stamp: <1998-02-18 10:20:51 gildea>
+
+
+
+File: autotype-ja, Node: QuickURL, Next: Tempo, Prev: Timestamps, Up: Top
+
+QuickURL: ポイント位置のテキストに応じてURL挿入
+***********************************************
+`M-x quickurl' はポイント付近のテキストに応じてテキストを挿入する
+ことができます．URL は変数 `quickurl-url-file' で設定されたファイ
+ルで定義されており，`(KEY . URL)' という cons cells
+か `(KEY URL COMMENT)' というリストになっていま
+す．ポイント位置の単語がKEY であれば，`M-x quickurl' は
+URL を挿入します．例えば，以下のような設定が可能です．
+
+     (("FSF"      "http://www.fsf.org/" "The Free Software Foundation")
+      ("emacs"  . "http://www.emacs.org/")
+      ("hagbard"  "http://www.hagbard.demon.co.uk" "Hagbard's World"))
+
+`M-x quickurl-add-url' は新規に KEY/URL のペアを追加できます．`M-x
+quickurl-list' で URL リストの対話的編集ができます．
+
+
+
+File: autotype-ja, Node: Tempo, Next: Hippie Expand, Prev: QuickURL, Up: Top
+
+Tempo: 柔軟なテンプレート挿入
+*****************************
+
+Tempo パッケージは機能的なテンプレートやマクロを簡単に定義できます．主
+にある種のドキュメントを簡単に編集できる方法を作るプログラマを意図して
+います(それに限定しているわけではありませんが)．
+
+テンプレートはポイント位置に挿入されるべきアイテムのリストとして定義さ
+れます．単純な文字列もあれば，書式を制御するようなものや挿入したテキス
+トのある箇所を定義するようなものもあります．`M-x tempo-backward-mark'
+と `M-x tempo-forward-mark' でそうしたポイントを順番に移動していくこと
+ができます．
+
+より柔軟なテンプレートとして Lisp シンボルを含むこともできます．その
+Lisp シンボルは変数やリスト，Lisp 式として評価されます．特定のタグの自
+動補完機能も用意されています．
+
+Tempo テンプレートを定義するために使われる他の要素は
+`tempo-define-template' のドキュメントを参照ください．
+
+Tempo に関する詳細は `tempo.el' のコメントを参照ください．
+
+
+
+File: autotype-ja, Node: Hippie Expand, Next: Concept Index, Prev: Tempo, Up: Top
+
+`Hippie' 展開
+*************
+
+`M-x hippie-expand' は1つのコマンドでさまざまな補完や展開を行うことがで
+きます。繰り返し実行すると、すべての候補を連続で展開できます。
+
+どの方法をどういう順番で実行するかは 変数
+`hippie-expand-try-functions-list' で決まります。カスタマイズすることで、
+順番を変えたり、ある方法を削除したり、新しい方法を追加したりできます。
+数引数を与えると、`M-x hippie-expand' は
+`hippie-expand-try-functions-list' で「数引数」番目にある関数が実行され
+ます。他の引数 (負引数や `C-u' のみ) 補完されたテキストを元に戻します。
+
+より詳しいことは`hippie-exp.el'のコメントを参照してください。
+
+一般的には `hippie-expand' を `dabbrev-expand' が割り当てられている
+`M-/' にバインドします。そして、`dabbrev-expand' は補完する関数の1つ
+(`try-expand-dabbrev' などが容易されています) にしておくのです。
+
+
+
+File: autotype-ja, Node: Concept Index, Next: Command Index, Prev: Hippie Expand, Up: Top
+
+概念索引
+********
+
+* Menu:
+
+* autoinserting:                Autoinserting.          (line   5)
+* copyrights:                   Copyrights.             (line   5)
+* executables:                  Executables.            (line   5)
+* inserting pairs:              Inserting Pairs.        (line   5)
+* pairs:                        Inserting Pairs.        (line   5)
+* skeleton language:            Skeleton Language.      (line   5)
+* skeletons:                    Using Skeletons.        (line   5)
+* skeletons as abbrevs:         Skeletons as Abbrevs.   (line   5)
+* templates:                    Tempo.                  (line   6)
+* timestamps:                   Timestamps.             (line   5)
+* URLs:                         QuickURL.               (line   5)
+* using skeletons:              Using Skeletons.        (line   5)
+* wrapping skeletons:           Wrapping Skeletons.     (line   5)
+
+
+
+File: autotype-ja, Node: Command Index, Next: Variable Index, Prev: Concept Index, Up: Top
+
+コマンド索引
+************
+
+* Menu:
+
+* auto-insert:                  Autoinserting.          (line   6)
+* copyright:                    Copyrights.             (line   6)
+* copyright-update:             Copyrights.             (line  11)
+* define-auto-insert:           Autoinserting.          (line  50)
+* define-skeleton:              Skeleton Language.      (line  68)
+* executable-self-display:      Executables.            (line  33)
+* executable-set-magic:         Executables.            (line  27)
+* hippie-expand:                Hippie Expand.          (line   6)
+* quickurl:                     QuickURL.               (line   5)
+* quickurl-add-url:             QuickURL.               (line  16)
+* quickurl-list:                QuickURL.               (line  16)
+* skeleton-further-elements:    Skeleton Language.      (line  62)
+* skeleton-insert:              Skeleton Language.      (line   6)
+* skeleton-pair-insert-maybe:   Inserting Pairs.        (line  14)
+* tempo-backward-mark:          Tempo.                  (line  10)
+* tempo-define-template:        Tempo.                  (line  20)
+* tempo-forward-mark:           Tempo.                  (line  10)
+* time-stamp:                   Timestamps.             (line   6)
+
+
+
+File: autotype-ja, Node: Variable Index, Prev: Command Index, Up: Top
+
+変数索引
+********
+
+* Menu:
+
+* auto-insert:                  Autoinserting.          (line  54)
+* auto-insert-alist:            Autoinserting.          (line  15)
+* auto-insert-prompt:           Autoinserting.          (line  70)
+* auto-insert-query:            Autoinserting.          (line  64)
+* copyright-current-year:       Copyrights.             (line  11)
+* copyright-limit:              Copyrights.             (line  11)
+* copyright-query:              Copyrights.             (line  23)
+* executable-chmod:             Executables.            (line   6)
+* executable-insert:            Executables.            (line  17)
+* executable-magicless-file-regexp: Executables.        (line  13)
+* executable-prefix:            Executables.            (line   6)
+* executable-query:             Executables.            (line  27)
+* hippie-expand-try-functions-list: Hippie Expand.      (line   6)
+* quickurl-url-file:            QuickURL.               (line   5)
+* skeleton-pair:                Inserting Pairs.        (line  14)
+* skeleton-pair-alist:          Inserting Pairs.        (line  27)
+* skeleton-pair-on-word:        Inserting Pairs.        (line  22)
+* skeleton-transformation:      Skeleton Language.      (line  17)
+* time-stamp-active:            Timestamps.             (line  10)
+* time-stamp-count:             Timestamps.             (line  14)
+* time-stamp-end:               Timestamps.             (line  14)
+* time-stamp-format:            Timestamps.             (line  10)
+* time-stamp-inserts-lines:     Timestamps.             (line  14)
+* time-stamp-line-limit:        Timestamps.             (line  14)
+* time-stamp-start:             Timestamps.             (line  10)
+* write-file-functions:         Timestamps.             (line   6)
+
+Tag table:
+Node: Top332
+Node: Using Skeletons2076
+Node: Wrapping Skeletons2944
+Node: Skeletons as Abbrevs4249
+Node: Skeleton Language4850
+Node: Inserting Pairs7880
+Node: Autoinserting9169
+Node: Copyrights11390
+Node: Executables12364
+Node: Timestamps13471
+Node: QuickURL14244
+Node: Tempo14905
+Node: Hippie Expand15519
+Node: Concept Index16135
+Node: Command Index17122
+Node: Variable Index18451
+
+End tag table

@@ -1,0 +1,5443 @@
+-*- coding: utf-8 -*-
+INFO-DIR-SECTION GNU programming tools
+START-INFO-DIR-ENTRY
+* Libtool(ja): (libtool-ja).           Generic shared library support script.
+END-INFO-DIR-ENTRY
+
+INFO-DIR-SECTION Individual utilities
+START-INFO-DIR-ENTRY
+* libtoolize(ja): (libtool-ja)Invoking libtoolize.     Adding libtool support.
+END-INFO-DIR-ENTRY
+
+   このファイルは，GNU Libtool 1.5を説明します．
+
+   Copyright (C) 1996-2003 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+File: libtool-ja.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
+
+Shared library support for GNU
+******************************
+
+このファイルはGNU Libtoolの説明で，それは，パッケージ開発者が一般的な
+共有ライブラリを提供することを可能にするスクリプトです．このエディショ
+ンはバージョン1.5を説明します．
+
+   libtoolを用いたときの問題の報告方法の情報は，*Note Reporting bugs::.
+
+* Menu:
+
+* Introduction::                What the heck is libtool?
+* Libtool paradigm::            How libtool's view of libraries is different.
+* Using libtool::               Example of using libtool to build libraries.
+* Invoking libtool::            Running the `libtool' script.
+* Integrating libtool::         Using libtool in your own packages.
+* Versioning::                  Using library interface versions.
+* Library tips::                Tips for library interface design.
+* Inter-library dependencies::  Libraries that depend on other libraries.
+* Dlopened modules::            `dlopen'ing libtool-created libraries.
+* Using libltdl::               Libtool's portable `dlopen' wrapper library.
+* Other languages::             Using libtool without a C compiler.
+* Troubleshooting::             When libtool doesn't work as advertised.
+* Maintaining::                 Information used by the libtool maintainer.
+* GNU Free Documentation License:: License for this manual.
+* Index::                       Full index.
+
+ --- 詳細なノードリスト ---
+
+はじめに
+
+* Motivation::                  Why does GNU need a libtool?
+* Issues::                      The problems that need to be addressed.
+* Other implementations::       How other people have solved these issues.
+* Postmortem::                  Learning from past difficulties.
+
+libtoolを使用する
+
+* Creating object files::       Compiling object files for libraries.
+* Linking libraries::           Creating libraries from object files.
+* Linking executables::         Linking object files against libtool libraries.
+* Debugging executables::       Running GDB on libtool-generated programs.
+* Installing libraries::        Making libraries available to users.
+* Installing executables::      Making programs available to users.
+* Static libraries::            When shared libraries are not wanted.
+
+`libtool'の呼び出し
+
+* Compile mode::                Creating library object files.
+* Link mode::                   Generating executables and libraries.
+* Execute mode::                Debugging libtool-generated programs.
+* Install mode::                Making libraries and executables public.
+* Finish mode::                 Completing a library installation.
+* Uninstall mode::              Removing installed executables and libraries.
+* Clean mode::                  Removing uninstalled executables and libraries.
+
+パッケージとlibtoolの統合
+
+* Makefile rules::              Writing `Makefile' rules for libtool.
+* Using Automake::              Automatically supporting libtool.
+* Configuring::                 Configuring libtool for a host system.
+* Distributing::                What files to distribute with your package.
+* Static-only libraries::       Sometimes shared libraries are just a pain.
+
+libtoolのコンフィグレーション
+
+* AC_PROG_LIBTOOL::             Configuring `libtool' in `configure.in'.
+
+パッケージにlibtoolを含める
+
+* Invoking libtoolize::         `libtoolize' command line options.
+* Autoconf .o macros::          Autoconf macros that set object file names.
+
+ライブラリインターフェースのバージョン
+
+* Interfaces::                  What are library interfaces?
+* Libtool versioning::          Libtool's versioning system.
+* Updating version info::       Changing version information before releases.
+* Release numbers::             Breaking binary compatibility for aesthetics.
+
+インターフェースデザインへの助言
+
+* C header files::              How to write portable include files.
+
+dlopenモジュール
+
+* Building modules::            Creating dlopenable objects and libraries.
+* Dlpreopening::                Dlopening that works on static platforms.
+* Finding the dlname::          Choosing the right file to `dlopen'.
+* Dlopen issues::               Unresolved problems that need your attention.
+
+libltdlを使用する
+
+* Libltdl interface::           How to use libltdl in your programs.
+* Modules for libltdl::         Creating modules that can be `dlopen'ed.
+* Thread Saftey in libltdl::	Registering callbacks for multi-thread safety.
+* User defined module data::    Associating data with loaded modules.
+* Module loaders for libltdl::  Creating user defined module loaders.
+* Distributing libltdl::        How to distribute libltdl with your package.
+
+他の言語でlibtoolを使用する
+
+* C++ libraries::
+
+トラブルシューティング
+
+* Libtool test suite::          Libtool's self-tests.
+* Reporting bugs::              How to report problems with libtool.
+
+libtoolのテストスイート
+
+* Test descriptions::           The contents of the test suite.
+* When tests fail::             What to do when a test fails.
+
+libtoolのための管理メモ
+
+* New ports::                   How to port libtool to new systems.
+* Tested platforms::            When libtool was last tested.
+* Platform quirks::             Information about different library systems.
+* libtool script contents::     Configuration information that libtool uses.
+* Cheap tricks::                Making libtool maintainership easier.
+
+新しいシステムへlibtoolを移植する
+
+* Information sources::         Where to find relevant documentation
+* Porting inter-library dependencies::  Implementation details explained
+
+プラットフォームの癖
+
+* References::                  Finding more information.
+* Compilers::                   Creating object files from source files.
+* Reloadable objects::          Binding object files together.
+* Multiple dependencies::	Removing duplicate dependent libraries.
+* Archivers::                   Programs that create static archives.
+
+
+File: libtool-ja.info,  Node: Introduction,  Next: Libtool paradigm,  Prev: Top,  Up: Top
+
+1 はじめに
+**********
+
+これまで，ソースコードパッケージの開発者が共有ライブラリの能力を利用し
+たい場合，パッケージを実行するそれぞれのプラットフォームに対し，カスタ
+ムサポートコードを書く必要がありました．パッケージインストーラがビルド
+されるライブラリの種類を選択できるように，コンフィグレーションインター
+フェースを設計する必要もありました．
+
+   GNU Libtoolは，一つのスクリプトでプラットフォーム特有の依存性とユーザ
+インターフェースの両方をカプセル化することで，開発者の仕事を単純にしま
+す．GNU Libtoolは，それぞれのホストの形式の完全な機能を，一般的なイン
+タフェースを通して利用できるが，やっかいな癖はプログラマから隠されるよ
+うに設計されています．
+
+   GNU Libtoolの一貫したインターフェースは再保証されます... ユーザは
+好みのソースコードパッケージを共有ライブラリにビルドするため，不明瞭な
+ドキュメントを読む必要がありません．パッケージの`configure'スクリ
+プト(またはその同等品)を実行するだけで，libtoolがいやな仕事をすべて行っ
+てくれます．
+
+このドキュメント全体にいくつかの例があります．すべて同じ環境を仮定して
+います．我々は，ライブラリ`libhello'を一般的な方法でビルドしたい
+と思っています．
+
+   `libhello'は，共有ライブラリ，スタティックライブラリ，または，そ
+の両方になります... libtoolで移植できるホストシステムで利用可能な
+すべてのものです．
+
+   この章では，libtoolの最初の設計思想を説明します．歴史に興味がなかった
+り，堅実な方法で拡張されているlibtoolのコードを書きたい場合，自由に飛
+ばして次の章へ行ってください．
+
+* Menu:
+
+* Motivation::                  Why does GNU need a libtool?
+* Issues::                      The problems that need to be addressed.
+* Other implementations::       How other people have solved these issues.
+* Postmortem::                  Learning from past difficulties.
+
+
+File: libtool-ja.info,  Node: Motivation,  Next: Issues,  Up: Introduction
+
+1.1 libtoolを書いた動機
+=======================
+
+1995年初頭から，数人のGNU開発者はそれぞれ，パッケージに対する共有ライ
+ブラリのサポートの重要性を認識していました．そのように変更する主な動機
+は，GNUプログラムでのコードのモジュール化と再利用を(概念的，物理的の両
+方で)促進するためです．
+
+そのような要求は，パッケージのインストーラが要求するすべてのライブラリ
+の形式が可能になるように，GNUパッケージにライブラリを組み込む方法を一
+般的なものにする必要があることを意味します．問題は，異なるプラットフォー
+ムで共有ライブラリを作成する標準的な手法が無いことです．
+
+   以下のセクションで，GNUでの共有ライブラリのサポートが直面している重大
+な問題と，共有ライブラリのサポートをlibtoolで標準化した方法を概説しま
+す．
+
+   以下の仕様書が，このシステムの開発と評価で使用されました．
+
+  1. システムはできる限り簡潔である必要があります．
+
+  2. システムは，GNU管理者がより簡単に使用できるように，GNU Autoconfと
+     Automakeユーティリティと完全に統合する必要があります．しかし，GNUパッ
+     ケージ以外でも使用できるように，これらのツールを要求してはなりません．
+
+  3. 他の(GNUでない)アーキテクチャとツールへの移植が望まれます．
+
+
+File: libtool-ja.info,  Node: Issues,  Next: Other implementations,  Prev: Motivation,  Up: Introduction
+
+1.2 問題の実装
+==============
+
+以下の問題は，再利用可能なあらゆる共有ライブラリシステム，特にlibtool
+で解決する必要があります．
+
+  1.
+     パッケージのインストーラで，ビルドされるライブラリの種類を制御可能にす
+     べきです．
+
+  2.
+     インストールされていないライブラリとダイナミックにリンクされるプログラ
+     ムの実行を巧妙に行うことを可能にします．`LD_LIBRARY_PATH'が(サポー
+     トしている場合は)正しく設定されている必要があり，そうでなければプログ
+     ラムの実行に失敗するでしょう．
+
+  3.
+     システムは，共有ライブラリをサポートしていないホストでさえ，堅実に処理
+     する必要があります．
+
+  4.
+     共有ライブラリをビルドするときに必要なコマンドは，ホストごとに大きく異
+     なる可能性があります．これらは，コンフィグレーション時に一定の方法で決
+     定する必要があります．
+
+  5.
+     インストールされる共有ライブラリの接尾子が常に明確なわけではありません．
+     通常，ファイル名はホストごとに同じだということを仮定されるので，
+     `Makefile'規則が難しくなります．
+
+  6.
+     共有ライブラリをその場でアップグレード可能なように，システムは，単純な
+     ライブラリバージョンナンバーの抽象化が必要です．バイナリ互換を最大にす
+     るため，ライブラリへのインターフェースの設計方法を，プログラマに伝える
+     べきです．
+
+  7. インストールする`Makefile'ターゲットは，パッケージインストーラに
+     特定の環境変数(`LD_LIBRARY_PATH'または同等のもの)を設定したり，
+     `ldconfig'を実行するよう，警告する必要があります．
+
+
+File: libtool-ja.info,  Node: Other implementations,  Next: Postmortem,  Prev: Issues,  Up: Introduction
+
+1.3 その他の実装
+================
+
+libtoolが開発されるまで，多くのフリーソフトウエアパッケージは，独自の
+共有ライブラリをビルドしインストールしていました．既存の機能の再発明を
+避けるために，これらのパッケージを最初に調査しました．
+
+   さて，これらのパッケージに，libtoolが必要としている共有ライブラリシス
+テムの詳細な文章が無いのは明らかです．そのため，それ以外のパッケージは
+影響するので多少断念されました．
+
+
+File: libtool-ja.info,  Node: Postmortem,  Prev: Other implementations,  Up: Introduction
+
+1.4 その他の実装の近代的な解析
+==============================
+
+調査されたそれぞれの実装は，多くの異なるホストシステムに対して，予定し
+ていた仕事をすべて公平に行いました．しかし，再利用できるコンポーネント
+として一般的に機能するものは，これらの解決法にはないようでした．
+
+ほとんどのものは，実装で行なわれていることを正確に理解すること無く使用
+する(まして，変更する)には複雑すぎ，それらは通常，文章化されていません
+でした．
+
+   異なるベンダーはライブラリについて異なる見解を持つこと，そして，当然
+_動作する_という単一のパラダイムを自信を持って定めているものが調
+査したパッケージには無かったことが主な難点です．
+
+理想としては，既存のライブラリシステムが一貫して動作するような一連の拡
+張と変更として実装されている標準物に，libtoolがなることです．しかし，
+オペレーティングシステム開発者に悪い方法を修正させることは簡単な仕事で
+はなく，バグが多く，壊れていて，混乱したオペレーティングシステム上でさ
+え，今すぐに共有ライブラリをビルドしたいと，人々は思っていました．
+
+   このため，libtoolは独立したシェルスクリプトとして設計されました．それ
+は，異なるプラットフォーム上のコンパイラスイートを，堅実で強力なインター
+フェースを用いて包み隠すことで，`Makefile'の書き手を悩ませるライ
+ブラリのビルドでの問題と矛盾から隔離しています．
+
+運が良ければ，libtoolは役に立ち，GNUコミュニティで使用され，そして，そ
+れを書くとき学んだ教訓は，将来のライブラリシステムの設計に採用されるで
+しょう．
+
+
+File: libtool-ja.info,  Node: Libtool paradigm,  Next: Using libtool,  Prev: Introduction,  Up: Top
+
+2 libtoolのパラダイム
+*********************
+
+最初は，ライブラリのオブジェクト形式の不特定多数をサポートするように
+libtoolは設計されました．その後，libtoolはより多くのプラットフォームに
+移植され，ライブラリとプログラムの間の関係を記述するため，新しいパラダ
+イムが徐々に開発されました．
+
+   要約すると，"ライブラリは複数のエントリポイントと，より正式に定義され
+たインターフェースがあるプログラムである．"ということです．
+
+libtoolのバージョン0.7は，この新しいパラダイムを反映するため，完全に再
+設計され書き換えられました．今のところ成功しているようです．libtoolは，
+以前よりより単純になり，より役に立ちます．
+
+   libtoolパラダイムを導入する最善の方法は，それぞれの例を用いて，既存の
+ライブラリシステムのパラダイムと比較することです．それは新しい考え方な
+ので吸収するまで少し時間がかかるかもしれませんが，理解したとき世界がよ
+り単純化されるでしょう．
+
+
+File: libtool-ja.info,  Node: Using libtool,  Next: Invoking libtool,  Prev: Libtool paradigm,  Up: Top
+
+3 libtoolを使用する
+*******************
+
+libtoolが人生をより単純にする方法が分かるまで，独自のパッケージで
+libtoolを使用することを話す意味はありません．この章の例は，標準的なラ
+イブラリのビルド処理と，libtoolの処理を，二つの異なるプラットフォーム
+で比較することで，主な特徴を紹介します．
+
+`a23'
+     スタティックライブラリのみのUltrix 4.2プラットフォーム．
+
+`burger'
+     共有ライブラリを持つ，NetBSD/i386 1.2プラットフォーム．
+
+   独自のプラットフォームの例をこれに続けることが可能で，それは，libtool
+でインストールされた，前もってコンフィグレーションされているlibtoolス
+クリプトを使用します(*note Configuring::)．
+
+   以下の例のソースファイルは，libtool配布物の`demo'サブディレクトリ
+から持ってきています．ファイル`foo.c'と`hello.c'からライブラ
+リ`libhello'をビルドしていると仮定してください．
+
+   `foo.c'ソースファイルが`cos'数学ライブラリ関数を使用していて，
+それは通常，Cライブラリではなく単独の数学ライブラリで見つかることに注
+意してください(*note Trigonometric Functions: (libc)Trig
+Functions.)．そのため，`foo.o'や `foo.lo'
+を実行形式やライブラリにリンクするときは，常にリンク行の 最後に`-lm'
+を加える必要があります(*note Inter-library dependencies::)．
+
+   同じ規則は，標準Cライブラリに無い関数を使用するとき，常に当てはまりま
+す...これらのオブジェクトに対しリンクするときは，適切な
+`-lNAME'フラグをリンク行の終りに加える必要があります．
+
+   ライブラリをビルドした後，`libhello'に対して`main.o'をリンク
+することでプログラムを作成したいと思います．
+
+* Menu:
+
+* Creating object files::       Compiling object files for libraries.
+* Linking libraries::           Creating libraries from object files.
+* Linking executables::         Linking object files against libtool libraries.
+* Debugging executables::       Running GDB on libtool-generated programs.
+* Installing libraries::        Making libraries available to users.
+* Installing executables::      Making programs available to users.
+* Static libraries::            When shared libraries are not wanted.
+
+
+File: libtool-ja.info,  Node: Creating object files,  Next: Linking libraries,  Up: Using libtool
+
+3.1 オブジェクトファイルの作成
+==============================
+
+ソースファイルからオブジェクトファイルを作成するため，コンパイラは`-c'
+フラグ(とその他の必要なあらゆるフラグ)とともに呼び出されます．
+
+     burger$ gcc -g -O -c main.c
+     burger$
+
+   上記のコンパイラコマンドは，ソースファイル`main.c'からオブジェク
+トファイル`main.o'を生成します．
+
+ほとんどのライブラリシステムでは，スタティックライブラリの一部となるオ
+ブジェクトファイルを作成することは，実行可能な形式にリンクされるオブジェ
+クトファイルを作成することと同じくらい単純です．
+
+     burger$ gcc -g -O -c foo.c
+     burger$ gcc -g -O -c hello.c
+     burger$
+
+   しかし，共有ライブラリは"position-independent code" (PIC)のみから
+ビルドされます．そのため，標準のposition-dependent codeではなくPICを生
+成するようコンパイラに伝えるため，特定のフラグを渡す必要があります．
+
+   これがライブラリ実装の詳細なので，libtoolは個別の(`.o'の代わりに
+`.lo'で終わる)ライブラリオブジェクトファイルを用いて，複雑なPICコ
+ンパイラフラグを隠蔽します．共有ライブラリが無い(または，特定のPICフラ
+グが無い)システムでは，これらのライブラリオブジェクトファイルは"標準
+の"オブジェクトファイルと同じです．
+
+   `foo.c'と`hello.c'に対するライブラリオブジェクトファイルを作
+成するため，単純に標準のコンパイルコマンドを引数として，libtoolを呼び
+出してください(*note Compile mode::)．
+
+     a23$ libtool --mode=compile gcc -g -O -c foo.c
+     gcc -g -O -c foo.c
+     echo timestamp > foo.lo
+     a23$ libtool --mode=compile gcc -g -O -c hello.c
+     gcc -g -O -c hello.c
+     echo timestamp > hello.lo
+     a23$
+
+   それぞれの呼び出しで，libtoolが二つのファイルを作成することに注意して
+ください．`.lo'ファイルはライブラリオブジェクトで，それは共有ライ
+ブラリにビルドされ，`.o'ファイルは標準的なオブジェクトファイルで
+す．`a23'では，スタティックライブラリのみサポートされているので，
+ライブラリオブジェクトはタイムスタンプのみです．
+
+共有ライブラリのあるシステムでは，ライブラリオブジェクトと標準オブジェ
+クトが異なるように，libtoolはPIC生成フラグをコンパイルコマンドに自動的
+に挿入します．
+
+     burger$ libtool --mode=compile gcc -g -O -c foo.c
+     gcc -g -O -c -fPIC -DPIC foo.c
+     mv -f foo.o foo.lo
+     gcc -g -O -c foo.c >/dev/null 2>&1
+     burger$ libtool --mode=compile gcc -g -O -c hello.c
+     gcc -g -O -c -fPIC -DPIC hello.c
+     mv -f hello.o hello.lo
+     gcc -g -O -c hello.c >/dev/null 2>&1
+     burger$
+
+   二番目に実行されるGCCがその出力を破棄していることに注意してください．
+これは，コンパイラの警告がうるさく重複しないために行われます．
+
+
+File: libtool-ja.info,  Node: Linking libraries,  Next: Linking executables,  Prev: Creating object files,  Up: Using libtool
+
+3.2 ライブラリのリンク
+======================
+
+libtoolを用いない場合，スタティックライブラリを作成するため，プログラ
+マは`ar'コマンドを呼び出していました．
+
+     burger$ ar cru libhello.a hello.o foo.o
+     burger$
+
+   しかしもちろん，それだけではあまりに単純すぎて，多くのシステムでは(そ
+れ以上のカルマや何かを与えるため)結果として生成されたライブラリ上で，
+`ranlib'コマンドを実行する必要があります．
+
+     burger$ ranlib libhello.a
+     burger$
+
+   libtoolの"ライブラリはプログラム"というアプローチであるといるこの作
+業に対して，Cコンパイラを使用することはより自然に感じられます．その
+ため，共有ライブラリが無いプラットフォームでは，libtoolは単純にシステ
+ムの`ar'(そして可能なら`ranlib')コマンドのラッパーとして動作 します．
+
+   また，libtoolのライブラリ名は，標準の名前(`.a'接尾子の代わりに
+`.la'接尾子を持ちます)とは異なります．libtoolの引数は，コンパイラで
+`libhello.la'という名の実行形式を生成するために使用したのと同じも
+のです(*note Link mode::)．
+
+     a23$ libtool --mode=link gcc -g -O -o libhello.la foo.o hello.o
+     libtool: cannot build libtool library `libhello.la' from non-libtool \
+                     objects
+     a23$
+
+   あぁ！libtoolは通常のエラーを得てしまいましたた...ライブラリオブジェ
+クトの代わりに，標準のオブジェクトからライブラリをビルドしています．こ
+れはスタティックライブラリでは問題ありませんが，共有ライブラリシステム
+では非常に重要です．
+
+そのため，今回はライブラリオブジェクトファイルを用いて，もう一度試して
+みましょう．`foo.c'が`cos'数学ライブラリを使用しているので，
+コマンドラインに`-lm'を加える必要があることも忘れないでください (*note
+Using libtool::)．
+
+共有ライブラリをビルドするその他の複雑なことは，(最終的に)インストール
+されるディレクトリパス(この場合は，`/usr/local/lib')
+(1)を指定する必要があることです．
+
+     a23$ libtool --mode=link gcc -g -O -o libhello.la foo.lo hello.lo \
+                     -rpath /usr/local/lib -lm
+     mkdir .libs
+     ar cru .libs/libhello.a foo.o hello.o
+     ranlib .libs/libhello.a
+     creating libhello.la
+     a23$
+
+さて，共有ライブラリのプラットフォーム上で同じトリックを試してみましょ
+う．
+
+     burger$ libtool --mode=link gcc -g -O -o libhello.la foo.lo hello.lo \
+                     -rpath /usr/local/lib -lm
+     mkdir .libs
+     ld -Bshareable -o .libs/libhello.so.0.0 foo.lo hello.lo -lm
+     ar cru .libs/libhello.a foo.o hello.o
+     ranlib .libs/libhello.a
+     creating libhello.la
+     burger$
+
+   さてそれはかなり賢いです...libtoolは共有ライブラリを作成するため，
+スタティックライブラリと同様に，曖昧な`ld'コマンドを実行しただけ です．
+
+   libtoolが，現在のディレクトリではなく，`.libs'サブディレ
+クトリに余分なファイルを作成することに注意してください．この機能は，ビ
+ルドディレクトリをきれいにするのをより簡単にするためと，たまたま
+libtoolの使用を忘れていて他のプログラムを実行するとき，確実に手ひどく
+失敗するので役に立ちます．
+
+   ---------- Footnotes ----------
+
+   (1) `rpath'を指定しない場合，libtoolはコンビニエンスアーカ
+イブをビルドしますが，それは共有ライブラリではありません(*note Static
+libraries::)
+
+
+File: libtool-ja.info,  Node: Linking executables,  Next: Debugging executables,  Prev: Linking libraries,  Up: Using libtool
+
+3.3 実行形式のリンク
+====================
+
+ライブラリを実行形式とリンクする前に，"インストール"する(恒久的な
+場所にそれを配置する)場所を選択した場合，リンクするためにlibtoolを使用
+する必要はありません．ライブラリの位置を指定するため，単純に適切な
+`-L'と`-l'フラグを使用してください．
+
+システムのリンカによっては，結果として生じる実行形式に，共有ライブラリ
+の完全なディレクトリ名の符号化を強要するものもあります．libtoolは，恒
+久的なディレクトリ名のみをインストールされた実行形式に書き込むことを確
+実にするため，特別な魔法でこの設計ミスに関して動作する必要があります．
+
+このバグの重要性は見落としてはなりません．それによるプログラムの暴走は
+明白ではありません．それはセキュリティホールを作成し，さらに悪いことに
+は，パッケージのインストール後にライブラリソースコードを編集した場合，
+インストールされたプログラムの動作を変更してしまうでしょう！
+
+そのため，インストールする前にライブラリとプログラムをリンクさせたい場
+合，リンクするためにlibtoolを使用する必要があります．
+
+インストールされていないライブラリとリンクする古い方法は，以下のように
+なります．
+
+     burger$ gcc -g -O -o hell.old main.o libhello.a -lm
+     burger$
+
+   libtoolの方法は，ほとんど同じです(1)(*note Link mode::)．
+
+     a23$ libtool --mode=link gcc -g -O -o hell main.o libhello.la -lm
+     gcc -g -O -o hell main.o ./.libs/libhello.a -lm
+     a23$
+
+   真実としてはあまりに単純に見えます．libtoolが行うことは，
+`libhello.la'を`./.libs/libhello.a'に変換することが
+すべてですが，`a23'には共有ライブラリがないことを忘れないでくださ い．
+
+   `burger'では，状況が異なります．
+
+     burger$ libtool --mode=link gcc -g -O -o hell main.o libhello.la -lm
+     gcc -g -O -o .libs/hell main.o -L./.libs -R/usr/local/lib -lhello -lm
+     creating hell
+     burger$
+
+   さて，`libhello.la'が既にインストールされていると仮定し，新しいプ
+ログラムをそれとリンクしたいとします．自分でそれがある場所を探し，以下
+を実行します．
+
+     burger$ gcc -g -O -o test test.o -L/usr/local/lib -lhello
+
+   しかし，`/usr/local/lib'が標準のライブラリ検索パスに無い場合，
+`test'を実行することはできません．しかし，既にインストールされて
+いるlibtoolライブラリとリンクするためlibtoolを使用する場合，それは The
+Right Thing (TM) (正解)となります．
+
+     burger$ libtool --mode=link gcc -g -O -o test test.o /usr/local/lib/libhello.la
+     gcc -g -O -o .libs/test test.o -Wl,--rpath
+     -Wl,/usr/local/lib /usr/local/lib/libhello.a -lm
+     creating test
+     burger$
+
+   libtoolが，ライブラリlibhello.laが依存している`-lm'同様，必要なラ
+ンタイムパスフラグを追加していることに注意してください．いいですね，ふっ
+ふ？
+
+   libtoolがラッパースクリプトを作成したので，インストールとデバッグにも
+libtoolを使用したほうがいいでしょう．しかし，プログラムはインストール
+されていないlibtoolライブラリには全く依存しないので，ラッパースクリプ
+トを用いない場合でもおそらく有用でしょう．この場合は，ラッパースクリプ
+トの作成を避けるため，おそらくより賢くlibtoolを作成できたでしょうが，
+これは読者の演習として残しておきます．
+
+   実行形式`hell'は，実際には`.libs'サブディレクトリに
+作成されることに注意してください．そして，ラッパースクリプトは現在のディ
+レクトリに作成されます．
+
+   NetBSD 1.2では，libtoolは`-R/usr/local/lib'コンパイラフラグを使用
+して，`libhello'のディレクトリのインストールを符号化します．そし
+て，ラッパースクリプトは，正しくインストールされるまで実行形式が正しい
+(`./.libs'にある)共有ライブラリを見つけることを保証しま す．
+
+   二つの異なるプログラムを比較してみましょう．
+
+     burger$ time ./hell.old
+     Welcome to GNU Hell!
+     ** This is not GNU Hello.  There is no built-in mail reader. **
+             0.21 real         0.02 user         0.08 sys
+     burger$ time ./hell
+     Welcome to GNU Hell!
+     ** This is not GNU Hello.  There is no built-in mail reader. **
+             0.63 real         0.09 user         0.59 sys
+     burger$
+
+ラッパースクリプトは実行にかなり時間がかかりますが，共有ライブラリがイ
+ンストールされていなくても，少なくとも結果は正しくなります．
+
+そのため，共有ライブラリがもたらした，全体的なスペース削減ははどうなっ
+ているのでしょう？
+
+     burger$ ls -l hell.old libhello.a
+     -rwxr-xr-x  1 gord  gord  15481 Nov 14 12:11 hell.old
+     -rw-r--r--  1 gord  gord   4274 Nov 13 18:02 libhello.a
+     burger$ ls -l .libs/hell .libs/libhello.*
+     -rwxr-xr-x  1 gord  gord  11647 Nov 14 12:10 .libs/hell
+     -rw-r--r--  1 gord  gord   4274 Nov 13 18:44 .libs/libhello.a
+     -rwxr-xr-x  1 gord  gord  12205 Nov 13 18:44 .libs/libhello.so.0.0
+     burger$
+
+   うーん，だめだなあ(2)．おそらく，
+私はこのプロジェクトを破壊し，作成中のゆりかごを取り上げたほうがいいで
+しょう．
+
+   実際，それは重要なことを証明しています．共有ライブラリには，それが(関
+連する)複雑さのため，オーバーへッドをがあります．この状況では，ダイナ
+ミックの価値は8キロバイトで，報酬は約4キロバイトです．そのため，少なく
+とも二，三個以上のプログラムとリンクするまで，共有される
+`libhello'を維持することは利点になりません．
+
+   ---------- Footnotes ----------
+
+   (1) しかし，インストールされて
+いないlibtoolライブラリにリンクするために，`-L'や`-l'フラグ
+の使用は避けたほうがいいでしょう．`.la'ファイルに対する，
+`../intl/libintl.la'のような相対パスのみを指定してください．これ
+は，インストールされていない共有ライブラリに対しリンクするとき，あらゆ
+る曖昧さを取り除くため決定された設計です．
+
+   (2) 訳注：原文は，Well, that sucks.
+
+
+File: libtool-ja.info,  Node: Debugging executables,  Next: Installing libraries,  Prev: Linking executables,  Up: Using libtool
+
+3.4 実行形式のデバッグ
+======================
+
+`hell'が複雑なプログラムの場合，システムにインストールする前にそ
+れのテストとデバッグを間違いなく行いたいでしょう．上記のセクションで，
+libtoolラッパースクリプトが，プログラムを直接実行することを可能にする
+方法を見ましたが，残念ながら，このメカニズムはデバッガの邪魔になります．
+
+     burger$ gdb hell
+     GDB is free software and you are welcome to distribute copies of it
+      under certain conditions; type "show copying" to see the conditions.
+     There is no warranty for GDB; type "show warranty" for details.
+     GDB 4.16 (i386-unknown-netbsd), (C) 1996 Free Software Foundation, Inc.
+
+     "hell": not in executable format: File format not recognized
+
+     (gdb) quit
+     burger$
+
+   残念です．GDBは実行形式がある場所が分からないので動作しません．そのた
+め，もう一度実行形式でGDBを呼び出してみてください．
+
+     burger$ gdb .libs/hell
+     trick:/home/src/libtool/demo$ gdb .libs/hell
+     GDB is free software and you are welcome to distribute copies of it
+      under certain conditions; type "show copying" to see the conditions.
+     There is no warranty for GDB; type "show warranty" for details.
+     GDB 4.16 (i386-unknown-netbsd), (C) 1996 Free Software Foundation, Inc.
+     (gdb) break main
+     Breakpoint 1 at 0x8048547: file main.c, line 29.
+     (gdb) run
+     Starting program: /home/src/libtool/demo/.libs/hell
+     /home/src/libtool/demo/.libs/hell: can't load library 'libhello.so.2'
+
+     Program exited with code 020.
+     (gdb) quit
+     burger$
+
+   あぁ．さて，GDBは，`hell'がリンクしている共有ライブラリを見つける
+ことができないため文句を言いました．そのため，正しいライブラリパスを設
+定してデバッガを実行するために，libtoolを使う必要があります．幸い，
+`.libs'ディレクトリを完全に忘れて，そのままの実行形式の
+ラッパーで実行可能です(*note Execute mode::)．
+
+     burger$ libtool --mode=execute gdb hell
+     GDB is free software and you are welcome to distribute copies of it
+      under certain conditions; type "show copying" to see the conditions.
+     There is no warranty for GDB; type "show warranty" for details.
+     GDB 4.16 (i386-unknown-netbsd), (C) 1996 Free Software Foundation, Inc.
+     (gdb) break main
+     Breakpoint 1 at 0x8048547: file main.c, line 29.
+     (gdb) run
+     Starting program: /home/src/libtool/demo/.libs/hell
+
+     Breakpoint 1, main (argc=1, argv=0xbffffc40) at main.c:29
+     29	  printf ("Welcome to GNU Hell!\n");
+     (gdb) quit
+     The program is running.  Quit anyway (and kill it)? (y or n) y
+     burger$
+
+
+File: libtool-ja.info,  Node: Installing libraries,  Next: Installing executables,  Prev: Debugging executables,  Up: Using libtool
+
+3.5 ライブラリのインストール
+============================
+
+libtoolが無いシステムでライブラリをインストールすることは，全く簡単で
+す... それらをその場所にコピーするだけです．(1)
+
+     burger$ su
+     Password: ********
+     burger# cp libhello.a /usr/local/lib/libhello.a
+     burger#
+
+   おっと，`ranlib'コマンドを忘れないでください．
+
+     burger# ranlib /usr/local/lib/libhello.a
+     burger#
+
+   libtoolのインストールは，同様に全く単純です．通常使用する，
+`install'や`cp'コマンドをそのまま使用してください (*note Install
+mode::)．
+
+     a23# libtool --mode=install cp libhello.la /usr/local/lib/libhello.la
+     cp libhello.la /usr/local/lib/libhello.la
+     cp .libs/libhello.a /usr/local/lib/libhello.a
+     ranlib /usr/local/lib/libhello.a
+     a23#
+
+   アンインストールでlibtoolを助け(*note Uninstall mode::)，リンクし
+(*note Linking executables::)，dlopenでプログラムを助ける (*note
+Dlopened modules::)ため，libtoolのライブラリ`libhello.la'
+もインストールされることに注意してください．
+
+   共有ライブラリの例は，以下のようになります．
+
+     burger# libtool --mode=install install -c libhello.la /usr/local/lib/libhello.la
+     install -c .libs/libhello.so.0.0 /usr/local/lib/libhello.so.0.0
+     install -c libhello.la /usr/local/lib/libhello.la
+     install -c .libs/libhello.a /usr/local/lib/libhello.a
+     ranlib /usr/local/lib/libhello.a
+     burger#
+
+   ライブラリインストール時にBSD互換のinstallプログラムを使用する場合，
+`-s'(シンボルのstrip)フラグを指定すると安全です．libtoolは `-s'
+フラグを無視する，またはライブラリからデバッグとコンパイラシ
+ンボルのみをstripするプログラムを実行します．
+
+ライブラリを一度配置すると，使用する前に必要な追加のコンフィグレーショ
+ンを行います．最初に，ビルド時に使用した`-rpath'フラグと同じ場所
+に，ライブラリが実際にインストールされていることを確かめる必要がありま
+す．
+
+   そして，`libtool -n --mode=finish LIBDIR'を実行すると，行う
+ことのヒントが与えられるはずです(*note Finish mode::)．
+
+     burger# libtool -n --mode=finish /usr/local/lib
+     PATH="$PATH:/sbin" ldconfig -m /usr/local/lib
+     -----------------------------------------------------------------
+     Libraries have been installed in:
+        /usr/local/lib
+
+     To link against installed libraries in a given directory, LIBDIR,
+     you must use the `-LLIBDIR' flag during linking.
+
+      You will also need to do one of the following:
+        - add LIBDIR to the `LD_LIBRARY_PATH' environment variable
+          during execution
+        - add LIBDIR to the `LD_RUN_PATH' environment variable
+          during linking
+        - use the `-RLIBDIR' linker flag
+
+     See any operating system documentation about shared libraries for
+     more information, such as the ld and ld.so manual pages.
+     -----------------------------------------------------------------
+     burger#
+
+これらのステップを完了した後，インストールされたライブラリの使用開始が
+可能になります．作成されたライブラリに依存する実行形式もインストールで
+きます．
+
+   ---------- Footnotes ----------
+
+   (1) 偶発的にライ
+ブラリをstripしないでください，そうすると使用不可能になります．
+
+
+File: libtool-ja.info,  Node: Installing executables,  Next: Static libraries,  Prev: Installing libraries,  Up: Using libtool
+
+3.6 実行形式のインストール
+==========================
+
+インストールされていないlibtoolライブラリに対して，実行形式をリンクす
+るためにlibtoolを使用した場合(*note Linking executables::)，ライブラリ
+をインストールした後に実行形式をインストールするため，libtoolを使用す
+る必要があります．
+
+   それでは，Ultrixの例を対象に，以下のように実行します．
+
+     a23# libtool install -c hell /usr/local/bin/hell
+     install -c hell /usr/local/bin/hell
+     a23#
+
+   共有ライブラリシステムでは，libtoolはラッパースクリプトを無視し，正し
+いバイナリをインストールします．
+
+     burger# libtool install -c hell /usr/local/bin/hell
+     install -c .libs/hell /usr/local/bin/hell
+     burger#
+
+
+File: libtool-ja.info,  Node: Static libraries,  Prev: Installing executables,  Up: Using libtool
+
+3.7 スタティックライブラリとのリンク
+====================================
+
+libtoolの旨味を知って，`ar'と`ranlib'の愚かさへなぜ戻るので
+しょう？さて，決して共有されるはずがないスタティックアーカイブをつくる
+ことが望ましいときもあります．最もよくある状況として，複数の異なるプロ
+グラムをビルドするために使用する，オブジェクトファイルの集まりを持って
+いるときがあります．個々のプログラムに対し，すべてのオブジェクトファイ
+ルをリストアップする代わりに，それらのオブジェクトから"コンビニエンス
+ライブラリ"を作成し，ライブラリとプログラムをリンクすることが可能です．
+この技術は，他のディレクトリのライブラリへのリンクをサポートするので，
+他のディレクトリのソースからビルドされるオブジェクトファイルをリンクす
+るサポートが欠けている，GNU automakeを補うためによく使用されます．この
+制限は，リリース1.4までのGNU automakeに当てはまります．より新しいリリー
+スは，他のディレクトリのソースをサポートするでしょう．
+
+このコンビニエンスライブラリとプログラムをリンクしたいだけの場合，完全
+にlibtoolを無視し，古い`ar'と`ranlib'コマンド(や，対応する GNU automake
+`_LIBRARIES'規則)が使用可能です．(おそらく使用したく
+はないでしょうが)libtoolを使用して，コンビニエンスライブラリをインストー
+ルすることさえ可能です．
+
+     burger$ libtool --mode=install ./install-sh -c libhello.a /local/lib/libhello.a
+     ./install-sh -c libhello.a /local/lib/libhello.a
+     ranlib /local/lib/libhello.a
+     burger$
+
+   スタティックライブラリのインストールにlibtoolを使用すると，ライブラリ
+が(`-s'フラグを使用したインストーラの場合のように)偶然stripされる
+ことから守り，自動的に実行される正しい`ranlib'コマンドと同様にな
+ります．
+
+   しかし，libtoolライブラリは単にオブジェクトファイルの集合以上です．そ
+れらは古いアーカイブにはない，ライブラリの依存情報も伝えることが可能で
+す．libtoolのスタティックなコンビニエンスライブラリを作成したい場合，
+スタティックライブラリのみに興味があることを示すため，`-rpath'フ
+ラグを省略し`-static'を使用することができます．そのようなスタティッ
+クライブラリとリンクするとき，libtoolは実際にすべてのオブジェクトファ
+イルと依存するライブラリをプログラムにリンクします．
+
+   `-rpath'と`-static'の両方を省略した場合，libtoolは，他の
+libtoolライブラリで，共有ライブラリの作成にすら使用可能なlibtoolのコン
+ビニエンスライブラリを作成します．スタティックな場合のように，ライブラ
+リは一組のオブジェクトファイルと依存するライブラリの別名として動作しま
+すが，この場合，オブジェクトファイルは共有ライブラリに含まれるほうが適
+しています．しかし，直接または間接的に，単一のプログラムやライブラリに
+単一のコンビニエンスライブラリをリンクしないように注意して下さい．さも
+なければ，シンボル再定義に関するエラーを得るでしょう．
+
+   GNU automakeを使用するとき，`-rpath'オプションがリンク時に渡され
+ないように，コンビニエンスライブラリに対する`lib_LTLIBRARIES'の代
+わりに`noinst_LTLIBRARIES'を使用した方が良いでしょう．
+
+経験的に，最大一つのlibtoolライブラリにlibtoolのコンビニエンスライブラ
+リをリンクし，プログラムにはリンクしないようにしてください，そして，
+libtoolのコンビニエンススタティックライブラリを一つのプログラムにのみ
+リンクし，それは，ライブラリ依存情報をコンビニエンススタティックライブ
+ラリのユーザに伝えることが必要な場合のみにしてください．
+
+スタティックなリンクが適している，その他の一般的な状況は，独立したバイ
+ナリを作成するときです．リンクにlibtoolを使用し，`-all-static'フ
+ラグを加えてください．
+
+
+File: libtool-ja.info,  Node: Invoking libtool,  Next: Integrating libtool,  Prev: Using libtool,  Up: Top
+
+4 `libtool'の呼び出し
+*********************
+
+`libtool'プログラムは以下の構文になります．
+
+     libtool [OPTION]... [MODE-ARG]...
+
+そして，以下のオプションを受け入れます．
+
+`--config'
+     libtoolのコンフィグレーション変数を表示し終了します．
+
+`--debug'
+     シェルスクリプトの実行の追跡を標準出力にダンプします．これは多くの出力
+     を生成するので，`less'(や`more')にパイプしたり，ファイルにリ
+     ダイレクトしたいかもしれません．
+
+`-n'
+`--dry-run'
+     あらゆるファイルを作成，編集，削除せず，libtoolで実行されるコマンドの
+     みを表示します．
+
+`--features'
+     基本的なコンフィグレーションオプションを表示します．これは，パッケージ
+     がビルドするライブラリを，スタティックまたは共有のいずれにするか決定す
+     る方法を提供します．
+
+`--preserve-dup-deps'
+     ライブラリ内で重複する依存性を削除しません．スタティックライブラリを用
+     いたパッケージのビルド時に，ライブラリはお互いに回忌的に依存する可能性
+     があるので(共有ライブラリもそうですが，それらは問題ありません)，その状
+     況では，`-la -lb -la'が要求されるところで，二番目の`-la'
+     を取り除いてはならず，さもないとリンクは失敗するでしょう．これらの重複
+     が必要な状況では，このオプションはそれらを保持し，libtoolが安全だと分
+     かっているライブラリだけを取り除きます．
+
+`--finish'
+     `--mode=finish'と同じです．
+
+`--help'
+     へルプメッセージを表示し終了します．`--mode=MODE'が指定され
+     た場合，MODEの詳細へルプを表示します．
+
+`--mode=MODE'
+     処理モードとしてMODEを使用します．デフォルトで，処理モードは
+     MODE-ARGSから推測されます．推測不可能な状況があまりに多いので，
+     MODEを指定しないことは，現在では推奨されていません．将来の
+     libtoolのバージョンでは，MODEを明示的に設定することを要求するよ
+     うになるでしょう．
+
+     MODEは以下の一つに設定する必要があります．
+
+    `compile'
+          ソースファイルをlibtoolオブジェクトにコンパイルします．
+
+    `execute'
+          インストールされていない，libtoolが生成したプログラムやライブラリを他
+          のプログラムが使用できるように，自動的にライブラリパスを設定します．
+
+    `finish'
+          libtoolライブラリのシステムへのインストールを完全に行います．
+
+    `install'
+          ライブラリや実行形式をインストールします．
+
+    `link'
+          ライブラリや実行形式を作成します．
+
+    `uninstall'
+          インストールされたライブラリや実行形式を削除します．
+
+    `clean'
+          アンインストールされたライブラリや実行形式を削除します．
+
+`--version'
+     ibtoolのバージョン情報を出力し終了します．
+
+   MODE-ARGSは引数の変数の数で，それは処理モードの選択に依存します．
+一般的に，それぞれのMODE-ARGは，libtool自身ではなく，libtoolが呼
+び出すプログラムで解釈されます．
+
+* Menu:
+
+* Compile mode::                Creating library object files.
+* Link mode::                   Generating executables and libraries.
+* Execute mode::                Debugging libtool-generated programs.
+* Install mode::                Making libraries and executables public.
+* Finish mode::                 Completing a library installation.
+* Uninstall mode::              Removing installed executables and libraries.
+* Clean mode::                  Removing uninstalled executables and libraries.
+
+
+File: libtool-ja.info,  Node: Compile mode,  Next: Link mode,  Up: Invoking libtool
+
+4.1 コンパイルモード
+====================
+
+"コンパイル"モードに対し，MODE-ARGSは，`標準的な'オブジェク
+トファイルを作成するとき使用するコンパイルコマンドです．これらの引数は，
+Cコンパイラの名前で始まり，オブジェクトファイルのみを作成するための
+`-c'コンパイラフラグが含まれます．
+
+   libtoolは，ソースファイル名からディレクトリ要素を削除して出力ファイル
+名を決定し，ソースコードの接尾子(例えば，Cソースコードに対する
+`.c')をライブラリオブジェクト接尾子`.lo'に置換します．
+
+   共有ライブラリをビルドする場合は，必要なPIC生成フラグがコンパイルコマ
+ンドに置換されます．`-XCClinker FLAG'を使用したり，リンカフ
+ラグ`-Wl,FLAG'と`-Xlinker FLAG'を渡すことで，リ
+ンク指定のフラグをコンパイラドライバに渡すことが可能です．また，
+`-Wc,FLAG'と`-Xcompiler FLAG'を使用することで，
+コンパイル指定のフラグを渡すことも可能です．
+
+   `-static'オプションが与えられている場合は，libtoolが
+`--disable-static'でコンフィグレーションされていた場合でも，
+`.o'ファイルがビルされてます．
+
+   現在は`-o'オプションが，完全にサポートされていることに注意してく
+ださい．それがサポートされていないプラットフォームでは，(オブジェクト
+のロックと移動によって)エミュレートされるので，Makefileを少し編集する
+だけでlibtoolは本当に簡単に使用できます．入力例は以下のようになります．
+     libtool gcc -c foo/x.c -o foo/x.lo
+   will do what you expect.
+
+   しかし，コンパイラが`-c'と`-o'をサポートしていない場合，既存
+の`./x.o'を上書きせずに`foo/x.c'をコンパイルすることが不可能
+なことに注意してください．そのため，ソースファイル`./x.c'がある場
+合，`./x.o'(や`./x.lo')が，サブディレクトリのあらゆる
+`x.lo'の後で再作成されることを確実にするため，`Makefile'に依
+存性の導入を必ず行ってください．
+     x.o x.lo: foo/x.lo bar/x.lo
+   これは，プログラムやライブラリを作成するため，一時的に壊れた`x.o'
+の使用を試みないことを確実にします．それは，`-c'と`-o'を同時
+にサポートするプラットフォームで，不必要な再コンパイルを引き起こすかも
+しれませんが，それは，そうでないものに対して安全にする唯一の方法です．
+
+
+File: libtool-ja.info,  Node: Link mode,  Next: Execute mode,  Prev: Compile mode,  Up: Invoking libtool
+
+4.2 リンクモード
+================
+
+"リンク"モードは，(ライブラリオブジェクトを含む)オブジェクトファイ
+ルと，その他のライブラリや作成された実行可能なプログラムをリンクします．
+
+   MODE-ARGSは，いくつかのオブジェクトファイルから(`-o'フラグ
+を用いた)出力ファイルを作成するためにCコンパイラが使用するコマンドから
+成り立ちます．
+
+   以下のMODE-ARGSの組は特別に扱われます．
+
+`-all-static'
+     OUTPUT-FILEがプログラムの場合，共有ライブラリと全くリンクしませ
+     ん．OUTPUT-FILEがライブラリの場合，スタティックライブラリのみ作
+     成します．
+
+`-avoid-version'
+     ライブラリとモジュールに対しバージョン管理(*note
+     Versioning::)を避けよ
+     うとし，すなわち，バージョン情報は保存されず，シンボリックリンクも作成
+     されません．プラットフォームがバージョニングを要求する場合，このオプショ
+     ンは効果がありません．
+
+`-dlopen FILE'
+     ネイティブなdlopenがホストプラットフォームでサポートされていない場合
+     (*note Dlopened modules::)や，プログラムが`-static'や
+     `-all-static'でリンクされている場合，`-dlpreopen FILE'
+     と同じです．それ以外では効果はありません．FILEが`self'の場
+     合，`-export-dynamic'を可能にする，または，`-dlpreopen self'
+     に後退することにより，libtoolはプログラムがそれ自身を`dlopen'可能
+     であることを確かめます．
+
+`-dlpreopen FILE'
+     FILEを出力プログラムにリンクし，そのシンボルを
+     LT_PRELOADED_SYMBOLSに含めます(*note Dlpreopening::)．FILE
+     が`self'の場合，プログラムのシンボル自身が LT_PRELOADED_SYMBOLS
+     に加えられます．FILEが`force'の
+     場合，libtoolは，LT_PRELOADED_SYMBOLSが空であろうがなかろうが，
+     常に_定義済_であることを確実にします．
+
+`-export-dynamic'
+     OUTPUT-FILEからのシンボルが`dlsym'で解決されることを可能に
+     します(*note Dlopened modules::)．
+
+`-export-symbols SYMFILE'
+     リンカにSYMFILEでリストアップされているシンボルのみエクスポート
+     するよう伝えます．シンボルファイルは`.sym'で終わるべきで，一行ご
+     とに一シンボル名を含める必要があります．このオプションに効果がないプラッ
+     トフォームがあります．デフォルトですべてのシンボルがエクスポートされま
+     す．
+
+`-export-symbols-regex REGEX'
+     正規表現REGEXに一致するシンボルのみエクスポートされる以外，
+     `-export-symbols'と同じです．デフォルトですべてのシンボルがエクス
+     ポートされます．
+
+`-LLIBDIR'
+     既にインストールされている，要求されているライブラリに対し，
+     LIBDIRを検索します．
+
+`-lNAME'
+     OUTPUT-FILEはインストールされているライブラリ
+     `libNAME'を要求します．このオプションはOUTPUT-FILEが
+     実行形式でないときも要求されます．
+
+`-module'
+     dlopen可能なライブラリを作成します(*note Dlopened
+     modules::)．このオプ
+     ションはプログラムでは動作しません．モジュール名の'lib'の前置は不要で
+     す．しかし，名前の破壊を避けるため，'libname'と'name'
+     パッケージで同時 に使用してはなりません．
+
+`-no-fast-install'
+     実行形式OUTPUT-FILEの高速インストールモードを利用不可にします．
+     プログラムをインストールする必要がないとき役に立ちます．
+
+`-no-install'
+     インストール不可能で，そのためラップスクリプトが不要な実行形式
+     OUTPUT-FILEをリンクします．プログラムがビルドツリーでのみ使用さ
+     れる場合，例えば，テストしたり他のファイルを生成するプログラムに対して
+     役に立ちます．
+
+`-no-undefined'
+     OUTPUT-FILEが他のライブラリに依存しないことを宣言します．他のラ
+     イブラリに依存する共有ライブラリを作成不可能なプラットフォームもありま
+     す(*note Inter-library dependencies::)．
+
+`-o OUTPUT-FILE'
+     指定されたオブジェクトとライブラリからOUTPUT-FILEを作成します．
+
+`-release RELEASE'
+     ユーザが他より新しいバージョンを簡単に伝えられるよう，パッケージのリリー
+     スRELEASEで生成されたライブラリを指定します．このフラグを使用す
+     る場合，パッケージの二つのリリースがバイナリ互換でないことを警告されま
+     す．バイナリ互換が欲しい場合，代わりに`-version-info'フラグを使用
+     してください(*note Versioning::)．
+
+`-rpath LIBDIR'
+     OUTPUT-FILEがlibtoolライブラリの場合，それをビルドするために，バー
+     ジョン情報CURRENT，REVISION，そしてAGEを使用します (*note
+     Versioning::)．このフラグをパッケージのリリース情報の指定に使用
+     せず，そのためには`-release'を参照してください．
+
+`-shrext SUFFIX'
+     OUTPUT-FILEがlibtoolライブラリの場合，システム標準の共有ライブラ
+     リに対するファイル名の拡張子をSUFFIXに置換します(ほとんどのシス
+     テムでは，これに`.so'を使用します)．このオプションは，アプリケー
+     ションが要求する共有ライブラリ(一般的にはモジュール)の拡張子が，デフォ
+     ルトのものではない状況で役に立ちます．前置するドットを含めた完全なファ
+     イル名の拡張子を提供する必要があることに注意してください．
+
+`-R LIBDIR'
+     OUTPUT-FILEがプログラムの場合，プログラムの実行時のパスを
+     LIBDIRに加えます．OUTPUT-FILEがライブラリの場合，ライブラ
+     リがプログラムとリンクされるときは，常にLIBDIRが実行時のパスに加
+     えられるように，そのDEPENDENCY_LIBSに-RLIBDIRを加えます．
+
+`-static'
+     OUTPUT-FILEがプログラムの場合，インストールされていない共有ライ
+     ブラリとリンクしません．OUTPUT-FILEがライブラリの場合，スタティッ
+     クライブラリのみ作成します．
+
+`-version-info CURRENT[:REVISION[:AGE]]'
+     OUTPUT-FILEがlibtoolライブラリの場合，それをビルドするために，バー
+     ジョン情報CURRENT，REVISION，そしてAGEを使用します (*note
+     Versioning::)．このフラグをパッケージのリリース情報の指定に使用
+     せず，そのためには`-release'を参照してください．
+
+`-version-number MAJOR[:MINOR[:REVISION]]'
+     OUTPUT-FILEがlibtoolライブラリの場合，結果として得られるライブラ
+     リが使用する指定されたメジャー，マイナーそしてリビジョンナンバーを使用
+     するように，インターフェースバージョンの情報を計算します．これは，特定
+     のバージョンナンバーがすでにオペレーティングシステムで使用されている既
+     存のプロジェクトで，libtoolが使用できるように設計されています．新しい
+     プロジェクトでは，代わりに`-version-info'フラグを使用すべきです．
+
+`-Wl,FLAG'
+`-Xlinker FLAG'
+     リンカ指定のフラグを直接リンカに渡します．
+
+`-XCClinker FLAG'
+     リンク指定フラグをコンパイラドライバ(CC)にリンク時に渡します．
+
+   OUTPUT-FILEが`.la'で終わる場合，libtoolライブラリが作成され，
+それはライブラリオブジェクト(`.lo'ファイル)のみから作成される必要
+があります．`-rpath'オプションは要求されません．現在の実装では，
+libtoolライブラリが他のインストールされていないlibtoolライブラリに依存
+することはできません(*note Inter-library dependencies::)．
+
+   OUTPUT-FILEが`.a'で終わる場合，標準的なライブラリは
+`ar'と，おそらく`ranlib'を使用して作成されます．
+
+   OUTPUT-FILEが`.o'や`.lo'で終わる場合，リロード可能なオ
+ブジェクトファイルは，(通常`ld -r'を用いて)入力ファイルから作成さ
+れます．この手法は"部分的なリンク"と呼ばれることが多いです．
+
+   それ以外の場合，実行可能なプログラムが作成されます．
+
+
+File: libtool-ja.info,  Node: Execute mode,  Next: Install mode,  Prev: Link mode,  Up: Invoking libtool
+
+4.3 実行モード
+==============
+
+`実行'モードに対し，ライブラリパスは自動的に設定され，プログラム
+は実行されます．
+
+   MODE-ARGSの最初は，プログラム名として扱われ，残りはプログラムの
+引数となります．
+
+   以下のMODE-ARGSの組は特別に扱われます．
+
+`-dlopen FILE'
+     ライブラリパスにFILEを含むディレクトリを加えます．
+
+   このモードは，あらゆる`-dlopen'フラグによって，ライブラリパス環境
+変数を設定します．
+
+   すべてのARGSがlibtoolの実行形式のラッパーの場合，それらは対応す
+るインストールされていないバイナリの名前に変換され，それらが要求するす
+べてのライブラリディレクトリがライブラリパスに加えられます．
+
+
+File: libtool-ja.info,  Node: Install mode,  Next: Finish mode,  Prev: Execute mode,  Up: Invoking libtool
+
+4.4 インストールモード
+======================
+
+"インストール"モードでは，libtoolはMODE-ARGSのほとんどの要素
+を，`cp'で始まるインストールコマンドやBSD互換の`install'プロ
+グラムとして解釈します．
+
+   MODE-ARGSの残りは，特別扱いされます．
+
+`-inst-prefix INST-PREFIX-DIR'
+     最終的なPREFIXではなく一時的な保存領域にインストールするとき，こ
+     の引数は一時的なパスを反映するために使用し，それは`automake'で
+     DESTDIRを使用する方法とほとんど同じです．例えば，PREFIXが
+     `/usr/local'でINST-PREFIX-DIRが`/tmp'の場合，オブジェ
+     クトは`/tmp/usr/local/'にインストールされます．インストールされた
+     オブジェクトがlibtoolライブラリの場合，ライブラリの内部フィールドは
+     INST-PREFIX-DIRではなくPREFIXだけに反映されます．
+
+          # Directory that this library needs to be installed in:
+          libdir='/usr/local/lib'
+
+     以下ではありません．
+
+          # Directory that this library needs to be installed in:
+          libdir='/tmp/usr/local/lib'
+
+     `inst-prefix'は，インストールされたオブジェクトがインストール時に
+     再リンクする必要がある場合にも，それがPREFIXではなく
+     INST-PREFIX-DIR/PREFIXのライブラリと再リンクするのを確実に
+     するためにも使用されます．
+
+     実際は，このオプションはlibtoolで直接呼び出すときに使用することが本当
+     の目的ではありません．それは`libtool --mode=install'が `libtool
+     --mode=relink'を呼び出すとき自動的に使用されます．
+     libtoolは元々の`libtool --mode=install'コマンドで与えられたインス
+     トール先のパスを解析し，`libtool --mode=link'で確定した予測される
+     インストールパスと比較することで，これを行ないます．
+
+     このため，エンドユーザは変更する必要はなく，`automake'形式の `make
+     install DESTDIR=/tmp'でJust Work(tm) (うまく動作します)にな
+     ります．
+
+   残りのMODE-ARGSは，`cp'や`install'コマンドの引数として 解釈されます．
+
+コマンドが実行され，特権の不要な必要なインストール後のコマンドも完全に
+実行されます．
+
+
+File: libtool-ja.info,  Node: Finish mode,  Next: Uninstall mode,  Prev: Install mode,  Up: Invoking libtool
+
+4.5 フィニッシュモード
+======================
+
+"フィニッシュ"モードは，ユーザプログラムにlibtoolライブラリを配置し
+リンクできるよう，システム管理者のインストールを助けます．
+
+   それぞれのMODE-ARGはライブラリのディレクトリの名前として解釈され
+ます．このコマンドの実行は，`--dry-run'オプションが役に立つように，
+スーパーユーザの特権を要求するかもしれません．
+
+
+File: libtool-ja.info,  Node: Uninstall mode,  Next: Clean mode,  Prev: Finish mode,  Up: Invoking libtool
+
+4.6 アンインストールモード
+==========================
+
+"アンインストール"モードはインストールされているライブラリ，実行形
+式，そしてオブジェクトを削除します．
+
+   MODE-ARGの最初はファイルの削除に使用するプログラム名(通常は
+`/bin/rm')です．
+
+   残りのMODE-ARGSは，(`-'で始まる)削除プログラムに対するフラグ，ま
+たは削除するファイル名です．
+
+
+File: libtool-ja.info,  Node: Clean mode,  Prev: Uninstall mode,  Up: Invoking libtool
+
+4.7 クリーンモード
+==================
+
+"クリーン"モードはアンインストールされたライブラリ，実行形式，オブ
+ジェクト，そして，それらに関連があるlibtoolの一時ファイルを削除します．
+
+   最初のMODE-ARGは，ファイルを削除するために使用するプログラムの名
+前(通常は`/bin/rm')です．
+
+   残りのMODE-ARGSは削除プログラムに対する(`-'で始まる)フラグ，また
+は削除するファイル名です．
+
+
+File: libtool-ja.info,  Node: Integrating libtool,  Next: Versioning,  Prev: Invoking libtool,  Up: Top
+
+5 パッケージとlibtoolの統合
+***************************
+
+この章は，ユーザが混乱せずに共有ライブラリをインストールできるように，
+パッケージとlibtoolの統合方法を記述します．
+
+* Menu:
+
+* Makefile rules::              Writing `Makefile' rules for libtool.
+* Using Automake::              Automatically supporting libtool.
+* Configuring::                 Configuring libtool for a host system.
+* Distributing::                What files to distribute with your package.
+* Static-only libraries::       Sometimes shared libraries are just a pain.
+
+
+File: libtool-ja.info,  Node: Makefile rules,  Next: Using Automake,  Up: Integrating libtool
+
+5.1 libtoolに対する`Makefile'規則を書く
+=======================================
+
+libtoolは，完全にAutomake(*note Introduction:
+(automake)Top.)と統合されていて，それはAutomake version 1.2から開始
+されています．
+
+   通常の`Makefile'(や`Makefile.in')で，libtoolを使用したい場合
+は，独自のものとなります．Automake 1.2を使用せず，パッケージにlibtool
+の組み込み方を知らない場合，以下の一つが必要になります．
+
+  1.
+     Automake(バージョン1.2以降)を近くのGNUのミラーからダウンロードし，イン
+     ストールし，その使用を開始してください．
+
+  2. `Makefile'規則の手での書き方を学んでください．複雑なときもありま
+     すが，古いライブラリをコンパイルするための規則を書けるぐらいの知識があ
+     る場合，libtoolライブラリに対する新しい規則の理解は可能でしょう(ヒント：
+     libtool 配布物の`demo'サブディレクトリの`Makefile.in'を調べ
+     てください... 特に，それがAutomakeによって`Makefile.am'から自
+     動的に生成されたことに注意してください)．
+
+
+File: libtool-ja.info,  Node: Using Automake,  Next: Configuring,  Prev: Makefile rules,  Up: Integrating libtool
+
+5.2 libtoolと共にAutomakeを使用する
+===================================
+
+libtoolライブラリのサポートは，`LTLIBRARIES'プライマリの下で実装
+されています．
+
+   libtool配布物の`demo'サブディレクトリの，Automake
+`Makefile.am'からの例は，以下のようになっています．
+
+   最初に，プログラムをlibtoolライブラリとリンクするため，
+`program_LDADD'変数のみを使用してください．
+
+     bin_PROGRAMS = hell hell.debug
+
+     # Build hell from main.c and libhello.la
+     hell_SOURCES = main.c
+     hell_LDADD = libhello.la
+
+     # Create an easier-to-debug version of hell.
+     hell_debug_SOURCES = main.c
+     hell_debug_LDADD = libhello.la
+     hell_debug_LDFLAGS = -static
+
+   フラグ`-dlopen'と`-dlpreopen'(*note Link mode::)は，
+PROGRAM_LDADD変数で，より適切になります．残念ながら，リリース1.4
+までのGNU automakeは，PROGRAM_LDADD変数でこれらのフラグを受け入
+れないため，以下で代用します．
+
+   * それらをPROGRAM_LDFLAGSに加え，PROGRAM_DEPENDENCIESにライ
+     ブラリをリストアップし，それらが属するこれらのフラグを受け入れるGNU
+     automakeのリリースを待ってください．
+
+   * フラグの回りを引用符で囲みます，しかし，PROGRAM_DEPENDENCIESも設
+     定する必要があります．
+
+          program_LDADD = "-dlopen" libfoo.la
+          program_DEPENDENCIES = libfoo.la
+
+   * `configure.in'の`AC_SUBST'で，変数DLOPENと
+     DLPREOPENを設定し，`program_LDADD'での明確なフラグ
+     `-dlopen'と`-dlpreopen'に対する置換物として， `@DLOPEN@'
+     と`@DLPREOPEN@'を使用します．Automakeは，依存
+     性から`AC_SUBST'された変数を捨てるので，`program_LDADD'のこ
+     れらのフラグを受け入れたとき，それは正確に期待したように動作します．
+
+   (インストールされていない共有libtoolライブラリとのリンクを避けるため
+`-static'を使用するような)`program'をリンクしている間， libtool
+に渡したいあらゆるフラグを詰め込むため，`program_LDFLAGS'
+変数を使用することも可能です．
+
+   libtoolライブラリをビルドすることは，ほとんど冒険です...
+`-version-info'(*note Versioning::)オプションをlibtoolに渡すため，
+`libhello_la_LDFLAGS'を使用することに注意してください．
+
+     # Build a libtool library, libhello.la for installation in libdir.
+     lib_LTLIBRARIES = libhello.la
+     libhello_la_SOURCES = hello.c foo.c
+     libhello_la_LDFLAGS = -version-info 3:12:1
+
+   `-rpath'オプションは，(`noinst_LTLIBRARIES'としてリストアッ
+プされるライブラリ以外)Automakeにより自動的に渡されるので，指定する必
+要はありません．
+
+   詳細は，*Note Building a Shared Library: (automake)A Shared Library.
+
+
+File: libtool-ja.info,  Node: Configuring,  Next: Distributing,  Prev: Using Automake,  Up: Integrating libtool
+
+5.3 libtoolのコンフィグレーション
+=================================
+
+libtoolは，共有ライブラリを作成し適切なものにリンクするため，コンパイ
+ラセットとオペレーティングシステムの詳細な知識を必要とします．libtool
+配布物をインストールするとき，システム特有のlibtoolスクリプトはバイナ
+リディレクトリにインストールされます．
+
+   しかし，独自のパッケージとともにlibtoolを配布するとき (*note
+Distributing::)，パッケージをコンパイルするために使用されるコン
+パイラセットとオペレーティングシステムを，常に知っているわけではありま
+せん．
+
+   このため，libtoolを使用する前に"コンフィグレーション"する必要があ
+ります．この考えは，GNU `configure'スクリプトを使用するものに似て
+います．`configure'は，システムの特徴に対しいくつものテストを行い，
+`Makefiles'(と，おそらく`config.h'ヘッダファイル)を生成し，
+その後，`make'を実行しパケージをビルドすることが可能です．
+
+libtoolは，インストーラのホストマシンに対するlibtoolスクリプトを生成す
+るために，独自のテストを`configure'スクリプトに加えます．
+
+* Menu:
+
+* AC_PROG_LIBTOOL::             Configuring `libtool' in `configure.in'.
+
+
+File: libtool-ja.info,  Node: AC_PROG_LIBTOOL,  Up: Configuring
+
+5.3.1 `AC_PROG_LIBTOOL'マクロ
+-----------------------------
+
+GNU Autoconf(やAutomake)を使用している場合，`AC_PROG_LIBTOOL'の呼
+び出しを`configure.in'に加える必要があります．このマクロは，生成
+されたlibtoolスクリプトがホストの特徴を理解できるようにするため，多く
+の新しいテストを`configure'スクリプトに加えます．
+
+ -- Macro: AC_PROG_LIBTOOL
+ -- Macro: AM_PROG_LIBTOOL
+     `--enable-shared'と`--disable-shared'の`configure'フラ
+     グに対するサポートを加えます．(1)
+     `AM_PROG_LIBTOOL'は，このマクロに対する古い名前で，
+     しばらくはサポートされますが，やめた方がいいでしょう．
+
+     デフォルトで，このマクロは，利用可能な場合は共有ライブラリを開始し，共
+     有ライブラリと衝突しない場合はスタティックライブラリも可能とします．こ
+     れらのデフォルトは，`AC_DISABLE_SHARED'や`AC_DISABLE_STATIC'
+     マクロのどちらかで修正可能です．
+
+          # Turn off shared libraries during beta-testing, since they
+          # make the build process take too long.
+          AC_DISABLE_SHARED
+          AC_PROG_LIBTOOL
+
+     ユーザは，パッケージ名を基にビルドされる，共有またはスタティックライブ
+     ラリを選択するため，`--enable-shared'と`--enable-static'を
+     `configure'へのフラグとして変更を指定してもかまいません．例え
+     ば，共有する`bfd' と`gdb'ライブラリをビルドし，`libg++'
+     を共有にしないため，以下の`configure'スクリプトの実行で，三つのこ
+     とのすべて可能となります．
+
+          trick$ ./configure --enable-shared=bfd,gdb
+
+     一般的に，`--enable-shared=PKGS'の指定は，カンマで分けられ
+     たPKGSリストに名前があるすべてのパッケージを
+     `--enable-shared'で，それ以外のすべてのパッケージを
+     `--disable-shared'でコンフィグレーションすること同じです．
+     `--enable-static=PKGS'フラグは，同様に動作しますが，その場
+     合は`--enable-static'と`--disable-static'を使用します．同様
+     に，`--enable-fast-install=PKGS'フラグの適用は，
+     `--enable-fast-install'と`--disable-fast-install'を使用しま す．
+
+     パッケージ名`default'は，`PACKAGE'環境変数に名前が設定されて
+     いない，あらゆるパッケージに一致します．
+
+     このマクロは，シェル変数LIBTOOL_DEPSも設定し，それで，libtoolス
+     クリプトが時代遅れになった場合の自動的な更新に使用できるようになります．
+     そうするために`configure.in'に以下を加えてください．
+
+          AC_PROG_LIBTOOL
+          AC_SUBST(LIBTOOL_DEPS)
+
+     そして，`Makefile.in'や`Makefile.am'に，以下を加えてください．
+
+          LIBTOOL_DEPS = @LIBTOOL_DEPS@
+          libtool: $(LIBTOOL_DEPS)
+                  $(SHELL) ./config.status --recheck
+
+     GNU
+     automakeを使用してる場合，automakeが面倒をみるので，指示の省略が可
+     能です．`libtool'での依存性を明確に作成する必要があります．
+
+
+ -- Macro: AC_LIBTOOL_DLOPEN
+     dlopenサポートの調査を可能にします．パッケージで`-dlopen'と
+     `-dlpreopen'フラグを使用する場合，このマクロ使用すべきで，そうし
+     ない場合，libtoolはシステムがdlopenをサポートしていないと仮定します．
+     マクロは`AC_PROG_LIBTOOL'の*前で*呼び出す必要があります．
+
+ -- Macro: AC_LIBTOOL_WIN32_DLL
+     このマクロは，win32プラットフォームでクリーンなdllをビルドするために移
+     植する場合，使用する必要があります．通常これは，あらゆるライブラリデー
+     タ項目を`__declspec(dllexport)'でエクスポートし，
+     `__declspec(dllimport)'でインポートすることを意味します．このマク
+     ロが使用されていない場合，libtoolはパッケージライブラリがクリーンなdll
+     ではなく，win32ホストでのスタティックライブラリのみをビルドすると仮定
+     します．
+
+     このマクロは`AC_PROG_LIBTOOL'の*前で*呼び出す必要があり，
+     パッケージの`Makefile'でのリンクモードでの準備として，
+     `libtool'に`-no-undefined'を渡させる必要があります．通常，
+     `-no-undefined'を渡す場合，すべてのライブラリシンボルが，リンク時
+     には*本当に*定義されていることを確かめる必要があります！
+
+ -- Macro: AC_DISABLE_FAST_INSTALL
+     `AC_PROG_LIBTOOL'のデフォルトの動作を，高速インストールに対する最
+     適化を不可能にするよう変更します．ユーザはこのデフォルトを，プラット
+     フォームのサポートに依存して，`--enable-fast-install'を指定するこ
+     とで優先させることができます．
+
+ -- Macro: AC_DISABLE_SHARED
+ -- Macro: AM_DISABLE_SHARED
+     `AC_PROG_LIBTOOL'のデフォルトの動作を，共有ライブラリを利用不可能
+     に変更します．ユーザはこのデフォルトを，`--enable-shared'を指定す
+     ることで優先させることができます．
+
+ -- Macro: AC_DISABLE_STATIC
+ -- Macro: AM_DISABLE_STATIC
+     `AC_PROG_LIBTOOL'のデフォルトの動作を，スタティックライブラリを利
+     用不可能に変更します．ユーザはこのデフォルトを，`--enable-static'
+     を指定することで優先させることができます．
+
+   `AC_PROG_LIBTOOL'内のテストは，以下の環境変数も認識します．
+
+ -- Variable: CC
+     生成された`libtool'が使用するCコンパイラです．これが設定されてい
+     ない場合，`AC_PROG_LIBTOOL'は`gcc'や`cc'を探します．
+
+ -- Variable: CFLAGS
+     標準的なオブジェクトファイルを生成するために使用するコンパイラフラグで
+     す．これが設定されていない場合，`AC_PROG_LIBTOOL'はそのようなフラ
+     グを全く使用しません．それは，`AC_PROG_LIBTOOL'がテストを実行する
+     方法にのみ効果があり，生成された`libtool'には効果はありません．
+
+ -- Variable: CPPFLAGS
+     Cプリプロセッサフラグです．これが設定されていない場合，
+     `AC_PROG_LIBTOOL'はそのようなフラグを全く使用しません．それは，
+     `AC_PROG_LIBTOOL'がテストを実行する方法にのみ効果があり，生成され
+     た`libtool'には効果はありません．
+
+ -- Variable: LD
+     (生成された`libtool'が要求する場合は)システムリンカです．これが設
+     定されていない場合，`AC_PROG_LIBTOOL'は，CCで使用されるリン
+     カが何かを判別しようとします．
+
+ -- Variable: LDFLAGS
+     プログラムをリンクするとき，`libtool'が使用するフラグです．これが
+     設定されていない場合，`AC_PROG_LIBTOOL'はそのようなフラグを全く使
+     用しません．それは，`AC_PROG_LIBTOOL'がテストを実行する方法にのみ
+     効果があり，生成された`libtool'には効果はありません．
+
+ -- Variable: LIBS
+     プログラムのリンクとき，`AC_PROG_LIBTOOL'が使用するライブラリです．
+     これが設定されていない場合，`AC_PROG_LIBTOOL'はそのようなフラグを
+     使用しません．それは`AC_PROG_LIBTOOL'が実行するテストにのみに効果
+     があり，生成された`libtool'には効果はありません．
+
+ -- Variable: NM
+     使用するプログラムで，`nm'の調査ではありません．
+
+ -- Variable: RANLIB
+     使用するプログラムで，`ranlib'の調査ではありません．
+
+ -- Variable: LN_S
+     プログラムのリンクを作成するコマンドで，可能な場合はソフトリンク，それ
+     以外ではハードリンクです．この変数が設定されていない場合，
+     `AC_PROG_LIBTOOL'は適切なプログラムを調査します．
+
+ -- Variable: DLLTOOL
+     使用するプログラムで，`dlltool'の調査ではありません．
+     Cygwin/MS-Windowsでのみ意味があります．
+
+ -- Variable: OBJDUMP
+     使用するプログラムで，`objdump'の調査ではありません．
+     Cygwin/MS-Windowsでのみ意味があります．
+
+ -- Variable: AS
+     使用するプログラムで，`as'の調査ではありません．しばらくは，
+     Cygwin/MS-Windows でのみ使用されます．
+
+   `libtoolize'プログラムを呼び出すとき(*note Invoking libtoolize::)，
+それは`AC_PROG_LIBTOOL'の定義が見つかる場所を伝えます．Automakeを
+使用している場合，`aclocal'プログラムは自動的に，`configure'
+スクリプトに`AC_PROG_LIBTOOL'サポートを`configure'スクリプト
+に加えます．
+
+   それにもかかわらず，`acinclude.m4'に`libtool.m4'のコピーを含
+めることは賢明で，そのため，`aclocal.m4'と`configure'がなん
+らかの理由で再びビルドされた場合も，適切なlibtoolマクロが使用されます．
+代わりに，ユーザが`libtool.m4'の互換バージョンをインストールして
+いて，`aclocal'にアクセス可能なことを期待します．これは，バージョ
+ンが一致しない場合，不運なエラーを導くかもしれません．
+
+   ---------- Footnotes ----------
+
+   (1) `AC_PROG_LIBTOOL'は，
+`Makefile.in'での`Makefile'変数の`top_builddir'の定義を
+要求します．Automakeはこれを自動的に行いますが，Autoconfユーザは，ビル
+ドディレクトリのトップへの相対パス(例えば，`../..')を設定する必要
+があります．
+
+
+File: libtool-ja.info,  Node: Distributing,  Next: Static-only libraries,  Prev: Configuring,  Up: Integrating libtool
+
+5.4 パッケージにlibtoolを含める
+===============================
+
+libtoolを使用するため，パッケージに以下のファイルを含める必要があります．
+
+`config.guess'
+     標準的なシステム名の判別を試みます．
+
+`config.sub'
+     標準的なシステム名を評価する，サブルーチンスクリプトです．
+
+`ltmain.sh'
+     基本的なlibtool機能を実装する一般的なスクリプトです．
+
+   libtoolスクリプト自身はパッケージに含まれないことに注意してください．
+*Note Configuring::.
+
+   手動でこれらのファイルをパッケージにコピーするより，`libtoolize'
+プログラムを使用した方がよいでしょう．
+
+* Menu:
+
+* Invoking libtoolize::         `libtoolize' command line options.
+* Autoconf .o macros::          Autoconf macros that set object file names.
+
+
+File: libtool-ja.info,  Node: Invoking libtoolize,  Next: Autoconf .o macros,  Up: Distributing
+
+5.4.1 `libtoolize'の呼び出し
+----------------------------
+
+`libtoolize'プログラムは，libtoolサポートをパッケージに追加する標
+準的な方法を提供します．将来は，より良い調査の使用法や，より簡単に
+libtoolを作成する機能を実装するかもしれません．
+
+   `libtoolize'プログラムは以下の構文です．
+
+     libtoolize [OPTION]...
+
+そして，以下のオプションを受け入れます．
+
+`--automake'
+     静かに動作し，libtoolがサポートされているAutomakeを仮定します．
+
+     `libtoolize --automake'は，`AC_PROG_LIBTOOL'が
+     `configure.in'にあるとき，Automakeがlibtoolファイルをパッケージに
+     追加するために使用します．
+
+`--copy'
+`-c'
+     libtoolデータディレクトリから，シンボリックリンクを作成するのではなく，
+     ファイルをコピーします．
+
+`--debug'
+     シェルスクリプトの実行の追跡を，標準出力にダンプします．これは大量の出
+     力を生成するため，`less'(や`more')にパイプしたり，ファイルに
+     リダイレクトしたいかもしれません．
+
+`--dry-run'
+`-n'
+     ファイルシステムを変更するコマンドは実行せず，それらを出力するだけです．
+
+`--force'
+`-f'
+     既存のlibtoolのファイルを置換します．デフォルトで，`libtoolize'は
+     既存のファイルを上書きしません．
+
+`--help'
+     へルプメッセージを出力し終了します．
+
+`--ltdl'
+     パッケージのサブディレクトリに，libltdlをインストールします．
+
+`--ltdl-tar'
+     ファイルlibltdl.tar.gzをパッケージに追加します．
+
+`--version'
+     `libtoolize'のバージョン情報を出力し終了します．
+
+   `libtoolize'が，パッケージの`configure.in'で，明確な
+`AC_CONFIG_AUX_DIR'の呼び出しを検出した場合(*note The Autoconf Manual:
+(autoconf)Input.)，指定されたディレクト リにファイルを配置します．
+
+   `libtoolize'は，パッケージにlibtoolサポートを加えるヒントも同様に
+表示します．
+
+
+File: libtool-ja.info,  Node: Autoconf .o macros,  Prev: Invoking libtoolize,  Up: Distributing
+
+5.4.2 Autoconfの`.o'マクロ
+--------------------------
+
+Autoconfパッケージは，テストを実行するいくつかのマクロをもたらし，それ
+は，オブジェクトファイル名に対応して変数を設定します．libtoolオブジェ
+クトに対応する名前を使用する必要があるときもあります．
+
+   libtoolオブジェクトがリストアップする変数名には以下のものがあります．
+
+ -- Variable: LTALLOCA
+     `AC_FUNC_ALLOCA'で置換されます(*note Particular Function Checks:
+     (autoconf)Particular Functions.)．空，または`alloca.lo'を含みます．
+
+ -- Variable: LTLIBOBJS
+     `AC_REPLACE_FUNCS'(*note Generic Function Checks:
+     (autoconf)Generic Functions.)とその他の 関数で置換されます．
+
+残念ながら，安定版のリリースのAutoconf(これを書いている時期は，2.13)は，
+libtoolでこれらの変数を提供する方法が全くありません．そのため，それに
+依存して，パッケージの`configure.in'で`AC_OUTPUT'を呼び出す
+前に，以下のコードの実装を使用してください．
+
+     LTLIBOBJS=`echo "$LIBOBJS" | sed 's/\.[^.]* /.lo /g;s/\.[^.]*$/.lo/'`
+     AC_SUBST(LTLIBOBJS)
+     LTALLOCA=`echo "$ALLOCA" | sed 's/\.[^.]* /.lo /g;s/\.[^.]*$/.lo/'`
+     AC_SUBST(LTALLOCA)
+     AC_OUTPUT(...)
+
+
+File: libtool-ja.info,  Node: Static-only libraries,  Prev: Distributing,  Up: Integrating libtool
+
+5.5 スタティックのみのライブラリ
+================================
+
+パッケージを開発しているとき，パッケージを`--disable-shared'フラ
+グでコンフィグレーションしたり，`AC_DISABLE_SHARED'Autoconfマクロ
+(*note The `AC_PROG_LIBTOOL' macro: AC_PROG_LIBTOOL.)を使用し
+て，`AC_PROG_LIBTOOL'のデフォルトに優先することに価値があることも
+よくあります．これは，libtoolが共有ライブラリをビルドすることを避け，
+それには，いくつかの利点があります．
+
+   * 二回目のコンパイルを速くし，開発サイクルを高速にします．
+
+   *
+     共有ライブラリによって加えられる複雑さの詳細が不要なので，デバッグがよ
+     り簡単になります．
+
+   *
+     スタティックのみのプラットフォームでのlibtoolの動作方法が分かります．
+
+   パッケージの`README'に，他の開発者に`--disable-shared'で時間
+を稼げることを知らせるため，ちょっとした注意を書きたいかもしれません．
+以下の例の注意は，GIMP(1) 配布物の`README'から持ってきました．
+
+     The GIMP uses GNU Libtool in order to build shared libraries on a
+     variety of systems. While this is very nice for making usable
+     binaries, it can be a pain when trying to debug a program. For that
+     reason, compilation of shared libraries can be turned off by
+     specifying the `--disable-shared' option to `configure'.
+
+   ---------- Footnotes ----------
+
+   (1) 思い切りがよくない人のためのGNU Image Manipulation
+Programです．`http://www.gimp.org/'を参照してください．
+
+
+File: libtool-ja.info,  Node: Versioning,  Next: Library tips,  Prev: Integrating libtool,  Up: Top
+
+6 ライブラリインターフェースのバージョン
+****************************************
+
+共有ライブラリで導入された発行物で，最も難しいものは，実行時の依存性の
+作成と解決です．プログラムとライブラリの依存性は，`sed'のような単
+一の名前の用語で，よく記述されます．そのため"libtoolはsedに依存する"
+と告げ，それで十分目的を果たせます．
+
+しかし，規則的にインターフェースが変更されるとき，我々はより具体的に告
+げる必要があります．"Gnus 5.1はEmacs 19.28以上を要求する．"ここでは，
+名前からなるインターフェースの記述と"バージョンナンバー"です．
+
+   種類の説明はいくつかの目的において十分でないことすらあります．Emacs
+20 で変更された場合，Gnus 5.1を破壊するのに十分ではないでしょうか？
+
+同じ問題は，共有ライブラリでも存在します．我々は，プログラムが必要とし
+ているインターフェースを提供するライブラリのみとリンクされることを，ダ
+イナミックリンカが保証できるように，プログラムが依存する共有ライブラリ
+を記述するために，公式なバージョン管理システムが必要です．
+
+* Menu:
+
+* Interfaces::                  What are library interfaces?
+* Libtool versioning::          Libtool's versioning system.
+* Updating version info::       Changing version information before releases.
+* Release numbers::             Breaking binary compatibility for aesthetics.
+
+
+File: libtool-ja.info,  Node: Interfaces,  Next: Libtool versioning,  Up: Versioning
+
+6.1 ライブラリインターフェースとは？
+====================================
+
+ライブラリのインターフェースは，以下の何か(またはそれ以上)でしょう．
+
+   * グローバル変数: 名前と型
+
+   * グローバル関数: 引数の型と数，返り値の型，関数名
+
+   * 標準入力，標準出力，標準エラー，そしてファイル形式
+
+   * ソケット，パイプ，プロセス間通信のプロトコル書式
+
+スタティック関数は，ライブラリのユーザが直接利用不可能なので，インター
+フェースに数えられないことに注意してください．
+
+
+File: libtool-ja.info,  Node: Libtool versioning,  Next: Updating version info,  Prev: Interfaces,  Up: Versioning
+
+6.2 libtoolのバージョン管理システム
+===================================
+
+libtoolは独自の公式のバージョン管理システムがあります．それは，あまり
+柔軟ではありませんが，強力なバージョン管理システムで，確かに最も単純で
+す．
+
+ライブラリとは，整数で任意に表示できるインターフェースのいくつかの組を
+エクスポートするものだと考えて下さい．プログラムがライブラリとリンクさ
+れるとき，これらのインターフェースのサブセットを利用するかもしれません．
+
+プログラムが使用するインターフェースのlibtoolの記述は単純です．それは，
+結果のバイナリにある最大と最小のインターフェースの番号を符号化します
+(FIRST-INTERFACE, LAST-INTERFACE)．
+
+   ダイナミックリンカは，ライブラリがFIRST-INTERFACEと
+LAST-INTERFACEの間の_すべての_インターフェースの番号をサポー
+トする場合，プログラムがライブラリとリンク可能なことを保証します．
+
+   libtoolの移植性の要求が，実際に必要と言うよりは厳密なので，問題を生じ
+る可能性があることに注意してください．
+
+   さて，`libhello'がインターフェースの5，16，17，18，と19をサポート
+し，libtoolは`libhello'を`test'にリンクするとき使用されると 仮定します．
+
+   libtoolは`test'に数字5と19を符号化し，ダイナミックリンカは，5と19
+の間の_すべての_インターフェースをサポートしているライブラリのみ
+と，`test'をリンクします．そのため，ダイナミックリンカは
+`libhello'と`test'をリンクすることを拒否するのです！
+
+この問題を排除するために，libtoolはライブラリは，連続したインターフェー
+ス番号を宣言することのみ可能としています．そのため，`libhello'は， 16
+から19までのインターフェースをサポートすることを宣言するのが精一杯
+です．そして，ダイナミックリンカは，`libhello'を`test'とリン クします．
+
+   そのため，libtoolライブラリバージョンは，三つの整数で宣言されます．
+
+CURRENT
+     このライブラリで実装されている，最も新しいインターフェース番号．
+
+REVISION
+     CURRENTのインターフェースの実装番号．
+
+AGE
+     このライブラリで実装されている，最新と最古のインターフェースの違い．言
+     い換えると，ライブラリは，`CURRENT - AGE'から
+     `CURRENT'までの番号の範囲で，すべてのインターフェース番号を
+     実装しています．
+
+   二つのライブラリが，個別のCURRENTとAGEを持つ場合，ダイナミッ
+クリンカは，より大きいREVISION番号を選択します．
+
+
+File: libtool-ja.info,  Node: Updating version info,  Next: Release numbers,  Prev: Libtool versioning,  Up: Versioning
+
+6.3 ライブラリバージョン情報の更新
+==================================
+
+libtoolのバージョン管理システムを使用したい場合，リンクモード (*note
+Link mode::)で，`-version-info'フラグを使用して，libtool
+にバージョン情報を指定する必要があります．
+
+   このフラグは，`CURRENT[:REVISION[:AGE]]'の形式
+の引数を受け入れます．そして，`-version-info 3:12:1'を渡すと，
+CURRENTを3，REVISIONを12，そしてAGEを1に設定します．
+
+   REVISIONやAGEが省略された場合，デフォルトは0になります．ま
+た，AGEはCURRENTインターフェース番号以下にする必要があるこ
+とに注意してください．
+
+ライブラリバージョン情報を更新する助けとなる規則の集合は，以下のように
+なります．
+
+  1. バージョン情報は，それぞれのlibtoolライブラリに対し`0:0:0'で始めて
+     ください．
+
+  2.
+     ソフトウェアの一般へのリリースの直前にのみ，バージョン情報を更新してく
+     ださい．より頻繁な更新は不要で，現在のインターフェース番号が速くなるこ
+     とを確実にするだけです．
+
+  3. 前回の更新から，ライブラリソースコードが完全に変更された場合，
+     REVISIONを増加してください(`C:R:A'は `C:r+1:A'となります)．
+
+  4.
+     前回の更新から，インターフェースが加えられた，削除された，または変更さ
+     れた場合，CURRENTを増加し，REVISIONを0に設定してください．
+
+  5. 前回の一般へのリリースから，あるインターフェースが削除された場合，
+     AGEを0に設定してください．
+
+  6. 前回の一般へのリリースから，あるインターフェースが削除された場合，
+     AGEを0に設定してください．
+
+パッケージのリリース番号に対応するように，インターフェース番号を設定す
+る試みは*_決して_*しないでください．これは，ライブラリバー
+ジョンの目的の誤解を促進する悪習にすぎません．その代わり，
+`-release'フラグ(*note Release numbers::)を使用しますが，パッケー
+ジが他のリリースとバイナリ互換でないことを警告されます．
+
+
+File: libtool-ja.info,  Node: Release numbers,  Prev: Updating version info,  Up: Versioning
+
+6.4 リリース情報の管理
+======================
+
+プログラムをライブラリにリンクしたいユーザに明確になるように，パッケー
+ジリリース名を共有ライブラリに符号化したいこともよくあります．この便利
+さは，特にGNU/Linuxで使用されます．
+
+     trick$ ls /usr/lib/libbfd*
+     /usr/lib/libbfd.a	    /usr/lib/libbfd.so.2.7.0.2
+     /usr/lib/libbfd.so
+     trick$
+
+   `trick'として，`/usr/lib/libbfd.so'は `libbfd.so.2.7.0.2'
+へのシンボリックリンクで，それは
+`binutils-2.7.0.2'の一部として配布されています．
+
+ライブラリインターフェースは，リリース番号のように，滅多に同時に変更さ
+れず，ライブラリ接尾子はすべてのプラットフォームを跨り，すべて同じでは
+ないので，残念ながらこの便利さはlibtoolのライブラリバージョンの情報の
+考えと直接衝突します．
+
+   そのため，両方の見方に適応するため，`-version-info'を使用したくな
+いライブラリに対し，リリース情報を設定するにあたり，`-release'フ
+ラグを使用することができます．`libbfd'の例では，libtoolが使用する
+次のリリースは，`-release 2.9.0'でビルドされるべきで，それは，
+GNU/Linuxで，以下のファイルを生成します．
+
+     trick$ ls /usr/lib/libbfd*
+     /usr/lib/libbfd-2.9.0.so     /usr/lib/libbfd.a
+     /usr/lib/libbfd.so
+     trick$
+
+   この場合，`/usr/lib/libbfd.so'は`libbfd-2.9.0.so'へのシンボ
+リックリンクです．これは`binutils-2.9.0'を扱っているユーザにとっ
+て，バージョン情報のlibtoolの考えに妥協することなく，明白になります．
+
+このオプションはライブラリ名を編集することに注意し，過去のライブラリリ
+リースとのバイナリ互換を壊したくない場合は使用しないでください．一般的
+に，パッケージの内部ライブラリや，大変頻繁に変更されるインターフェース
+を持つ物に対してのみ`-release'を使用してください．
+
+
+File: libtool-ja.info,  Node: Library tips,  Next: Inter-library dependencies,  Prev: Versioning,  Up: Top
+
+7 インターフェース設計に対する助言
+**********************************
+
+良いライブラリインターフェースと書くことは，多くの経験とライブラリが解
+決する問題への完全な理解が必要です．
+
+良いインターフェースを設計した場合，頻繁に変更する必要がなく，ドキュメ
+ントを更新し続ける必要がなく，ユーザはライブラリの使用方法を何度も学習
+する必要がありません．
+
+ここにライブラリインターフェースの設計に関するヒントの短いリストがあり，
+それは仕事上で役立つでしょう．
+
+計画前
+     エントリポイントを頻繁に削除する必要がないように，すべてのインターフェー
+     スを本当に最小限にするように試みてください．
+
+インターフェースの変更を避ける
+     エントリポイントの再設計と変更を地獄のように繰り返すのが好きな人もいま
+     す(注意：関数の_名前変更_はエントリポイントの変更と考えられます)．
+     インターフェースを再設計する必要がある場合，ユーザが既存のコードを書き
+     換える必要がないように，互換機能を残すことを試みてください．
+
+不透明なデータ型の使用
+     ライブラリユーザがアクセスするデータ型の定義は，少ないければ少ないほど
+     良いでしょう．可能な場合，一般的な(内部データにキャスト可能な)ポインタ
+     を受け入れる関数を設計し，ライブラリユーザが直接データを操作するのを許
+     可するのではなく，アクセスする関数を提供してください．そうすることで，
+     インターフェースを変更せずに，データ構造を変更することが自由になります．
+
+     これは，本質的にオブジェクト指向のシステムで抽象的なデータ型と継承を使
+     用するのと同じです．
+
+ヘッダファイルの使用
+     ライブラリのグローバル関数と変数のそれぞれのドキュメントをヘッダファイ
+     ルに注意して書いていて，ライブラリソースファイルに含めている場合，コン
+     パイラは偶然にインターフェースの変更の有無を知らせるでしょう(*note
+     C header files::)．
+
+可能な場所での`static'キーワード(またはその等価物)の使用
+     ライブラリが持つグローバル関数は，減らせば減らすほど，より柔軟に変更で
+     きます．スタティック関数と変数は，形式を変更したいとき変更できます
+     ...ユーザはそれらにアクセスできず，そのためインターフェースは変更
+     されません．
+
+配列の次元に対する注意
+     大域的な配列の要素数は，たとえヘッダで`extern int foo[];'と宣言し
+     ていたとしても，それはインターフェースの一部です．これはi386とその他の
+     SVR4/ELFシステムでは，アプリケーションが共有ライブラリのデータを参照す
+     る時，データのサイズ(と型)はアプリケーションの実行形式に含められます．
+     配列や文字列の大きさを変更したくなければ，配列ではなくポインタとして提
+     供してください．
+
+* Menu:
+
+* C header files::              How to write portable include files.
+
+
+File: libtool-ja.info,  Node: C header files,  Up: Library tips
+
+7.1 Cヘッダファイルを書く
+=========================
+
+移植性の高いCヘッダファイルを書くことは難しく，それは異なる形式のコン
+パイラで読まれる可能性があるためです．
+
+C++コンパイラ
+     C++コンパイラは，Cより強固に形式化されているため，完全なプロトタイプで
+     宣言された関数を要求します．C関数と変数は，名前がおかしくならないよう
+     に，`extern "C"'ディレクティブで宣言する必要があります．libtool
+     でC++の使用に関連したその他の問題は，*Note C++ libraries::.
+
+ANSI Cコンパイラ
+     ANSI
+     Cコンパイラは，C++コンパイラほど厳密ではありませんが，関数のプロ
+     トタイプは，ヘッダファイルを`#include'したときの不必要な警告を避
+     けるため，行う方が良いでしょう．
+
+非ANSI Cコンパイラ
+     Non-ANSIコンパイラは，関数がプロトタイプされている場合，エラーを報告し
+     ます．
+
+これらの複雑さは，上記それぞれのコンパイラを利用可能にするため，ライブ
+ラリインファーフェースヘッダで，いくつかのCプリプロセッサの魔法を使用
+する必要があることを意味します．
+
+   libtool配布物の`demo'サブディレクトリの`foo.h'は，安全にシス
+テムディレクトリにインストール可能な，ヘッダファイルの書き方の例を提供
+します．
+
+   そのファイルの関連する部分は，以下のようになっています．
+
+     /* BEGIN_C_DECLS should be used at the beginning of your declarations,
+        so that C++ compilers don't mangle their names.  Use END_C_DECLS at
+        the end of C declarations. */
+     #undef BEGIN_C_DECLS
+     #undef END_C_DECLS
+     #ifdef __cplusplus
+     # define BEGIN_C_DECLS extern "C" {
+     # define END_C_DECLS }
+     #else
+     # define BEGIN_C_DECLS /* empty */
+     # define END_C_DECLS /* empty */
+     #endif
+
+     /* PARAMS is a macro used to wrap function prototypes, so that
+        compilers that don't understand ANSI C prototypes still work,
+        and ANSI C compilers can issue warnings about type mismatches. */
+     #undef PARAMS
+     #if defined (__STDC__) || defined (_AIX) \
+             || (defined (__mips) && defined (_SYSTYPE_SVR4)) \
+             || defined(WIN32) || defined(__cplusplus)
+     # define PARAMS(protos) protos
+     #else
+     # define PARAMS(protos) ()
+     #endif
+
+   これらのマクロは，以下のように`foo.h'で使用されます．
+
+     #ifndef FOO_H
+     #define FOO_H 1
+
+     /* The above macro definitions. */
+     #include "..."
+
+     BEGIN_C_DECLS
+
+     int foo PARAMS((void));
+     int hello PARAMS((void));
+
+     END_C_DECLS
+
+     #endif /* !FOO_H */
+
+   `#ifndef FOO_H'が，`foo.h'の本体を，与えられたコンパイルで一
+回以上読み込むことを避けることに注意してください．
+
+   また，`BEGIN_C_DECLS'/`END_C_DECLS'の組の外側あるものだけが，
+`#include'行にあります．厳密にいうと，それは，保護が必要なCのシン
+ボル名ですが，ヘッダの内容の中心周辺にこれらのマクロの単一の組がある場
+合，ヘッダファイルはより管理しやすくなります．
+
+   `PARAMS'，`BEGIN_C_DECLS'，そして`END_C_DECLS'のこれら
+の定義を独自のヘッダで使用すべきです．そして，C++，ANSI，そして非ANSI
+のコンパイラ(1)で有効なヘッダファイルを作成するために，そ
+れらを使用することが可能となります．
+
+移植可能なコードをネイティブに書かないでください，上記のヒントに続ける
+ことで，最も明白な問題を無くすことに役立ちますが，明らかに別の微妙な問
+題があります．以下の問題に対処する必要があるかもしれません．
+
+   * ANSI以前のコンパイラは，一般的なポインタ型`void *'を常にサポート
+     するわけではなく，そこでは`char *'を使用する必要があります．
+
+   * `const'，`signed'そして`signed'キーワードは，サポートさ
+     れていないコンパイラもあり，特にANSI以前のコンパイラがあげられます．
+
+   * `long double'型は，多くのコンパイラでサポートされていません．
+
+   ---------- Footnotes ----------
+
+   (1) 我々は，`__P'，`__BEGIN_DECLS'そして
+`__END_DECLS'の使用を推奨していました．アンダースコアで始まるシン
+ボル(とプリプロセッサマクロさえも)がコンパイラの使用で予約されているの
+で，悪いアドバイスでした．
+
+
+File: libtool-ja.info,  Node: Inter-library dependencies,  Next: Dlopened modules,  Prev: Library tips,  Up: Top
+
+8 ライブラリ内部の依存性
+************************
+
+定義では，すべての共有ライブラリシステムは，シンボル解決が実行時まで延
+期されるように，実行形式をライブラリに依存させる方法を提供します．
+
+   "ライブラリ内部の依存性"は，他のライブラリに依存するライブラリにあ
+ります．例えば，libtoolライブラリ`libhello'が`cos'関数を使用
+する場合，それは`libm'に対するライブラリ内部の依存性があり，数学
+ライブラリが`cos'を実装しています．
+
+共有ライブラリシステムには，内部で一貫した方法で，この機能を提供するも
+のもあります．これらのシステムは，潜在的に無限長の依存性の連鎖を認めま
+す．
+
+しかし，ほとんどの共有ライブラリのシステムは，単一レベルの依存のみを認
+めるという制限があります．これらのシステムでは，プログラムは共有ライブ
+ラリに依存しますが，共有ライブラリは他の共有ライブラリに依存しません．
+
+   あらゆる事象で，ライブラリ内部の依存性を宣言するため，libtoolは単純な
+メカニズムを提供します．独自のライブラリに依存するすべてのライブラリ
+`libNAME'に対しライブラリを作成するとき，対応する
+`-lNAME'オプションをリンク行に単純に加えます．`libm'に
+依存する`libhello'の例をビルドしてみます．
+
+     burger$ libtool --mode=link gcc -g -O -o libhello.la foo.lo hello.lo \
+                     -rpath /usr/local/lib -lm
+     burger$
+
+   プログラムを`libhello'に対しリンクするとき，`-l'オプションを
+再び指定する必要はありません．必要なライブラリがすべて見つかることを保
+証するため，libtoolがそれを行います．この制約は，スタティックライブラ
+リシステムと，単純なダイナミックライブラリシステムとの互換性を保つため
+に必要です．
+
+   AIXのように，この柔軟性さえ許可されないプラットフォームもあります．共
+有ライブラリをビルドするため，それは完全に自己内蔵型である必要があり
+(すなわち，`.lo'ファイルや`-l'で指定されたライブラリでシンボ
+ルが見つかるもののみを参照する)，-NO-UNDEFINEDフラグを指定する必
+要があります．デフォルトで，libtoolはこの種のプラットフォームではスタ
+ティックライブラリのみをビルドします．
+
+1.2以前のlibtoolのリリースのコードにおける，単純に考えられたライブラリ
+内部の依存性の追跡は，ライブラリを他のライブラリとリンクすることが可能
+なときが明白でないため，それが利用ができず，複雑な異常終了が発生します．
+この概念のより複雑な実装は，リリース1.3の前に再導入されましたが，
+libtoolがサポートするすべてのプラットフォームに移植されませんでした．
+デフォルトで，保守的な動作は，ライブラリが他のライブラリとリンクするこ
+とを避け，プログラムがリンクされるときのみに，その内部依存性が導入され
+ます．
+
+
+File: libtool-ja.info,  Node: Dlopened modules,  Next: Using libltdl,  Prev: Inter-library dependencies,  Up: Top
+
+9 dlopenモジュール
+******************
+
+"ダイナミックリンク"の議論では，その用語が二つの異なる概念を述べる
+ときに使用されるので，混乱することがあります．
+
+  1.
+     共有ライブラリに対しプログラムをコンパイルとリンクし，それは，ダイナミッ
+     クリンカにより実行時に自動的に解決される．この処理では，ダイナミックリ
+     ンクはアプリケーション透過です．
+
+  2. アプリケーションの，`dlopen'(1)のような関数の呼び出しで，
+     それは，ユーザが指定したモジュールを実行時に任意にロードします．この形
+     式のダイナミックリンクは，アプリケーションで明示的に制御されます．
+
+混乱を軽減するため，このマニュアルは二番目の形式のダイナミックリンクを
+"dlopen"モジュールとして述べることにします．
+
+dlopenモジュールの主な利点は，プログラムを拡張するために，インタプリタ
+言語を使用するのではなく，コンパイルされたオブジェクトコードにアクセス
+する能力です．実際，dlopenは，言語を拡張する効果的な方法を提供するため，
+インタプリタ言語でよく使用されます．
+
+   バージョン1.5の現在は，libtoolはdlopenされるモジュールのサ
+ポートを提供します．しかし，パッケージがそのようなサポートを行うことを，
+`configure.in'で，マクロ`AC_LIBTOOL_DLOPEN'を使用して指示し
+た方が良いでしょう．このマクロが使用されない(または
+`AC_PROG_LIBTOOL'の_後で_使用される)場合，libtoolはdlopenメ
+カニズムが利用不可能と仮定し，シミュレーションを試みます．
+
+この章ではdlopenでアクセス可能なモジュールを生成するため，dlopenアプリ
+ケーション開発者がlibtoolを使用する方法を議論します．
+
+* Menu:
+
+* Building modules::            Creating dlopenable objects and libraries.
+* Dlpreopening::                Dlopening that works on static platforms.
+* Finding the dlname::          Choosing the right file to `dlopen'.
+* Dlopen issues::               Unresolved problems that need your attention.
+
+   ---------- Footnotes ----------
+
+   (1) HP-UXでは異なり， `shl_load'という名の関数が使用されます．
+
+
+File: libtool-ja.info,  Node: Building modules,  Next: Dlpreopening,  Up: Dlopened modules
+
+9.1 dlopenのためのモジュールのビルド
+====================================
+
+オペレーティングシステムには，プログラムシンボルを`dlsym'(または
+その等価)関数を用いてダイナミックに解決するために，特別に宣言する必要
+があるものもあります．
+
+   libtoolは，`-export-dynamic'と`-module'リンクフラグを提供し (*note
+Link mode::)，それはこの宣言を行います．他のモジュールやdlopen
+されているlibtoolライブラリをdlopenするアプリケーションプログラムをリ
+ンクする場合，これらのフラグを使用する必要があります．
+
+   例えば，後でアプリケーションにdlopenされる共有ライブラリ
+`libhello'をビルドしたい場合，他のリンクオプションに
+`-module'を加えます．
+
+     burger$ libtool --mode=link gcc -module -o libhello.la foo.lo \
+                     hello.lo -rpath /usr/local/lib -lm
+     burger$
+
+   _実行形式_からのシンボルが，dlopenしたいライブラリの未解決の参照
+を満足させる必要がある場合，フラグ`-export-dynamic'を使用する必要
+があります．dlopenを呼び出す実行形式をリンクするとき，
+`-export-dynamic' を使用してください．
+
+     burger$ libtool --mode=link gcc -export-dynamic -o hell-dlopener main.o
+     burger$
+
+
+File: libtool-ja.info,  Node: Dlpreopening,  Next: Finding the dlname,  Prev: Building modules,  Up: Dlopened modules
+
+9.2 dlopen
+==========
+
+libtoolは，dlopenするlibtoolオブジェクトとlibtoolライブラリファイルに
+対し，_たとえ`dlopen'と`dlsym'関数が無いプラットフォー
+ムでも_，そのシンボルが解決できるように，特別のサポートを提供します．
+
+   "laziness"の増加順にプログラムにコードをロードする，以下の別の方法を
+考慮します．
+
+  1.
+     参照するしないに関わらない，実行形式の一部となるオブジェクトファイルへ
+     のリンクです．オブジェクトファイルが見つからない場合，リンカは実行形式
+     の作成を停止します．
+
+  2.
+     上記のオブジェクトファイルでの未定義の参照を満足させるように，リンク時
+     に検索されるようにするための，リンカに対するスタティックライブラリの宣
+     言です．スタティックライブラリが見つからない場合，リンカは実行形式の作
+     成を停止します．
+
+  3.
+     上記のファイルでの未定義の参照を満足させるために，実行時に検索されるよ
+     うにするための，実行時リンクの共有ライブラリの宣言です．共有ライブラリ
+     が見つからない場合，ダイナミックリンカは実行形式の作成を停止します．
+
+  4.
+     アプリケーション自身が解決することができるように，参照をダイナミックに
+     解決するdlopenモジュールです．モジュールを開くときエラーが発生したり，
+     モジュールが見つからない場合，アプリケーションは壊れることなく回復しま
+     す．
+
+   libtoolは，コンパイル時にオブジェクトファイルをプログラムにリンクし，
+プログラムのシンボルテーブルを表現するデータ構造を作成することで，スタ
+ティックなプラットフォームで`-dlopen'オプションをエミュレートしま す．
+
+   この特徴を使用するため，プログラムのリンク時(*note Link mode::)に
+`-dlopen'や`-dlpreopen'フラグを使用することで，アプリケーショ
+ンでdlopenしたいオブジェクトを宣言する必要があります．
+
+ -- Structure: struct lt_dlsymlist { const char *NAME; lt_ptr ADDRESS; }
+     NAME属性は，`"fprintf"'のような，シンボル名のNULL終端されて
+     いる文字列です．ADDRESS属性は，`&fprintf'のような対応するオ
+     ブジェクトへの一般的なポインタです．
+
+ -- Variable: const lt_dlsymlist * lt_preloaded_symbols
+     LT_SYMBOL構造体の配列で，プログラムにリンクされる，プリロードさ
+     れているすべてのシンボルを表現します．それぞれの`-dlpreloaded'ファ
+     イルに対し，ファイルのNAMEを用いた要素と，`0'の
+     ADDRESSがあり，このファイルからエクスポートされるすべてのシンボ
+     ルが続きます．実行形式自身に対し，特別の名前@PROGRAM@が使用されます．
+     最後の要素は，NAMEと`0'のADDRESSを持ちます．
+
+   ドル記号のような，ANSI
+Cでは有効ではない識別子を許可するコンパイラもあ ります．libtoolはANSI
+Cで有効なシンボル(最初がASCII文字またはアンダー
+スコアで，ゼロ個以上のASCII文字，数字，そしてアンダースコアが続くもの)
+のみ認識するので，非ASCIIシンボルはLT_PRELOADED_SYMBOLSに出現し ません．
+
+
+File: libtool-ja.info,  Node: Finding the dlname,  Next: Dlopen issues,  Prev: Dlpreopening,  Up: Dlopened modules
+
+9.3 dlopenで正しい名前の検索
+============================
+
+`-module'を用いてライブラリがリンクされた後，dlopen可能になります．
+残念ながら ライブラリ名が変更されるため，パッケージでdlopenの正しいファ
+イルを決定する必要があります．
+
+   最も率直で柔軟な実装は，インストールされた`.la'ファイルを探し，以
+下の行を検索することで実行時に決定することです．
+
+     # The name that we can `dlopen'.
+     dlname='DLNAME'
+
+   DLNAMEが空の場合，ライブラリはdlopenされません．それ以外では，そ
+れでライブラリのdlnameを与えます．そのため，ライブラリが
+`/usr/local/lib/libhello.la'にインストールされていて，
+DLNAMEが`libhello.so.3'の場合，
+`/usr/local/lib/libhello.so.3'がdlopenされます．
+
+プログラムがこのアプローチを行っている場合，ライブラリが最終的にインス
+トールされるディレクトリと同じように，
+`LD_LIBRARY_PATH'(1)環境変数でリストアップされているディレクトリで
+検索します．この変数(または同等物)を検索することで，インストール前でも，
+プログラムがlibtoolを使用してリンクし提供されているdlopenモジュールを
+見つけることを保証します．
+
+   ---------- Footnotes ----------
+
+   (1) AIXでの`LIBPATH'とHP-UXでの `SHLIB_PATH'です．
+
+
+File: libtool-ja.info,  Node: Dlopen issues,  Prev: Finding the dlname,  Up: Dlopened modules
+
+9.4 未解決のdlopenの問題
+========================
+
+以下の問題は，libtoolのdlopenサポートを使用しても解決しません．
+
+   *
+     dlopen関数は一般に，共有ライブラリプラットフォームでのみ利用可能です．
+     パッケージをスタティックなプラットフォームに移植したい場合，libltdl
+     (*note Using
+     libltdl::)を使用する，または，代わりとなる独自のdlopenダ
+     イナミックコードを開発する必要があります．最も妥当な解決方法は，
+     `dlopen'ファミリーのラッパー関数を書くことを必要とし，それは，与
+     えられたプラットフォームでdlopenがサポートされていないまたは利用不可能
+     なときの，パッケージ特有のトリックです．
+
+   * 関数の`dlopen'ファミリーの実装には大きな違いがあります．同じ関数
+     名を用いないプラットフォーム(特にHP-UXでは`shl_load'ファミリーを
+     用います)さえ存在します．
+
+   * アプリケーション開発者は，`dlopen'に渡す正しいモジュール名を発見
+     するために，カスタムの検索関数を書く必要があります．
+
+
+File: libtool-ja.info,  Node: Using libltdl,  Next: Other languages,  Prev: Dlopened modules,  Up: Top
+
+10 libltdlの使用
+****************
+
+libtoolは，`libltdl'と呼ばれる小さなライブラリを提供し，それは，
+dlopenライブラリの様々な困難をプログラマから隠すことを目指します．それ
+は，dlopenの機能で必要とされるアプリケーションとともに配布可能な，ヘッ
+ダファイルと小さなCソースファイルから成り立ちます．`libltdl'サー
+ビスの単純な実装に対し，あまりに制限が多いダイナミックリンカをもつプラッ
+トフォーム上では，GNU DLDを要求したり，libtoolのdlpreopenメカニズムを
+用いてダイナミックリンクをエミュレートするだけのものもあります．
+
+libltdlは，現在以下のダイナミックリンクメカニズムをサポートします．
+
+   * `dlopen' (Solaris，Linux，そして様々なBSD)
+
+   * `shl_load' (HP-UX)
+
+   * `LoadLibrary' (Win16とWin32)
+
+   * `load_add_on' (BeOS)
+
+   * GNU DLD
+     (スタティックライブラリに対するダイナミックリンクのエミュレーション)
+
+   * libtoolのdlpreopen (*note Dlpreopening::)
+
+以下の例外で，libltdlはGNUライブラリ公有使用許諾書の条件下でライセンス
+されています．
+
+     GNU Lesser General Public Licenseの特別な例外として，GNU
+     libtoolを使用
+     してビルドされるプログラムやライブラリの一部としてこのファイルを配布す
+     る場合，プログラムの残りに対して使用する配布条件と同じものにして，それ
+     を含めることができます．
+
+* Menu:
+
+* Libltdl interface::           How to use libltdl in your programs.
+* Modules for libltdl::         Creating modules that can be `dlopen'ed.
+* Thread Saftey in libltdl::	Registering callbacks for multi-thread safety.
+* User defined module data::    Associating data with loaded modules.
+* Module loaders for libltdl::  Creating user defined module loaders.
+* Distributing libltdl::        How to distribute libltdl with your package.
+
+
+File: libtool-ja.info,  Node: Libltdl interface,  Next: Modules for libltdl,  Up: Using libltdl
+
+10.1 プログラムでのlibltdlの使用法
+==================================
+
+libltdl APIは，強力なSolarisとLinuxのdlopenインターフェースに似ていて，
+それは，非常に簡単ですが強力です．
+
+プログラムでlibltdlを使用するために，ヘッダファイル`ltdl.h'をイン
+クルードする必要があります．
+
+     #include <ltdl.h>
+
+libltdlの前回のリリースでは，POSIX名前空間の慣習に違反していたシ
+ンボルをいくつか使用していました．これらのシンボルの使用は，現在では非
+難されるので，ここで記述されるように置換されました．古い非難されそうな
+シンボル名に依存したコードがある場合，`ltdl.h'をインクルードする
+前に`LT_NON_POSIX_NAMESPACE'を定義すると，変換されたマクロが提供
+されます．使用するシンボルの組が何であっても，新しいAPIは前回のものと
+バイナリ互換ではないので，このバージョンのlibltdlを使用するため，アプ
+リケーションを再コンパイルする必要があるでしょう．
+
+libltdlがスレッドセーフでない，すなわち，マルチスレッドアプリケーショ
+ンは，libtoolに対しミューテックスを使用する必要があることに注意してく
+ださい．それは，GNU/Linuxのglibc 2.0の`RTLD_LAZY'を用いた
+`dlopen'が(デフォルトでlibtoolを使用します)，スレッドセーフではな
+いことが報告されていますが，この問題は，glibc 2.1でおそらく修正される
+でしょ．一方，`RTLD_NOW'は，FreeBSD上のマルチスレッドアプリケーショ
+ンで問題が生じたと報告されています．これらの問題に関する作業は，読者の
+演習として残っています．貢献は，きっと歓迎されます．
+
+以下の型は`ltdl.h'で定義されています．
+
+ -- Type: lt_ptr
+     `lt_ptr'は，汎用ポインタです．
+
+ -- Type: lt_dlhandle
+     `lt_dlhandle'はモジュール"ハンドル"です．すべてのlt_dlopenされる
+     モジュールはそれに関連付けされたハンドルがあります．
+
+ -- Type: lt_dlsymlist
+     `lt_dlsymlist'はdlpreopenされるモジュールのシンボルリストです．こ
+     の構造体は，*note Dlpreopening::で記述されます．
+
+libltdlは以下の関数を提供します．
+
+ -- Function: int lt_dlinit (void)
+     libltdlを初期化します．この関数は，libltdl使用する前に呼び出す必要があ
+     り，複数回呼び出すことが可能です．成功したら0，それ以外ではエラーの番
+     号を返します．
+
+ -- Function: int lt_dlexit (void)
+     libltdlを終了し，すべてのモジュールを閉じます．この関数は，
+     `lt_dlinit'が正常に呼び出された回数と同じだけ呼び出されたとき，
+     libltdlを終了するだけです．成功したら0，それ以外ではエラーの番号を返し
+     ます．
+
+ -- Function: lt_dlhandle lt_dlopen (const char *FILENAME)
+     ファイル名FILENAMEを用いてモジュールを開き，そのハンドルを返しま
+     す．`lt_dlopen'は，libtoolダイナミックモジュール，プリロードされ
+     たスタティックモジュール，プログラム自身，そしてネイティブなダイナミッ
+     クライブラリを開くことが可能です．
+
+     モジュール内の未解決のシンボルは，それが依存する(まだ実装されていない)
+     ライブラリと，前もってdlopenされたモジュールを用いて解決されます．この
+     モジュールを使用している実行形式が`-export-dynamic'フラグでリンク
+     されている場合，実行形式の大域的なシンボルもモジュール内の参照の解決に
+     使用されます．
+
+     FILENAMEが`NULL'でプログラムが`-export-dynamic'や `-dlopen
+     self'を用いてリンクされている場合，`lt_dlopen'はプ
+     ログラム自身のハンドルを返し，それはそのシンボルのアクセスに使用可能で
+     す．
+
+     libltdlがライブラリを見つけられず，ファイル名FILENAMEがディレク
+     トリコンポーネントを持たない場合，それは，以下の検索パスを(以下の順番
+     で)，さらにモジュールを検索します．
+
+       1. ユーザ定義の検索パス：
+          この検索パスは，関数`lt_dlsetsearchpath'，
+          `lt_dladdsearchdir'，そして`lt_dlinsertsearchdir'を用いたプ
+          ログラムで変更可能です．
+
+       2. libltdlの検索パス：
+          この検索パスは，環境変数LTDL_LIBRARY_PATHの値です．
+
+       3. システムのライブラリ検索パス：
+          システム依存のライブラリ検索パスです(例えば，Linuxでは
+          LD_LIBRARY_PATHになります)．
+
+     それぞれの検索パスは，例えば`"/usr/lib/mypkg:/lib/foo"'のように，
+     コロンで分離された絶対的なディレクトリのリストにする必要があります．
+
+     同じモジュールが複数回ロードされた場合，同じハンドルが返されます．あら
+     ゆる原因で`lt_dlopen'が失敗した場合，`NULL'が返されます．
+
+ -- Function: lt_dlhandle lt_dlopenext (const char *FILENAME)
+     ファイル名に異なるファイル名の拡張子を追加を試みる以外は，
+     `lt_dlopen'と同じです．ファイル名FILENAMEを持つファイルが見
+     つからない場合，libltdlは，以下の拡張子の追加を試みます．
+
+       1. libtoolのアーカイブ拡張子`.la'
+
+       2.
+          ホストプラットフォームの本来のダイナミックライブラリに使用される拡張子
+          で，例えば，`.so'，`.sl'等です．
+
+     この探索手法は，本来のダイナミックライブラリの命名規則を知らないプログ
+     ラムが，そのようなライブラリを，libtoolモジュールと同様に，透過的に
+     `dlopen'することを可能にするために設計されています．
+
+ -- Function: int lt_dlclose (lt_dlhandle HANDLE)
+     モジュールHANDLEの参照カウントを減らします．ゼロになったり，この
+     モジュールに依存する他のモジュールがない場合，モジュールはアンロードさ
+     れます．成功時には0を返します．
+
+ -- Function: lt_ptr lt_dlsym (lt_dlhandle HANDLE, const char *NAME)
+     モジュールHANDLE内のアドレスを返し，そこでは，ヌルで終端された文
+     字列NAMEで与えられるシンボルがロードされています．シンボルが見つ
+     からない場合は`NULL'を返します．
+
+ -- Function: const char * lt_dlerror (void)
+     libltdlのあらゆる関数から発生した最も新しいエラーを記述する，可読性の
+     高い文字列を返します．初期化からまたは最後に呼び出されてからエラーが発
+     生していない場合，`NULL'を返します．
+
+ -- Function: int lt_dlpreload (const lt_dlsymlist *PRELOADED)
+     プリロードされているモジュールPRELOADEDのリストを登録します．
+     PRELOADEDが`NULL'の場合，`lt_dlpreload_default'で設定
+     されているリスト以外の，これまで登録されているすべてのシンボルリストが
+     検出されます．成功時には0を返します．
+
+ -- Function: int lt_dlpreload_default (const lt_dlsymlist *PRELOADED)
+     プリロードされているモジュールリストのデフォルトをPRELOADEDに設
+     定し，それは`lt_dlpreload'で検出されません．この関数は，
+     `lt_dlinit'を使用して初期化されるためにlibltdlを要求し_ない_
+     ことと，デフォルトでプリロードされるモジュールを登録するためにプログラ
+     ムで使用できることに注意してください．この関数を直接呼び出す代わりに，
+     ほとんどのプログラムはマクロ`LTDL_SET_PRELOADED_SYMBOLS'を使用し
+     ます．
+
+     成功時には0を返します．
+
+ -- Macro: LTDL_SET_PRELOADED_SYMBOLS
+     プリロードされるシンボルのデフォルトリストを設定します．プリロードされ
+     るlibltdlのモジュールを初期化するために，プログラムで使用した方が良い
+     でしょう．
+
+          #include <ltdl.h>
+
+          int main() {
+            /* ... */
+            LTDL_SET_PRELOADED_SYMBOLS();
+            /* ... */
+          }
+
+ -- Function: int lt_dladdsearchdir (const char *SEARCH_DIR)
+     検索ディレクトリSEARCH_DIRを現在のユーザ定義のライブラリ検索パス
+     に後置します．成功時には0を返します．
+
+ -- Function: int lt_dlinsertsearchdir (const char *BEFORE,
+          const char *SEARCH_DIR)
+     検索ディレクトリSEARCH_DIRをユーザ定義のライブラリ検索パスを，ア
+     ドレスBEFOREで始まる項目の直前に挿入します．BEFOREが
+     `NULL'の場合，`lt_dladdsearchdir'が呼び出されたのと同様に後
+     置します．成功時には0を返します．
+
+ -- Function: int lt_dlsetsearchpath (const char *SEARCH_PATH)
+     現在のユーザ定義のライブラリ検索パスをSEARCH_PATHで置換し，それ
+     はコロンで分けられた絶対的なディレクトリのリストにする必要があります．
+     成功時には0を返します．
+
+ -- Function: const char * lt_dlgetsearchpath (void)
+     現在のユーザ定義のライブラリ検索パスを返します．
+
+ -- Function: int lt_dlforeachfile (const char *SEARCH_PATH,
+          int (*FUNC) (const char *FILENAME, lt_ptr DATA), lt_ptr DATA)
+     アプリケーションによっては，既知の名前でモジュールを個別にロードしたく
+     なく，むしろディレクトリの組みからすべてのモジュールを見つけたり，初期
+     化中にすべてロードしたいかもしれません．この関数を用いると，libltdlに
+     候補となるSEARCH_PATH内のコロンで分離されたディレクトリリストを
+     走査させ，それらを独自のコールバック関数FUNCに渡すDATAと併
+     せて渡すことが可能です．SEACH_PATHが`NULL'の場合，
+     `lt_dlopen'が調査する標準的な場所をすべて検索します．この関数は，
+     これらの呼び出しの一つでもゼロ以外の値が返されるまで，またはファイルが
+     亡くなるまで，SEARCH_PATHで見つかったそれぞれのファイルに対し，
+     FUNCを呼び出し続けます．`lt_dlforeachfile'は最後の
+     FUNCの呼び出しの返り値を返します．
+
+     例えば，最初のベクトル(配列)のアドレスを保持しているDATAを使用し
+     ているファイルの，順番になっている"argv"のようなベクトル(配列)を構
+     築するために，FUNCを定義することも可能です．
+
+ -- Function: int lt_dlmakeresident (lt_dlhandle HANDLE)
+     モジュールを`lt_dlclose'できないように印を付けます．モジュールが
+     プロジェクトの中心部の機能を実装している場合，削除されるとコードが壊れ
+     るので，これは役に立つはずです．成功すると0を返します．
+
+     実行しているバイナリに対するHANDLEを取得するために `lt_dlopen
+     (NULL)'を使用する場合，そのハンドルは常駐しているよう
+     な印が常に付き，したがってうまく`lt_dlclose'することができません．
+
+ -- Function: int lt_dlisresident (lt_dlhandle HANDLE)
+     特定のモジュールが常駐しているように印が付いているかどうか調査し，その
+     場合は1を返し，それ以外では0を返します．この関数の実行中にエラーがある
+     場合， -1 が返され，`lt_dlerror'を用いて回収されるエラーメッセー
+     ジが設定されます．
+
+ -- Variable: lt_ptr (*) (size_t SIZE) lt_dlmalloc
+ -- Variable: void (*) (lt_ptr PTR) lt_dlfree
+     これらの変数は，デフォルトで`malloc'と`free'に設定されますが，
+     同等の機能を提供する他の関数に設定可能です．しかし，
+     `lt_dlpreopen_default'やマクロ`LTDL_SET_PRELOADED_SYMBOLS'以
+     外のあらゆるlibltdl関数の呼び出し後に，その値を編集すべきではありませ
+     ん．
+
+
+File: libtool-ja.info,  Node: Modules for libltdl,  Next: Thread Saftey in libltdl,  Prev: Libltdl interface,  Up: Using libltdl
+
+10.2 `dlopen'可能なモジュールの作成
+===================================
+
+libtoolモジュールは，いくつかの例外はありますが，通常のlibtoolライブラ
+リに似ています．
+
+   libtoolの`-module'スイッチを用いて，モジュールとリンクする必要が
+あり，そして，dlopenをサポートしていないプラットフォームでlibtoolが
+dlpreopenできるよう，`-dlopen modulename.la'を用いてモジュールを
+dlopenするために，あらゆるプログラムとリンクすべきです．モジュールが，
+あらゆる他のライブラリに依存する場合，モジュールとリンクするときや，そ
+れをdlopenするプログラムをリンクするとき，それらを確実に指定してくださ
+い．特定のモジュールに対し*note Versioning::を使用禁止にしたい場合，
+`-avoid-version'スイッチを用いてリンクすべきです．libtoolモジュー
+ルは，"lib"接頭辞が不要なことに注意してください．しかし，automake 1.4
+やそれ以降のものは，そのようなモジュールのビルドが必要です．
+
+   通常，その内部を知る必要なしにプログラムがdlopenできるよう，一組のモ
+ジュールは同じインターフェース提供し，すなわち同じシンボルをエクスポー
+トします．すべてのエクスポートされたシンボルで，シンボルの衝突を避ける
+ため，"modulename_LTX_"を前置する必要があります(`modulename'はモ
+ジュール名です)．内部シンボルは，例えば"_modulename_"を前置するといっ
+た，他のモジュールと衝突しないような方法で命名する必要があります．一回
+以上宣言された，同じシンボルを持つことをサポートするシステムもあります
+がそれは通常移植性がなく，そのようなモジュールをdlpreopenすることを不
+可能にします．libltdlは，シンボルの本当の名前を得るとき，自動的に接頭
+辞を切り取ります．さらに，非libtoolモジュールもdlopenできるよう，接頭
+辞を使用していないモジュールをサポートします．
+
+   `foo1.c'は移植可能なlibtoolモジュールの例です．エクスポートされた
+シンボルは"foo1_LTX_"，内部シンボルは"_foo1_"が前置されています．コー
+ドの可読性を高めるため，エイリアスは最初に定義されています．
+
+     /* aliases for the exported symbols */
+     #define foo	foo1_LTX_foo
+     #define bar	foo1_LTX_bar
+
+     /* a global variable definition */
+     int bar = 1;
+
+     /* a private function */
+     int _foo1_helper() {
+       return bar;
+     }
+
+     /* an exported function */
+     int foo() {
+       return _foo1_helper();
+     }
+
+`Makefile.am'は，モジュール`foo1.la'をビルドするのに必要な規
+則を含んでいます．
+
+     ...
+     lib_LTLIBRARIES = foo1.la
+
+     foo1_la_SOURCES = foo1.c
+     foo1_la_LDFLAGS = -module
+     ...
+
+
+File: libtool-ja.info,  Node: Thread Saftey in libltdl,  Next: User defined module data,  Prev: Modules for libltdl,  Up: Using libltdl
+
+10.3 マルチスレッド環境でのlibtldlの使用
+========================================
+
+`lt_dlmutex_register()'関数を使用し，適切なコールバック関数の定義
+を提供することで，libltdlをマルチスレッド環境で使用することが可能です．
+
+ -- Type: void lt_dlmutex_lock (void)
+     これは，ミューテックスロックが必要なlibltdlの実装コードの部分の，最初
+     に呼び出される関数のアドレスを持っている，関数のポインタ型です．
+
+     libltdlは本質的に再帰的なので，これらのコールバック関数によって使用さ
+     れるロックメカニズムが再入可能であることは重要で，そうでなければ，おか
+     しな問題が発生します．
+
+ -- Type: void lt_dlmutex_unlock (void)
+     アンロック関数に一致する型です．
+
+ -- Type: void lt_dlmutex_seterror (const char *ERROR);
+     libltdl APIの関数の多くは，エラーを発生したクライアントを示す，特
+     殊な返り値をとります．通常(シングルスレッドアプリケーションでは)，内部
+     から回収することができるエラーを記述する文字列は，`lt_dlerror()'
+     に保存されます．
+
+     この形式の関数は，それがマルチスレッドのコンテクストで動作するように，
+     ライブラリに登録される必要があります．関数は，スレッドローカルストレー
+     ジに渡されるあらゆるエラーメッセージを保存すべきです．
+
+ -- Type: const char * lt_dlmutex_geterror (void)
+     スレッドローカルのストレージに，最後にエラーメッセージを保存したものに
+     関連するコールバック関数に一致する型です．
+
+     正しく登録されたとき，クライアントに対するエラーメッセージを回収するた
+     めに，全てのスレッドから`lt_dlerror())'によって，この関数は使用さ
+     れます．
+
+ -- Function: int lt_dlmutex_register (lt_dlmutex_lock *LOCK,
+          lt_dlmutex_unlock *UNLOCK, lt_dlmutex_set_error *SETERROR,
+          lt_dlmutex_geterror *GETERROR)
+     libltdlのマルチスレッドの準備で，上記のそれぞれの関数の型を登録するた
+     めに，この関数を使用してください．全ての引数は，有効な`NULL'でな
+     い関数アドレスにする必要があり，また，そうでない場合は，シングルスレッ
+     ドオペレーションへの返り値として，全て`NULL'にする必要があります．
+
+
+File: libtool-ja.info,  Node: User defined module data,  Next: Module loaders for libltdl,  Prev: Thread Saftey in libltdl,  Up: Using libltdl
+
+10.4 ロードされたモジュールに関連するデータ
+===========================================
+
+libltdlが管理している，それぞれのロードされたモジュールに関する内部情
+報には，ユーザが利用可能なものもあり，それは以下のような構造体の形式で
+す．
+
+ -- Type: struct lt_dlinfo { char *FILENAME; char *NAME; int REF_COUNT;
+          }
+     `lt_dlinfo'は，モジュールの情報を保存するために使用されます．
+     FILENAME属性は，`NULL'で終端された，実際のモジュールファイ
+     ル名の文字列です．モジュールがlibtoolモジュールの場合，NAMEはそ
+     のモジュール名(例えば，`"dir/libfoo.la"'に対する`"libfoo"')
+     で，それ以外では`NULL'に設定されます．REF_COUNT属性は，現在
+     ロードされている同じモジュールの回数を記述する参照カウンタです．
+
+   以下の関数は，与えられたHANDLEに対するこの構造体のlibltdlの内部
+のコピーへのポインタを返します．
+
+ -- Function: const lt_dlinfo * lt_dlgetinfo (lt_dlhandle HANDLE)
+     モジュールHANDLEに関するいくつかの情報を含む構造体の，ポインタを
+     返します．構造体の内容は編集してはなりません．失敗時には`NULL'が
+     返ります．
+
+さらに，ロードした全てのモジュールのハンドルリストを保持する手助けをす
+るために，これらの関数で，ロードされているモジュールのlibltdlのリスト
+全体を繰り返すことが可能となります．
+
+ -- Function: int lt_dlforeach
+          (int (*FUNC) (lt_dlhandle HANDLE, lt_ptr DATA), lt_ptr DATA)
+     ロードされているそれぞれのモジュールに対し関数FUNCを呼び出します．
+     引数のHANDLEは，ロードされているモジュールのハンドルの一つで，
+     DATAは，`lt_dlforeach'に渡すDATA引数です．FUNC
+     がハンドルの一つに対し，ゼロでない値を返すとすぐに，
+     `lt_dlforeach'はFUNCの呼び出しを停止し，直ちに1を返します．
+     それ以外は0が返ります．
+
+ -- Function: lt_dlhandle lt_dlhandle_next (lt_dlhandle place)
+     PLACEが`NULL'の場合は，リスト内の最初のハンドルを返し，そし
+     て順番に次ものを呼び出すことで，ロードされているモジュール全体を繰り返
+     します．PLACEが，ロードされているモジュールリスト内の最後の要素
+     の場合，この関数は`NULL'を返します．
+
+もちろん，アプリケーションの目的のために，それぞれのハンドルに関連付け
+する必要があるデータがある場合，libltdlで管理されるリストと平行して，
+ロードされたモジュールハンドルの独自のリストの管理が必要になります．し
+かし，個別のモジュールハンドルを用いたアプリケーションデータに，ロード
+されたものとして関連付けさせるために，以下のAPIの呼び出しを使用す
+る場合には，実際にはそうする必要はありません．前もって保存したデータを
+回収するために後で利用するlibltdlからのユニークな呼び出しidを，最初に
+取得する必要があります．これで，ロードされているモジュールに対する独自
+のデータを個別に保存したい異なるライブラリが，もう一つの(ライブラリ)の
+データへのインターフェースなしでそれを行うことが可能となります．
+
+ -- Type: lt_dlcaller_id
+     個別のデータセットのキーを保つ，透過でない型です．
+
+ -- Function: lt_dlcaller_id lt_dlcaller_register (void)
+     モジュールデータごとに個別のセットを，保存し回収するためのユニークなキー
+     を取得するために，これを使用してください．
+
+ -- Function: lt_ptr lt_dlcaller_set_data (lt_dlcaller_id KEY,
+          lt_dlhandle HANDLE, lt_ptr DATA)
+     後で回収するために，KEYとHANDLEにユニークに関連付けされた
+     データのセットとして，DATAを設定します．この関数は，以前に関連付
+     けされたKEYとHANDLEがある場合は，そのDATAを返します．
+     0の結果は，前回のエラー(が存在する場合)に対する診断結果が，
+     `lt_dlerror()' で利用可能であることを示している可能性があります．
+
+     例えば，いくつかの関連データを正しく削除するために，以下のようにします．
+
+              lt_ptr stale = lt_dlcaller_set_data (key, handle, 0);
+              if (stale == NULL)
+                {
+                  char *error_msg = lt_dlerror ();
+
+                  if (error_msg != NULL)
+                    {
+                      my_error_handler (error_msg);
+                      return STATUS_FAILED;
+                    }
+                }
+              else
+                {
+                  free (stale);
+                }
+
+ -- Function: lt_ptr lt_dlcaller_get_data (lt_dlcaller_id KEY,
+          lt_dlhandle HANDLE)
+     KEYとHANDLEに関連付けされているDATAのアドレス，また
+     は，無い場合は`NULL'を返します．
+
+ここまでの関数は，アプリケーションにロードされたりアンロードされたりし
+たモジュールを追跡させる必要なく，オペレーションの検索と適用を実装する
+ために，`lt_dlforeach'と組み合わせることが可能です．
+
+     int
+     my_dlcaller_callback (lt_dlhandle handle, lt_ptr key_ptr)
+     {
+       struct my_module_data *my_data;
+
+       my_data = lt_dlcaller_get_data (handle, (lt_dlcaller_id) *key_ptr);
+
+       return process (my_data);
+     }
+
+     int
+     my_dlcaller_foreach (lt_dlcaller_id key)
+     {
+       lt_dlforeach (my_dlcaller_callback, (lt_ptr) &key);
+     }
+
+
+File: libtool-ja.info,  Node: Module loaders for libltdl,  Next: Distributing libltdl,  Prev: User defined module data,  Up: Using libltdl
+
+10.5 新しいモジュールローダの作成方法と登録方法
+===============================================
+
+モジュールにアクセスするためのlibltdlの方法は多いけれど，プロジェクト
+の目的に十分でないときもあります．独自のローダを書き，`lt_dlopen'
+が利用できるように，libltdlでそれを登録することが可能です．
+
+   ローダを書くことは，`lt_dlopen'，`lt_dlsym'そして
+`lt_dlclose'で呼び出し可能な，少なくとも三つの関数を書くことを必
+要とします．オプションで，`lt_dlexit'が実行されるときクリーンアッ
+プ処理を実行する終了関数と，`lt_dlsym'に渡されるあらゆるシンボル
+に前置されるシンボルの前置文字を提供することも可能です．これらの関数は，
+以下の関数のポインタ型に一致する必要があり，その後，それらを
+`lt_user_dlloader'の代わりに関連付けし，登録することが可能です．
+
+   ローダの登録には，`lt_dlloader_find'が認識でき，
+`lt_dlloader_remove'で削除できるように，それに対する名前を選択す
+ることが必要です．選択した名前はユニークである必要があり，libltdlの組
+み込みローダで既に使用しているものはいけません．
+
+"dlopen"
+     存在する場合は，システムのダイナミックローダ．
+
+"dld"
+     libltdlがビルドされたときに`libdld'がインストールされている場合は，
+     GNU dldローダ．
+
+"dlpreload"
+     プリロードされているスタティックモジュールの`lt_dlopen'のためのロー
+     ダ．
+
+   前置される"dl"は，libltdlの将来のバージョンで提供されるローダとして予
+約されているので，独自のローダ名に使用すべきではありません．
+
+以下の型は，`ltdl.h'で定義されています．
+
+ -- Type: lt_module
+     `lt_module'はモジュール依存のdlloaderです．ダイナミックモジュール
+     ローダの拡張は，これらの低レベルの型を使用して通信を行ないます．
+
+ -- Type: lt_dlloader
+     `lt_dlloader'はモジュールローダの型に対するハンドルです．
+
+ -- Type: lt_user_data
+     `lt_user_data'はローダのインスタンスデータに対して使用されます．
+
+ -- Type: struct lt_user_dlloader {const char *SYM_PREFIX;
+          lt_module_open *MODULE_OPEN; lt_module_close *MODULE_CLOSE;
+          lt_find_sym *FIND_SYM; lt_dlloader_exit *DLLOADER_EXIT; }
+     ダイナミックモジュールを開くために新しい方法を定義したくて，それを使用
+     した`lt_dlopen' APIがある場合，これらの構造体のインスタンス
+     を作成し，それを`lt_dlloader_add'に渡す必要があります．好みの
+     DLLOADER_DATAフィールドで渡すことが可能で，それは，関数ポインタ
+     フィールドで指定されている，それぞれの関数への最初のパラメータの値とし
+     て返されます．
+
+ -- Type: lt_module lt_module_open (const char *FILENAME)
+     `lt_dlloader'モジュールローダに対するローダ関数の型です． `struct
+     lt_user_dlloader'構造体のdlloader_dataフィールドに設定さ
+     れる値は，LOADER_DATAパラメータで，この関数に渡されます．そのよ
+     うな関数の実装は，指名されたモジュールのロードを試み，関連する
+     `lt_module_close'と`lt_sym_find'関数のポインタに渡すのに適切
+     な`lt_module'を返すべきです．関数が失敗した場合は`NULL'を返
+     し，`lt_dlseterror'を用いてエラーメッセージを設定すべきです．
+
+ -- Type: int lt_module_close (lt_user_data LOADER_DATA,
+          lt_module MODULE)
+     ユーザが定義したモジュールローダに対するアンローダの型です．そのような
+     関数の実装は，MODULEモジュールに結び付けられたあらゆるリソースの
+     解放を試み，その後でメモリからアンロードすべきです．理由があって関数が
+     失敗した場合，`lt_dlseterror'を用いてエラーメッセージを設定し，ゼ
+     ロ以外を返すべきです．
+
+ -- Type: lt_ptr lt_find_sym (lt_module MODULE, const char *SYMBOL)
+     ユーザが定義したモジュールローダに対する，シンボルルックアップ関数の型
+     です．そのような関数の実装は，モジュールMODULE内の指名された
+     SYMBOLのアドレスを返す，もしくは，検査が失敗した場合は，エラーメッ
+     セージを`lt_dlseterror'で設定し，`NULL'を返すべきです．
+
+ -- Type: int lt_dlloader_exit (lt_user_data LOADER_DATA)
+     ユーザが定義したモジュールローダに対する，終了関数の型です．そのような
+     関数の実装は，ローダに関連するあらゆるリソースを解放すべきで，それには
+     `lt_user_dlloader'の`dlloader_data'フィールド内部にあるユー
+     ザが指定したあらゆるデータを含みます．`NULL'でない場合は，関数は
+     `lt_dlexit'と`lt_dlloader_remove'から呼び出されます．
+
+   例えば，以下のようにします．
+
+     int
+     register_myloader (void)
+     {
+       lt_user_dlloader dlloader;
+
+       /* User modules are responsible for their own initialisation. */
+       if (myloader_init () != 0)
+         return MYLOADER_INIT_ERROR;
+
+       dlloader.sym_prefix    = NULL;
+       dlloader.module_open   = myloader_open;
+       dlloader.module_close  = myloader_close;
+       dlloader.find_sym      = myloader_find_sym.
+       dlloader.dlloader_exit = myloader_exit;
+       dlloader.dlloader_data = (lt_user_data)myloader_function;
+
+       /* Add my loader as the default module loader. */
+       if (lt_dlloader_add (lt_dlloader_next (NULL), &dlloader, "myloader") != 0)
+         return ERROR;
+
+       return OK;
+     }
+
+ローダに対する必要な初期化がある場合は，ローダが登録される前に手動で実
+行する必要があることに注意してください - libltdlはユーザローダの初期
+化を扱いません．
+
+   終了はlibltdlで扱われ_ます_が，`dlloader_exit'のコールバック
+が初期化フェーズの間に要求された，あらゆるリソースを解放することを確か
+めることは重要です．
+
+libltdlは，独自のモジュールローダを書くために，以下の関数を提供します．
+
+ -- Function: int lt_dlloader_add (lt_dlloader *PLACE,
+          lt_user_dlloader *DLLOADER, const char *LOADER_NAME)
+     新しいモジュールローダを全てのローダリストに加え，それは，(PLACE
+     が`NULL'の場合は)最後のローダとして，それ以外ではPLACEとし
+     て渡されたローダの直前に加えます．LOADER_NAMEは，新しく登録され
+     たローダが渡された場合，`lt_dlloader_name'を返します，これらの
+     LOADER_NAMEは，ユニークである必要があり，そうでない場合は，
+     `lt_dlloader_remove'と`lt_dlloader_find'は動作不可能です．成
+     功に対し0を返します．
+
+          {
+            /* Make myloader be the last one. */
+            if (lt_dlloader_add (NULL, myloader) != 0)
+              perror (lt_dlerror ());
+          }
+
+ -- Function: int lt_dlloader_remove (const char *LOADER_NAME)
+     ユニークな名前LOADER_NAMEで識別されているローダを削除します．こ
+     れが成功可能となる前に，指名されたローダにより開かれている全てのモジュー
+     ルを，閉じておく必要があります．成功に対し0を返し，それ以外では，エラー
+     メッセージが`lt_dlerror'から取得可能です．
+
+          {
+            /* Remove myloader. */
+            if (lt_dlloader_remove ("myloader") != 0)
+              perror (lt_dlerror ());
+          }
+
+ -- Function: lt_dlloader * lt_dlloader_next (lt_dlloader *PLACE)
+     ローダモジュール全体を繰り返し，それは，PLACEが`NULL'の場合
+     は最初のローダを返し，順番に次を呼び出すことで行います．ハンドルは，
+     `lt_dlloader_add'用です．
+
+          {
+            /* Make myloader be the first one. */
+            if (lt_dlloader_add (lt_dlloader_next (NULL), myloader) != 0)
+              return ERROR;
+          }
+
+ -- Function: lt_dlloader * lt_dlloader_find (const char *LOADER_NAME)
+     LOADER_NAME識別子に一致する最初のローダを返し，識別子が見つから
+     ない場合は`NULL'を返します．
+
+     libltdl自身で使用可能な識別子は，ホストアーキテクチャがサポートしてい
+     る場合は"dlopen"(1)，"dld"，そして"dlpreload"です．
+
+          {
+            /* Add a user loader as the next module loader to be tried if
+               the standard dlopen loader were to fail when lt_dlopening. */
+            if (lt_dlloader_add (lt_dlloader_find ("dlopen"), myloader) != 0)
+              return ERROR;
+          }
+
+ -- Function: const char * lt_dlloader_name (lt_dlloader *PLACE)
+     `lt_dlloader_next'や`lt_dlloader_find'で取得される，
+     PLACEの識別名を返します．この関数が失敗する場合，`NULL'を返
+     し，`lt_dlerror'で回収するためのエラーを設定します．
+
+ -- Function: lt_user_data * lt_dlloader_data (lt_dlloader *PLACE)
+     `lt_dlloader_next'や`lt_dlloader_find'で取得される，
+     PLACEのアドレスを返します．この関数が失敗する場合，`NULL'を
+     返し，`lt_dlerror'で回収するためのエラーを設定します．
+
+10.5.1 ユーザモジュールローダでのエラー処理
+-------------------------------------------
+
+ -- Function: int lt_dladderror (const char *DIAGNOSTIC)
+     この関数で，独自のエラーメッセージを`lt_dlerror'に組み込むことが
+     可能となります．`lt_dlerror'で返すための適切な診断メッセージに渡
+     すものと，`lt_dlseterror'で使用されるエラー識別子が返されます．
+
+     識別子の割り当てが失敗した場合，この関数は-1を返します．
+
+          int myerror = lt_dladderror ("Doh!");
+          if (myerror < 0)
+            perror (lt_dlerror ());
+
+ -- Function: int lt_dlseterror (int ERRORCODE)
+     独自のモジュールローダを書くとき，`lt_dlerror'インターフェースを
+     通じて伝搬されるようにエラーを発生させるために，この関数を使用すべきで
+     す．libltdlで使用される標準エラーの全ては，`ltdl.h'で宣言されてい
+     て，そうでなければ，`lt_dladderror'を用いて独自に書き加えることが
+     可能です．
+
+          if (lt_dlseterror (LTDL_ERROR_NO_MEMORY) != 0)
+            perror (lt_dlerror ());
+
+---------- Footnotes ----------
+
+   (1) これは，モジュールをロードしている API に依存します -
+例えば，`shl_load'と`LoadLibrary'で す
+
+
+File: libtool-ja.info,  Node: Distributing libltdl,  Prev: Module loaders for libltdl,  Up: Using libltdl
+
+10.6 パッケージとともにlibltdlを配布する方法
+============================================
+
+libltdlはlibtoolとともにインストールされるのですが，libtoolやlibltdlを
+インストールしていないパッケージユーザの利便性のため，パッケージの配布
+物にlibltdlを含めたいと思うかもしれません．この場合，手動でパッケージ
+に加える`ltdl'オブジェクト，または，使用したいlibltdlの特色を決定
+する必要があります．それは，コンビニエンスライブラリやインストール可能
+なlibtoolライブラリです．
+
+   `libltdl'をッケージに加える最も簡単な方法は，ソースファイルの
+`ltdl.c'と`ltdl.h'をパッケージのソースディレクトリにコピーし，
+ソースの残りと一緒にリンクすることです．これの手助けをするため，
+autoconfのm4マクロが`ltdl.m4'で利用可能です．autoconfを実行する前
+に，それらが`aclocal.m4'で利用可能かどうかを確かめる必要がありま す -
+automakeを使用している場合は`ltdl.m4'の内容を
+`acinclude.m4'に加え，そうでない場合は`aclocal.m4'に加えます．
+マクロを利用可能にした後，`ltdl.o'を正しくビルドするために必要な
+コンフィグレーション時の調査を実行するため，`AC_LIB_LTDL'マクロの
+呼び出しを，パッケージの`configure.in'に加える必要があります．イ
+ンストールされているlibltdl やlibltdlに依存しているライブラリと，パケー
+ジのバイナリをリンクしようとする場合，この手法には問題があります．シン
+ボルの二重定義の問題があるかもしれません．
+
+コンビニエンスライブラリの利点の一つは，インストールされていないという
+ことなので，libtoolを使用するという事実はユーザにとって明白ではなく，
+ユーザが以前にインストールしているlibtoolのバージョンを上書きしません．
+一方，(例えば，バグフィックスといった)理由があって，libltdlをアップグ
+レードしたい場合，インストールされているバージョンのlibtoolを置き換え
+る代わりに，パッケージを再コンパイルする必要があります．しかし，プログ
+ラムやライブラリが以前にインストールされているバージョンのlibltdlを使
+用しているライブラリとリンクする場合，リンカエラーが発生し実行時にクラッ
+シュするかもしれません．もう一つの問題は，一つ以上のlibtoolライブラリ
+へコンビニエンスライブラリをリンクできないことで，複製されたシンボルを
+得る可能性があるので，そのときは，これらのライブラリを用いた単一のプロ
+グラムとリンクしてください．一般的に，libtoolを使用している他のライブ
+ラリに依存しないプログラムでは，コンビニエンスライブラリを問題なく使用
+可能です．libltdlのこの特徴を利用可能にするため，
+`AC_LIBLTDL_CONVENIENCE'行を`configure.in'に，
+`AC_PROG_LIBTOOL'の_前に_加えた方が良いでしょう．
+
+   インストール可能なバージョンのlibltdlを選択するために，マクロ
+`AC_LIBLTDL_INSTALLABLE'の呼び出しを`configure.in'に，
+`AC_PROG_LIBTOOL'の_前に_加えた方が良いでしょう．このマクロ
+は，libltdlが既にインストールされているかどうか調査し，そうでない場合，
+ビルドしインストールされるパッケージlibltdlを埋め込むことを要求します．
+しかし，バージョン調査は実行されないことに注意してください．ユーザは，
+コンフィグレーションスイッチ`--enable-ltdl-install'を使用すること
+で，他のバージョンの存在に関係なく，テストを優先し，埋め込まれた
+libtoolをインストールする必要があるか決定することができます．
+
+   libtoolをパッケージに埋め込むため，`libtoolize'コマンドラインに
+`--ltdl'のみ加えてください．それで，パッケージのサブディレクトリ
+`libltdl'にlibtoolのソースをコピーします．どちらのマクロも，
+`libltdl'ディレクトリの位置を指定する追加の引数を受け入れます．デ
+フォルトで，どちらのマクロも`${top_srcdir}/libltdl'を仮定します．
+
+   どのマクロを使用しても，`configure.in'は`AC_CONFIG_SUBDIRS'
+を使用して，libltdlをコンフィグレーションし，`Makefile'が，例えば，
+automakeのSUBDIRSを使用して，libtoolのディレクトリでサブmakeを開
+始することを確実にするのはあなたです．どちらのマクロも，libltdlでリン
+クするために使用するリンクフラグのシェル変数LIBLTDLと，
+`ltdl.h'をインクルードするプログラムをコンパイルするために使用す
+るプリプロセッサフラグLTDLINCLを定義します．この変数が
+`Makefile'で利用可能にすることを確実にするため`AC_SUBST'を使
+用したり，デフォルトで`AC_SUBST'される，LIBSと
+CPPFLAGSのような変数に加えるのはあなた次第です．
+
+   コンビニエンスlibltdlを使用している場合，LIBLTDLはコンビニエンス
+libltdlのバージョンに対するパス名で，LTDLINCLはlibltdlを含むディ
+レクトリが続く`-I'になり，どちらも`${top_builddir}/'，また
+は，`${top_srcdir}/'で，それぞれ始まります．
+
+   インストールされているlibltdlのバージョンを要求し，それが見つかった場
+合(1)，LIBLTDLは
+`-lltdl'に，LTDLINCLは空に設定されます(それは，libltdlがラ
+イブラリパスにある場合，`ltdl.h'がインクルードパスのどこかにある
+という，暗黙の仮定です)．インストール可能なlibltdlのバージョンをビルド
+する必要がある場合，`${top_builddir}/'で始まるそのパス名は，
+LIBLTDLに保存され，LTDLINCLはコンビニエンスライブラリの場
+合と同様に設定されます．
+
+   そのため，libltdlとプログラムをリンクしたいときは，それをインストール
+された，またはインストール可能なコンビニエンスライブラリにし，すなわち，
+libtoolを使用して，LTDLINCLを用いてコンパイルし，
+`$(LIBLTDL)'を用いてリンクしてください．
+
+   おそらく`AC_LIBTOOL_DLOPEN'も`configure.in'に，
+`AC_PROG_LIBTOOL'の_前に_加えた方が良く，そうしない場合は，
+libtoolはdlopenメカニズムがサポートされていないと仮定し，おそらく希望
+していないdlpreopenに逆戻りします．
+
+   libltdlとプログラムをリンクするとき，`-static'や
+`-all-static'スイッチの使用を避けてください．dlopen関数はスタティッ
+クリンクに対して利用可能でない可能性があるので，これはすべてのプラット
+フォームで動作するわけではありません．
+
+以下の例は，パッケージにコンビニエンスlibltdlを埋め込む方法を示します．
+インストール可能な形態を使用するために，`AC_LIBLTDL_CONVENIENCE'
+を`AC_LIBLTDL_INSTALLABLE'で置換してください．我々は，libltdlが
+`libtoolize --ltdl'を使用して埋め込まれていると仮定しています．
+
+   configure.inは以下のようになります．
+     ...
+     dnl Enable building of the convenience library
+     dnl and set LIBLTDL accordingly
+     AC_LIBLTDL_CONVENIENCE
+     dnl Substitute LTDLINCL and LIBLTDL in the Makefiles
+     AC_SUBST(LTDLINCL)
+     AC_SUBST(LIBLTDL)
+     dnl Check for dlopen support
+     AC_LIBTOOL_DLOPEN
+     dnl Configure libtool
+     AC_PROG_LIBTOOL
+     dnl Configure libltdl
+     AC_CONFIG_SUBDIRS(libltdl)
+     ...
+
+   Makefile.amは以下のようになります．
+     ...
+     SUBDIRS = libltdl
+
+     INCLUDES = $(LTDLINCL)
+
+     myprog_LDFLAGS = -export-dynamic
+     # The quotes around -dlopen below fool automake <= 1.4 into accepting it
+     myprog_LDADD = $(LIBLTDL) "-dlopen" self "-dlopen" foo1.la
+     myprog_DEPENDENCIES = $(LIBLTDL) foo1.la
+     ...
+
+   ---------- Footnotes ----------
+
+   (1) たとえ，libltdlがインストールされていても，libltdlがCライ
+ブラリ以外のライブラリが提供するシンボルに依存する場合，
+`AC_LIBLTDL_INSTALLABLE'は検出に失敗する可能性があります．この場
+合，libltdlのビルドとインストールは不必要です．
+
+
+File: libtool-ja.info,  Node: Other languages,  Next: Troubleshooting,  Prev: Using libltdl,  Up: Top
+
+11 他の言語でlibtoolを使用する
+******************************
+
+libtoolは最初に，C言語での共有ライブラリを書くことに対するサポートを加
+えるために実装されました．しかし，時間が経ち，プログラマが好みのプログ
+ラム言語での共有ライブラリの便利さを自由に得られるように，libtoolは他
+の言語と統合されています．
+
+この章は，libtoolが他の言語と相互作用する方法と，Cを用いない場合に必要
+とされる特記事項を記述します．
+
+* Menu:
+
+* C++ libraries::
+
+
+File: libtool-ja.info,  Node: C++ libraries,  Up: Other languages
+
+11.1 C++に対するライブラリを書く
+================================
+
+C++コードのライブラリを作成することは，そのオブジェクトファイルがCのも
+のと三つの点で異なっているだけので，かなり簡単な処理になります．
+
+  1.
+     名前をmangleするため，C++ライブラリはC++コンパイラで作成されたものだけ
+     利用可能です．この決定は，コンストラクタ，例外処理，そしてRTTIのような
+     機能の実装との衝突からユーザを守るため，C++の設計者によってなされまし
+     た．
+
+  2.
+     システムによっては，ダイナミックリンカがダイナミック(すなわち実行時)に
+     初期化の実行するため，C++コンパイラは特別な動作を行なう必要があります．
+     これは，そのようなライブラリとリンクするため，`ld'を直接呼び出す
+     べきではなく，その代わりにC++コンパイラを使用するべきだということを意
+     味します．
+
+  3.
+     C++コンパイラは，いくつかの標準C++ライブラリとデフォルトでリンクします
+     が，libtoolは，これらのライブラリがどれかを知らないため，それに対して
+     リンクする方法を調査するため，ライブラリ内部の依存の解析さえ実行できま
+     せん．それゆえ，C++プログラムやライブラリとリンクするため`ld'を実
+     行すると失敗すると思われます．
+
+   これらの問題のため，C++プログラムとライブラリをコンパイルしリンクする
+ために，常にC++コンパイラを使用するように設計されています．プログラム
+の`main()'関数のインスタンスによっては，スタティックなC++オブジェ
+クトを適切に初期化するため，C++コンパイラでコンパイルする必要があるも
+のもあります．
+
+
+File: libtool-ja.info,  Node: Troubleshooting,  Next: Maintaining,  Prev: Other languages,  Up: Top
+
+12 トラブルシューティング
+*************************
+
+libtoolは，現在のオペレーティングシステムで最新を保つよう変更しながら，
+コンスタントに開発されていています．libtoolがプラットフォーム上で思っ
+たように動作しない場合，問題点と解決方法を決定する助けとなる，この章を
+読んだ方が良いでしょう．
+
+* Menu:
+
+* Libtool test suite::          Libtool's self-tests.
+* Reporting bugs::              How to report problems with libtool.
+
+
+File: libtool-ja.info,  Node: Libtool test suite,  Next: Reporting bugs,  Up: Troubleshooting
+
+12.1 libtoolのテストスイート
+============================
+
+libtoolは，その能力をテストし，libtoolプログラムの明らかなバグを報告す
+る，プログラムの独自のセットとともにあります．これらのテストは，
+libtoolの過去の問題と他のオペレーティングシステム内の既知の欠陥を基に
+して，絶えず進化もしています．
+
+   `INSTALL'ファイルに記述されているように，libtoolのビルド後，基本
+的な機能要求に合っていることを確めるために，`make check'を実行する
+ことが可能です．
+
+* Menu:
+
+* Test descriptions::           The contents of the test suite.
+* When tests fail::             What to do when a test fails.
+
+
+File: libtool-ja.info,  Node: Test descriptions,  Next: When tests fail,  Up: Libtool test suite
+
+12.1.1 テストスイートの記述
+---------------------------
+
+テストスイートの現在のプログラムと，それらがテストするもののリストは以
+下のようになっています．
+
+`cdemo-conf.test'
+`cdemo-exec.test'
+`cdemo-make.test'
+`cdemo-static.test'
+`cdemo-shared.test'
+     これらのプログラムは，libtool配布物の`cdemo'サブディレクトリが，
+     正しくコンフィグレーションされ，ビルドされることを知るための調査を行な
+     います．
+
+     `cdemo'サブディレクトリは，libtoolのコンビニエンスライブラリのデ
+     モンストレーションと，ビルド時にスタティックライブラリの作成を可能とす
+     るメカニズムを含んでいて，コンポーネントが共有ライブラリであったとして
+     も，プログラムや他のライブラリと後でリンクされることを可能とする方法で
+     す．
+
+     `cdemo-make.test'と`cdemo-exec.test'のテストは，三つの異なる
+     libtoolコンフィグレーションで，三回実行されます．
+     `cdemo-conf.test'は，スタティックライブラリと共有ライブラリの両方
+     をビルドするために(両方サポートしているプラットフォームではデフォルト
+     です)`cdemo/libtool'をコンフィグレーションし，
+     `cdemo-static.test'はスタティックライブラリのみビルドし
+     (`--disable-shared')，そして`cdemo-shared.test' は共有ライブ
+     ラリのみビルドします(`--disable-static')．
+
+`demo-conf.test'
+`demo-exec.test'
+`demo-inst.test'
+`demo-make.test'
+`demo-unst.test'
+`demo-static.test'
+`demo-shared.test'
+`demo-nofast.test'
+`demo-pic.test'
+`demo-nopic.test'
+     これらのプログラムは，libtool配布物の`demo'サブディレクトリが，コ
+     ンフィグレーション，ビルド，インストール，そしてアンインストールが正し
+     くできることを知るために調査します．
+
+     `demo'サブディレクトリは，libtoolを使用する平凡なパッケージのデモ
+     ンストレーションを含んでいます．テストの`demo-make.test'，
+     `demo-exec.test'，`demo-inst.test'，そして
+     `demo-unst.test'は，四つの異なるlibtoolのコンフィグレーションの下
+     で，四回実行されます．`demo-conf.test'は，スタティックと共有の両
+     方のライブラリをビルドするために`demo/libtool'をコンフィグレーショ
+     ンし，`demo-static.test'は，スタティックライブラリのみビルドし
+     (`--disable-shared')，そして`demo-shared.test'は，共有ライブ
+     ラリのみをビルドします(`--disable-static')．
+     `demo-nofast.test'は，高速インストールモードを使用禁止にするため
+     に(`--enable-fast-install=no')，`demo/libtool'をコンフィグレー
+     ションします．`demo-pic.test'は，PICコードをビルドしたいときは
+     (`--with-pic')，非PICコードをビルドしたいときは
+     (`--without-pic')にするように，`demo/libtool'をコンフィグレー
+     ションします．
+
+`deplibs.test'
+     スタティックライブラリを共有ライブラリにリンク不可能なシステムもたくさ
+     んあります．そのような場合を避けるため，libtoolは
+     `deplibs_check_method'を使用します．このテストは，libtoolの
+     `deplibs_check_method'が正しく動作するかどうか調査します．
+
+`hardcode.test'
+     共有ライブラリを持つすべてのシステムで，実行形式に対しリンクされるライ
+     ブラリの位置が実行形式の内部に符号化されるはずです*note Linking
+     executables::．このテストは，システムリンカがライブラリの位置をハードコー
+     ドし，libtool自身のリンカの動作方法の概念と一致することを保証する条件
+     を調査します．
+
+`build-relink.test'
+     変数SHLIBPATH_OVERRIDES_RUNPATHが正しく設定されているかどうか調
+     査します．テストが失敗し，VERBOSEが設定されている場合，それは変
+     数を設定する必要がないことを示します．
+
+`noinst-link.test'
+     libtoolが，たった今ビルドされたライブラリにリンクする方が良い時，以前
+     にインストールされているバージョンにリンクしようとしないかどうか調査し
+     ます．
+
+`depdemo-conf.test'
+`depdemo-exec.test'
+`depdemo-inst.test'
+`depdemo-make.test'
+`depdemo-unst.test'
+`depdemo-static.test'
+`depdemo-shared.test'
+`depdemo-nofast.test'
+     これらのプログラムは，libtool配布物の`depdemo'サブディレクトリの，
+     コンフィグレーション，ビルド，インストール，そしてアンインストールを，
+     正しく行えることを判定するための調査を行います．
+
+     `depdemo'サブディレクトリは，libtoolに依存する内部ライブラリのデ
+     モンストレーションを含みます．このテストプログラムは，いくつかの交互依
+     存しているライブラリをリンクします．
+
+     テストの，`depdemo-make.test'，`depdemo-exec.test'，
+     `depdemo-inst.test'，そして`depdemo-unst.test'は，四つの異な
+     るlibtoolのコンフィグレーションの下で，四回実行されます．
+     `depdemo-conf.test'は，スタティックと共有の両方のライブラリをビル
+     ドするために，`depdemo/libtool'をコンフィグレーションし，
+     `depdemo-static.test'はスタティックライブラリのみビルドし
+     (`--disable-shared')，`depdemo-shared.test'は共有ライブラリ
+     のみビルドします(`--disable-static')．`depdemo-nofast.test'
+     は高速インストールモード(`--enable-fast-install=no')を利用不可能
+     にするために，`depdemo/libtool'をコンフィグレーションします．
+
+`mdemo-conf.test'
+`mdemo-exec.test'
+`mdemo-inst.test'
+`mdemo-make.test'
+`mdemo-unst.test'
+`mdemo-static.test'
+`mdemo-shared.test'
+     これらのプログラムは，libtool配布物の`mdemo'サブディレクトリが，
+     コンフィグレーション，ビルド，インストール，そしてアンインストールが正
+     しくできることを知るために調査します．
+
+     `mdemo'サブディレクトリは，libtoolと，システム非依存のモジュール
+     ロードのための，dlopenラッパー`libltdl'を使用するパッケージのデモ
+     ンストレーションを含みます．ライブラリ`libltdl'は，様々なプラット
+     フォーム(Linux，Solaris，HP/UX等)に対する，dlpreopenモジュールに対する
+     サポートを含む(*note Dlpreopening::)dlopenラッパーを提供します．
+
+     テストの`mdemo-make.test'，`mdemo-exec.test'，
+     `mdemo-inst.test'，そして`mdemo-unst.test'は，三つの異なる
+     libtoolのコンフィグレーションの下で，三回実行されます．
+     `mdemo-conf.test'は，スタティックと共有の両方のライブラリをビルド
+     するために`mdemo/libtool'をコンフィグレーションし，
+     `mdemo-static.test'は，スタティックライブラリのみビルドし
+     (`--disable-shared')，そして`mdemo-shared.test'は，共有ライ
+     ブラリのみをビルドします(`--disable-static')．
+
+`dryrun.test'
+     このテストは，libtoolの`--dry-run'モードが正しく動作するかどうか
+     を調査します．
+
+`assign.test'
+     libtoolスクリプト内の割り当てられている同じ行で，停止したり，続けたり
+     しないかどうか調査します．
+
+`link.test'
+     このテストは，libtoolでないスタティックライブラリに対する直接的なリン
+     クが正しく動作することを保証します．
+
+`link-2.test'
+     このテストは，`.lo'で終わるファイルがプログラムファイルに直接リン
+     クされないことを確かめます．
+
+`nomode.test'
+     実際にlibtoolの助けが可能かどうか調査します．
+
+`quote.test'
+     このプログラムはlibtoolのメタ文字を引用符で囲むことを調査します．
+
+`sh.test'
+     `test'コマンドがlibtoolで忘れられていないか調査します．
+
+`suffix.test'
+     他のプログラミング言語がlibtoolで使用されるとき(*note Other
+     languages::)，ソースファイルは`.c'以外の接尾子で終わるかもしれませ
+     ん．このテストは，サポートするすべてのファイル形式に対する接尾子を扱う
+     こと可能で，接尾子が不当なときは失敗することを確認します．
+
+
+
+File: libtool-ja.info,  Node: When tests fail,  Prev: Test descriptions,  Up: Libtool test suite
+
+12.1.2 テストが失敗するとき
+---------------------------
+
+上記のそれぞれのテストは，`make check'を実行するとき出力を生成しな
+いように設計されています．それぞれのプログラムの終了ステータスで，テス
+トが成功しなかったかどうかを`Makefile'に伝えます．
+
+   テストが失敗した場合，それはlibtool内のプログラムエラー，またはプログ
+ラム自身のエラーのどちらかが存在することを意味します．
+
+特定のテストを調査するために，通常のプログラムで行うように，直接実行す
+ることが可能です．テストがこの方法で呼び出されたとき，それは，問題を決
+定するのに役に立ちそうな出力を生成します．
+
+   テストプログラムに出力を生成させるもうひとつの方法は，実行前に
+VERBOSE環境変数を`yes'に設定することです．例えば，`env VERBOSE=yes make
+check'ですべてのテストが実行され，それぞれについてデ
+バッグ情報の表示が得られます．
+
+
+File: libtool-ja.info,  Node: Reporting bugs,  Prev: Libtool test suite,  Up: Troubleshooting
+
+12.2 バグの報告
+===============
+
+libtoolにバグを発見したと考えた場合，もう一度考えた直したほうが良いで
+しょう．libtool管理者は，責任転嫁(または"バグを通過させる"かもしれま
+せん)で有名です(1)．libtoolは，共有ライ
+ブラリの実装で既知の欠陥を修正するために開発されたので，libtoolのバグ
+のほとんどは，ある程度は，他のオペレーティングシステムのバグになります．
+しかし，libtool の管理者は，他人のバギーなオペレーティングシステムに対
+するサポートを加えることを，確かに楽しんでいます．[Texinfoでウインクし
+ている笑顔を表示する，いい方法があれば良いのですが．]
+
+   libtoolの純粋なバグは，シェルスクリプトの移植性の問題，ドキュメントの
+エラー，そしてテストスイートの失敗(*note Libtool test suite::)を含みま
+す．
+
+最初に，問題と考えられる動作が，既に特徴として言及されていないことを確
+かめるために，ドキュメントとへルプ画面を調査してください．
+
+   そして，バグを報告することに関するEmacsガイド(*note Reporting Bugs:
+(emacs)Bugs.)を読んでください．リストアップされてい
+る詳細は，Emacs特有のものもありますが，基本的な原則は一般的なものです．
+
+   最後に，テストスイートの出力(*note When tests fail::)，バグを再生成す
+るのに必要なすべての詳細，そして，動作がバグだと考えられる理由の概要の
+ような適切なあらゆる_事実_とともに，the libtool bug reporting address
+<bug-libtool@gnu.org>にバグの報告を
+送ってください．サブジェクト行に，単語"libtool"と，同様に使用してい
+るバージョンナンバー(それは，`ltconfig --version'の入力で分かりま
+す)が含まれていることを確認してください．
+
+   ---------- Footnotes ----------
+
+   (1) 訳注：原文では，passing the buck(責任転嫁)と passing the
+bug(バグを通過させる)をかけています
+
+
+File: libtool-ja.info,  Node: Maintaining,  Next: GNU Free Documentation License,  Prev: Troubleshooting,  Up: Top
+
+13 libtoolの管理用メモ
+**********************
+
+この章は，libtool管理者が見つける重要な情報を含みます．新しいシステム
+への移植や，独自のlibtoolを書くことを考慮しない場合，役に立たないでしょ
+う．
+
+* Menu:
+
+* New ports::                   How to port libtool to new systems.
+* Tested platforms::            When libtool was last tested.
+* Platform quirks::             Information about different library systems.
+* libtool script contents::     Configuration information that libtool uses.
+* Cheap tricks::                Making libtool maintainership easier.
+
+
+File: libtool-ja.info,  Node: New ports,  Next: Tested platforms,  Up: Maintaining
+
+13.1 新しいシステムへのlibtoolの移植
+====================================
+
+サポートされていないシステムへのlibtoolの移植に乗り出す前に，既存の仕
+事と重複していないことを確認するために，the libtool mailing list
+<libtool@gnu.org>に電子メールを 送る価値はあります．
+
+移植の文章が見つからない場合，文句を言ってください！パッチを用いた苦情
+と，ドキュメントやlibtool自身の改良は十分に歓迎されます．
+
+* Menu:
+
+* Information sources::         Where to find relevant documentation
+* Porting inter-library dependencies::  Implementation details explained
+
+
+File: libtool-ja.info,  Node: Information sources,  Next: Porting inter-library dependencies,  Up: New ports
+
+13.1.1 情報源
+-------------
+
+新たな移植の必要性が明らかになると，通常，以下の情報が必要となります．
+
+標準的なシステム名
+     他のシステムに影響しないようにlibtoolのコンフィグレーション処理を変更
+     可能にするため，このシステムに対する`config.guess'の出力が必要で
+     す．
+
+`ld'と`cc'に対するmanページ
+     共有ライブラリを作成するため，共有ライブラリのみにリンクするため，そし
+     て，PICを生成するために使用するフラグを，通常これらは記述しています．
+     必要な情報を見つけるため，以下の相互参照が必要かもしれません．
+
+`ld.so'，`rtld'，または，その同等物のmanページ
+     これらは，システムで共有ライブラリがロードされる仕組みを理解するための，
+     有益な情報源です．
+
+`ldconfig'やその同等物のmanページ
+     このページは，通常，共有ライブラリをインストールする方法を記述していま
+     す．
+
+`ls -l /lib /usr/lib'の出力
+     これは，システムの共有ライブラリの命名規則を表示し，それは，シンボリッ
+     クリンクの名前も含んでいます．
+
+あらゆる追加の文章
+     共有ライブラリのビルドとインストール方法の特別な文章があるシステムもあ
+     ります．
+
+Bourneシェルプログラムの方法を知っている場合，完全に自分で移植すること
+が可能です．それ以外の場合，関連する作業を行う腕のある人を探す必要があ
+ります．libtoolメーリングリストの人々は，新たな移植への援助を志願する
+意思があるので，彼らに情報を送ることができます．
+
+独自に移植するためには，プラットフォーム特有のコンフィグレーションプロ
+セスの変更を行うため，`libtool.m4'マクロを明確に修正する必要があ
+ります．`PORTME'キーワードに対するファイルを検索する必要があり，
+それで，変更に必要なヒントを得られるでしょう．一般的に，呼び出されるも
+のは，適切なコンフィグレーション変数の編集です(*note libtool script
+contents::)．
+
+最善策は，既にサポートされている良く似たシステムを見つけ，変更の基本と
+することです．しかし，システムが他のサポートされているシステムと，大き
+く異なる場合や，新しいコンフィグレーション変数を加え，それに応じて
+`ltmain.in'スクリプトを変更する必要がある場合もあります．欲しいも
+のを達成するための，最も効果的な方法の助言がある可能性があるので，
+`ltmain.in'を変更する前に，メーリングリストに書いて確認してくださ い．
+
+
+File: libtool-ja.info,  Node: Porting inter-library dependencies,  Prev: Information sources,  Up: New ports
+
+13.1.2 ライブラリ内部の依存性のサポートの移植
+---------------------------------------------
+
+バージョン1.2c以降，libtoolは，Toshio Kuratomi
+<badger@prtr-13.ucsc.edu>のパッチのおかげで，ライブラリ内部の依
+存性を可能とする機能が再導入されてるプラットフォームもあります．パッチ
+に含まれるメッセージの短いバージョンは以下のようになります．
+
+   基本的な体系はこのようになります．`libtool.m4'で，libtoolを書いて
+いる人は，`$deplibs'が`$archive_cmds'のどこかに含まれている
+こと，また，変数`$deplibs_check_method'と，
+`deplibs_check_method'がファイルマジックの場合は
+`$file_magic_cmd'が設定されていることを確認します．
+
+   `deplibs_check_method'は，以下の五つの内の一つのはずです．
+`file_magic [REGEX]'
+     ライブラリリンクパスで正しいlibnameを持つライブラリを探します．そして，
+     ライブラリで`$file_magic_cmd'を実行し，正規表現REGEXに一致
+     することを調査します．FILE_MAGIC_TEST_FILEが`libtool.m4'に
+     よって設定されているとき，正規表現がその出力と一致するかどうかを検証し，
+     それ以外ではユーザが警告を受けるようにするため，それは
+     `$file_magic_cmd'への引数として使用されます．
+
+`test_compile'
+     ライブラリリストの出力以外とプログラムがリンク可能かどうかのみを調査し，
+     それらが`ldd'の出力でリストアップされていることを調査します．それ
+     は現在，使用されていないので，将来は打ち切る可能性があります．
+
+`pass_all'
+     調査せず，すべて通過します．例えばDEC OSF/1 3 と
+     4のような，デフォルト
+     で，コードが位置に依存せず，ライブラリ内部の依存性がダイナミックリンカ
+     で適切にサポートされているプラットフォームで，これは動作するでしょう．
+
+`none'
+     deplibsをdeplibs=""に再設定します．そうすれば，`archive_cmds'は，
+     すべてのプラットフォームでdeplibsを含むはずですが，deplibは必要がなけ
+     れば使用されません．
+
+`unknown'
+     `libtool.m4'で優先されない場合，すべてのシステムでデフォルトです．
+     それは`none'と同じですが，正しい値が何か，我々が本当に知らないこ
+     とを文章化していて，我々はそれを改善するパッチを歓迎します．
+
+   `ltmain.in'で，我々は本当に一生懸命作業しました．それは，
+(libname_spec等の評価を使用するための変数を設定/リリース行う)小さな初
+期化と移植，そして使用するメソッドを決定するケース文です．これは，実際
+にはコードです...  もう少し凝縮できれば良かったのですが，関数呼び出し
+を用いずにできるとは思えませんでした．私はほとんどの(ループの外に出す
+等の)最適化を行いましたが，余分なものがあるかもしれません．明確な最適
+化を考える前に，前進を止め，発見されたバグに対して作業すべきだと考えま
+した．
+
+
+File: libtool-ja.info,  Node: Tested platforms,  Next: Platform quirks,  Prev: New ports,  Up: Maintaining
+
+13.2 テストされたプラットフォーム
+=================================
+
+以下の表は，共有ライブラリのサポートを謡っているプラットフォームで，
+libtoolがテストされたことが分かっている最後の時期を記述しています．
+
+     -------------------------------------------------------
+     $BI8=`E*$J%[%9%HL>(B            $B%3%s%Q%$%i(B libtool   $B7k2L(B
+       ($B%D!<%k$N%P!<%8%g%s(B)                 $B%j%j!<%9(B
+     -------------------------------------------------------
+     alpha-dec-osf5.1		cc	 1.3e	  ok (1.910)
+     alpha-dec-osf4.0f               gcc      1.3e     ok (1.910)
+     alpha-dec-osf4.0f               cc       1.3e     ok (1.910)
+     alpha-dec-osf3.2                gcc      0.8      ok
+     alpha-dec-osf3.2                cc       0.8      ok
+     alpha-dec-osf2.1                gcc      1.2f     NS
+     alpha*-unknown-linux-gnu        gcc      1.3b     ok
+       (egcs-1.1.2, GNU ld 2.9.1.0.23)
+     hppa2.0w-hp-hpux11.00           cc       1.2f     ok
+     hppa2.0-hp-hpux10.20            cc       1.3.2    ok
+     hppa1.1-hp-hpux10.20            gcc      1.2f     ok
+     hppa1.1-hp-hpux10.20            cc       1.3c     ok (1.821)
+     hppa1.1-hp-hpux10.10            gcc      1.2f     ok
+     hppa1.1-hp-hpux10.10            cc       1.2f     ok
+     hppa1.1-hp-hpux9.07             gcc      1.2f     ok
+     hppa1.1-hp-hpux9.07             cc       1.2f     ok
+     hppa1.1-hp-hpux9.05             gcc      1.2f     ok
+     hppa1.1-hp-hpux9.05             cc       1.2f     ok
+     hppa1.1-hp-hpux9.01             gcc      1.2f     ok
+     hppa1.1-hp-hpux9.01             cc       1.2f     ok
+     i*86-*-beos                     gcc      1.2f     ok
+     i*86-*-bsdi4.0.1                gcc      1.3c     ok
+       (gcc-2.7.2.1)
+     i*86-*-bsdi4.0                  gcc      1.2f     ok
+     i*86-*-bsdi3.1                  gcc      1.2e     NS
+     i*86-*-bsdi3.0                  gcc      1.2e     NS
+     i*86-*-bsdi2.1                  gcc      1.2e     NS
+     i*86-pc-cygwin                  gcc      1.3b     NS
+       (egcs-1.1 stock b20.1 compiler)
+     i*86-*-dguxR4.20MU01            gcc      1.2      ok
+     i*86-*-freebsd4.3		gcc      1.3e     ok (1.912)
+     i*86-*-freebsdelf4.0            gcc      1.3c     ok
+       (egcs-1.1.2)
+     i*86-*-freebsdelf3.2            gcc      1.3c     ok
+       (gcc-2.7.2.1)
+     i*86-*-freebsdelf3.1            gcc      1.3c     ok
+       (gcc-2.7.2.1)
+     i*86-*-freebsdelf3.0            gcc      1.3c     ok
+     i*86-*-freebsd3.0               gcc      1.2e     ok
+     i*86-*-freebsd2.2.8             gcc      1.3c     ok
+       (gcc-2.7.2.1)
+     i*86-*-freebsd2.2.6             gcc      1.3b     ok
+       (egcs-1.1 & gcc-2.7.2.1, native ld)
+     i*86-*-freebsd2.1.5             gcc      0.5      ok
+     i*86-*-netbsd1.5                gcc      1.3e     ok (1.901)
+       (egcs-1.1.2)
+     i*86-*-netbsd1.4                gcc      1.3c     ok
+       (egcs-1.1.1)
+     i*86-*-netbsd1.4.3A             gcc      1.3e     ok (1.901)
+     i*86-*-netbsd1.3.3              gcc      1.3c     ok
+       (gcc-2.7.2.2+myc2)
+     i*86-*-netbsd1.3.2              gcc      1.2e     ok
+     i*86-*-netbsd1.3I               gcc      1.2e     ok
+       (egcs 1.1?)
+     i*86-*-netbsd1.2                gcc      0.9g     ok
+     i*86-*-linux-gnu		gcc	 1.3e	  ok (1.901)
+       (Red Hat 7.0, gcc "2.96")
+     i*86-*-linux-gnu		gcc	 1.3e	  ok (1.911)
+       (SuSE 7.0, gcc 2.95.2)
+     i*86-*-linux-gnulibc1           gcc      1.2f     ok
+     i*86-*-openbsd2.5               gcc      1.3c     ok
+       (gcc-2.8.1)
+     i*86-*-openbsd2.4               gcc      1.3c     ok
+       (gcc-2.8.1)
+     i*86-*-solaris2.7               gcc      1.3b     ok
+       (egcs-1.1.2, native ld)
+     i*86-*-solaris2.6               gcc      1.2f     ok
+     i*86-*-solaris2.5.1             gcc      1.2f     ok
+     i*86-ncr-sysv4.3.03             gcc      1.2f     ok
+     i*86-ncr-sysv4.3.03             cc       1.2e     ok
+       (cc -Hnocopyr)
+     i*86-pc-sco3.2v5.0.5		cc	 1.3c	  ok
+     i*86-pc-sco3.2v5.0.5		gcc	 1.3c	  ok
+       (gcc 95q4c)
+     i*86-pc-sco3.2v5.0.5		gcc	 1.3c	  ok
+       (egcs-1.1.2)
+     i*86-sco-sysv5uw7.1.1		gcc	 1.3e	  ok (1.901)
+       (gcc-2.95.2, SCO linker)
+     i*86-UnixWare7.1.0-sysv5	cc	 1.3c	  ok
+     i*86-UnixWare7.1.0-sysv5	gcc	 1.3c	  ok
+       (egcs-1.1.1)
+     m68k-next-nextstep3             gcc      1.2f     NS
+     m68k-sun-sunos4.1.1             gcc      1.2f     NS
+       (gcc-2.5.7)
+     m88k-dg-dguxR4.12TMU01          gcc      1.2      ok
+     m88k-motorola-sysv4             gcc      1.3      ok
+       (egcs-1.1.2)
+     mips-sgi-irix6.5                gcc      1.2f     ok
+       (gcc-2.8.1)
+     mips-sgi-irix6.4                gcc      1.2f     ok
+     mips-sgi-irix6.3                gcc      1.3b     ok
+       (egcs-1.1.2, native ld)
+     mips-sgi-irix6.3                cc       1.3b     ok
+       (cc 7.0)
+     mips-sgi-irix6.2                gcc      1.2f     ok
+     mips-sgi-irix6.2                cc       0.9      ok
+     mips-sgi-irix5.3                gcc      1.2f     ok
+       (egcs-1.1.1)
+     mips-sgi-irix5.3                gcc      1.2f     NS
+       (gcc-2.6.3)
+     mips-sgi-irix5.3                cc       0.8      ok
+     mips-sgi-irix5.2                gcc      1.3b     ok
+       (egcs-1.1.2, native ld)
+     mips-sgi-irix5.2                cc       1.3b     ok
+       (cc 3.18)
+     mips-sni-sysv4			cc       1.3.5    ok
+       (Siemens C-compiler)
+     mips-sni-sysv4			gcc      1.3.5    ok
+       (gcc-2.7.2.3, GNU assembler 2.8.1, native ld)
+     mipsel-unknown-openbsd2.1       gcc      1.0      ok
+     powerpc-apple-darwin6.4         gcc      1.5      ok
+     (apple dev tools released 12/2002)
+     powerpc-ibm-aix4.3.1.0          gcc      1.2f     ok
+       (egcs-1.1.1)
+     powerpc-ibm-aix4.2.1.0          gcc      1.2f     ok
+       (egcs-1.1.1)
+     powerpc-ibm-aix4.1.5.0          gcc      1.2f     ok
+       (egcs-1.1.1)
+     powerpc-ibm-aix4.1.5.0          gcc      1.2f     NS
+       (gcc-2.8.1)
+     powerpc-ibm-aix4.1.4.0          gcc      1.0      ok
+     powerpc-ibm-aix4.1.4.0          xlc      1.0i     ok
+     rs6000-ibm-aix4.1.5.0           gcc      1.2f     ok
+       (gcc-2.7.2)
+     rs6000-ibm-aix4.1.4.0           gcc      1.2f     ok
+       (gcc-2.7.2)
+     rs6000-ibm-aix3.2.5             gcc      1.0i     ok
+     rs6000-ibm-aix3.2.5             xlc      1.0i     ok
+     sparc-sun-solaris2.8		gcc	 1.3e	  ok (1.913)
+       (gcc-2.95.3 & native ld)
+     sparc-sun-solaris2.7            gcc      1.3e     ok (1.913)
+       (gcc-2.95.3 & native ld)
+     sparc-sun-solaris2.6            gcc      1.3e     ok (1.913)
+       (gcc-2.95.3 & native ld)
+     sparc-sun-solaris2.5.1          gcc      1.3e     ok (1.911)
+     sparc-sun-solaris2.5            gcc      1.3b     ok
+       (egcs-1.1.2, GNU ld 2.9.1 & native ld)
+     sparc-sun-solaris2.5            cc       1.3b     ok
+       (SC 3.0.1)
+     sparc-sun-solaris2.4            gcc      1.0a     ok
+     sparc-sun-solaris2.4            cc       1.0a     ok
+     sparc-sun-solaris2.3            gcc      1.2f     ok
+     sparc-sun-sunos4.1.4            gcc      1.2f     ok
+     sparc-sun-sunos4.1.4            cc       1.0f     ok
+     sparc-sun-sunos4.1.3_U1         gcc      1.2f     ok
+     sparc-sun-sunos4.1.3C           gcc      1.2f     ok
+     sparc-sun-sunos4.1.3            gcc      1.3b     ok
+       (egcs-1.1.2, GNU ld 2.9.1 & native ld)
+     sparc-sun-sunos4.1.3            cc       1.3b     ok
+     sparc-unknown-bsdi4.0           gcc      1.2c     ok
+     sparc-unknown-linux-gnulibc1    gcc      1.2f     ok
+     sparc-unknown-linux-gnu         gcc      1.3b     ok
+       (egcs-1.1.2, GNU ld 2.9.1.0.23)
+     sparc64-unknown-linux-gnu       gcc      1.2f     ok
+
+     $BCm0U(B:
+     - "ok" $B$O!$(B"$B$9$Y$F$N%F%9%H$rDL2a$7$?(B"$B$3$H$r0UL#$7$^$9!%(B
+     - "NS" $B$O!$(B"$B6&M-$K<:GT(B"("Not Shared")$B$r0UL#$7$^$9$,!$(B
+                $B%9%?%F%#%C%/%i%$%V%i%j$O(BOK$B$G$9!%(B
+
+   注：ベンダー配布されているHP-UXの`sed'(1)プログラムは，ひどく壊れ
+ていて，libtoolの要求を処理することができないため，ユーザは異常の問題
+を報告する可能性があります．これらのシステムで動作する(GNU `sed')
+のような`sed'をインストールする以外に，回避方法はありません．
+
+   注：ベンダー配布されているNCR MP-RAS `cc'プログラムは，標準エラー
+に著作権を出力し，`conftest.err'の大きさのテストで混乱します．回
+避方法は，`configure'を実行するとき，`CC='cc -Hnocopyr''を用
+いて`CC'を指定します．
+
+
+File: libtool-ja.info,  Node: Platform quirks,  Next: libtool script contents,  Prev: Tested platforms,  Up: Maintaining
+
+13.3 プラットフォームの癖
+=========================
+
+このセクションは，libtoolの管理者の健康に捧げます．それは，libtoolが使
+用するプログラム，システムごとの違い，そしてテストの方法を記述します．
+
+   libtoolはシェルスクリプトなので，最初から最後まで読むだけで理解するこ
+とは難しいはずです．このセクションは，libtoolが特定の方法で行う理由の
+理解を助けます．スクリプト自身が組み合わされているので，libtoolの改善
+や，独自に書く方法の，より良いセンスが必要でしょう．
+
+* Menu:
+
+* References::                  Finding more information.
+* Compilers::                   Creating object files from source files.
+* Reloadable objects::          Binding object files together.
+* Multiple dependencies::	Removing duplicate dependent libraries.
+* Archivers::                   Programs that create static archives.
+
+
+File: libtool-ja.info,  Node: References,  Next: Compilers,  Up: Platform quirks
+
+13.3.1 リファレンス
+-------------------
+
+以下は，価値のある文章の参照リストです．
+
+   * SGIのIRIXのマニュアルページで，それは
+     `http://techpubs.sgi.com/cgi-bin/infosrch.cgi?cmd=browse&db=man'で
+     見つかります．
+
+   * Sunのフリーサービス領域
+     (`http://www.sun.com/service/online/free.html')とドキュメントサー
+     バ(`http://docs.sun.com/')．
+
+   * CompaqのTru64 UNIXオンラインドキュメントは
+     (`http://tru64unix.compaq.com/faqs/publications/pub_page/doc_list.html')
+     にあり，C++ドキュメントは
+     (`http://tru64unix.compaq.com/cplus/docs/index.htm')です．
+
+   *
+     Hewlett-Packardは(`http://docs.hp.com/index.html')にオンラインドキュ
+     メントがあります．
+
+   * IBMは(`http://www.rs6000.ibm.com/resource/aix_resource/Pubs/')にオ
+     ンラインドキュメントがあります．
+
+
+File: libtool-ja.info,  Node: Compilers,  Next: Reloadable objects,  Prev: References,  Up: Platform quirks
+
+13.3.2 コンパイラ
+-----------------
+
+libtoolに影響するコンパイラの特徴は，PICオブジェクトを生成するための
+(存在する場合は)必要なフラグのみです．一般的に，Cコンパイラが特定のPIC
+フラグをサポートする場合，あらゆる派生的なコンパイラは同じフラグをサポー
+トします．この規則に対し，注目すべき若干の例外があるまでは，このセクショ
+ンではCコンパイラのみを説明します．
+
+   プラットフォームに関係なく，以下のCコンパイラは，標準のコマンドライオ
+プションがあります．
+
+`gcc'
+     これはGNU
+     Cコンパイラで，多くのフリーオペレーティングシステム(少し例を
+     あげると，FreeBSD，GNU/Hurd，GNU/Linux，Lites，NetBSD，そしてOpenBSDで
+     す) に対する，システムコンパイラでもあります．
+
+     `-fpic'や`-fPIC'フラグは，位置に依存しないコードを生成するた
+     めに使用可能です．`-fPIC'は動作するコードを生成することを保証しま
+     すが，m68k，m88k，そしてSparcチップ上ではコードは遅くなります．しかし，
+     これらのチップで`-fpic'を使用すると，共有ライブラリでの自由なサイ
+     ズが強制的に制限されます．
+
+このサブセクションの残りは，バンドルされているオペレーティングシステム
+のコンパイラをリストアップします．
+
+`aix3*'
+`aix4*'
+     (IA-64のAIX以外)AIXはPowerPCとRS/6000チップに移植されているので，ほと
+     んどのAIXコンパイラにはPICフラグがありません．(1)
+
+`hpux10*'
+     PICを生成するために`+Z'を使用してください．
+
+`osf3*'
+     Digital/UNIX
+     3.xは，少なくともPowerPCプラットフォームでなければ，PICフ
+     ラグはありません．
+
+`solaris2*'
+     PICを生成するために`-KPIC'を使用してください．
+
+`sunos4*'
+     PICを生成するために`-PIC'を使用してください．
+
+   ---------- Footnotes ----------
+
+   (1) PowerPCと RS/6000チップ(`powerpc-*-*'，`powerpcle-*-*'，そして
+`rs6000-*-*')に対しコンパイルされているすべてのコードは，オペレー
+ティングシステムやコンパイラスイートに関係なく，位置に依存しません．そ
+のため，"標準オブジェクト"はこれらのシステム上で共有ライブラリのビル
+ドで使用され，特別なPICコンパイラフラグは要求されません．
+
+
+File: libtool-ja.info,  Node: Reloadable objects,  Next: Multiple dependencies,  Prev: Compilers,  Up: Platform quirks
+
+13.3.3 リロード可能なオブジェクト
+---------------------------------
+
+すべての既知のシステム上で，リロード可能なオブジェクトは`ld -r -o
+OUTPUT.o INPUT1.o INPUT2.o'を実行することで生成可能
+です．このリロード可能なオブジェクトは，他のオブジェクトと完全な同義語
+として扱うことが可能です．
+
+
+File: libtool-ja.info,  Node: Multiple dependencies,  Next: Archivers,  Prev: Reloadable objects,  Up: Platform quirks
+
+13.3.4 複数の依存性
+-------------------
+
+ほとんどの近代的なプラットフォームでは，依存するライブラリがリストアッ
+プされる順序はオブジェクトの生成で影響がありません．理論上，シンボルを
+提供しているライブラリの後に，リストアップされている他のライブラリに足
+りないシンボルを提供するライブラリを要求するプラットフォームがあります．
+
+特に，一組のスタティックアーカイブのそれぞれが，他のシンボルのいくつか
+を解決する場合，それらのアーカイブの前後両方に他のものをリストアップす
+ることが必要かもしれません．重複したライブラリはリンク行からデフォルト
+で削除されるので，libtoolは，現在この状況に十分に対処していません．こ
+れが必要な状況では，すべての重複する依存性を避けるため、libtoolはコマ
+ンドラインオプション`--preserve-dup-deps'を提供しています．
+
+
+File: libtool-ja.info,  Node: Archivers,  Prev: Multiple dependencies,  Up: Platform quirks
+
+13.3.5 アーカイバ
+-----------------
+
+すべての既知のシステム上で，スタティックライブラリのビルドは，`ar cru
+libNAME.a OBJ1.o OBJ2.o ...'の実行で完成する
+はずで，そこでは，`.a'ファイルは出力ライブラリで，それぞれの `.o'
+ファイルはオブジェクトファイルです．
+
+   すべての既知のシステム上で，`ranlib'という名のプログラムがある場
+合，リンクする前に`ranlib libNAME.a'コマンドを用いて，作成さ
+れるライブラリを"祝福"するために使用する必要があります．Irixのように，
+代わりに`ar ts'を使用するシステムもあります．
+
+
+File: libtool-ja.info,  Node: libtool script contents,  Next: Cheap tricks,  Prev: Platform quirks,  Up: Maintaining
+
+13.4 `libtool'スクリプトの内容
+==============================
+
+バージョン1.4からは，`libtool'スクリプトは`configure'によっ
+て生成されます(*note Configuring::．以前のバージョンでは， `ltconfig'
+と呼ばれるへルパースクリプトを呼び出すことで，
+`configure'はそれを達成していました．libtoolのバージョン0.7から
+1.0までは，このスクリプトは，単純にシェル変数を設定し，libtoolのバック
+エンドの`ltmain.sh'の源となっていました．libtoolバージョン1.1から
+1.3までの`ltconfig'は，`ltmain.sh'の内容を，生成された
+`libtool'にインライン化し，それは多くのシステムでパフォーマンスを
+改善しました．`ltconfig'が実行するために使用するテストは，現在
+`libtool.m4'にあり，そこで我々はAutoconfを使用して書くことが可能
+となっています．これは，インライン化された`ltmain.sh'の実行時の動
+作に有利で，_そして_，管理が必要な生のシェルコードの量をかなり取
+り除くことで，ビルド時間を短くする改善を行いました．
+
+後で評価するもの対するシェルコマンドを保持する変数の命名に使用される規
+則は，有効な単一行のシェルスクリプトが必要とされるところで接尾子
+`_cmd'，複数行のシェルスクリプトが後で評価することが*可能
+な*ところで接尾子`_cmds'を使用することです．規則では，
+`_cmds'変数は，必要なところで，`~'文字で評価ユニットを区切り ます．
+
+   それぞれのコンフィグレーション変数と，`ltmain.sh'で使用する方法の
+リストは，以下のようになります(*note Configuring::)．
+
+ -- Variable: AR
+     システムライブラリアーカイバの名前です．
+
+ -- Variable: CC
+     ibtoolをコンフィグレーションするために使用するCコンパイラの名前です．
+
+ -- Variable: LD
+     リロード可能にするリンクとおそらく共有ライブラリに対し，libtoolが内部
+     で使用するリンカの名前です．
+
+ -- Variable: NM
+     BSD互換の`nm'プログラムの名前で，それは以下の書式の一つで，大域的
+     なシンボルを生成します．
+
+          ADDRESS C GLOBAL-VARIABLE-NAME
+          ADDRESS D GLOBAL-VARIABLE-NAME
+          ADDRESS T GLOBAL-FUNCTION-NAME
+
+ -- Variable: RANLIB
+     存在する場合，ranlibプログラムの名前を設定します．
+
+ -- Variable: allow_undefined_flag
+     結果として生じる共有ライブラリに，未解決のシンボルがあることを宣言する
+     ために，`archive_cmds'で使用されるフラグです．そのようなフラグが
+     不要な場合は空です．ライブラリで定義されていないシンボルを参照して，共
+     有ライブラリを生成する方法がない場合，`unsupported'を設定します．
+
+ -- Variable: always_export_symbols
+     アーカイブとリンクする前に，EXPORT_SYMBOLS_CMDSを使用してエクス
+     ポートされるシンボルのリストを，libtoolが自動的に生成するかどうかです．
+     `yes'または`no'に設定します．デフォルトは`no'です．
+
+ -- Variable: archive_cmds
+ -- Variable: archive_expsym_cmds
+ -- Variable: old_archive_cmds
+     それぞれ，共有ライブラリ，`-export-symbols'を用いた共有ライブラリ，
+     そしてスタティックライブラリを生成するために使用するコマンドです．
+
+ -- Variable: old_archive_from_new_cmds
+     共有ライブラリがスタティックライブラリに依存する場合，
+     `old_archive_from_new_cmds'はスタティックライブラリを生成するため
+     に使用するコマンドを含みます．この変数が空の場合，
+     `old_archive_cmds'は使用されません．
+
+ -- Variable: old_archive_from_expsyms_cmds
+     スタティックライブラリが，共有ライブラリで正しくリンクするために，エク
+     スポートシンボルリストから作成される必要がある場合，
+     `old_archive_from_expsyms_cmds'は，そのスタティックライブラリを作
+     成するために必要なコマンドを含みます．これらのコマンドが実行されるとき，
+     変数SONAMEは，共有ライブラリの名前を疑問符の中に含み，
+     $OBJDIR/$NEWLIBは，これらのコマンドがビルドするスタティックライ
+     ブラリのパスを含みます．これらのコマンドを実行した後，libtoolは，
+     SONAMEの代わりに$OBJDIR/$NEWLIBに対してリンクするための処
+     理を行います．
+
+ -- Variable: build_libtool_libs
+     このシステムで，libtoolが共有ライブラリをビルドできるかどうかです．
+     `yes'または`no'に設定します．
+
+ -- Variable: build_old_libs
+     このシステムで，libtoolがスタティックライブラリをビルドできるかどうか
+     です．`yes'または`no'に設定します．
+
+ -- Variable: compiler_c_o
+     コンパイラが，同時に`-c'と`-o'オプションをサポートするかどう
+     かです．`yes'または`no'に設定します．
+
+ -- Variable: compiler_o_lo
+     コンパイラが，直接".lo"ファイルへのコンパイルをサポートするかどうかで，
+     例えば，オブジェクトファイルが，接尾子".o"を持つ必要があるかどうかです．
+     `yes'または`no'に設定します．
+
+ -- Variable: dlopen_support
+     プラットフォームで，`dlopen'をサポートするかどうかです．
+     `yes'または`no'に設定します．
+
+ -- Variable: dlopen_self
+     実行形式自身が`dlopen'可能かどうかです．`yes'または`no'
+     に設定します．
+
+ -- Variable: dlopen_self_static
+     スタティックにリンクされているとき(`-all-static')，実行形式自身が
+     `dlopen'可能かどうかです．`yes'または`no'に設定します．
+
+ -- Variable: echo
+     バックスラッシュをエスケープ文字と解釈しない`echo'プログラムです．
+
+ -- Variable: exclude_expsyms
+     プリリードされているシンボルにリストアップされないシンボルのリストです．
+
+ -- Variable: export_dynamic_flag_spec
+     dlopenされる共有ライブラリが，プログラムで定義されているシンボルへの参
+     照を可能にするコンパイラリンクフラグです．
+
+ -- Variable: export_symbols_cmds
+     LIBOBJSからファイルEXPORT_SYMBOLSへエクスポートされたシン
+     ボルを抽出するコマンドです．
+
+ -- Variable: extract_expsyms_cmds
+     共有ライブラリからエクスポートされたシンボルリストを抽出するコマンドで
+     す．これらのコマンドは，ファイル$OBJDIR/$SONAME-DEFが無い場合に
+     実行され，`old_archive_from_expsyms_cmds'が使用するため，エクスポー
+     トされたシンボル名をそのファイルに書き出します．
+
+ -- Variable: fast_install
+     libtoolが特権を与える人を，インストール者または開発者のどちらかに決定
+     します．インストール者がビルドツリーでプログラムを実行することは滅多に
+     なく，開発者は滅多にインストールしないしないと仮定します．これは，
+     SHLIBPATH_OVERRIDES_RUNPATHが`yes'でないプラットフォーム上
+     でのみ意味があるので，この場合，FAST_INSTALLは`needless'設
+     定されます．FAST_INSTALLが`yes'に設定される場合，libtoolは
+     インストールされたライブラリを検索するプログラムを作成し，プログラムが
+     ビルドツリーで実行される場合，まだインストールされていないライブラリを
+     使用するため，要求があれば，新しいコピーがリンクされます．`no'に
+     設定されている場合，libtoolは，まだインストールされていないライブラリ
+     を使用するプログラムを作成し，インストール時にプログラムの新しいコピー
+     をリンクします．デフォルト値は`yes'または`needless'で，それ
+     は，プラットフォームとコンフィグレーションフラグに依存し，コンフィグレー
+     ションフラグ`--disable-fast-install'を用いると，`yes'から
+     `no'に切り替えられます．
+
+ -- Variable: finish_cmds
+     指定されたディレクトリで共有ライブラリを見つける方法を，ダイナミックリ
+     ンカに伝えるコマンドです．
+
+ -- Variable: finish_eval
+     コマンドが表示されない以外，FINISH_CMDSと同じです．
+
+ -- Variable: fix_srcfile_path
+     コンパイラに対するシェル変数$SRCFILEを修正する式です．
+
+ -- Variable: global_symbol_pipe
+     NMの出力を受け，Cの名前が続く生のシンボルのリストを生成するパイ
+     プラインです．例えば，以下のようになります．
+
+          $ eval "$NM progname | $global_symbol_pipe"
+          D SYMBOL1 C-SYMBOL1
+          T SYMBOL2 C-SYMBOL2
+          C SYMBOL3 C-SYMBOL3
+          ...
+          $
+
+     最初の列は，(いくつかのプラットフォーム上でコードからデータを伝えるた
+     めに使用される)シンボル形式を含みますが，その意味はシステムに依存しま
+     す．
+
+ -- Variable: global_symbol_to_cdecl
+     GLOBAL_SYMBOL_PIPEの出力を厳密なC宣言に変換するパイプラインです．
+     HP/UXのような，リンカがコードとデータを区別するプラットフォームでは，
+     データシンボルはそのように宣言され，コードシンボルは関数として宣言され
+     ます．気にしないプラットフォームではすべてがデータと仮定されます．
+
+ -- Variable: hardcode_action
+     `immediate'または`relink'のいずれかで，共有ライブラリパスが
+     インストールされる前に実行形式にハードコードされるか，または，再リンク
+     する必要があるかに依存します．
+
+ -- Variable: hardcode_direct
+     HARDCODE_LIBDIR_FLAG_SPECが指定されたとき，
+     (`DIR/libNAME.a'のような)コマンド行でライブラリが直接
+     していされる場合，リンカがディレクトリをハードコードするかどうかに依存
+     し，`yes'または`no'に設定します．
+
+ -- Variable: hardcode_into_libs
+     ライブラリ内の実行パスのハードコードをプラットフォームがサポートするか
+     どうかです．可能な場合，プログラムのリンクはより単純になりますが，ライ
+     ブラリはインストール時に再リンクが必要です．`yes'または`no'
+     に設定します．
+
+ -- Variable: hardcode_libdir_flag_spec
+     実行時に，共有ライブラリに対しダイナミックリンカがLIBDIRを検索す
+     るために，バイナリにLIBDIR変数をハードコードするためのフラグです．
+     空の場合，libtoolは他のハードコーディングメカニズムの使用を試みます．
+
+ -- Variable: hardcode_libdir_separator
+     コンパイラが単一のHARDCODE_LIBDIR_FLAGのみ受け入れる場合，この変
+     数はそのフラグに対する複数の引数を分ける文字列を含みます．
+
+ -- Variable: hardcode_minus_L
+     HARDCODE_LIBDIR_FLAG_SPECが指定されたとき，結果として生じる実行
+     形式に`-L'フラグで指定されるディレクトリを，リンカがハードコード
+     するかどうかに依存し，`yes'または`no'に設定します．
+
+ -- Variable: hardcode_shlibpath_var
+     HARDCODE_LIBDIR_FLAG_SPECが指定されたとき，結果として生じる実行
+     形式に`$shlibpath_var'の内容を書き込むことで，リンカがディレクト
+     リをハードコードするかどうかに依存し，`yes'または`no'に設定
+     します．`$shlibpath_var'で指定されたディレクトリが，リンク時では
+     なく実行時に検索される場合，`unsupported'に設定します．
+
+ -- Variable: host
+ -- Variable: host_alias
+     情報を目的として，libtoolがコンフィグレーションされたシステムの指定さ
+     れた標準名に設定します．
+
+ -- Variable: include_expsyms
+     EXPORT_SYMBOLSの使用時に，常にエクスポートされる必要があるシンボ
+     ルのリストです．
+
+ -- Variable: libext
+     標準的な，古いアーカイブの接尾子(通常は"a")です．
+
+ -- Variable: libname_spec
+     ライブラリ名の接頭辞の書式です．Unixシステムでは，スタティックライブラ
+     リは`libNAME.a'と命名されますが，(OS/2やMS-DOSのような)シス
+     テムでは，ライブラリは`NAME.a'のみで命名されることもありま す．
+
+ -- Variable: library_names_spec
+     共有ライブラリ名のリストです．最初はファイル名で，残りはファイルへのシ
+     ンボリックリンクです．リスト内の名前は，`-lNAME'で与えられ
+     たときリンカが見つけるファイル名です．
+
+ -- Variable: link_all_deplibs
+     libtoolが，全ての依存するプログラムに対しプログラムをリンクする必要が
+     あるかどうかです．`yes'または`no'に設定します．デフォルトは
+     `unknown'で，それは`yes'と同じです．
+
+ -- Variable: link_static_flag
+     ダイナミックリンクを避けるために使用する(Cコンパイラに渡す)リンカフラ
+     グです．
+
+ -- Variable: need_lib_prefix
+     自動的にモジュール名に'lib'接頭辞を付けるかどうかです．`yes'また
+     は`no'に設定します．デフォルトで，それは`unknown'になり，そ
+     れは`yes'と同じ意味ですが，本当に確かめたわけではないことを告げて
+     います．`yes'は`dlopen'と'lib'接頭辞がないライブラリにリンク
+     可能なことを意味し，すなわち，それはHARDCODE_DIRECTを`yes'
+     にすることを要求します．
+
+ -- Variable: need_version
+     バージョン管理がライブラリに必要とされるかどうかで，すなわち，ダイナミッ
+     クリンカが，すべてのライブラリに対しバージョンの接尾子を必要とするかど
+     うかです．`yes'または`no'に設定します．デフォルトで，それは
+     `unknown'で，それは`yes'と同じ意味を持ちますが，それを実際に
+     は確かめていないことを告げています．
+
+ -- Variable: need_locks
+     同時にコンパイルするとき，衝突を避けるためにファイルをロックする必要が
+     あるかどうかです．`yes'または`no'に設定します．
+
+ -- Variable: no_builtin_flag
+     `char'として外部グローバルシンボルを宣言することと衝突する組み込
+     み関数を，利用不可能にするコンパイラフラグです．
+
+ -- Variable: no_undefined_flag
+     結果として生じる共有ライブラリに，未解決のシンボルがないことを宣言する
+     ための，`archive_cmds'で使用されるフラグです．
+
+ -- Variable: objdir
+     一時的なlibtoolファイルが含まれるディレクトリ名です．
+
+ -- Variable: objext
+     標準的なオブジェクトファイルの接尾子(通常は"o")です．
+
+ -- Variable: pic_flag
+     ライブラリオブジェクトファイルをビルドするための，あらゆる追加のコンパ
+     イルフラグです．
+
+ -- Variable: postinstall_cmds
+ -- Variable: old_postinstall_cmds
+     それぞれ，共有またはスタティックライブラリをインストールした後に実行す
+     るコマンドです．
+
+ -- Variable: postuninstall_cmds
+ -- Variable: old_postuninstall_cmds
+     それぞれ，共有またはスタティックライブラリをアンインストールした後に実
+     行するコマンドです．
+
+ -- Variable: reload_cmds
+ -- Variable: reload_flag
+     リロード可能なオブジェクトを作成するコマンドです．
+
+ -- Variable: runpath_var
+     結果として生じる実行形式内にハードコードするディレクトリをリンカに伝え
+     る環境変数です．
+
+ -- Variable: shlibpath_overrides_runpath
+     環境変数でプログラムのハードコードされたライブラリ検索パスを優先可能か
+     どうかを示します．これが`no'に設定されている場合，libtoolはビルド
+     ツリーにプログラムのコピーを二つ作成する必要がある可能性があり，一つは
+     インストールされ，もう一つはビルドツリーのみで実行されます．これらのコ
+     ピーのどちらかが作成されるとき，`fast_install'の値に依存します．
+     デフォルト値は`unknown'で，それは`no'と同じです．
+
+ -- Variable: shlibpath_var
+     ダイナミックリンカに共有ライブラリを探す場所を伝える環境変数です．
+
+ -- Variable: soname_spec
+     共有ライブラリがファイルの本当の名前と異なる場合，その中に符号化された
+     コードされた名前です．
+
+ -- Variable: striplib
+ -- Variable: old_striplib
+     共有(`striplib')やスタティック(`old_striplib')のライブラリを
+     stripするコマンドです．これらの変数が空の場合，インストールモードの
+     stripフラグは，ライブラリに対し無視されます(*note Install mode::)．
+
+ -- Variable: sys_lib_dlsearch_path_spec
+     実行時にライブラリの検索パスを取得する式です．このリストに現れるディレ
+     クトリが実行形式にハードコードされることは決してありません．
+
+ -- Variable: sys_lib_search_path_spec
+     コンパイル時にライブラリの検索パスを取得する式です．この変数は，特定の
+     ライブラリが共有かスタティックかをテストする必要があるとき，libtoolが
+     使用します．SHLIBPATH_VARでリストアップされるディレクトリは，こ
+     のリストに自動的に現れ，ライブラリ検索パスを拡張するためにこの変数を使
+     用するリンカもあるので，毎回(すなわち，コンフィグレーション時以外)
+     libtoolは実行します．リンカは`-L'のような検索パス引数も切り替えま
+     す．
+
+ -- Variable: thread_safe_flag_spec
+     スレッドセーフなライブラリを生成するために使用する(Cコンパイラに渡す)
+     リンカフラグです．
+
+ -- Variable: version_type
+     ライブラリバージョンナンバーの形式です．`libtool'，
+     `freebsd-aout'，`freebsd-elf'，`irix'，`linux'，
+     `osf'，`sunos'，`windows'，または`none'の一つです．
+
+ -- Variable: whole_archive_flag_spec
+     コンビニエンスアーカイバから共有ライブラリを生成するコンパイラフラグで
+     す．
+
+ -- Variable: wl
+     libtoolが直接リンカにフラグを渡すことを可能とするCコンパイラフラグです．
+     `${wl}SOME-FLAG'として使用されます．
+
+   `_cmds'や`_eval'で終わる変数は，`~'で分けられた，順番に
+`eval'されるコマンドのリストを含みます．ゼロ以外の終了ステータス
+を返すコマンドがある場合，libtoolは一般的にエラーメッセージとともに終
+了します．
+
+   `_spec'で終わる変数は，libtoolで使用される前に`eval'されます．
+
+
+File: libtool-ja.info,  Node: Cheap tricks,  Prev: libtool script contents,  Up: Maintaining
+
+13.5 安っぽい手段
+=================
+
+より簡単にメンテナーシップを作成するために使用することが可能な手段は以
+下のようになっています．
+
+   * 人々がバグを報告したとき，彼らを助けたいと思う場合は，`--config'，
+     `--debug'，または`--features'フラグを使用したかどうかを尋ね
+     てください．これらのフラグは，中古の調査を信頼しなければならない代わり
+     に，情報を直接得る手助けとなるものです．
+
+   * `ltmain.in'を変更するたびごとに再コンフィグレーションする代わりに，
+     PATHに永久的な`libtool'スクリプトを保持し，それは直接
+     `ltmain.in'の元となるものです．
+
+     以下のステップは，そのようなスクリプトを作成する方法を記述し，そこでは
+     `/home/src/libtool'はlibtoolソースツリーを含むディレクトリ，
+     `/home/src/libtool/libtool'はプラットフォームに対し以前にコンフィ
+     グレーションしたlibtooolスクリプト，そして`~/bin'はPATHにあ
+     るディレクトリになっています．
+
+          trick$ cd ~/bin
+          trick$ sed '/^# ltmain\.sh/q' /home/src/libtool/libtool > libtool
+          trick$ echo '. /home/src/libtool/ltmain.in' >> libtool
+          trick$ chmod +x libtool
+          trick$ libtool --version
+          ltmain.sh (GNU @PACKAGE@) @VERSION@@TIMESTAMP@
+          trick$
+
+   `libtool --version'コマンドの最終的な出力は，`ltmain.in'スク
+リプトが直接使用されていることを示します．`configure'を再実行する
+必要なく新しい変更をテストするため，すぐに，`~/bin/libtool'や
+`/home/src/libtool/ltmain.in'を編集してください．
+
+
+File: libtool-ja.info,  Node: GNU Free Documentation License,  Next: Index,  Prev: Maintaining,  Up: Top
+
+GNU Free Documentation License
+******************************
+
+                        Version 1.1, March 2000
+
+     Copyright (C) 2000  Free Software Foundation, Inc.
+         59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+Preamble
+========
+
+The purpose of this License is to make a manual, textbook, or other
+written document "free" in the sense of freedom: to assure everyone the
+effective freedom to copy and redistribute it, with or without
+modifying it, either commercially or noncommercially.  Secondarily,
+this License preserves for the author and publisher a way to get credit
+for their work, while not being considered responsible for
+modifications made by others.
+
+   This License is a kind of "copyleft", which means that derivative
+works of the document must themselves be free in the same sense.  It
+complements the GNU General Public License, which is a copyleft license
+designed for free software.
+
+   We have designed this License in order to use it for manuals for free
+software, because free software needs free documentation: a free
+program should come with manuals providing the same freedoms that the
+software does.  But this License is not limited to software manuals; it
+can be used for any textual work, regardless of subject matter or
+whether it is published as a printed book.  We recommend this License
+principally for works whose purpose is instruction or reference.
+
+APPLICABILITY AND DEFINITIONS
+=============================
+
+This License applies to any manual or other work that contains a notice
+placed by the copyright holder saying it can be distributed under the
+terms of this License.  The "Document", below, refers to any such
+manual or work.  Any member of the public is a licensee, and is
+addressed as "you".
+
+   A "Modified Version" of the Document means any work containing the
+Document or a portion of it, either copied verbatim, or with
+modifications and/or translated into another language.
+
+   A "Secondary Section" is a named appendix or a front-matter section
+of the Document that deals exclusively with the relationship of the
+publishers or authors of the Document to the Document's overall subject
+(or to related matters) and contains nothing that could fall directly
+within that overall subject.  (For example, if the Document is in part a
+textbook of mathematics, a Secondary Section may not explain any
+mathematics.)  The relationship could be a matter of historical
+connection with the subject or with related matters, or of legal,
+commercial, philosophical, ethical or political position regarding them.
+
+   The "Invariant Sections" are certain Secondary Sections whose titles
+are designated, as being those of Invariant Sections, in the notice
+that says that the Document is released under this License.
+
+   The "Cover Texts" are certain short passages of text that are listed,
+as Front-Cover Texts or Back-Cover Texts, in the notice that says that
+the Document is released under this License.
+
+   A "Transparent" copy of the Document means a machine-readable copy,
+represented in a format whose specification is available to the general
+public, whose contents can be viewed and edited directly and
+straightforwardly with generic text editors or (for images composed of
+pixels) generic paint programs or (for drawings) some widely available
+drawing editor, and that is suitable for input to text formatters or
+for automatic translation to a variety of formats suitable for input to
+text formatters.  A copy made in an otherwise Transparent file format
+whose markup has been designed to thwart or discourage subsequent
+modification by readers is not Transparent.  A copy that is not
+"Transparent" is called "Opaque".
+
+   Examples of suitable formats for Transparent copies include plain
+ASCII without markup, Texinfo input format, LaTeX input format, SGML or
+XML using a publicly available DTD, and standard-conforming simple HTML
+designed for human modification.  Opaque formats include PostScript,
+PDF, proprietary formats that can be read and edited only by
+proprietary word processors, SGML or XML for which the DTD and/or
+processing tools are not generally available, and the machine-generated
+HTML produced by some word processors for output purposes only.
+
+   The "Title Page" means, for a printed book, the title page itself,
+plus such following pages as are needed to hold, legibly, the material
+this License requires to appear in the title page.  For works in
+formats which do not have any title page as such, "Title Page" means
+the text near the most prominent appearance of the work's title,
+preceding the beginning of the body of the text.
+
+VERBATIM COPYING
+================
+
+You may copy and distribute the Document in any medium, either
+commercially or noncommercially, provided that this License, the
+copyright notices, and the license notice saying this License applies
+to the Document are reproduced in all copies, and that you add no other
+conditions whatsoever to those of this License.  You may not use
+technical measures to obstruct or control the reading or further
+copying of the copies you make or distribute.  However, you may accept
+compensation in exchange for copies.  If you distribute a large enough
+number of copies you must also follow the conditions in section 3.
+
+   You may also lend copies, under the same conditions stated above, and
+you may publicly display copies.
+
+COPYING IN QUANTITY
+===================
+
+If you publish printed copies of the Document numbering more than 100,
+and the Document's license notice requires Cover Texts, you must enclose
+the copies in covers that carry, clearly and legibly, all these Cover
+Texts: Front-Cover Texts on the front cover, and Back-Cover Texts on
+the back cover.  Both covers must also clearly and legibly identify you
+as the publisher of these copies.  The front cover must present the
+full title with all words of the title equally prominent and visible.
+You may add other material on the covers in addition.  Copying with
+changes limited to the covers, as long as they preserve the title of
+the Document and satisfy these conditions, can be treated as verbatim
+copying in other respects.
+
+   If the required texts for either cover are too voluminous to fit
+legibly, you should put the first ones listed (as many as fit
+reasonably) on the actual cover, and continue the rest onto adjacent
+pages.
+
+   If you publish or distribute Opaque copies of the Document numbering
+more than 100, you must either include a machine-readable Transparent
+copy along with each Opaque copy, or state in or with each Opaque copy
+a publicly-accessible computer-network location containing a complete
+Transparent copy of the Document, free of added material, which the
+general network-using public has access to download anonymously at no
+charge using public-standard network protocols.  If you use the latter
+option, you must take reasonably prudent steps, when you begin
+distribution of Opaque copies in quantity, to ensure that this
+Transparent copy will remain thus accessible at the stated location
+until at least one year after the last time you distribute an Opaque
+copy (directly or through your agents or retailers) of that edition to
+the public.
+
+   It is requested, but not required, that you contact the authors of
+the Document well before redistributing any large number of copies, to
+give them a chance to provide you with an updated version of the
+Document.
+
+MODIFICATIONS
+=============
+
+You may copy and distribute a Modified Version of the Document under
+the conditions of sections 2 and 3 above, provided that you release the
+Modified Version under precisely this License, with the Modified
+Version filling the role of the Document, thus licensing distribution
+and modification of the Modified Version to whoever possesses a copy of
+it.  In addition, you must do these things in the Modified Version:
+
+  A. Use in the Title Page (and on the covers, if any) a title distinct
+     from that of the Document, and from those of previous versions
+     (which should, if there were any, be listed in the History section
+     of the Document).  You may use the same title as a previous version
+     if the original publisher of that version gives permission.
+
+  B.  List on the Title Page, as authors, one or more persons or
+     entities responsible for authorship of the modifications in the
+     Modified Version, together with at least five of the principal
+     authors of the Document (all of its principal authors, if it has
+     less than five).
+
+  C. State on the Title page the name of the publisher of the Modified
+     Version, as the publisher.
+
+  D.  Preserve all the copyright notices of the Document.
+
+  E. Add an appropriate copyright notice for your modifications
+     adjacent to the other copyright notices.
+
+  F. Include, immediately after the copyright notices, a license notice
+     giving the public permission to use the Modified Version under the
+     terms of this License, in the form shown in the Addendum below.
+
+  G. Preserve in that license notice the full lists of Invariant
+     Sections and required Cover Texts given in the Document's license
+     notice.
+
+  H. Include an unaltered copy of this License.
+
+  I. Preserve the section entitled "History", and its title, and add to
+     it an item stating at least the title, year, new authors, and
+     publisher of the Modified Version as given on the Title Page.  If
+     there is no section entitled "History" in the Document, create one
+     stating the title, year, authors, and publisher of the Document as
+     given on its Title Page, then add an item describing the Modified
+     Version as stated in the previous sentence.
+
+  J. Preserve the network location, if any, given in the Document for
+     public access to a Transparent copy of the Document, and likewise
+     the network locations given in the Document for previous versions
+     it was based on.  These may be placed in the "History" section.
+     You may omit a network location for a work that was published at
+     least four years before the Document itself, or if the original
+     publisher of the version it refers to gives permission.
+
+  K. In any section entitled "Acknowledgements" or "Dedications",
+     preserve the section's title, and preserve in the section all the
+     substance and tone of each of the contributor acknowledgements
+     and/or dedications given therein.
+
+  L. Preserve all the Invariant Sections of the Document, unaltered in
+     their text and in their titles.  Section numbers or the equivalent
+     are not considered part of the section titles.
+
+  M. Delete any section entitled "Endorsements".  Such a section may
+     not be included in the Modified Version.
+
+  N. Do not retitle any existing section as "Endorsements" or to
+     conflict in title with any Invariant Section.
+
+   If the Modified Version includes new front-matter sections or
+appendices that qualify as Secondary Sections and contain no material
+copied from the Document, you may at your option designate some or all
+of these sections as invariant.  To do this, add their titles to the
+list of Invariant Sections in the Modified Version's license notice.
+These titles must be distinct from any other section titles.
+
+   You may add a section entitled "Endorsements", provided it contains
+nothing but endorsements of your Modified Version by various
+parties-for example, statements of peer review or that the text has
+been approved by an organization as the authoritative definition of a
+standard.
+
+   You may add a passage of up to five words as a Front-Cover Text, and
+a passage of up to 25 words as a Back-Cover Text, to the end of the list
+of Cover Texts in the Modified Version.  Only one passage of
+Front-Cover Text and one of Back-Cover Text may be added by (or through
+arrangements made by) any one entity.  If the Document already includes
+a cover text for the same cover, previously added by you or by
+arrangement made by the same entity you are acting on behalf of, you
+may not add another; but you may replace the old one, on explicit
+permission from the previous publisher that added the old one.
+
+   The author(s) and publisher(s) of the Document do not by this License
+give permission to use their names for publicity for or to assert or
+imply endorsement of any Modified Version.
+
+COMBINING DOCUMENTS
+===================
+
+You may combine the Document with other documents released under this
+License, under the terms defined in section 4 above for modified
+versions, provided that you include in the combination all of the
+Invariant Sections of all of the original documents, unmodified, and
+list them all as Invariant Sections of your combined work in its
+license notice.
+
+   The combined work need only contain one copy of this License, and
+multiple identical Invariant Sections may be replaced with a single
+copy.  If there are multiple Invariant Sections with the same name but
+different contents, make the title of each such section unique by
+adding at the end of it, in parentheses, the name of the original
+author or publisher of that section if known, or else a unique number.
+Make the same adjustment to the section titles in the list of Invariant
+Sections in the license notice of the combined work.
+
+   In the combination, you must combine any sections entitled "History"
+in the various original documents, forming one section entitled
+"History"; likewise combine any sections entitled "Acknowledgements",
+and any sections entitled "Dedications".  You must delete all sections
+entitled "Endorsements."
+
+COLLECTIONS OF DOCUMENTS
+========================
+
+You may make a collection consisting of the Document and other documents
+released under this License, and replace the individual copies of this
+License in the various documents with a single copy that is included in
+the collection, provided that you follow the rules of this License for
+verbatim copying of each of the documents in all other respects.
+
+   You may extract a single document from such a collection, and
+distribute it individually under this License, provided you insert a
+copy of this License into the extracted document, and follow this
+License in all other respects regarding verbatim copying of that
+document.
+
+AGGREGATION WITH INDEPENDENT WORKS
+==================================
+
+A compilation of the Document or its derivatives with other separate
+and independent documents or works, in or on a volume of a storage or
+distribution medium, does not as a whole count as a Modified Version of
+the Document, provided no compilation copyright is claimed for the
+compilation.  Such a compilation is called an "aggregate", and this
+License does not apply to the other self-contained works thus compiled
+with the Document, on account of their being thus compiled, if they are
+not themselves derivative works of the Document.
+
+   If the Cover Text requirement of section 3 is applicable to these
+copies of the Document, then if the Document is less than one quarter
+of the entire aggregate, the Document's Cover Texts may be placed on
+covers that surround only the Document within the aggregate.  Otherwise
+they must appear on covers around the whole aggregate.
+
+TRANSLATION
+===========
+
+Translation is considered a kind of modification, so you may distribute
+translations of the Document under the terms of section 4.  Replacing
+Invariant Sections with translations requires special permission from
+their copyright holders, but you may include translations of some or
+all Invariant Sections in addition to the original versions of these
+Invariant Sections.  You may include a translation of this License
+provided that you also include the original English version of this
+License.  In case of a disagreement between the translation and the
+original English version of this License, the original English version
+will prevail.
+
+TERMINATION
+===========
+
+You may not copy, modify, sublicense, or distribute the Document except
+as expressly provided for under this License.  Any other attempt to
+copy, modify, sublicense or distribute the Document is void, and will
+automatically terminate your rights under this License.  However,
+parties who have received copies, or rights, from you under this
+License will not have their licenses terminated so long as such parties
+remain in full compliance.
+
+FUTURE REVISIONS OF THIS LICENSE
+================================
+
+The Free Software Foundation may publish new, revised versions of the
+GNU Free Documentation License from time to time.  Such new versions
+will be similar in spirit to the present version, but may differ in
+detail to address new problems or concerns.  See
+http://www.gnu.org/copyleft/.
+
+   Each version of the License is given a distinguishing version number.
+If the Document specifies that a particular numbered version of this
+License "or any later version" applies to it, you have the option of
+following the terms and conditions either of that specified version or
+of any later version that has been published (not as a draft) by the
+Free Software Foundation.  If the Document does not specify a version
+number of this License, you may choose any version ever published (not
+as a draft) by the Free Software Foundation.
+
+ADDENDUM: How to use this License for your documents
+====================================================
+
+To use this License in a document you have written, include a copy of
+the License in the document and put the following copyright and license
+notices just after the title page:
+
+     Copyright (c)  YEAR  YOUR NAME.
+     Permission is granted to copy, distribute and/or modify this document
+     under the terms of the GNU Free Documentation License, Version 1.1
+     or any later version published by the Free Software Foundation;
+     with the Invariant Sections being LIST THEIR TITLES, with the
+     Front-Cover Texts being LIST, and with the Back-Cover Texts being LIST.
+     A copy of the license is included in the section entitled "GNU
+     Free Documentation License".
+
+   If you have no Invariant Sections, write "with no Invariant Sections"
+instead of saying which ones are invariant.  If you have no Front-Cover
+Texts, write "no Front-Cover Texts" instead of "Front-Cover Texts being
+LIST"; likewise for Back-Cover Texts.
+
+   If your document contains nontrivial examples of program code, we
+recommend releasing these examples in parallel under your choice of
+free software license, such as the GNU General Public License, to
+permit their use in free software.
+
+
+File: libtool-ja.info,  Node: Index,  Prev: GNU Free Documentation License,  Up: Top
+
+索引
+****
+
+ [index ]
+* Menu:
+
+* .la files:                             Linking libraries.   (line  24)
+* .libs subdirectory:                    Linking libraries.   (line  71)
+* .lo files:                             Creating object files.
+                                                              (line  27)
+* AC_CONFIG_AUX_DIR:                     Invoking libtoolize. (line  54)
+* AC_DISABLE_FAST_INSTALL:               AC_PROG_LIBTOOL.     (line  89)
+* AC_DISABLE_SHARED:                     AC_PROG_LIBTOOL.     (line  95)
+* AC_DISABLE_STATIC:                     AC_PROG_LIBTOOL.     (line 101)
+* AC_FUNC_ALLOCA:                        Autoconf .o macros.  (line  13)
+* AC_LIBTOOL_DLOPEN:                     AC_PROG_LIBTOOL.     (line  68)
+* AC_LIBTOOL_WIN32_DLL:                  AC_PROG_LIBTOOL.     (line  74)
+* AC_PROG_LIBTOOL:                       AC_PROG_LIBTOOL.     (line  12)
+* AC_REPLACE_FUNCS:                      Autoconf .o macros.  (line  17)
+* aclocal:                               AC_PROG_LIBTOOL.     (line 164)
+* allow_undefined_flag:                  libtool script contents.
+                                                              (line  51)
+* always_export_symbols:                 libtool script contents.
+                                                              (line  57)
+* AM_DISABLE_SHARED:                     AC_PROG_LIBTOOL.     (line  96)
+* AM_DISABLE_STATIC:                     AC_PROG_LIBTOOL.     (line 102)
+* AM_PROG_LIBTOOL:                       AC_PROG_LIBTOOL.     (line  13)
+* application-level dynamic linking <1>: Using libltdl.       (line   6)
+* application-level dynamic linking:     Dlopened modules.    (line   6)
+* ar:                                    Linking libraries.   (line   6)
+* AR:                                    libtool script contents.
+                                                              (line  30)
+* archive_cmds:                          libtool script contents.
+                                                              (line  62)
+* archive_expsym_cmds:                   libtool script contents.
+                                                              (line  63)
+* AS:                                    AC_PROG_LIBTOOL.     (line 161)
+* assign.test:                           Test descriptions.   (line 144)
+* avoiding shared libraries:             Static-only libraries.
+                                                              (line   6)
+* bug reports:                           Reporting bugs.      (line   6)
+* buggy system linkers:                  Linking executables. (line  11)
+* bugs, subtle ones caused by buggy linkers: Linking executables.
+                                                              (line  16)
+* build-relink.test:                     Test descriptions.   (line  77)
+* build_libtool_libs:                    libtool script contents.
+                                                              (line  85)
+* build_old_libs:                        libtool script contents.
+                                                              (line  89)
+* C header files, portable:              C header files.      (line   6)
+* C++, pitfalls:                         C++ libraries.       (line   6)
+* C++, using:                            Other languages.     (line   6)
+* C, not using:                          Other languages.     (line   6)
+* CC <1>:                                AC_PROG_LIBTOOL.     (line 109)
+* CC:                                    libtool script contents.
+                                                              (line  33)
+* cdemo-conf.test:                       Test descriptions.   (line  14)
+* cdemo-exec.test:                       Test descriptions.   (line  14)
+* cdemo-make.test:                       Test descriptions.   (line  14)
+* cdemo-shared.test:                     Test descriptions.   (line  14)
+* cdemo-static.test:                     Test descriptions.   (line  14)
+* CFLAGS:                                AC_PROG_LIBTOOL.     (line 113)
+* clean mode:                            Clean mode.          (line   6)
+* command options, libtool:              Invoking libtool.    (line   6)
+* command options, libtoolize:           Invoking libtoolize. (line   6)
+* compile mode:                          Compile mode.        (line   6)
+* compiler_c_o:                          libtool script contents.
+                                                              (line  93)
+* compiler_o_lo:                         libtool script contents.
+                                                              (line  97)
+* compiling object files:                Creating object files.
+                                                              (line   6)
+* complexity of library systems:         Postmortem.          (line  10)
+* config.guess:                          Distributing.        (line   9)
+* config.sub:                            Distributing.        (line  12)
+* configuring libtool:                   Configuring.         (line   6)
+* convenience libraries:                 Static libraries.    (line   6)
+* CPPFLAGS:                              AC_PROG_LIBTOOL.     (line 119)
+* debugging libraries:                   Static-only libraries.
+                                                              (line   6)
+* definition of libraries:               Libtool paradigm.    (line  11)
+* demo-conf.test:                        Test descriptions.   (line  43)
+* demo-exec.test:                        Test descriptions.   (line  43)
+* demo-inst.test:                        Test descriptions.   (line  43)
+* demo-make.test:                        Test descriptions.   (line  43)
+* demo-nofast.test:                      Test descriptions.   (line  43)
+* demo-nopic.test:                       Test descriptions.   (line  43)
+* demo-pic.test:                         Test descriptions.   (line  43)
+* demo-shared.test:                      Test descriptions.   (line  43)
+* demo-static.test:                      Test descriptions.   (line  43)
+* demo-unst.test:                        Test descriptions.   (line  43)
+* depdemo-conf.test:                     Test descriptions.   (line  94)
+* depdemo-exec.test:                     Test descriptions.   (line  94)
+* depdemo-inst.test:                     Test descriptions.   (line  94)
+* depdemo-make.test:                     Test descriptions.   (line  94)
+* depdemo-nofast.test:                   Test descriptions.   (line  94)
+* depdemo-shared.test:                   Test descriptions.   (line  94)
+* depdemo-static.test:                   Test descriptions.   (line  94)
+* depdemo-unst.test:                     Test descriptions.   (line  94)
+* dependencies between libraries:        Inter-library dependencies.
+                                                              (line   6)
+* dependency versioning:                 Versioning.          (line   6)
+* deplibs.test:                          Test descriptions.   (line  64)
+* deplibs_check_method:                  Porting inter-library dependencies.
+                                                              (line   6)
+* design issues:                         Issues.              (line   6)
+* design of library interfaces:          Library tips.        (line   6)
+* design philosophy:                     Motivation.          (line   6)
+* developing libraries:                  Static-only libraries.
+                                                              (line   6)
+* dlclose <1>:                           Dlopened modules.    (line   6)
+* dlclose:                               Using libltdl.       (line   6)
+* dlerror:                               Using libltdl.       (line   6)
+* DLLTOOL:                               AC_PROG_LIBTOOL.     (line 153)
+* dlopen <1>:                            Dlopened modules.    (line   6)
+* dlopen:                                Using libltdl.       (line   6)
+* dlopen_self:                           libtool script contents.
+                                                              (line 106)
+* dlopen_self_static:                    libtool script contents.
+                                                              (line 110)
+* dlopen_support:                        libtool script contents.
+                                                              (line 102)
+* dlopening modules <1>:                 Dlopened modules.    (line   6)
+* dlopening modules:                     Using libltdl.       (line   6)
+* dlopening, pitfalls:                   Dlopen issues.       (line   6)
+* dlsym <1>:                             Using libltdl.       (line   6)
+* dlsym:                                 Dlopened modules.    (line   6)
+* double-compilation, avoiding:          Static-only libraries.
+                                                              (line   6)
+* dryrun.test:                           Test descriptions.   (line 140)
+* dynamic dependencies:                  Versioning.          (line   6)
+* dynamic linking, applications <1>:     Using libltdl.       (line   6)
+* dynamic linking, applications:         Dlopened modules.    (line   6)
+* dynamic modules, names:                Finding the dlname.  (line   6)
+* echo:                                  libtool script contents.
+                                                              (line 114)
+* eliding shared libraries:              Static-only libraries.
+                                                              (line   6)
+* examples of using libtool:             Using libtool.       (line   6)
+* exclude_expsyms:                       libtool script contents.
+                                                              (line 117)
+* execute mode:                          Execute mode.        (line   6)
+* export_dynamic_flag_spec:              libtool script contents.
+                                                              (line 120)
+* export_symbols_cmds:                   libtool script contents.
+                                                              (line 124)
+* extract_expsyms_cmds:                  libtool script contents.
+                                                              (line 128)
+* failed tests:                          When tests fail.     (line   6)
+* fast_install:                          libtool script contents.
+                                                              (line 134)
+* file_magic:                            Porting inter-library dependencies.
+                                                              (line  19)
+* file_magic_cmd:                        Porting inter-library dependencies.
+                                                              (line  19)
+* file_magic_test_file:                  Porting inter-library dependencies.
+                                                              (line  19)
+* finish mode:                           Finish mode.         (line   6)
+* finish_cmds:                           libtool script contents.
+                                                              (line 151)
+* finish_eval:                           libtool script contents.
+                                                              (line 155)
+* fix_srcfile_path:                      libtool script contents.
+                                                              (line 158)
+* formal versioning:                     Libtool versioning.  (line   6)
+* global functions:                      Library tips.        (line  43)
+* global_symbol_pipe:                    libtool script contents.
+                                                              (line 161)
+* global_symbol_to_cdecl:                libtool script contents.
+                                                              (line 176)
+* hardcode.test:                         Test descriptions.   (line  70)
+* hardcode_action:                       libtool script contents.
+                                                              (line 182)
+* hardcode_direct:                       libtool script contents.
+                                                              (line 187)
+* hardcode_into_libs:                    libtool script contents.
+                                                              (line 193)
+* hardcode_libdir_flag_spec:             libtool script contents.
+                                                              (line 199)
+* hardcode_libdir_separator:             libtool script contents.
+                                                              (line 204)
+* hardcode_minus_L:                      libtool script contents.
+                                                              (line 208)
+* hardcode_shlibpath_var:                libtool script contents.
+                                                              (line 213)
+* header files:                          Library tips.        (line  37)
+* host:                                  libtool script contents.
+                                                              (line 220)
+* host_alias:                            libtool script contents.
+                                                              (line 221)
+* implementation of libtool:             libtool script contents.
+                                                              (line   6)
+* include files, portable:               C header files.      (line   6)
+* include_expsyms:                       libtool script contents.
+                                                              (line 225)
+* install:                               Installing libraries.
+                                                              (line  19)
+* install mode:                          Install mode.        (line   6)
+* installation, finishing:               Installing libraries.
+                                                              (line  53)
+* inter-library dependencies:            Inter-library dependencies.
+                                                              (line   6)
+* inter-library dependency:              Porting inter-library dependencies.
+                                                              (line   6)
+* languages, non-C:                      Other languages.     (line   6)
+* LD <1>:                                AC_PROG_LIBTOOL.     (line 125)
+* LD:                                    libtool script contents.
+                                                              (line  36)
+* LDFLAGS:                               AC_PROG_LIBTOOL.     (line 130)
+* libext:                                libtool script contents.
+                                                              (line 229)
+* libltdl:                               Using libltdl.       (line   6)
+* libname_spec:                          libtool script contents.
+                                                              (line 232)
+* libraries, definition of:              Libtool paradigm.    (line  11)
+* libraries, finishing installation:     Installing libraries.
+                                                              (line  53)
+* libraries, stripping:                  Installing libraries.
+                                                              (line  43)
+* library interfaces:                    Interfaces.          (line   6)
+* library interfaces, design:            Library tips.        (line   6)
+* library object file:                   Creating object files.
+                                                              (line  27)
+* library_names_spec:                    libtool script contents.
+                                                              (line 237)
+* LIBS:                                  AC_PROG_LIBTOOL.     (line 136)
+* libtool:                               Invoking libtool.    (line   6)
+* libtool command options:               Invoking libtool.    (line   6)
+* libtool examples:                      Using libtool.       (line   6)
+* libtool implementation:                libtool script contents.
+                                                              (line   6)
+* libtool libraries:                     Linking libraries.   (line  24)
+* libtool library versions:              Libtool versioning.  (line   6)
+* libtool specifications:                Motivation.          (line  20)
+* libtoolize:                            Invoking libtoolize. (line   6)
+* libtoolize command options:            Invoking libtoolize. (line   6)
+* link mode:                             Link mode.           (line   6)
+* link-2.test:                           Test descriptions.   (line 152)
+* link.test:                             Test descriptions.   (line 148)
+* link_all_deplibs:                      libtool script contents.
+                                                              (line 242)
+* link_static_flag:                      libtool script contents.
+                                                              (line 247)
+* linking against installed libraries:   Linking executables. (line   6)
+* linking against uninstalled libraries: Linking executables. (line  24)
+* linking with installed libtool libraries: Linking executables.
+                                                              (line  47)
+* linking, partial:                      Link mode.           (line 156)
+* LN_S:                                  AC_PROG_LIBTOOL.     (line 148)
+* lt_dladderror:                         Module loaders for libltdl.
+                                                              (line 191)
+* lt_dladdsearchdir:                     Libltdl interface.   (line 158)
+* lt_dlcaller_get_data:                  User defined module data.
+                                                              (line  92)
+* lt_dlcaller_id:                        User defined module data.
+                                                              (line  58)
+* lt_dlcaller_register:                  User defined module data.
+                                                              (line  61)
+* lt_dlcaller_set_data:                  User defined module data.
+                                                              (line  66)
+* lt_dlclose:                            Libltdl interface.   (line 113)
+* lt_dlerror:                            Libltdl interface.   (line 123)
+* lt_dlexit:                             Libltdl interface.   (line  53)
+* lt_dlforeach:                          User defined module data.
+                                                              (line  33)
+* lt_dlforeachfile:                      Libltdl interface.   (line 178)
+* lt_dlfree:                             Libltdl interface.   (line 211)
+* lt_dlgetinfo:                          User defined module data.
+                                                              (line  23)
+* lt_dlgetsearchpath:                    Libltdl interface.   (line 174)
+* lt_dlhandle:                           Libltdl interface.   (line  38)
+* lt_dlhandle_next:                      User defined module data.
+                                                              (line  41)
+* lt_dlinfo:                             User defined module data.
+                                                              (line  12)
+* lt_dlinit:                             Libltdl interface.   (line  48)
+* lt_dlinsertsearchdir:                  Libltdl interface.   (line 163)
+* lt_dlisresident:                       Libltdl interface.   (line 204)
+* lt_dlloader:                           Module loaders for libltdl.
+                                                              (line  44)
+* lt_dlloader_add:                       Module loaders for libltdl.
+                                                              (line 126)
+* lt_dlloader_data:                      Module loaders for libltdl.
+                                                              (line 183)
+* lt_dlloader_exit:                      Module loaders for libltdl.
+                                                              (line  83)
+* lt_dlloader_find:                      Module loaders for libltdl.
+                                                              (line 164)
+* lt_dlloader_name:                      Module loaders for libltdl.
+                                                              (line 178)
+* lt_dlloader_next:                      Module loaders for libltdl.
+                                                              (line 153)
+* lt_dlloader_remove:                    Module loaders for libltdl.
+                                                              (line 141)
+* lt_dlmakeresident:                     Libltdl interface.   (line 195)
+* lt_dlmalloc:                           Libltdl interface.   (line 210)
+* lt_dlmutex_geterror:                   Thread Saftey in libltdl.
+                                                              (line  31)
+* lt_dlmutex_lock:                       Thread Saftey in libltdl.
+                                                              (line  10)
+* lt_dlmutex_register:                   Thread Saftey in libltdl.
+                                                              (line  41)
+* lt_dlmutex_seterror:                   Thread Saftey in libltdl.
+                                                              (line  21)
+* lt_dlmutex_unlock:                     Thread Saftey in libltdl.
+                                                              (line  18)
+* lt_dlopen:                             Libltdl interface.   (line  59)
+* lt_dlopenext:                          Libltdl interface.   (line  98)
+* lt_dlpreload:                          Libltdl interface.   (line 128)
+* lt_dlpreload_default:                  Libltdl interface.   (line 134)
+* lt_dlseterror:                         Module loaders for libltdl.
+                                                              (line 202)
+* lt_dlsetsearchpath:                    Libltdl interface.   (line 169)
+* lt_dlsym:                              Libltdl interface.   (line 118)
+* lt_dlsymlist <1>:                      Libltdl interface.   (line  42)
+* lt_dlsymlist:                          Dlpreopening.        (line  44)
+* lt_find_sym:                           Module loaders for libltdl.
+                                                              (line  77)
+* lt_module:                             Module loaders for libltdl.
+                                                              (line  40)
+* lt_module_close:                       Module loaders for libltdl.
+                                                              (line  70)
+* lt_module_open:                        Module loaders for libltdl.
+                                                              (line  60)
+* lt_preloaded_symbols:                  Dlpreopening.        (line  49)
+* lt_ptr:                                Libltdl interface.   (line  35)
+* lt_user_data:                          Module loaders for libltdl.
+                                                              (line  47)
+* lt_user_dlloader:                      Module loaders for libltdl.
+                                                              (line  52)
+* LTALLOCA:                              Autoconf .o macros.  (line  13)
+* LTDL_SET_PRELOADED_SYMBOLS:            Libltdl interface.   (line 145)
+* LTLIBOBJS:                             Autoconf .o macros.  (line  17)
+* LTLIBRARIES:                           Using Automake.      (line   6)
+* ltmain.sh:                             Distributing.        (line  15)
+* Makefile:                              Makefile rules.      (line   6)
+* Makefile.am:                           Makefile rules.      (line   6)
+* Makefile.in:                           Makefile rules.      (line   6)
+* mdemo-conf.test:                       Test descriptions.   (line 120)
+* mdemo-exec.test:                       Test descriptions.   (line 120)
+* mdemo-inst.test:                       Test descriptions.   (line 120)
+* mdemo-make.test:                       Test descriptions.   (line 120)
+* mdemo-shared.test:                     Test descriptions.   (line 120)
+* mdemo-static.test:                     Test descriptions.   (line 120)
+* mdemo-unst.test:                       Test descriptions.   (line 120)
+* mode, clean:                           Clean mode.          (line   6)
+* mode, compile:                         Compile mode.        (line   6)
+* mode, execute:                         Execute mode.        (line   6)
+* mode, finish:                          Finish mode.         (line   6)
+* mode, install:                         Install mode.        (line   6)
+* mode, link:                            Link mode.           (line   6)
+* mode, uninstall:                       Uninstall mode.      (line   6)
+* modules, dynamic <1>:                  Dlopened modules.    (line   6)
+* modules, dynamic:                      Using libltdl.       (line   6)
+* motivation for writing libtool:        Motivation.          (line   6)
+* names of dynamic modules:              Finding the dlname.  (line   6)
+* need_lib_prefix:                       libtool script contents.
+                                                              (line 251)
+* need_locks:                            libtool script contents.
+                                                              (line 266)
+* need_version:                          libtool script contents.
+                                                              (line 259)
+* NM <1>:                                AC_PROG_LIBTOOL.     (line 142)
+* NM:                                    libtool script contents.
+                                                              (line  40)
+* no_builtin_flag:                       libtool script contents.
+                                                              (line 270)
+* no_undefined_flag:                     libtool script contents.
+                                                              (line 274)
+* noinst-link.test:                      Test descriptions.   (line  82)
+* nomode.test:                           Test descriptions.   (line 156)
+* none:                                  Porting inter-library dependencies.
+                                                              (line  38)
+* objdir:                                libtool script contents.
+                                                              (line 278)
+* OBJDUMP:                               AC_PROG_LIBTOOL.     (line 157)
+* object files, compiling:               Creating object files.
+                                                              (line   6)
+* object files, library:                 Creating object files.
+                                                              (line  27)
+* objext:                                libtool script contents.
+                                                              (line 281)
+* old_archive_cmds:                      libtool script contents.
+                                                              (line  64)
+* old_archive_from_expsyms_cmds:         libtool script contents.
+                                                              (line  74)
+* old_archive_from_new_cmds:             libtool script contents.
+                                                              (line  68)
+* old_postinstall_cmds:                  libtool script contents.
+                                                              (line 289)
+* old_postuninstall_cmds:                libtool script contents.
+                                                              (line 294)
+* old_striplib:                          libtool script contents.
+                                                              (line 322)
+* opaque data types:                     Library tips.        (line  27)
+* options, libtool command:              Invoking libtool.    (line   6)
+* options, libtoolize command:           Invoking libtoolize. (line   6)
+* other implementations, flaws in:       Postmortem.          (line   6)
+* partial linking:                       Link mode.           (line 156)
+* pass_all:                              Porting inter-library dependencies.
+                                                              (line  32)
+* PIC (position-independent code):       Creating object files.
+                                                              (line  23)
+* pic_flag:                              libtool script contents.
+                                                              (line 284)
+* pitfalls using C++:                    C++ libraries.       (line   6)
+* pitfalls with dlopen:                  Dlopen issues.       (line   6)
+* portable C headers:                    C header files.      (line   6)
+* position-independent code:             Creating object files.
+                                                              (line  23)
+* postinstall_cmds:                      libtool script contents.
+                                                              (line 288)
+* postinstallation:                      Installing libraries.
+                                                              (line  53)
+* postuninstall_cmds:                    libtool script contents.
+                                                              (line 293)
+* problem reports:                       Reporting bugs.      (line   6)
+* problems, blaming somebody else for:   Troubleshooting.     (line   6)
+* problems, solving:                     Troubleshooting.     (line   6)
+* program wrapper scripts:               Linking executables. (line  75)
+* quote.test:                            Test descriptions.   (line 159)
+* RANLIB <1>:                            libtool script contents.
+                                                              (line  48)
+* RANLIB:                                AC_PROG_LIBTOOL.     (line 145)
+* ranlib:                                Linking libraries.   (line  12)
+* reload_cmds:                           libtool script contents.
+                                                              (line 298)
+* reload_flag:                           libtool script contents.
+                                                              (line 299)
+* renaming interface functions:          Library tips.        (line  21)
+* reporting bugs:                        Reporting bugs.      (line   6)
+* reusability of library systems:        Postmortem.          (line   6)
+* runpath_var:                           libtool script contents.
+                                                              (line 302)
+* saving time:                           Static-only libraries.
+                                                              (line   6)
+* security problems with buggy linkers:  Linking executables. (line  16)
+* sh.test:                               Test descriptions.   (line 162)
+* shared libraries, not using:           Static-only libraries.
+                                                              (line   6)
+* shared library versions:               Versioning.          (line   6)
+* shl_load <1>:                          Dlopened modules.    (line   6)
+* shl_load:                              Using libltdl.       (line   6)
+* shlibpath_overrides_runpath:           libtool script contents.
+                                                              (line 306)
+* shlibpath_var:                         libtool script contents.
+                                                              (line 314)
+* solving problems:                      Troubleshooting.     (line   6)
+* soname_spec:                           libtool script contents.
+                                                              (line 317)
+* specifications for libtool:            Motivation.          (line  20)
+* standalone binaries:                   Static libraries.    (line  62)
+* static linking:                        Static libraries.    (line   6)
+* strip:                                 Installing libraries.
+                                                              (line   6)
+* striplib:                              libtool script contents.
+                                                              (line 321)
+* stripping libraries:                   Installing libraries.
+                                                              (line  43)
+* su:                                    Installing libraries.
+                                                              (line   9)
+* suffix.test:                           Test descriptions.   (line 165)
+* sys_lib_dlsearch_path_spec:            libtool script contents.
+                                                              (line 327)
+* sys_lib_search_path_spec:              libtool script contents.
+                                                              (line 331)
+* test suite:                            Libtool test suite.  (line   6)
+* test_compile:                          Porting inter-library dependencies.
+                                                              (line  27)
+* tests, failed:                         When tests fail.     (line   6)
+* thread_safe_flag_spec:                 libtool script contents.
+                                                              (line 340)
+* time, saving:                          Static-only libraries.
+                                                              (line   6)
+* tricky design issues:                  Issues.              (line   6)
+* trouble with C++:                      C++ libraries.       (line   6)
+* trouble with dlopen:                   Dlopen issues.       (line   6)
+* troubleshooting:                       Troubleshooting.     (line   6)
+* undefined symbols, allowing:           Link mode.           (line  15)
+* uninstall mode:                        Uninstall mode.      (line   6)
+* unknown:                               Porting inter-library dependencies.
+                                                              (line  43)
+* unresolved symbols, allowing:          Link mode.           (line  15)
+* using shared libraries, not:           Static-only libraries.
+                                                              (line   6)
+* version_type:                          libtool script contents.
+                                                              (line 344)
+* versioning, formal:                    Libtool versioning.  (line   6)
+* whole_archive_flag_spec:               libtool script contents.
+                                                              (line 349)
+* wl:                                    libtool script contents.
+                                                              (line 353)
+* wrapper scripts for programs:          Linking executables. (line  75)
+
+
+
+Tag Table:
+Node: Top930
+Node: Introduction6828
+Node: Motivation8633
+Node: Issues9823
+Node: Other implementations11355
+Node: Postmortem11873
+Node: Libtool paradigm13340
+Node: Using libtool14291
+Node: Creating object files16368
+Node: Linking libraries18961
+Ref: Linking libraries-Footnote-121963
+Node: Linking executables22109
+Ref: Linking executables-Footnote-127143
+Ref: Linking executables-Footnote-227475
+Node: Debugging executables27515
+Node: Installing libraries30181
+Ref: Installing libraries-Footnote-133305
+Node: Installing executables33390
+Node: Static libraries34196
+Node: Invoking libtool37597
+Node: Compile mode40844
+Node: Link mode42886
+Node: Execute mode49634
+Node: Install mode50346
+Node: Finish mode52357
+Node: Uninstall mode52828
+Node: Clean mode53277
+Node: Integrating libtool53737
+Node: Makefile rules54386
+Node: Using Automake55418
+Node: Configuring57967
+Node: AC_PROG_LIBTOOL59144
+Ref: AC_PROG_LIBTOOL-Footnote-166756
+Node: Distributing66992
+Node: Invoking libtoolize67818
+Node: Autoconf .o macros69591
+Node: Static-only libraries70792
+Ref: Static-only libraries-Footnote-172153
+Node: Versioning72268
+Node: Interfaces73604
+Node: Libtool versioning74154
+Node: Updating version info76390
+Node: Release numbers78229
+Node: Library tips79945
+Node: C header files82539
+Ref: C header files-Footnote-186145
+Node: Inter-library dependencies86354
+Node: Dlopened modules88852
+Ref: Dlopened modules-Footnote-190738
+Node: Building modules90805
+Node: Dlpreopening91987
+Node: Finding the dlname94710
+Ref: Finding the dlname-Footnote-195884
+Node: Dlopen issues95939
+Node: Using libltdl96950
+Node: Libltdl interface98709
+Node: Modules for libltdl108375
+Node: Thread Saftey in libltdl110827
+Node: User defined module data112943
+Node: Module loaders for libltdl117750
+Ref: Module loaders for libltdl-Footnote-1126736
+Node: Distributing libltdl126837
+Ref: Distributing libltdl-Footnote-1133256
+Node: Other languages133492
+Node: C++ libraries134031
+Node: Troubleshooting135502
+Node: Libtool test suite136030
+Node: Test descriptions136713
+Node: When tests fail143686
+Node: Reporting bugs144571
+Ref: Reporting bugs-Footnote-1146160
+Node: Maintaining146261
+Node: New ports146938
+Node: Information sources147570
+Node: Porting inter-library dependencies149759
+Node: Tested platforms152329
+Node: Platform quirks160970
+Node: References161897
+Node: Compilers162772
+Ref: Compilers-Footnote-1164463
+Node: Reloadable objects164798
+Node: Multiple dependencies165206
+Node: Archivers166070
+Node: libtool script contents166668
+Node: Cheap tricks181776
+Node: GNU Free Documentation License183305
+Node: Index202002
+
+End Tag Table

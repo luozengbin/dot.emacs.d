@@ -1,0 +1,2057 @@
+Info file: eintr-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-lisp-intro.texi.patched'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELisp-Intro-ja: (eintr-ja).       Emacs-Lisp入門ガイド
+END-INFO-DIR-ENTRY
+
+
+これはプログラマではない人のための `Emacs Lisp プログラミング' 解説書で
+ある．
+
+Edition 2.04, 2001 Dec 17
+
+Copyright (C) 1990, '91, '92, '93, '94, '95, '97, 2001 Free Software
+Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Section being the Preface, with the Front-Cover Texts being
+no Front-Cover Texts, and with the Back-Cover Texts being no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File: eintr-ja, Node: mark-whole-buffer, Next: Buffer Exercises, Prev: Finding More, Up: PrePreface
+
+`mark-whole-buffer'の定義 *(2004/08/05)*
+========================================
+
+関数`mark-whole-buffer'を理解するのは、関数
+`simplified-beginning-of-buffer'を理解するのと同じくらい容易である。こ
+こでは、簡略版ではなく完全な関数を見てみよう。
+
+関数`beginning-of-buffer'ほどは多用されないが、関数`mark-whole-buffer'
+も有用である。関数`mark-whole-buffer'は、バッファの先頭にポイントを、バッ
+ファの最後にマークを置いてバッファ全体をリージョンとする。一般には`C-x
+h'にバインドされる。
+
+
+* Menu:
+
+* mark-whole-buffer overview::
+* Body of mark-whole-buffer::   Only three lines of code.
+
+
+
+
+File: eintr-ja, Node: mark-whole-buffer overview, Prev: Finding More, Up: Finding More
+
+`mark-whole-buffer' の概略
+--------------------------
+
+Emacs 20 では，関数の完全なコードはつぎのとおりである。
+
+     (defun mark-whole-buffer ()
+       "Put point at beginning and mark at end of buffer."
+       (interactive)
+       (push-mark (point))
+       (push-mark (point-max))
+       (goto-char (point-min)))
+
+他のすべての関数定義と同様に、関数`mark-whole-buffer'は関数定義の雛型に
+あてはまる。雛型はつぎのとおりである。
+
+     (defun 関数名 (引数リスト)
+       "説明文..."
+       (INTERACTIVE-EXPRESSION...)
+       本体...)
+
+この関数はつぎのように動作する。関数名は`mark-whole-buffer'である。空の
+引数リスト`()'がこれに続き、関数には引数を必要としないことを意味する。
+さらに、説明文が続く。
+
+つぎの行の式`(interactive)'は、関数が対話的に使われることをEmacsに指示
+する。これらの詳細は、前節で述べた関数`simplified-beginning-of-buffer'
+と同様である。
+
+
+
+File: eintr-ja, Node: Body of mark-whole-buffer, Prev: Finding More, Up: Finding More
+
+`mark-whole-buffer'の本体 *(2004/08/05)*
+----------------------------------------
+
+関数`mark-whole-buffer'の本体は、つぎの3行である。
+
+     (push-mark (point))
+     (push-mark (point-max))
+     (goto-char (point-min))
+
+最初の行は、式`(push-mark (point))'である。
+
+この行は、関数`simplified-beginning-of-buffer'の本体では`(push-mark)'と
+書かれた行とまったく同じことを行う。いずれの場合も、Lispインタープリタ
+はカーソルの現在位置にマークを設定する。
+
+なぜ、`mark-whole-buffer'では`(push-mark (point))'と書き、
+`beginning-of-buffer'では`(push-mark)'と書いたのかはわからない。たぶん、
+コードを書いた人が、`push-mark'の引数を省略でき、引数がない場合には
+`push-mark'はポイント位置に自動的にマークを設定することを知らなかったの
+ではないかと想像する。あるいは、つぎの行と同じような構造にしたかったの
+であろう。いずれにしても、この行により、Emacsはポイントの位置を調べて、
+そこにマークを設定する。
+
+`mark-whole-buffer'のつぎの行は`(push-mark (point-max))'である。この式
+は、バッファで取り得るポイントの最大値の位置にマークを設定する。これは
+バッファの最後である（バッファをナロイングしている場合には、バッファの
+参照可能な部分の最後である。ナロイングについてより詳しくは*Note
+Narrowing & Widening::）。このマークを設定すると、ポイントに設定されて
+いた直前のマークはなくなるが、Emacsはその位置を最近の他のマークと同様に
+記録しておく。つまり、必要ならば`C-u C-SPC'を2回タイプすればその位置に
+戻れるのである。
+
+Emacs 21 では `(push-mark (point-max)' が以下よりも少し複雑になりました．
+
+     (push-mark (point-max) nil t)
+
+(この式は以前とほとんど同じように動作します．これはバッファ上につけられ
+たマークのうちでできる限り高い番号の位置にマークをセットします．しかし，
+このバージョンでは`push-mark' には2つの追加の引数があります．
+`push-mark' の2番目の引数は`nil' になっています．このことは，マークをセッ
+トした際に「Mark set」というメッセージを表示*すべきである*ということを
+意味しています．3番目の引数は`t' になっています．このことは，暫定マーク
+モードがオンであれば，`push-mark' がマークを有効にすることを意味してい
+ます．暫定マークモードは現在有効になっているリージョンを可視化します．
+この動作は通常オフになっています)
+
+関数の最後の行は、`(goto-char (point-min)))'である。これは
+`beginning-of-buffer'のときとまったく同じに書いてある。この式では、カー
+ソルをバッファの最小ポイントつまり、バッファの先頭（あるいは、バッファ
+の参照可能な部分の先頭）に移動する。この結果、バッファの先頭にポイント
+があり、バッファの最後にマークが設定される。したがって、バッファ全体が
+リージョンとなる。
+
+
+
+File: eintr-ja, Node: append-to-buffer, Next: Buffer Exercises, Prev: Finding More, Up: PrePreface
+
+`append-to-buffer'の定義 *(2004/08/05)*
+=======================================
+
+コマンド`append-to-buffer'は、コマンド`mark-whole-buffer'と同様に単純で
+ある。このコマンドは、カレントバッファのリージョン（つまり、バッファの
+ポイントとマークのあいだの部分）を指定したバッファにコピーする。
+
+* Menu:
+
+* append-to-buffer overview::
+* append interactive::          A two part interactive expression.
+* append-to-buffer body::       Incorporates a `let' expression.
+* append save-excursion::       How the `save-excursion' works.
+
+
+
+File: eintr-ja, Node: append-to-buffer overview, Prev: Finding More, Up: Finding More
+
+`append-to-buffer' の概略
+-------------------------
+
+コマンド`append-to-buffer'は、関数`insert-buffer-substring'を用いてリー
+ジョンをコピーする。`insert-buffer-substring'の名前からわかるように、バッ
+ファのある部分を構成する文字列、つまり、「部分文字列」を別のバッファに
+挿入する。`append-to-buffer'の大部分は、`insert-buffer-substring'が動作
+するように条件を設定することである。つまり、テキストを受け取るバッファ
+とコピーすべきリージョンを設定することである。つぎは、関数の完全なテキ
+ストである。
+
+     (defun append-to-buffer (buffer start end)
+       "Append to specified buffer the text of the region.
+     It is inserted into that buffer before its point.
+
+     When calling from a program, give three arguments:
+     a buffer or the name of one, and two character numbers
+     specifying the portion of the current buffer to be copied."
+       (interactive "BAppend to buffer: \nr")
+       (let ((oldbuf (current-buffer)))
+         (save-excursion
+           (set-buffer (get-buffer-create buffer))
+           (insert-buffer-substring oldbuf start end))))
+
+この関数は、雛型を埋めたものと考えれば理解できるであろう。
+
+もっとも外側の雛型は関数定義である。ここでは、（いくつかの部分を埋める
+と）つぎのとおりである。
+
+     (defun append-to-buffer (buffer start end)
+       "説明文..."
+       (interactive "BAppend to buffer: \nr")
+       本体...)
+
+関数の最初の行には、関数名と3つの引数がある。引数は、テキストのコピーを
+受け取るバッファ`buffer'、カレントバッファのコピーすべきリージョンの始
+め`start'と最後`end'である。
+
+関数のつぎの部分は説明文であるが、これは明白であろう。
+
+
+
+File: eintr-ja, Node: append interactive, Prev: Finding More, Up: Finding More
+
+`append-to-buffer'の`interactive'式 *(2004/08/05)*
+--------------------------------------------------
+
+関数`append-to-buffer'は対話的に使われるので、関数には`interactive'式が
+必要である（`interactive'の復習は、*Note Interactive::を参照）。この式
+はつぎのように読める。
+
+     (interactive "BAppend to buffer: \nr")
+
+この式では、二重引用符のあいだに引数が、`\n'で区切られて2つある。
+
+最初の部分は`BAppend to buffer: 'である。この`B'は、関数にバッファ名を
+渡すことをEmacsに指示する。Emacsは、`B'に続く文字列`Append to buffer:
+'をミニバッファに表示してユーザーに名前を問い合わせる。そして、Emacsは、
+指定されたバッファを関数の引数リストの変数`buffer'に束縛する。
+
+改行`\n'は引数の最初の部分と2番目の部分を区切る。`\n'に続く`r'は、関数
+の引数リストのシンボル`buffer'に続く2つの引数（つまり、`start'と`end'）
+にポイントとマークの値を束縛するようにEmacsに指示する。
+
+
+
+File: eintr-ja, Node: append-to-buffer body, Prev: Finding More, Up: Finding More
+
+`append-to-buffer'の本体 *(2004/08/05)*
+---------------------------------------
+
+関数`append-to-buffer'の本体は`let'で始まる。
+
+すでに説明したように（*Note let::）、`let'式の目的は、`let'の本体の内側
+のみで使う変数を作り初期値を設定することである。つまり、`let'式の外側で
+同じ名前の変数があっても、それらとは混乱しないようにする。
+
+`let'式の概略を含んだ`append-to-buffer'の雛型を示せば、関数定義全体にど
+のように`let'式をあてはめるかがわかるであろう。
+
+     (defun append-to-buffer (buffer start end)
+       "説明文..."
+       (interactive "BAppend to buffer: \nr")
+       (let ((変数 値))
+             本体...)
+
+`let'式には3つの要素がある。
+
+  1. シンボル`let'。
+
+  2. 変数リスト。ここでは、1つの2要素リスト`(VARIABLE VALUE)'。
+
+  3. `let'式の本体。
+
+関数`append-to-buffer'では、変数リストはつぎのとおりである。
+
+     (oldbuf (current-buffer))
+
+`let'式のこの部分では、式`(current-buffer)'が返す値を変数`oldbuf'に束縛
+する。変数`oldbuf'には、どのバッファを使用していたかやどのバッファから
+コピーするかを記録する。
+
+Lispインタープリタが変数リストと`let'式の本体とを区別できるように、変数
+リストの要素を括弧で囲む。そのため、変数リストの2要素リストを括弧で囲む
+のである。したがって、つぎのようになる。
+
+     (let ((oldbuf (current-buffer)))
+       ... )
+
+`oldbuf'のまえにある2つの括弧のうち、最初の括弧は変数リストの区切りを表
+し、2番目の括弧は2要素リスト`(oldbuf (current-buffer))'の始まりを表すこ
+とに注意してほしい。
+
+
+
+File: eintr-ja, Node: append save-excursion, Prev: Finding More, Up: Finding More
+
+`append-to-buffer'の`save-excursion' *(2004/08/05)*
+---------------------------------------------------
+
+`append-to-buffer'の`let'式の本体は、
+`save-excursion'式から成っている。
+
+関数`save-excursion'は、ポイントとマークの位置を記録し、
+`save-excursion'の本体の式の実行を完了すると
+これらの位置を復元する。
+さらに、`save-excursion'はもとのバッファも記録しておき復元する。
+`append-to-buffer'ではこのように`save-excursion'を使う。
+
+複数行にまたがるリストは、最初のシンボル以外は最初のシンボルよりも
+字下げして書き、Lisp関数もこのように書く。
+この関数定義では、つぎに示すように、`let'は`defun'よりも字下げし、
+`save-excursion'は`let'よりも字下げする。
+
+     (defun ...
+       ...
+       ...
+       (let...
+         (save-excursion
+           ...
+
+このような書き方をすると、`save-excursion'の本体の2行が
+`save-excursion'の括弧に囲まれていること、また、`save-excursion'自体も
+`let'の括弧に囲まれていることがわかりやすくなる。
+
+     (let ((oldbuf (current-buffer)))
+       (save-excursion
+         (set-buffer (get-buffer-create buffer))
+         (insert-buffer-substring oldbuf start end))))
+
+関数`save-excursion'の使い方は、雛型の項目を埋めていくと考えればよい。
+
+     (save-excursion
+       本体の最初の式
+       本体の2番目の式
+        ...
+       本体の最後の式)
+
+この関数では、`save-excursion'の本体には2つの式があるだけである。本体は
+つぎのとおりである。
+
+     (set-buffer (get-buffer-create buffer))
+     (insert-buffer-substring oldbuf start end)
+
+関数`append-to-buffer'を評価すると、`save-excursion'の本体の2つの式が順
+番に評価される。最後の式の値が関数`save-excursion'の値として返される。
+これ以外の式は、副作用を起こすためだけに評価される。
+
+`save-excursion'の本体の最初の行では、関数`set-buffer'を用いてカレント
+バッファを`append-to-buffer'の第1引数で指定したものに切り替える（バッファ
+を切り替えることは副作用である。まえにも述べたように、Lispでは副作用が
+主要な目的である）。2番目の行で、関数の主要な処理を行う。
+
+関数`set-buffer'は、Emacsの注意をテキストをコピーする先のバッファに向け、
+`save-excursion'でもとに戻す。
+
+この行はつぎのとおりである。
+
+     (set-buffer (get-buffer-create buffer))
+
+このリストのもっとも内側の式は`(get-buffer-create buffer)'である。この
+式では関数`get-buffer-create'を使うが、この関数は指定した名前のバッファ
+を取得するか、そのようなバッファが存在しなければその名前でバッファを作
+成する。つまり、`append-to-buffer'を使えば、既存でないバッファにもテキ
+ストをコピーできる。
+
+`get-buffer-create'により、`set-buffer'で不必要なエラーが
+発生することを避けている。
+`set-buffer'には、切り替え先のバッファが必要である。
+存在しないバッファを指定すると、Emacsは失敗する。
+`get-buffer-create'は、バッファが存在しなければバッファを作成するので、
+`set-buffer'にはつねにバッファが与えられる。
+
+`append-to-buffer'の最後の行が、テキストの追加操作を行う。
+
+     (insert-buffer-substring oldbuf start end)
+
+関数`insert-buffer-substring'は、第1引数で指定したバッファ*から* カレン
+トバッファに文字列をコピーする。ここでは、`insert-buffer-substring'への
+引数は、`let'で作成し束縛した変数`oldbuf'の値であり、その値は、コマンド
+`append-to-buffer'を実行したときのカレントバッファである。
+
+`insert-buffer-substring'の処理が終了すると、
+`save-excursion'はもとのバッファに戻し、
+`append-to-buffer'が終了する。
+
+本体の動作の概要はつぎのとおりである。
+
+     (let (`oldbuf'に`current-buffer'の値を束縛する)
+       (save-excursion                       ; バッファを記録する
+         バッファを切り替える
+         `oldbuf'の文字列をバッファへコピーする)
+
+       もとのバッファへ戻す
+     終了するときに名前`oldbuf'を消す
+
+
+まとめると、`append-to-buffer'はつぎのように動作する。
+変数`oldbuf'にカレントバッファを記録する。
+必要ならば作成して新しいバッファを取得し、そのバッファへ切り替える。
+`oldbuf'の値を用いて、もとのバッファのリージョンのテキストを
+新しいバッファに挿入する。
+`save-excursion'を使っているので、もとのバッファに戻る。
+
+`append-to-buffer'を調べることで、ある程度複雑な関数について知ることが
+できた。`let'と`save-excursion'の使い方や、バッファを切り替えたあとで、
+もとのバッファに戻す方法がわかったと思う。多くの関数で、`let'、
+`save-excursion'、`set-buffer' をこのように使う。
+
+
+
+File: eintr-ja, Node: Buffer Related Review, Next: Buffer Exercises, Prev: Finding More, Up: PrePreface
+
+復　習 *(2004/08/05)*
+=====================
+
+本章で説明したさまざまな関数の概要をまとめておく。
+
+`describe-function'
+`describe-variable'
+     関数や変数の説明文を表示する。慣習的に、`C-h f'と`C-h v'にバインド
+     される。
+
+`find-tag'
+     関数や変数を含むソースファイルを探し、そのファイルのバッファに切り
+     替え、その関数や変数の先頭にポイントを移動する。慣習的に、
+     `M-.'（つまり、METAキーに続けてピリオド）にバインドされる。
+
+`save-excursion'
+     ポイントとマークの位置を記録し、`save-excursion'の引数を評価し終え
+     たら、もとの値に戻す。カレントバッファも記録しておき、終了後にもと
+     に戻す。
+
+`push-mark'
+     指定位置にマークを設定し、設定前のマークの値をマークリングに保存す
+     る。マークはバッファ内の位置であり、バッファにテキストが追加されて
+     も削除されても、その相対的な位置を保持する。
+
+`goto-char'
+     引数で指定した位置にポイントを移動する。引数は、数、マーク、
+     `(point-min)'のような位置を返す式のいずれかである。
+
+`insert-buffer-substring'
+     引数として関数に渡されたバッファのリージョンのテキストのコピーをカ
+     レントバッファに挿入する。
+
+`mark-whole-buffer'
+     バッファ全体をリージョンとする。通常、`C-x h'にバインドされる。
+
+`set-buffer'
+     Emacsの注意を別のバッファに向けるが、ウィンドウへの表示は変えない。
+     プログラムで別のバッファを操作するときに使う。
+
+`get-buffer-create'
+`get-buffer'
+     指定した名前のバッファを探し、存在しなければその名前のバッファを作
+     成する。関数`get-buffer'は、指定した名前のバッファが存在しなければ
+     `nil'を返す。
+
+
+
+File: eintr-ja, Node: Buffer Exercises, Next: optional Exercise, Prev: Finding More, Up: PrePreface
+
+演習問題
+========
+
+   * 読者独自の`simplified-end-of-buffer'の関数定義を書き、動作を確認せ
+     よ。
+
+   * バッファが既存かどうかのメッセージを表示する関数を
+     `if'と`get-buffer'を用いて書け。
+
+   * `find-tag'を用いて、関数`copy-to-buffer'のソースを探してみよ。
+
+
+
+File: eintr-ja, Node: More Complex, Next: Counting Words, Prev: PrePreface, Up: Top
+
+多少複雑な関数 *(2004/08/05)*
+*****************************
+
+本章では、前章で学んだことをもとに、多少複雑な関数を見てみよう。関数
+`copy-to-buffer'では、1つの定義内で式`save-excursion'を2つ使う方法を、
+関数`insert-buffer'では、`interactive'式でのアスタリスクの使い方と`or'
+の使い方を、名前と名前が参照するオブジェクトとの重要な違いを示す。
+
+* Menu:
+
+* copy-to-buffer::              With `set-buffer', `get-buffer-create'.
+* insert-buffer::               Read-only, and with `or'.
+* beginning-of-buffer::         Shows `goto-char',
+                                `point-min', and `push-mark'.
+* Second Buffer Related Review::
+* optional Exercise::
+
+
+
+File: eintr-ja, Node: copy-to-buffer, Next: optional Exercise, Prev: Buffer Exercises, Up: PrePreface
+
+`copy-to-buffer'の定義 *(2004/08/05)*
+=====================================
+
+`append-to-buffer'の動作を理解していれば、
+`copy-to-buffer'を理解するのは容易である。
+この関数はテキストをバッファにコピーするが、
+指定したバッファに追加するのではなく、指定バッファの内容を書き換える。
+関数`copy-to-buffer'のコードは、`append-to-buffer'のコードと
+ほぼ同じであるが、`erase-buffer'ともう1つ`save-excursion'を使う
+（`append-to-buffer'の説明は、
+*Note append-to-buffer::）。
+
+`copy-to-buffer'の本体はつぎのとおりである。
+
+     ...
+     (interactive "BCopy to buffer: \nr")
+       (let ((oldbuf (current-buffer)))
+         (save-excursion
+           (set-buffer (get-buffer-create buffer))
+           (erase-buffer)
+           (save-excursion
+             (insert-buffer-substring oldbuf start end)))))
+
+このコードは、`append-to-buffer'のコードとほぼ同じである。
+`append-to-buffer'の定義と違いがでるのは、コピー先のバッファに切り替え
+たあとである。関数`copy-to-buffer'では、バッファの既存の内容を削除する
+（つまり、書き換えるのである。Emacsでは、テキストを書き換えるには、既存
+のテキストを削除してから、新たなテキストを挿入する）。バッファの既存の
+内容を削除したあと、2つめの`save-excursion'を使い、新たなテキストを挿入
+する。
+
+なぜ`save-excursion'を2つ使うのだろうか？　関数の動作を見直してみよう。
+
+`copy-to-buffer'の本体の概略はつぎのとおりである。
+
+     (let (`oldbuf'に`current-buffer'の値を束縛する)
+       (save-excursion         ; 最初の`save-excursion'
+         バッファを切り替える
+           (erase-buffer)
+           (save-excursion     ; 2つめの`save-excursion'
+             `oldbuf'から部分文字列をバッファへ挿入する)))
+
+最初の`save-excursion'で、Emacsは、テキストのコピーもとのバッファに戻る
+ことができる。これは`append-to-buffer'での用法と同じであり、明らかであ
+ろう。では、2つめは何のためであろう？　`insert-buffer-substring'は、つ
+ねに、挿入したリージョンの*最後*にポイントを置く。2番目の
+`save-excursion'により、Emacsは挿入したテキストの先頭にポイントを置くこ
+とになる。多くの場合、ユーザーは、挿入したテキストの先頭にポイントがあ
+ることを好む（もちろん、関数`copy-to-buffer'が完了するともとのバッファ
+に戻る。しかし、ユーザーがコピー先のバッファに切り替えると、ポイントは
+テキストの先頭にある。つまり、このために2番目の`save-excursion'がある）。
+
+
+
+File: eintr-ja, Node: insert-buffer, Next: optional Exercise, Prev: Buffer Exercises, Up: PrePreface
+
+`insert-buffer'の定義 *(2004/08/05)*
+====================================
+
+`insert-buffer'もバッファに関連した関数である。
+このコマンドは、別のバッファからカレントバッファへコピーする。
+カレントバッファのテキストのリージョンを別のバッファへコピーする
+`append-to-buffer'や`copy-to-buffer'とは逆向きである。
+
+また、このコードでは、"読み出し専用（read-only）"のバッファでの
+`interactive'の使い方と、オブジェクトの名前と名前が参照するオブジェクト
+との重要な違いを示す。
+
+* Menu:
+
+* insert-buffer code::
+* insert-buffer interactive::   When you can read, but not write.
+* insert-buffer body::          The body has an `or' and a `let'.
+* if & or::                     Using an `if' instead of an `or'.
+* Insert or::                   How the `or' expression works.
+* Insert let::                  Two `save-excursion' expressions.
+
+
+
+File: eintr-ja, Node: insert-buffer code, Next: Optional Arguments, Prev: Buffer Exercises, Up: Buffer Exercises
+
+`insert-buffer' のソースコード
+------------------------------
+
+コードはつぎのとおりである。
+
+     (defun insert-buffer (buffer)
+       "Insert after point the contents of BUFFER.
+     Puts mark after the inserted text.
+     BUFFER may be a buffer or a buffer name."
+       (interactive "*bInsert buffer: ")
+       (or (bufferp buffer)
+           (setq buffer (get-buffer buffer)))
+       (let (start end newmark)
+         (save-excursion
+           (save-excursion
+             (set-buffer buffer)
+             (setq start (point-min) end (point-max)))
+           (insert-buffer-substring buffer start end)
+           (setq newmark (point)))
+         (push-mark newmark)))
+
+他の関数と同様に、雛型を使って関数の概略を見ることができる。
+
+     (defun insert-buffer (buffer)
+       "説明文..."
+       (interactive "*bInsert buffer: ")
+       本体...)
+
+
+
+File: eintr-ja, Node: insert-buffer interactive, Next: Optional Arguments, Prev: Buffer Exercises, Up: Buffer Exercises
+
+`insert-buffer'の`interactive'式
+--------------------------------
+
+`insert-buffer'では、`interactive'の引数には、アスタリスク`*'と
+`bInsert buffer: 'の2つの部分がある。
+
+* Menu:
+
+* Read-only buffer::            When a buffer cannot be modified.
+* b for interactive::           An existing buffer or else its name.
+
+
+
+File: eintr-ja, Node: Read-only buffer, Prev: Buffer Exercises, Up: Buffer Exercises
+
+読み出し専用バッファ
+....................
+
+アスタリスクは、読み出し専用バッファ、つまり、変更できないバッファに対
+処するためである。読み出し専用のバッファに`insert-buffer'を使うと、読み
+出し専用である旨のメッセージがエコー領域に表示され、端末のベルが鳴るか
+点滅する。カレントバッファには挿入できないのである。アスタリスクのあと
+にはつぎの部分との区切りに改行は必要ない。
+
+
+
+File: eintr-ja, Node: b for interactive, Prev: Buffer Exercises, Up: Buffer Exercises
+
+`interactive'式の`b'
+....................
+
+`interactive'式の引数の2番目の部分は、小文字の`b'で始まっている（大文字
+の`B'で始まる`append-to-buffer'のコードと異なる*Note
+append-to-buffer::）。小文字の`b'は、`insert-buffer'の引数は既存のバッ
+ファであるかバッファ名であることをLispインタープリタに指示する（大文字
+の`B'では、バッファが存在しない場合も許す）。Emacsは、デフォルトのバッ
+ファを提示してバッファ名を問い合わせ、名前の補完も行う。バッファが存在
+しないと、メッセージ「No match（一致するものがない）」を表示して端末の
+ベルを鳴らす。
+
+
+
+File: eintr-ja, Node: insert-buffer body, Next: Optional Arguments, Prev: Buffer Exercises, Up: Buffer Exercises
+
+関数`insert-buffer'の本体 *(2004/08/05)*
+----------------------------------------
+
+関数`insert-buffer'の本体には、2つの主要な部分、`or'式と`let'式がある。
+`or'式の目的は、引数`buffer'がバッファの名前ではなく、バッファに束縛さ
+れていることを保証することである。`let'式の本体は、別のバッファからカレ
+ントバッファにコピーするコードである。
+
+関数`insert-buffer'の2つの式の概略はつぎのとおりである。
+
+     (defun insert-buffer (buffer)
+       "説明文..."
+       (interactive "*bInsert buffer: ")
+       (or ...
+           ...
+       (let (変数リスト)
+           `let'の本体... )
+
+`or'式により、どのようにして引数`buffer'にバッファ名ではなくバッファが
+束縛されることが保証されるのかを理解するには、まず、関数`or'を理解する
+必要がある。
+
+そのまえに、関数の最初の部分を`if'で書き換えて、すでによく知っている方
+法で考えてみよう。
+
+
+
+File: eintr-ja, Node: if & or, Next: Optional Arguments, Prev: Buffer Exercises, Up: Buffer Exercises
+
+`or'のかわりに`if'を使った`insert-buffer' *(2004/08/05)*
+--------------------------------------------------------
+
+必要なことは、`buffer'の値をバッファ名ではなくバッファそのものとするこ
+とである。値が名前の場合には、対応するバッファそのものを取得する必要が
+ある。
+
+読者の名前が記された名簿を持って、会議場で受け付け係が読者を探している
+場面を想像してほしい。このとき受け付け係には、読者自身ではなく読者の名
+前が「束縛」されている。受け付け係が読者を探しあてて読者の腕をとると、
+受け付け係には読者が「束縛」される。
+
+Lispでは、このような状況をつぎのように書ける。
+
+     (if (not (招待客の腕をとっている))
+         (招待客を探し、腕をとる))
+
+バッファについても同じことをしたいのである。バッファそのものを取得して
+いなければ、それを取得したいのである。
+
+（名前ではなく）バッファそのものを持っているかどうかを調べる述語
+`bufferp'を用いれば、つぎのようなコードが書ける。
+
+     (if (not (bufferp buffer))              ; 判定条件
+         (setq buffer (get-buffer buffer)))  ; 真の場合の動作
+
+ここで、`if'式の判定条件は`(not (bufferp buffer))'であり、
+真の場合の動作は、式`(setq buffer (get-buffer buffer))'である。
+
+判定条件では、引数がバッファならば関数`bufferp'は真を返すが、
+引数がバッファ名の場合には偽を返す
+（関数名`bufferp'の最後の文字は`p'である。
+すでに説明したように、`p'をそのように使うのは、
+関数が述語（predicate）であることを意味する慣習である。
+また、述語とは、ある性質が真であるか偽であるかを調べる関数であった。
+*Note Wrong Type of Argument::）。
+
+式`(bufferp buffer)'のまえには関数`not'があり、判定条件はつぎのとおりで
+ある。
+
+     (not (bufferp buffer))
+
+`not'は、引数が偽の場合には真を、真の場合には偽を返す関数である。したがっ
+て、`(bufferp buffer)'が真ならば`not'式は偽を返し、偽ならば真を返す。
+「not 真」は偽であり、「not 偽」は真である。
+
+この判定条件を使うと、`if'式はつぎのように動作する。変数`buffer'の値が
+バッファ名ではなく実際のバッファであれば、判定条件は偽となり、`if'式の
+真の場合の動作は評価されない。変数`buffer'が実際のバッファであれば何も
+する必要はないので、これでよい。
+
+一方、`buffer'の値がバッファそのものではなくバッファ名の場合には、判定
+条件は真を返し、真の場合の動作が評価される。ここでは、真の場合の動作は
+`(setq buffer (get-buffer buffer))'である。この式では、バッファ名を与え
+ると実際のバッファそのものを返す関数`get-buffer'を使う。`setq'により、
+変数`buffer'にバッファそのものを設定し、（バッファ名であった）まえの値
+を置き換える。
+
+
+
+File: eintr-ja, Node: Insert or, Next: Optional Arguments, Prev: Buffer Exercises, Up: Buffer Exercises
+
+`or'の本体 *(2004/08/05)*
+-------------------------
+
+関数`insert-buffer'での`or'式の目的は、引数`buffer'にバッファ名ではなく
+バッファが束縛されていることを保証することである。上の節では、`if'式を
+用いてこれを行う方法を示したが、関数`insert-buffer'では実際には`or'を使っ
+ている。これを理解するには、`or'の動作を理解する必要がある。
+
+関数`or'は、任意個数の引数を取る。各引数を順番に評価し、`nil'以外の値を
+返した最初の引数の値を返す。さらに、`nil'以外の値が初めて返されると、そ
+れよりうしろの引数をいっさい評価しないのも、`or'の重要な機能である。
+
+`or'式はつぎのようになる。
+
+     (or (bufferp buffer)
+         (setq buffer (get-buffer buffer)))
+
+`or'の最初の引数は、式`(bufferp buffer)'である。この式は、バッファが名
+前ではなく実際のバッファであるときには真（`nil'以外の値）を返す。`or'式
+では、この場合には`or'式は真の値を返し、そのつぎの式は評価しない。
+`buffer'の値が実際のバッファであれば何もする必要はないので、これでよい。
+
+一方、`buffer'の値がバッファ名であると、`(bufferp buffer)'の値は`nil'で
+あり、Lispインタープリタは`or'式のつぎの要素を評価する。つまり、式
+`(setq buffer (get-buffer buffer))'を評価する。この式は、`nil'以外の値、
+つまり、変数`buffer'に設定した値であり、バッファ名ではなくバッファその
+ものである。
+
+以上の効果をまとめると、シンボル`buffer'には、つねに、バッファ名ではな
+くバッファそのものが束縛されるのである。後続行の関数`set-buffer'はバッ
+ファ名ではなくバッファそのものしか扱えないので、以上の処理が必要なので
+ある。
+
+なお、`or'を使えば、受け付け係の例はつぎのように書ける。
+
+     (or (招待客の腕をとっている) (招待客を探し腕をとる))
+
+
+
+File: eintr-ja, Node: Insert let, Next: Optional Arguments, Prev: Buffer Exercises, Up: Buffer Exercises
+
+`insert-buffer'の`let'式 *(2004/08/05)*
+---------------------------------------
+
+変数`buffer'がバッファ名ではなくバッファそのものを参照することを
+保証したあと、関数`insert-buffer'は`let'式に進む。
+ここには、3つのローカル変数、`start'、`end'、`newmark'があり、
+それぞれを初期値`nil'に束縛する。
+これらの変数は`let'内部の残りの部分で使われ、
+`let'が終わるまでEmacsの同じ名前の変数の出現を一時的に隠す。
+
+`let'の本体には2つの`save-excursion'がある。まず、内側の
+`save-excursion'を詳しく見てみよう。その式はつぎのとおりである。
+
+     (save-excursion
+       (set-buffer buffer)
+       (setq start (point-min) end (point-max)))
+
+式`(set-buffer buffer)'は、Emacsの注意をカレントバッファから
+テキストのコピーもとのバッファに向ける。
+そのバッファにて、コマンド`point-min'と`point-max'を用いて
+バッファの先頭と最後を変数`start'と`end'に設定する。
+ここでは、`setq'により、1つの式で2つの変数に値を設定する方法も
+示している。
+`setq'の最初の引数には第2引数の値が、第3引数には第4引数の値が設定される。
+
+内側の`save-excursion'の本体を終了すると、`save-excursion'はもとのバッ
+ファに戻すが、`start'と`end'には、テキストのコピーもとのバッファの先頭
+と最後の値が設定されたままである。
+
+外側の`save-excursion'式の概要はつぎのとおりである。
+
+     (save-excursion
+       (内側の式`save-excursion'
+          (新しいバッファに切り替え`start'と`end'を設定)
+       (insert-buffer-substring buffer start end)
+       (setq newmark (point)))
+
+関数`insert-buffer-substring'は、バッファ`buffer'の始め`start'から終わ
+り`end'までのリージョンのテキストをカレントバッファにコピーする。
+`start'と`end'のあいだは2番目のバッファ全体であるので、2番目のバッファ
+全体が読者が編集しているバッファにコピーされる。続いて、挿入したテキス
+トの最後にあるポイントを変数`newmark'に記録する。
+
+外側の`save-excursion'の本体を評価し終えると、ポイントとマークはもとの
+位置に戻される。
+
+しかし、新たに挿入したテキストの最後にマークを、先頭にポイントを設定し
+ておくと便利である。変数`newmark'は挿入したテキストの最後を記録している。
+`let'式の最後の行の式`(push-mark newmark)'で、このようにマークを設定す
+る（そのまえのマークの位置も参照できる。つまりマークリングに記録されて
+いるので、`C-u C-SPC'で戻れる）。一方、ポイントは挿入したテキストの先頭
+にあり、挿入する関数を呼ぶまえの位置のままである。
+
+`let'式全体はつぎのとおりである。
+
+     (let (start end newmark)
+       (save-excursion
+         (save-excursion
+           (set-buffer buffer)
+           (setq start (point-min) end (point-max)))
+         (insert-buffer-substring buffer start end)
+         (setq newmark (point)))
+       (push-mark newmark))
+
+関数`append-to-buffer'と同様に、関数`insert-buffer'は、`let'と
+`save-excursion'と`set-buffer'を使っている。さらに、この関数では`or'の
+1つの使い方を示した。これらのすべての関数は、何度も何度も使う構成部品で
+ある。
+
+
+
+File: eintr-ja, Node: beginning-of-buffer, Next: optional Exercise, Prev: Buffer Exercises, Up: PrePreface
+
+`beginning-of-buffer'の完全な定義 *(2004/08/05)*
+================================================
+
+関数`beginning-of-buffer'の基本的な構造はすでに説明した（*Note
+simplified-beginning-of-buffer::）。
+
+まえに説明したように、引数なしで`beginning-of-buffer'を起動すると、カー
+ソルをバッファの先頭に移動し、マークを移動前の位置に設定する。ところが、
+1〜10までの数nを指定して起動すると、関数はその数をバッファ長を単位とし
+たn/10と解釈し、Emacsはバッファの先頭からn/10の位置にカーソルを移動する。
+したがって、この関数を`M-<'で呼べばバッファの先頭にカーソルを移動するし、
+`C-u 7M-<'で呼べばバッファの70%のところにカーソルを移動する。引数に10よ
+り大きな数を使うと、バッファの最後にカーソルを移動する。
+
+関数`beginning-of-buffer'は、引数を指定しても、しなくても呼べる。つまり、
+引数は省略できる。
+
+* Menu:
+
+* Optional Arguments::
+* beginning-of-buffer opt arg::  Example with optional argument.
+* beginning-of-buffer complete::
+
+
+
+File: eintr-ja, Node: Optional Arguments, Next: beginning-of-buffer opt arg, Prev: Buffer Exercises, Up: Buffer Exercises
+
+オプションの引数 *(2004/08/05)*
+-------------------------------
+
+特に指定しない限り、Lispは、関数定義で引数を指定した関数は、引数に渡す
+値とともに呼ばれることを期待する。そうでないと、`Wrong number of
+arguments'のエラーメッセージを得る。
+
+しかし、オプション引数の機能がLispにはある。引数を省略できることを"キー
+ワード（keyword）"でLispインタープリタに指示する。そのキーワードは
+`&optional'である（`optional'の直前の`&'もキーワードの一部である）。関
+数定義において、キーワード`&optional'のあとに続く引数には、関数を呼び出
+すときにその引数に値が渡されなくてもよい。
+
+したがって、`beginning-of-buffer'の関数定義の最初の行はつぎのようになる。
+
+     (defun beginning-of-buffer (&optional arg)
+
+関数全体の概略はつぎのとおりである。
+
+     (defun beginning-of-buffer (&optional arg)
+       "説明文..."
+       (interactive "P")
+       (push-mark)
+         (引数があれば
+             移動先の位置を計算する
+           さもなければ、
+           (point-min))))
+
+この関数は、`simplified-beginning-of-buffer'に似ているが、
+`interactive'式には引数として`"P"'があり、関数`goto-char'に続けて、引数
+が指定された場合に移動先を計算する`if'式がある点が異なる。
+
+`interactive'式の`"P"'は、前置引数がある場合にはそれを関数に渡すことを
+Emacsに指示する。前置引数は、METAキーに続けて数をタイプするか、`C-u'を
+タイプしてから数をタイプする（数をタイプしないと、`C-u'のデフォルトは4
+である）。
+
+`if'式の判定条件は単純で、単に引数`arg'である。`arg'に`nil'以外の値があ
+るのは、引数を指定して`beginning-of-buffer'が呼ばれた場合であり、`if'式
+の真の場合の動作を評価する。一方、引数なしで`beginning-of-buffer'を呼ぶ
+と、`arg'の値は`nil'となり`if'式の偽の場合の動作が評価される。偽の場合
+の動作は単純であり、`point-min'である。このように評価される場合は、
+`goto-char'式全体は`(goto-char (point-min))'となり、関数
+`beginning-of-buffer'の簡略な場合と同じである。
+
+
+
+File: eintr-ja, Node: beginning-of-buffer opt arg, Prev: Optional Arguments, Up: Buffer Exercises
+
+引数を指定した`beginning-of-buffer' *(2004/08/05)*
+--------------------------------------------------
+
+引数を指定して`beginning-of-buffer'を呼ぶと、`goto-char'に渡す値を計算
+する式が評価される。この式は、一見、複雑なように見える。これには、内側
+に`if'式や多くの算術演算がある。つぎのとおりである。
+
+     (if (> (buffer-size) 10000)
+         ;; バッファサイズが大きな場合の桁溢れを防ぐ!
+         (* (prefix-numeric-value arg) (/ (buffer-size) 10))
+       (/
+        (+ 10
+           (*
+            (buffer-size) (prefix-numeric-value arg))) 10))
+
+* Menu:
+
+* Disentangle beginning-of-buffer::
+* Large buffer case::
+* Small buffer case::
+
+
+
+File: eintr-ja, Node: Disentangle beginning-of-buffer, Prev: beginning-of-buffer opt arg, Up: beginning-of-buffer opt arg
+
+Disentangle `beginning-of-buffer'
+.................................
+
+複雑に見える他の式や`beginning-of-buffer'内の条件式などと同様に、この式
+も雛型に当てはめてみると分かりやすくなる。ここでは`if'式の雛型を使う。
+この式の骨格はつぎのようになる。
+
+     (if (バッファが大きい
+         バッファサイズを10で割ってから、引数を掛ける
+       さもなければ、別の計算方法
+
+内側の`if'式の判定条件では、バッファサイズを調べる。古いEmacs Lispの第
+18版では、（大きな数は必要ないので）8百万を超える数は扱えず、バッファが
+大きな場合にEmacsがこの制限を超えるような数を計算する可能性があるので、
+このような検査をしていた。注釈中の「桁溢れ（overflow）」は、数が大きす
+ぎることを意味する。Emacs 21 では大きな数を使えるが，このコードは変更さ
+れていない．以前よりもずっと大きなバッファを見るようになってきたためだ．
+
+バッファが大きい場合とそうでない場合の2つの場合がある。
+
+
+
+File: eintr-ja, Node: Large buffer case, Prev: Disentangle beginning-of-buffer, Up: beginning-of-buffer opt arg
+
+大きなバッファでの動作
+......................
+
+`beginning-of-buffer'では、内側の`if'式でバッファサイズが10000文字より
+大きいかどうかを検査する。これには関数`>'と関数`buffer-size'を使う。
+
+つぎのとおりである。
+
+     (if (> (buffer-size) 10000)
+
+バッファが大きな場合、`if'式の真の場合の動作が評価される。（読みやすい
+ように整形すると）その行はつぎのようになる。
+
+     (*
+       (prefix-numeric-value arg)
+       (/ (buffer-size) 10))
+
+この式は乗算であり、関数`*'には2つの引数を渡す。
+
+第1引数は`(prefix-numeric-value arg)'である。`interactive'の引数に
+`"P"'を使うと、関数に引数として渡される値は数ではなく、「生の前置引数
+（raw prefix argument）」である（数のリスト）。数値演算を施すには、変換
+する必要があり、それには`prefix-numeric-value'を使えばよい。
+
+第2引数は`(/ (buffer-size) 10)'である。この式は、バッファの大きさの数を
+10で割る。これにより、バッファサイズの1/10に相当する文字数が得られる
+（Lispでは、`*'を乗算に使うように、`/'を除算に使う）。
+
+乗算の式全体では、この値に引数の値を掛ける。乗算はつぎのようになる。
+
+     (* 前置引数の値
+        バッファの文字数の1/10)
+
+たとえば、前置引数が`7'ならば、1/10に相当する値に7を掛け、バッファの
+70%の位置になる。
+
+つまり、バッファが大きな場合には、以上の結果から、
+`goto-char'式はつぎのようになる。
+
+     (goto-char (* (prefix-numeric-value arg)
+                   (/ (buffer-size) 10)))
+
+これにより、望みの位置にカーソルが移動する。
+
+
+
+File: eintr-ja, Node: Small buffer case, Prev: Disentangle beginning-of-buffer, Up: beginning-of-buffer opt arg
+
+小さなバッファでの動作
+......................
+
+バッファが10000文字未満の場合には、少々異なる計算を行う。最初の計算方法
+で十分であり、このようなことは不要と考える読者もいよう。しかし、小さな
+バッファでは、最初の計算方法では、目的の行に正しくカーソルを移動できず、
+2番目の計算方法のほうがよい。
+
+コードはつぎのとおりである。
+
+     (/ (+ 10 (* (buffer-size) (prefix-numeric-value arg))) 10))
+
+このコードでは、関数がどのように括弧の中に入れ子になっているかがわかれ
+ば、何が起こるかを理解できる。入れ子になった式をより深く字下げして整形
+すると読みやすくなる。
+
+       (/
+        (+ 10
+           (*
+            (buffer-size)
+            (prefix-numeric-value arg)))
+        10))
+
+括弧をよく見ると、もっとも内側の演算は`(prefix-numeric-value arg)'であ
+り、生の引数を数に変換する。つぎの式で、この数にバッファサイズを掛ける。
+
+     (* (buffer-size) (prefix-numeric-value arg)
+
+この乗算により、バッファのサイズよりも大きな数を得る。たとえば、引数が
+7ならば、7倍大きい。この数に10を加えてから10で割り、バッファの目的の位
+置より1だけ大きな数を得る。
+
+この計算結果を`goto-char'に渡してカーソルを移動する。
+
+
+
+File: eintr-ja, Node: beginning-of-buffer complete, Prev: beginning-of-buffer opt arg, Up: Buffer Exercises
+
+`beginning-of-buffer'の完全なコード *(2004/08/05)*
+--------------------------------------------------
+
+関数`beginning-of-buffer'の完全なテキストをつぎに示す。
+
+     (defun beginning-of-buffer (&optional arg)
+       "Move point to the beginning of the buffer;
+     leave mark at previous position.
+     With arg N, put point N/10 of the way
+     from the true beginning.
+     Don't use this in Lisp programs!
+     \(goto-char (point-min)) is faster
+     and does not set the mark."
+       (interactive "P")
+       (push-mark)
+       (goto-char
+        (if arg
+            (if (> (buffer-size) 10000)
+                ;; Avoid overflow for large buffer sizes!
+                (* (prefix-numeric-value arg)
+                   (/ (buffer-size) 10))
+              (/ (+ 10 (* (buffer-size)
+                          (prefix-numeric-value arg)))
+                 10))
+          (point-min)))
+       (if arg (forward-line 1)))
+
+2つの小さな点を除いて、この関数はまえに述べたような動作をする。最初の点
+は、説明文字列に関する部分であり、第2の点は関数の最後の行である。
+
+説明文字列では、つぎの式を参照している。
+
+     \(goto-char (point-min))
+
+この式の最初の括弧のまえには`\'がある。この`\'は、シンボリック式として
+評価するのではなく説明文として式を表示するようにLispインタープリタに指
+示する。
+
+コマンド`beginning-of-buffer'の最後の行は、引数を指定してコマンドを起動
+した場合に、ポイントを次行の先頭に移動する。
+
+     (if arg (forward-line 1)))
+
+これにより、バッファの適切なn/10の位置の直後の行の先頭にカーソルを置く。
+これは、すくなくともバッファの指定されたn/10の位置にカーソルを位置決め
+して見栄えをよくするためのもので、必要ないことかもしれないが、こうしな
+いと不満のもとになる。
+
+
+
+File: eintr-ja, Node: Second Buffer Related Review, Next: optional Exercise, Prev: Buffer Exercises, Up: PrePreface
+
+復　習 *(2004/08/05)*
+=====================
+
+本章で説明したことがらをまとめておく。
+
+`or'
+     各引数を順番に評価し、`nil'以外の値を返した最初の値を返す。`nil'以
+     外の値を返すものがなければ、`nil'を返す。つまり、引数の最初の真の
+     値を返す。1つでも真のものがあれば、真の値を返す。
+
+`and'
+     各引数を順番に評価し、すべてが`nil'ならば`nil'を返す。`nil'でない
+     ものがなければ、最後の引数の値を返す。つまり、すべての引数が真なら
+     ば真の値を返す。
+
+`&optional'
+     関数定義に引数を省略できることを表すキーワード。つまり、必要ならば、
+     引数を与えなくても関数を評価できる。
+
+`prefix-numeric-value'
+     `(interactive "P")'で得た「生の前置引数」を数値に変換する。
+
+`forward-line'
+     ポイントをつぎの行の先頭に移動する。
+     1より大きな引数を与えた場合には、その行数だけポイントを進める。
+     ポイントを指定量だけ進められない場合には、
+     `forward-line'は可能なだけ進めて、指定量に満たない行数を返す。
+
+`erase-buffer'
+     カレントバッファの全内容を削除する。
+
+`bufferp'
+     引数がバッファなら`t'を、さもなければ`nil'を返す。
+
+
+
+File: eintr-ja, Node: optional Exercise, Next: what-line, Prev: Buffer Exercises, Up: PrePreface
+
+`optional'引数の演習問題
+========================
+
+省略できる引数に指定した数が`fill-column'の値に比べて大きいか小さいかを
+メッセージに表示する対話的関数を書いてみよ。ただし、関数に引数を渡され
+なかった場合のデフォルトは56とする。
+
+
+
+File: eintr-ja, Node: Narrowing & Widening, Next: Counting Words, Prev: PrePreface, Up: Top
+
+ナロイングとワイドニング *(2004/08/07)*
+***************************************
+
+ナロイングとは、バッファの特定部分に集中して残りの部分を不用意に変更し
+ないようにするEmacsの機能である。初心者に混乱を与えないように、ナロイン
+グは、通常、無効にしてある。
+
+* Menu:
+
+* Narrowing advantages::        The advantages of narrowing
+* save-restriction::            The `save-restriction' special form.
+* what-line::                   The number of the line that point is on.
+* narrow Exercise::
+
+
+
+File: eintr-ja, Node: Narrowing advantages, Next: what-line, Prev: optional Exercise, Up: PrePreface
+
+ナローイングの利点
+==================
+
+ナロイングすると、バッファの残りの部分は存在しないかのように見えなくな
+る。たとえば、バッファのある部分のみで単語を置き換えるような場合には、
+利点となる。望みの範囲にナロイングすれば、その部分だけで置き換えを行え
+る。文字列検索もその範囲内のみで行えるので、たとえば、文書のある部分を
+編集する場合、編集範囲にナロイングしておけばそれ以外の範囲の文字列を拾
+うことがない。(`narrow-to-region' のキーバインドは `C-x n n' である)
+
+しかし、ナロイングするとバッファの残りの部分が見えなくなるため、偶然に
+ナロイングしてしまうとファイルのその部分を削除してしまったと思うような
+読者を怯えさせる。さらに、（通常`C-x u'にバインドされる）コマンド
+`undo'でも、ナロイングを無効にしない（また、そうすべきでもない）ので、
+コマンド`widen'によりバッファの残りの部分が見えるようになることを知らな
+い人は絶望することになる（`widen'は`C-x w'にバインドしてある）。
+
+ナロイングは人間にとってと同様にLispインタープリタにとっても有用である。
+Emacs Lisp関数は、しばしば、バッファの一部分に働くように設計されている。
+逆に、ナロイングしてあるバッファの全体に働く必要があるEmacs Lisp関数も
+ある。たとえば、関数`what-line'は、ナロイングが有効な場合にはそれを無効
+にし、処理を終了するともとのようにナロイングする。一方で、`what-line'か
+らも呼ばれる関数`count-lines'では、ナロイングを用いてバッファの操作範囲
+を限定し、終了するときにもとに戻す。
+
+
+
+File: eintr-ja, Node: save-restriction, Next: what-line, Prev: optional Exercise, Up: PrePreface
+
+スペシャルフォーム`save-restriction' *(2004/08/07)*
+===================================================
+
+Emacs Lispでは、スペシャルフォーム`save-restriction'を用いて、設定され
+ているナロイングの範囲を記録できる。Lispインタープリタが
+`save-restriction'式に出会うと、`save-restriction'の本体を実行し、それ
+らがナロイング範囲を変更した場合にはもとに戻す。たとえば、バッファをナ
+ロイングしてあるときに、`save-restriction'に続くコードでナロイングを取
+り除いた場合には、完了後に`save-restriction'はバッファのナロイングをも
+とに戻す。コマンド`what-line'では、コマンド`save-restriction'の直後にあ
+るコマンド`widen'でバッファに設定されたナロイングを取り除く。関数が終了
+する直前にもとのナロイングが復元される。
+
+`save-restriction'式の雛型は単純である。
+
+     (save-restriction
+       本体... )
+
+`save-restriction'の本体は、1つ以上の式であり、Lispインタープリタが順番
+に評価する。
+
+`save-excursion'と`save-restriction'を続けて使う場合には、
+`save-excursion'は外側で使うべきである。逆順に使うと、`save-excursion'
+を呼んでEmacsが切り替えたバッファのナロイングを記録し損なうことがある。
+つまり、`save-excursion'と`save-restriction'とを一緒に使う場合には、つ
+ぎのように書く。
+
+     (save-excursion
+       (save-restriction
+         本体...))
+
+状況によっては，`save-excursion' と `save-restriction' のスペシャルフォー
+ムを一緒に書かずに，適切な順番で書かなければなりません．
+
+例を示します．
+
+       (save-restriction
+         (widen)
+         (save-excursion
+         BODY...))
+
+
+
+File: eintr-ja, Node: what-line, Next: narrow Exercise, Prev: optional Exercise, Up: PrePreface
+
+`what-line' *(2004/08/07)*
+==========================
+
+コマンド`what-line'は、カーソルが位置する行の行数を調べる。この関数では、
+コマンド`save-restriction'と`save-excursion'の使用例を示す。関数の完全
+なテキストはつぎのとおりである。
+
+     (defun what-line ()
+       "Print the current line number (in the buffer) of point."
+       (interactive)
+       (save-restriction
+         (widen)
+         (save-excursion
+           (beginning-of-line)
+           (message "Line %d"
+                    (1+ (count-lines 1 (point)))))))
+
+関数には、予想どおり、説明文と`interactive'式がある。続く2つの行では関
+数`save-restriction'と`widen'を使っている。
+
+スペシャルフォーム`save-restriction'は、カレントバッファに設定されてい
+るナロイングを記録し、`save-restriction'の本体のコードを評価したあと、
+記録したナロイングを復元する。
+
+スペシャルフォーム`save-restriction'に続いて、`widen'がある。この関数は、
+`what-line'が呼ばれたときにカレントバッファに設定されているナロイングを
+無効にする（このナロイングは`save-restriction'が記録している）。このワ
+イドニングにより、バッファの先頭から行数を数えられるようになる。さもな
+いと、参照可能なリージョン内に制限されてしまう。設定されていたもとのナ
+ロイングは、スペシャルフォーム`save-restriction'を終了する直前に復元さ
+れる。
+
+`widen'の呼び出しに続いて、`save-excursion'があり、カーソル（つまり、ポ
+イント）とマークの位置を記録し、`save-excursion'の本体のコードでポイン
+トを移動する関数`beginning-of-line'を呼んだあとにそれらを復元する。
+
+（式`(widen)'は、`save-restriction'と`save-excursion'のあいだに
+ある。
+2つの`save- ...'式を続けて順に書く場合には、
+`save-excursion'を外側にすること。）
+
+関数`what-line'の最後の2行で、バッファの行数を数えて、エコー領域にその
+数を表示する。
+
+     (message "Line %d"
+              (1+ (count-lines 1 (point)))))))
+
+関数`message'はEmacsの画面の最下行に1行のメッセージを表示する。第1引数
+は二重引用符のあいだにあり、文字列として表示される。ただし、この文字列
+には、これに続く引数を表示するための`%d'や`%s'や`%c'が含まれてもよい。
+`%d'は、引数を10進数で表示するので、メッセージは`Line 243'のようになる。
+
+`%d'のかわりに表示される数は、関数のつぎの行で計算される。
+
+     (1+ (count-lines 1 (point)))
+
+このコードは、`1'で示されるバッファの先頭から`(point)'までの
+行数を数え、それに1を加える
+（関数`1+'は、引数に1を加える）。
+1を加えるのは、たとえば、2番目の行のまえには1行しかないからであり、
+`count-lines'は現在行の直前までの行数を数える。
+
+`count-lines'が処理を終了するとエコー領域にメッセージが表示され、
+`save-excursion'がポイントとマークの位置をもとに戻す。さらに、
+`save-restriction'はもとのナロイングの設定を復元する。
+
+
+
+File: eintr-ja, Node: narrow Exercise, Next: Strange Names, Prev: what-line, Up: PrePreface
+
+ナロイングの演習問題
+====================
+
+バッファの後半にナロイングしていて最初の行を参照できないような場合であっ
+ても、カレントバッファの最初の60文字を表示する関数を書いてみよ。これに
+は、`save-restriction'、`widen'、`goto-char'、`point-min'、
+`buffer-substring'、`message'を始め、さまざまな関数をポプリのように混ぜ
+合わせて使う必要がある。
+
+
+
+File: eintr-ja, Node: car cdr & cons, Next: Counting Words, Prev: PrePreface, Up: Top
+
+基本関数 `car'、`cdr'、`cons' *(2004/08/07)*
+********************************************
+
+Lispでは、`car'、`cdr'、`cons'は基本関数である。関数`cons'はリストの作
+成、関数`car'と`cdr'はリストの分解に使う。
+
+関数`copy-region-as-kill'のウォークスルーでは、`cons'に加えて`cdr'の変
+形である`setcdr'と`nthcdr'を見ることになる（*Note
+copy-region-as-kill::）。
+
+* Menu:
+
+* Strange Names::               An historical aside: why the strange names?
+* car & cdr::                   Functions for extracting part of a list.
+* cons::                        Constructing a list.
+* nthcdr::                      Calling `cdr' repeatedly.
+* nth::
+* setcar::                      Changing the first element of a list.
+* setcdr::                      Changing the rest of a list.
+* cons Exercise::
+
+
+
+File: eintr-ja, Node: Strange Names, Next: cons, Prev: narrow Exercise, Up: PrePreface
+
+Strange Names
+=============
+
+関数`cons'の名前は不合理ではなく、単語「construct（作り上げる）」の省略
+である。一方、`car'と`cdr'の名前の由来は、難解である。`car'は
+「Contents of the Address part of the Register」の頭文字であり、
+`cdr'（「クダー」と読む）は「Contents of the Decrement part of the
+Register」の頭文字である。これらの語句は、最初のLispが開発された初期の
+コンピュータのハードウェアの一部を指す。この語句は古くて意味がないばか
+りでなく、Lispに関していえば、25年間以上にもわたってこれらの語句は無意
+味であった。研究者の一部には、これらの関数に対する合理的な名称を使う人
+もいるが、それにもかかわらず、これらの名称は使われ続けている。特に、こ
+れらはEmacs Lispのソースコードでも使われているので、本書でもこれになら
+う。
+
+
+
+File: eintr-ja, Node: car & cdr, Next: cons, Prev: Strange Names, Up: PrePreface
+
+`car'と`cdr' *(2004/08/07)*
+===========================
+
+The CAR of a list is, quite simply, the first item in the list.
+Thus the CAR of the list `(rose violet daisy buttercup)' is
+`rose'.
+リストのCARは、簡単にいえば、リストの先頭要素である。
+したがって、リスト`(rose violet daisy buttercup)'のCARは、
+`rose'である。
+
+GNU EmacsのInfoで読んでいる場合には、つぎを評価するとわかる。
+
+     (car '(rose violet daisy buttercup))
+
+式を評価すると、エコー領域に`rose'と表示される。
+
+明らかに、関数`car'のもっと合理的な名称は`first'であり、しばしばそのよ
+うに提案されている。
+
+`car'は、リストからその先頭要素を取り除くのではない。先頭要素が何である
+かを返すだけである。リストに`car'を適用したあとでも、リストはそれ以前と
+同じである。専門用語では、`car'は「非破壊的（non-destructive）」である
+という。この機能は重要なことがあとでわかる。
+
+リストのCDRは、リストの残りである。
+つまり、関数`cdr'は、リストの最初の要素のあとに続く部分を返す。
+したがって、リスト`'(rose violet daisy buttercup)'のCDRは、
+`rose'であるが、`cdr'が返すリストの残りは
+`(violet daisy buttercup)'である。
+
+いつものようにつぎの式を評価すればわかる。
+
+     (cdr '(rose violet daisy buttercup))
+
+これを評価すると、エコー領域には`(violet daisy buttercup)'と表示される。
+
+`car'と同様に、`cdr'もリストから要素を取り除くことはない。リストの第2要
+素以降が何であるかを返すだけである。
+
+上の例では、花のリストをクオートしていた。クオートしないと、Lispインター
+プリタは、関数として`rose'を呼びリストを評価しようとする。この例では、
+そのようにはしたくないのである。
+
+明らかに、関数`cdr'のより合理的な名称は`rest'であろう。
+
+（つぎのことに注意してほしい：新しい関数に名前を付けるときには、何をし
+ているかを注意深く考えてほしい。というのは、予想以上に長期間にわたって
+使われることもあるからである。本書で、（`car'や`cdr'のような）これらの
+名称を使い続けるのは、Emacs Lispのソースコードでこれらを使っているから
+である。同じ名称を使わないと、読者がコードを読む際に苦労するであろう。
+合理的な名称を使えば、あとに続く人々に感謝されるはずである。）
+
+When `car' and `cdr' are applied to a list made up of symbols, such as
+the list `(pine fir oak maple)', the element of the list returned by
+the function `car' is the symbol `pine' without any parentheses around
+it.  `pine' is the first element in the list.  However, the CDR of the
+list is a list itself, `(fir oak maple)', as you can see by evaluating
+the following expressions in the usual way: `(pine fir oak maple)'のよ
+うなシンボルだけから成るリストに`car'や`cdr'を適用すると、関数`car'が返
+すリストの要素は周りに括弧のないシンボル`pine'である。`pine'は、リスト
+の先頭要素である。一方、つぎの式を評価してみるとわかるように、リストの
+CDRはリストであり、`(fir oak maple)'である。
+
+     (car '(pine fir oak maple))
+
+     (cdr '(pine fir oak maple))
+
+ところが、リストのリストでは、先頭要素は、それ自体、リストである。
+`car'はリストの先頭要素をリストとして返す。たとえば、3つのリスト、肉食
+獣のリスト、草食獣のリスト、海棲哺乳類のリストから成るリストを考える。
+
+     (car '((lion tiger cheetah)
+            (gazelle antelope zebra)
+            (whale dolphin seal)))
+
+この場合、第1要素、つまり、リストのCARは、
+肉食獣のリスト`(lion tiger cheetah)'であり、リストの残りの部分は
+`((gazelle antelope zebra) (whale dolphin seal))'である。
+
+     (cdr '((lion tiger cheetah)
+            (gazelle antelope zebra)
+            (whale dolphin seal)))
+
+再度指摘するが、`car'と`cdr'は、非破壊的である。つまり、これらをリスト
+に適用したあとでも、リストは変更されていないことに注意してほしい。これ
+らの使い方において、この性質はとても重要である。
+
+第1章のアトムに関する説明で、Lispにおいては、
+「配列などのある種のアトムは分解できるが、
+その機構はリストを分解する機構とは異なる。
+Lispでは、リストのアトムを分解することはできない」と述べた
+（*Note Lisp Atoms::）。
+関数`car'と`cdr'は、リストを分解するために使い、
+Lispにとって基本的であると考えられている。
+これらの関数では、
+配列を分解したりその一部を参照できないので、配列はアトムと考えられる。
+逆に、別の基本関数`cons'はリストを作り上げるが、配列を作ることはできない
+（配列は、配列専用の関数で処理する。
+*Note Arrays::）。
+
+
+
+File: eintr-ja, Node: cons, Next: nthcdr, Prev: Strange Names, Up: PrePreface
+
+`cons' *(2004/08/07)*
+=====================
+
+関数`cons'はリストを作り、`car'と`cdr'の逆操作である。
+たとえば、3要素リスト`(fir oak maple)'から4要素リストを作るのに
+`cons'を使う。
+
+     (cons 'pine '(fir oak maple))
+
+このリストを評価すると、つぎのリスト
+
+     (pine fir oak maple)
+
+がエコー領域に表示される。
+`cons'は、リストの先頭に新たな要素を置く、あるいは、要素をリストに繋ぐ。
+
+* Menu:
+
+* Build a list::
+* length::                      How to find the length of a list.
+
+
+
+File: eintr-ja, Node: Build a list, Prev: cons, Up: cons
+
+Build a list
+------------
+
+`cons'には繋ぐべきリストが必要である。 (1) (*Note Build a
+list-Footnotes::) 何もないところから始めることはできない。リストを作る
+ときには、最初は少なくとも空リストを与える必要がある。花のリストを作る
+一連の`cons'をつぎに示す。GNU EmacsのInfoで読んでいる場合には、いつもの
+ように各式を評価できる。値は「の評価結果は」と読める`=>'のうしろに記し
+ておく。
+
+     (cons 'buttercup ())
+          => (buttercup)
+
+     (cons 'daisy '(buttercup))
+          => (daisy buttercup)
+
+     (cons 'violet '(daisy buttercup))
+          => (violet daisy buttercup)
+
+     (cons 'rose '(violet daisy buttercup))
+          => (rose violet daisy buttercup)
+
+最初の例では、空リストを`()'で表し、`buttercup'に空リストが続くリストを
+作成している。見ればわかるように、作成したリスト内の空リストは表示され
+ない。`(buttercup)'とだけ表示される。空リストには何も含まれないので、空
+リストをリストの要素としては数えない。一般に、空リストは見えない。
+
+2番目の例では、`(cons 'daisy '(buttercup))'により、`buttercup'のまえに
+`daisy'を置いて新たに2要素リストを作る。3番目の例では、`daisy'と
+`buttercup'のまえに`violet'を置いて3要素リストを作っている。
+
+
+File: eintr-ja  Node: Build a list-Footnotes, Up: Build a list
+
+(1) ドットペアーを作成するためにアトムと要素を`cons'することもでき
+る。ここでは、ドットペアーについては説明しないので、*Note Dotted Pair Notation: (elisp)Dotted Pair Notationを参照。
+
+
+
+File: eintr-ja, Node: length, Prev: Build a list, Up: cons
+
+リストの長さ：`length'
+----------------------
+
+Lisp関数`length'を使うとリスト内の要素の個数を調べることができる。たと
+えば、つぎの式、
+
+     (length '(buttercup))
+          => 1
+
+     (length '(daisy buttercup))
+          => 2
+
+     (length (cons 'violet '(daisy buttercup)))
+          => 3
+
+3番目の例では、関数`cons'を用いて3要素リストを作り、それを関数`length'
+の引数として渡している。
+
+空リストの要素数を数える場合にも`length'を使える。
+
+     (length ())
+          => 0
+
+予想どおりに、空リストの要素数は0である。
+
+リスト以外の長さを調べようとするとどうなるであろうか？　
+`length'に空リストさえも与えずに引数なしで呼んでみよう。
+
+     (length )
+
+これを評価すると、つぎのエラーメッセージを得る。
+
+     Wrong number of arguments: #<subr length>, 0
+
+これは、関数が予想する引数の個数とは異なる、
+0個の引数を受け取ったことを意味する。
+この場合は、関数`length'が長さを調べる引数として1個必要である
+（リストの要素数がいくつであろうが、
+*1つ*のリストは*1つ*の引数である）。
+
+エラーメッセージの`#<subr length>'の部分は、関数名を表す。これは特別な
+記法`#<subr'で書かれており、関数`length'はEmacs LispではなくCで書かれた
+基本操作関数であることを意味する（`subr'は、「subroutine（サブルーティ
+ン）」の略）。サブルーティンについてより詳しくは、*Note What Is a
+Function?: (elisp)What Is a Function。
+
+
+
+File: eintr-ja, Node: nthcdr, Next: nth, Prev: cons, Up: PrePreface
+
+`nthcdr'
+========
+
+関数`nthcdr'は、関数`cdr'に関連しており、リストのCDRを繰り返し取る。
+
+リスト`(pine fir oak maple)'のCDRを取ると、
+リスト`(fir oak maple)'を得る。
+同じことを返された値に適用するとリスト`(oak maple)'を得る
+（もちろん、もとのリストにCDRを繰り返し適用しても、
+関数はリストを変更しないので、同じ結果を得るだけである。
+CDRのCDRのように評価する必要がある）。
+これを続けると、最終的には空リストを得ることになるが、
+`()'のかわりに`nil'と表示される。
+
+一連のCDRを繰り返して適用してみよう。それぞれの結果は、`=>'のうしろに記
+しておく。
+
+     (cdr '(pine fir oak maple))
+          =>(fir oak maple)
+
+     (cdr '(fir oak maple))
+          => (oak maple)
+
+     (cdr '(oak maple))
+          =>(maple)
+
+     (cdr '(maple))
+          => nil
+
+     (cdr 'nil)
+          => nil
+
+     (cdr ())
+          => nil
+
+一連のCDRのあいだで値を表示しない場合には、つぎのようにする。
+
+     (cdr (cdr '(pine fir oak maple)))
+          => (oak maple)
+
+この例では、Lispインタープリタはもっとも内側のリストを最初に評価する。
+もっとも内側のリストはクオートしてあるので、そのままもっとも内側の
+`cdr'に渡される。この`cdr'はリストの2番目以降の要素で構成されたリストを
+もっとも外側の`cdr'に渡し、それはもとのリストの3番目以降の要素で構成さ
+れたリストを返す。この例では、関数`cdr'を繰り返し、もとのリストの先頭と
+2番目の要素を除いた要素で構成されたリストを返す。
+
+関数`nthcdr'は、`cdr'を繰り返し呼んで同じことを行う。つぎの例では、引数
+2とリストを関数`nthcdr'に渡し、先頭と第2要素を除いたリストを得る。つま
+り、リストに対して`cdr'を2回繰り返したのと同じである。
+
+     (nthcdr 2 '(pine fir oak maple))
+          => (oak maple)
+
+もとの4要素リストを使って、0、1、5などの数値引数を
+`nthcdr'に渡すとどうなるかを見てみよう。
+
+     ;; リストはそのまま
+     (nthcdr 0 '(pine fir oak maple))
+          => (pine fir oak maple)
+
+     ;; 第1要素を除いたコピーを返す
+     (nthcdr 1 '(pine fir oak maple))
+          => (fir oak maple)
+
+     ;; 最初の3つの要素を除いたリストのコピーを返す
+     (nthcdr 3 '(pine fir oak maple))
+          => (maple)
+
+     ;; 4つの要素すべてを除いたものを返す
+     (nthcdr 4 '(pine fir oak maple))
+          => nil
+
+     ;; すべての要素を除いたものを返す
+     (nthcdr 5 '(pine fir oak maple))
+          => nil
+
+
+
+File: eintr-ja, Node: nth, Next: setcar, Prev: nthcdr, Up: PrePreface
+
+`nth'
+=====
+
+`nthcdr' はリストの CDR を繰り返し取ります．`nth' は`nthcdr' により得ら
+れた結果の CAR を取ります．結果として，リストの N 番目の要素を返します．
+
+そういうわけで，速度のことを考えずに C で定義しなければ，`nth' の定義は
+下記のようになるだろう．
+
+     (defun nth (n list)
+       "Returns the Nth element of LIST.
+     N counts from zero.  If LIST is not that long, nil is returned."
+       (car (nthcdr n list)))
+
+(もともと，`nth' は `subr.el' で Emacs Lisp により定義されていました．
+しかし，1980年代に C で再定義されました．)
+
+`nth' はリストの要素を1つ返します．これはとても便利な機能です．
+
+要素は1からではなく，0から始まります．つまり，リストの最初の要素，CAR
+で取り出せるものは 0 番目の要素なのです．これは"0基準"の数え方であり，
+しばしば"1基準"であるリストの最初の要素が1番目から始まる数え方に慣れて
+いると戸惑うことでしょう．
+
+例を示します．
+
+     (nth 0 '("one" "two" "three"))
+         => "one"
+
+     (nth 1 '("one" "two" "three"))
+         => "two"
+
+重要なことは，`nth' は `nthcdr' や `cdr' のようにもとのリストを変更しな
+いことである．つまり，この関数は非破壊的なのである．これは，`setcar' や
+`setcdr' とは大きく異なる．
+
+
+
+File: eintr-ja, Node: setcar, Next: setcdr, Prev: nth, Up: PrePreface
+
+`setcar'
+========
+
+名前から予想できるように、関数`setcar'や`setcdr'は、リストの`car'や
+`cdr'に新しい値を設定する。もとのリストを変更しない`car'や`cdr'と異なり、
+これらはもとのリストを変更する。実際にその動作を試してみよう。まず、関
+数`setcar'から始めよう。
+
+最初に、リストを作り、関数`setq'を使って変数の値としてそのリストを設定
+する。ここでは動物のリストを作ろう。
+
+     (setq animals '(antelope giraffe lion tiger))
+
+GNU EmacsのInfoで読んでいる場合には、いつものように式の直後にカーソルを
+置いて`C-x C-e'とタイプすれば、この式を評価できる（筆者もこのようにして
+執筆している。これは、計算環境にインタープリタがあることの1つの利点であ
+る）。
+
+変数`animals'を評価すると、リスト`(giraffe antelope tiger lion)'に束縛
+されていることがわかる。
+
+     animals
+          => (antelope giraffe lion tiger)
+
+いいかえれば、変数`animals'はリスト `(antelope giraffe lion tiger)' を
+指しているのである。
+
+つぎに、変数`animals'とクオートしたシンボル`hippopotamus'を2つの引数と
+して関数`setcar'を評価する。それには、3要素リスト`(setcar animals
+'hippopotamus)'を書いて、いつものようにそれを評価する。
+
+     (setcar animals 'hippopotamus)
+
+この式を評価してから、変数`animals'を再度評価する。動物のリストが変化し
+たことがわかるはずである。
+
+     animals
+          => (hippopotamus giraffe lion tiger)
+
+The first element on the list, `antelope' is replaced by
+`hippopotamus'.  リストの先頭要素が`antelope'から`hippopotamus'に変更さ
+れた。
+
+つまり、`setcar'は、`cons'のようにはリストに新たな要素を追加しないこと
+がわかる。`setcar'は、`giraffe'を`hippopotamus'で置き換え、リストを*変
+更*したのである。
+
+
+
+File: eintr-ja, Node: setcdr, Next: cons Exercise, Prev: setcar, Up: PrePreface
+
+`setcdr'
+========
+
+関数`setcdr'は関数`setcar'に似ているが、リストの先頭要素ではなく2番目以
+降の要素を変更する。
+
+この動作をみるために、つぎの式を評価して変数に家畜動物のリストを設定す
+る。
+
+     (setq domesticated-animals '(horse cow sheep goat))
+
+このリストを評価すると、リスト`(horse cow sheep goat)'を得る。
+
+     domesticated-animals
+          => (horse cow sheep goat)
+
+つぎに、リストを値として持つ変数の名前とリストの`cdr'に設定するリストの
+2つの引数でSETCDRを評価する。
+
+     (setcdr domesticated-animals '(cat dog))
+
+この式を評価すると、エコー領域にリスト`(cat dog)'と表示される。これは関
+数が返した値である。ここで興味があるのは「副作用」であり、変数
+`domesticated-animals'を評価するとわかる。
+
+     domesticated-animals
+          => (horse cat dog)
+
+つまり、リストは`(horse cow sheep goat)'から`(horse cat dog)'へと
+変更された。
+リストのCDRが、`(cow sheep goat)'から
+`(cat dog)'に変わったのである。
+
+
+
+File: eintr-ja, Node: cons Exercise, Next: Storing Text, Prev: setcdr, Up: PrePreface
+
+演習問題
+========
+
+`cons'を使った数個の式を評価して、鳥のリストを作ってみよ。リストにその
+リスト自身を`cons'するとどうなるかを調べてみよ。鳥の4要素リストの先頭要
+素を魚に置き換えてみよ。さらに、そのリストの残りの部分を他の魚で置き換
+えてみよ。
+
+
+
+File: eintr-ja, Node: Cutting & Storing Text, Next: Counting Words, Prev: PrePreface, Up: Top
+
+テキストのカットと保存 *(2004/08/08)*
+*************************************
+
+GNU Emacsで「キル（kill）」コマンドでバッファからテキストをカットする
+（切り取る）と、それらはリストに保存され、「ヤンク（yank）」コマンドで
+取り出せる。
+
+（Emacsにおける単語「kill」は、実体の値を破壊*しない*処理を意味するが、
+その用法は、歴史的な不運な偶然による。もっと適切な用語は、キルコマンド
+の動作からすれば、「clip（切り取る）」であろう。バッファからテキストを
+切り取り、復元可能なように保存するからである。Emacsのソースのすべての
+「kill」を「clip」に、すべての「killed」を「clipped」に置き換えたくなる
+誘惑にしばしば駆られる。）
+
+* Menu:
+
+* Storing Text::                Text is stored in a list.
+* zap-to-char::                 Cutting out text up to a character.
+* kill-region::                 Cutting text out of a region.
+* Digression into C::           Minor note on C programming language macros.
+* defvar::                      How to give a variable an initial value.
+* copy-region-as-kill::         A definition for copying text.
+* cons & search-fwd Review::
+* search Exercises::
+
+
+
+File: eintr-ja, Node: Storing Text, Next: zap-to-char, Prev: cons Exercise, Up: PrePreface
+
+Storing Text in a List
+======================
+
+バッファからテキストを切る取ると、それはリストに保存される。順に切り取っ
+たテキストは順にリストに保存されるので、リストはつぎのようになる。
+
+     ("a piece of text" "previous piece")
+
+リストにテキストを追加するには、つぎのように関数`cons'を使う。
+
+     (cons "another piece"
+           '("a piece of text" "previous piece"))
+
+この式を評価すると、エコー領域に3要素リストが表示される。
+
+     ("another piece" "a piece of text" "previous piece")
+
+関数`car'と`nthcdr'を使えば、テキストの望みの断片を取り出せる。たとえば、
+つぎのコードでは、`nthcdr 1 ...'は先頭要素を除いたリストを返し、`car'は
+その先頭要素を返す。つまり、もとのリストの第2要素である。
+
+     (car (nthcdr 1 '("another piece"
+                      "a piece of text"
+                      "previous piece")))
+          => "a piece of text"
+
+もちろん、Emacsの実際の関数はこれより複雑である。テキストを切り取り復元
+するコードは、何番目の要素を指定しようとも、Emacsがリストの望みの要素を
+取り出すように書く必要がある。さらに、リストの最後に達した場合には、何
+も返さないのではなく、リストの先頭要素を返すようにすべきである。
+
+テキストの断片を保持するリストを"キルリング（kill ring）"と呼ぶ。本章で
+は、キルリングについて説明し、まず、関数`zap-to-char'の動作とその使い方
+を説明する。この関数は、キルリングを操作する関数を起動する関数を使う
+（呼び出す）。まずは、裾野を登ることにしよう。
+
+本章以降では、バッファから切り取ったテキストをどのように取り出すかを説明する。
+*Note Yanking::。
+
+
+
+File: eintr-ja, Node: zap-to-char, Next: kill-region, Prev: Storing Text, Up: PrePreface
+
+`zap-to-char'
+=============
+
+関数`zap-to-char'は、GNU Emacsの第19版と第21版ではわずかに変更された．
+しかし，`zap-to-char' は他の関数 `kill-region' を呼び出す．この関数は第
+21版では大幅に書き換えられた．
+
+Emacs 19 の `kill-region' は複雑だが，ここでは重要ではないので省略する．
+
+Emacs 21 の `kill-region' は Emacs 19 よりも読みやすくなっている．そし
+て，とても重要なエラーハンドリングという考え方が含まれているので，ざっ
+と紹介することになるだろう．
+
+しかし，まずは `zap-to-char' を紹介しよう．
+
+以下は、第19版での関数の実装の完全なテキストである。
+
+     (defun zap-to-char (arg char)  ; version 19 implementation
+       "Kill up to and including ARG'th occurrence of CHAR.
+     Goes backward if ARG is negative; error if CHAR not found."
+       (interactive "*p\ncZap to char: ")
+       (kill-region (point)
+                    (progn
+                      (search-forward
+                       (char-to-string char) nil nil arg)
+                      (point))))
+
+
+
+File: eintr-ja, Node: zap-to-char interactive, Next: progn, Prev: zap-to-char, Up: zap-to-char
+
+`interactive'式
+---------------
+
+コマンド`zap-to-char'の`interactive'式はつぎのとおりである。
+
+     (interactive "*p\ncZap to char: ")
+
+`"*p\ncZap to char: "'のように二重引用符に囲まれた引数があり、3つの部分
+から成る。最初の部分はもっとも簡単でアスタリスク`*'であり、バッファが読
+み出し専用だった場合にエラーを発生させる。つまり、読み出し専用バッファ
+で`zap-to-char'を使うと、テキストを削除できずに、「Buffer is read-only
+（バッファは読み出し専用）」というエラーメッセージを受け取り、端末のベ
+ルも鳴る。
+
+第21版ではアスタリスク `*' を持たないように改良されました．第19版でもこ
+の関数は同じように動作すいます．しかし，読み出し専用バッファからテキス
+トを削除するのではなく，キルリングに削除されるはずだったテキストをコピー
+するのです．両版で，エラーメッセージが表示されます．
+
+しかし，第19版の改良では `interactive' の改良の誤りのために読み出し専用
+バンファからテキストをコピーします．`interactive' のドキュメントによる
+とアスタリスク `*' は `zap-to-char' がバッファが読み出し専用の時，何か
+をしないようにすべきなのです．つまり，関数はテキストをキルリングにコピー
+すべきではないのです．コピーするのはバグなのです．
+
+第21版では `interactive' が適切に改良されました．だから，アスタリスク
+`*' は interactive の仕様から削除されなければなりませんでした．`*' を挿
+入し関数定義を評価すると，`zap-to-char' を読み出し専用バッファで実行す
+ることになります．しかし，テキストはコピーできません．
+
+その変更とドキュメントの変更を除くと2つのバージョンにおける
+`zap-to-char' の機能は同じです．
+
+さて，interactive の仕様の説明を続けよう．
+
+`"*p\ncZap to char: "' の2番目の部分は `p'である．この部分は改行`\n'で
+終わる。`p'は、関数の第1引数には「処理した前置引数（processed prefix）」
+の値を渡すことを意味する。前置引数は、`C-u'に続けて数、あるいは、`M-'と
+数をタイプして渡す。引数なしで対話的に関数を呼び出した場合には、この引
+数には1が渡される。
+
+`"*p\ncZap to char: "'の3番目の部分は `cZap to char:'である。この部分で
+は、小文字の`c'により、`interactive'はプロンプトがあり、引数は文字であ
+ることを期待する。プロンプトは`c'のあとに続く文字列`Zap to char: 'であ
+る（コロンのうしろの空白は、見やすくするためである）。
+
+これらにより、ユーザーに問い合わせて`zap-to-char'へ渡す正しい型の引数を
+準備する。
+
+
+
+File: eintr-ja, Node: zap-to-char body, Next: progn, Prev: zap-to-char, Up: zap-to-char
+
+`zap-to-char'の本体
+-------------------
+
+関数`zap-to-char'の本体には、カーソルの現在位置から指定文字を含んだテキ
+ストをキル（つまり、削除）するコードがある。コードの最初の部分はつぎの
+とおりである。
+
+     (kill-region (point) ...
+
+`(point)'はカーソルの現在位置である。
+
+コードのつぎの部分は、`progn'を使った式である。
+`progn'の本体は、`search-forward'と`point'の呼び出しから成る。
+
+`search-forward'を説明してからのほうが
+`progn'の動作を理解しやすいので、
+`search-forward'を説明してから`progn'を説明する。
+
+
+
+File: eintr-ja, Node: search-forward, Next: progn, Prev: zap-to-char, Up: zap-to-char
+
+関数`search-forward'
+--------------------
+
+関数`search-forward'は、`zap-to-char'にて削除する指定文字を探すために使
+われる。この探索に成功すると、`search-forward'は、探索文字列の最後の文
+字の直後にポイントを置く（`zap-to-char'では、探索文字列は1文字である）。
+逆向きに探索した場合には、探索文字列の最初の文字の直前にポイントを置く。
+さらに、`search-forward'は、真として`t'を返す（したがって、ポイントの移
+動は「副作用」である）。
+
+`zap-to-char'では、関数`search-forward'をつぎのように使う。
+
+     (search-forward (char-to-string char) nil nil arg)
+
+関数`search-forward'は4つの引数を取る。
+
+  1. 第1引数は探す対象となるものであり、
+     `"z"'のような文字列である必要がある。
+
+     `zap-to-char'に渡される引数は単独の文字である。コンピュータの構成
+     方法のために、Lispインタープリタは単独の文字と文字列を区別するかも
+     しれない。コンピュータ内部では、単独の文字は、1文字の文字列とは異
+     なる電気的な形式となる（単独の文字は、コンピュータ内部では、しばし
+     ば、ちょうど1バイトで記録される。一方、文字列は長かったりするので、
+     コンピュータはそれに対応できる必要がある）。関数`search-forward'は
+     文字列を探すので、関数`zap-to-char'が引数として受け取った文字は、
+     コンピュータ内部では、ある形式から別の形式に変換する必要がある。さ
+     もないと、関数`search-forward'は失敗する。関数`char-to-string'を使っ
+     て、この変換を行う。
+
+  2. 第2引数は探索範囲を限定し、バッファ内の位置を指定する。この場合、
+     バッファの最後まで探索してよいので、探索範囲を限定せず、第2引数は
+     `nil'である。
+
+  3. 第3引数は、探索に失敗した場合にどうするかを指定する。エラーを通知
+     する（かつ、メッセージを表示する）か、`nil'を返す。第3引数に`nil'
+     を指定すると、探索に失敗すると関数はエラーを通知する。
+
+  4. `search-forward'の第4引数は、繰り返し回数、つまり、文字列の出現を
+     何回探すかを指定する。この引数は省略でき、繰り返し回数を指定しない
+     と1である。この引数が負の場合には、逆向きに探索する。
+
+`search-forward'式の概略はつぎのとおりである。
+
+     (search-forward "探索文字列"
+                     探索範囲
+                     探索失敗時の動作
+                     繰り返し回数)
+
+では、`progn'を説明しよう。
+
+
+

@@ -1,0 +1,1278 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: HTTPResponse オブジェクト,  Next: 例 12,  Prev: HTTPConnection オブジェクト,  Up: httplib
+
+HTTPResponse オブジェクト
+-------------------------
+
+`HTTPResponse' インスタンスは以下のメソッドと属性を持ちます:
+
+`read([amt])'
+     応答の本体全体か、AMT バイトまで読み出して返します。
+
+`getheader(name[, default])'
+     ヘッダ NAME の内容を取得して返すか、該当するヘッダがない場合には
+     DEFAULT を返します。
+
+`msg'
+     応答ヘッダを含む `mimetools.Message' インスタンスです。
+
+`version'
+     サーバが使用した HTTP プロトコルバージョンです。10 は HTTP/1.0 を、
+     11 は HTTP/1.1 を表します。
+
+`status'
+     サーバから返される状態コードです。
+
+`reason'
+     サーバから返される応答の理由文です。
+
+
+File: python-lib-jp.info,  Node: 例 12,  Prev: HTTPResponse オブジェクト,  Up: httplib
+
+例
+--
+
+以下はどうやって `GET' リクエストを行うかを示す例です:
+
+     >>> import httplib
+     >>> conn = httplib.HTTPConnection("www.python.org")
+     >>> conn.request("GET", "/index.html")
+     >>> r1 = conn.getresponse()
+     >>> print r1.status, r1.reason
+     200 OK
+     >>> data1 = r1.read()
+     >>> conn.request("GET", "/parrot.spam")
+     >>> r2 = conn.getresponse()
+     >>> print r2.status, r2.reason
+     404 Not Found
+     >>> data2 = r2.read()
+     >>> conn.close()
+
+以下はどうやって `POST' リクエストを行うかを示す例です:
+
+     >>> import httplib, urllib
+     >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
+     >>> headers = {"Content-type": "application/x-www-form-urlencoded",
+     ...            "Accept": "text/plain"}
+     >>> conn = httplib.HTTPConnection("musi-cal.mojam.com:80")
+     >>> conn.request("POST", "/cgi-bin/query", params, headers)
+     >>> response = conn.getresponse()
+     >>> print response.status, response.reason
+     200 OK
+     >>> data = response.read()
+     >>> conn.close()
+
+
+File: python-lib-jp.info,  Node: ftplib,  Next: gopherlib,  Prev: httplib,  Up: インターネットプロトコルとその支援
+
+FTPプロトコルクライアント
+=========================
+
+FTPプロトコルクライアント(ソケットを必要とします)。
+
+このモジュールでは`FTP'クラスと、それに関連するいくつかの項目を定
+義しています。
+`FTP'クラスは、FTPプロトコルのクライアント側の機能を備えています。
+このクラスを使うとFTPのいろいろな機能の自動化、例えば他のFTPサーバのミ
+ラーリングといったことを実行するPythonプログラムを書くことができます。
+また、`urllib'モジュールもFTPを使うURLを操作するのにこのクラス
+を使っています。 FTP (File Transfer
+Protocol)についての詳しい情報はInternet RFC 959 を参 照して下さい。
+
+`ftplib'モジュールを使ったサンプルを以下に示します：
+
+     >>> from ftplib import FTP
+     >>> ftp = FTP('ftp.cwi.nl')   # ホストのデフォルトポートへ接続
+     >>> ftp.login()               # ユーザ名 anonymous、パスワード anonyumou
+     s@
+     >>> ftp.retrlines('LIST')     # ディレクトリの内容をリストアップ
+     total 24418
+     drwxrwsr-x   5 ftp-usr  pdmaint     1536 Mar 20 09:48 .
+     dr-xr-srwt 105 ftp-usr  pdmaint     1536 Mar 21 14:32 ..
+     -rw-r--r--   1 ftp-usr  pdmaint     5305 Mar 20 09:48 INDEX
+      .
+      .
+      .
+     >>> ftp.retrbinary('RETR README', open('README', 'wb').write)
+     '226 Transfer complete.'
+     >>> ftp.quit()
+
+このモジュールは以下の項目を定義しています：
+
+`FTP([host[, user[, passwd[, acct]]]])'
+     `FTP'クラスの新しいインスタンスを返します。
+     HOSTが与えられると、`connect(HOST)'メソッドが実行されま す。
+     USERが与えられると、さらに`login(USER, PASSWD, \v
+     ar{acct})'メソッドが実行されます（このPASSWDとACCTは指定され
+     なければデフォルトでは空文字列です）。
+
+`all_errors'
+     `FTP'インスタンスのメソッドの結果、FTP接続で（プログラミングのエ
+     ラーと考えられるメソッドの実行によって）発生する全ての例外（タプル形
+     式）。 この例外には以下の４つのエラーはもちろん、`socket.error'と
+     `IOError'も含まれます。
+
+`error_reply'
+     サーバから想定外の応答があった時に発生する例外。
+
+`error_temp'
+     400-499の範囲のエラー応答コードを受け取った時に発生する例外。
+
+`error_perm'
+     500-599の範囲のエラー応答コードを受け取った時に発生する例外。
+
+`error_proto'
+     1-5の数字で始まらない応答コードをサーバから受け取った時に発生する例外。
+
+See also:
+     *Note netrc:: `.netrc'ファイルフォーマットのパーザ。
+     `.netrc'ファイルは、FTPクライアントがユーザにプロンプトを出す前に、
+     ユーザ認証情報をロードするのによく使われます。
+     Pythonのソースディストリビューションの`Tools/scripts/ftpmi rror.py'
+     ファイルは、FTPサイトあるいはその一部をミ
+     ラーリングするスクリプトで、`ftplib'モジュールを使っています。こ
+     のモジュールを適用した応用例として使うことができます。
+
+* Menu:
+
+* FTP オブジェクト::
+
+
+File: python-lib-jp.info,  Node: FTP オブジェクト,  Prev: ftplib,  Up: ftplib
+
+FTP オブジェクト
+----------------
+
+いくつかのコマンドは２つのタイプについて実行します：１つはテキストファイ
+ルで、もう１つはバイナリファイルを扱います。
+これらのメソッドのテキストバージョンでは`lines'、バイナリバージョン
+では`binary'の語がメソッド名の終わりについています。
+
+`FTP'インスタンスには以下のメソッドがあります：
+
+`set_debuglevel(level)'
+     インスタンスのデバッグレベルを設定します。
+     この設定によってデバッグ時に出力される量を調節します。
+     デフォルトは`0'で、何も出力されません。
+     `1'なら、一般的に１つのコマンドあたり１行の適当な量のデバッグ出力を
+     行います。
+     `2'以上なら、コントロール接続で受信した各行を出力して、最大のデバッ
+     グ出力をします。
+
+`connect(host[, port])'
+     指定されたホストとポートに接続します。
+     ポート番号のデフォルト値はFTPプロトコルの仕様で定められた`21'です。
+     他のポート番号を指定する必要はめったにありません。
+     この関数はひとつのインスタンスに対して一度だけ実行すべきです；
+     インスタンスが作られた時にホスト名が与えられていたら、呼び出すべきではあ
+     りません。
+     これ以外の他の全てのメソッドは接続された後で実行可能となります。
+
+`getwelcome()'
+     接続して最初にサーバから送られてくるウェルカムメッセージを返します。
+     （このメッセージには、ユーザにとって適切な注意書きやヘルプ情報が含まれる
+     ことがあります。）
+
+`login([user[, passwd[, ac ct]]])'
+     与えられたUSERでログインします。
+     PASSWDとACCTのパラメータは省略可能で、デフォルトでは空文字列 です。
+     もしUSERが指定されないなら、デフォルトで`'anonymous''になりま す。
+     もしUSERが`'anonymous''なら、デフォルトのPASSWDは`
+     'anonymous@''になります。
+     このfunctionは各インスタンスについて一度だけ、接続が確立した後に呼び出さ
+     なければなりません；
+     インスタンスが作られた時にホスト名とユーザ名が与えられていたら、このメ
+     ソッドを実行すべきではありません。
+     ほとんどのFTPコマンドはクライアントがログインした後に実行可能になりま
+     す。
+
+`abort()'
+     実行中のファイル転送を中止します。
+     これはいつも機能するわけではありませんが、やってみる価値はあります。
+
+`sendcmd(command)'
+     シンプルなコマンド文字列をサーバに送信して、受信した文字列を返します。
+
+`voidcmd(command)'
+     シンプルなコマンド文字列をサーバに送信して、その応答を扱います。
+     応答コードが200-299の範囲にあれば何も返しません。
+     それ以外は例外を発生します。
+
+`retrbinary(command, callback[, maxblocksize[, rest]])'
+     バイナリ転送モードでファイルを受信します。
+     COMMANDは適切な`RETR'コマンド： `'RETR
+     FILENAME''でなければなりません。
+     関数CALLBACKは、受信したデータブロックのそれぞれに対して、データブ
+     ロックを１つの文字列の引数として呼び出されます。
+     省略可能な引数MAXBLOCKSIZEは、実際の転送を行うのに作られた低レベル
+     のソケットオブジェクトから読み込む最大のチャンクサイズを指定します（これ
+     はCALLBACKに与えられるデータブロックの最大サイズにもなります）。
+     妥当なデフォルト値が設定されます。
+     RESTは、`transfercmd()'メソッドと同じものです。
+
+`retrlines(command[, callback])'
+     ASCII転送モードでファイルとディレクトリのリストを受信します。
+     COMMANDは、適切な`RETR'コマンド（`retrbinary()'を参
+     照）あるいは`LIST'コマンド（通常は文字列`'LIST''）でなければな
+     りません。
+     関数CALLBACKは末尾のCRLFを取り除いた各行に対して実行されます。
+     デフォルトではCALLBACKは`sys.stdout'に各行を印字します。
+
+`set_pasv(boolean)'
+     BOOLEANがtrueなら"パッシブモード"をオンにし、そうでないならパッ
+     シブモードをオフにします。 （Python
+     2.0以前ではデフォルトでパッシブモードはオフにされていましたが、
+     Python 2.1以後ではデフォルトでオンになっています。）
+
+`storbinary(command, file[, blocksize])'
+     バイナリ転送モードでファイルを転送します。
+     COMMANDは適切な`STOR'コマンド：`"STOR FILENAME"'で
+     なければなりません。
+     FILEは開かれたファイルオブジェクトで、`read()'メソッドで
+     `EOF'まで読み込まれ、ブロックサイズBLOCKSIZEでデータが転送されま
+     す。 引数BLOCKSIZEのデフォルト値は8192です。 _Changed in Python
+     version 2.1_
+
+`storlines(command, file)'
+     ASCII転送モードでファイルを転送します。
+     COMMANDは適切な`STOR'コマンドでなければなりません（`st
+     orbinary()'を参照）。
+     FILEは開かれたファイルオブジェクトで、`readline()'メソッド
+     で`EOF'まで読み込まれ、各行がデータが転送されます。
+
+`transfercmd(cmd[, rest])'
+     データ接続中に転送を初期化します。
+     もし転送中なら、`EPRT'あるいは`PORT'コマンドと、CMDで指
+     定したコマンドを送信し、接続を続けます。
+     サーバがパッシブなら、`EPSV'あるいは`PASV'コマンドを送信して接
+     続し、転送コマンドを開始します。
+     どちらの場合も、接続のためのソケットを返します。
+
+     省略可能なRESTが与えられたら、`REST'コマンドがサーバに送信さ
+     れ、RESTを引数として与えます。
+     RESTは普通、要求したファイルのバイトオフセット値で、最初のバイトを
+     とばして指定したオフセット値からファイルのバイト転送を再開するよう伝えま
+     す。 しかし、RFC
+     959ではRESTが印字可能なASCIIコード33から126の範囲の文
+     字列からなることを要求していることに注意して下さい。
+     したがって、`transfercmd()'メソッドはRESTを文字列に変換しま
+     すが、文字列の内容についてチェックしません。
+     もし`REST'コマンドをサーバが認識しないなら、例外`error_re
+     ply'が発生します。
+     この例外が発生したら、引数RESTなしに`transfercmd()'を実行し ます。
+
+`ntransfercmd(cmd[, rest])'
+     `transfercmd()'と同様ですが、データと予想されるサイズとのタプルを
+     返します。
+     もしサイズが計算できないなら、サイズの代わりに`None'が返されます。
+     CMDとRESTは`transfercmd()'のものと同じです。
+
+`nlst(argument[, ...])'
+     `NLST'コマンドで返されるファイルのリストを返します。
+     省略可能なARGUMENTは、リストアップするディレクトリです（デフォルト
+     ではサーバのカレントディレクトリです）。
+     `NLST'コマンドに非標準である複数の引数を渡すことができます。
+
+`dir(argument[, ...])'
+     `LIST'コマンドで返されるディレクトリ内のリストを作り、標準出力へ出
+     力します。
+     省略可能なARGUMENTは、リストアップするディレクトリです（デフォルト
+     ではサーバのカレントディレクトリです）。
+     `LIST'コマンドに非標準である複数の引数を渡すことができます。
+     もし最後の引数が関数なら、`retrlines()'のようにCALLBACKとし
+     て使われます；デフォルトでは`sys.stdout'に印字します。
+     このメソッドは`None'を返します。
+
+`rename(fromname, toname)'
+     サーバ上のファイルのファイル名FROMNAMEをTONAMEへ変更します。
+
+`delete(filename)'
+     サーバからファイルFILENAMEを削除します。
+     成功したら応答のテキストを返し、そうでないならパーミッションエラーでは
+     `error_perm'を、他のエラーでは`error_reply'を返しま す。
+
+`cwd(pathname)'
+     サーバのカレントディレクトリを設定します。
+
+`mkd(pathname)'
+     サーバ上に新たにディレクトリを作ります。
+
+`pwd()'
+     サーバ上のカレントディレクトリのパスを返します。
+
+`rmd(dirname)'
+     サーバ上のディレクトリDIRNAMEを削除します。
+
+`size(filename)'
+     サーバ上のファイルFILENAMEのサイズを尋ねます。
+     成功したらファイルサイズが整数で返され、そうでないなら`None'が返さ
+     れます。
+     `SIZE'コマンドは標準化されていませんが、多くの普通のサーバで実装さ
+     れていることに注意して下さい。
+
+`quit()'
+     サーバに`QUIT'コマンドを送信し、接続を閉じます。
+     これは接続を閉じるのに"礼儀正しい"方法ですが、`QUIT'コマンドに反
+     応してサーバの例外が発生するかもしれません。
+     この例外は、`close()'メソッドによって`FTP'インスタンスに対
+     するその後のコマンド使用が不可になっていることを示しています（下記参
+     照）。
+
+`close()'
+     接続を一方的に閉じます。
+     既に閉じた接続に対して実行すべきではありません（例えば`quit()'を
+     呼び出して成功した後など）。
+     この実行の後、`FTP'インスタンスはもう使用すべきではありません
+     （`close()'あるいは`quit()'を呼び出した後で、
+     `login()'メソッドをもう一度実行して再び接続を開くことはできませ
+     ん）。
+
+
+File: python-lib-jp.info,  Node: gopherlib,  Next: poplib,  Prev: ftplib,  Up: インターネットプロトコルとその支援
+
+gopher プロトコルのクライアント
+===============================
+
+gopher プロトコルのクライアント (ソケットを必要とします)。
+
+このモジュールでは、gopher プロトコルのクライアント側について最小限の
+実装を提供しています。このモジュールは `urllib' モジュールで gopher
+プロトコルを使う URL を扱うために用いられます。
+
+このモジュールでは以下の関数を定義しています:
+
+`send_selector(selector, host[, port])'
+     SELECTOR 文字列を HOST および PORT (標準の値は `70' です) の
+     gopher サーバに送信します。
+     返信されたドキュメントデータを読み出すための、開かれた状態のファイル
+     オブジェクトを返します。
+
+`send_query(selector, query, host[, port])'
+     SELECTOR 文字列、および QUERY 文字列を HOST および PORT
+     (標準の値は `70' です) の gopher サーバに送信します。
+     返信されたドキュメントデータを読み出すための、開かれた状態のファイル
+     オブジェクトを返します。
+
+gopher サーバから返されるデータは任意の形式であり、セレクタ (selector)
+文字列の最初の文字に依存するので注意してください。データがテキスト
+(セレクタの最初の文字が `0') の場合、各行は CRLF で終端
+され、データ全体は `.' 一個だけからなる行で終端されます。 `..'
+で始まる行の先頭は `.' に置き換えられます。 ディレクトリリスト
+(セレクタの最初の文字が `1') の場合にも、 同じプロトコルで転送されます。
+
+
+File: python-lib-jp.info,  Node: poplib,  Next: imaplib,  Prev: gopherlib,  Up: インターネットプロトコルとその支援
+
+POP3 プロトコルクライアント
+===========================
+
+POP3 プロトコルクライアント (socketsを必要とする)
+
+このモジュールは、 `POP3' クラスを定義します。これはPOP3サーバへの
+接続と、 RFC 1725 に定められたプロトコルを実装します。 `POP3' クラスは
+minimalとoptinalという2つのコマンドセットをサポートします。
+
+POP3についての注意事項は、それが広くサポートされているにもかかわらず、
+既に時代遅れだということです。幾つも実装されているPOP3サーバーの品質は、
+貧弱なものが多数を占めています。もし、お使いのメールサーバーがIMAPを
+サポートしているなら、 ``imaplib' や `IMAP4'' が 使えます。
+IMAPサーバーは、より良く実装されている傾向があります。
+
+`poplib'  モジュールでは、ひとつのクラスが提供されています。
+
+`POP3(host[, port])'
+     このクラスが、実際にPOP3プロトコルを実装します。インスタンスが初期化
+     されるときに、コネクションが作成されます。 PORT
+     が省略されると、POP3標準のポート(110)が使われます。
+
+1つの例外が、 `poplib'
+モジュールのアトリビュートとして定義されています。
+
+`error_proto'
+     例外は、すべてのエラーで発生します。例外の理由は文字列としてコンストラクタに
+     渡されます。
+
+See also:
+     *Note imaplib:: The standard Python IMAP module.  `Frequently
+     Asked Questions About Fetchmail' {POP/IMAPクライアント `fetchmail'
+     のFAQ。POPプロトコルを
+     ベースにしたアプリケーションを書くときに有用な、POP3サーバの種類や
+     RFCへの適合度といった情報を収集しています。}
+
+* Menu:
+
+* POP3 オブジェクト::
+* POP3 の例::
+
+
+File: python-lib-jp.info,  Node: POP3 オブジェクト,  Next: POP3 の例,  Prev: poplib,  Up: poplib
+
+POP3 オブジェクト
+-----------------
+
+POP3コマンドはすべて、それと同じ名前のメソッドとしてlower-caseで
+表現されます。そしてそのほとんどは、サーバからのレスポンスとなる
+テキストを返します。
+
+`POP3' クラスのインスタンスは以下のメソッドを持ちます。
+
+`set_debuglevel(level)'
+     インスタンスのデバッグレベルを指定します。これはデバッギングアウトプット
+     の表示量をコントロールします。デフォルト値の `0' は、デバッギング
+     アウトプットを表示しません。値を `1' とすると、デバッギングアウト
+     プットの表示量を適当な量にします。これは大体、リクエストごと1行になります。
+     値を `2'
+     以上にすると、デバッギングアウトプットの表示量を最大にします。
+     コントロール中の接続で送受信される各行をログに出力します。
+
+`getwelcome()'
+     POP3サーバーから送られるグリーティングメッセージを返します。
+
+`user(username)'
+     userコマンドを送出します。応答はパスワード要求を表示します。
+
+`pass_(password)'
+     パスワードを送出します。応答は、メッセージ数とメールボックスのサイズを
+     含みます。 注：サーバー上のメールボックスは `quit()'
+     が呼ばれるまでロックされます。
+
+`apop(user, secret)'
+     POP3サーバーにログオンするのに、よりセキュアなAPOP認証を使用します。
+
+`rpop(user)'
+     POP3サーバーにログオンするのに、（UNIXのr-コマンドと同様の）RPOP認証を使用します。
+
+`stat()'
+     メールボックスの状態を得ます。結果は2つのintegerからなるタプルとなります。
+     `(MESSAGE COUNT, MAILBOX SIZE)'.
+
+`list([which])'
+     メッセージのリストを要求します。結果は以下のような形式で表されます。
+     `(RESPONSE, ['mesg_num octets', ...])' WHICH
+     が与えられると、それによりメッセージを指定します。
+
+`retr(which)'
+     WHICH 番のメッセージ全体を取り出し、そのメッセージに既読フラグを
+     立てます。結果は `(RESPONSE, ['line', ...], OCTETS)'
+     という形式で表されます。
+
+`dele(which)'
+     WHICH 番のメッセージに削除のためのフラグを立てます。ほとんどの
+     サーバで、QUITコマンドが実行されるまでは実際の削除は行われません
+     （もっとも良く知られた例外は Eudora
+     QPOPで、その配送メカニズムはRFCに
+     違反しており、どんな切断状況でも削除操作を未解決にしています）。
+
+`rset()'
+     メールボックスの削除マークすべてを取り消します。
+
+`noop()'
+     何もしません。接続保持のために使われます。
+
+`quit()'
+     Signoff:  commit changes, unlock mailbox, drop connection.
+     サインオフ：変更をコミットし、メールボックスをアンロックして、接続を破棄します。
+
+`top(which, howmuch)'
+     メッセージヘッダと HOWMUCH で指定した行数のメッセージを、
+     WHICHで指定したメッセージ分取り出します。結果は以下のような
+     形式となります。 `(RESPONSE, ['line', ...], OCTETS)'.
+
+     このメソッドはPOP3のTOPコマンドを利用し、RETRコマンドのように、メッセージに
+     既読フラグをセットしません。残念ながら、TOPコマンドはRFCでは貧弱な仕様しか
+     定義されておらず、しばしばノーブランドのサーバーでは（その仕様が）守られて
+     いません。このメソッドを信用してしまう前に、実際に使用するPOPサーバーで
+     テストをしてください。
+
+`uidl([which])'
+     （ユニークIDによる）メッセージダイジェストのリストを返します。
+     WHICH が設定されている場合、結果はユニークIDを含みます。それは
+     `'RESPONSE MESGNUM UID'という形式のメッセージ、 または`(RESPONSE,
+     ['mesgnum uid', ...],OCTETS)'という 形式のリストとなります。
+
+
+File: python-lib-jp.info,  Node: POP3 の例,  Prev: POP3 オブジェクト,  Up: poplib
+
+POP3 の例
+---------
+
+これは（エラーチェックもない）最も小さなサンプルで、メールボックスを
+開いて、すべてのメッセージを取り出し、プリントします。
+
+     import getpass, poplib
+     
+     M = poplib.POP3('localhost')
+     M.user(getpass.getuser())
+     M.pass_(getpass.getpass())
+     numMessages = len(M.list()[1])
+     for i in range(numMessages):
+         for j in M.retr(i+1)[1]:
+             print j
+
+モジュールの末尾に、より広い範囲の使用例となるtestセクションがあります。
+
+
+File: python-lib-jp.info,  Node: imaplib,  Next: nntplib,  Prev: poplib,  Up: インターネットプロトコルとその支援
+
+IMAP4 プロトコルクライアント
+============================
+
+IMAP4 protocol client (requires sockets).
+
+このモジュールでは三つのクラス、`IMAP4', `IMAP4_SSL' と `IMAP4_stream'
+を定義します。これらのクラスは IMAP4 サーバへの接続をカプセル化し、 RFC
+2060 に定義されている IMAP4rev1 クライアントプロトコルの大規模な
+サブセットを実装しています。このクラスは IMAP4 (RFC 1730 ) 準拠の
+サーバと後方互換性がありますが、`STATUS' コマンドは IMAP4 では
+サポートされていないので注意してください。
+
+`imaplib' モジュール内では三つのクラスを提供しており、 `IMAP4'
+は基底クラスとなります:
+
+`IMAP4([host[, port]])'
+     このクラスは実際の IMAP4 プロトコルを実装しています。
+     インスタンスが初期化された際に接続が生成され、プロトコルバージョン
+     (IMAP4 または IMAP4rev1) が決定されます。HOST が指定されて
+     いない場合、 `''' (ローカルホスト) が用いられます。 PORT
+     が省略された場合、標準の IMAP4 ポート番号 (143) が用いられます。
+
+例外は `IMAP4' クラスの属性として定義されています:
+
+`IMAP4.error'
+     何らかのエラー発生の際に送出される例外です。例外の理由は
+     文字列としてコンストラクタに渡されます。
+
+`IMAP4.abort'
+     IMAP4 サーバのエラーが生じると、この例外が送出されます。
+     この例外は `IMAP4.error' のサブクラスです。
+     通常、インスタンスを閉じ、新たなインスタンスを再び生成することで、
+     この例外から復旧できます。
+
+`IMAP4.readonly'
+     この例外は書き込み可能なメイルボックスの状態がサーバによって変更された
+     際に送出されます。 この例外は `IMAP4.error' のサブクラスです。
+     他の何らかのクライアントが現在書き込み権限を獲得しており、
+     メイルボックスを開きなおして書き込み権限を再獲得する必要があります。
+
+このモジュールではもう一つ、安全 (secure) な接続を使ったサブクラスが
+あります:
+
+`IMAP4_SSL([host[, port[, keyfile[, certfile]]]])'
+     `IMAP4' から導出されたサブクラスで、SSL 暗号化ソケットを
+     介して接続を行います (このクラスを利用するためには SSL
+     サポート付きで コンパイルされた socket モジュールが必要です) 。
+     HOST が指定されて いない場合、 `''' (ローカルホスト)
+     が用いられます。 PORT が省略された場合、標準の IMAP4-over-SSL
+     ポート番号 (993) が用いられます。 KEYFILE および CERTFILE
+     もオプションです - これらは SSL 接続のための PEM 形式の秘密鍵
+     (private key) と認証チェイン (certificate chain) ファイルです。
+
+さらにもう一つのサブクラスは、子プロセスで確立した接続を使用する
+場合に使用します。
+
+`IMAP4_stream(command)'
+     `IMAP4' から導出されたサブクラスで、COMMANDを
+     `os.popen2()'に渡して作成される `stdin/stdout'
+     ディスクリプタと接続します。 _Added in Python version 2.3_
+
+以下のユーティリティ関数が定義されています:
+
+`Internaldate2tuple(datestr)'
+     IMAP4 INTERNALDATE 文字列を標準世界時 (Coordinated Universal Time)
+     に変換します。`time' モジュール形式のタプルを返します。
+
+`Int2AP(num)'
+     整数を [`A' .. `P'] からなる文字集合を用いて表現した
+     文字列に変換します。
+
+`ParseFlags(flagstr)'
+     IMAP4 `FLAGS' 応答を個々のフラグからなるタプルに変換します。
+
+`Time2Internaldate(date_time)'
+     `time' モジュールタプルを IMAP4 `INTERNALDATE'
+     表現形式に変換します。文字列形式: `"DD-Mmm-YYYY HH:MM:SS +HHMM"'
+     (二重引用符含む) を返します。
+
+IMAP4 メッセージ番号は、メイルボックスに対する変更が行われた
+後には変化します; 特に、 `EXPUNGE' 命令はメッセージの削除を
+行いますが、残ったメッセージには再度番号を振りなおします。従って、
+メッセージ番号ではなく、 UID 命令を使い、その UID を利用するよう
+強く勧めます。
+
+モジュールの末尾に、より拡張的な使用例が収められたテストセクションが
+あります。
+
+See also:
+     プロトコルに関する記述、およびプロトコルを実装したサーバの
+     ソースとバイナリは、全て ワシントン大学の _IMAP Information
+     Center_ (<http://www.cac.washington.edu/imap/>) にあります。
+
+* Menu:
+
+* IMAP4 オブジェクト::
+* IMAP4 の使用例::
+
+
+File: python-lib-jp.info,  Node: IMAP4 オブジェクト,  Next: IMAP4 の使用例,  Prev: imaplib,  Up: imaplib
+
+IMAP4 オブジェクト
+------------------
+
+全ての IMAP4rev1 命令は、同じ名前のメソッドで表されており、大文字の
+ものも小文字のものもあります。
+
+命令に対する引数は全て文字列に変換されます。例外は `AUTHENTICATE'
+の引数と `APPEND' の最後の引数で、これは IMAP4 リテラルとして
+渡されます。必要に応じて (IMAP4 プロトコルが感知対象としている
+文字が文字列に入っており、かつ丸括弧か二重引用符で囲われていなかった
+場合) 文字列はクオートされます。しかし、`LOGIN' 命令の PASSWORD
+引数は常にクオートされます。文字列がクオートされない ようにしたい
+(例えば `STORE' 命令の FLAGS 引数) 場合、
+文字列を丸括弧で囲んでください (例: `r'(\Deleted)'')。
+
+各命令はタプル: `(TYPE, [DATA, ...])' を返し、 TYPE は通常 `'OK''
+または `'NO'' です。 DATA
+は命令に対する応答をテキストにしたものか、命令に対する 実行結果です。各
+DATA は文字列かタプルとなります。タプルの場合、
+最初の要素はレスポンスのヘッダで、次の要素にはデータが格納されます。
+(ie: 'literal' value)
+
+以下のコマンドにおけるMESSAGE_SET オプションは、
+コマンドの作用対象となる一つまたは複数のメッセージを指定する
+文字列です。この文字列に指定できるのは単なるメッセージ番号
+(`'1'')、メッセージ番号の範囲 (`'2:4'')、および
+メッセージ番号の範囲をコンマで区切ったもの(`'1:3,6:9'')
+です。範囲にはアスタリスクを使って、最大のメッセージ番号を
+指定できます(`'3:*'')。
+
+`IMAP4' のインスタンスは以下のメソッドを持っています:
+
+`append(mailbox, flags, date_time, message)'
+     指定された名前のメイルボックスにメッセージを追加します。
+
+`authenticate(func)'
+     認証命令です -- 応答の処理が必要です。現在は実装されておらず、
+     例外を送出します。
+
+`check()'
+     サーバ上のメイルボックスにチェックポイントを設定します。
+     Checkpoint mailbox on server.
+
+`close()'
+     現在選択されているメイルボックスを閉じます。削除されたメッセージは
+     書き込み可能メイルボックスから除去されます。`LOGOUT' 前に
+     実行することを勧めます。
+
+`copy(message_set, new_mailbox)'
+     MESSAGE_SET で指定したメッセージ群を NEW_MAILBOX の
+     末尾にコピーします。
+
+`create(mailbox)'
+     MAILBOX と名づけられた新たなメイルボックスを生成します。
+
+`delete(mailbox)'
+     MAILBOX と名づけられた古いメイルボックスを削除します。
+
+`expunge()'
+     選択されたメイルボックスから削除された要素を永久に除去します。
+     各々の削除されたメッセージに対して、`EXPUNGE' 応答を
+     生成します。返されるデータには `EXPUNGE' メッセージ番号を
+     受信した順番に並べたリストが入っています。
+
+`fetch(message_set, message_parts)'
+     メッセージ (の一部) を取りよせます。MESSAGE_PARTS
+     はメッセージパートの名前を表す文字列を丸括弧で囲ったもので、
+     例えば: `"(UID BODY[TEXT])"' のようになります。
+     返されるデータはメッセージパートのエンベロープ情報とデータ
+     からなるタプルです。
+
+`getacl(mailbox)'
+     MAILBOX に対する `ACL' を取得します。 このメソッドは非標準ですが、
+     `Cyrus' サーバでサポートされています。
+
+`getquota(root)'
+     `quota' ROOT により、リソース使用状況と制限値を取得します。
+     このメソッドは RFC 2087 で定義されている IMAP4 QUOTA
+     拡張の一部です。 _Added in Python version 2.3_
+
+`getquotaroot(mailbox)'
+     MAILBOX に対して `quota' ROOT を実行した結果のリストを 取得します。
+     このメソッドは RFC 2087 で定義されている IMAP4 QUOTA
+     拡張の一部です。 _Added in Python version 2.3_
+
+`list([directory[, pattern]])'
+     PATTERN にマッチする DIRECTORYメイルボックス名を列挙します。
+     DIRECTORY の標準の設定値は最上レベルのメイルフォルダで、 PATTERN
+     は標準の設定では全てにマッチします。返されるデータには `LIST'
+     応答のリストが入っています。
+
+`login(user, password)'
+     平文パスワードを使ってクライアントを照合します。 PASSWORD
+     はクオートされます。
+
+`login_cram_md5(user, password)'
+     パスワードの保護のため、クライアント認証時に`CRAM-MD5'だけを使用します。
+     これは、`CAPABILITY'レスポンスに `AUTH=CRAM-MD5' が含まれる場合のみ
+     有効です。 _Added in Python version 2.3_
+
++
+
+`logout()'
+     サーバへの接続を遮断します。サーバからの `BYE' 応答を返します。
+
+`lsub([directory[, pattern]])'
+     購読しているメイルボックス名のうち、ディレクトリ内でパターンにマッチ
+     するものを列挙します。 DIRECTORY
+     の標準の設定値は最上レベルのメイルフォルダで、 PATTERN
+     は標準の設定では全てにマッチします。返されるデータには
+     返されるデータはメッセージパートエンベロープ情報とデータからなるタプルです。
+
+`noop()'
+     サーバに `NOOP' を送信します。
+
+`open(host, port)'
+     HOST 上の PORT に対するソケットを開きます。
+     このメソッドで確立された接続オブジェクトは `read'、
+     `readline'、`send'、および`shutdown' メソッドで
+     使われます。このメソッドはオーバライドすることができます。
+
+`partial(message_num, message_part, start, length)'
+     メッセージの後略された部分を取り寄せます。
+     返されるデータはメッセージパートエンベロープ情報とデータからなるタプルです。
+
+`proxyauth(user)'
+     USERとして認証されたものとします。
+     認証された管理者がユーザの代理としてメイルボックスにアクセス
+     する際に使用します。 _Added in Python version 2.3_
+
++
+
+`read(size)'
+     遠隔のサーバから SIZE バイト読み出します。
+     このメソッドはオーバライドすることができます。
+
+`readline()'
+     遠隔のサーバから一行読み出します。
+     このメソッドはオーバライドすることができます。
+
+`recent()'
+     サーバに更新を促します。新たなメッセージがない場合応答は `None'
+     になり、そうでない場合 `RECENT' 応答の値になります。
+
+`rename(oldmailbox, newmailbox)'
+     OLDMAILBOX という名前のメイルボックスを NEWMAILBOX
+     に名称変更します。
+
+`response(code)'
+     応答 CODE を受信していれば、そのデータを返し、そうでなければ
+     `None' を返します。通常の形式 (usual type) ではなく指定したコード
+     を返します。
+
+`search(charset, criterion[, ...])'
+     条件に合致するメッセージをメイルボックスから検索します。返される
+     データには合致したメッセージ番号をスペースで分割したリストが入って
+     います。CHARSET は `None' でもよく、この場合にはサーバ
+     への要求内に `CHARSET' は指定されません。IMAP プロトコルは
+     少なくとも一つの条件 (criterion) が指定されるよう要求しています;
+     サーバがエラーを返した場合、例外が送出されます。
+
+     例:
+
+          # M is a connected IMAP4 instance...
+          msgnums = M.search(None, 'FROM', '"LDJ"')
+          
+          # or:
+          msgnums = M.search(None, '(FROM "LDJ")')
+
+
+`select([mailbox[, readonly]])'
+     メイルボックスを選択します。返されるデータは MAILBOX 内の
+     メッセージ数 (`EXISTS' 応答) です。標準の設定では MAILBOX は
+     `'INBOX'' です。READONLY が設定された
+     場合、メイルボックスに対する変更はできません。
+
+`send(data)'
+     遠隔のサーバに `data' を送信します。
+     このメソッドはオーバライドすることができます。
+
+`setacl(mailbox, who, what)'
+     `ACL' を MAILBOX に設定します。 このメソッドは非標準ですが、
+     `Cyrus' サーバでサポートされています。
+
+`setquota(root, limits)'
+     `quota' ROOT のリソースを LIMITS に設定します。 このメソッドは RFC
+     2087 で定義されている IMAP4 QUOTA 拡張の一部です。 _Added in
+     Python version 2.3_
+
+`shutdown()'
+     `open' で確立された接続を閉じます。
+     このメソッドはオーバライドすることができます。
+
+`socket()'
+     サーバへの接続に使われているソケットインスタンスを返します。
+
+`sort(sort_criteria, charset, search_criterion[, ...])'
+     `sort' 命令は `search' に結果の並べ替え (sort) 機能をつけた
+     変種です。返されるデータには、条件に合致するメッセージ番号をスペースで
+     分割したリストが入っています。 sort 命令は SEARCH_CRITERIUM
+     の前に二つの引数を持ちます; SORT_CRITERIA
+     のリストを丸括弧で囲ったものと、検索時の CHARSET です。 `search'
+     と違って、検索時の CHARSET は必須です。 `uid sort'
+     命令もあり、`search' に対する `uid search' と同じように `sort'
+     命令に対応します。 `sort' 命令はまず、charset 引数の指定に従って
+     searching criteria
+     の文字列を解釈し、メイルボックスから与えられた検索条件に合致する
+     メッセージを探します。次に、合致したメッセージの数を返します。
+
+     `IMAP4rev1' 拡張命令です。
+
+`status(mailbox, names)'
+     MAILBOX の指定ステータス名の状態情報を要求します。
+
+`store(message_set, command, flag_list)'
+     メイルボックス内のメッセージ群のフラグ設定を変更します。 RFC 2060
+     の 6.4.6 節によると、COMMAND は "FLAGS", "+FLAGS", "-FLAGS"
+     のいずれかで、サフィクス ".SILENT" をオプションで追加 できます。
+
+     たとえば、全てのメッセージに削除フラグを立てるには
+     以下のようにします:
+
+          typ, data = M.search(None, 'ALL')
+          for num in data[0].split():
+             M.store(num, '+FLAGS', '\\Deleted')
+          M.expunge()
+
+
+`subscribe(mailbox)'
+     新たなメイルボックスを購読 (subscribe) します。
+
+`uid(command, arg[, ...])'
+     command args を、メッセージ番号ではなく UID
+     で指定されたメッセージ群に
+     対して実行します。命令内容に応じた応答を返します。少なくとも
+     一つの引数を与えなくてはなりません; 何も与えない場合、サーバは
+     エラーを返し、例外が送出されます。
+
+`unsubscribe(mailbox)'
+     古いメイルボックスの購読を解除 (unsubscribe) します。
+
+`xatom(name[, arg[, ...]])'
+     サーバから `CAPABILITY' 応答で通知された単純な拡張命令を 許容
+     (allow) します。
+
+`IMAP4_SSL' のインスタンスは追加のメソッドを一つだけ持ちます:
+
+`ssl()'
+     サーバへの安全な接続に使われる SSLObject インスタンスを返します。
+
+以下の属性が `IMAP4' のインスタンス上で定義されています:
+
+`PROTOCOL_VERSION'
+     サーバから返された `CAPABILITY' 応答にある、サポートされている
+     最新のプロトコルです。
+
+`debug'
+     デバッグ出力を制御するための整数値です。初期値はモジュール変数
+     `Debug' から取られます。3 以上の値にすると各命令をトレースします。
+
+
+File: python-lib-jp.info,  Node: IMAP4 の使用例,  Prev: IMAP4 オブジェクト,  Up: imaplib
+
+IMAP4 の使用例
+--------------
+
+以下にメイルボックスを開き、全てのメッセージを取得して印刷する 最小の
+(エラーチェックをしない) 使用例を示します:
+
+     import getpass, imaplib
+     
+     M = imaplib.IMAP4()
+     M.login(getpass.getuser(), getpass.getpass())
+     M.select()
+     typ, data = M.search(None, 'ALL')
+     for num in data[0].split():
+         typ, data = M.fetch(num, '(RFC822)')
+         print 'Message %s\n%s\n' % (num, data[0][1])
+     M.close()
+     M.logout()
+
+
+File: python-lib-jp.info,  Node: nntplib,  Next: smtplib,  Prev: imaplib,  Up: インターネットプロトコルとその支援
+
+NNTP プロトコルクライアント
+===========================
+
+NNTP プロトコルクライアント (ソケットを必要とします)。
+
+このモジュールでは、 クラス `NNTP' を定義しています。このクラス は NNTP
+プロトコルのクライアント側を実装しています。このモジュールを
+使えば、ニュースリーダや記事投稿プログラム、または自動的にニュース記事を
+処理するプログラムを実装することができます。NNTP (Network News Transfer
+Protocol、ネットニュース転送プロトコル) の詳細については、
+インターネット RFC 977 を参照してください。
+
+以下にこのモジュールの使い方の小さな例を二つ示します。
+ニュースグループに関する統計情報を列挙し、最新 10 件の記事を出力
+するには以下のようにします:
+
+     >>> s = NNTP('news.cwi.nl')
+     >>> resp, count, first, last, name = s.group('comp.lang.python')
+     >>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
+     Group comp.lang.python has 59 articles, range 3742 to 3803
+     >>> resp, subs = s.xhdr('subject', first + '-' + last)
+     >>> for id, sub in subs[-10:]: print id, sub
+     ...
+     3792 Re: Removing elements from a list while iterating...
+     3793 Re: Who likes Info files?
+     3794 Emacs and doc strings
+     3795 a few questions about the Mac implementation
+     3796 Re: executable python scripts
+     3797 Re: executable python scripts
+     3798 Re: a few questions about the Mac implementation
+     3799 Re: PROPOSAL: A Generic Python Object Interface for Python C Modules
+     3802 Re: executable python scripts
+     3803 Re: \POSIX{} wait and SIGCHLD
+     >>> s.quit()
+     '205 news.cwi.nl closing connection.  Goodbye.'
+
+ファイルから記事を投稿するには、以下のようにします
+(この例では記事番号は有効な番号を指定していると仮定しています):
+
+     >>> s = NNTP('news.cwi.nl')
+     >>> f = open('/tmp/article')
+     >>> s.post(f)
+     '240 Article posted successfully.'
+     >>> s.quit()
+     '205 news.cwi.nl closing connection.  Goodbye.'
+
+このモジュール自体では以下の内容を定義しています:
+
+`NNTP(host[, port [, user[, password [, readermode]]]])'
+     ホスト HOST 上で動作し、ポート番号 PORT で要求待ちを している NNTP
+     サーバとの接続を表現する新たな `NNTP' クラスの
+     インスタンスを返します。標準のPORT は 119 です。オプションの USER
+     および PASSWORD が与えられているか、
+     または`~/.netrc'に適切な認証情報が指定されている場合、 `AUTHINFO
+     USER' および `AUTHINFO PASS' 命令を使って
+     サーバに対して身元証明および認証を行います。オプションのフラグ
+     READERMODE が真の場合、認証の実行に先立って `mode reader'
+     命令が送信されます。reader モードは、ローカルマシン上の NNTP サーバ
+     に接続していて、`group' のような reader 特有の命令を呼び出し
+     たい場合に便利なことがあります。予期せず `NNTPPermanentError'
+     に遭遇したなら、READERMODE を設定する必要があるかもしれません。
+     READERMODE 標準で  `None' です。
+
+`NNTPError()'
+     標準の例外 `Exception' から導出されており、`nntplib'
+     モジュールが送出する全ての例外の基底クラスです。
+
+`NNTPReplyError()'
+     期待はずれの応答がサーバから返された場合に送出される例外です。
+     以前のバージョンとの互換性のために、`error_reply'
+     はこのクラスと等価になっています。
+
+`NNTPTemporaryError()'
+     エラーコードの範囲が 400-499
+     のエラーを受信した場合に送出される例外です。
+     以前のバージョンとの互換性のために、`error_temp'
+     はこのクラスと等価になっています。
+
+`NNTPPermanentError()'
+     エラーコードの範囲が 500-599
+     のエラーを受信した場合に送出される例外です。
+     以前のバージョンとの互換性のために、`error_perm'
+     はこのクラスと等価になっています。
+
+`NNTPProtocolError()'
+     サーバから返される応答が 1-5 の範囲の数字で始まっていない場合に
+     送出される例外です。
+     以前のバージョンとの互換性のために、`error_proto'
+     はこのクラスと等価になっています。
+
+`NNTPDataError()'
+     応答データ中に何らかのエラーが存在する場合に送出される例外です。
+     以前のバージョンとの互換性のために、`error_data'
+     はこのクラスと等価になっています。
+
+* Menu:
+
+* NNTP オブジェクト::
+
+
+File: python-lib-jp.info,  Node: NNTP オブジェクト,  Prev: nntplib,  Up: nntplib
+
+NNTP オブジェクト
+-----------------
+
+NNTP インスタンスは以下のメソッドを持っています。全てのメソッドにおける
+戻り値のタプルで最初の要素となる RESPONSE は、サーバの応答 です:
+この文字列は 3 桁の数字からなるコードで始まります。
+サーバの応答がエラーを示す場合、上記のいずれかの例外が送出されます。
+
+`getwelcome()'
+     サーバに最初に接続した際に送信される応答中のウェルカムメッセージを
+     返します。(このメッセージには時に、ユーザにとって重要な免責事項や
+     ヘルプ情報が入っています。)
+
+`set_debuglevel(level)'
+     インスタンスのデバッグレベルを設定します。このメソッドは印字される
+     デバッグ出力の量を制御します。標準では `0' に設定されていて、
+     これはデバッグ出力を全く印字しません。`1' はそこそこの量、 一般に
+     NNTP 要求や応答あたり 1 行のデバッグ出力を生成します。 値が `2'
+     やそれ以上の場合、(メッセージテキストを含めて) NNTP
+     接続上で送受信された全ての内容を一行ごとにログ出力する、
+     最大限のデバッグ出力を生成します。
+
+`newgroups(date, time, [file])'
+     `NEWSGROUPS' 命令を送信します。DATE 引数は `'YYMMDD''
+     の形式を取り、日付を表します。 TIME 引数は `'HHMMSS''
+     の形式をとり、
+     時刻を表します。与えられた日付および時刻以後新たに出現した
+     ニュースグループ名のリストを GROUPS として、 `(RESPONSE, GROUPS)'
+     を返します。
+     FILE引数が指定されている場合、`NEWGROUPS'コマンドの出力結果は
+     ファイルに格納されます。FILEが文字列の場合、この文字列をファイル名
+     としてファイルをオープンし、書き込み後にクローズします。FILEがファ
+     イルオブジェクトの場合、オブジェクトの`write()'メソッドを呼び出し
+     て出力結果を格納します。FILEが指定されている場合は戻り値として空の
+     リストを返します。
+
+`newnews(group, date, time, [file])'
+     `NEWNEWS' 命令を送信します。ここで、GROUP はグループ名 または
+     `'*'' で、 DATE および TIME は `newsgrups()'
+     における引数と同じ意味を持ちます。 `(RESPONSE, ARTICLES)'
+     からなるペアを返し、 ARTICLES は記事 ID のリストです。
+     FILE引数が指定されている場合、`NEWNEWS'コマンドの出力結果は
+     ファイルに格納されます。FILEが文字列の場合、この文字列をファイル名
+     としてファイルをオープンし、書き込み後にクローズします。FILEがファ
+     イルオブジェクトの場合、オブジェクトの`write()'メソッドを呼び出し
+     て出力結果を格納します。FILEが指定されている場合は戻り値として空の
+     リストを返します。
+
+`list([file])'
+     `LIST' 命令を送信します。`(RESPONSE, LIST)'
+     からなるペアを返します。LIST はタプルからなるリストです。
+     各タプルは `(GROUP, LAST, FIRST, FLAG)' の形式をとり、GROUP
+     がグループ名、LAST および FIRST
+     はそれぞれ最新および最初の記事の記事番号 (を表す文字列)、そして
+     FLAG は投稿が可能な場合には `'y''、そうでない場合には
+     `'n''、グループがモデレート (moderated) されている場合には `'m''
+     となります。(順番に注意してください: LAST、 FIRST の順です。)
+     FILE引数が指定されている場合、`LIST'コマンドの出力結果は
+     ファイルに格納されます。FILEが文字列の場合、この文字列をファイル名
+     としてファイルをオープンし、書き込み後にクローズします。FILEがファ
+     イルオブジェクトの場合、オブジェクトの`write()'メソッドを呼び出し
+     て出力結果を格納します。FILEが指定されている場合は戻り値として空の
+     リストを返します。
+
+`group(name)'
+     `GROUP' 命令を送信します。NAME はグループ名です。タプル
+     `(RESPONSE, COUNT, FIRST, LAST, NAME)' を返します。COUNT
+     はグループ中の記事数 (の推定値) で、 FIRST
+     はグループ中の最初の記事番号、LAST はグループ中の
+     最新の記事番号、NAME はグループ名です。記事番号は文字列で
+     返されます。
+
+`help([file])'
+     `HELP' 命令を送信します。`(RESPONSE, LIST)'
+     からなるペアを返します。LIST はヘルプ文字列からなるリストです。
+     FILE引数が指定されている場合、`HELP'コマンドの出力結果は
+     ファイルに格納されます。FILEが文字列の場合、この文字列をファイル名
+     としてファイルをオープンし、書き込み後にクローズします。FILEがファ
+     イルオブジェクトの場合、オブジェクトの`write()'メソッドを呼び出し
+     て出力結果を格納します。FILEが指定されている場合は戻り値として空の
+     リストを返します。
+
+`stat(id)'
+     `STAT' 命令を送信します。ID は (`<' と `>' に囲まれた形式の)
+     メッセージ ID か、 (文字列の) 記事番号です。 三つ組み `(RESPONSE,
+     NUMBER, ID)' を返します。 NUMBER は (文字列の) 記事番号で、ID は
+     (`<' と `>' に囲まれた形式の) メッセージ ID です。
+
+`next()'
+     `NEXT' 命令を送信します。`stat()' のような応答を返します。
+
+`last()'
+     `LAST' 命令を送信します。`stat()' のような応答を返します。
+
+`head(id)'
+     `HEAD' 命令を送信します。ID は `stat()' における
+     のと同じ意味を持ちます。 `(RESPONSE, NUMBER, ID, LIST)'
+     からなるタプルを返します。最初の 3 要素は `stat()' と
+     同じもので、LIST は記事のヘッダからなるリスト
+     (まだ解析されておらず、末尾の改行が取り去られたヘッダ行のリスト)
+     です。
+
+`body(id,[file])'
+     `BODY' 命令を送信します。ID は `stat()' における
+     のと同じ意味を持ちます。FILE 引数が与えられている場合、 記事本体
+     (body) はファイルに保存されます。FILE が文字列
+     の場合、このメソッドはその名前を持つファイルオブジェクトを
+     開き、記事を書き込んで閉じます。FILE がファイルオブジェクトの
+     場合、`write()' を呼び出して記事本体を記録します。 `head()'
+     のような戻り値を返します。FILE が与えられて いた場合、 返される
+     LIST は空のリストになります。
+
+`article(id)'
+     `ARTICLE' 命令を送信します。ID は `stat()' における
+     のと同じ意味を持ちます。`head()' のような戻り値を返します。
+
+`slave()'
+     `SLAVE' 命令を送信します。サーバの RESPONSE を返します。
+
+`xhdr(header, string, [file])'
+     `XHDR' 命令を送信します、この命令は RFC には定義されていませんが、
+     一般に広まっている拡張です。HEADER 引数は、例えば `'subject''
+     といったヘッダキーワードです。STRING 引数は `'FIRST-LAST''
+     の形式でなければならず、ここで FIRST および LAST
+     は検索の対象とする記事範囲の最初と最後の 記事番号です。`(RESPONSE,
+     LIST)' のペアを返します。 LIST は `(ID, TEXT)'
+     のペアからなるリストで、 ID が (文字列で表した) 記事 ID、TEXT
+     がその記事の ヘッダテキストです。
+     FILE引数が指定されている場合、`XHDR'コマンドの出力結果は
+     ファイルに格納されます。FILEが文字列の場合、この文字列をファイル名
+     としてファイルをオープンし、書き込み後にクローズします。FILEがファ
+     イルオブジェクトの場合、オブジェクトの`write()'メソッドを呼び出し
+     て出力結果を格納します。FILEが指定されている場合は戻り値として空の
+     リストを返します。
+
+`post(file)'
+     `POST' 命令を使って記事をポストします。FILE
+     引数は開かれているファイルオブジェクトで、その内容は `readline()'
+     メソッドを使って EOF まで読み出されます。
+     内容は必要なヘッダを含め、正しい形式のニュース記事で
+     なければなりません。`post()' メソッドは `.'
+     で始まる行を自動的にエスケープします。
+
+`ihave(id, file)'
+     `IHAVE' 命令を送信します。応答がエラーでない場合、 FILE を
+     `post()' と全く同じように扱います。
+
+`date()'
+     タプル `(RESPONSE, DATE, TIME)' を返します。 このタプルには
+     `newnews()' および `newgroups()' メソッド
+     に合った形式の、現在の日付および時刻が入っています。
+     これはオプションの NNTP
+     拡張なので、全てのサーバでサポートされている とは限りません。
+
+`xgtitle(name, [file])'
+     `XGTITLE' 命令を処理し、`(RESPONSE, LIST)'
+     からなるペアを返します。LIST は `(NAME, TITLE)'
+     を含むタプルのリストです。
+     FILE引数が指定されている場合、`XHDR'コマンドの出力結果は
+     ファイルに格納されます。FILEが文字列の場合、この文字列をファイル名
+     としてファイルをオープンし、書き込み後にクローズします。FILEがファ
+     イルオブジェクトの場合、オブジェクトの`write()'メソッドを呼び出し
+     て出力結果を格納します。FILEが指定されている場合は戻り値として空の
+     リストを返します。 これはオプションの NNTP
+     拡張なので、全てのサーバでサポートされている とは限りません。
+
+`xover(start, end, [file])'
+     `(RESP, LIST)' からなるペアを返します。 LIST
+     はタプルからなるリストで、各タプルは記事番号 START および END
+     の間に区切られた記事です。各タプルは `(ARTICLE NUMBER, SUBJECT,
+     POSTER, DATE, ID, REFERENCES, SIZE, LINES)' の形式をとります。
+     FILE引数が指定されている場合、`XHDR'コマンドの出力結果は
+     ファイルに格納されます。FILEが文字列の場合、この文字列をファイル名
+     としてファイルをオープンし、書き込み後にクローズします。FILEがファ
+     イルオブジェクトの場合、オブジェクトの`write()'メソッドを呼び出し
+     て出力結果を格納します。FILEが指定されている場合は戻り値として空の
+     リストを返します。 これはオプションの NNTP
+     拡張なので、全てのサーバでサポートされている とは限りません。
+
+`xpath(id)'
+     `(RESP, PATH)' からなるペアを返します。 PATH は メッセージ ID が
+     ID である記事のディレクトリパスです。 これはオプションの NNTP
+     拡張なので、全てのサーバでサポートされている とは限りません。
+
+`quit()'
+     `QUIT' 命令を送信し、接続を閉じます。このメソッドを呼び出した
+     後は、NTTP
+     オブジェクトの他のいかなるメソッドも呼び出してはいけません。
+
+
+File: python-lib-jp.info,  Node: smtplib,  Next: telnetlib,  Prev: nntplib,  Up: インターネットプロトコルとその支援
+
+SMTP プロトコル クライアント
+============================
+
+SMTP プロトコル クライアント (ソケットが必要です)。
+
+`smtplib'モジュールは、SMTPまたはESMTPのリスナーデーモンを備えた
+任意のインターネット上のホストにメイルを送るために使用することができる
+SMTPクライアント・セッション・オブジェクトを定義します。
+SMTPおよびESMTPオペレーションの詳細は、 RFC 821 () や RFC 1869
+
+()を調べてください。
+
+`SMTP([host[, port[, local_hostname]]])'
+     `SMTP'インスタンスはSMTPコネクションをカプセル化し、
+     SMTPとESMTPの命令をサポートをします。
+     オプションであるhostとportを与えた場合は、
+     SMTPクラスのインスタンスが作成されると同時に、
+     `connect()'メソッドを呼び出し初期化されます。
+     また、ホストから応答が無い場合は、`SMTPConnectError'が上げられます。
+
+     普通に使う場合は、初期化と接続を行ってから、
+     `sendmail()'と`quit()'メソッドを呼びます。
+     使用例は先の方で記載しています。
+
+このモジュールの例外には次のものがあります:
+
+`SMTPException'
+     このモジュールの例外クラスのベースクラスです。
+
+`SMTPServerDisconnected'
+     この例外はサーバが突然コネクションを切断するか、
+     もしくは`SMTP'インスタンスを生成する前にコネクションを張ろうと
+     した場合に上げられます。
+
+`SMTPResponseException'
+     SMTPのエラーコードを含んだ例外のクラスです。
+     これらの例外はSMTPサーバがエラーコードを返すときに生成されます。
+     エラーコードは`smtp_code'属性に格納されます。
+     また、`smtp_error'属性にはエラーメッセージが格納されます。
+
+`SMTPSenderRefused'
+     送信者のアドレスが弾かれたときに上げられる例外です。
+     全ての`SMTPResponseException'例外に、
+     SMTPサーバが弾いた`sender'アドレスの文字列がセットされます。
+
+`SMTPRecipientsRefused'
+     全ての受取人アドレスが弾かれたときに上げられる例外です。
+     各受取人のエラーは属性`recipients'によってアクセス可能で、
+     `SMTP.sendmail()'が返す辞書と同じ並びの辞書になっています。
+
+`SMTPDataError'
+     SMTPサーバが、メッセージのデータを受け入れることを拒絶した時に
+     上げられる例外です。
+
+`SMTPConnectError'
+     サーバへの接続時にエラーが 発生した時に上げられる例外です。
+
+`SMTPHeloError'
+     サーバーが`HELO'メッセージを弾いた時に上げられる例外です。
+
+See also:
+    *RFC821 Simple Mail Transfer Protocol*
+          SMTP のプロトコル定義 です。このドキュメントでは SMTP
+          のモデル、操作手順、プロトコルの
+          詳細についてカバーしています。
+
+    *RFC1869 SMTP Service Extensions*
+          SMTP に対する ESMTP 拡張の定義です。このドキュメントでは、
+          新たな命令による SMTP の拡張、サーバによって提供される命令を
+          動的に発見する機能のサポート、およびいくつかの追加命令定義
+          について記述しています。
+
+
+* Menu:
+
+* SMTP オブジェクト::
+* SMTP 使用例::
+

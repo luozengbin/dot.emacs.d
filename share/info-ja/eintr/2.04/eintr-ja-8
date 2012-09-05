@@ -1,0 +1,1983 @@
+Info file: eintr-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-lisp-intro.texi.patched'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELisp-Intro-ja: (eintr-ja).       Emacs-Lisp入門ガイド
+END-INFO-DIR-ENTRY
+
+
+これはプログラマではない人のための `Emacs Lisp プログラミング' 解説書で
+ある．
+
+Edition 2.04, 2001 Dec 17
+
+Copyright (C) 1990, '91, '92, '93, '94, '95, '97, 2001 Free Software
+Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Section being the Preface, with the Front-Cover Texts being
+no Front-Cover Texts, and with the Back-Cover Texts being no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File: eintr-ja, Node: Remainder Function, Next: rotate-yk-ptr remainder, Prev: rotate-yk-ptr else-part, Up: Kill Ring
+
+剰余関数`%'
+...........
+
+`(% 1 length)'を理解するには`%'を理解する必要がある。（`C-h f `%' RET'
+とタイプして探した）その説明文によれば、関数`%'は、第1引数を第2引数で割っ
+たときの余りを返す。たとえば、5を2で割った余りは1である（2を2倍して余り
+1を加えると5になる）。
+
+算術をほとんどしない人には、小さな数を大きな数で割ることができて余りが
+あることに驚くかもしれない。例では、5を2で割った。逆に、2を5で割った結
+果はどうなるであろう？　小数を使えば、答えは、2/5、つまり、0.4である。
+しかし、整数しか使えない場合には、結果は異なったものになる。明らかに、
+5を0倍すればよいだろうが、余りはいくつだろう？　答えを探すには、子ども
+のころから馴染み深い場合分けを考える。
+
+   * 5割る5は1で、余りは0；
+
+   * 6割る5は1で、余りは1；
+
+   * 7割る5は1で、余りは2；
+
+   * 同様に、10割る5は2で、余りは0；
+
+   * 11割る5は2で、余りは1；
+
+   * 12割る5は2で、余りは2；
+
+これに対比させると、
+
+   * 0割る5は0で、余りは0であるはず；
+
+   * 1割る5は0で、余りは1であるはず；
+
+   * 2割る5は0で、余りは2であるはず；
+
+などなどである。
+
+したがって、このコードでは、`length'の値は5なので、
+
+     (% 1 5)
+
+を評価した結果は1である（式の直後にカーソルを置いて`C-x C-e'とタイプし
+て確認した。もちろん、エコー領域には1と表示される）。
+
+
+
+File: eintr-ja, Node: rotate-yk-ptr remainder, Next: kill-rng-yk-ptr last elt, Prev: Remainder Function, Up: Kill Ring
+
+`rotate-yank-pointer'における`%'の利用
+......................................
+
+`kill-ring-yank-pointer'がキルリングの先頭を指し、
+`rotate-yank-pointer'に渡した引数が1の場合には、
+`%'式は1を返す。
+
+     (- length (length kill-ring-yank-pointer))
+          => 0
+
+したがって、
+
+     (+ arg (- length (length kill-ring-yank-pointer)))
+          => 1
+
+であり、`length'の値に関係なく、
+
+     (% (+ arg (- length (length kill-ring-yank-pointer)))
+        length)
+          => 1
+
+となる。
+
+この結果、式`setq kill-ring-yank-pointer'はつぎのように簡約できる。
+
+     (setq kill-ring-yank-pointer (nthcdr 1 kill-ring))
+
+この動作を理解するのは簡単である。キルリングの第1要素を指していたものが、
+`kill-ring-yank-pointer'は第2要素を指すように設定される。
+
+明らかに、`rotate-yank-pointer'に渡す引数が2の場合、
+`kill-ring-yank-pointer'には`(nthcdr 2 kill-ring)'が設定される。引数に
+他の値を指定すると変わる。
+
+同様に、`kill-ring-yank-pointer'がキルリングの第2要素を
+指している状態では、その長さはキルリングの長さより1小さいので、
+余りの計算は式`(% (+ arg 1) length)'をもとに行われる。
+つまり、`rotate-yank-pointer'へ渡す引数が1ならば、
+`kill-ring-yank-pointer'は、キルリングの第2要素から第3要素に移動する。
+
+
+
+File: eintr-ja, Node: kill-rng-yk-ptr last elt, Prev: rotate-yk-ptr remainder, Up: Kill Ring
+
+最後の要素を指す
+................
+
+最後の疑問は、`kill-ring-yank-pointer'がキルリングの*最後*の
+要素を指しているとどうなるかである。
+`rotate-yank-pointer'を呼び出すと、
+キルリングからは何も取り出せないのであろうか？　
+答えは否である。
+これとは異なる有用なことが起こる。
+`kill-ring-yank-pointer'は、キルリングの先頭を指すように設定される。
+
+これがどのように行われるかを、キルリングの長さを5、
+`rotate-yank-pointer'に渡す引数を1と仮定して、コードを見てみよう。
+`kill-ring-yank-pointer'がキルリングの最後の要素を指していると、その長
+さは1である。コードはつぎのとおりであった。
+
+     (% (+ arg (- length (length kill-ring-yank-pointer))) length)
+
+変数に数値を入れると、式はつぎのようになる。
+
+     (% (+ 1 (- 5 1)) 5)
+
+もっとも内側の式から外側に向かって評価する。`(- 5 1)'の値は4、`(+ 1
+4)'の合計は5、5を5で割った余りは0である。したがって、
+`rotate-yank-pointer'が実行することは
+
+     (setq kill-ring-yank-pointer (nthcdr 0 kill-ring))
+
+であり、`kill-ring-yank-pointer'はキルリングの先頭を指すように設定され
+る。
+
+`rotate-yank-pointer'を連続して呼び出すと、キルリングの最後に達するまで
+は、`kill-ring-yank-pointer'はキルリングの要素を順番に指し、先頭に戻る。
+リストには終わりがないかのように先頭に戻るので、キルリングをリングとよ
+ぶのである（リングとは、終わりがないもの？）。
+
+
+
+File: eintr-ja, Node: yank, Next: yank-pop, Prev: Kill Ring, Up: Kill Ring
+
+`yank' *(2004/08/10)*
+=====================
+
+`rotate-yank-pointer'を理解していれば、関数`yank'は簡単である。唯一の巧
+妙な部分は、`rotate-yank-pointer'に渡す引数を計算する部分である。
+
+コードはつぎのとおりである。
+
+     (defun yank (&optional arg)
+       "Reinsert the last stretch of killed text.
+     More precisely, reinsert the stretch of killed text most
+     recently killed OR yanked.
+     With just C-U as argument, same but put point in front
+     (and mark at end).  With argument n, reinsert the nth
+     most recently killed stretch of killed text.
+     See also the command \\[yank-pop]."
+
+       (interactive "*P")
+       (rotate-yank-pointer (if (listp arg) 0
+                              (if (eq arg '-) -1
+                                (1- arg))))
+       (push-mark (point))
+       (insert (car kill-ring-yank-pointer))
+       (if (consp arg)
+           (exchange-point-and-mark)))
+
+このコードをざっと見ると、最後の数行はすぐにわかりそうである。マークを
+プッシュする、つまり、記録する。`kill-ring-yank-pointer'が指す最初の要
+素（CAR）は挿入するものである。関数に渡された引数が`cons'ならば、ポイン
+トとマークを交換して、挿入したテキストの最後ではなく先頭にポイントを移
+動する。このオプションは説明文で解説してある。関数自体は、`"*P"'を指定
+した対話的なものである。これは、読み出し専用のバッファでは動作せず、未
+処理の前置引数を関数に渡すことを意味する。
+
+* Menu:
+
+* rotate-yk-ptr arg::           Pass the argument to `rotate-yank-pointer'.
+* rotate-yk-ptr negative arg::  Pass a negative argument.
+
+
+
+File: eintr-ja, Node: rotate-yk-ptr arg, Next: rotate-yk-ptr negative arg, Prev: yank, Up: yank
+
+引数の渡し方
+............
+
+`yank'の難しい部分は、`rotate-yank-pointer'に渡す引数を決定するための計
+算を理解することである。幸い、一見したほど難しくはない。
+
+一方あるいは両方の`if'式を評価すると数になり、その数が
+`rotate-yank-pointer'に渡される引数となる。
+
+注釈を付けると、コードはつぎのようになる。
+
+     (if (listp arg)                         ; 判定条件
+         0                                   ; 真の場合の動作
+       (if (eq arg '-)                       ; 偽の場合の動作、内側のif
+           -1                                ; 内側のifの真の場合の動作
+         (1- arg))))                         ; 内側のifの偽の場合の動作
+
+このコードは2つの`if'式から成り、一方の偽の場合の動作に他方が含まれてい
+る。
+
+最初の、つまり、外側の`if'式では、`yank'に渡された引数が
+リストかどうかを調べる。
+奇妙であるが、引数なしで`yank'が呼ばれると、これは真になる。
+省略できる引数に渡される値は`nil'であり、
+`(listp nil)'を評価すると真を返すからである。
+そこで、`yank'に引数を渡さないと、`yank'の中の
+`rotate-yank-pointer'に渡す引数は0である。
+つまり、予想どおりに、ポインタは移動されずに、`kill-ring-yank-pointer'が
+指す先頭要素が挿入される。
+同様に、`yank'への引数が`C-u'であると、これはリストとして読まれ、
+この場合も`rotate-yank-pointer'には0が渡される
+（`C-u'は、未処理の前置引数である`(4)'となり、
+これは1要素のリストである）。
+同時に、関数のうしろの部分で、この引数は`cons'であることがわかるので、
+ポイントを挿入したテキストの始まりに、
+マークを挿入したテキストの終わりに移動する
+（`interactive'の引数`P'は、省略可能な引数が略されていたり、
+`C-u'だったりした場合にこれらの値を提供するためのものである）。
+
+外側の`if'式の真の場合の動作では、引数がなかったり`C-u'であった時，処理
+を行う。偽の場合の動作では、それ以外の状況を処理する。偽の場合の動作自
+身は、別の`if'式である。
+
+内側の`if'式では、引数が負かどうかを調べる（METAと-キーを同時に押し下げ
+るか、ESCキーに続けて-キーを押すとこのようになる）。この場合には、関数
+`rotate-yank-pointer'には、引数として`-1'が渡される。そうすると
+`kill-ring-yank-pointer'は逆向きに移動し、望んだ動作となる。
+
+内側の`if'の判定条件が偽（つまり、引数はマイナス記号ではない）であると、
+式の偽の場合の動作が評価される。
+これは式`(1- arg)'である。
+2つの`if'式のために、引数が正の数か（マイナス記号だけではない）負の数の
+場合にこの式が評価される。
+`(1- arg)'は、引数から1を引いた値を返す
+（`1-'関数は、引数から1を引く）。
+つまり、`yank'への引数が1ならば、0に減らされ、
+予想どおりに、
+`kill-ring-yank-pointer'が指す先頭要素が挿入される。
+
+
+
+File: eintr-ja, Node: rotate-yk-ptr negative arg, Prev: rotate-yk-ptr arg, Up: yank
+
+負の引数を渡す
+..............
+
+最後に、剰余関数`%'や関数`nthcdr'に負の引数を与えるとどうなるのであろう
+か？
+
+試してみればわかる。`(% -1 5)'を評価すると、負の数が返される。負の数で
+`nthcdr'を呼び出すと、第1引数が0の場合と同じ値を返す。つぎのコードを評
+価するとこのことがわかる。
+
+`=>'のまえの式を評価すると`=>'のあとに示した結果になる。いつものように、
+コードの直後にカーソルを置いて`C-x C-e' （`eval-last-sexp'）とタイプし
+て行った。GNU EmacsのInfoで読んでいる場合には、読者自身で試してほしい。
+
+     (% -1 5)
+          => -1
+
+     (setq animals '(cats dogs elephants))
+          => (cats dogs elephants)
+
+     (nthcdr 1 animals)
+          => (dogs elephants)
+
+     (nthcdr 0 animals)
+          => (cats dogs elephants)
+
+     (nthcdr -1 animals)
+          => (cats dogs elephants)
+
+したがって、`yank'にマイナス記号や負の数を渡すと、
+`kill-ring-yank-pointer'は先頭に達するまで逆向きに巡回される。そして、
+先頭で止まる。リストの最後に達するとリストの先頭へ戻ってリングを形成す
+るのとは異なり、先頭で止まる。これには意味がある。なるべく最近に切り取っ
+たテキストの断片を戻したいとしばしば思うだろうが、30回もまえのキルコマ
+ンドからテキストを挿入したくはないであろう。そこで、終わりに向かっては
+リングである必要があるが、逆向きで先頭に戻った場合には巡回しない。
+
+マイナス記号付きのどんな数を`yank'に渡しても、-1と解釈される。これはプ
+ログラムの記述を明らかに簡単にする。キルリングの先頭へ向けて一度に1より
+も大きく戻る必要はないので、マイナス記号に続く数の大きさを調べるように
+関数を書くよりもよほど簡単である。
+
+
+
+File: eintr-ja, Node: yank-pop, Prev: yank, Up: Kill Ring
+
+`yank-pop' *(2004/08/10)*
+=========================
+
+`yank'を理解していれば、関数`yank-pop'は簡単である。場所を節約するため
+に説明文を省くと、つぎのようになる。
+
+     (defun yank-pop (arg)
+       (interactive "*p")
+       (if (not (eq last-command 'yank))
+           (error "Previous command was not a yank"))
+       (setq this-command 'yank)
+       (let ((before (< (point) (mark))))
+         (delete-region (point) (mark))
+         (rotate-yank-pointer arg)
+         (set-mark (point))
+         (insert (car kill-ring-yank-pointer))
+         (if before (exchange-point-and-mark))))
+
+この関数には小文字の`p'を指定した`interactive'があるので、前置引数は処
+理してから関数に渡される。コマンドはyankの直後でのみ使え、それ以外の場
+合にはエラーメッセージが送られる。この検査には、すでに説明した変数
+`last-command'を使っている（*Note copy-region-as-kill::）。
+
+`let'節では、ポイントがマークのまえにあるかうしろにあるかに依存して変数
+`before'に真か偽を設定し、ポイントとマークのあいだのリージョンを削除す
+る。これは直前のyankで挿入したリージョンであり、この部分のテキストを置
+き換えるのである。つぎに、`kill-ring-yank-pointer'を巡回して、直前に挿
+入したテキストを再度挿入しないようにする。新たに挿入するテキストの先頭
+にマークを設定し、`kill-ring-yank-pointer'が指す先頭要素をポイントに挿
+入する。これにより、テキストの終わりにポイントが置かれる。直前のyankで
+挿入したテキストの先頭にポイントを置いてあった場合には、ポイントとマー
+クを入れ換えて、新たに挿入したテキストの先頭に再度ポイントを置く。以上
+である。
+
+
+
+File: eintr-ja, Node: Full Graph, Next: GNU Free Documentation License, Prev: Kill Ring, Up: Top
+
+ラベル付きグラフ *(2004/08/10)*
+*******************************
+
+座標軸が表示されていると、グラフの理解に役立つ。これらは尺度を与えてく
+れる。前節（*Note Readying a Graph::）では、グラフの本体を表示するコー
+ドを書いた。ここでは、本体自身に加えて、ラベルを付けた垂直軸と水平軸も
+表示するコードを書く。
+
+* Menu:
+
+* Labelled Example::
+* print-graph Varlist::         `let' expression in `print-graph'.
+* print-Y-axis::                Print a label for the vertical axis.
+* print-X-axis::                Print a horizontal label.
+* Print Whole Graph::           The function to print a complete graph.
+
+
+
+File: eintr-ja, Node: Labelled Example, Next: print-X-axis, Prev: Full Graph, Up: Full Graph
+
+グラフにレベルをつける例
+========================
+
+バッファへの挿入はポイントの右下へ向かって行われるので、グラフを描く新
+しい関数では、まず、Y軸、つまり、垂直軸を描いてから、グラフの本体を描き、
+最後に、X軸、つまり、水平軸を描く。この描く順序から、関数の内容が決まる。
+
+  1. コードの初期設定。
+
+  2. Y軸を描く。
+
+  3. グラフの本体を描く。
+
+  4. X軸を描く。
+
+最終的なグラフはつぎのようになる。
+
+         10 -
+                       *
+                       *  *
+                       *  **
+                       *  ***
+          5 -      *   *******
+                 * *** *******
+                 *************
+               ***************
+          1 - ****************
+              |   |    |    |
+              1   5   10   15
+
+このグラフでは、垂直と水平の両者の軸に、数字のラベルを付けてある。しか
+し、ある種のグラフでは、水平軸は時間であり、つぎのように、月名のラベル
+のほうが適することもある。
+
+          5 -      *
+                 * ** *
+                 *******
+               ********** **
+          1 - **************
+              |    ^      |
+              Jan  June   Jan
+
+もちろん、少々考えれば、垂直／水平軸のさまざまなラベリング方法を考えつ
+く。われわれの仕事も複雑になる。複雑さは混乱を招く。したがって、まずは
+単純なラベリング方法を選び、そのあとで修正なり置き換えを行う。
+
+以上の考察から、関数`print-graph'の概略はつぎのようになる。
+
+     (defun print-graph (numbers-list)
+       "説明文..."
+       (let ((height  ...
+             ...))
+         (print-Y-axis height ... )
+         (graph-body-print numbers-list)
+         (print-X-axis ... )))
+
+`print-graph'の関数定義の各部分を順番に扱おう。
+
+
+
+File: eintr-ja, Node: print-graph Varlist, Next: print-X-axis, Prev: Full Graph, Up: Full Graph
+
+`print-graph'の変数リスト *(2004/08/10)*
+========================================
+
+関数`print-graph'を書く場合、最初の仕事は、`let'式の変数リストを書くこ
+とである（関数を対話的にしたり、説明文字列の内容については、しばらく手
+をつけないでおく）。
+
+変数リストでは、数個の変数を設定する。明らかに、垂直軸のラベルの先頭は
+少なくともグラフの高さである必要があるので、この情報をここで得ておく必
+要がある。関数`print-graph-body'もこの情報を必要とすることに注意してほ
+しい。異なる2つの場所でグラフの高さを計算する理由はないので、ここでの計
+算を利用するように`print-graph-body'の以前の定義を変更する。
+
+同様に、X軸を描く関数と関数`print-graph-body'の両者は、各シンボルの幅を
+知る必要がある。この計算もここで行い、`print-graph-body'の以前の定義を
+変更する。
+
+水平軸のラベルの長さは少なくともグラフの幅である必要がある。しかし、こ
+の情報は水平軸を描く関数でのみ使われるので、ここで計算する必要はない。
+
+以上の考察から、`print-graph'の`let'の変数リストはつぎのようになる。
+
+     (let ((height (apply 'max numbers-list)) ; 第1版
+           (symbol-width (length graph-blank)))
+
+あとでわかるように、この式は実は正確ではない。
+
+
+
+File: eintr-ja, Node: print-Y-axis, Next: print-X-axis, Prev: Full Graph, Up: Full Graph
+
+関数`print-Y-axis' *(2004/08/10)*
+=================================
+
+関数`print-Y-axis'の仕事は、つぎのような垂直軸のラベルを描くことである。
+
+         10 -
+
+
+
+
+          5 -
+
+
+
+          1 -
+
+関数にはグラフの高さが渡され、適切な数字や目盛を作成して挿入する。
+
+Y軸のラベルをどのようにすべきかは図からは簡単にわかるが、言葉で書き表し
+たり、そのようにする関数定義を書くことはまた別である。5行ごとに数字や目
+盛が必要なのではない。`1'と`5'のあいだには3行（2行目、3行目、4行目）あ
+るが、`5'と`10'のあいだには4行（6行目、7行目、8行目、9行目）ある。基準
+行（数1）には数字と目盛が必要であり、最下行から5行目および5の倍数の行に
+数字と目盛が必要であるといい直したほうがよい。
+
+* Menu:
+
+* Height of label::             What height for the Y axis?
+* Compute a Remainder::         How to compute the remainder of a division.
+* Y Axis Element::              Construct a line for the Y axis.
+* Y-axis-column::               Generate a list of Y axis labels.
+* print-Y-axis Penultimate::    A not quite final version.
+
+
+
+File: eintr-ja, Node: Height of label, Next: Compute a Remainder, Prev: Full Graph, Up: Full Graph
+
+ラベルの高さは？
+----------------
+
+つぎの問題は、ラベルの高さをどうすべきかである。グラフのもっとも大きな
+高さが7であったとしよう。Y軸のもっとも大きなラベルを`5 -'にして、グラフ
+の棒がラベルより高くなってもよいのだろうか？　あるいは、もっとも大きな
+ラベルを`7 -'にして、グラフの最大値の目印にするのだろうか？　あるいは、
+もっとも大きなラベルを5の倍数の`10 -'にして、グラフの最大値よりも高くす
+るのだろうか？
+
+後者が望ましい。ほとんどのグラフは、刻み幅の倍数の長さの辺の四角形の中
+に書かれる。刻み幅が5であれば、辺の長さは、5、10、15、などなどである。
+垂直軸の高さを刻み幅の倍数にしようとすると、変数リストの高さを計算する
+単純な式はまちがっていることに気づく。式は`(apply 'max numbers-list)'で
+あった。これは、正確に最大の高さを返し、5の倍数となるような最大数に繰り
+上げた値を返さない。より複雑な式が必要である。
+
+このような場合の常として、小さな複数の問題に分解できれば、複雑な問題は
+簡単になる。
+
+まず、グラフの最大の高さが5の倍数、つまり5、10、15、などの場合を考える。
+この値をY軸の高さとして使える。
+
+数が5の倍数であるかを調べる比較的簡単な方法は、数を5で割って余りを調べ
+ることである。余りがなければ、数は5の倍数である。つまり、7を5で割ると余
+りは2となり、7は5の倍数ではない。いい方を変えて教室でのことを思い出すと、
+5を1倍して余り2を足すと7になる。しかし、5を2倍して余り0を足すと10になり、
+10は5の倍数である。
+
+
+
+File: eintr-ja, Node: Compute a Remainder, Next: Y Axis Element, Prev: Full Graph, Up: Full Graph
+
+余りの計算 *(2004/08/10)*
+-------------------------
+
+Lispでは、余りを計算する関数は`%'である。この関数は、第1引数を第2引数で
+割った余りを返す。`%'は、`apropos'を使って探せないEmacs Lispの関数であ
+る。`M-x apropos RET remainder RET'とタイプしても何も得られない。`%'の
+存在を知る唯一の方法は、本書のような書籍を読むか、Emacs Lispのソースを
+読むことである。関数`%'は、付録で説明している`rotate-yank-pointer'のコー
+ドで使われている（*Note rotate-yk-ptr body::）。
+
+つぎの2つの式を評価すれば関数`%'を試せる。
+
+     (% 7 5)
+
+     (% 10 5)
+
+最初の式は2を返し、2番目は0を返す。
+
+返された値が0かどうかを調べるには、関数`zerop'を使う。この関数は、数で
+ある引数が0ならば`t'を返す。
+
+     (zerop (% 7 5))
+          => nil
+
+     (zerop (% 10 5))
+          => t
+
+したがって、つぎの式はグラフの高さが5の倍数ならば`t'を返す。
+
+     (zerop (% height 5))
+
+（もちろん、`height'の値は、`(apply 'max numbers-list)'の値である。）
+
+一方、`height'の値が5の倍数でなかったら、それより大きなつぎの5の倍数に
+直したいのである。これは、すでに馴染みのある関数を使った単純な算術でで
+きる。まず、`height'の値を5で割って、5の何倍かを調べる。したがって、12
+は、5の2倍はある。この商に1を加えて5を掛けると、高さより大きなつぎの5の
+倍数の値を得られる。12は、5の2倍はある。2に1を加えて、5を掛ける。結果は
+15であり、これは12より大きなつぎの5の倍数である。これに対応するLispの式
+はつぎのとおりである。
+
+     (* (1+ (/ height 5)) 5)
+
+たとえば、つぎの式を評価すると結果は15である。
+
+     (* (1+ (/ 12 5)) 5)
+
+これまでの説明では、Y軸の刻み幅として5を使ってきたが、これ以外の値を使
+いたい場合もあろう。一般的には、5のかわりに、値を設定できる変数を使うべ
+きである。この変数の名前としては`Y-axis-label-spacing'が最適であると思
+う。
+
+これを使うと、`if'式はつぎのようになる。
+
+     (if (zerop (% height Y-axis-label-spacing))
+         height
+       ;; そうでなければ
+       (* (1+ (/ height Y-axis-label-spacing))
+          Y-axis-label-spacing))
+
+この式は、高さが`Y-axis-label-spacing'の値の倍数ならば`height'の
+値を返し、そうでなければ、
+`Y-axis-label-spacing'のつぎに大きな倍数を計算してその値を返す。
+
+（`Y-axis-label-spacing'の値を設定してから）この式を関数`print-graph'の
+`let'式に埋め込む。
+
+     (defvar Y-axis-label-spacing 5
+       "Number of lines from one Y axis label to next.")
+
+     ...
+     (let* ((height (apply 'max numbers-list))
+            (height-of-top-line
+             (if (zerop (% height Y-axis-label-spacing))
+                 height
+               ;; そうでなければ
+               (* (1+ (/ height Y-axis-label-spacing))
+                  Y-axis-label-spacing)))
+            (symbol-width (length graph-blank))))
+     ...
+
+（関数`let*'を使っていることに注意してほしい。
+高さの初期値を、いったん、式`(apply 'max numbers-list)'で計算し、
+最終的な値を計算するために`height'の値を使っている。
+`let*'について詳しくは、*Note fwd-para let::。）
+
+
+
+File: eintr-ja, Node: Y Axis Element, Next: Y-axis-column, Prev: Compute a Remainder, Up: Full Graph
+
+Y軸の要素の作成 *(2004/08/10)*
+------------------------------
+
+垂直軸を書くときには、`5 -'や`10 - 'などの文字列を
+5行ごとに書きたい。
+さらに、数字と目盛をきちんとそろえたいので、
+短い数字には空白をまえに埋める必要がある。
+数字を2桁で表す文字列がある場合には、
+数字が1桁になる文字列では、数字の直前に空白文字を埋める必要がある。
+
+数の桁数を調べるには、関数`length'を使う。しかし、関数`length'は文字列
+のみを扱い、数を扱えない。そのため、数を文字列に変換する必要がある。こ
+れは関数`number-to-string'で行う。たとえば、
+
+     (length (number-to-string 35))
+          => 2
+
+     (length (number-to-string 100))
+          => 3
+
+(`number-to-string' は `int-to-string' とも呼ばれる．さまざまなソースで
+代わりの名前としてみることだろう)
+
+さらに、各ラベルの数字のあとには` - 'などの文字列が続く。
+これを`Y-axis-tic'と呼ぶことにする。
+この変数をつぎのように`defvar'で定義する。
+
+     (defvar Y-axis-tic " - "
+        "String that follows number in a Y axis label.")
+
+Y軸のラベルの長さは、Y軸の目盛の長さとグラフの先頭の数字の桁数の総和で
+ある。
+
+     (length (concat (number-to-string height) Y-axis-tic)))
+
+この値は、関数`print-graph'の変数リストで`full-Y-label-width'として計算
+する（始めは、これを変数リストに含めるとは思っていなかった）。
+
+垂直軸の完全なラベルを作るには、数字に目盛を繋げ、数字の桁数に応じてそ
+れらのまえに空白文字を繋げる。ラベルは3つの部分、（省略されるかもしれな
+い）空白、数字、目盛から成る。関数には、特定の行の数の値と、
+`print-graph'で（一度だけ）計算された先頭行の幅が渡される。
+
+     (defun Y-axis-element (number full-Y-label-width)
+       "Construct a NUMBERed label element.
+     A numbered element looks like this `  5 - ',
+     and is padded as needed so all line up with
+     the element for the largest number."
+       (let* ((leading-spaces
+              (- full-Y-label-width
+                 (length
+                  (concat (number-to-string number)
+                          Y-axis-tic)))))
+         (concat
+          (make-string leading-spaces ? )
+          (number-to-string number)
+          Y-axis-tic)))
+
+関数`Y-axis-element'は、必要ならばまえに置く空白、文字列にした数字、目
+盛を繋げる。
+
+ラベルに何個の空白が必要かを調べるために、目的とするラベルの幅から、数
+字の桁数と目盛の長さを足した実際の目盛の長さを引く。
+
+関数`make-string'を使って、空白文字を挿入する。
+この関数は2つの引数を取る。
+第1引数で文字列の長さを指定し、
+第2引数には挿入する文字を特別な形式で指定する。
+`? 'のように疑問符のあとに空白文字を続ける。
+文字の書き方に関する記述は、
+*Note Character Type: (elisp)Character Type。
+
+関数 `number-to-string'は、文字列を繋げる式で使われており、数を文字列に
+変換する。この文字列には、まえに置く空白文字や目盛が繋げられる。
+
+
+
+File: eintr-ja, Node: Y-axis-column, Next: print-Y-axis Penultimate, Prev: Y Axis Element, Up: Full Graph
+
+Y軸のコラムの作成 *(2004/08/10)*
+--------------------------------
+
+これまでの関数は、垂直軸のラベルとして挿入する数字や空白から成る文字列
+のリストを生成する関数を作るために必要なすべての道具を提供する。
+
+     (defun Y-axis-column (height width-of-label)
+       "Construct list of Y axis labels and blank strings.
+     For HEIGHT of line above base and WIDTH-OF-LABEL."
+       (let (Y-axis)
+         (while (> height 1)
+           (if (zerop (% height Y-axis-label-spacing))
+               ;; ラベルを挿入する
+               (setq Y-axis
+                     (cons
+                      (Y-axis-element height width-of-label)
+                      Y-axis))
+             ;; そうでなければ、空白を挿入する
+             (setq Y-axis
+                   (cons
+                    (make-string width-of-label ? )
+                    Y-axis)))
+           (setq height (1- height)))
+         ;; 基準行を挿入する
+         (setq Y-axis
+               (cons (Y-axis-element 1 width-of-label) Y-axis))
+         (nreverse Y-axis)))
+
+この関数では、`height'の値から始めて1ずつ減らす。引き算をするたびに、値
+が`Y-axis-label-spacing'の倍数かどうかを調べる。倍数ならば、関数
+`Y-axis-element'を使って数字を書いたラベルを作る。そうでなければ、関数
+`make-string'を使って空白ラベルを作る。基準行では、数字1のあとに目盛を
+付ける。
+
+
+
+File: eintr-ja, Node: print-Y-axis Penultimate, Prev: Y-axis-column, Up: Full Graph
+
+`print-Y-axis'の最終直前版 *(2004/08/10)*
+-----------------------------------------
+
+関数`Y-axis-column'が作成したリストは関数`print-Y-axis'に渡され、リスト
+をコラムとして挿入する。
+
+     (defun print-Y-axis (height full-Y-label-width)
+       "Insert Y axis using HEIGHT and FULL-Y-LABEL-WIDTH.
+     Height must be the maximum height of the graph.
+     Full width is the width of the highest label element."
+     ;; Value of height and full-Y-label-width
+     ;; are passed by `print-graph'.
+       (let ((start (point)))
+         (insert-rectangle
+          (Y-axis-column height full-Y-label-width))
+         ;; グラフを挿入できるようにポイントを移動
+         (goto-char start)
+         ;; ポイントを full-Y-label-width だけ進める
+         (forward-char full-Y-label-width)))
+
+`print-Y-axis'は、関数`insert-rectangle'を使って関数`Y-axis-column'が作
+成したY軸のラベルを挿入する。さらに、グラフ本体を書けるようにポイントを
+正しい位置に移動する。
+
+つぎのようにして`print-Y-axis'を試せる。
+
+  1. インストールする。
+
+          Y-axis-label-spacing
+          Y-axis-tic
+          Y-axis-element
+          Y-axis-column
+          print-Y-axis
+
+  2. つぎの式をコピーする。
+
+          (print-Y-axis 12 5)
+
+  3. バッファ`*scratch*'に切り替え、軸のラベルを書き始めたい場所にカー
+     ソルを移動する。
+
+  4. `M-ESC'（`eval-expression'）とタイプする。
+
+  5. `C-y'（`yank'）で、`graph-body-print'式をミニバッファにヤンクする。
+
+  6. RETを押して、式を評価する。
+
+Emacsは、先頭が`10 - 'であるようなラベルを垂直に表示する
+（関数`print-graph'は`height-of-top-line'の値を渡し、
+その値は15になる）。
+
+
+
+File: eintr-ja, Node: print-X-axis, Next: Print Whole Graph, Prev: Full Graph, Up: Full Graph
+
+関数`print-X-axis' *(2004/08/10)*
+=================================
+
+X軸のラベルはY軸のラベルに似ているが、目盛は数字の行の上にある。ラベル
+はつぎのようである。
+
+         |   |    |    |
+         1   5   10   15
+
+最初の目盛は、グラフの最初のコラムの下にあり、
+そのまえには複数の空白文字がある。
+これらの空白は、その上にあるY軸のラベルの幅に相当する。
+2番目、3番目、4番目、それ以降の目盛はすべて等間隔で、
+`X-axis-label-spacing'の値で決まる。
+
+X軸の第2行目は、空白をまえに置いた数字で、変数`X-axis-label-spacing'の
+値で決まる間隔だけ離れている。
+
+グラフ本体の表示に使うシンボルの幅を変更してもラベルの付き方が
+変わらないように、変数`X-axis-label-spacing'の値は、
+`symbol-width'を単位とすべきである。
+
+* Menu:
+
+* Similarities differences::    Much like `print-Y-axis', but not exactly.
+* X Axis Tic Marks::            Create tic marks for the horizontal axis.
+
+
+
+File: eintr-ja, Node: Similarities differences, Next: X Axis Tic Marks, Prev: print-X-axis, Up: print-X-axis
+
+類似点と相違点
+--------------
+
+関数`print-X-axis'は、関数`print-Y-axis'とほぼ同様に作れるが、X軸は目盛
+の行と数字の行の2行であることが異なる。それぞれを表示する別々の関数を書
+いて、それらを関数`print-X-axis'で組み合わせる。
+
+これは、3段階の処理になる。
+
+  1. X軸の目盛を描く関数`print-X-axis-tic-line'を書く。
+
+  2. X軸の数字を描く関数`print-X-axis-numbered-line'を書く。
+
+  3. `print-X-axis-tic-line'と`print-X-axis-numbered-line'を使って、軸
+     の2つの行を描く関数`print-X-axis'を書く。
+
+
+
+File: eintr-ja, Node: X Axis Tic Marks, Prev: print-X-axis, Up: print-X-axis
+
+X軸の目盛 *(2004/08/10)*
+------------------------
+
+最初の関数は、X軸の目盛を描く。目盛自体とその間隔を指定する必要がある。
+
+     (defvar X-axis-label-spacing
+       (if (boundp 'graph-blank)
+           (* 5 (length graph-blank)) 5)
+       "Number of units from one X axis label to next.")
+
+（`graph-blank'の値は、別の`defvar'で設定される。
+述語`boundp'は、`graph-blank'に値が設定されたかどうかを調べる。
+設定されていない場合には、`boundp'は`nil'を返す。
+`graph-blank'が束縛されていない場合に、この条件式を使わないと、
+Emacs 21 ではデバッファに入り，エラーメッセージ
+`Debugger entered--Lisp error: (void-variable graph-blank)'
+を得る。）
+
+以下は `X-axis-tic-symbol' の `defvar' である．
+
+     (defvar X-axis-tic-symbol "|"
+       "String to insert to point to a column in X axis.")
+
+目標はつぎのような行を作ることである。
+
+            |   |    |    |
+
+最初の目盛は、最初のコラムの下にくるように字下げされるが、これは、Y軸の
+ラベル幅と同じである。
+
+目盛の要素は、目盛からつぎの目盛までのあいだの空白文字と、目盛のシンボ
+ルである。空白の個数は、目盛のシンボルの幅と`X-axis-label-spacing'で決
+まる。
+
+コードはつぎのようになる。
+
+     ;;; X-axis-tic-element
+     ...
+     (concat
+      (make-string
+       ;; 空白文字の文字列を作る
+       (-  (* symbol-width X-axis-label-spacing)
+           (length X-axis-tic-symbol))
+       ? )
+      ;; 空白文字列に目盛のシンボルを繋ぐ
+      X-axis-tic-symbol)
+     ...
+
+つぎは、最初の目盛をグラフの最初のコラムに字下げするために必要な空白文
+字の個数を決めることである。関数`print-graph'が`full-Y-label-width'とし
+て渡した値を使う。
+
+`X-axis-leading-spaces'を計算するコードはつぎのとおりである。
+
+     ;; X-axis-leading-spaces
+     ...
+     (make-string full-Y-label-width ? )
+     ...
+
+水平軸の長さを決める必要もある。この長さは、数のリストの長さと水平軸の
+目盛の個数で決まる。
+
+     ;; X-length
+     ...
+     (length numbers-list)
+
+     ;; tic-width
+     ...
+     (* symbol-width X-axis-label-spacing)
+
+     ;; number-of-X-tics
+     (if (zerop (% (X-length tic-width)))
+         (/ (X-length tic-width))
+       (1+ (/ (X-length tic-width))))
+
+以上のことから、X軸の目盛の行を描く関数を書ける。
+
+     (defun print-X-axis-tic-line
+       (number-of-X-tics X-axis-leading-spaces X-axis-tic-element)
+       "Print tics for X axis."
+         (insert X-axis-leading-spaces)
+         (insert X-axis-tic-symbol)  ; 最初のコラムの真下
+         ;; 2番目の目盛を正しい位置に挿入する
+         (insert (concat
+                  (make-string
+                   (-  (* symbol-width X-axis-label-spacing)
+                       ;; Insert white space up to second tic symbol.
+                       (* 2 (length X-axis-tic-symbol)))
+                   ? )
+                  X-axis-tic-symbol))
+         ;; 残りの目盛を挿入する
+         (while (> number-of-X-tics 1)
+           (insert X-axis-tic-element)
+           (setq number-of-X-tics (1- number-of-X-tics))))
+
+数字の行も同じように簡単である。
+
+まず、空白をまえに置いた数字を作る。
+
+     (defun X-axis-element (number)
+       "Construct a numbered X axis element."
+       (let ((leading-spaces
+              (-  (* symbol-width X-axis-label-spacing)
+                  (length (number-to-string number)))))
+         (concat (make-string leading-spaces ? )
+                 (number-to-string number))))
+
+つぎに、最初のコラムの直下に描く「1」から始まる数字の行を書く関数を作る。
+
+     (defun print-X-axis-numbered-line
+       (number-of-X-tics X-axis-leading-spaces)
+       "Print line of X-axis numbers"
+       (let ((number X-axis-label-spacing))
+         (insert X-axis-leading-spaces)
+         (insert "1")
+         (insert (concat
+                  (make-string
+                   ;; つぎの数字までの空白文字を挿入する
+                   (-  (* symbol-width X-axis-label-spacing) 2)
+                   ? )
+                  (number-to-string number)))
+         ;; 残りの数字を挿入する
+         (setq number (+ number X-axis-label-spacing))
+         (while (> number-of-X-tics 1)
+           (insert (X-axis-element number))
+           (setq number (+ number X-axis-label-spacing))
+           (setq number-of-X-tics (1- number-of-X-tics)))))
+
+最後に、`print-X-axis-tic-line'と`print-X-axis-numbered-line'を使う
+`print-X-axis'を書く必要がある。
+
+関数では、`print-X-axis-tic-line'と`print-X-axis-numbered-line'が使うロー
+カル変数の値を決定する必要があり、そのあと、これらの関数を呼び出す。さ
+らに、2つの行を分ける復帰を書く必要もある。
+
+関数は、5つのローカル変数を指定する変数リストと、2つの行のおのおのを描
+く関数の呼び出しから成る。
+
+     (defun print-X-axis (numbers-list)
+       "Print X axis labels to length of NUMBERS-LIST."
+       (let* ((leading-spaces
+               (make-string full-Y-label-width ? ))
+            ;; symbol-width は graph-body-print が与える
+            (tic-width (* symbol-width X-axis-label-spacing))
+            (X-length (length numbers-list))
+            (X-tic
+             (concat
+              (make-string
+               ;; 空白の文字列を作る
+               (-  (* symbol-width X-axis-label-spacing)
+                   (length X-axis-tic-symbol))
+               ? )
+              ;; 空白を目盛のシンボルに繋ぐ
+              X-axis-tic-symbol))
+            (tic-number
+             (if (zerop (% X-length tic-width))
+                 (/ X-length tic-width)
+               (1+ (/ X-length tic-width)))))
+         (print-X-axis-tic-line tic-number leading-spaces X-tic)
+         (insert "\n")
+         (print-X-axis-numbered-line tic-number leading-spaces)))
+
+`print-X-axis'を試してみよう。
+
+  1. `X-axis-tic-symbol'、`X-axis-label-spacing'、
+     `print-X-axis-tic-line'とともに
+     `X-axis-element'、`print-X-axis-numbered-line'、
+     `print-X-axis'をインストールする。
+
+  2. つぎの式をコピーする。
+
+          (progn
+           (let ((full-Y-label-width 5)
+                 (symbol-width 1))
+             (print-X-axis
+              '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16))))
+
+  3. バッファ`*scratch*'に切り替え、軸のラベルを描き始める場所にカーソ
+     ルを置く。
+
+  4. `M-ESC'（`eval-expression'）とタイプする。
+
+  5. `C-y'（`yank'）でテスト用の式をミニバッファにヤンクする。
+
+  6. RETを押して式を評価する。
+
+Emacsはつぎのように水平軸を表示する。
+
+          |   |    |    |    |
+          1   5   10   15   20
+
+
+
+File: eintr-ja, Node: Print Whole Graph, Prev: print-X-axis, Up: Full Graph
+
+グラフ全体の表示 *(2004/08/11)*
+===============================
+
+グラフ全体を表示する準備ができた。
+
+正しいラベルを付けたグラフを描く関数は、まえに作った概略（*Note Full
+Graph::）とほぼ同じであるが多少追加点もある。
+
+つぎに概略を示す。
+
+     (defun print-graph (numbers-list)
+       "説明文..."
+       (let ((height  ...
+             ...))
+         (print-Y-axis height ... )
+         (graph-body-print numbers-list)
+         (print-X-axis ... )))
+
+* Menu:
+
+* The final version::           A few changes.
+* Test print-graph::            Run a short test.
+* Graphing words in defuns::    Executing the final code.
+* lambda::                      How to write an anonymous function.
+* mapcar::                      Apply a function to elements of a list.
+* Another Bug::                 Yet another bug ... most insidious.
+* Final printed graph::         The graph itself!
+
+
+
+File: eintr-ja, Node: The final version, Next: Test print-graph, Prev: Print Whole Graph, Up: Print Whole Graph
+
+最終版での変更
+--------------
+
+最終版は、計画したものと2つの点で異なる。第一に、変数リストには一度だけ
+計算する値が追加してある。第二に、ラベルの行間隔を指定するオプションを
+持つことである。後者の機能は本質的であり、これがないと、1画面や1ページ
+に収まらないグラフができてしまう。
+
+この新しい機能のためには、`vertical-step'を追加するように関数
+`Y-axis-column'を変更する必要がある。関数はつぎのようになる。
+
+     ;;; 最終版
+     (defun Y-axis-column
+       (height width-of-label &optional vertical-step)
+       "Construct list of labels for Y axis.
+     HEIGHT is maximum height of graph.
+     WIDTH-OF-LABEL is maximum width of label.
+     VERTICAL-STEP, an option, is a positive integer
+     that specifies how much a Y axis label increments
+     for each line.  For example, a step of 5 means
+     that each line is five units of the graph."
+       (let (Y-axis
+             (number-per-line (or vertical-step 1)))
+         (while (> height 1)
+           (if (zerop (% height Y-axis-label-spacing))
+               ;; ラベルを挿入する
+               (setq Y-axis
+                     (cons
+                      (Y-axis-element
+                       (* height number-per-line)
+                       width-of-label)
+                      Y-axis))
+             ;; そうでなければ、空白を挿入する
+             (setq Y-axis
+                   (cons
+                    (make-string width-of-label ? )
+                    Y-axis)))
+           (setq height (1- height)))
+         ;; 基準行を挿入する
+         (setq Y-axis (cons (Y-axis-element
+                             (or vertical-step 1)
+                             width-of-label)
+                            Y-axis))
+         (nreverse Y-axis)))
+
+グラフの最大の高さとシンボルの幅は、`print-graph'の`let'式で計算される。
+そこで、`graph-body-print'がこれらの値を受け取るように変更する必要があ
+る。
+
+     ;;; 最終版
+     (defun graph-body-print (numbers-list height symbol-width)
+       "Print a bar graph of the NUMBERS-LIST.
+     The numbers-list consists of the Y-axis values.
+     HEIGHT is maximum height of graph.
+     SYMBOL-WIDTH is number of each column."
+       (let (from-position)
+         (while numbers-list
+           (setq from-position (point))
+           (insert-rectangle
+            (column-of-graph height (car numbers-list)))
+           (goto-char from-position)
+           (forward-char symbol-width)
+           ;; コラムごとにグラフを描く
+           (sit-for 0)
+           (setq numbers-list (cdr numbers-list)))
+         ;; X軸のラベル用に、ポイントを移動する
+         (forward-line height)
+         (insert "\n")))
+
+最後に、関数`print-graph'のコードを示す。
+
+     ;;; 最終版
+     (defun print-graph
+       (numbers-list &optional vertical-step)
+       "Print labelled bar graph of the NUMBERS-LIST.
+     The numbers-list consists of the Y-axis values.
+
+     Optionally, VERTICAL-STEP, a positive integer,
+     specifies how much a Y axis label increments for
+     each line.  For example, a step of 5 means that
+     each row is five units."
+       (let* ((symbol-width (length graph-blank))
+              ;; `height' は、最大の数であり
+              ;; 表示幅がもっとも大きくなる
+              (height (apply 'max numbers-list))
+              (height-of-top-line
+               (if (zerop (% height Y-axis-label-spacing))
+                   height
+                 ;; そうでなければ
+                 (* (1+ (/ height Y-axis-label-spacing))
+                    Y-axis-label-spacing)))
+              (vertical-step (or vertical-step 1))
+              (full-Y-label-width
+               (length
+                (concat
+                 (number-to-string
+                  (* height-of-top-line vertical-step))
+                 Y-axis-tic))))
+
+         (print-Y-axis
+          height-of-top-line full-Y-label-width vertical-step)
+         (graph-body-print
+          numbers-list height-of-top-line symbol-width)
+         (print-X-axis numbers-list)))
+
+
+
+File: eintr-ja, Node: Test print-graph, Next: Graphing words in defuns, Prev: Print Whole Graph, Up: Print Whole Graph
+
+`print-graph'のテスト *(2004/08/10)*
+------------------------------------
+
+関数`print-graph'を数の短いリストで試してみよう。
+
+  1. `Y-axis-column'、`graph-body-print'、`print-graph' （および、残り
+     のコード）をインストールする。
+
+  2. つぎの式をコピーする。
+
+          (print-graph '(3 2 5 6 7 5 3 4 6 4 3 2 1))
+
+  3. バッファ`*scratch*'に切り替え、軸のラベルを描き始めたい場所にカー
+     ソルを置く。
+
+  4. `M-ESC'（`eval-expression'）とタイプする。
+
+  5. `C-y'（`yank'）で、ミニバッファにテスト用の式をヤンクする。
+
+  6. RETを押し、式を評価する。
+
+Emacsはつぎのようなグラフを表示する。
+
+     10 -
+
+
+              *
+             **   *
+      5 -   ****  *
+            **** ***
+          * *********
+          ************
+      1 - *************
+
+          |   |    |    |
+          1   5   10   15
+
+一方、`vertical-step'の値として2を`print-graph'に渡すつぎの式を評価する
+と、
+
+     (print-graph '(3 2 5 6 7 5 3 4 6 4 3 2 1) 2)
+
+グラフはつぎのようになる。
+
+     20 -
+
+
+              *
+             **   *
+     10 -   ****  *
+            **** ***
+          * *********
+          ************
+      2 - *************
+
+          |   |    |    |
+          1   5   10   15
+
+（垂直軸の最後が「2」であるのは、バグであろうか機能であろうか？　バグと
+考えるのであれば、かわりに「1」（あるいは、「0」）を表示するようにソー
+スを直せばよい。）
+
+
+
+File: eintr-ja, Node: Graphing words in defuns, Next: lambda, Prev: Test print-graph, Up: Print Whole Graph
+
+単語やシンボルの個数のグラフ *(2004/08/11)*
+-------------------------------------------
+
+グラフ作成に必要なコードはすべて書いた。単語やシンボルの個数が10個未満
+の関数定義はいくつ、10から19個のものはいくつ、20から29個のものはいくつ、
+などなどを示すグラフである。
+
+これは、多段の処理である。まず、必要なコードをすべてロードしてあること
+を確認する。
+
+`top-of-ranges'の値を変えてしまった場合に備えて、`top-of-ranges'の値を
+再設定しておこう。つぎの式を評価する。
+
+     (setq top-of-ranges
+      '(10  20  30  40  50
+        60  70  80  90 100
+       110 120 130 140 150
+       160 170 180 190 200
+       210 220 230 240 250
+       260 270 280 290 300)
+
+つぎは、各範囲に属する単語やシンボルの個数のリストを作る。
+
+つぎの式を評価する。
+
+     (setq list-for-graph
+            (defuns-per-range
+              (sort
+               (recursive-lengths-list-many-files
+                (directory-files "/usr/local/emacs/lisp"
+                                 t ".+el$"))
+               '<)
+              top-of-ranges))
+
+筆者のマシンでは、1時間ほど掛かる。Emacs第19.23版の303個のLispのファイ
+ルを調べる。処理が完了すると、`list-for-graph'にはつぎのような値が入る。
+
+     (537 1027 955 785 594 483 349 292 224 199 166 120 116 99
+     90 80 67 48 52 45 41 33 28 26 25 20 12 28 11 13 220)
+
+つまり、筆者の場合、単語やシンボルの個数が10個未満の関数定義は537、10か
+ら19個のものは1027、20から29個のものは955、などなどである。
+
+明らかに、このリストを見るだけで、ほとんどの関数定義では10から30個の単
+語やシンボルが含まれことがわかる。
+
+ではグラフを描こう。しかし、1030行もの高さのグラフを描きたいわけではな
+い。高さが25行よりも低いグラフを描きたい。画面や1ページの紙に簡単に収ま
+るような高さのグラフである。
+
+これには、`list-for-graph'の各値を1/50に減らす必要がある。
+
+まだ説明していない2つの関数`mapcar'と`lambda'を使うと、つぎの小さな関数
+でできる。
+
+     (defun one-fiftieth (full-range)
+       "Return list, each number one-fiftieth of previous."
+      (mapcar '(lambda (arg) (/ arg 50)) full-range))
+
+
+
+File: eintr-ja, Node: lambda, Next: mapcar, Prev: Graphing words in defuns, Up: Print Whole Graph
+
+`lambda'式：便利な無名性 *(2004/08/11)*
+---------------------------------------
+
+`lambda'は、関数名を持たない無名関数を表すシンボルである。無名関数を使
+う場合には、その本体を含める必要がある。
+
+つまり、
+
+     (lambda (arg) (/ arg 50))
+
+は、「`arg'として渡されたものを50で割った商を返す」ような関数定義である。
+
+たとえば、まえに、関数`multiply-by-seven'があった。
+それは、引数を7倍した。
+引数を50で割ることと、名前がないことを除けば、この関数も似ている。
+`multiply-by-seven'に等価な無名関数は、つぎのようになる。
+
+     (lambda (number) (* 7 number))
+
+（*Note defun::。）
+
+3を7倍したければ、つぎのように書ける。
+
+     (multiply-by-seven 3)
+      \_______________/ ^
+              |         |
+            関数      引数
+
+
+
+この式は、21を返す。
+
+同様に、つぎのようにも書ける。
+
+     ((lambda (number) (* 7 number)) 3)
+      \____________________________/ ^
+                    |                |
+                無名関数           引数
+
+
+
+100を50で割りたければ、つぎのように書ける。
+
+     ((lambda (arg) (/ arg 50)) 100)
+      \______________________/  \_/
+                  |              |
+              無名関数         引数
+
+
+
+この式は、2を返す。関数には100が渡され、50で割られるのである。
+
+`lambda'について詳しくは、*Note Lambda Expressions: (elisp)Lambda
+Expressions。Lispとlambda式は、λ計算（Lambda Calculus）から導かれたの
+である。
+
+
+
+File: eintr-ja, Node: mapcar, Next: Another Bug, Prev: lambda, Up: Print Whole Graph
+
+関数`mapcar' *(2004/08/11)*
+---------------------------
+
+`mapcar'は、順番に、第2引数の各要素で第1引数を呼び出す。第2引数は並びで
+あること。
+
+この名前の`map'部分は数学的用語 "mapping over a domain" (ある機能をある
+範囲に属する各要素に適用すること)に由来する．数学的用語は征服者が一度に
+一箇所ずつ征服している領域を巡回することの隠喩である．そして，もちろん
+`car'はリストの最初を意味する Lisp の概念に由来する．
+
+たとえば、
+
+     (mapcar '1+ '(2 4 6))
+          => (3 5 7)
+
+引数に1を加える関数`1+'が、リストの各要素に対して実行され、新たなリスト
+が返される。
+
+これと、第1引数を残りのものに適用する`apply'とを対比してほしい
+（`apply'の説明は、
+*Note Readying a Graph::）。
+
+`one-fiftieth'の定義では、第1引数はつぎの無名関数である。
+
+     (lambda (arg) (/ arg 50))
+
+そして、第2引数は`full-range'であり、
+`list-for-graph'に束縛される。
+
+式全体はつぎのようになる。
+
+     (mapcar '(lambda (arg) (/ arg 50)) full-range))
+
+`mapcar'について詳しくは、*Note Mapping Functions: (elisp)Mapping
+Functions。
+
+関数`one-fiftieth'を使って、
+`list-for-graph'の各要素を1/50にした要素からなるリストを作れる。
+
+     (setq fiftieth-list-for-graph
+           (one-fiftieth list-for-graph))
+
+結果はつぎのようになる。
+
+     (10 20 19 15 11 9 6 5 4 3 3 2 2
+     1 1 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 4)
+
+書くための準備は、これでほとんど整った（情報の欠落があることに注意して
+ほしい。上位の範囲の多くは0であるが、それらの範囲にある単語やシンボルの
+個数の`defun'の数が50より小さいことを意味し、必ずしも`defun'の数が0では
+ない）。
+
+
+
+File: eintr-ja, Node: Another Bug, Next: Final printed graph, Prev: mapcar, Up: Print Whole Graph
+
+別のバグ ... もっとも潜在的 *(2004/08/11)*
+------------------------------------------
+
+「ほとんど整った」といったのは、関数`print-graph'にはバグがあるのである。
+`vertical-step'のオプションはあるが、`horizontal-step'のオプションはな
+い。`top-of-range'は、10間隔で10から300まである。しかし、関数
+`print-graph'は、1ずつ描く。
+
+これは、もっとも潜在的なバグの典型的なものであり、無視したことによるバ
+グである。機能としては存在しないので、コードに書かれておらず、コードを
+調べてもこの種のバグは発見できない。最良の行動は、プログラムを初期の段
+階で何回もテストすることであり、コードを可能な限り理解しやすく変更しや
+すくしておくことである。たとえすぐにではなくても、最終的には、書いたコー
+ドは書き直すことになることを理解しておいてほしい。実行するのは難しい格
+言である。
+
+関数`print-X-axis-numbered-line'を直す必要がある。そして、関数
+`print-X-axis'と`print-graph'も、対応するように直す必要がある。多くを直
+す必要はない。ちょっとしたことが1つである。目盛に数字を合わせるだけであ
+る。これには少々考える必要がある。
+
+つぎに修正した`print-X-axis-numbered-line'を示す。
+
+     (defun print-X-axis-numbered-line
+       (number-of-X-tics X-axis-leading-spaces
+        &optional horizontal-step)
+       "Print line of X-axis numbers"
+       (let ((number X-axis-label-spacing)
+             (horizontal-step (or horizontal-step 1)))
+         (insert X-axis-leading-spaces)
+         ;; まえにある余分な空白を削除する
+         (delete-char
+          (- (1-
+              (length (number-to-string horizontal-step)))))
+         (insert (concat
+                  (make-string
+                   ;; 空白を挿入する
+                   (-  (* symbol-width
+                          X-axis-label-spacing)
+                       (1-
+                        (length
+                         (number-to-string horizontal-step)))
+                       2)
+                   ? )
+                  (number-to-string
+                   (* number horizontal-step))))
+         ;; 残りの数を挿入する
+         (setq number (+ number X-axis-label-spacing))
+         (while (> number-of-X-tics 1)
+           (insert (X-axis-element
+                    (* number horizontal-step)))
+           (setq number (+ number X-axis-label-spacing))
+           (setq number-of-X-tics (1- number-of-X-tics)))))
+
+Infoで読んでいる場合には、新しい版の`print-X-axis'や`print-graph'もある
+ので、これらを評価する。印刷物で読んでいる場合には、変更した行をつぎに
+示してある（コードを全体は多すぎる）。
+
+
+     (defun print-X-axis (numbers-list horizontal-step)
+       "Print X axis labels to length of NUMBERS-LIST.
+     Optionally, HORIZONTAL-STEP, a positive integer,
+     specifies how much an X  axis label increments for
+     each column."
+     ;; Value of symbol-width and full-Y-label-width
+     ;; are passed by `print-graph'.
+       (let* ((leading-spaces
+               (make-string full-Y-label-width ? ))
+             ;; symbol-width は graph-body-print が与える
+            (tic-width (* symbol-width X-axis-label-spacing))
+            (X-length (length numbers-list))
+            (X-tic
+             (concat
+              (make-string
+               ;; 空白文字の文字列を作る
+               (-  (* symbol-width X-axis-label-spacing)
+                   (length X-axis-tic-symbol))
+               ? )
+              ;; 空白を目盛のシンボルに繋げる
+              X-axis-tic-symbol))
+            (tic-number
+             (if (zerop (% X-length tic-width))
+                 (/ X-length tic-width)
+               (1+ (/ X-length tic-width)))))
+
+         (print-X-axis-tic-line
+          tic-number leading-spaces X-tic)
+         (insert "\n")
+         (print-X-axis-numbered-line
+          tic-number leading-spaces horizontal-step)))
+
+     (defun print-graph
+       (numbers-list &optional vertical-step horizontal-step)
+       "Print labelled bar graph of the NUMBERS-LIST.
+     The numbers-list consists of the Y-axis values.
+
+     Optionally, VERTICAL-STEP, a positive integer,
+     specifies how much a Y axis label increments for
+     each line.  For example, a step of 5 means that
+     each row is five units.
+
+     Optionally, HORIZONTAL-STEP, a positive integer,
+     specifies how much an X  axis label increments for
+     each column."
+       (let* ((symbol-width (length graph-blank))
+              ;; `height' は最大の数であり
+              ;; 表示幅がもっとも大きい
+              (height (apply 'max numbers-list))
+              (height-of-top-line
+               (if (zerop (% height Y-axis-label-spacing))
+                   height
+                 ;; そうでなければ
+                 (* (1+ (/ height Y-axis-label-spacing))
+                    Y-axis-label-spacing)))
+              (vertical-step (or vertical-step 1))
+              (full-Y-label-width
+               (length
+                (concat
+                 (number-to-string
+                  (* height-of-top-line vertical-step))
+                 Y-axis-tic))))
+         (print-Y-axis
+          height-of-top-line full-Y-label-width vertical-step)
+         (graph-body-print
+             numbers-list height-of-top-line symbol-width)
+         (print-X-axis numbers-list horizontal-step)))
+
+
+
+
+File: eintr-ja, Node: Final printed graph, Prev: Another Bug, Up: Print Whole Graph
+
+グラフ *(2004/08/10)*
+---------------------
+
+インストールしたら、コマンド`print-graph'をつぎのようにして呼ぶ。
+
+     (print-graph fiftieth-list-for-graph 50 10)
+
+グラフはつぎのとおりである。
+
+
+
+
+     1000 -  *
+             **
+             **
+             **
+             **
+      750 -  ***
+             ***
+             ***
+             ***
+             ****
+      500 - *****
+            ******
+            ******
+            ******
+            *******
+      250 - ********
+            *********                     *
+            ***********                   *
+            *************                 *
+       50 - ***************** *           *
+            |   |    |    |    |    |    |    |
+           10  50  100  150  200  250  300  350
+
+
+
+
+関数のもっとも大きなグループは、10から19個の単語やシンボルを含むもので
+ある。
+
+
+
+File: eintr-ja, Node: GNU Free Documentation License, Next: About the Author, Prev: Full Graph, Up: Top
+
+GNU Free Documentation License *(2004/08/11)*
+*********************************************
+
+                       Version 1.1, March 2000
+
+     Copyright (C) 2000 Free Software Foundation, Inc.
+     59 Temple Place, Suite 330, Boston, MA  02111-1307, USA
+
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+  0. PREAMBLE
+
+     The purpose of this License is to make a manual, textbook, or
+     other written document "free" in the sense of freedom: to assure
+     everyone the effective freedom to copy and redistribute it, with
+     or without modifying it, either commercially or noncommercially.
+     Secondarily, this License preserves for the author and publisher
+     a way to get credit for their work, while not being considered
+     responsible for modifications made by others.
+
+     This License is a kind of "copyleft", which means that derivative
+     works of the document must themselves be free in the same sense.
+     It complements the GNU General Public License, which is a
+     copyleft license designed for free software.
+
+     We have designed this License in order to use it for manuals for
+     free software, because free software needs free documentation: a
+     free program should come with manuals providing the same freedoms
+     that the software does.  But this License is not limited to
+     software manuals; it can be used for any textual work, regardless
+     of subject matter or whether it is published as a printed book.
+     We recommend this License principally for works whose purpose is
+     instruction or reference.
+
+  1. APPLICABILITY AND DEFINITIONS
+
+     This License applies to any manual or other work that contains a
+     notice placed by the copyright holder saying it can be
+     distributed under the terms of this License.  The "Document",
+     below, refers to any such manual or work.  Any member of the
+     public is a licensee, and is addressed as "you".
+
+     A "Modified Version" of the Document means any work containing
+     the Document or a portion of it, either copied verbatim, or with
+     modifications and/or translated into another language.
+
+     A "Secondary Section" is a named appendix or a front-matter
+     section of the Document that deals exclusively with the
+     relationship of the publishers or authors of the Document to the
+     Document's overall subject (or to related matters) and contains
+     nothing that could fall directly within that overall subject.
+     (For example, if the Document is in part a textbook of
+     mathematics, a Secondary Section may not explain any
+     mathematics.)  The relationship could be a matter of historical
+     connection with the subject or with related matters, or of legal,
+     commercial, philosophical, ethical or political position
+     regarding them.
+
+     The "Invariant Sections" are certain Secondary Sections whose
+     titles are designated, as being those of Invariant Sections, in
+     the notice that says that the Document is released under this
+     License.
+
+     The "Cover Texts" are certain short passages of text that are
+     listed, as Front-Cover Texts or Back-Cover Texts, in the notice
+     that says that the Document is released under this License.
+
+     A "Transparent" copy of the Document means a machine-readable
+     copy, represented in a format whose specification is available to
+     the general public, whose contents can be viewed and edited
+     directly and straightforwardly with generic text editors or (for
+     images composed of pixels) generic paint programs or (for
+     drawings) some widely available drawing editor, and that is
+     suitable for input to text formatters or for automatic
+     translation to a variety of formats suitable for input to text
+     formatters.  A copy made in an otherwise Transparent file format
+     whose markup has been designed to thwart or discourage subsequent
+     modification by readers is not Transparent.  A copy that is not
+     Transparent" is called "Opaque".
+
+     Examples of suitable formats for Transparent copies include plain
+     ASCII without markup, Texinfo input format, LaTeX input format,
+     SGML or XML using a publicly available DTD, and
+     standard-conforming simple HTML designed for human modification.
+     Opaque formats include PostScript, PDF, proprietary formats that
+     can be read and edited only by proprietary word processors, SGML
+     or XML for which the DTD and/or processing tools are not
+     generally available, and the machine-generated HTML produced by
+     some word processors for output purposes only.
+
+     The "Title Page" means, for a printed book, the title page
+     itself, plus such following pages as are needed to hold, legibly,
+     the material this License requires to appear in the title page.
+     For works in formats which do not have any title page as such,
+     Title Page" means the text near the most prominent appearance of
+     the work's title, preceding the beginning of the body of the
+     text.
+
+  2. VERBATIM COPYING
+
+     You may copy and distribute the Document in any medium, either
+     commercially or noncommercially, provided that this License, the
+     copyright notices, and the license notice saying this License
+     applies to the Document are reproduced in all copies, and that
+     you add no other conditions whatsoever to those of this License.
+     You may not use technical measures to obstruct or control the
+     reading or further copying of the copies you make or distribute.
+     However, you may accept compensation in exchange for copies.  If
+     you distribute a large enough number of copies you must also
+     follow the conditions in section 3.
+
+     You may also lend copies, under the same conditions stated above,
+     and you may publicly display copies.
+
+  3. COPYING IN QUANTITY
+
+     If you publish printed copies of the Document numbering more than
+     100, and the Document's license notice requires Cover Texts, you
+     must enclose the copies in covers that carry, clearly and
+     legibly, all these Cover Texts: Front-Cover Texts on the front
+     cover, and Back-Cover Texts on the back cover.  Both covers must
+     also clearly and legibly identify you as the publisher of these
+     copies.  The front cover must present the full title with all
+     words of the title equally prominent and visible.  You may add
+     other material on the covers in addition.  Copying with changes
+     limited to the covers, as long as they preserve the title of the
+     Document and satisfy these conditions, can be treated as verbatim
+     copying in other respects.
+
+     If the required texts for either cover are too voluminous to fit
+     legibly, you should put the first ones listed (as many as fit
+     reasonably) on the actual cover, and continue the rest onto
+     adjacent pages.
+
+     If you publish or distribute Opaque copies of the Document
+     numbering more than 100, you must either include a
+     machine-readable Transparent copy along with each Opaque copy, or
+     state in or with each Opaque copy a publicly-accessible
+     computer-network location containing a complete Transparent copy
+     of the Document, free of added material, which the general
+     network-using public has access to download anonymously at no
+     charge using public-standard network protocols.  If you use the
+     latter option, you must take reasonably prudent steps, when you
+     begin distribution of Opaque copies in quantity, to ensure that
+     this Transparent copy will remain thus accessible at the stated
+     location until at least one year after the last time you
+     distribute an Opaque copy (directly or through your agents or
+     retailers) of that edition to the public.
+
+     It is requested, but not required, that you contact the authors
+     of the Document well before redistributing any large number of
+     copies, to give them a chance to provide you with an updated
+     version of the Document.
+
+  4. MODIFICATIONS
+
+     You may copy and distribute a Modified Version of the Document
+     under the conditions of sections 2 and 3 above, provided that you
+     release the Modified Version under precisely this License, with
+     the Modified Version filling the role of the Document, thus
+     licensing distribution and modification of the Modified Version
+     to whoever possesses a copy of it.  In addition, you must do
+     these things in the Modified Version:
+
+       A. Use in the Title Page (and on the covers, if any) a title
+          distinct from that of the Document, and from those of
+          previous versions (which should, if there were any, be
+          listed in the History section of the Document).  You may use
+          the same title as a previous version if the original
+          publisher of that version gives permission.
+
+       B. List on the Title Page, as authors, one or more persons or
+          entities responsible for authorship of the modifications in
+          the Modified Version, together with at least five of the
+          principal authors of the Document (all of its principal
+          authors, if it has less than five).
+
+       C. State on the Title page the name of the publisher of the
+          Modified Version, as the publisher.
+
+       D. Preserve all the copyright notices of the Document.
+
+       E. Add an appropriate copyright notice for your modifications
+          adjacent to the other copyright notices.
+
+       F. Include, immediately after the copyright notices, a license
+          notice giving the public permission to use the Modified
+          Version under the terms of this License, in the form shown
+          in the Addendum below.
+
+       G. Preserve in that license notice the full lists of Invariant
+          Sections and required Cover Texts given in the Document's
+          license notice.
+
+       H. Include an unaltered copy of this License.
+
+       I. Preserve the section entitled "History", and its title, and
+          add to it an item stating at least the title, year, new
+          authors, and publisher of the Modified Version as given on
+          the Title Page.  If there is no section entitled "History"
+          in the Document, create one stating the title, year,
+          authors, and publisher of the Document as given on its Title
+          Page, then add an item describing the Modified Version as
+          stated in the previous sentence.
+
+       J. Preserve the network location, if any, given in the Document
+          for public access to a Transparent copy of the Document, and
+          likewise the network locations given in the Document for
+          previous versions it was based on.  These may be placed in
+          the "History" section.  You may omit a network location for
+          a work that was published at least four years before the
+          Document itself, or if the original publisher of the version
+          it refers to gives permission.
+
+       K. In any section entitled "Acknowledgments" or "Dedications",
+          preserve the section's title, and preserve in the section
+          all the substance and tone of each of the contributor
+          acknowledgments and/or dedications given therein.
+
+       L. Preserve all the Invariant Sections of the Document,
+          unaltered in their text and in their titles.  Section
+          numbers or the equivalent are not considered part of the
+          section titles.
+
+       M. Delete any section entitled "Endorsements".  Such a section
+          may not be included in the Modified Version.
+
+       N. Do not retitle any existing section as "Endorsements" or to
+          conflict in title with any Invariant Section.
+
+     If the Modified Version includes new front-matter sections or
+     appendices that qualify as Secondary Sections and contain no
+     material copied from the Document, you may at your option
+     designate some or all of these sections as invariant.  To do
+     this, add their titles to the list of Invariant Sections in the
+     Modified Version's license notice.  These titles must be distinct
+     from any other section titles.
+
+     You may add a section entitled "Endorsements", provided it
+     contains nothing but endorsements of your Modified Version by
+     various parties--for example, statements of peer review or that
+     the text has been approved by an organization as the
+     authoritative definition of a standard.
+
+     You may add a passage of up to five words as a Front-Cover Text,
+     and a passage of up to 25 words as a Back-Cover Text, to the end
+     of the list of Cover Texts in the Modified Version.  Only one
+     passage of Front-Cover Text and one of Back-Cover Text may be
+     added by (or through arrangements made by) any one entity.  If
+     the Document already includes a cover text for the same cover,
+     previously added by you or by arrangement made by the same entity
+     you are acting on behalf of, you may not add another; but you may
+     replace the old one, on explicit permission from the previous
+     publisher that added the old one.
+
+     The author(s) and publisher(s) of the Document do not by this
+     License give permission to use their names for publicity for or
+     to assert or imply endorsement of any Modified Version.
+
+  5. COMBINING DOCUMENTS
+
+     You may combine the Document with other documents released under
+     this License, under the terms defined in section 4 above for
+     modified versions, provided that you include in the combination
+     all of the Invariant Sections of all of the original documents,
+     unmodified, and list them all as Invariant Sections of your
+     combined work in its license notice.
+
+     The combined work need only contain one copy of this License, and
+     multiple identical Invariant Sections may be replaced with a
+     single copy.  If there are multiple Invariant Sections with the
+     same name but different contents, make the title of each such
+     section unique by adding at the end of it, in parentheses, the
+     name of the original author or publisher of that section if
+     known, or else a unique number.  Make the same adjustment to the
+     section titles in the list of Invariant Sections in the license
+     notice of the combined work.
+
+     In the combination, you must combine any sections entitled
+     History" in the various original documents, forming one section
+     entitled "History"; likewise combine any sections entitled
+     Acknowledgments", and any sections entitled "Dedications".  You
+     must delete all sections entitled "Endorsements."
+
+  6. COLLECTIONS OF DOCUMENTS
+
+     You may make a collection consisting of the Document and other
+     documents released under this License, and replace the individual
+     copies of this License in the various documents with a single
+     copy that is included in the collection, provided that you follow
+     the rules of this License for verbatim copying of each of the
+     documents in all other respects.
+
+     You may extract a single document from such a collection, and
+     distribute it individually under this License, provided you
+     insert a copy of this License into the extracted document, and
+     follow this License in all other respects regarding verbatim
+     copying of that document.
+
+  7. AGGREGATION WITH INDEPENDENT WORKS
+
+     A compilation of the Document or its derivatives with other
+     separate and independent documents or works, in or on a volume of
+     a storage or distribution medium, does not as a whole count as a
+     Modified Version of the Document, provided no compilation
+     copyright is claimed for the compilation.  Such a compilation is
+     called an "aggregate", and this License does not apply to the
+     other self-contained works thus compiled with the Document, on
+     account of their being thus compiled, if they are not themselves
+     derivative works of the Document.
+
+     If the Cover Text requirement of section 3 is applicable to these
+     copies of the Document, then if the Document is less than one
+     quarter of the entire aggregate, the Document's Cover Texts may
+     be placed on covers that surround only the Document within the
+     aggregate.  Otherwise they must appear on covers around the whole
+     aggregate.
+
+  8. TRANSLATION
+
+     Translation is considered a kind of modification, so you may
+     distribute translations of the Document under the terms of
+     section 4.  Replacing Invariant Sections with translations
+     requires special permission from their copyright holders, but you
+     may include translations of some or all Invariant Sections in
+     addition to the original versions of these Invariant Sections.
+     You may include a translation of this License provided that you
+     also include the original English version of this License.  In
+     case of a disagreement between the translation and the original
+     English version of this License, the original English version
+     will prevail.
+
+  9. TERMINATION
+
+     You may not copy, modify, sublicense, or distribute the Document
+     except as expressly provided for under this License.  Any other
+     attempt to copy, modify, sublicense or distribute the Document is
+     void, and will automatically terminate your rights under this
+     License.  However, parties who have received copies, or rights,
+     from you under this License will not have their licenses
+     terminated so long as such parties remain in full compliance.
+
+ 10. FUTURE REVISIONS OF THIS LICENSE
+
+     The Free Software Foundation may publish new, revised versions
+     of the GNU Free Documentation License from time to time.  Such new
+     versions will be similar in spirit to the present version, but may
+     differ in detail to address new problems or concerns.  See
+     `http://www.gnu.org/copyleft/'.
+
+     Each version of the License is given a distinguishing version
+     number.  If the Document specifies that a particular numbered
+     version of this License "or any later version" applies to it, you
+     have the option of following the terms and conditions either of
+     that specified version or of any later version that has been
+     published (not as a draft) by the Free Software Foundation.  If
+     the Document does not specify a version number of this License,
+     you may choose any version ever published (not as a draft) by the
+     Free Software Foundation.
+
+
+

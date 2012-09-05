@@ -1,0 +1,1896 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Standard Syntax Tables, Next: Syntax Table Internals, Prev: Parsing Expressions, Up: Syntax Tables
+
+標準的な構文テーブル
+====================
+
+Emacsのほとんどのメジャーモードにはそれ独自の構文テーブルがあります。そ
+れらのいくつかをつぎに示します。
+
+ -- Function: standard-syntax-table
+     この関数は、基本（fundamental）モードで使用する構文テーブルである
+     標準の構文テーブルを返す。
+
+ -- Variable: text-mode-syntax-table
+     この変数の値は、テキスト（text）モードで使用する構文テーブルである。
+
+ -- Variable: c-mode-syntax-table
+     この変数の値は、Cモードのバッファ向けの構文テーブルである。
+
+ -- Variable: emacs-lisp-mode-syntax-table
+     この変数の値は、編集コマンドがemacs-lispモードで使用する構文テーブ
+     ルである。（これはLispの関数`read'にはなんの効果もない。）
+
+
+
+File: elisp-ja, Node: Syntax Table Internals, Next: Categories, Prev: Standard Syntax Tables, Up: Syntax Tables
+
+構文テーブルの内部
+==================
+
+Lispプログラムでは普通は構文テーブルの要素を直接には操作しません。Lisp
+レベルの構文テーブル関数は、普通は構文記述子（*Note Syntax
+Descriptors::）を操作します。ですが、内部形式を明文化しておきます。
+
+構文テーブルの各要素は、`(SYNTAX-CODE . MATCHING-CHAR)'の
+形のコンスセルです。
+CARのSYNTAX-CODEは、構文クラスと構文フラグを符号化する整数です。
+釣り合う文字を指定してあると、
+CDRのMATCHING-CHARは`nil'以外です。
+
+つぎの表は、各構文クラスに対応するSYNTAX-CODEの値です。
+
+
+    整数 クラス                整数 クラス                整数 クラス
+
+    0 whitespace          5 close parenthesis   10 character quote
+
+    　 白文字                 　 閉じ括弧                　 文字クォート
+
+    1 punctuation         6 expression prefix   11 comment-start
+
+    　 句読点                 　 式前置子                　 コメント開始
+
+    2 word                7 string quote        12 comment-end
+
+    　 単語                  　 文字列クォート             　 コメント終了
+
+    3 symbol              8 paired delimiter    13 inherit
+
+    　 シンボル                　 対になった区切り            　 継承
+
+    4 open parenthesis    9 escape              14 comment-fence
+
+    　 開き括弧                　 エスケープ               　 コメント区切り
+
+    15 string-fence
+
+    　 文字列区切り
+
+たとえば、`('の普通の構文値は、`(4 . 41)'です。（41は`)'の文字コード。）
+
+フラグは、最下位ビットから16番目のビットから始まる上位ビットに符号化し
+ます。つぎの表は、各構文フラグとそれに対応する2の巾です。
+
+
+    フラグ 2の巾               フラグ 2の巾               フラグ 2の巾
+
+    `1' `(lsh 1 16)'      `3' `(lsh 1 18)'      `p' `(lsh 1 20)'
+
+    `2' `(lsh 1 17)'      `4' `(lsh 1 19)'      `b' `(lsh 1 21)'
+
+
+
+File: elisp-ja, Node: Categories, Prev: Syntax Table Internals, Up: Syntax Tables
+
+カテゴリ
+========
+
+"カテゴリ"（category）は、文字を構文的に分類する別の方法です。必要に応
+じて複数のカテゴリを定義できて、そうすると各文字に1つか複数のカテゴリを
+独立に設定できます。構文クラスと異なり、カテゴリは互いに排他的ではあり
+ません。1つの文字が複数のカテゴリに属することは普通にあります。
+
+各バッファには"カテゴリテーブル"（category table）があり、どのカテゴリ
+が定義済みでどの文字がどのカテゴリに属するかを記録しています。各カテゴ
+リテーブルはそれ独自のカテゴリ群を定義しますが、それらは標準のカテゴリ
+テーブルをコピーして普通は初期化されます。そのため、すべてのモードで標
+準のカテゴリを使えます。
+
+各カテゴリには名前があり、それは` 'から`~'までの
+範囲のASCII印字文字です。
+`define-category'でカテゴリを定義するときにその名前を指定します。
+
+カテゴリテーブルは実際には文字テーブル（*Note Char-Tables::）です。カテ
+ゴリテーブルの添字Cの要素は、"カテゴリ集合"（category set）です。これは
+ブールベクトルであり、文字Cが属するカテゴリ群を表します。このカテゴリ集
+合において、添字CATの要素が`t'であると、CATは集合の要素であることを意味
+し、当該文字CはカテゴリCATに属することを意味します。
+
+ -- Function: define-category CHAR DOCSTRING &optional TABLE
+     この関数は、名前をCHAR、説明文字列をDOCSTRINGとして新たなカテゴリ
+     を定義する。
+
+     新たなカテゴリは、カテゴリテーブルTABLEに対して定義される。
+     TABLEのデフォルトは、カレントバッファのカテゴリテーブルである。
+
+ -- Function: category-docstring CATEGORY &optional TABLE
+     この関数は、カテゴリテーブルTABLEのカテゴリCATEGORYの説明文字列を
+     返す。
+
+          (category-docstring ?a)
+               => "ASCII"
+          (category-docstring ?l)
+               => "Latin"
+
+ -- Function: get-unused-category TABLE
+     この関数は、カテゴリテーブルTABLEで現在定義されていない
+     新たなカテゴリ名（文字）を返す。
+     TABLEにおいて可能なすべてのカテゴリが使用済みであると`nil'を返す。
+
+ -- Function: category-table
+     この関数は、カレントバッファのカテゴリテーブルを返す。
+
+ -- Function: category-table-p OBJECT
+     この関数は、OBJECTがカテゴリテーブルであると`t'を返し、さもなけれ
+     ば`nil'を返す。
+
+ -- Function: standard-category-table
+     この関数は、標準のカテゴリテーブルを返す。
+
+ -- Function: copy-category-table &optional TABLE
+     この関数は、カテゴリテーブルTABLEのコピーを作成しそれを返す。
+     TABLEを指定しない（あるいは`nil'）と、
+     現在のカテゴリテーブルのコピーを返す。
+     TABLEがカテゴリテーブルでないとエラーを通知する。
+
+ -- Function: set-category-table TABLE
+     この関数は、カレントバッファのカテゴリテーブルをTABLEとする。
+     TABLEを返す。
+
+ -- Function: make-category-set CATEGORIES
+     この関数は、新たなカテゴリ集合、つまり、文字列CATEGORIESに指定した
+     カテゴリで内容を初期化したブールベクトルを返す。CATEGORIESの要素は
+     カテゴリ名であること。新たなカテゴリ集合では、CATEGORIESの各カテゴ
+     リに対しては`t'をそれ以外のカテゴリに対しては`nil'を設定する。
+
+          (make-category-set "al")
+               => #&128"\0\0\0\0\0\0\0\0\0\0\0\0\2\20\0\0"
+
+ -- Function: char-category-set CHAR
+     この関数は、文字CHARに対するカテゴリ集合を返す。これは、文字CHARが
+     属するカテゴリ群を記録したブールベクトルである。関数
+     `char-category-set'は、カテゴリテーブルに存在する同じブールベクト
+     ルを返すため、新たな領域を割り付けない。
+
+          (char-category-set ?a)
+               => #&128"\0\0\0\0\0\0\0\0\0\0\0\0\2\20\0\0"
+
+ -- Function: category-set-mnemonics CATEGORY-SET
+     この関数は、カテゴリ集合CATEGORY-SETをこの集合に属するすべてのカテ
+     ゴリの名前からなる文字列に変換する。
+
+          (category-set-mnemonics (char-category-set ?a))
+               => "al"
+
+ -- Function: modify-category-entry CHARACTER CATEGORY &optional TABLE RESET
+     この関数は、カテゴリテーブルTABLE（デフォルトはカレントバッファの
+     カテゴリテーブル）内の文字CHARACTERのカテゴリ集合を変更する。
+
+     普通、カテゴリ集合にCATEGORYを追加して変更する。しかし、RESETが
+     `nil'以外であるとCATEGORYを削除する。
+
+
+File: elisp-ja, Node: Abbrevs, Next: Processes, Prev: Syntax Tables, Up: Top
+
+略語と略語の展開 *(2003/10/30)*
+*******************************
+
+"略語"(abbrev) とは、より長い文字列へ展開される文字の列のことです。ユー
+ザーが略語の文字列を挿入すると、その展開形に自動的に置換されます。これ
+により打鍵量を省けます。
+
+現在有効な略語の集まりは、"略語表"(abbrev table) に記録されています。各
+バッファにはローカルな略語表がありますが、通常、同じメジャーモードのす
+べてのバッファは 1 つの略語表を共有します。グローバルな略語表もあります。
+通常、両方を使います。
+
+略語表は、各略語に対するシンボルを収めたオブジェクト配列として表現されます。
+シンボルの名前が略語です。
+その値は展開形であり、その関数定義は展開を行うフック関数です。
+その属性リストのセルには略語を展開した回数である利用回数が入ります。
+それらのシンボルは、通常のオブジェクト配列にはインターンされませんから、
+Lisp 式を読み取った結果には、それらはけっして現れません。
+実際、略語を扱うコード以外では、それらはけっして使われません。
+したがって、それらをかなり非標準的に使っても安全です。
+*Note Creating Symbols::。
+
+ユーザーレベルの略語コマンドについては、
+*Note 略語の利用法: (emacs)Abbrevsを参照してください。
+
+* Menu:
+
+* Abbrev Mode::                 Setting up Emacs for abbreviation.
+* Tables: Abbrev Tables.        Creating and working with abbrev tables.
+* Defining Abbrevs::            Specifying abbreviations and their expansions.
+* Files: Abbrev Files.          Saving abbrevs in files.
+* Expansion: Abbrev Expansion.  Controlling expansion; expansion subroutines.
+* Standard Abbrev Tables::      Abbrev tables used by various major modes.
+
+
+
+File: elisp-ja, Node: Abbrev Mode, Next: Abbrev Tables, Prev: Abbrevs, Up: Abbrevs
+
+略語 (abbrev) モードの設定 *(2003/10/30)*
+=========================================
+
+略語 (abbrev) モードは、変数`abbrev-mode'の値で制御されるマイナモードで
+す。
+
+ -- Variable: abbrev-mode
+     この変数の値が`nil'以外であると、バッファに略語が挿入されると自動
+     的に展開するようになる。値が`nil'であると、略語を定義することはで
+     きるが、自動的には展開されない。
+
+     この変数は設定されると自動的にバッファローカルになる。
+
+ -- Variable: default-abbrev-mode
+     これは、`abbrev-mode'を上書きしていないバッファ向けの
+     `abbrev-mode'の値である。これは`(default-value 'abbrev-mode)'と同
+     じである。
+
+
+
+File: elisp-ja, Node: Abbrev Tables, Next: Abbrev Files, Prev: Abbrevs, Up: Abbrevs
+
+略語表 *(2003/10/30)*
+=====================
+
+本節では、略語表の作成方法と扱い方について述べます。
+
+ -- Function: make-abbrev-table
+     この関数は、新たな空の略語表、つまり、シンボルを含まないオブジェク
+     ト配列を作成して返す。この値はゼロで埋められたベクトルである。
+
+ -- Function: clear-abbrev-table TABLE
+     この関数は、略語表TABLE内のすべての略語を未定義にして略語表を空に
+     する。関数はいつも`nil'を返す。
+
+ -- Function: define-abbrev-table TABNAME DEFINITIONS
+     この関数は、TABNAME(シンボル) を略語表の名前として定義する。つまり、
+     この変数としての値は略語表になる。DEFINITIONSに従って略語表に略語
+     を定義する。ここで、DEFINITIONSは`(ABBREVNAME EXPANSION HOOK
+     USECOUNT)'の形の要素から成るリストである。戻り値はつねに`nil'であ
+     る。
+
+ -- Variable: abbrev-table-name-list
+     その値が略語表であるシンボルのリストである。
+     `define-abbrev-table'は、新たな略語表の名前をこのリストに追加する。
+
+ -- Function: insert-abbrev-table-description NAME &optional HUMAN
+     この関数は、NAMEで指名される略語表の記述をポイントのまえに挿入する。
+     引数NAMEは、その値が略語表であるシンボルである。戻り値はつねに
+     `nil'である。
+
+     HUMANが`nil'以外であると、この記述は人間向けである。
+     さもなければ、この記述は Lisp 式、つまり、
+     NAMEの現在の定義どおりにNAMEを定義するような
+     `define-abbrev-table'の呼び出しである。
+
+
+
+File: elisp-ja, Node: Defining Abbrevs, Next: Abbrev Files, Prev: Abbrev Tables, Up: Abbrevs
+
+略語を定義する *(2003/10/30)*
+=============================
+
+これらの関数は、指定した略語表に略語を定義します。
+`define-abbrev'は下位レベルの基本的な関数ですが、
+`add-abbrev'はユーザーに情報を問い合わせるコマンドが使います。
+
+ -- Function: add-abbrev TABLE TYPE ARG
+     この関数は、ユーザーからの情報に基づいて略語表TABLEに略語を追加す
+     る。引数TYPEは、この略語の種類を英語で表した文字列である(典型的に
+     は、`"global"'や`"mode-specific"'。) この文字列はユーザーへのプロ
+     ンプトに使われる。引数ARGは、展開形の単語数である。
+
+     戻り値は、新たな略語を内部的に表現するシンボルであるか、既存の略語
+     を再定義することをユーザーが拒否したときには`nil'である。
+
+ -- Function: define-abbrev TABLE NAME EXPANSION &optional HOOK COUNT
+     略語 (NAME) をEXPANSIONに展開し，HOOKを呼び出すように定義する。ま
+     た，オプションであるCOUNTの値は abbrev での展開回数の初期値となる．
+     指定されなければ 0 となる．
+
+     戻り値は、 Emacs 内部で略語を表現するシンボルを返すが、その名前は
+     NAMEである。
+
+     引数NAMEは文字列であること。引数EXPANSIONは、普通は、目的の展開形
+     (文字列) であるが、略語を未定義にするには`nil'である。これが文字列
+     でも`nil'でもなければ、略語を『展開する』ときにはHOOKだけを実行す
+     る。
+
+     引数HOOKは、関数か`nil'である。HOOKが`nil'以外であると、略語を
+     EXPANSIONに置換し終えてから引数なしで呼ばれる。HOOKが呼ばれるとき
+     には、ポイントはEXPANSIONの直後に置かれる。
+
+     略語の利用回数は 0 に初期化される。
+
+ -- User Option: only-global-abbrevs
+     この変数が`nil'以外であると、ユーザーはグローバルな略語だけを使う
+     意図があることを表す。モード固有の略語を定義するコマンドに対して、
+     グローバルな略語を定義するように指示する。この変数は本節の関数のふ
+     るまいを変えることはないが、それらを呼び出す側でこの変数を検査して
+     いる。
+
+
+
+File: elisp-ja, Node: Abbrev Files, Prev: Abbrev Tables, Up: Abbrevs
+
+略語をファイルに保存する *(2003/10/30)*
+=======================================
+
+略語定義を保存したファイルは、実際には、 Lisp コードのファイルです。略
+語は、同じ内容の同じ略語表を定義する Lisp プログラムの形で保存されます。
+したがって、ファイルは`load'(*Note How Programs Do Loading::) でロード
+できます。しかし、関数`quietly-read-abbrev-file'がより便利なインターフェ
+イスを提供します。
+
+`save-some-buffers'などのユーザーレベルの機能では、ここに述べた変数の制
+御のもとで、略語をファイルに自動的に保存できます。
+
+ -- User Option: abbrev-file-name
+     これは、略語を読み込んだり保存するデフォルトのファイル名である。
+
+ -- Function: quietly-read-abbrev-file &optional FILENAME
+     この関数は、`write-abbrev-file'で書いておいた
+     ファイルFILENAMEから、略語定義を読み取る。
+     FILENAMEが省略されるか，`nil'であると、
+     `abbrev-file-name'で指定されるファイルを使う。
+     `save-abbrevs'に`t'を設定して、変更は保存されるようにする。
+
+     この関数はいっさいメッセージを表示しない。
+     `nil'を返す。
+
+ -- User Option: save-abbrevs
+     `save-abbrev'が`nil'以外の値であると、
+     Emacs はファイルを保存するときに略語も保存する。
+     `abbrev-file-name'が略語を保存するファイルを指定する。
+
+ -- Variable: abbrevs-changed
+     略語を定義したり変更すると、この変数は`nil'以外に設定される。これ
+     は、読者の略語を保存する機会を与えるために、Emacs のさまざまなコマ
+     ンドに対するフラグとして働く。
+
+ -- コマンド: write-abbrev-file &optional FILENAME
+     ロードすると同じ略語を定義するような Lisp プログラムの形で、ファイ
+     ルFILENAMEにすべての略語表のすべての略語定義を保存する。もしファイ
+     ル名 (FILENAME) が省略されるか nil であると，`abbrev-file-name'で
+     設定したファイルに保存される．また，この関数は`nil'を返す。
+
+
+
+File: elisp-ja, Node: Abbrev Expansion, Prev: Abbrev Files, Up: Abbrevs
+
+略語の探索と展開 *(2003/10/30)*
+===============================
+
+通常、略語は、`self-insert-command'を含む特定の対話的なコマンドによって
+展開されます。本節では、データのやりとりに使う変数に加えて、そのような
+コマンドを書くために使用するサブルーティンについて述べます。
+
+ -- Function: abbrev-symbol ABBREV &optional TABLE
+     この関数は、名前ABBREVの略語を表すシンボルを返す。そのような略語が
+     定義されていなければ、戻り値は`nil'である。省略可能な第 2 引数
+     TABLEは、探索対象の略語表である。TABLEが`nil'であると、この関数は、
+     まずカレントバッファのローカルな略語表を試し、つぎにグローバルな略
+     語表を試す。
+
+ -- Function: abbrev-expansion ABBREV &optional TABLE
+     この関数は、ABBREVが(カレントバッファで使用される略語表での定義ど
+     おりに) 展開されるであろう文字列を返す。省略可能な引数TABLEは、
+     `abbrev-symbol'と同様に、使用する略語表を指定する。
+
+ -- コマンド: expand-abbrev
+     このコマンドは、ポイントのまえの略語をあれば展開する。略語の直後に
+     ポイントがない場合、このコマンドはなにもしない。このコマンドは、展
+     開を行えば展開前の文字を返し、さもなければ`nil'を返す。
+
+
+ -- コマンド: abbrev-prefix-mark &optional ARG
+     現在のポイント位置を略語の開始位置としてマークする。つぎに
+     `expand-abbrev'を呼び出すと、通常どおりにポイントのまえの単語を使
+     うかわりに、ここから (その時点での) ポイントまでのテキストを略語と
+     して展開する。
+
+ -- User Option: abbrev-all-caps
+     これが`nil'以外であると、大文字だけで入力された略語を大文字だけで
+     展開する。さもなければ、大文字だけで入力された略語は、展開形の各単
+     語を大文字で始めるように展開される。
+
+ -- Variable: abbrev-start-location
+     これは、`expand-abbrev'がつぎに展開する略語の開始位置として使うバッ
+     ファ内位置である。(`nil'であると、そのかわりにポイントのまえの単語
+     を使う意味である。) `expand-abbrev'が呼び出されるたびに、
+     `abbrev-start-location'は`nil'に設定される。この変数は、
+     `abbrev-prefix-mark'でも設定される。
+
+ -- Variable: abbrev-start-location-buffer
+     この変数の値は、`abbrev-start-location'が設定されたバッファである。
+     別のバッファで略語を展開しようとすると`abbrev-start-location'はク
+     リアされる。この変数は`abbrev-prefix-mark'が設定する。
+
+ -- Variable: last-abbrev
+     これは、もっとも最近に略語展開された`abbrev-symbol' (略語を表すシ
+     ンボル) である。この情報は、コマンド`unexpand-abbrev'向けに
+     `expand-abbrev'が残す(*Note 略語展開の制御: (emacs)Expanding
+     Abbrevs.)  。
+
+ -- Variable: last-abbrev-location
+     これは、もっとも最近に略語展開した箇所である。
+     これは、コマンド`unexpand-abbrev'向けに
+     `expand-abbrev'が残した情報を保持する。
+
+ -- Variable: last-abbrev-text
+     これは、もっとも最近に略語展開したときの (あれば) 大文字小文字変換後の
+     展開形のテキストである。
+     略語展開を取り消すと、この値は`nil'である。
+     これは、コマンド`unexpand-abbrev'向けに
+     `expand-abbrev'が残した情報を保持する。
+
+ -- Variable: pre-abbrev-expand-hook
+     これは、任意の略語を展開する直前に順に実行される関数を収めたノーマ
+     ルフックである。*Note Hooks::。ノーマルフックなので、フック関数は
+     引数を受け取らない。しかし、バッファでポイントのまえを調べることで
+     展開すべき略語をみつけることができる。また，このフックは
+     `expand-abbrev'が実行する最初の処理であるため，展開される語を探す
+     前に現在の展開表を変更することもできる．
+
+以下のコード例は、`pre-abbrev-expand-hook'の使い方を示します。ユーザー
+が略語を句読点文字で終えると、フック関数が確認を求めます。したがって、
+このフックにより、ユーザーは展開の可否を決定でき、了承しなかったときに
+は展開を止められます。
+
+     (add-hook 'pre-abbrev-expand-hook 'query-if-not-space)
+
+     ;; この関数は、`pre-abbrev-expand-hook'が起動する
+
+     ;; ユーザーが略語を空白で終えると、この関数はなにもしない
+     ;; (つまり、略語を展開できるように戻る)
+     ;; ユーザーがその他の文字を入力したら、
+     ;; この関数は展開するかどうかを問い合わせる
+
+     ;; ユーザーがプロンプトにyで答えたら、
+     ;; (関数`not'を使っているので) この関数は`nil'を返すが
+     ;; 問題ない。戻り値は展開には影響しない
+
+     (defun query-if-not-space ()
+       (if (/= ?\  (preceding-char))
+           (if (not (y-or-n-p "Do you want to expand this abbrev? "))
+               (error "Not expanding this abbrev"))))
+
+
+
+File: elisp-ja, Node: Standard Abbrev Tables, Prev: Abbrev Files, Up: Abbrevs
+
+標準の略語表 *(2003/10/30)*
+===========================
+
+Emacs にあらかじめロードされるメジャーモード向けの略語表を保持する変数
+一覧を示します。
+
+ -- Variable: global-abbrev-table
+     これは、モードに依存しない略語向けの略語表である。これに定義された
+     略語は、すべてのバッファに適用される。各バッファにはローカルな略語
+     表もあり、それらの略語定義はグローバルな略語表の略語定義に優先する。
+
+ -- Variable: local-abbrev-table
+     このバッファローカルな変数の値はカレントバッファの (モード固有の)
+     略語表である。
+
+ -- Variable: fundamental-mode-abbrev-table
+     これは、基本 (fundamental) モードで使われるローカルな略語表である。
+     いいかえれば、基本 (fundamental) モードであるすべてのバッファのロー
+     カルな略語表である。
+
+ -- Variable: text-mode-abbrev-table
+     これは、テキスト (text) モードで使われるローカルな略語表である。
+
+ -- Variable: lisp-mode-abbrev-table
+     これは、 lisp モードと emacs-lisp モードで使われるローカルな略語表
+     である。
+
+
+
+File: elisp-ja, Node: Processes, Next: Display, Prev: Abbrevs, Up: Top
+
+プロセス
+********
+
+オペレーティングシステムの用語では、"プロセス"（process）とは、プログラ
+ムを実行する空間のことです。Emacsはプロセスとして動いています。Emacs
+Lispのプログラムでは、独自のプロセスとして他のプログラムを起動できます。
+それらは、Emacsプロセスの"サブプロセス"（subprocess）とか"子プロセス
+（child process）と呼ばれ、Emacsプロセスはそれらの"親プロセス"（parent
+process）です。
+
+Emacsのサブプロセスは、それを作成する方法に依存して、"同期
+（synchronous）であるか"非同期"（asynchronous）です。同期サブプロセスを
+作成すると、Lispプログラムは実行を継続するまえにそのサブプロセスの終了
+を待ちます。非同期サブプロセスを作成すると、それはLispプログラムと並行
+して動作します。この種のサブプロセスは、Emacs内部ではやはり『プロセス』
+と呼ばれるLispオブジェクトで表現されます。Lispプログラムはこのオブジェ
+クトを用いてサブプロセスと通信したりそれを制御できます。たとえば、シグ
+ナルを送ったり、状態情報を取得したり、プロセスからの出力を受け取ったり、
+プロセスへ入力を送れます。
+
+ -- Function: processp OBJECT
+     この関数は、OBJECTがプロセスであれば`t'を返し、さもなければ`nil'を
+     返す。
+
+* Menu:
+
+* Subprocess Creation::      Functions that start subprocesses.
+* Shell Arguments::          Quoting an argument to pass it to a shell.
+* Synchronous Processes::    Details of using synchronous subprocesses.
+* Asynchronous Processes::   Starting up an asynchronous subprocess.
+* Deleting Processes::       Eliminating an asynchronous subprocess.
+* Process Information::      Accessing run-status and other attributes.
+* Input to Processes::       Sending input to an asynchronous subprocess.
+* Signals to Processes::     Stopping, continuing or interrupting
+                               an asynchronous subprocess.
+* Output from Processes::    Collecting output from an asynchronous subprocess.
+* Sentinels::                Sentinels run when process run-status changes.
+* Transaction Queues::	     Transaction-based communication with subprocesses.
+* Network::                  Opening network connections.
+
+
+
+File: elisp-ja, Node: Subprocess Creation, Next: Shell Arguments, Prev: Processes, Up: Processes
+
+サブプロセス作成関数
+====================
+
+プログラムを実行するために新たなサブプロセスを作る関数が3つあります。そ
+の1つ`start-process'は、非同期プロセスを作成してプロセスオブジェクトを
+返します（*Note Asynchronous Processes::）。残りの2つ、`call-process'と
+`call-process-region'は同期プロセスを作成しますが、プロセスオブジェクト
+は返しません（*Note Synchronous Processes::）。
+
+同期／非同期プロセスについては以下の節に述べます。3つの関数の呼び出し方
+は類似しているので、ここではそれらに共通な引数について述べます。
+
+いずれの場合でも、関数の引数PROGRAMは、実行すべきプログラムを指定します。
+そのファイルがみつからなかったり実行できないと、エラーを通知します。ファ
+イル名が相対名であると、変数`exec-path'は探索すべきディレクトリのリスト
+を保持しています。Emacsは起動時に環境変数`PATH'の値に基づいて
+`exec-path'を初期化します。`~'、`.'、`..'のファイル名の標準的な書き方は、
+`exec-path'でも普通どおりに解釈されますが、（`$HOME'などの）環境変数の
+置換は認識しません。それには`substitute-in-file-name'を使います（*Note
+File Name Expansion::）。
+
+サブプロセスを作成する各関数には、プログラムの標準出力の受け取り場所を
+指定する引数BUFFER-OR-NAMEがあります。これはバッファかバッファ名である
+必要があります。バッファ名であると、そのバッファが既存でなければ新たに
+作成します。`nil'でもかまいませんが、その場合、フィルタ関数で処理しない
+限り出力を破棄します。（*Note Filter Functions::と*Note Read and
+Print::）。通常、複数のプロセスの出力を同じバッファへは送らないようにし
+ます。それらの出力がでたらめに混ざってしまうからです。
+
+サブプロセスを作成する3つの関数すべてに、`&rest'引数であるARGSがありま
+す。ARGSはすべてが文字列である必要があり、それぞれを区切ってコマンド行
+引数としてPROGRAMに与えられます。引数全体を指定されたプログラムへ直接渡
+すため、これらの引数ではワイルドカード文字や他のシェル構文の特別な意味
+はありません。
+
+*注意*：` '引数PROGRAMにはプログラムの名前だけを指定し、コマンド行引数
+はいっさい指定しない。コマンド行引数はARGSで与えること。
+
+サブプロセスのカレントディレクトリは
+`default-directory'の値で決まります（*Note File Name Expansion::）。
+
+サブプロセスはEmacsから環境変数を継承しますが、
+優先するものを`process-environment'で指定できます。
+*Note System Environment::。
+
+ -- Variable: exec-directory
+     この変数の値は、Emaccsが起動することを意図したGNU Emacsとともに配
+     布されたプログラム群を収めたディレクトリ名（文字列）である。プログ
+     ラム`movemail'はそのようなプログラムの例であり、inboxから新たなメ
+     イルを取り出すためにrmailが利用する。
+
+ -- User Option: exec-path
+     この変数の値は、サブプロセスで実行するプログラムを探索するディレク
+     トリのリストである。各要素はディレクトリ名（文字列）であるか、デフォ
+     ルトディレクトリ（つまり`default-directory'の値）を意味する`nil'で
+     ある。
+
+     引数PROGRAMが絶対ファイル名でないと、
+     `call-process'と`start-process'は
+     `exec-path'の値を使う。
+
+
+
+File: elisp-ja, Node: Shell Arguments, Next: Synchronous Processes, Prev: Subprocess Creation, Up: Processes
+
+シェル引数
+==========
+
+Lispプログラムから、ユーザーが指定したファイル名を含んだコマンドを指定
+してシェルを実行する必要がときどきあります。これらのプログラムでは、任
+意の正しいファイル名を扱える必要があります。しかし、シェルは、特定の文
+字がファイル名として現れると特別に扱うので、そのような文字がシェルに混
+乱をもたらします。そのような文字を扱うには、関数`shell-quote-argument'
+を使います。
+
+ -- Function: shell-quote-argument ARGUMENT
+     この関数は、ARGUMENTを実際の内容とするシェル構文で表した引数を文字
+     列で返す。この戻り値をシェルコマンドに連結し、実行のためにシェルに
+     渡しても問題を生じないはずである。
+
+     この関数が行うことの詳細は読者のオペレーティングシステムに依存する。
+     この関数は通常のシェル構文に合うように設計してある。非標準のシェル
+     を使う場合には、この関数を再定義する必要があろう。MS-DOSでは、この
+     関数はARGUMENTを無変更で返す。MS-DOSのシェルにはクォートの機能がな
+     いため、これは本当は正しいことではないが最良のことである。
+
+          ;; つぎの例はGNUとUNIXシステムのふるまいである
+          (shell-quote-argument "foo > bar")
+               => "foo\\ \\>\\ bar"
+
+     シェルコマンドを作る`shell-quote-argument'の使用例をつぎに示す。
+
+          (concat "diff -c "
+                  (shell-quote-argument oldfile)
+                  " "
+                  (shell-quote-argument newfile))
+
+
+
+File: elisp-ja, Node: Synchronous Processes, Next: Asynchronous Processes, Prev: Shell Arguments, Up: Processes
+
+同期プロセスの作成
+==================
+
+"同期プロセス"（synchronous process）を作成すると、Emacsは実行を続行す
+るまえにそのプロセスが終了するのを待ちます。diredはその例です。`ls'を同
+期プロセスで実行し、その出力を少々修正します。プロセスは同期なので、
+Emacsがなにかを行おうとするまえにディレクトリ一覧全部がバッファに届きま
+す。
+
+Emacsは同期サブプロセスの終了を待ちますが、
+ユーザーは`C-g'と打って中断できます。
+`C-g'はまずシグナル`SIGINT'でサブプロセスをキルしようとしますが、
+中断を完了するまえにサブプロセスが終了するのを待ちます。
+その期間にユーザーがさらに`C-g'を打つと、
+`SIGKILL'でサブプロセスを即座にキルし、ただちに中断を完了します。
+*Note Quitting::。
+
+同期サブプロセス作成関数は、そのプロセスがどのように終了したかを表すも
+のを返します。
+
+同期サブプロセスからの出力は、ファイルから読むテキストと同様に、
+コーディングシステムを用いて一般には復号化します。
+`call-process-region'がサブプロセスへ送る入力は、
+ファイルへ書くテキストと同様に、
+コーディングシステムを用いて符号化します。
+*Note Coding Systems::。
+
+ -- Function: call-process PROGRAM &optional INFILE DESTINATION DISPLAY &rest ARGS
+     この関数は、別のプロセスでPROGRAMを呼び出し、それが終了するのを待
+     つ。
+
+     INFILEが`nil'でなければプロセスへの標準入力はINFILEであるが、さも
+     なければ`/dev/null'である。引数DESTINATIONでプロセスの出力先をつぎ
+     のように指定する。
+
+     バッファ
+          このバッファのポイントのまえに出力を挿入する。これにはプロセ
+          スの標準出力と標準エラーの両者を含む。
+
+     文字列
+          文字列で指定した名前のバッファのポイントのまえに出力を挿入す
+          る。
+
+     `t'
+          カレントバッファのポイントのまえに出力を挿入する。
+
+     `nil'
+          出力を破棄する。
+
+     0
+          出力を破棄し、サブプロセスの終了を待たずにただちに戻る。
+
+          この場合、このプロセスはEmacsと並行して動作するので真のサブプ
+          ロセスではない。しかし、この関数から戻るとEmacsはサブプロセス
+          の処理を本質的には終えたという意味で同期プロセスと考えること
+          ができる。
+
+     `(REAL-DESTINATION ERROR-DESTINATION)'
+          標準出力と標準エラーを分離し、REAL-DESTINATIONの指定に従って
+          通常の出力を扱い、ERROR-DESTINATIONに従ってエラー出力を処理す
+          る。ERROR-DESTINATIONが`nil'であるとエラー出力を破棄し、`t'で
+          あると通常の出力に混ぜ、文字列であるとその名前のファイルにエ
+          ラー出力を振り向ける。
+
+          エラー出力を入れるバッファを直接に指定することはできない。そ
+          れを実装するのは難しすぎる。しかし、エラー出力を一時ファイル
+          へ送ってからそのファイルをバッファに挿入すれば、同じ効果を得
+          られる。
+
+     DISPLAYが`nil'以外であると、`call-process'は、出力が挿入されるとバッ
+     ファを再表示する。（しかし、コーディングシステムとして実際のデータ
+     からコーディングシステムを推定する`undecided'を指定していると、非
+     ASCII文字に出会うと再表示を継続できない場合もある。これを修正する
+     のが困難である根本的な理由がある。）さもなければ、関数
+     `call-process'は再表示しないので、Emacsが通常の過程でそのバッファ
+     を再表示するまでは、スクリーン上で結果は見えない。
+
+     残りの引数ARGSは、プログラムに対するコマンド行引数を指定する文字列
+     である。
+
+     （待たないように指示しない限り）`call-process'が返す値は、
+     プロセスの終了理由を表す。
+     数でサブプロセスの終了状態を表し、
+     0は成功、それ以外の値は失敗を意味する。
+     プロセスがシグナルで終了すると、
+     `call-process'はシグナルを記述する文字列を返す。
+
+     つぎの例では、バッファ`foo'がカレントである。
+
+          (call-process "pwd" nil t)
+               => nil
+
+          ---------- Buffer: foo ----------
+          /usr/user/lewis/manual
+          ---------- Buffer: foo ----------
+
+          (call-process "grep" nil "bar" nil "lewis" "/etc/passwd")
+               => nil
+
+          ---------- Buffer: bar ----------
+          lewis:5LTsHm66CSWKg:398:21:Bil Lewis:/user/lewis:/bin/csh
+
+          ---------- Buffer: bar ----------
+
+     `insert-directory'の定義にある`call-process'のよい使用例をつぎに示
+     す。
+
+          (call-process insert-directory-program nil t nil SWITCHES
+                        (if full-directory-p
+                            (concat (file-name-as-directory file) ".")
+                          file))
+
+ -- Function: call-process-region START END PROGRAM &optional DELETE DESTINATION DISPLAY &rest ARGS
+     この関数は、PROGRAMを動かすプロセスの標準入力としてSTARTとENDのあ
+     いだのテキストを送る。DELETEが`nil'以外であると、送ったテキストを
+     削除する。これは、カレントバッファに送った入力のかわりに出力を挿入
+     することを意味するDESTINATIONが`t'であるときに有用である。
+
+     引数DESTINATIONとDISPLAYは、サブプロセスからの出力をどのように扱い、
+     出力か到着するたびに表示を更新するかどうかを制御する。詳しくは、上
+     記の`call-process'の記述を参照。DESTINATIONが整数0であると、
+     `call-process-region'は、サブプロセスの終了を待たずに出力を破棄し
+     てただちに`nil'を返す。
+
+     残りの引数ARGSは、プログラムに対するコマンド行引数を指定する文字列
+     である。
+
+     `call-process-region'の戻り値は`call-process'と同様であり、待たず
+     に戻るように指示すると`nil'であり、さもなければサブプロセスの終了
+     状態を表す数か文字列である。
+
+     つぎの例では、バッファ`foo'の始めの5文字（単語`input'）を標準入力
+     としてユーティリティ`cat'を実行するために`call-process-region'を使
+     う。`cat'は、標準入力を標準出力へコピーする。引数DESTINATIONが`t'
+     であるので、出力はカレントバッファに挿入される。
+
+          ---------- Buffer: foo ----------
+          input-!-
+          ---------- Buffer: foo ----------
+
+          (call-process-region 1 6 "cat" nil t)
+               => nil
+
+          ---------- Buffer: foo ----------
+          inputinput-!-
+          ---------- Buffer: foo ----------
+
+     コマンド`shell-command-on-region'は、つぎのように
+     `call-process-region'を使う。
+
+          (call-process-region
+           start end
+           shell-file-name      ; プログラムの名前
+           nil                  ; リージョンを削除しない
+           buffer               ; 出力は`buffer'へ入れる
+           nil                  ; 出力中は再表示しない
+           "-c" command)        ; シェルに対する引数
+
+ -- Function: shell-command-to-string COMMAND
+     この関数は、シェルコマンドとしてCOMMAND（文字列）を実行し、コマン
+     ドの出力を文字列として返す。
+
+
+
+File: elisp-ja, Node: Asynchronous Processes, Next: Deleting Processes, Prev: Synchronous Processes, Up: Processes
+
+非同期プロセスの作成
+====================
+
+"非同期プロセス"を作成すると、Emacsとサブプロセスの両者はただちに動作を
+継続します。そしてプロセスはEmacsと並行に動作し、両者は以下の節に述べる
+関数を用いて互いに通信できます。しかし、通信は部分的に非同期です。特定
+の関数を呼び出したときにだけEmacsはプロセスへデータを送り、Emacsが入力
+待ちか時間待ちをしているときにだけプロセスからの出力を受け取れます。
+
+ここでは、非同期プロセスの作成方法について述べます。
+
+ -- Function: start-process NAME BUFFER-OR-NAME PROGRAM &rest ARGS
+     この関数は、新たな非同期サブプロセスを作成し、そのプロセスでプログ
+     ラムPROGRAMを走らせる。Lispにおいて新たなサブプロセスを表すプロセ
+     スオブジェクトを返す。引数NAMEはプロセスオブジェクトの名前を指定す
+     る。その名前のプロセスがすでに存在すると、名前を一意にするために
+     （`<1>'などを付加して）NAMEを修正する。バッファBUFFER-OR-NAMEは、
+     そのプロセスに対応付けるバッファである。
+
+     残りの引数ARGSは、プログラムに対するコマンド行引数を指定する文字列
+     である。
+
+     つぎの例では、最初のプロセスは動き始めると100秒間（休止ではなく）
+     動作する。そのあいだに2番目のプロセスを動かし始めると、一意である
+     ためにそれには名前`my-process<1>'が与えられる。2番目のプロセスは、
+     最初のプロセスが終了するまえにバッファ`foo'にディレクトリ一覧を挿
+     入する。2番目のプロセスが終了するとそれを表すメッセージがバッファ
+     に挿入される。しばらくして最初のプロセスが終了すると、別のメッセー
+     ジがバッファに挿入される。
+
+          (start-process "my-process" "foo" "sleep" "100")
+               => #<process my-process>
+
+          (start-process "my-process" "foo" "ls" "-l" "/user/lewis/bin")
+               => #<process my-process<1>>
+
+          ---------- Buffer: foo ----------
+          total 2
+          lrwxrwxrwx  1 lewis     14 Jul 22 10:12 gnuemacs --> /emacs
+          -rwxrwxrwx  1 lewis     19 Jul 30 21:02 lemon
+
+          Process my-process<1> finished
+
+          Process my-process finished
+          ---------- Buffer: foo ----------
+
+ -- Function: start-process-shell-command NAME BUFFER-OR-NAME COMMAND &rest COMMAND-ARGS
+     この関数は`start-process'と同様であるが、指定したコマンドを実行す
+     るためにシェルを用いる点が異なる。引数COMMANDはシェルコマンドの名
+     前であり、COMMAND-ARGSはそのシェルコマンドに対する引数である。変数
+     `shell-file-name'は、使用するシェルを指定する。
+
+     `start-process'で直接にではなく
+     シェルを介してプログラムを実行すると、
+     引数のワイルドカードなどのシェルの機能を利用できる。
+     つまり、ユーザー指定の任意のファイル名をコマンドに入れる場合には、
+     まえもって`shell-quote-argument'でクォートし、
+     ファイル名内のシェルの特別な文字が
+     そのような特別な意味を持た*ない*ようにする。
+     *Note Shell Arguments::。
+
+ -- Variable: process-connection-type
+     この変数は、非同期サブプロセスとの通信に用いる装置の型を制御する。
+     これが`nil'以外であると疑似端末PTYを利用できる場合にはそれを用る。
+     さもなければパイプを用いる。
+
+     シェル（shell）モードなどのユーザーに見えるプロセス向けには、パイ
+     プでは不可能なプロセスとその子プロセスとのあいだでジョブ制御
+     （`C-c'、`C-z'など）を許すので疑似端末PTYが望ましい。プログラムの
+     内部目的向けに使われるサブプロセスでは、効率的なパイプを用いるほう
+     がよい。また、多くのシステムでは疑似端末PTYの総数には制約があり、
+     それらを浪費しないほうがよい。
+
+     `process-connection-type'の値は`start-process'を呼び出したときに使
+     われる。したがって、`start-process'の呼び出しの周りでこの変数を束
+     縛することで、1つのサブプロセスに対する通信方法を指定できる。
+
+          (let ((process-connection-type nil))  ; パイプを使う
+            (start-process ...))
+
+     サブプロセスが実際にはパイプか疑似端末PTYのどちらを使っているかを
+     調べるには、関数`process-tty-name'を使う（*Note Process
+     Information::）。
+
+
+
+File: elisp-ja, Node: Deleting Processes, Next: Process Information, Prev: Asynchronous Processes, Up: Processes
+
+プロセスの削除
+==============
+
+"プロセスを削除する"とは、サブプロセスからEmacsをただちに切り離し、サブ
+プロセスを活性なプロセスリストから取り除くことです。サブプロセスへシグ
+ナルを送ってサブプロセスを終了させますが、ただちに終了するとは保証され
+ません。プロセスオブジェクトを指すLispオブジェクトがある限り、プロセス
+オブジェクトは存在し続けます。プロセスマークは以前と同様に同じ場所（プ
+ロセスからの出力をバッファに挿入した箇所）を指し続けます。
+
+プロセスはいつでも明示的に削除できます。プロセスは終了後に自動的に削除
+されますが、終了後ただちにではありません。終了したプロセスが自動的に削
+除されるまえに明示的に削除しても無害です。
+
+ -- User Option: delete-exited-processes
+     この変数は、（`exit'を呼び出すかシグナルのために）終了したプロセス
+     の自動削除を制御する。`nil'であると、ユーザーが`list-processes'を
+     実行するまで存在し続ける。さもなければ、終了後にただちに削除する。
+
+ -- Function: delete-process NAME
+     この関数は、NAMEに対応付けられたプロセスをシグナル`SIGHUP'でキルし
+     削除する。引数は、プロセス、プロセス名、バッファ、バッファ名のいず
+     れかである。
+
+          (delete-process "*shell*")
+               => nil
+
+ -- Function: process-kill-without-query PROCESS &optional DO-QUERY
+     この関数は、Emacsを終了するときにプロセスPROCESSが動作中であると、
+     ユーザーに問い合わせるかどうかを指定する。DO-QUERYが`nil'であると、
+     プロセスを黙って削除する。さもなければ、Emacsはプロセスのキルに関
+     して問い合わせる。
+
+     問い合わせるようにしてあったプロセスであると戻り値は`t'であり、さ
+     もなければ戻り値は`nil'である。新たに作成されたプロセスは、つねに
+     問い合わせ用になっている。
+
+          (process-kill-without-query (get-process "shell"))
+               => t
+
+
+
+File: elisp-ja, Node: Process Information, Next: Input to Processes, Prev: Deleting Processes, Up: Processes
+
+プロセス情報
+============
+
+プロセスに関する情報を返す関数がいくつかあります。
+`list-processes'は対話的利用のためにあります。
+
+ -- コマンド: list-processes
+     このコマンドは、活性なすべてのプロセスの一覧を表示する。
+     さらに、`Exited'や`Signaled'である状態の
+     プロセスをすべて削除する。
+     `nil'を返す。
+
+ -- Function: process-list
+     この関数は、削除されていないすべてのプロセスのリストを返す。
+
+          (process-list)
+               => (#<process display-time> #<process shell>)
+
+ -- Function: get-process NAME
+     この関数はNAMEという名前のプロセスを返す。
+     あるいは、そのようなプロセスがなければ`nil'を返す。
+     NAMEが文字列でないとエラーを通知する。
+
+          (get-process "shell")
+               => #<process shell>
+
+ -- Function: process-command PROCESS
+     この関数は、プロセスPROCESSを始動するために実行したコマンドを返す。
+     これは文字列のリストであり、最初の文字列は実行されたプログラム、残
+     りの文字列はそのプログラムに与えた引数である。
+
+          (process-command (get-process "shell"))
+               => ("/bin/csh" "-i")
+
+ -- Function: process-id PROCESS
+     この関数は、プロセスPROCESSのプロセス番号PIDを返す。これは同じ計算
+     機上で動いている他のすべてのプロセスとプロセスPROCESSを区別するた
+     めの整数である。プロセスのPIDは、プロセスを始動したときにオペレー
+     ティングシステムのカーネルが選び、プロセスが終了するまで変わらない。
+
+ -- Function: process-name PROCESS
+     この関数はプロセスPROCESSの名前を返す。
+
+ -- Function: process-contact PROCESS
+     この関数は、通常の子プロセスに対しては`t'を返し、ネットワーク接続
+     に対しては`(HOSTNAME SERVICE)'を返す（*Note Network::）。
+
+ -- Function: process-status PROCESS-NAME
+     この関数は、PROCESS-NAMEの状態をシンボルとして返す。引数
+     PROCESS-NAMEは、プロセス、バッファ、プロセス名（文字列）、バッファ
+     名（文字列）のいずれかであること。
+
+     実際のサブプロセスに対して可能な値はつぎのとおり。
+
+     `run'
+          実行中のプロセスである。
+     `stop'
+          一時停止しているが継続可能である。
+     `exit'
+          終了したプロセス。
+     `signal'
+          致命的なシグナルを受け取ったプロセスである。
+     `open'
+          ネットワーク接続を開いている。
+     `closed'
+          ネットワーク接続は閉じている。接続をいったん閉じるとそれを再
+          度開くことはできないが、同じ接続先へ新たな接続を開くことはで
+          きる。
+     `nil'
+          PROCESS-NAMEは既存プロセスの名前ではない。
+
+          (process-status "shell")
+               => run
+          (process-status (get-buffer "*shell*"))
+               => run
+          x
+               => #<process xx<1>>
+          (process-status x)
+               => exit
+
+     ネットワーク接続では、`process-status'はシンボル`open'か`closed'の
+     いずれかを返す。後者は、相手側が接続を閉じたかEmacsが
+     `delete-process'を行ったことを表す。
+
+ -- Function: process-exit-status PROCESS
+     この関数は、プロセスPROCESSの終了状態か、
+     プロセスをキルしたシグナル番号を返す。
+     （どちらであるかを判定するには、`process-status'の結果を用いる。）
+     PROCESSが終了していないと値は0である。
+
+ -- Function: process-tty-name PROCESS
+     この関数は、プロセスPROCESSがEmacsとの通信に用いている端末名を返す。
+     あるいは、端末のかわりにパイプを用いていれば`nil'を返す（*Note
+     Asynchronous Processes::の`process-connection-type'を参照）。
+
+ -- Function: process-coding-system PROCESS
+     この関数は、プロセスPROCESSからの出力を復号化するために用いている
+     コーディングシステムと、PROCESSへの入力を符号化するために用いてい
+     るコーディングシステムを記述するコンスセルを返す。
+
+          (CODING-SYSTEM-FOR-DECODING . CODING-SYSTEM-FOR-ENCODING)
+
+ -- Function: set-process-coding-system PROCESS DECODING-SYSTEM ENCODING-SYSTEM
+     この関数は、プロセスPROCESSからの以降の出力および入力に用いるコー
+     ディングシステムを指定する。サブプロセスから出力の復号化には
+     DECODING-SYSTEMを使い、サブプロセスの入力の符号化には
+     ENCODING-SYSTEMを使う。
+
+
+
+File: elisp-ja, Node: Input to Processes, Next: Signals to Processes, Prev: Process Information, Up: Processes
+
+プロセスへ入力を送る
+====================
+
+本節の関数を用いてEmacsが入力を送ると、非同期プロセスは入力を受け取りま
+す。入力の送先であるプロセスと、送るべき入力データを指定する必要があり
+ます。そのデータは、サブプロセスの『標準入力』に現れます。
+
+疑似端末PTYのバッファ付き入力の容量に上限があるオペレーティングシステム
+もあります。そのようなシステムでは、Emacsは他の文字に混ぜて定期的にEOF
+を送り、文字が流れるように強制します。ほとんどのプログラムでは、このよ
+うなEOFは無害なはずです。
+
+ファイルに書き込むテキストと同様に、サブプロセスの入力は、サブプロセス
+がそれを受け取るまえにコーディングシステムを用いて普通は符号化されます。
+`set-process-coding-system'で使用するコーディングシステムを指定できます
+（*Note Process Information::）。さもなければ、
+`coding-system-for-write'が`nil'以外であればこれを使います。それ以外で
+はデフォルトの機構で決まるものを使います（*Note Default Coding
+Systems::）。
+
+ -- Function: process-send-string PROCESS-NAME STRING
+     この関数は、文字列STRINGの内容を標準入力としてプロセス
+     PROCESS-NAMEに送る。引数PROCESS-NAMEは、プロセスかプロセス名である
+     こと。これが`nil'であると、カレントバッファのプロセスを用いる。
+
+     関数は`nil'を返す。
+
+          (process-send-string "shell<1>" "ls\n")
+               => nil
+
+
+          ---------- Buffer: *shell* ----------
+          ...
+          introduction.texi               syntax-tables.texi~
+          introduction.texi~              text.texi
+          introduction.txt                text.texi~
+          ...
+          ---------- Buffer: *shell* ----------
+
+ -- コマンド: process-send-region PROCESS-NAME START END
+     この関数は、STARTとENDで定義される領域内のテキストを標準入力として
+     プロセスPROCESS-NAMEへ送る。PROCESS-NAMEはプロセスかプロセス名であ
+     ること。（`nil'であると、カレントバッファのプロセスを使う。）
+
+     STARTとENDのどちらかがカレントバッファ内の位置を表す整数でもマーカ
+     でもないと、エラーを通知する。（どちらが大きな数であるかは重要では
+     ない。）
+
+ -- Function: process-send-eof &optional PROCESS-NAME
+     この関数は、プロセスPROCESS-NAMEが入力で
+     「ファイルの終りEOF」を見るようにする。
+     EOFはそれまでに送ったテキストのあとにある。
+
+     PROCESS-NAMEを指定しなかったり`nil'であると、この関数はカレントバッ
+     ファのプロセスにEOFを送る。カレントバッファにプロセスがないとエラー
+     を通知する。
+
+     関数はPROCESS-NAMEを返す。
+
+          (process-send-eof "shell")
+               => "shell"
+
+
+
+File: elisp-ja, Node: Signals to Processes, Next: Output from Processes, Prev: Input to Processes, Up: Processes
+
+プロセスにシグナルを送る
+========================
+
+サブプロセスに"シグナルを送る"ことは、サブプロセスの動作に割り込む一方
+法です。それぞれ独自の意味を持つ異なるシグナルがいくつかあります。一連
+のシグナルとそれらの名前は、オペレーティングシステムが定義します。たと
+えば、シグナル`SIGINT'は、ユーザーが`C-c'を打った、あるいは、それと同様
+なことが起こったことを意味します。
+
+各シグナルには、サブプロセスに対する標準的な効果があります。ほとんどの
+シグナルはサブプロセスをキルしますが、その実行を一時停止したり再開する
+ものもあります。プログラムがシグナルを処理している場合には、シグナルの
+効果を一般的に述べることはできません。
+
+本節の関数を呼び出してシグナルを明示的に送ることができます。また、
+Emacsは特定の場面で自動的にシグナルを送ります。バッファを削除すると、そ
+のバッファに対応付けられているすべてのプロセスにシグナル`SIGHUP'を送り
+ます。Emacsを終了するときには、動作しているすべてのサブプロセスにシグナ
+ル`SIGHUP'を送ります。（`SIGHUP'は、ユーザーが電話を切ったことを普通は
+表すシグナル。）
+
+シグナルを送る各関数は、省略可能な2つの引数、
+PROCESS-NAMEとCURRENT-GROUPを受け付けます。
+
+引数PROCESS-NAMEは、プロセス、プロセス名、`nil'のいずれかです。
+これが`nil'であると、カレントバッファに対応付けられているプロセスが
+デフォルトになります。
+PROCESS-NAMEがプロセスを指定しないとエラーを通知します。
+
+引数CURRENT-GROUPは、Emacsのサブプロセスとしてジョブ制御可能なシェルを
+実行しているときに違いが現れるフラグです。これが`nil'以外であると、
+Emacsがサブプロセスとの通信に用いている端末の現在のプロセスグループにシ
+グナルを送ります。プロセスがジョブ制御可能なシェルであると、これはシェ
+ルの現在のサブジョブ (1) (*Note Signals to Processes-Footnotes::) であ
+ることを意味します。`nil'であると、Emacsのサブプロセスの直接のプロセス
+グループにシグナルを送ります。プロセスがジョブ制御可能なシェルであると、
+これはシェルそのものです。
+
+オペレーティングシステムはパイプではプロセスグループを扱わないため、
+サブプロセスとの通信にパイプを用いている場合には、
+フラグCURRENT-GROUPには効果はありません。
+同じ理由で、パイプを用いている場合には
+ジョブ制御可能なシェル（のジョブ制御機能）は働きません。
+*Note Asynchronous Processes::の
+`process-connection-type'を参照してください。
+
+ -- Function: interrupt-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は、プロセスPROCESS-NAMEにシグナル`SIGINT'を送って割り込む。
+     Emacsの外側では、『割り込み文字』（普通、`C-c'であるシステムもあり、
+     その他のシステムでは`DEL'）を打つとこのシグナルを送る。引数
+     CURRENT-GROUPが`nil'以外であると、この関数は、Emacsがサブプロセス
+     と通信している端末上で『`C-c'を打つ』と考えることができる。
+
+ -- Function: kill-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は、プロセスPROCESS-NAMEにシグナル`SIGKILL'を送ってキルす
+     る。このシグナルはサブプロセスを即座にキルし、サブプロセスはこれを
+     処理できない。
+
+ -- Function: quit-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は、プロセスPROCESS-NAMEにシグナル`SIGQUIT'を送る。このシ
+     グナルは、『中断文字』（Emacsの外側では普通は`C-b'や`C-\'）が送る
+     シグナルと同じものである。
+
+ -- Function: stop-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は、プロセスPROCESS-NAMEにシグナル`SIGTSTP'を送って一時停
+     止させる。その実行を再開させるには`continue-process'を使う。
+
+     Emacsの外側でジョブ制御可能なシステムでは、『一時停止文字』（普通
+     は`C-z'）が普通はこのシグナルを送る。CURRENT-GROUPが`nil'以外であ
+     ると、この関数は、Emacsがサブプロセスと通信している端末上で
+     『`C-z'を打つ』と考えることができる。
+
+ -- Function: continue-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は、プロセスPROCESSにシグナル`SIGTCONT'を送って実行を再開
+     させる。以前に一時停止させられたPROCESSを再開する。
+
+ -- Function: signal-process PID SIGNAL
+     この関数は、必ずしもEmacsの子プロセスではないプロセスPIDにシグナル
+     を送る。引数SIGNALは、送るべきシグナルを整数で指定する。
+
+
+File: elisp-ja  Node: Signals to Processes-Footnotes, Up: Signals to Processes
+
+(1) 【訳注】シェルのもとで動いているプロセス群
+
+
+
+File: elisp-ja, Node: Output from Processes, Next: Sentinels, Prev: Signals to Processes, Up: Processes
+
+プロセスからの出力を受け取る
+============================
+
+サブプロセスが標準出力に書く出力を受け取る方法は2つあります。プロセスに
+対応付けられたバッファに出力を挿入するか、あるいは、"フィルタ関数
+（filter function）と呼ばれる関数を出力に対して作用させます。プロセスに
+バッファもフィルタ関数もなければ、その出力は破棄します。
+
+サブプロセスからの出力は、Emacsが待っている、つまり、端末入力を読んでい
+るとき、`sit-for'や`sleep-for'を実行中のとき（*Note Waiting::）、
+`accept-process-output'（*Note Accepting Output::）を実行中のときにだけ
+到着します。これにより、並行プログラムを普通は悩ますようなタイミングエ
+ラーの問題を最小に抑えます。たとえば、安全にプロセスを作成してから、バッ
+ファかフィルタ関数を指定できます。この処理の途中で待つような基本関数を
+呼び出さなければ、出力は到着しません。
+
+ファイルから読むテキストと同様に、サブプロセスの出力は、バッファやフィ
+ルタ関数が受け取るまえにコーディングシステムを用いて普通は復号化します。
+`set-process-coding-system'で使用するコーディングシステムを指定できます
+（*Note Process Information::）。さもなければ、
+`coding-system-for-read'が`nil'以外であればこれを使います。それ以外では
+デフォルトの機構で決まるものを使います（*Note Default Coding
+Systems::）。
+
+*警告：*` '
+データからコーディングシステムを決定する`undecided'のような
+コーディングシステムは、非同期サブプロセスの出力に対しては
+完全に信頼性のある動作はできない。
+これは、Emacsが非同期サブプロセスの出力が
+到着するたびに一塊で処理するからである。
+Emacsは1つの塊から正しい変換を検出しようと試みるが、
+これがつねに動作するとは限らない。
+したがって、可能な限り
+文字コード変換と行末変換の両方を指定したコーディングシステムを使う。
+つまり、`undecided'や`latin-1'などではなく、
+`latin-1-unix'のようなものを使う。
+
+* Menu:
+
+* Process Buffers::       If no filter, output is put in a buffer.
+* Filter Functions::      Filter functions accept output from the process.
+* Accepting Output::      Explicitly permitting subprocess output.
+                            Waiting for subprocess output.
+
+
+
+File: elisp-ja, Node: Process Buffers, Next: Filter Functions, Prev: Output from Processes, Up: Output from Processes
+
+プロセスバッファ
+----------------
+
+プロセスには"対応付けられたバッファ"が（普通は）あります。そのバッファ
+はEmacsの普通のバッファであり、2つの目的に使われます。プロセスからの出
+力を保存することと、プロセスがキルされたことを判定するためです。バッファ
+を用いてそれを操作しているプロセスを識別することもできます。普通は1つの
+バッファに1つのプロセスを対応付けるからです。プロセスの多くの応用では、
+プロセスへ送る入力を編集するためにバッファを使いますが、これはEmacs
+Lispに組み込まれたことではありません。
+
+プロセスにフィルタ関数（*Note Filter Functions::）がなければ、その出力
+は対応付けられたバッファに挿入されます。出力の挿入位置は`process-mark'
+で決定され、`process-mark'は挿入したばかりのテキストの末尾を指すように
+更新されます。`process-mark'は普通はバッファの末尾にありますが、つねに
+そうであるとは限りません。
+
+ -- Function: process-buffer PROCESS
+     この関数は、プロセスPROCESSに対応付けられているバッファを返す。
+
+          (process-buffer (get-process "shell"))
+               => #<buffer *shell*>
+
+ -- Function: process-mark PROCESS
+     この関数は、プロセスPROCESSからの出力を挿入する箇所を指定する
+     PROCESSのプロセスマーカを返す。
+
+     PROCESSにバッファがなければ、
+     `process-mark'はどこも指していないマーカである。
+
+     バッファにプロセス出力を挿入する際には、挿入箇所を決定するためにこ
+     のマーカを使用し、挿入したテキストの末尾を指すようにこのマーカを更
+     新する。これにより、出力の連続した塊を順に挿入できるのである。
+
+     バッファに出力を直接挿入する場合と同様に、
+     フィルタ関数はこのマーカを扱うべきである。
+     `process-mark'を用いたフィルタ関数の好例は、以下の節にある。
+
+     プロセスへ送るためにユーザーがプロセスバッファに入力することが予想
+     されるときは、プロセスマーカは新たな入力とそれ以前の出力を区切る。
+
+ -- Function: set-process-buffer PROCESS BUFFER
+     この関数は、プロセスPROCESSにバッファBUFFERを対応付ける。BUFFERが
+     `nil'であると、プロセスに対応付けられたバッファはない。
+
+ -- Function: get-buffer-process BUFFER-OR-NAME
+     この関数はBUFFER-OR-NAMEに対応付けられたプロセスを返す。バッファに
+     複数のプロセスが対応付けられている場合には、それらの1つを選ぶ。
+     （現状では、もっとも最近に作られたプロセスを選ぶ。）同じバッファに
+     複数のプロセスを対応付けることは一般にはよくない。
+
+          (get-buffer-process "*shell*")
+               => #<process shell>
+
+     プロセスのバッファを削除すると、サブプロセスにシグナル`SIGHUP'を送っ
+     てプロセスを削除する（*Note Signals to Processes::）。
+
+
+
+File: elisp-ja, Node: Filter Functions, Next: Accepting Output, Prev: Process Buffers, Up: Output from Processes
+
+プロセスフィルタ関数
+--------------------
+
+プロセスの"フィルタ関数"（filter function）は、対応付けられたプロセスか
+らの標準出力を受け取る関数です。プロセスにフィルタがあると、そのプロセ
+スからの*すべて*の出力はフィルタに渡されます。プロセスにフィルタがない
+場合に限って、プロセスからの出力向けにプロセスバッファを直接使います。
+
+フィルタ関数は、Emacsがなにかを待っているときにのみ呼ばれます。
+そのような期間にのみプロセスの出力が到着するからです。
+Emacsが待つのは、端末入力を読んでいるとき、
+`sit-for'や`sleep-for'を実行中のとき（*Note Waiting::）、
+`accept-process-output'（*Note Accepting Output::）を実行中のときです。
+
+フィルタ関数は2つの引数、対応付けられたプロセスとそのプロセスから受け取っ
+たばかりの出力である文字列を受け取ります。関数は出力に対してなにを行っ
+てもかまいません。
+
+フィルタ関数の内側では中断は普通は禁止されています。
+さもないと、コマンドレベルで打った`C-g'の効果や、
+ユーザーコマンドを中断するために打った`C-g'の効果は予測できません。
+フィルタ関数の内側で中断を行いたい場合には、
+`inhibit-quit'に`nil'を束縛します。
+*Note Quitting::。
+
+フィルタ関数の実行中にエラーが発生するとそのエラーは自動的に捕捉され、
+フィルタ関数を始動したときに動いていた
+プログラムの実行を停止しないようにします。
+しかし、`debug-on-error'が`nil'以外であると、
+エラーを捕捉しません。
+これにより、Lispデバッガでフィルタ関数をデバッグできます。
+*Note Debugger::。
+
+多くのフィルタ関数は、ときどきあるいはつねに、プロセスのバッファにテキ
+ストを挿入します。これはフィルタ関数がないときのEmacsの動作を模倣するも
+のです。そのようなフィルタ関数では、対象のバッファに挿入するために
+`set-buffer'を使う必要があります。カレントバッファをなかば恒久的に切り
+替えないように、これらのフィルタ関数はカレントバッファを記録／復元する
+必要があります。プロセスマーカを更新し、必要に応じてポイントの値も更新
+します。これらはつぎのように行います。
+
+     (defun ordinary-insertion-filter (proc string)
+       (with-current-buffer (process-buffer proc)
+         (let ((moving (= (point) (process-mark proc))))
+           (save-excursion
+             ;; テキストを挿入し、プロセスマーカを進める
+             (goto-char (process-mark proc))
+             (insert string)
+             (set-marker (process-mark proc) (point)))
+           (if moving (goto-char (process-mark proc))))))
+
+カレントバッファを記録／復元するために`save-excursion'ではなく
+`with-current-buffer'を使うのは、2番目の`goto-char'の呼び出しで行うポイ
+ントの移動効果を有効にするためです。
+
+新たにテキストが到着するたびにプロセスバッファが見えるようにフィルタ関
+数で強制するには、つぎのような行を`with-current-buffer'の直前に入れます。
+
+     (display-buffer (process-buffer proc))
+
+ポイント位置に関わらずに新たな出力の末尾にポイントを移動するには、変数
+`moving'を削除して、無条件に`goto-char'を呼び出します。
+
+Emacsの初期の版では、正規表現を探索したり一致処理するフィルタ関数では、
+マッチデータを明示的に保存／復元する必要がありました。
+今のEmacsは、フィルタ関数に対してはこれを自動的に行いますから、
+フィルタ関数で明示的に行う必要はありません。
+*Note Match Data::。
+
+プロセスのバッファに出力を書き込むフィルタ関数は、そのバッファが有効で
+あるかどうかを検査するべきです。無効なバッファに挿入しようとするとエラー
+になります。バッファが無効であれば、式`(buffer-name (process-buffer
+PROCESS))' を実行すると`nil'を返します。
+
+関数に渡される出力は任意のサイズの塊できます。同じ出力を2回生成するプロ
+グラムは、あるときには一度に200文字の塊を1つ送る場合もあれば、40文字の
+塊を5つ送る場合もあります。サブプロセスの出力から特定のテキスト文字列を
+探すフィルタでは、そのような文字列が2つかそれ以上の出力の塊に分割される
+場合も扱えるようにします。
+
+ -- Function: set-process-filter PROCESS FILTER
+     この関数は、プロセスPROCESSにフィルタ関数FILTERを指定する。
+     FILTERが`nil'であると、プロセスにフィルタはない。
+
+ -- Function: process-filter PROCESS
+     この関数は、プロセスPROCESSのフィルタ関数を返す。あるいは、フィル
+     タ関数がなければ`nil'を返す。
+
+フィルタ関数の使用例をつぎに示します。
+
+     (defun keep-output (process output)
+        (setq kept (cons output kept)))
+          => keep-output
+     (setq kept nil)
+          => nil
+     (set-process-filter (get-process "shell") 'keep-output)
+          => keep-output
+     (process-send-string "shell" "ls ~/other\n")
+          => nil
+     kept
+          => ("lewis@slug[8] % "
+     "FINAL-W87-SHORT.MSS    backup.otl              kolstad.mss~
+     address.txt             backup.psf              kolstad.psf
+     backup.bib~             david.mss               resume-Dec-86.mss~
+     backup.err              david.psf               resume-Dec.psf
+     backup.mss              dland                   syllabus.mss
+     "
+     "#backups.mss#          backup.mss~             kolstad.mss
+     ")
+
+
+
+
+File: elisp-ja, Node: Accepting Output, Prev: Filter Functions, Up: Output from Processes
+
+プロセスからの出力を受け取る
+----------------------------
+
+非同期サブプロセスからの出力は、Emacsが時間待ちや端末入力などのなんらか
+の外部事象を待っているときにのみ到着します。Lispプログラムから特定の場
+面で出力の到着を明示的に許したり、プロセスの出力が到着するのを待つこと
+ができると有用なことがあります。
+
+ -- Function: accept-process-output &optional PROCESS SECONDS MILLISEC
+     この関数は、Emacsにプロセスからの未処理の出力を読み取ることを許す。
+     その出力は、対応付けられたバッファに挿入されるか、フィルタ関数に与
+     えられる。PROCESSが`nil'以外であると、この関数は、PROCESSからなん
+     らかの出力を得るまで戻らない。
+
+     引数SECONDSとMILLISECは、時間切れを指定する。前者は秒単位の時間、
+     後者はミリ秒単位の時間を指定する。指定された2つの時間は合計され、
+     任意のサブプロセスの出力を受け取ったどうかに関わらず、その時間だけ
+     経過すると`accept-process-output'は戻ってくる。
+
+     引数SECONDSは整数である必要はない。浮動小数点数であると、この関数
+     は秒未満の時間も待つ。秒未満を扱えないシステムもある。そのようなシ
+     ステムでは、SECONDSを切り下げる。
+
+     すべてのオペレーティングシステムで秒未満を扱えるわけではない。扱え
+     ないシステムでMILLISECにゼロ以外を指定するとエラーになる。
+
+     関数`accept-process-output'は、出力を得ると`nil'以外を返す。あるい
+     は、出力が到着するまえに時間切れすると`nil'を返す。
+
+
+
+File: elisp-ja, Node: Sentinels, Next: Transaction Queues, Prev: Output from Processes, Up: Processes
+
+番兵：プロセスの状態変化の検出
+==============================
+
+"プロセスの番兵"（process sentinel）は、プロセスを終了／一時停止／継続
+させる（Emacsが送ったかプロセス自身の動作によって生起した）シグナルを含
+めて対応付けられたプロセスの状態が任意の理由で変化したときに呼び出され
+る関数です。プロセスの番兵は、プロセスが終了しても呼び出されます。番兵
+は2つの引数、事象が発生したプロセスと事象の種類を記述する文字列を受け取
+ります。
+
+事象を記述する文字列はつぎのとおりです。
+
+   * `"finished\n"'.
+
+   * `"exited abnormally with code EXITCODE\n"'.
+
+   * `"NAME-OF-SIGNAL\n"'.
+
+   * `"NAME-OF-SIGNAL (core dumped)\n"'.
+
+番兵はEmacsが（たとえば、端末入力や時間経過、プロセスの出力を）待ってい
+るときにのみ実行されます。他のLispプログラムの実行途中で無秩序に番兵を
+実行した場合に起こるタイミングエラーを回避するためです。`sit-for'や
+`sleep-for'（*Note Waiting::）、あるいは、
+`accept-process-output'（*Note Accepting Output::）を呼び出すとプログラ
+ムは待ちに入り、番兵が動けることになります。Emacsは、コマンドループで入
+力を読むときにも番兵の実行を許します。
+
+番兵の内側では中断は普通は禁止されています。
+さもないと、コマンドレベルで打った`C-g'の効果や、
+ユーザーコマンドを中断するために打った`C-g'の効果は予測できません。
+番兵の内側で中断を行いたい場合には、
+`inhibit-quit'に`nil'を束縛します。
+*Note Quitting::。
+
+プロセスのバッファに出力を書き込む番兵は、そのバッファが有効であるかど
+うかを検査するべきです。無効なバッファに挿入しようとするとエラーになり
+ます。バッファが無効であれば、式`(buffer-name (process-buffer
+PROCESS))' を実行すると`nil'を返します。
+
+番兵の実行中にエラーが発生するとそのエラーは自動的に捕捉され、
+番兵を始動したときに動いていた
+プログラムの実行を停止しないようにします。
+しかし、`debug-on-error'が`nil'以外であると、
+エラーを捕捉しません。
+これにより、Lispデバッガで番兵をデバッグできます。
+*Note Debugger::。
+
+Emacsの初期の版では、正規表現を探索したり一致処理する番兵では、
+マッチデータを明示的に保存／復元する必要がありました。
+今のEmacsは、番兵に対してはこれを自動的に行いますから、
+番兵で明示的に行う必要はありません。
+*Note Match Data::。
+
+ -- Function: set-process-sentinel PROCESS SENTINEL
+     この関数は、プロセスPROCESSに番兵SENTINELを対応付ける。SENTINELが
+     `nil'であると、プロセスに番兵はない。番兵がない場合のデフォルトの
+     ふるまいは、プロセス状態が変化するとプロセスのバッファにメッセージ
+     を挿入する。
+
+          (defun msg-me (process event)
+             (princ
+               (format "Process: %s had the event `%s'" process event)))
+          (set-process-sentinel (get-process "shell") 'msg-me)
+               => msg-me
+          (kill-process (get-process "shell"))
+               -| Process: #<process shell> had the event `killed'
+               => #<process shell>
+
+ -- Function: process-sentinel PROCESS
+     この関数は、プロセスPROCESSの番兵を返すか、番兵がなければ`nil'を返
+     す。
+
+ -- Function: waiting-for-user-input-p
+     番兵やフィルタ関数が動作中にこの関数を呼び出すと、番兵やフィルタ関
+     数を呼び出したときにEmacsがユーザーからのキーボード入力を待ってる
+     と`nil'以外を返し、それ以外では`nil'を返す。
+
+
+
+File: elisp-ja, Node: Transaction Queues, Next: Network, Prev: Sentinels, Up: Processes
+
+トランザクションキュー
+======================
+
+トランザクションを用いたサブプロセスとの通信に"トランザクションキュー"
+（transaction queue）を使えます。まず`tq-create'を用いて、指定したプロ
+セスとの通信用トランザクションキューを作成します。そして、トランザクショ
+ンを送るために`tq-enqueue'を呼び出します。
+
+ -- Function: tq-create PROCESS
+     この関数は、プロセスPROCESSとの通信用トランザクションキューを作成
+     して返す。引数PROCESSは、バイトストリームを送受信できる機能を有す
+     るサブプロセスであること。つまり、子プロセスであるか、別のマシン上
+     の可能性もあるサーバーへのTCP接続である。
+
+ -- Function: tq-enqueue QUEUE QUESTION REGEXP CLOSURE FN
+     この関数はキューQUEUEにトランザクションを送る。キューを指定するこ
+     とは、通信相手のサブプロセスを指定する効果がある。
+
+     引数QUESTIONは、トランザクションを始める送出メッセージである。引数
+     FNは、対応する応答が戻ってきたときに呼び出す関数である。その関数は
+     2つの引数、CLOSUREと受け取った応答で呼び出される。
+
+     引数REGEXPは、1つの応答だけに一致する正規表現である。
+     `tq-enqueue'が応答の末尾を判定するために使う。
+
+     `tq-enqueue'の戻り値そのものに意味はない。
+
+ -- Function: tq-close QUEUE
+     未処理のトランザクションすべてが完了するのを待ち、接続や子プロセス
+     を終了して、トランザクションキューQUEUEを終える。
+
+トランザクションキューはフィルタ関数を用いて実装してあります。
+*Note Filter Functions::。
+
+
+
+File: elisp-ja, Node: Network, Prev: Transaction Queues, Up: Processes
+
+ネットワーク接続
+================
+
+Emacs Lispプログラムは、同一マシンや別のマシン上の他のプロセスに対して
+TCPネットワーク接続を開くことができます。ネットワーク接続は、サブプロセ
+スと同様にLispが扱い、プロセスオブジェクトとして表現されます。しかし、
+通信相手のプロセスはEmacsプロセスの子プロセスではありませんから、キルし
+たりシグナルを送ることはできません。データの送受信のみが可能です。
+`delete-process'は接続を閉じますが、もう一方の端のプロセスをキルしませ
+ん。そのプロセスは、接続が閉じた場合の動作を判断する必要があります。
+
+ネットワーク接続を表すプロセスオブジェクトと
+サブプロセスを表すプロセスオブジェクトとは、
+関数`process-status'を使って区別できます。
+この関数は、ネットワーク接続に対しては
+`open'か`closed'をつねに返し、
+本当のサブプロセスに対してはこれらのいずれの値もけっして返しません。
+*Note Process Information::。
+
+ -- Function: open-network-stream NAME BUFFER-OR-NAME HOST SERVICE
+     この関数は、ホストのサーバーに対するTCP接続を開く。接続を表すプロ
+     セスオブジェクトを返す。
+
+     引数NAMEは、プロセスオブジェクトに付ける名前を指定する。必要に応じ
+     て一意にするために修正される。
+
+     引数BUFFER-OR-NAMEは、接続に対応付けるバッファである。出力を扱うフィ
+     ルタ関数を指定しない限り、接続からの出力はそのバッファに挿入される。
+     BUFFER-OR-NAMEが`nil'であると、接続にはバッファを対応付けないこと
+     を意味する。
+
+     引数HOSTとSERVICEは、接続先を指定する。HOSTはホスト名（文字列）で
+     あり、SERVICEは定義済みのネットワークサービス（文字列）かポート番
+     号（整数）である。
+
+
+
+File: elisp-ja, Node: Display, Next: Calendar, Prev: Processes, Up: Top
+
+Emacsの画面表示
+***************
+
+本章では、Emacsがユーザーに提示する画面表示に関連するさまざまな機能につ
+いて述べます。
+
+* Menu:
+
+* Refresh Screen::      Clearing the screen and redrawing everything on it.
+* Truncation::          Folding or wrapping long text lines.
+* The Echo Area::       Where messages are displayed.
+* Invisible Text::      Hiding part of the buffer text.
+* Selective Display::   Hiding part of the buffer text (the old way).
+* Overlay Arrow::       Display of an arrow to indicate position.
+* Temporary Displays::  Displays that go away automatically.
+* Overlays::		Use overlays to highlight parts of the buffer.
+* Width::               How wide is a character or string.
+* Faces::		A face defines a graphics appearance: font, color, etc.
+* Blinking::            How Emacs shows the matching open parenthesis.
+* Inverse Video::	Specifying how the screen looks.
+* Usual Display::	The usual conventions for displaying nonprinting chars.
+* Display Tables::	How to specify other conventions.
+* Beeping::             Audible signal to the user.
+* Window Systems::      Which window system is being used.
+
+
+
+File: elisp-ja, Node: Refresh Screen, Next: Truncation, Prev: Display, Up: Display
+
+スクリーン全体の再表示
+======================
+
+関数`redraw-frame'は、指定したフレーム（*Note Frames::）の内容全体を再
+表示します。
+
+ -- Function: redraw-frame FRAME
+     この関数は、フレームFRAMEをクリアしてから再表示する。
+
+より強力なのは`redraw-display'です。
+
+ -- コマンド: redraw-display
+     この関数は、すべての可視フレームをクリアしてから再表示する。
+
+ユーザー入力の処理のほうが再表示より絶対的に優先します。入力があるとき
+にこれらの関数を呼び出してもただちにはなにもしませんが、入力をすべて処
+理し終えてから再表示します。
+
+通常、Emacsを停止したり再開してもスクリーン全体を再表示します。Emacsの
+ようなディスプレイ向けプログラムと通常の逐次表示向けに、表示内容を個別
+に記録できる端末エミュレータもあります。そのような端末を使っているとき
+には、再開時の再表示を禁止した場合もあります。
+
+ -- Variable: no-redraw-on-reenter
+     この変数は、停止後に再開したあとで、スクリーン全体を再表示するかど
+     うかを制御する。`nil'以外であると再描画の必要はないことを意味し、
+     `nil'であると再描画が必要であることを意味する。デフォルトは`nil'で
+     ある。
+
+
+
+File: elisp-ja, Node: Truncation, Next: The Echo Area, Prev: Refresh Screen, Up: Display
+
+表示の切り詰め
+==============
+
+テキスト行がウィンドウの右端を越えていると、
+その行をつぎのスクリーン行へ継続するか、
+スクリーン行1行に切り詰めます。
+長いテキスト行を表示するために使われる追加のスクリーン行を
+"継続"行と呼びます。
+通常、ウィンドウの最右端のコラムに現れる`$'で切り詰めたことを示し、
+`\'でつぎの行に『折り返した』こと、
+つまり、"継続している"行であることを示します。
+（表示テーブルで別の文字を指定できる。
+*Note Display Tables::を参照。）
+
+継続することと詰め込みは別のことです。
+継続はスクリーン上だけのことであり、バッファ内容は変わりません。
+また、継続では単語の境界ではなく、正確にスクリーンの右端で
+行を分けます。
+*Note Filling::。
+
+ -- User Option: truncate-lines
+     このバッファローカルな変数は、ウィンドウの右端を越える行をどのよう
+     に表示するかを制御する。デフォルトは`nil'であり継続を意味する。値
+     が`nil'以外であると、そのような行を切り詰める。
+
+     変数`truncate-partial-width-windows'が`nil'以外であると、
+     （フレーム内で）左右に並んだウィンドウでは、
+     `truncate-lines'の値に関わらずつねに切り詰る。
+
+ -- User Option: default-truncate-lines
+     この変数は、`truncate-lines'のバッファローカルな値を持たないバッファ
+     向けの`truncate-lines'のデフォルト値である。
+
+ -- User Option: truncate-partial-width-windows
+     この変数は、左右に並んだウィンドウ（*Note Splitting Windows::）に
+     おいて、ウィンドウの右端を越える行の表示を制御する。`nil'以外であ
+     ると、そのような行を切り詰める。さもなければ、`truncate-lines'に従っ
+     て表示する。
+
+ウィンドウで水平方向にスクロールしている（*Note Horizontal Scrolling::）
+と、強制的に切り詰めます。
+
+継続や切り詰めを表す文字は、表示テーブルを使って変更できます。
+*Note Display Tables::。
+
+バッファに*とても*長い行があるときにそれらの表示に継続行を使うと、それ
+によりEmacsの再表示が遅くなります。コラム計算や字下げ関数も遅くなります。
+そのような場合には、`cache-long-line-scans'に`t'を設定するのがよいです。
+
+ -- Variable: cache-long-line-scans
+     この変数が`nil'以外であると、字下げ／移動関数とEmacsの再表示におい
+     て、バッファを走査した結果をキャッシュし、バッファが変更されていな
+     いときにはキャッシュを調べてバッファの対象領域の再走査を回避する。
+
+     キャッシュするようにすると、短い行の処理が多少遅くなる。
+
+     この変数は、すべてのバッファで自動的にバッファローカルである。
+
+
+
+File: elisp-ja, Node: The Echo Area, Next: Invisible Text, Prev: Truncation, Up: Display
+
+エコー領域
+==========
+
+"エコー領域"（echo area）は、
+基本関数`message'でメッセージを表示したり、
+打鍵を表示するために使われます。
+（活性な）ミニバッファはエコー領域と
+同じスクリーン上の位置に現れますが、
+エコー領域とミニバッファは同じものではありません。
+`GNU Emacs マニュアル'には、
+エコー領域とミニバッファがスクリーンの同じ箇所を使う際の
+衝突を回避する規則が述べてあります
+（*Note ミニバッファ: (emacs)Minibuffer.）。
+エラーメッセージもエコー領域に現れます。
+*Note Errors::。
+
+エコー領域に表示するには、
+ストリーム（*Note Output Functions::）として
+`t'を指定したLisp表示関数を使うか、あるいはつぎのようにします。
+
+ -- Function: message STRING &rest ARGUMENTS
+     この関数は、エコー領域に1行のメッセージを表示する。
+     引数STRINGは、言語Cの`printf'の制御文字列と同様である。
+     書式指定について詳しくは、*Note String Conversion::の
+     `format'を参照。
+     `message'は構築した文字列を返す。
+
+     バッチモードでは、`message'はメッセージテキストと改行を標準エラー
+     ストリームへ出力する。
+
+     STRINGが`nil'であると、`message'はエコー領域をクリアする。ミニバッ
+     ファが活性であると、これによりミニバッファの内容がスクリーンにただ
+     ちに表示される。
+
+          (message "Minibuffer depth is %d."
+                   (minibuffer-depth))
+           -| Minibuffer depth is 0.
+          => "Minibuffer depth is 0."
+
+          ---------- Echo Area ----------
+          Minibuffer depth is 0.
+          ---------- Echo Area ----------
+
+ -- Function: message-or-box STRING &rest ARGUMENTS
+     この関数は`message'と同様にメッセージを表示するが、
+     エコー領域のかわりに対話ボックスを使うこともある。
+     この関数がマウスを用いて起動されたコマンドから呼ばれたとき、
+     より正確には、`last-nonmenu-event'（*Note Command Loop Info::）が
+     `nil'かリストのいずれかであると、
+     メッセージを表示するために対話ボックスかポップアップメニューを用いる。
+     さもなければエコー領域を用いる。
+     （これは、同様な決定をくだす`y-or-n-p'の判定条件と同じである。
+     *Note Yes-or-No Queries::。）
+
+     呼び出しの周りで`last-nonmenu-event'に適切な値を束縛することで、マ
+     ウスを使うかエコー領域を使うか強制できる。
+
+ -- Function: message-box STRING &rest ARGUMENTS
+     この関数は`message'と同様にメッセージを表示するが、
+     可能な限り対話ボックス（やポップアップメニュー）を使う。
+     対話ボックスやポップアップメニューを扱えない端末などで
+     これらを使用できない場合には、
+     `message-box'は`message'と同様にエコー領域を使う。
+
+ -- Function: current-message
+     この関数は、エコー領域に現在表示されているメッセージを返す。なけれ
+     ば`nil'を返す。
+
+ -- Variable: cursor-in-echo-area
+     この変数は、エコー領域にメッセージを表示しているときにカーソルをど
+     こに表示するかを制御する。`nil'以外であると、メッセージの末尾にカー
+     ソルを表示する。さもなければ、エコー領域にではなく、ポイント位置に
+     カーソルを表示する。
+
+     この値は普通は`nil'である。Lispプログラムはこれに`t'を短い期間だけ
+     束縛する。
+
+ -- Variable: echo-area-clear-hook
+     このノーマルフックは、`(message nil)'や他の理由でエコー領域をクリ
+     アするたびに実行される。
+
+エコー領域に表示したほとんどすべてのメッセージはバッファ`*Messages*'に
+も記録されます。
+
+ -- User Option: message-log-max
+     この変数は、バッファ`*Messages*'に保持する行数を指定する。値`t'は、
+     保持する行数を制限しないことを意味する。値`nil'は、メッセージをまっ
+     たく記録しないことを意味する。メッセージを表示しつつそれを記録しな
+     いようにするにはつぎのようにする。
+
+          (let (message-log-max)
+            (message ...))
+
+ -- Variable: echo-keystrokes
+     この変数は、コマンド文字を表示するまでの経過時間を決定する。この値
+     は整数であり、表示し始めるまでに待つ秒数を指定する。ユーザーが
+     （`C-x'などの）プレフィックスキーを打ってからつぎを打つまでにこの
+     秒数だけ遅れがあると、プレフィックスキーをエコー領域に表示する。
+     （いったんキー列の表示を始めると、同じキー列の以降の文字すべてを表
+     示する。）
+
+     値がゼロであると、コマンド入力を表示しない。
+
+
+

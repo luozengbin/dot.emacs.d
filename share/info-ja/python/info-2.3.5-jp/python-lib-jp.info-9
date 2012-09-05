@@ -1,0 +1,1274 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: struct,  Next: difflib,  Prev: re,  Up: 文字列処理
+
+文字列データをパックされたバイナリデータとして解釈する
+======================================================
+
+文字列データをパックされたバイナリデータとして解釈します。
+
+このモジュールは、 Python の値と Python 上で文字列データとして表される
+C の構造体データとの間の変換を実現します。このモジュールでは、C 構造体の
+レイアウトおよび Python の値との間で行いたい変換をコンパクトに表現する
+ために、"フォーマット文字列" を使います。
+このモジュールは特に、ファイルに保存されたり、ネットワーク接続を経由
+したバイナリデータを扱うときに使われます。
+
+このモジュールは以下の例外と関数を定義しています:
+
+`error'
+     様々な状況で送出された例外です; 引数は何が問題かを記述する文字列
+     です。
+
+`pack(fmt, v1, v2, ...)'
+     値 `V1, V2, ...' が与えられたフォーマット
+     で含まれる文字列データを返します。引数は指定したフォーマットが要求する
+     型と正確に一致していなければなりません。
+
+`unpack(fmt, string)'
+     (おそらく `pack(FMT, ...)' でパックされた) 文字列
+     データを、与えられた書式に従ってアンパックします。値が一つしかない場合を
+     含め、結果はタプルで返されます。文字列データにはフォーマットが要求する
+     だけのデータが正確に含まれていなければなりません (`len(STRING)' が
+     `calcsize(FMT)' と一致しなければ なりません)。
+
+`calcsize(fmt)'
+     与えられたフォーマットに対応する構造体のサイズ
+     (すなわち文字列データの サイズ) を返します。
+
+フォーマット文字 (format character) は以下の意味を持っています; C と
+Python の間の変換では、値は正確に以下に指定された型でなくては
+なりません:
+
+フォーマット       C での型           Python             備考
+------             ------             ------             ------
+x                  pad byte           no value           
+c                  `char'             長さ 1 の文字列    
+b                  `signed char'      整数型 (integer)   
+B                  `unsigned char'    整数型             
+h                  `short'            整数型             
+H                  `unsigned short'   整数型             
+i                  `int'              整数型             
+I                  `unsigned int'     long 整数型        
+l                  `long'             整数型             
+L                  `unsigned long'    long 整数型        
+q                  `long long'        long 整数型        (1)
+Q                  `unsigned long     long 整数型        (1)
+                   long'                                 
+f                  `float'            浮動小数点型       
+d                  `double'           浮動小数点型       
+s                  `char[]'           文字列             
+p                  `char[]'           文字列             
+P                  `void *'           整数型             
+
+注意事項:
+
+`(1)'
+     フォーマット文字 `q' および `Q' は、 プラットフォームの C
+     コンパイラが C の `long long' 型、 Windows では `__int64'
+     をサポートする場合にのみ、
+     プラットフォームネイティブの値との変換を行うモードだけで利用することが
+     できます。
+
+     _Added in Python version 2.2_
+
+フォーマット文字の前に整数をつけ、繰り返し回数 (count) を指定することが
+できます。 例えば、フォーマット文字列 `'4h'' は `'hhhh'' と全く同じ
+意味です。
+
+フォーマット文字間の空白文字は無視されます; count とフォーマット
+文字の間にはスペースを入れてはいけません。
+
+フォーマット文字 `s' では、count は文字列のサイズと
+して扱われます。他のフォーマット文字のように繰り返し回数ではありません;
+例えば、`'10c'' が 10 個のキャラクタを表すのに対して、 `'10s'' は 10
+バイトの長さを持った 1 個 の文字列です。文字列をパックする際には、
+指定した長さにフィットするように、必要に応じて切り詰められたりヌル文字
+で穴埋めされたりします。また特殊なケースとして、(`'0c'' が 0 個の
+キャラクタを表すのに対して) `'0s'' は 1 個の空文字列を意味します。
+
+フォーマット文字 `p' は "Pascal 文字列 (pascal string)"
+をコードします。Pascal 文字列は固定長のバイト列に収められた短い可変長の
+文字列です。count は実際に文字列データ中に収められる全体の長さ
+です。このデータの先頭の 1 バイトには文字列の長さか255 のうち、小さい
+方の数が収められます。その後に文字列のバイトデータが続きます。 `pack()'
+に渡された Pascal 文字列の長さが長すぎた (count-1 よりも長い)
+場合、先頭の count-1 バイトが書き込まれます。文字列が count-1
+よりも短い場合、指定した count バイトに達するまでの残りの
+部分はヌルで埋められます。`unpack()' では、フォーマット文字 `p'
+は指定された count バイトだけデータを読み込みますが、
+返される文字列は決して 255 文字を超えることはないので注意してください。
+
+フォーマット文字 `I'、 `L'、 `q' および `Q' では、返される値は Python
+long 整数です。
+
+フォーマット文字 `P' では、返される値は Python 整数型または long
+整数型で、これはポインタの値を Python での整数にキャストする際に、
+値を保持するために必要なサイズに依存します。 `NULL' ポインタは常に
+Python 整数型の `0' になります。
+ポインタ型のサイズを持った値をパックする際には、Python 整数型 および
+long 整数型オブジェクトを使うことができます。例えば、 Alpha および
+Merced プロセッサは 64 bit のポインタ値を使いますが、これは
+ポインタを保持するために Python long 整数型が使われることを意味します;
+32 bit ポインタを使う他のプラットフォームでは Python 整数型が使われ
+ます。
+
+デフォルトでは、C では数値はマシンのネイティブ (native) の形式
+およびバイトオーダ (byte order) で表され、適切にアラインメント
+(alignment)
+するために、必要に応じて数バイトのパディングを行ってスキップします
+(これは C コンパイラが用いるルールに従います)。
+
+これに代わって、フォーマット文字列の最初の文字を使って、バイトオーダや
+サイズ、アラインメントを指定することができます。指定できる文字を
+以下のテーブルに示します:
+
+文字                     バイトオーダ             サイズおよびアラインメント
+------                   -----                    -----
+@                        ネイティブ               ネイティブ
+=                        ネイティブ               標準
+<                        リトルエンディアン       標準
+>                        ビッグエンディアン       標準
+!                        ネットワークバイトオーダ 標準
+                         (= ビッグエンディアン)   
+
+フォーマット文字列の最初の文字が上のいずれかでない場合、`@'
+であるとみなされます。
+
+ネイティブのバイトオーダはビッグエンディアンかリトルエンディアンで、
+ホスト計算機に依存します。例えば、Motorola および Sun のプロセッサは
+ビッグエンディアンです; Intel および DEC
+のプロセッサはリトルエンディアン です。
+
+ネイティブのサイズおよびアラインメントは C コンパイラの `sizeof'
+式で決定されます。ネイティブのサイズおよびアラインメントは大抵ネイティブ
+のバイトオーダと同時に使われます。
+
+標準のサイズおよびアラインメントは以下のようになります:
+どの型に対しても、 アラインメントは必要ありません
+(ので、パディングを使う必要があります); `short' は 2 バイトです; `int'
+と `long' は 4 バイトです; `long long' (Windows では `__int64') は 8
+バイトです; `float' と `double' は順に 32-bit あるいは 64-bit の IEEE
+浮動小数点数です。
+
+`@' と `=' の違いに注意してください: 両方とも
+ネイティブのバイトオーダですが、後者のバイトサイズやバイトオーダは
+標準のものに合わせてあります。
+
+`!' 表記法はネットワークバイトオーダがビッグエンディアンか
+リトルエンディアンか忘れちゃったという熱意に乏しい人向けに用意されて
+います。
+
+バイトオーダに関して、「(強制的にバイトスワップを行う)ネイティブの逆」
+を指定する方法はありません; `<' または `>' のうち
+ふさわしい方を選んでください。
+
+`P' フォーマット文字はネイティブバイトオーダでのみ利用可能 です
+(デフォルトのネットワークバイトオーダに設定するか、`@'
+バイトオーダ指定文字を指定しなければなりません)。 `=' を指定
+した場合、ホスト計算機のバイトオーダに基づいてリトルエンディアンと
+ビッグエンディアンのどちらを使うかを決めます。struct モジュールはこの
+設定をネイティブのオーダ設定として解釈しないので、`P' を
+使うことはできません。
+
+以下に例を示します (この例は全てビッグエンディアンのマシンで、
+ネイティブのバイトオーダ、サイズおよびアラインメントの場合です):
+
+     >>> from struct import *
+     >>> pack('hhl', 1, 2, 3)
+     '\x00\x01\x00\x02\x00\x00\x00\x03'
+     >>> unpack('hhl', '\x00\x01\x00\x02\x00\x00\x00\x03')
+     (1, 2, 3)
+     >>> calcsize('hhl')
+     8
+
+ヒント: 特定の型によるアラインメント要求に従うように構造体の末端を
+そろえるには、count をゼロにした特定の型でフォーマットを終端します。
+例えば、フォーマット `'llh0l'' は、 long 型が 4 バイトを境界と
+してそろえられていると仮定して、末端に 2 バイトをパディングします。
+この機能は変換対象がネイティブのサイズおよびアラインメントの場合
+にのみ働きます; 標準に型サイズおよびアラインメントの設定ではいかなる
+アラインメントも行いません。
+
+See also:
+     *Note array:: 一様なデータ型からなるバイナリ記録データのパック
+     *Note xdrlib:: XDR データのパックおよびアンパック。
+
+
+File: python-lib-jp.info,  Node: difflib,  Next: fpformat,  Prev: struct,  Up: 文字列処理
+
+差異の計算を助ける
+==================
+
+オブジェクト同士の違いを計算する
+
+_Added in Python version 2.1_
+
+`SequenceMatcher'
+     柔軟性のあるクラスで、ハッシュ化できる要素の連続であれば、
+     どんな型のものであっても比較可能です。基礎的なアルゴリズムは
+     可塑的なものであり、1980年代の後半に発表されたRatcliffとObershelp
+     によるアルゴリズム、大げさに名づけられた"ゲシュタルトパターン
+     マッチング"よりはもう少し良さそうなものです。その考え方は、
+     "junk"要素を含まない最も長いマッチ列を探すことです（Ratcliffと
+     Obershelpのアルゴリズムではjunkを示しません）。このアイデアは、
+     下位のマッチ列から左または右に伸びる列の断片に対して再帰的に
+     あてはまります。これは小さな文字列に対して効率良いものでは
+     ありませんが、人間の目からみて「良く見える」ようにマッチする
+     傾向があります。
+
+     *タイミング:* 基本的なRatcliff-Obershelpアルゴリズムは、
+     予想の3乗、最悪の場合でも2乗となります。`SequenceMatcher'
+     オブジェクトは、最悪のケースに比べて4倍、予想される挙動は、
+     シーケンスの中にどのくらいの要素があるのか（最良なのは一列の場合）、
+     というややこしい状況に依存しています。
+
+`Differ'
+     テキスト行からなるシーケンスを比較するクラスです。人が読むことの
+     できる差異を作成します。Differクラスは`SequenceMatcher'
+     クラスを利用します。これらは、列からなるシーケンスを比較し、
+     （ほぼ）同一の列内の文字を比較します。
+
+     `Differ'クラスによる差異の各行は、2文字のコードではじめられます。
+
+     コード                             意味
+     ------                             -----
+     '- '                               列は文字列1にのみ存在する
+     '+ '                               列は文字列2にのみ存在する
+     '  '                               列は両方の文字列で同一
+     '? '                               列は入力文字列のどちらにも存在しない
+
+     '? 'で始まる列は線内の差異に注意を向けようとします。その差異は、
+     入力されたシーケンスのどちらにも存在しません。シーケンスが
+     タブ文字を含むとき、これらのラインは判別しづらいものになる
+     ことがあります。
+
+`context_diff(a, b[, fromfile[, tofile [, fromfiledate[, tofiledate[, n [, lineterm]]]]]])'
+     A と B (文字列のリスト) を比較し、差異
+     (差異のある行を生成するジェネレータ) を、diff
+     のコンテクスト形式で返します。
+
+     コンテクスト形式は、変更があった行に前後数行を加えてある、コンパクトな表
+     現方法です。変更箇所は、変更前/変更後に分けて表します。コンテクスト（変
+     更箇所前後の行）の行数は N で指定し、デフォルト値は 3 です。
+
+     デフォルトでは、diff の制御行 (`***' や `---' を含む行) の最
+     後には、改行文字が付加されます。この場合、入出力共、行末に改行文字を持つ
+     ので、`file.readlines()' で得た入力から生成した差異を、
+     `file.writelines()' に渡す場合に便利です。行末に改行文字を持た
+     ない入力に対しては、出力でも改行文字を付加しないように LINETERM 引
+     数に `""' を渡してください。
+
+     diff
+     コンテクスト形式は、通常、ヘッダにファイル名と変更時刻を持ってい
+     ます。この情報は、文字列 FROMFILE、TOFILE、FROMFILEDATE、
+     TOFILEDATE で指定できます。変更時刻の書式は、通常、 `time.ctime()'
+     の戻り値と同じものを使います。指定しなかった場合
+     のデフォルト値は、空文字列です。
+
+     `Tools/scripts/diff.py'
+     は、この関数のコマンドラインのフロントエンド（インターフェイス）になっています。
+
+     _Added in Python version 2.3_
+
+`get_close_matches(word, possibilities[, n[, cutoff]])'
+     最も「十分」なマッチのリストを返します。WORDは、なるべく
+     マッチして欲しい（一般的には文字列の）シーケンスです。
+     POSSIBILITIESはWORDにマッチさせる（一般的には文字列）
+     シーケンスのリストです。
+
+     オプションの引数N（デフォルトでは`3'）はメソッドの返す
+     マッチの最大数です。N は `0' より大きくなければなりません。
+
+     オプションの引数 CUTOFF （デフォルトでは `0.6'）は、 [0,
+     1]の間となるfloatの値です。可能性として、少なくとも WORD
+     が無視されたのと同様の数値にはなりません。
+
+     可能性のある、（少なくとも N に比べて）最もよいマッチはリストに
+     よって返され、同一性を表す数値に応じて最も近いものから順に格納されます。
+
+          >>> get_close_matches('appel', ['ape', 'apple', 'peach', 'puppy'])
+          ['apple', 'ape']
+          >>> import keyword
+          >>> get_close_matches('wheel', keyword.kwlist)
+          ['while']
+          >>> get_close_matches('apple', keyword.kwlist)
+          []
+          >>> get_close_matches('accept', keyword.kwlist)
+          ['except']
+
+
+`ndiff(a, b[, linejunk[, charjunk]])'
+     A と B （文字列からなるリスト）を比較し、`Differ'
+     オブジェクト形式の差異（解析器は差異のある列）を返します。
+
+     オプションのパラメータ LINEJUNK と CHARJUNK は、filter
+     機能のためのキーワードです（使わないときは空にする）。
+
+     LINEJUNK: string型の引数ひとつを受け取る関数で、文字列が
+     junkか否かによってtrueを（違うときにはtrueを）返します。Python
+     2.3以降、デフォルトでは（`None'）になります。それまでは、
+     モジュールレべルの関数`IS_LINE_JUNK()'であり、それは
+     少なくともひとつのシャープ記号（`#'）をのぞく、可視の
+     キャラクタを含まない行をフィルタリングします。 Python
+     2.3では、下位にある`SequenceMatcher'クラスが、
+     雑音となるくらい頻繁に登場する列であるか否かを、動的に分析します。
+     これは、バージョン2.3以前でのデフォルト値よりうまく動作します。
+
+     CHARJUNK: 長さ1の文字を受け取る関数です。デフォルトでは、
+     モジュールレべルの関数 IS_CHARACTER_JUNK()であり、これは空白文字列
+     （空白またはタブ、注：改行文字をこれに含めるのは悪いアイデア！）を
+     フィルタリングします。
+
+     `Tools/scripts/ndiff.py' は、この関数のコマンドラインのフロント
+     エンド（インターフェイス）です。
+
+          >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
+          ...              'ore\ntree\nemu\n'.splitlines(1))
+          >>> print ''.join(diff),
+          - one
+          ?  ^
+          + ore
+          ?  ^
+          - two
+          - three
+          ?  -
+          + tree
+          + emu
+
+
+`restore(sequence, which)'
+     差異を生成したシーケンスのひとつを返します。
+
+     与えられるSEQUENCEは `Differ.compare()' または
+     `ndiff()'によって生成され、ファイル1または2（引数
+     WHICHで指定される）によって元の列に復元され、行頭の
+     プレフィクスが取りのぞかれます。
+
+     例:
+
+          >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
+          ...              'ore\ntree\nemu\n'.splitlines(1))
+          >>> diff = list(diff) # materialize the generated delta into a list
+          >>> print ''.join(restore(diff, 1)),
+          one
+          two
+          three
+          >>> print ''.join(restore(diff, 2)),
+          ore
+          tree
+          emu
+
+
+`unified_diff(a, b[, fromfile[, tofile [, fromfiledate[, tofiledate[, n [, lineterm]]]]]])'
+     A と B (共に文字列のリスト) を比較し、diff の unified 形式
+     で、差異 (差分行を生成するジェネレータ) を返します。
+
+     unified
+     形式は変更があった行に前後数行を加えた、コンパクトな表現方法で
+     す。変更箇所は (変更前/変更後を分離したブロックではなく)
+     インライン・ス
+     タイルで表されます。コンテクスト（変更箇所前後の行）の行数は、N で
+     指定し、デフォルト値は 3 です。
+
+     デフォルトでは、diff の制御行 (`---'、`+++'、`@@' を含 む行)
+     は行末で改行します。この場合、入出力共、行末に改行文字を持つので、
+     `file.readlines()' で得た入力を処理して生成した差異を、
+     `file.writelines()' に渡す場合に便利です。
+
+     行末に改行文字を持たない入力には、出力も同じように改行なしになるように、LINETERM
+     引数を `""' にセットしてください
+
+     diff
+     コンテクスト形式は、通常、ヘッダにファイル名と変更時刻を持ってい
+     ます。  この情報は、文字列 FROMFILE、TOFILE、
+     FROMFILEDATE、TOFILEDATE で指定できます。変更時刻の書式は、
+     通常、`time.ctime()' の戻り値と同じものを使います。 指定しなかっ
+     た場合のデフォルト値は、空文字列です。
+
+     `Tools/scripts/diff.py' は、この関数のコマンドラインのフロントエ
+     ンド（インターフェイス）です。
+
+     _Added in Python version 2.3_
+
+`IS_LINE_JUNK(line)'
+     無視できる列のときtrueを返します。列 LINE が空白、または `#"'
+     ひとつのときには無視できます。それ以外の時には
+     無視できません。`ndiff()' の引数LINKJUNKとして
+     デフォルトで使用されます。 `ndiff()'のLINEJUNKはPython
+     2.3以前のものです。
+
+`IS_CHARACTER_JUNK(ch)'
+     無視できる文字のときtrueを返します。文字 CH が空白、または
+     タブ文字のときには無視できます。それ以外の時には無視できません。
+     `ndiff()' の引数CHARJUNKとしてデフォルトで使用されます。
+
+See also:
+     `Pattern Matching: The Gestalt Approach （パターン マッチング:
+     全体アプローチ）'{John W. Ratcliff と  D. E. Metzener
+     による同一性アルゴリズムに関する議論。  1988年7月号掲載。}
+
+* Menu:
+
+* SequenceMatcherオブジェクト::
+* SequenceMatcher の例::
+* Differ オブジェクト::
+* Differ の例::
+
+
+File: python-lib-jp.info,  Node: SequenceMatcherオブジェクト,  Next: SequenceMatcher の例,  Prev: difflib,  Up: difflib
+
+SequenceMatcherオブジェクト
+---------------------------
+
+The `SequenceMatcher'
+クラスには、以下のようなコンストラクタがあります。:
+
+`SequenceMatcher([isjunk[, a[, b]]])'
+     オプションの引数 ISJUNK は、（デフォルトの） `None'
+     またはsequenceエレメントが与えられた場合にtrueを返し、エレメントが
+     "junk"の場合に限り無視される、ひとつの引数をもった関数である
+     必要があります。 B に `None' が渡されるのは、`lambda x: 0';
+     が渡されるのと同じことです。言い換えると、どんな要素も無視されません。
+     例えば以下のような引数を渡すことで、空白とタブ文字を無視して
+     キャラクタの列を比較します。
+
+          lambda x: x in " \t"
+
+     オプションの引数 A と B は、比較される文字列です。
+     デフォルトで、それらは空の文字列で、文字列の要素はハッシュ化できます。
+
+`SequenceMatcher' オブジェクトは以下のメソッドを持ちます。
+
+`set_seqs(a, b)'
+     比較される2つの文字列を設定します。
+
+`SequenceMatcher' オブジェクトは2つ目の文字列についての詳細な情報を
+算定し、保管します。そのため、ひとつの文字列をいくつもの文字列と比較する場合、
+まず `set_seq2()' を使って文字列を設定しておき、別の文字列をひとつづつ
+比較するために、繰り返し `set_seq()' を呼び出します。
+
+`set_seq1(a)'
+     比較を行うひとつ目の文字列を設定します。比較される2つ目の文字列は
+     変更されません。
+
+`set_seq2(b)'
+     比較を行う2つめ目のシーケンスを設定します。比較されるひとつ目の
+     シーケンスは変更されません。
+
+`find_longest_match(alo, ahi, blo, bhi)'
+     `A[ALO:AHI]' と`B[BLO: BHI]'の中から、最長のマッチ列を探します。
+
+     ISJUNKが省略されたか`None'の時、`get_longest_match()' は`A[I:I+K]
+     'が`B[J: J+K]'と等しいような`(I, J, K)'を 返します。その値は`ALO
+     <= I <= I+K <=  AHI'かつ`BLO <= J <= J+K <=  BHI'となります。`(I',
+     J', K')'でも、 同じようになります。さらに`K >= K', I <= I'' が`I
+     == I', J <= J''でも同様です。
+     言い換えると、いくつものマッチ列すべてのうち、A内で最初に
+     始まるものを返します。そしてそのA内で最初のマッチ列すべての
+     うちB内で最初に始まるものを返します。
+
+          >>> s = SequenceMatcher(None, " abcd", "abcd abcd")
+          >>> s.find_longest_match(0, 5, 0, 9)
+          (0, 4, 5)
+
+     引数ISJUNKが与えられている場合、上記の通り、はじめに再長の
+     マッチ列を判定します。ブロック内にjunk要素が見当たらないような
+     追加条件の際はこれに該当しません。次にそのマッチ列を、その両側の
+     junk要素にマッチするよう、できる限り広げていきます。そのため結果
+     となる列は、探している列のたまたま直前にあった同一のjunk以外の
+     junkにはマッチしません。
+
+     以下は前と同じサンプルですが、空白をjunkとみなしています。これは
+     `' abcd''が2つ目の列の末尾にある`' abcd''にマッチしない
+     ようにしています。代わりに`'abcd''にはマッチします。そして
+     2つ目の文字列中、一番左の`'abcd''にマッチします。
+
+          >>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
+          >>> s.find_longest_match(0, 5, 0, 9)
+          (1, 0, 4)
+
+     どんな列にもマッチしない時は、`(ALO, BLO, 0)'を 返します。
+
+`get_matching_blocks()'
+     マッチしたシーケンス中で個別にマッチしたシーケンスをあらわす、
+     3つの値のリストを返します。それぞれの値は`(I, J,
+     N)'という形式であらわされ、`A[I:I+N] ==
+     B[J:J+N]'いう関係を意味します。3つの値は
+     IとJの間で単調に増加します。
+
+     最後のタプルはダミーで、`(len(A), len(B), 0)'という
+     値を持ちます。これは`N==0'である唯一のタプルです。
+
+          >>> s = SequenceMatcher(None, "abxcd", "abcd")
+          >>> s.get_matching_blocks()
+          [(0, 0, 2), (3, 2, 2), (5, 4, 0)]
+
+
+`get_opcodes()'
+     aをbにするための方法を記述する5つのタプルを返します。それぞれの
+     タプルは`(TAG, I1, I2, J1, J2)'
+     という形式であらわされます。最初のタプルは`I1 == J1 ==
+     0'であり、I1はその前にあるタプルのI2と同じ値です。
+     同様にJ1は前のJ2と同じ値になります。
+
+     TAGの値は文字列であり、次のような意味です。
+
+     値                                 意味
+     ------                             -----
+     'replace'                          `A[I1:I2]'は`B[
+                                        J1:J2]'に置き換えられる
+     'delete'                           `A[I1:I2]' は削除される。
+                                        この時、`J1 == J2'である
+     'insert'                           `B[J1:J2]' が`A
+                                        [I1:I1]'に挿入される。 この時`I1
+                                        == I2'である。
+     'equal'                            `A[I1:I2] == B[J1:J2]'
+                                        (下位の文字列は同一)
+
+     例:
+
+          >>> a = "qabxcd"
+          >>> b = "abycdf"
+          >>> s = SequenceMatcher(None, a, b)
+          >>> for tag, i1, i2, j1, j2 in s.get_opcodes():
+          ...    print ("%7s a[%d:%d] (%s) b[%d:%d] (%s)" %
+          ...           (tag, i1, i2, a[i1:i2], j1, j2, b[j1:j2]))
+           delete a[0:1] (q) b[0:0] ()
+            equal a[1:3] (ab) b[0:2] (ab)
+          replace a[3:4] (x) b[2:3] (y)
+            equal a[4:6] (cd) b[3:5] (cd)
+           insert a[6:6] () b[5:6] (f)
+
+
+`get_grouped_opcodes([n])'
+     最大 N
+     行までのコンテクストを含むグループを生成するような、ジェネレータを返します。
+
+     このメソッドは、`get_opcodes()' で返されるグループの中から、似
+     たような差異のかたまりに分け、間に挟まっている変更の無い部分を省きます。
+
+     グループは `get_opcodes()' と同じ書式で返されます。
+
+     _Added in Python version 2.3_
+
+`ratio()'
+     [0, 1]の範囲の浮動小数点で、シーケンスの同一性を測る値を返します。
+
+     Tが2つのシーケンスそれぞれがもつ要素の総数だと仮定し、Mをマッチした
+     数とすると、この値は2.0*M/Tであらわされます。もしシーケンスがまったく
+     同じ場合、値は1.0となり、まったく異なる場合には`0.0'となります。
+
+     このメソッドは`get_matching_blocks()'または`get_opcodes()'が
+     まだ呼び出されていない場合には非常にコストが高く、この時より限定された
+     機能をもった`quick_ratio()'もしくは`real_quick_ratio()'を
+     最初に試してみることができます。
+
+
+`quick_ratio()'
+     `ratio()'で測定する同一性をより素早く、限定された形で測ります。
+
+     このメソッドは`ratio()'より限定されており、これを超えるとは
+     見なされませんが、高速に実行します。
+
+`real_quick_ratio()'
+     ratio()で測定する同一性を非常に素早く測ります。
+
+     このメソッドは`ratio()'より限定されており、これを
+     超えるとは見なされませんが、`ratio()'や`
+     quick_ratio()'より高速に実行します。
+
+この文字列全体のマッチ率を返す3つのメソッドは、異なる近似値に基づく
+異なる結果を返します。とはいえ、`quick_ratio()'と`
+real_quick_ratio()'は、常に`ratio()'より大きな値を示します。
+
+     >>> s = SequenceMatcher(None, "abcd", "bcde")
+     >>> s.ratio()
+     0.75
+     >>> s.quick_ratio()
+     0.75
+     >>> s.real_quick_ratio()
+     1.0
+
+
+File: python-lib-jp.info,  Node: SequenceMatcher の例,  Next: Differ オブジェクト,  Prev: SequenceMatcherオブジェクト,  Up: difflib
+
+SequenceMatcher の例
+--------------------
+
+この例は2つの文字列を比較します。空白を"junk"とします。
+
+     >>> s = SequenceMatcher(lambda x: x == " ",
+     ...                     "private Thread currentThread;",
+     ...                     "private volatile Thread currentThread;")
+
+`ratio()' は、[0, 1] の範囲の値を返し、シーケンスの同一性を測ります。
+経験によると、`ratio()' の値が0.6を超えると、シーケンスがよく似て
+いることを示します。
+
+     >>> print round(s.ratio(), 3)
+     0.866
+
+シーケンスのどこがマッチしているかにだけ興味のある時には
+`get_matching_blocks()' が手軽でしょう。
+
+     >>> for block in s.get_matching_blocks():
+     ...     print "a[%d] and b[%d] match for %d elements" % block
+     a[0] and b[0] match for 8 elements
+     a[8] and b[17] match for 6 elements
+     a[14] and b[23] match for 15 elements
+     a[29] and b[38] match for 0 elements
+
+注意:最後のタプルは、`get_matching_blocks()'が常にダミーで
+あることで返されるものです。 `(len(A), len(B), 0)'
+であり、これは最後のタプルの要素（マッチするようその数）がゼロとなる
+唯一のケースです。
+
+はじめのシーケンスがどのようにして2番目のものになるのかを知るには、
+`get_opcodes()' を使います。
+
+     >>> for opcode in s.get_opcodes():
+     ...     print "%6s a[%d:%d] b[%d:%d]" % opcode
+      equal a[0:8] b[0:8]
+     insert a[8:8] b[8:17]
+      equal a[8:14] b[17:23]
+      equal a[14:29] b[23:38]
+
+See also the function `get_close_matches()' in this module, which shows
+how simple code building on `SequenceMatcher' can be used to do useful
+work.  `SequenceMatcher' を使った、シンプルで使えるコードを知るには、
+このモジュールの関数 `get_close_matches()' を参照してください。
+
+
+File: python-lib-jp.info,  Node: Differ オブジェクト,  Next: Differ の例,  Prev: SequenceMatcher の例,  Up: difflib
+
+Differ オブジェクト
+-------------------
+
+`Differ'オブジェクトによって抽出された差分は、*最小単位*の
+差分を見ても問題なく抽出されます。反対に、最小の差分の場合にはこれとは
+反対のように見えます。それらが、どこれも可能ときに同期するからです。
+時折、思いがけなく100ページもの部分にマッチします。隣接するマッチ列の
+同期するポイントを制限することで、より長い差異を算出する再帰的なコスト
+での、局所性の概念を制限します。
+
+`Differ'は、以下のようなコンストラクタを持ちます。
+
+`Differ([linejunk[, charjunk]])'
+     オプションのパラメータLINEJUNKとCHARJUNKはfilter関数の
+     ために指定します（もしくは`None'を指定）。
+
+     LINEJUNK:ひとつの文字列引数を受け取れるべき関数です。
+     文字列がjunkのときにtrueを返します。デフォルトでは、`None'
+     であり、どんな行であってもjunkとは見なされません。
+
+     CHARJUNK: この関数は（長さ1の）文字列を引数として受け取り、文字列が
+     junkであるときにtrueを返します。デフォルトは`None'であり、どんな文字列も
+     junkとは見なされません。
+
+`Differ'オブジェクトは、以下のひとつのメソッドによって使われます
+（違いを生成します）。
+
+`compare(a, b)'
+     文字列からなる2つのシーケンスを比較し、差異（を表す文字列からなる
+     シーケンス）を生成します。
+
+     Each sequence must contain individual single-line strings ending
+     with newlines. Such sequences can be obtained from the
+     `readlines()' method of file-like objects.  The delta generated
+     also consists of newline-terminated strings, ready to be printed
+     as-is via the `writelines()' method of a file-like object.
+     それぞれのシーケンスは、改行文字によって終了する、独立したひと連なりの
+     文字列でなければなりません。そのようなシーケンスは、ファイル形式オブジェクトの
+     `readline()'メソッドによって得ることができます。（得られる）差異は
+     改行文字で終了する文字列として得られ、ファイル形式オブジェクトの`writeline()'
+     メソッドによって出力できる形になっています。
+
+
+File: python-lib-jp.info,  Node: Differ の例,  Prev: Differ オブジェクト,  Up: difflib
+
+Differ の例
+-----------
+
+この例では2つのテキストを比較します。初めに、改行文字で終了する独立した
+1行の連続した（ファイル形式オブジェクトの`readlines()'メソッドに
+よって得られるような）テキストを用意します。
+
+     >>> text1 = '''  1. Beautiful is better than ugly.
+     ...   2. Explicit is better than implicit.
+     ...   3. Simple is better than complex.
+     ...   4. Complex is better than complicated.
+     ... '''.splitlines(1)
+     >>> len(text1)
+     4
+     >>> text1[0][-1]
+     '\n'
+     >>> text2 = '''  1. Beautiful is better than ugly.
+     ...   3.   Simple is better than complex.
+     ...   4. Complicated is better than complex.
+     ...   5. Flat is better than nested.
+     ... '''.splitlines(1)
+
+次にDifferオブジェクトをインスタンス化します。
+
+     >>> d = Differ()
+
+注意：`Differ'オブジェクトをインスタンス化するとき、
+"junk."である列と文字をフィルタリングす関数を渡すことができます。
+詳細は`Differ()'コンストラクタを参照してください。
+
+最後に、2つを比較します。
+
+     >>> result = list(d.compare(text1, text2))
+
+`result'は文字列のリストなので、pretty-printしてみましょう。
+
+     >>> from pprint import pprint
+     >>> pprint(result)
+     ['    1. Beautiful is better than ugly.\n',
+      '-   2. Explicit is better than implicit.\n',
+      '-   3. Simple is better than complex.\n',
+      '+   3.   Simple is better than complex.\n',
+      '?     ++                                \n',
+      '-   4. Complex is better than complicated.\n',
+      '?            ^                     ---- ^  \n',
+      '+   4. Complicated is better than complex.\n',
+      '?           ++++ ^                      ^  \n',
+      '+   5. Flat is better than nested.\n']
+
+これは、複数行の文字列として、次のように出力されます。
+
+     >>> import sys
+     >>> sys.stdout.writelines(result)
+         1. Beautiful is better than ugly.
+     -   2. Explicit is better than implicit.
+     -   3. Simple is better than complex.
+     +   3.   Simple is better than complex.
+     ?     ++
+     -   4. Complex is better than complicated.
+     ?            ^                     ---- ^
+     +   4. Complicated is better than complex.
+     ?           ++++ ^                      ^
+     +   5. Flat is better than nested.
+
+
+File: python-lib-jp.info,  Node: fpformat,  Next: StringIO,  Prev: difflib,  Up: 文字列処理
+
+浮動小数点の変換
+================
+
+浮動小数点をフォーマットする汎用関数。
+
+_Note:_ This module is unneeded: everything here could be done via the
+`%' string interpolation operator.
+
+`fpformat' モジュールは浮動小数点数の表示を 100% 純粋に Python だけで
+行うための関数を定義しています。 _Note:_
+このモジュールは必要ありません: このモジュールのすべてのことは、 `%'
+を使って、文字列の補間演算により可能です。
+
+`fpformat' モジュールは次にあげる関数と例外を定義しています。
+
+`fix(x, digs)'
+     X を `[-]ddd.ddd' の形にフォーマットします。 小数点の後ろに DIGS
+     桁と、小数点の前に少なくとも1桁です。 `var{digs} <= 0'
+     の場合、小数点以下は切り捨てられます。
+
+     X は数字か数字を表した文字列です。
+
+     DIGS は整数です。
+
+     返り値は文字列です。
+
+`sci(x, digs)'
+     X を `[-]d.dddE[+-]ddd' の形にフォーマットします。 小数点の後ろに
+     DIGS 桁と、小数点の前に1桁だけです。
+
+     `var{digs} <= 0'
+     の場合、1桁だけ残され、小数点以下は切り捨てられます。
+
+     X は実数か実数を表した文字列です。
+
+     DIGS は整数です。
+
+     返り値は文字列です。
+
+`NotANumber'
+     `fix()' や `sci()' にパラメータとして渡された文字列 X が
+     数字として認識できなかった場合、例外が発生します。
+     標準の例外が文字列の場合、この例外は `ValueError'
+     のサブクラスです。
+     例外値は、例外を発生させた不適切にフォーマットされた文字列です。
+
+
+例:
+
+     >>> import fpformat
+     >>> fpformat.fix(1.23, 1)
+     '1.2'
+
+
+File: python-lib-jp.info,  Node: StringIO,  Next: cStringIO,  Prev: fpformat,  Up: 文字列処理
+
+ファイルのように文字列を読み書きする
+====================================
+
+ファイルのように文字列を読み書きする。
+
+このモジュールは、(_メモリファイル_としても知られている)
+文字列のバッファに対して読み書きを行うファイルのようなクラス、
+`StringIO' 、を実装しています。
+
+操作方法についてはファイルオブジェクトの説明を参照してください(セクション
+*Note ファイルオブジェクト::)。
+
+`StringIO([buffer])'
+     `StringIO'
+     オブジェクトを作る際に、コンストラクターに文字列を渡すこと
+     で初期化することができます。 文字列を渡さない場合、最初は
+     `StringIO' はカラです。
+
+     `StringIO' オブジェクトはユニコードも 8-bit
+     の文字列も受け付けますが、
+     この2つを混ぜることには少し注意が必要です。
+     この2つが一緒に使われると、 `getvalue()' が呼ばれたときに、 (8th
+     ビットを使っている)7-bit ASCII に解釈できない 8-bit の文字列は、
+     `UnicodeError' を引き起こします。
+
+次にあげる `StringIO' オブジェクトのメソッドには特別な説明が必要です:
+
+`getvalue()'
+     `StringIO' オブジェクトの `close()'
+     メソッドが呼ばれる前ならいつでも、 "file" の中身全体を返します。
+     ユニコードと 8-bit
+     の文字列を混ぜることの説明は、上の注意を参照してください。
+     この2つの文字コードを混ぜると、このメソッドは `UnicodeError' を
+     引き起こすかもしれません。
+
+`close()'
+     メモリバッファを解放します。
+
+
+File: python-lib-jp.info,  Node: cStringIO,  Next: textwrap,  Prev: StringIO,  Up: 文字列処理
+
+高速化された `StringIO'
+=======================
+
+`StringIO'を高速にしたものだが、サブクラス化はできない。
+
+`cStringIO' モジュールは `StringIO' モジュールと同様の
+インターフェースを提供しています。 `StringIO.StringIO'
+オブジェクトを酷使する場合、 このモジュールにある `StringIO()'
+関数をかわりに使うと効果的です。
+
+このモジュールは、ビルトイン型のオブジェクトを返すファクトリー関数を提供しているので、
+サブクラス化して自分用の物を作ることはできません。
+そうした場合には、オリジナルの `StringIO' モジュールを使ってください。
+
+`StringIO' モジュールで実装されているメモリファイルとは異なり、
+このモジュールで提供されているものは、プレイン ASCII
+文字列にエンコードできない ユニコードを受け付けることができません。
+
+また、引数に文字列を指定して`StringIO()'呼び出すと読み出し専用のオブジェクト
+が生成されますが、この場合 `cStringIO.StringIO()' では
+write()メソッドを持たない オブジェクトを生成します。
+
+次にあげるデータオブジェクトも提供されています:
+
+`InputType'
+     文字列をパラメーターに渡して `StringIO'
+     を呼んだときに作られるオブジェクトの オブジェクト型。
+
+`OutputType'
+     パラメーターを渡さすに `StringIO'
+     を呼んだときに返されるオブジェクトの オブジェクト型。
+
+このモジュールには C API
+もあります。詳しくはこのモジュールのソースを参照してください。
+
+
+File: python-lib-jp.info,  Node: textwrap,  Next: codecs,  Prev: cStringIO,  Up: 文字列処理
+
+テキストの折り返しと詰め込み
+============================
+
+テキストの折り返しと詰め込み
+
+_Added in Python version 2.3_
+
+`textwrap'モジュールでは、二つの簡易関数`wrap()'と
+`fill()'、そして作業のすべてを行うクラス`TextWrapper'
+とユーティリティ関数 `dedent()' を提供しています。
+単に一つや二つのテキスト文字列の折り返しまたは詰め込みを行っている
+ならば、簡易関数で十分間に合います。そうでなければ、
+効率のために`TextWrapper'のインスタンスを使った方が良いでしょう。
+
+`wrap(text[, width[, ...]])'
+     TEXT(文字列)内の段落を一つだけ折り返しを行います。したがって、すべての行が高々WIDTH文字の長さになります。最後に改行が付かない出力行のリストを返します。
+
+     オプションのキーワード引数は、以下で説明する`TextWrapper'のインスタンス属性に対応しています。WIDTHはデフォルトで`70'です。
+
+`fill(text[, width[, ...]])'
+     TEXT内の段落を一つだけ折り返しを行い、折り返しが行われた段落を含む一つの文字列を返します。`fill()'は
+          "\n".join(wrap(text, ...))
+
+     の省略表現です。
+
+     特に、`fill()'は`wrap()'とまったく同じ名前のキーワード引数を受け取ります。
+
+`wrap()'と`fill()'の両方ともが`TextWrapper'インスタンスを作成し、その一つのメソッドを呼び出すことで機能します。そのインスタンスは再利用されません。したがって、たくさんのテキスト文字列を折り返し/詰め込みを行うアプリケーションのためには、あなた自身の`TextWrapper'オブジェクトを作成することでさらに効率が良くなるでしょう。
+
+追加のユーティリティ関数である `dedent()' は、不要な
+空白をテキストの左側に持つ文字列からインデントを取り去ります。
+
+`dedent(text)'
+     TEXT の各行に対し、左側から一様に取り去ることができるような空白
+     を除去します。
+
+     この関数は通常、三重引用符で囲われた文字列をスクリーン/その他の
+     左端にそろえ、なおかつソースコード中でのインデントされた形式を
+     損なわないようにするために使われます。
+
+     以下に例を示します:
+          def test():
+              # end first line with \ to avoid the empty line!
+              s = '''\
+              hello
+                world
+              '''
+              print repr(s)          # prints '    hello\n      world\n    '
+              print repr(dedent(s))  # prints 'hello\n  world\n'
+
+
+`TextWrapper(...)'
+     `TextWrapper'コンストラクタはたくさんのオプションのキーワード引数を受け取ります。それぞれの引数は一つのインスタンス属性に対応します。したがって、例えば、
+          wrapper = TextWrapper(initial_indent="* ")
+
+     は
+          wrapper = TextWrapper()
+          wrapper.initial_indent = "* "
+
+     と同じです。
+
+     あなたは同じ`TextWrapper'オブジェクトを何回も再利用できます。また、使用中にインスタンス属性へ代入することでそのオプションのどれでも変更できます。
+
+`TextWrapper'インスタンス属性(とコンストラクタのキーワード引数)は以下の通りです:
+
+`width'
+     (デフォルト: `70')
+     折り返しが行われる行の最大の長さ。入力行に`width'より長い単一の語が無い限り、`TextWrapper'は`width'文字より長い出力行が無いことを保証します。
+
+`expand_tabs'
+     (デフォルト: `True')
+     もし真ならば、そのときはTEXT内のすべてのタブ文字はTEXTの`expandtabs()'メソッドを用いて空白に展開されます。
+
+`replace_whitespace'
+     (デフォルト: `True')
+     もし真ならば、タブ展開の後に残る(`string.whitespace'に定義された)空白文字のそれぞれが一つの空白と置き換えられます。_Note:_
+     `expand_tabs'が偽で`replace_whitespace'が真ならば、各タブ文字は一つの空白に置き換えられます。それはタブ展開と同じでは_ありません_。
+
+`initial_indent'
+     (デフォルト: `''')
+     折り返しが行われる出力の一行目の先頭に付けられる文字列。一行目の折り返しの長さになるまで含められます。
+
+`subsequent_indent'
+     (デフォルト: `''')
+     一行目以外の折り返しが行われる出力のすべての行の先頭に付けられる文字列。一行目以外の各行が折り返しの長さまで含められます。
+
+`fix_sentence_endings'
+     (デフォルト: `False')
+     もし真ならば、`TextWrapper'は文の終わりを見つけようとし、確実に文がちょうど二つの空白で常に区切られているようにします。これは一般的に固定スペースフォントのテキストに対して望ましいです。しかし、文の検出アルゴリズムは完全ではありません:
+     文の終わりには、後ろに空白がある`.'、`!'または`?'の中の一つ、ことによると`"'あるいは`''が付随する小文字があると仮定しています。これに伴う一つの問題は
+
+          [...] Dr. Frankenstein's monster [...]
+
+     の"Dr."と
+
+          [...] See Spot. See Spot run [...]
+
+     の"Spot."の間の差異を検出できないアルゴリズムです。
+
+     `fix_sentence_endings'はデフォルトで偽です。
+
+     文検出アルゴリズムは"小文字"の定義のために`string.lowercase'に依存し、同一行の文を区切るためにピリオドの後に二つの空白を使う慣習に依存しているため、英文テキストに限定されたものです。
+
+`break_long_words'
+     (デフォルト: `True')
+     もし真ならば、そのとき`width'より長い行が確実にないようにするために、`width'より長い語は切られます。偽ならば、長い語は切られないでしょう。そして、`width'より長い行があるかもしれません。(`width'を超える分を最小にするために、長い語は単独で一行に置かれるでしょう。)
+
+`TextWrapper'はモジュールレベルの簡易関数に類似した二つの公開メソッドも提供します:
+
+`wrap(text)'
+     TEXT(文字列)内の段落を一つだけ折り返しを行います。したがって、すべての行は高々`width'文字です。すべてのラッピングオプションは`TextWrapper'インスタンスのインスタンス属性から取られています。最後に改行の無い出力された行のリストを返します。
+
+`fill(text)'
+     TEXT内の段落を一つだけ折り返しを行い、折り返しが行われた段落を含む一つの文字列を返します。
+
+
+File: python-lib-jp.info,  Node: codecs,  Next: unicodedata,  Prev: textwrap,  Up: 文字列処理
+
+codec レジストリと基底クラス
+============================
+
+データやストリームをエンコード・デコードする
+
+このモジュールでは、標準のPython
+codec（エンコーダとデコーダ）の基底クラスを定義し、 codec
+およびエラー処理の検索手順を管理している、 内部的な Python codec
+レジストリ に対するアクセス手段を提供しています。
+
+`codecs' では以下の関数を定義しています:
+
+`register(search_function)'
+     codec 検索関数を登録します。検索関数は第 1
+     引数にアルファベットの小文字
+     から成るエンコーディング名を取り、関数のタプル `(ENCODER,
+     DECODER, STREAM_READER,STREAM_WRITER)' を返すことに
+     なっています。戻り値の関数が取る引数は以下の通りです。
+
+     ENCODER と DECODER: これらは、Codec インスタンスの
+     `encode()'と`decode()' (Codec Interface 参照)
+     と同じインターフェイスを
+     持つ関数、またはメソッドでなければなりません。
+     これらの関数・メソッドは状態なし (stateless)
+     モードで動作しなければなりません。
+
+     STREAM_READER と STREAM_WRITER: これらは次のようなインター
+     フェイスを持つファクトリ関数でなければなりません。
+
+     `factory(STREAM, ERRORS='strict')'
+
+     これらのファクトリ関数は、それぞれの基底クラスである
+     `StreamWriter' と `StreamReader' で定義されているインターフェイスを
+     提供するオブジェクトを返さなければいけません。ストリーム codecs
+     は状態を保持することができます。
+
+     errors が取り得る値は、`'strict''
+     (エンコーディングエラーの際に例外を発生)、 `'replace''
+     (奇形データを `?'等の適切な文字で置換)、 `'ignore''
+     (奇形データを無視し何も通知せずに処理を継続)、
+     `'xmlcharrefreplace''' (適切な XML 文字参照で置換
+     (エンコーディングのみ))、 および `'backslashreplace''
+     (バックスラッシュによるエスケープシーケンス
+     (エンコーディングのみ)) と、`register_error()' で定義されたその他の
+     エラーハンドル名になります。
+
+     検索関数が与えられたエンコーディングを見つけられなかった場合には、
+     `None'を返すべきです。
+
+`lookup(encoding)'
+     Python codec レジストリから codec
+     タプルを探し、上の項目で定義された関数 のタプルを返します。
+
+     最初に、レジストリのキャッシュから encoding
+     を探します。見つからなければ、
+     登録されている検索関数のリストから探します。見つからなければ、
+     `LookupError' が発生し、見つかれば codec のタプルがキャッシュ
+     に保存され、それを呼び出し側に返します。
+
+さまざまな codec へのアクセスを簡便化するために、このモジュールは次に挙
+げるような関数を提供します。これらは codec の検索に `lookup()'
+を使います。
+
+`getencoder(encoding)'
+     encoding で指定された codec を検索し、エンコーダ関数を返します。
+
+     encoding が見つからなければ `LookupError' が発生します。
+
+`getdecoder(encoding)'
+     encoding で指定された codec を検索し、デコーダ関数を返します。
+
+     encoding が見つからなければ `LookupError' が発生します。
+
+`getreader(encoding)'
+     encoding で指定された codec を検索し、StreamReader
+     クラス、またはファク トリ関数を返します。
+
+     encoding が見つからなければ `LookupError' が発生します。
+
+`getwriter(encoding)'
+     encoding で指定された codec を検索し、StreamWriter
+     クラス、またはファク トリ関数を返します。
+
+     encoding が見つからなければ `LookupError' が発生します。
+
+`register_error(name, error_handler)'
+     エラー処理関数 ERROR_HANDLER を名前 NAME で登録します。
+     エンコード中およびデコード中にエラーが発生した場合、 NAME が
+     errors パラメタとして指定されていれば ERROR_HANDLER
+     が呼び出されます。
+
+     ERROR_HANDLER はエラーの場所に関する情報の入った
+     `UnicodeEncodeError' インスタンスとともに呼び出されます。
+     エラー処理関数はこの例外を送出するか、別の例外を送出するか、または
+     入力のエンコードができなかった部分の代替文字列、およびどこからエンコードを
+     再開するかを指定するタプルを返さなければなりません。
+     エンコーダは代替文字列をエンコードし、元の入力の指定された場所から
+     エンコードを再開します。負の位置は入力文字列の末端からの相対位置と
+     して扱われます。返された位置が境界の外側にある場合には IndexError
+     が送出されます。
+
+     デコードと翻訳は同様に働きますが、`UnicodeDecodeError' または
+     `UnicodeTranslateError' がハンドラに渡される点が
+     異なります。また、エラーハンドラから得られた置換文字列が出力に直接
+     置かれる点も異なります。
+
+`lookup_error(name)'
+     既に、名前NAME 以下に登録されているエラー処理関数を返します。
+
+     エラー処理関数が見つからなければ `LookupError' が発生します。
+
+`strict_errors(exception)'
+     `strict' エラー処理を実装しています。
+
+`replace_errors(exception)'
+     `replace' エラー処理を実装しています。
+
+`ignore_errors(exception)'
+     `ignore' エラー処理を実装しています。
+
+`xmlcharrefreplace_errors_errors(exception)'
+     `xmlcharrefreplace' エラー処理を実装しています。
+
+`backslashreplace_errors_errors(exception)'
+     `backslashreplace' エラー処理を実装しています。
+
+エンコードされたファイルやストリームの処理を簡便化するため、, このモジュ
+ールは次のようなユーティリティ関数を定義しています。
+
+`open(filename, mode[, encoding[, errors[, buffering]]])'
+     指定された MODE でエンコードされたファイルを開き、
+     透過なエンコード・デ
+     コードを提供するような、ラップされた版のファイルオブジェクトを返します。
+
+     _Note:_ ラップされた版は、その codec
+     で定義されたフォーマットのオブジェク
+     トのみ受け付けます。多くの組み込み codec において  Unicode
+     オブジェクト です。出力も codec に依存し、通常は Unicode
+     オブジェクトです。
+
+     ENCODING は、ファイルに使われるエンコーディングを指定します。
+
+     ERRORS を指定して、エラー処理を定義することもできます。デフォルト
+     では `'strict'' で、エンコード時にエラーがあれば `ValueError'
+     が発生します。
+
+     BUFFERING は、組み込み関数 `open()' と同じです。デフォル
+     トでは、ラインバッファです。
+
+`EncodedFile(file, input[, output[, errors]])'
+     ラップされた版のファイルオブジェクトを返し、このオブジェクトは透過なエン
+     コード変換を提供します。
+
+     ラップされたファイルに書かれた文字列は、与えられた INPUT エンコー
+     ディングに従って変換され、OUTPUT エンコーディングを使ってファイル
+     に文字列として書き込まれます。中間エンコーディングは、通常 Unicode
+     ですが、指 定された codecs に依存します。
+
+     OUTPUT が与えられなければ、INPUT がデフォルトになります。
+
+     ERRORS を与えて、エラー処理を定義することもできます。デフォルト
+     では `'strict'' で、エンコード時にエラーがあれば `ValueError'
+     が発生します。
+
+このモジュールは以下のような定数を定義します。プラットフォーム依存なファ
+イルを読み書きするのに役立ちます。
+
+`BOM'
+
+`BOM_BE'
+
+`BOM_LE'
+
+`BOM_UTF8'
+
+`BOM_UTF16'
+
+`BOM_UTF16_BE'
+
+`BOM_UTF16_LE'
+
+`BOM_UTF32'
+
+`BOM_UTF32_BE'
+
+`BOM_UTF32_LE'
+     ここで定義された定数は、様々なエンコーディングの Unicode の
+     バイト・オー ダー・マーク (BOM) で、UTF-16 と UTF-32
+     におけるデータストリームやファイ
+     ルストリームのバイトオーダーを指定したり、UTF-8 におけるUnicode
+     signature として使われます。`BOM_UTF16' は `BOM_UTF16_BE' と
+     `BOM_UTF16_LE' のいずれかで、プラッ
+     トフォームのネイティブ・バイトオーダーに依存します。`BOM' は
+     `BOM_UTF16'のエイリアスです。同様に `BOM_LE'は
+     `BOM_UTF16_LE'の、`BOM_BE' は `BOM_UTF16_BE'
+     のエイリアスです。他は UTF-8 と UTF-32 エンコーディングの BOM
+     を表します。
+
+See also:
+    <http://sourceforge.net/projects/python-codecs/>
+          Python で使う、 アジア文字用の codec のサポートに取り組む
+          SourceForge のプロジェクト。
+          この文書の執筆時点では開発の初期段階です。 --
+          ダウンロード可能なファイ ルについては、プロジェクトの FTP
+          エリア を見てください。
+
+
+* Menu:
+
+* Codec 基底クラス::
+* 標準エンコーディング::
+* encodingsidna --- アプリケーションにおける国際化ドメイン名 IDNA::
+
+
+File: python-lib-jp.info,  Node: Codec 基底クラス,  Next: 標準エンコーディング,  Prev: codecs,  Up: codecs
+
+Codec 基底クラス
+----------------
+
+`codecs' は、インターフェイスを定義し、自前の Python 用 codec
+を、簡単に書くのに使える基底クラス群を定義してあります。
+
+各 codec は、Python の codec として使えるように、4つのインターフェイスを
+定義しなければなりません。状態なしエンコーダ、状態なしデコーダ、ストリー
+ムリーダ、ストリームライタです。ストリームリーダとライタは、通常、状態な
+しエンコーダとデコーダを再利用して、ファイル・プロトコルを実装します。
+
+`Codec' クラスは、状態なしエンコーダ・デコーダのインターフェイスを
+定義します。
+
+エラー処理を簡便化し、安定させるために、`encode()' メソッドと
+`decode()' メソッドは、ERRORS 文字列引数を提供することで、
+異なるエラー処理の仕組みを実装してもかまいません。以下の文字列は全ての標
+準 Python codec で定義および実装されています。
+
+Value                                Meaning
+------                               -----
+'strict'                             `UnicodeError'
+                                     (または、そのサブクラス)を 発生 -
+                                     これがデフォルト。
+'ignore'                             その文字を無視し、次の文字から変換を再開
+'replace'                            適当な文字で置換 - Python
+                                     の組み込み Unicode codec
+                                     のデコード時には公 式の U+FFFD
+                                     REPLACEMENT CHARACTER
+                                     を、エンコード時 には '?' を使う
+'xmlcharrefreplace'                  適切な XML
+                                     文字参照で置換(エンコードのみ)
+'backslashreplace'                   バックスラッシュつきのエスケープシーケンス
+                                     で置換(エンコードのみ)
+
+受け付ける値は、`register_error' を使って追加できます。
+
+* Menu:
+
+* Codec オブジェクト::
+* StreamWriter オブジェクト::
+* StreamReader オブジェクト::
+* StreamReaderWriter オブジェクト::
+* StreamRecoder オブジェクト::
+

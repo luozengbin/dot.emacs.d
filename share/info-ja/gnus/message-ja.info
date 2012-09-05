@@ -1,0 +1,2335 @@
+Info file: message-ja.info,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `message-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Message-ja: (message-ja).     Mail and news composition mode that goes
+                                with Gnus (Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+
+
+File: message-ja.info, Node: Top, Next: Interface, Prev: (dir), Up: (dir)
+
+Message
+*******
+
+Gnus のすべてのメッセージの作成 (メールとニュースの両方) は、メッセージ
+モードのバッファーで行ないます。
+
+* Menu:
+
+* Interface::         メッセージバッファーの設定
+* Commands::          メッセージモードのバッファーで実行できる命令
+* Variables::         メッセージバッファーのカスタマイズ
+* Compatibility::     メッセージを下位互換にする
+* Appendices::        もっと技術的なこと
+* Index::             変数、関数、概念の索引
+* Key Index::         メッセージモードのキーの一覧
+
+Message は Gnus とともに配布されます。このマニュアルに対応する Gnus の
+版は No Gnus v0.4 です。
+
+
+
+File: message-ja.info, Node: Interface, Next: Commands, Prev: Top, Up: Top
+
+インターフェース
+****************
+
+プログラム (または人) がメッセージに反応したいとき--返答、フォローアッ
+プ、転送、取り消しをしたいとき--そのプログラム (または人) はちょうどそ
+のメッセージがあるバッファーにポイントを置いて、必要な命令を呼び出すは
+ずです。すると `Message' は、適切なヘッダーで満たした新しい `message'
+モードのバッファーを出現させてくれるので、利用者はメッセージを送る前に
+それを編集することができます。
+
+* Menu:
+
+* New Mail Message::     真新しいメールメッセージを編集する
+* New News Message::     真新しいニュースメッセージを編集する
+* Reply::                メールで返答する
+* Wide Reply::           すべての人たちにメールで応答する
+* Followup::             ニュースでフォローアップする
+* Canceling News::       ニュース記事を取り消す
+* Superseding::          メッセージを置き換える
+* Forwarding::           メッセージをニュースまたはメールで転送する
+* Resending::            メールメッセージを再送する
+* Bouncing::             弾かれたメールメッセージを再送する
+* Mailing Lists::        メーリングリストにメールを送る
+
+
+
+File: message-ja.info, Node: New Mail Message, Next: New News Message, Prev: Interface, Up: Interface
+
+新しいメールメッセージ
+======================
+
+`message-mail' 命令は、新しいメッセージバッファーを出現させます。
+
+二つの省略可能な引数が受け付けられます: 最初のものは `To' ヘッダーとし
+て、二番目は `Subject' ヘッダーとして使われます。もしこれらが `nil' だっ
+たら、それらの二つのヘッダーは空になります。
+
+
+
+File: message-ja.info, Node: New News Message, Next: Reply, Prev: New Mail Message, Up: Interface
+
+新しいニュースメッセージ
+========================
+
+`message-news' 命令は、新しいメッセージバッファーを出現させます。
+
+この関数は二つの省略可能な引数を受け付けます。最初のものは
+`Newsgroups' ヘッダーとして、二つ目のものは `Subject' ヘッダーとして使
+われます。もしこれらが `nil' だったら、それらの二つのヘッダーは空になり
+ます。
+
+
+
+File: message-ja.info, Node: Reply, Next: Wide Reply, Prev: New News Message, Up: Interface
+
+返答
+====
+
+`message-reply' 関数は、現在のバッファーにあるメッセージへの返答のメッ
+セージバッファーを出現させます。
+
+Message は返答がどこに行くか (*Note Responses::) を標準の方法で決定しま
+すが、`message-reply-to-function' 変数をいじくることによって、あなたの
+必要に応じてその振る舞いを変えることができます。
+
+`From' の代わりに `Sender' に返答を送りたいのであれば、このようなことが
+できます:
+
+     (setq message-reply-to-function
+           (lambda ()
+            (cond ((equal (mail-fetch-field "from") "somebody")
+                    (list (cons 'To (mail-fetch-field "sender"))))
+                  (t
+                   nil))))
+
+この関数は、返答しようとする記事がヘッダー部分に狭められたバッファーで
+呼ばれます。
+
+ご覧のように、この関数はリストを返さなければなりません。この場合、To ヘッ
+ダーがそうなるべきだと判断すれば `((To . "Whom"))' を返します。そうでな
+ければ単に `nil' を返すだけで、To ヘッダーを決定する標準の方法が使われ
+るでしょう。
+
+リストのそれぞれの要素は cons セルです。CAR はヘッダーの名前 (例えば
+`Cc') で、CDR はヘッダーの値 (例えば `larsi@ifi.uio.no') です。これらす
+べてのヘッダーは、送出されるメールのヘッダーに挿入されます。
+
+
+
+File: message-ja.info, Node: Wide Reply, Next: Followup, Prev: Reply, Up: Interface
+
+広い返答
+========
+
+`message-wide-reply' は、現在のバッファーにあるメッセージへの広い返答の
+メッセージバッファーを出現させます。「広い返答」とは `To'、`From' (また
+は `Reply-to') および `Cc' ヘッダーに挙げられているすべての人たちに届く
+返答です。
+
+Message は返答がどこに行くかを決定するために標準の方法を使いますが、
+`message-wide-reply-to-function' をいじくることによって、振る舞いをあな
+たの必要に合うように変更することができます。それは
+`message-reply-to-function' と同じやり方で使われます (*Note Reply::)。
+
+正規表現 `rmail-dont-reply-to-names' に合致するアドレスは `Cc' ヘッダー
+から取り除かれます。
+
+`message-wide-reply-confirm-recipients' が非-`nil' だったら、複数の受取
+人に返答したいかどうかの確認を求められます。ディフォルトは `nil' です。
+
+
+
+File: message-ja.info, Node: Followup, Next: Canceling News, Prev: Wide Reply, Up: Interface
+
+フォローアップ
+==============
+
+`message-followup' 命令は、現在のバッファーにあるメッセージにフォローアッ
+プするためのメッセージバッファーを出現させます。
+
+Message はフォローアップがどこに行くかを標準の方法を使って決定しますが、
+`message-followup-to-function' をいじくることによって、あなたの必要に合
+うように振る舞いを変更することができます。それは
+`message-reply-to-function' と同じやり方で使われます (*Note Reply::)。
+
+`message-use-followup-to' 変数は `Followup-To' ヘッダーに関して何をする
+か (訳注: To ヘッダーをどうやって決定するか) を指定します。それが
+`use' だったら、いつもその値を使います。もし `ask' だったら (これがディ
+フォルトです)、その値を使うかどうかを尋ねます。もし `t' だったら、その
+値が (文字通り) `poster' でない限り、その値を使います (訳注:
+`message-use-followup-to' の値が `t' で、`Followup-To' ヘッダーの値が
+`poster' だったら、それを使うかどうかを尋ねます。なお、実際に To ヘッダー
+に使われるのは、`Mail-Reply-To'、`Reply-To' および `From' ヘッダーの中
+で、最初に見つかったメールアドレスです)。`nil' であれば、値を使いません。
+
+
+
+File: message-ja.info, Node: Canceling News, Next: Superseding, Prev: Followup, Up: Interface
+
+ニュースを取り消す
+==================
+
+`message-cancel-news' 命令は、現在のバッファーにある記事を取り消します。
+
+`message-cancel-message' の値が取り消し記事の本文に挿入されます。ディフォ
+ルトは `I am canceling my own article.' です。
+
+Message がニュース記事をポストするとき、ディフォルトで `Cancel-Lock' ヘッ
+ダーを挿入します。これはあなた自身が書いたメーッセージをあなただけが取
+り消すことができることを保証する暗号化されたヘッダーで、すぐれものです。
+欠点は、`.emacs' ファイル (Gnus が秘密の cancel lock パスワード (最初の
+この機能を使うときに自動的に生成されます) を格納する場所) をなくしてし
+まうと、メッセージの取り消しができなくなってしまうことです。自分でパス
+ワードを管理したいならば、以下のようなものを `~/.gnus.el' ファイルに入
+れて下さい:
+
+     (setq canlock-password "geheimnis"
+           canlock-password-for-verify canlock-password)
+
+そのヘッダーを挿入するかどうかは、`message-insert-canlock' 変数によって
+制御されます。
+
+まだ多くのニュースサーバーが `Cancel-Lock' ヘッダーを重要視していません
+が、将来は変わることが期待されます。
+
+
+
+File: message-ja.info, Node: Superseding, Next: Forwarding, Prev: Canceling News, Up: Interface
+
+ニュース記事の置き換え
+======================
+
+`message-supersede' 命令は、現在のバッファーにあるメッセージを置き換え
+るためのメッセージバッファーを出現させます。
+
+`message-ignored-supersedes-headers' に合致するヘッダーは新しいメッ
+セージバッファーを出現させる前に取り除かれます。ディフォルトは
+`^Path:\\|^Date\\|^NNTP-Posting-Host:\\|^Xref:\\|^Lines:\\|
+^Received:\\|^X-From-Line:\\|^X-Trace:\\|^X-Complaints-To:\\|
+Return-Path:\\|^Supersedes:\\|^NNTP-Posting-Date:\\|^X-Trace:\\|
+^X-Complaints-To:\\|^Cancel-Lock:\\|^Cancel-Key:\\|^X-Hashcash:\\|
+^X-Payment:\\|^Approved:' です。
+
+
+
+File: message-ja.info, Node: Forwarding, Next: Resending, Prev: Superseding, Up: Interface
+
+転送
+====
+
+`message-forward' 命令は、現在のバッファーにあるメッセージを転送するた
+めのメッセージバッファーを出現させます。接頭引数が与えられると、ニュー
+スを使って転送します。
+
+`message-forward-ignored-headers'
+     この正規表現に合致するすべてのヘッダーが、転送されるメッセージから
+     削除されます。
+
+`message-make-forward-subject-function'
+     転送されるメッセージの、表題ヘッダーを作るために呼ばれる関数のリス
+     トです。前の関数で作られた表題は、続くそれぞれの関数に渡されます。
+
+     提供されている関数は次の通りです:
+
+     `message-forward-subject-author-subject'
+          記事の出どころ (著者かニュースグループ) を、括弧 ([...]) で囲
+          んで表題の前に付けます。
+
+     `message-forward-subject-fwd'
+          記事の表題の前に `Fwd:' を置きます。
+
+`message-wash-forwarded-subjects'
+     この変数が `t' だったら、以前に転送されたことを示す痕跡 (`Fwd:',
+     `Re:', `(fwd)' のようなもの) を、新しい表題を組み立てる前にはぎ取
+     ります。ディフォルト値は `nil' です。
+
+`message-forward-as-mime'
+     この変数が `t' (ディフォルト) だったら、転送されるメッセージは
+     MIME RFC822 パートとして埋め込まれます。`nil' だった場合は、以前に
+     MIME に対応していなかった Gnus がしたように、転送されるメッセージ
+     のコピーが、ただ単に新しいメッセージに埋め込まれます。
+
+`message-forward-before-signature'
+     非-`nil' だったら署名の前に、それ以外だったら後に、転送するメッセー
+     ジを置きます。
+
+
+
+File: message-ja.info, Node: Resending, Next: Bouncing, Prev: Forwarding, Up: Interface
+
+再送
+====
+
+`message-resend' 命令は、利用者にアドレスを入力することを要求して、現在
+のバッファーにあるメッセージをそのアドレスに再送します。
+
+正規表現 `message-ignored-resent-headers' に合致するヘッダーは、メッセー
+ジを送る前に取り除かれます。
+
+
+
+File: message-ja.info, Node: Bouncing, Next: Mailing Lists, Prev: Resending, Up: Interface
+
+弾かれたメールメッセージ
+========================
+
+`message-bounce' 命令は、もし現在のバッファーに弾かれたメールメッセージ
+があったら、弾かれたことの情報を取り除いたメッセージバッファーを出現さ
+せます。「弾かれたメッセージ」とは、一般には `mailer-daemon' から配送不
+可として突き返されたメールです。
+
+正規表現 `message-ignored-bounced-headers' に合致するヘッダーは、バッ
+ファーを出現させる前に取り除かれます。ディフォルトは
+`^\\(Received\\|Return-Path\\|Delivered-To\\):' です。
+
+
+
+File: message-ja.info, Node: Mailing Lists, Prev: Bouncing, Up: Interface
+
+メーリングリスト
+================
+
+メーリングリストに投稿する際に、その投稿に対するフォローアップ記事を指
+定した場所に直接送ってもらいたいことがあります。Mail-Followup-To (MFT)
+はまさにこれを可能にするために作られました。これが役に立つ場合の例を三
+つ:
+
+   * メーリングリストに投稿する人は、投稿した人ではなく、メーリングリス
+     トだけに返答を送るべきであることを、MFT を使って表現することができ
+     ます。これは、投稿者がすでにそのメーリングリストを購読している場合
+     が該当します。
+
+   * メーリングリストに投稿する人は、メーリングリストだけでなく投稿した
+     人にも返答を送るべきであることを、MFT を使って表現することができま
+     す。これは、投稿者がそのメーリングリストを購読していない場合が該当
+     します。
+
+   * メッセージが複数のメーリングリストに投稿されている場合に、それ以降
+     の議論を一つのメーリングリストだけで行なうことを指定するためにも
+     MFT を使うことができます。議論がいくつかのメーリングリストで行なわ
+     れてしまうとばらばらになりやすいし、フォローするのが難しくなってし
+     まいますから。
+
+Gnus は他の人のメッセージにある MFT ヘッダーを尊重します (すなわち、だ
+れか別の人の投稿にフォローアップするとき)。また、外に出て行くメッセージ
+のための、道理にかなった MFT ヘッダーを作成することのサポートも提供しま
+す。
+
+
+正しい MFT ヘッダーを自動的に作る
+---------------------------------
+
+投稿する記事の MFT ヘッダーを Gnus が自動的に作ってくれるようにするため
+の第一歩は、購読しているメーリングリストのアドレスのリストを Gnus に与
+えることです。一つ以上の方法でこれを行なうことができます。以下の変数が
+手ごろでしょう。
+
+`message-subscribed-addresses'
+     これは購読しているメーリングリストのアドレスのリストでなければなり
+     ません。ディフォルト値は `nil' です。例:
+
+          (setq message-subscribed-addresses
+                '("ding@gnus.org" "bing@noose.org"))
+
+`message-subscribed-regexps'
+     これは購読しているメーリングリストのアドレスを示す正規表現のリスト
+     でなければなりません。ディフォルト値は `nil' です。上記と同じ結果
+     を成し遂げたい場合の例:
+
+          (setq message-subscribed-regexps
+                '("\\(ding@gnus\\)\\|\\(bing@noose\\)\\.org")
+
+`message-subscribed-address-functions'
+     これは MFT ヘッダーの値を決めるために (一度に一回!!) 呼ばれる関数
+     のリストです。それらの関数には引数が無いことを忠告しておきましょう。
+     ディフォルト値は `nil' です。
+
+     Gnus ではこの変数のために定義された、良い関数の候補があります。関
+     数 `gnus-find-subscribed-addresses' は、`subscribed' グループパラ
+     メーター (*Note グループパラメーター: (gnus-ja)Group Parameters.)
+     が非-`nil' に設定されているグループに対応するアドレスのリストを返
+     します。こんなふうに使って下さい。
+
+          (setq message-subscribed-address-functions
+                '(gnus-find-subscribed-addresses))
+
+`message-subscribed-address-file'
+     あなたはもしかしたら酔狂な人 (原典: one organized human freak) で、
+     購読しているすべてのメーリングリストのアドレスのリストを別ファイル
+     で持っているかもしれません! そうならば、単にこの変数をそのファイル
+     名にすることによって、人生は善きものになるでしょう。
+
+上記の複数の変数を使うことができます。それらの値はすべて「加えられ」ま
+す。何らかの使える方法で。:-)
+
+さあ用意ができました。いつものようにメッセージの作成を始めましょう。そ
+していつも通りに送信しましょう。メッセージが送出される直前に Gnus の
+MFT を作る仕掛けが動作して、メッセージがすでに MFT フィールドを持ってい
+るかどうかを調べます。もしそれがあるなら、それは放っておかれます (その
+場合にそれが空っぽだったら、そのフィールドが削除されて自動生成されたも
+ので置き換えられることはありません。これは個々のメッセージについて MFT
+の生成を禁止させる基本です)。無かった場合は受取人のアドレスのリスト
+(To: と Cc: ヘッダーにある) を、それらの一つが購読しているメーリングリ
+ストのアドレスかどうかを調べます。それらのどれもがメーリングリストのア
+ドレスでなかったら、MFT は作られません。それ以外の場合には MFT がヘッダー
+に付け加えられ、その値は To: と Cc: にあるすべてのアドレスに設定されま
+す。
+
+うーむ。そうするとあなたは「購読していないメーリングリストにメールを送
+信するときはどうなるの?  私は余分のコピーが欲しいことを MFT で言いたい」
+と尋ねますね (これは MFT が無い場合と同様に処理されるでしょう。しかし、
+to-address で設定された他の誰かより優先させるために、明示的な MFT を使
+うことができます)。関数
+`message-generate-unsubscribed-mail-followup-to' が役に立つかもしれませ
+ん。これはディフォルトで `C-c C-f C-a' に割り当てられています。どんな場
+合でも、あなたは自分が選んだ MFT を挿入することができます; それを始める
+のに `C-c C-f C-m' (`message-goto-mail-followup-to') が助けてくれるでしょ
+う。
+
+MFT 投稿の尊重
+--------------
+
+メーリングリストに投稿された記事にフォローアップするとき、その記事が
+MFT ヘッダーを持っていたら、Gnus の動作は変数
+`message-use-mail-followup-to' の値によって決まります。この値は以下のど
+れかになります:
+
+`use'
+     常に MFT を尊重します。フォローアップ記事の To: と Cc: ヘッダーは、
+     元の記事の MFT ヘッダーから引き出します。これがディフォルトです。
+
+`nil'
+     常に MFT を尊重しません (完璧に無視)。
+
+`ask'
+     どうするかを尋ねます。
+
+MFT を尊重することは良いネチケット (netiquette) であると考えられていま
+す。どこにフォローアップする必要があるかを、メッセージを投稿した人はあ
+なたよりよく知っているはずですから。
+
+
+
+File: message-ja.info, Node: Commands, Next: Variables, Prev: Interface, Up: Top
+
+命令
+****
+
+* Menu:
+
+* Buffer Entry::        メッセージバッファーに入った後の命令
+* Header Commands::     ヘッダーに移動またはヘッダーを変更するための命令
+* Movement::            メッセージバッファーの中を動き回る
+* Insertion::           メッセージバッファーにいろんなものを挿入する
+* MIME::                MIME に関する考察
+* IDNA::                非-ASCII ドメイン名に関する考察
+* Security::            メッセージへの署名と暗号化
+* Various Commands::    いろいろなこと
+* Sending::             実際にメッセージを送る
+* Mail Aliases::        メールの別名の使い方
+* Spelling::            Emacs にスペルチェックさせる
+
+
+
+File: message-ja.info, Node: Buffer Entry, Next: Header Commands, Prev: Commands, Up: Commands
+
+バッファーに入る
+================
+
+何か他のメッセージに応答するときは、たいていメッセージバッファーで書き
+上げますよね。Message は多くの引用文を扱ったり、署名を削除したり、文章
+の整形をしたり、あるいはあなたが使っている設定に依存するいろんなことを
+します。Message は普通はうまく動作しますが、ときどき間違えもします。そ
+れらの間違いを利用者が正すことができるように、Message はあるまとまった
+動作を自動的に行なう前にアンドゥ (やり直し) の境界を設定します。それに
+よって、ほんの何回かアンドゥ・キー (通常 `C-_') を押せば、未編集のメッ
+セージに戻すことができます。
+
+
+
+File: message-ja.info, Node: Header Commands, Next: Movement, Prev: Buffer Entry, Up: Commands
+
+ヘッダー命令
+============
+
+
+ヘッダーに移動するための命令
+----------------------------
+
+以下の命令は対象になっているヘッダーに移動します。存在しなければ挿入さ
+れます。
+
+`C-c ?'
+     メッセージモードの説明を表示します。
+
+`C-c C-r C-t'
+     `To' ヘッダーに行きます (`message-goto-to')。
+
+`C-c C-f C-o'
+     `From' ヘッダーに行きます (`message-goto-from')。(キーバインド中の
+     “o”は創作者 (Originator) に由来しています。)
+
+`C-c C-f C-b'
+     `Bcc' ヘッダーに行きます (`message-goto-bcc')。
+
+`C-c C-f C-f'
+     `Fcc' ヘッダーに行きます (`message-goto-fcc')。
+
+`C-c C-f C-c'
+     `Cc' ヘッダーに行きます (`message-goto-cc')。
+
+`C-c C-f C-s'
+     `Subject' ヘッダーに行きます (`message-goto-subject')。
+
+`C-c C-f C-r'
+     `Reply-To' ヘッダーに行きます (`message-goto-reply-to')。
+
+`C-c C-f C-n'
+     `Neswsgroups' ヘッダーに行きます (`message-goto-newsgroups')。
+
+`C-c C-f C-d'
+     `Distribution' ヘッダーに行きます (`message-goto-distribution')。
+
+`C-c C-f C-o'
+     `Followup-To' ヘッダーに行きます (`message-goto-followup-to')。
+
+`C-c C-f C-k'
+     `Keywords' ヘッダーに行きます (`message-goto-keywords')。
+
+`C-c C-f C-u'
+     `Summary' ヘッダーに行きます (`message-goto-summary')。
+
+`C-c C-f C-i'
+     `high' という値を持つ `Importance:' ヘッダーを挿入します。このヘッ
+     ダーは受信者にそのメッセージの重要性を知らせるために使われるもので
+     す。もしバッファーにすでにこのヘッダーがある場合は、RFC 1376 に準
+     じた三つの値 `low'、`normal' および `high' を循環させます。
+
+`C-c C-f C-a'
+     講読していないメーリングリストに投稿する場合に見合った
+     `Mail-Followup-To:' ヘッダーを挿入します。講読していないメーリング
+     リストに元記事を投稿するときは、`Mail-Followup-To:' ヘッダーに手で
+     記入しなければなりません。内容は、普通はメーリングリストのアドレス
+     とあなた自身のアドレスです。この関数はそのようなヘッダーを自動的に
+     挿入します。これは現在のメールのバッファーから `To:' ヘッダーの内
+     容を抜き出し、それに現在の `user-mail-address' を追加します。
+
+     省略可能な引数 `include-cc' が `nil' ではない場合は、`Cc:' ヘッダー
+     にあるアドレスも `Mail-Followup-To:' ヘッダーに置かれます。
+
+
+ヘッダーを変更するための命令
+----------------------------
+
+`C-c C-o'
+     `message-header-format-alist' に従ってヘッダーを並べ替えます
+     (`message-sort-headers')。
+
+`C-c C-t'
+     フォローアップしようとするメッセージの `Reply-To' もしくは `From'
+     ヘッダーを含む `To' ヘッダーを挿入します (`message-insert-to')。
+
+`C-c C-n'
+     返答しようとする記事の `Followup-To' もしくは、`Nesgroups' ヘッダー
+     を反映した `Newsgroups' ヘッダーを挿入します
+     (`message-insert-newsgroups')。
+
+`C-c C-l'
+     メーリングリスト宛てだけにメッセージを送ります。`To:' と `Cc:' ヘッ
+     ダーから、そのメーリングリスト以外のアドレスを削除します。
+
+`C-c M-n'
+     開封確認要求を挿入します。
+     (`message-insert-disposition-notification-to')。もし受信者が RFC
+     2298 をサポートしていれば、彼女はそのメッセージを受け取ったことを
+     知らせてくれるでしょう。
+
+`M-x message-insert-importance-high'
+     `high' という値を持つ `Importance' ヘッダーを (必要ならすでに存在
+     するものを消去してから) 挿入します。
+
+`M-x message-insert-importance-low'
+     `low' という値を持つ `Importance' ヘッダーを (必要ならすでに存在す
+     るものを消去してから) 挿入します。
+
+`C-c C-f s'
+     現在の `Subject' ヘッダーを変更します。新しい `Subject' を尋ねて
+     `(was: <古い表題>)' を追加します。そういう記事を受け取った人がさら
+     に返信するときに、古い表題は削除することができます。
+     `message-subject-trailing-was-query' (*Note Message Headers::) を
+     見て下さい。
+
+`C-c C-f x'
+     クロスポストのために、対象グループとともに `FollowUp-To' ヘッダー
+     を設定し、その対象グループが `Newsgroups' ヘッダーに存在しなかった
+     らそこに追加し、かつ本文に注意書きを入れます。
+     `message-cross-post-default' が `nil' になっているか、またはこの命
+     令が接頭引付きで呼ばれると、`Follow-Up' ヘッダーが設定されるだけで、
+     `Newsgroups' ヘッダーへの追加は行なわれません。注意書きを入れる関
+     数は `message-cross-post-note-function' 変数で制御されます。
+
+`C-c C-f t'
+     `To' ヘッダーの内容を `Cc' か `Bcc' ヘッダーの内容で置き換えます。
+     (`Cc' ヘッダーが無い場合に限って、代わりに `Bcc' ヘッダーが使われ
+     ます。)
+
+`C-c C-f w'
+     初めはそのメッセージが広い返答のために作られたものでなかった場合で
+     も、広い返答をしているように `To' と `Cc' ヘッダーを挿入します。
+
+`C-c C-f a'
+     `X-No-Archive: Yes' をヘッダーに挿入して、本文に注意書きを入れます。
+     ヘッダーと注意書き
+     は `message-archive-header' と `message-archive-note' を使って
+     カスタマイズすることができます。接頭引数付きで呼ばれると、挿入するテキス
+     トを要求します。本文に注意書きを入れたくない場合は、
+     `message-archive-note' を `nil' にして下さい。
+
+
+
+File: message-ja.info, Node: Movement, Next: Insertion, Prev: Header Commands, Up: Commands
+
+移動
+====
+
+`C-c C-b'
+     メッセージの本文の先頭に移動します (`message-goto-body')。
+
+`C-c C-i'
+     メッセージの署名に移動します (`message-goto-signature')。
+
+`C-a'
+     ヘッダーの値の先頭にいるときは行の先頭に移動し、そうでないときはヘッ
+     ダーの値の先頭に移動します。(ヘッダーの値というのは、ヘッダー名お
+     よびコロンの後にあるものです。) この動作は変数
+     `message-beginning-of-line' をトグル切り替えすることによって無効に
+     することができます。
+
+
+
+File: message-ja.info, Node: Insertion, Next: MIME, Prev: Movement, Up: Commands
+
+挿入
+====
+
+`C-c C-y'
+     返答しようとしているメッセージをメッセージバッファーに yank します
+     (`messsage-yank-original')。
+
+`C-c C-M-y'
+     バッファー名を尋ねて、そのバッファーの内容をメッセージバッファーに
+     yank します (`message-yank-buffer')。
+
+`C-c C-q'
+     Yank されたメッセージを折り返して耳を揃えます
+     (`message-fill-yanked-message')。警告: もし変なやり方で引用されて
+     いると、yank された文章をひどくぐちゃぐちゃにしてしまうかもしれま
+     せん。もっとも、どんなものが安全かは、すぐにわかるでしょうけれど。
+     とにかく、何が起きても `C-x u' (`undo') が使えるのだから問題無いこ
+     とだけは、覚えておいて下さい。
+
+`C-c C-w'
+     バッファーの最後に署名を挿入します (`message-insert-signature')。
+
+`C-c M-h'
+     メッセージのヘッダーを挿入します (`message-insert-headers')。
+
+`C-c M-m'
+     現在の記事のある領域を、それらを囲むためのタグで印を付けます。
+     `message-mark-insert-begin' と `message-mark-insert-end' を見て下
+     さい。接頭引数を付けて使うと、slrn ふうの verbatim (文章を一言一句
+     そのまま表す) 記号の対 (`#v+' と `#v-') を使います。(訳注: そうい
+     うメッセージを Gnus で表示すると、ディフォルトではその領域が一つの
+     パートとして扱われ、また強調表示されます。)
+
+`C-c M-f'
+     現在の記事にファイルを挿入して、その領域を囲むためのタグで印を付け
+     ます。`message-mark-insert-begin' と `message-mark-insert-end' を
+     見て下さい。接頭引数を付けて使うと、slrn ふうの verbatim (文章を一
+     言一句そのまま表す) 記号の対 (`#v+' と `#v-') を使います。(訳注:
+     そういうメッセージを Gnus で表示すると、ディフォルトではその領域が
+     一つのパートとして扱われ、また強調表示されます。)
+
+
+
+File: message-ja.info, Node: MIME, Next: IDNA, Prev: Insertion, Up: Commands
+
+MIME
+====
+
+Message は MIME に対応した送信用のエージェントです。ふつう利用者は、
+MIME にするために何かする必要はありません。Message は自動的に
+`Content-Type' および `Content-Transfer-Encoding' ヘッダーを付加します。
+
+利用者が MIME でマルチパートを使いたい最も一般的なものは、送出するメー
+ルに「添付」を付け加えることでしょう。これは `C-c C-a' 命令で行なうこと
+ができ、その際ファイル名と MIME タイプが尋ねられます。
+
+あなたの Emacs がドラッグ＆ドロップをサポートしていれば、Message バッ
+ファーにファイルをドロップすることもできます。変数
+`mml-dnd-protocol-alist' で、Message バッファーにファイルをドロップする
+ときにどんなことを行なうかを指定します。変数 `mml-dnd-attach-options'
+は、ファイルをドロップするときにどの MIME オプションを指定したいかを制
+御します。それをリストにする場合、有効なオプションは `type',
+`description' および `disposition' です。`disposition' は暗に `type' を
+含みます。`nil' だったらオプションを尋ねません。`t' にすると、オプショ
+ンを指定するかどうかを尋ねます。
+
+さらに MML 言語 (*Note MIME メッセージの作成:
+(emacs-mime-ja)Composing.) を使えば、どんな複雑なマルチパートでも自由に
+作ることができます。
+
+
+
+File: message-ja.info, Node: IDNA, Next: Security, Prev: MIME, Up: Commands
+
+国際化ドメイン名
+================
+
+Message は IDNA に準拠した送信エージェントです。利用者は IDNA のために
+一般には何もする必要がありません。Message は `From'、`To' および `Cc'
+ヘッダーにある非-ASCII ドメイン名を自動的にエンコードします。
+
+もっと IDNA が有名になるまでは、Message は実際にドメイン名を IDNA エン
+コードすべきかどうかの確認を求めることになっています。今のところは、利
+用者の幾人かはドメイン名に非-ASCII 文字を含むことができることに気づいて
+いないかもしれないので、彼らが偶然に非-ASCII ドメイン名をタイプしてしまっ
+たときのために安全ネットを張っているわけです。
+
+変数 `message-use-idna' は IDNA を使うかどうかを制御します。この変数が
+`nil' だったら IDNA エンコードは行なわれません。シンボル `ask' に設定さ
+れていると利用者は確認を求められます。また、`t' に設定されていると
+(IDNA が完全に利用可能ならば、それがディフォルトです)、自動的に IDNA エ
+ンコードが行なわれます。
+
+実験的に IDNA エンコードを行ないたいならば、(エンコードされた非-ASCII
+ドメイン名を得るために) メッセージの編集中に `M-x
+message-idna-to-ascii-rhs RET' をタイプして下さい。
+
+この機能を使うには GNU Libidn (http://www.gnu.org/software/libidn/) を
+インストールしておかなければなりません。
+
+
+
+File: message-ja.info, Node: Security, Next: Various Commands, Prev: IDNA, Up: Commands
+
+セキュリティー
+==============
+
+MML 言語を使うことによって、Message は電子署名された、または電子暗号化
+されたメッセージを作ることができます。Message (と言うか MML) は、現在
+PGP (RFC 1991), PGP/MIME (RFC 2015/3156) および S/MIME をサポートしてい
+ます。MIME パートに対してセキュリティーの操作を行なうための MML への指
+示は、以下のように署名の場合は `C-c C-m s' キーマップを使って、暗号化の
+場合は `C-c C-m c' キーマップを使って行ないます。
+
+`C-c C-m s s'
+
+     S/MIME を使って現在のメッセージに電子書名します。
+
+`C-c C-m s o'
+
+     PGP を使って現在のメッセージに電子書名します。
+
+`C-c C-m s p'
+
+     PGP/MIME を使って現在のメッセージに電子書名します。
+
+`C-c C-m c s'
+
+     S/MIME を使って現在のメッセージを電子暗号化します。
+
+`C-c C-m c o'
+
+     PGP を使って現在のメッセージを電子暗号化します。
+
+`C-c C-m c p'
+
+     PGP/MIME を使って現在のメッセージを電子暗号化します。
+
+`C-c C-m C-n'
+     メッセージからセキュリティー関連の MML タグを削除します。
+
+これらの命令は、その場でメッセージに署名したり暗号化するわけではなく、
+単にセキュリティーのための適切な MML タグを挿入して、メッセージが実際に
+送信されるときにその動作を実行するように、MML エンジンに指示を与えるだ
+けです。それらは他の仕事、例えば暗号化されたメールを送りたい相手の人の
+S/MIME の証明書を探して、取り寄せるようなことも行なうかもしれません。
+mml 解析エンジンが MML で書かれたメッセージを適切に MIME メッセージに変
+換するとき、セキュリティーのためのタグは、パートまたはマルチパートのど
+ちらかのタグで置き換えられます。メッセージが他の mml パートも含んでいる
+場合にはマルチパートのタグが使われ、他のパートが無い場合は単一のパート
+のタグが使われるでしょう。このようにして、署名される/暗号化されるマルチ
+パートのメッセージに対し、メッセージ・モードは「正しいこと (登録商標)」
+(原文: the Right Thing (TM)) を行ないます。
+
+署名そして特に暗号化はしばしば機密情報を送信するときに使われるので、メー
+ルが本当に署名または暗号化されることを確かめるための何らかの手段を必要
+とするでしょう。上記の署名/暗号化のための命令を実行した後でなら、`C-u
+C-c RET P' (`mml-preview') を使うことによって生の記事を下見することが可
+能です。そうして、あなたの以前に大切だった人に関する、あるいは、この前
+の夜の変なパーティーで、あのおかしな身なりの人が実際にやったことに関す
+るあなたの長い罵倒が、本当に暗号化されて送信されるであろうことを確認す
+ることができます。
+
+*注意!* PGP/MIME と S/MIME のどちらも RFC822 ヘッダーを署名/暗号化しま
+せん。それらは MIME パートにのみ作用します。機密の表題とともにメールを
+送ってしまう前に、このことを肝に命じておいて下さい。
+
+メッセージを暗号化するとき、Gnus はディフォルトで「署名+暗号化」(メッセー
+ジに対して署名と暗号化の両方が行なわれる) モードを使います。特定のメッ
+セージに対してこれを行なわせたくないならば、
+`mml-secure-message-encrypt-*' 命令に接頭引数を与えて (例えば `C-u C-c
+C-m c p' を使って) 下さい。
+
+上記のセキュリティー命令を実際に使うのはさほど難しくありません。少なく
+とも、すべての関係するプログラムが適切に通信し合うことを確かめることと
+比較して。そこで、外部のどんなライブラリーまたはプログラムが必要かにつ
+いて、およびいくつかの些細で一般的なヒントを述べることにします。
+
+
+S/MIME を使う
+-------------
+
+*注意!* この章は近代的な暗号法、S/MIME、さまざまな PKCS の標準、
+OpenSSL などの基礎に、あなたが精通していることを想定しています。
+
+Message (それに MML) が S/MIME をサポートするには OpenSSL が必要です。
+OpenSSL は実際の S/MIME による署名/暗号化の処理を実行します。OpenSSL は
+`http://www.openssl.org/' で見つかるでしょう。OpenSSL 0.9.6 以降のもの
+が動作するはずです。バージョン 0.9.5a は証明書からメールアドレスを抽出
+することができません。またそれは MIME のセパレータに余計な CR 文字を挿
+入するので、変なメールを送る人だと思われたくなければ、それを使うことを
+避けたいでしょう。(もっともあなたは S/MIME のメッセージを送った時点で、
+おそらくその変人コンテストでの勝利を逃してしまいましたが。)
+
+暗号化されたメールを送るために個人の証明書は要りません。もっとも
+Message (MML) は、通信したい相手の人の証明書を必要としますけれど。これ
+は `C-c C-m c s' をタイプしたときに尋ねられます。今のところ、証明書をロー
+カルファイルから取り出すか DNS から取り寄せるかの、二つの方法があります。
+ローカルファイルを選択した場合、それは PEM 形式による X.509 証明書を含
+んでいる必要があります。DNS を選んだ場合には、その証明書が格納されてい
+るドメイン名を尋ねられます (ディフォルトは上手に推測したものです)。私が
+信じる限り Message (MML) は S/MIME の証明書を DNS から取り寄せる世界初
+のメール・エージェントなので、あまりたくさんの証明書がそこで見つかるこ
+とは無いでしょう。少なくとも一つだけは `simon.josefsson.org' ドメイン
+(訳注: 原著者のサイト) に格納されたものがあるはずですが。LDAP は証明書
+を配給するためのもっと普及している手法で、それをサポートすることが計画
+されています。(話は変わりますが、`ldapsearch' をコマンドラインから実行
+して証明書をファイルに取り込み、それを使うことができますよ。)
+
+メッセージの署名については、ある種の設定無しでは OpenSSL は署名の処理を
+実行することができません。とりわけ、あなたの秘密鍵 (private key) と証明
+書がどこに格納されているかを教えてあげる必要があります。MML はその名に
+ふさわしい `smime.el' という OpenSSL への Emacs インターフェースを使い
+ますが、それはこの設定に使うためのための `custom' グループを持っていま
+す。ですから `M-x customize-group RET smime RET' を試して、眺めてみて下
+さい。
+
+現在は、CA (または RA) と通信してあなた自身の証明書を生成することはサポー
+トされていません。それに計画もありません。私は Netscape を使って、ネッ
+ト上にある大きな CA の一つから無料の S/MIME の証明書をもらいました。
+Netscape は秘密鍵と証明書を PKCS #12 形式で輸出 (export) することができ
+ます。OpenSSL を使って、これを以下のように PEM 形式による素 (plain) の
+X.509 証明書に変換して下さい。
+
+     $ openssl pkcs12 -in ns.p12 -clcerts -nodes > key+cert.pem
+
+`smime-keys' 変数が `key+cert.pem' ファイルを指し示すようにしなければな
+りません。今や、あなたは署名されたメッセージを送信できるはずです。
+
+*注意!* あなたの鍵は今、暗号化されずにファイルに格納されたので、それの
+扱いには気を付けて下さい。暗号化された鍵をファイルに格納する機能はサポー
+トされています。その場合は OpenSSL を呼び出す前に Gnus がパスフレーズを
+尋ねるでしょう。どうやってそれを成し遂げるかについては OpenSSL のドキュ
+メントを読んで下さい。暗号化されていない鍵を使う (例えばそれらが安全な
+ストレージにある、またはあなたが安全なシングル・利用者のマシンにいる)
+のであれば、パスフレーズの入力を要求されたとき、単に `RET' を押して下さ
+い。
+
+
+PGP/MIME を使う
+---------------
+
+PGP/MIME は GNU Privacy Guard (http://www.gnupg.org/) のような、外部の
+OpenPGP の実装を必要とします。OpenPGP より以前の実装である PGP 2.x と
+PGP 5.x もサポートします。PGP の実装への一つの Emacs インターフェースで
+ある (*Note PGG: (pgg-ja)Top.) が含まれていますが、Mailcrypt と
+Florian Weimer さんの `gpg.el' もサポートします。
+
+注: もし `gpg.el' を使うのであれば、`gpg-temp-directory' で指定されるディ
+レクトリーのパーミッションが必ず 0700 になっているようにして下さい。
+
+あなたの PGP の実装のドキュメントで詳しく述べられているので、あなた自身
+のための鍵の生成のしかたは、それに譲ります。
+
+もしあなたが古い PGP 2.x の鍵を GnuPG に輸入してあって、PGP 2.x を使っ
+ている仲間に署名されかつ暗号化されたメッセージを送りたいとすると、受信
+者はあなたが送信したものを理解できないことを発見することになるでしょう。
+一つの解は、代わりに PGP 2.x を使うこと (すなわち、もし `pgg' を使って
+いるのであれば、`pgg-default-scheme' を `pgp' に設定すること) です。
+GnuPG を使いたいのであれば、`gpg-2comp' という互換を実現するスクリプト
+`http://muppet.faveve.uni-stuttgart.de/~gero/gpg-2comp/' を入手して、使
+うことができます。さらに PGP 2.x を使っている仲間に、GnuPG に乗り換える
+ことを説得しても良いでしょう。最後の代替手段として、署名と暗号化の動作
+を二段階 (分離署名してからメッセージを暗号化する) にすることができます。
+この振る舞いを変更したいのであれば、`mml-signencrypt-style-alist' 変数
+をカスタマイズすることができます。例えば:
+
+     (setq mml-signencrypt-style-alist '(("smime" separate)
+                                         ("pgp" separate)
+                                         ("pgpauto" separate)
+                                         ("pgpmime" separate)))
+
+これは署名と暗号化を二段階で行なわせることによって、PGP version 2 が理
+解できるメッセージを生成します。
+
+(その問題に関するさらなる情報については、
+`http://www.gnupg.org/gph/en/pgp2x.html' を参照して下さい。)
+
+
+
+File: message-ja.info, Node: Various Commands, Next: Sending, Prev: Security, Up: Commands
+
+いろいろな命令
+==============
+
+`C-c C-r'
+     現在のメッセージをカエサル変換 (別名 rot13) します
+     (`message-caesar-buffer-body')。ある範囲にバッファーが狭められてい
+     た場合は、バッファーの見える部分だけを変換します。数値接頭引数は文
+     中のアルファベットを何文字分回転させるかを指定します。ディフォルト
+     は 13 です。
+
+`C-c C-e'
+     ポイントとマークの間の文を省略します (`message-elide-region')。文
+     章は kill されて、変数 `message-elide-ellipsis' の値で置き換えられ
+     ます。ディフォルトの省略符号として使われる値は (`[...]') です。
+
+`C-c M-k'
+     現在位置のアドレスを削除します (訳注: この命令は作者や出どころが不
+     明で、さらに悪いことに不完全な命令に見えます。必ず消したいアドレス
+     の先頭にポイントを置いて使って下さい。)
+
+`C-c C-z'
+     現在位置から署名まで、またはそれが無ければ記事の最後までの文を
+     kill します (`message-kill-to-signature')。
+
+`C-c C-v'
+     メッセージの本文において、領域が設定された場所以外のすべての文を消
+     去します (`message-delete-not-region')。
+
+`M-RET'
+     四本の空行を挿入します。そして、もしポイントが引用文の中間にあった
+     のならば、引用文を整形し直します。
+
+     例です:
+
+          > これは何かの引用文です。 そして、ここにはもっと引用文があります。
+
+     ポイントが「そして」の前にあるときに `M-RET' を押すと、以下のよう
+     になります:
+
+          > これは何かの引用文です。
+
+          *
+
+          > そして、ここにはもっと引用文があります。
+
+     `*' はポイントが置かれる場所です。
+
+`C-c M-r'
+     バッファーの名前を変更します (`message-rename-buffer')。接頭引数が
+     与えられると、新しいバッファー名の入力を要求します。
+
+`TAB'
+     `message-tab-body-function' が `nil' でなかったら、それが指定する
+     関数を実行します。さもなければ、`text-mode-map' か `global-map' の
+     `TAB' キーに割り当てられている命令を使います。
+
+
+
+File: message-ja.info, Node: Sending, Next: Mail Aliases, Prev: Various Commands, Up: Commands
+
+送信
+====
+
+`C-c C-c'
+     メッセージを送信し、現在のバッファーを `bury-buffer' します
+     (`message-send-and-exit')。
+
+          訳注: `bury-buffer' は指定したバッファーを現在の Emacs 上に存
+          在するバッファーのリストの最後の要素にする関数で、一般に重要
+          度が低くなったバッファーに対して実行されます。それを見たい場
+          合は `C-x C-b' を使って下さい。ただしバッファーの名前が
+          `*sent ... *' に変わっているはずです。
+
+`C-c C-s'
+     メッセージを送信します (`message-send')。
+
+`C-c C-d'
+     メッセージバッファーを `bury-buffer' して (送信せずに) 終了します
+     (`message-dont-send')。
+
+`C-c C-k'
+     メッセージバッファーを kill して (送信せずに) 終了します
+     (`message-kill-buffer')。
+
+
+
+File: message-ja.info, Node: Mail Aliases, Next: Spelling, Prev: Sending, Up: Commands
+
+メールの別名
+============
+
+`message-mail-alias-type' という変数で、どのような型のメールの別名
+(mail alias) の伸張を使うかを制御します。今のところ一つの様式しか使えま
+せん--Message はメールの別名を扱うために `mailabbrev' を使います。もし
+この変数が `nil' になっていると、メールの別名の伸張は行なわれません。
+
+`Mailabbrev' は `/etc/mailrc' と `~/.mailrc' ファイルを解析することによっ
+て動作します。それらのファイルは次のようになっています:
+
+     alias lmi "Lars Magne Ingebrigtsen <larsi@ifi.uio.no>"
+     alias ding "ding@ifi.uio.no (ding mailing list)"
+
+このような行を `~/.mailrc' ファイルに追加しておけば、`To' や `Cc' (など)
+のヘッダーで `lmi' と書いて `SPC' を押すだけで、その別名を伸張してくれ
+るはずです。
+
+メッセージを送るときには伸張は行なわれません--すべての伸張は明示的に
+(訳注: 実際に自分でメールを書いているときに) 行なわれなくてはなりません。
+
+
+
+File: message-ja.info, Node: Spelling, Prev: Mail Aliases, Up: Commands
+
+Emacs にスペルチェックさせる
+============================
+
+メッセージを Emacs でスペルチェックするために普及している二つの方法とし
+て `ispell' と `flyspell' があります。`ispell' の方は昔か
+らあって、たぶんより一般的なパッケージです。あなたは最初にメッセージを書
+いてから、例によって全体を `ispell' に通し、すべての書き損じを修正
+するでしょう。メッセージを送信するときにそれを自動的に行なうためには、
+`.emacs' ファイルに以下のようなものを入れて下さい。
+
+     (add-hook 'message-send-hook 'ispell-message)
+
+あなたが別の言語で書く習慣を持っているのならば、変数
+`ispell-message-dictionary-alist' で切り替えることができます。(訳注: 以
+下の連想リストの各要素で、ヘッダーのどれかに合致する正規表現と辞書を指
+定します。ただし `japanese' という辞書はありません (たぶん)。)
+
+     (setq ispell-message-dictionary-alist
+           '(("^Newsgroups:.*\\bde\\." . "deutsch8")
+             (".*" . "default")))
+
+`ispell' はインストールされている `ispell' プログラムに依存します。
+
+人気があるもう一つの方法は `flyspell' を使うことです。このパッケージは
+あなたが書いている最中にスペルチェックを行ない、いろんな方法で間違った
+スペルの語を指摘してくれます。
+
+`flyspell' を使うには、以下のようなものを `.emacs' ファイルに入れて下さ
+い。
+
+     (defun my-message-setup-routine ()
+       (flyspell-mode 1))
+     (add-hook 'message-setup-hook 'my-message-setup-routine)
+
+`flyspell' はインストールされている `ispell' プログラムに依存します。
+
+
+
+File: message-ja.info, Node: Variables, Next: Compatibility, Prev: Commands, Up: Top
+
+変数
+****
+
+* Menu:
+
+* Message Headers::             メッセージヘッダーに関する一般的なこと
+* Mail Headers::                メールのヘッダーをカスタマイズする
+* Mail Variables::              他のメール変数
+* News Headers::                ニュースのヘッダーをカスタマイズする
+* News Variables::              他のニュース変数
+* Insertion Variables::         どう挿入するかをカスタマイズする
+* Various Message Variables::   他のメッセージ変数
+* Sending Variables::           送信のための変数
+* Message Buffers::             Message がバッファーの名前を付ける方法
+* Message Actions::             終了するときに実行すること
+
+
+
+File: message-ja.info, Node: Message Headers, Next: Mail Headers, Prev: Variables, Up: Variables
+
+メッセージヘッダー
+==================
+
+Message はメッセージを作成する分野の第一線にあって、極めて意欲的です。
+その使命はニュースとメールのエージェントを統合することです。メールと
+ニュースを一緒に送ることを可能にするためには、メッセージをメールで送っ
+たものとニュースで送ったものがよく似た見栄えになるように、Message はす
+べてのヘッダーをそれ自身で作成しなければなりません。
+
+`message-generate-headers-first'
+     `t' だったら、すべての必要なヘッダーをメッセージを書き始める前に作
+     成します。これは作成するヘッダーのリストであっても構いません:
+
+          (setq message-generate-headers-first
+                '(References))
+
+     変数 `message-required-headers'、`message-required-mail-headers'
+     および `message-required-news-headers' は、どのヘッダーが必要かを
+     指定します。
+
+     変数 `message-deletable-headers' (後述) の設定によっては、いくつか
+     のヘッダーが送信する前に消されて作り直されることに注意して下さい。
+
+`message-draft-headers'
+     Message が Gnus 上で走っている場合、メッセージバッファーはドラフト
+     グループと関連付けられています。`message-draft-headers' は、そのド
+     ラフトグループにドラフトが記録されるときに、どのヘッダーが作成され
+     るべきかを指示します。
+
+`message-from-style'
+     `From' ヘッダーをどういう見栄えにするかを指定します。以下の四つの
+     値が使えます:
+
+     `nil'
+          アドレスだけです---`king@grassland.com'.
+
+     `parens'
+          `king@granssland.com (Elvis Parsley)'.
+
+     `angles'
+          `Elvis Parsley <king@grassland.com>'.
+
+     `default'
+          引用符で囲む必要がある場合 (*) は `parens' と同様の見栄えにし
+          ます。そうでなければ `angles' の場合と同じような見栄えにしま
+          す。`parens' の形式を使ってもなお引用符で囲まなければならない
+          場合 (*) は、有無を言わずに `angles' の形式を使います。
+
+          訳注*: フルネームの部分が特殊文字を含んでいる場合
+
+`message-deletable-headers'
+     前もって Message が作成したヘッダーのうち、このリストに含まれてい
+     るものは投稿する前に削除されます。記事を投稿したとしましょう。それ
+     から、いたずら好きなあなたはそれをどこか別のグループに再び投稿する
+     ことを決心したので、`*post-buf*' バッファーに戻って `Newsgroups'
+     行を編集し、再び送り出したとします。ディフォルトでは、この変数は前
+     に作られた古い `Message-ID' を取り除いて、新しいものを作ることを確
+     実にします。もしこれが行なわれないと、おそらく帝国全体が滅亡して無
+     政府状態がはびこり、猫が二本の足で歩き始めて世界を支配するでしょう。
+     伝え聞くところによれば。
+
+`message-default-headers'
+     この文字列はすべてのメッセージバッファーのヘッダーの最後に挿入され
+     ます。
+
+`message-subject-re-regexp'
+     メッセージへの応答には `Re: ' で始まる表題があります。これは英単語
+     の“response”の略では *ありません*。ラテン語で「それに応答して」
+     (in response to) と言う意味です。無教養な馬鹿者どもはこの事実をと
+     り損ねて、代わりに忌まわしい `Aw: ' (antwort) や `Sv: ' (svar) を
+     使うように、彼らのソフトウェアを「国際化」しました。それは無意味だ
+     し邪悪です。しかし、あなたはこれらの邪悪な道具を使う利用者と応対し
+     なければならないかもしれません。そういう場合には、この変数をそれら
+     の接頭語に合致する正規表現に設定することができます。私ですか?  私
+     は規格に従わないメールはただ捨て去っているだけです。
+
+     これは、返事をするときにそれらのヘッダーに対処するための値の例です:
+
+          (setq message-subject-re-regexp
+                (concat
+                 "^[ \t]*"
+                   "\\("
+                     "\\("
+                       "[Aa][Nn][Tt][Ww]\\.?\\|"     ; antw
+                       "[Aa][Ww]\\|"                 ; aw
+                       "[Ff][Ww][Dd]?\\|"            ; fwd
+                       "[Oo][Dd][Pp]\\|"             ; odp
+                       "[Rr][Ee]\\|"                 ; re
+                       "[Rr][\311\351][Ff]\\.?\\|"   ; ref
+                       "[Ss][Vv]"                    ; sv
+                     "\\)"
+                     "\\(\\[[0-9]*\\]\\)"
+                     "*:[ \t]*"
+                   "\\)"
+                 "*[ \t]*"
+                 ))
+
+`message-subject-trailing-was-query'
+     表題の行にぶら下がっている `(was: <古い表題>)' をどうするかを制御
+     します。`nil' だったら表題をそのままにしておきます。`ask' というシ
+     ンボルだったら、どうするかを利用者に尋ねます。表題が
+     `message-subject-trailing-was-ask-regexp' に合致する場合だけですが。
+     `message-subject-trailing-was-query' が `t' だったら、常にぶら下がっ
+     た古い表題をはぎ取ります。その場合は
+     `message-subject-trailing-was-regexp' が使われます。
+
+`message-alternative-emails'
+     あなたの第二、第三のメールアドレスに合致する正規表現です。元の記事
+     の To、Cc または From ヘッダーにあって、この変数に合致する最初のア
+     ドレスが、ディフォルトの From の値を置き換えて、出て行くメッセージ
+     の From 欄として使われます。
+
+     例えばあなたが john@home.net および john.doe@work.com という第二の
+     電子メールアドレスを持っていて、それらに宛てて送られてきたメッセー
+     ジに返信するときに、それらを From 欄で使いたければ、この変数を次の
+     ように設定すれば良いでしょう:
+
+          (setq message-alternative-emails
+                (regexp-opt '("john@home.net" "john.doe@work.com")))
+
+     この変数は、投稿様式 (posting styles) や `message-setup-hook' を実
+     行することによって設定されるどんなものよりも優先します。
+
+`message-allow-no-recipients'
+     `Gcc' と `Fcc' 以外に受取人がいなかった場合 (訳注: To, Cc,
+     Newsgroups などが空だった場合) に、何をするかを設定します。
+     `always' だったら送信できますが、`never' だったら送信できません。
+     `ask' (それがディフォルト) だったら、どうするかを尋ねられます。
+
+`message-hidden-headers'
+     正規表現、正規表現のリスト、または最初の要素が `not' で残りが正規
+     表現であるリストです。メッセージを作成しているときに、どのヘッダー
+     を隠したままにしておくかを決めます。
+
+          (setq message-hidden-headers
+                '(not "From" "Subject" "To" "Cc" "Newsgroups"))
+
+     それらのヘッダーは、それら以外の部分にバッファーを狭めること
+     (narrowing) によって隠されます。`M-x widen' を使うことによって、そ
+     れらが見えるようにすることができます。
+
+`message-header-synonyms'
+     似た意味を持つヘッダー名のリストのリストです。例えばこのリストが
+     `Cc' と `To' を要素に持つリストを含んでいると、メッセージがすでに
+     受信者に `Cc' されている場合、`message-carefully-insert-headers'
+     は `To' ヘッダーを挿入しません。
+
+
+
+File: message-ja.info, Node: Mail Headers, Next: Mail Variables, Prev: Message Headers, Up: Variables
+
+メールヘッダー
+==============
+
+`message-required-mail-headers'
+     この変数の構文については *Note News Headers:: を参照して下さい。ディ
+     フォルトは `(From Subject Date (optional . In-Reply-To)
+     Message-ID (optional . User-Agent))' です。
+
+`message-ignored-mail-headers'
+     メールを出す前に取り除かれるヘッダーの正規表現です。
+     ディフォルトは
+     `^[GF]cc:\\|^Resent-Fcc:\\|^Xref:\\|^X-Draft-From:\\|
+     ^X-Gnus-Agent-Meta-Information:' です。
+
+`message-default-mail-headers'
+     この文字列はメールとして初期化されたすべてのメッセージバッファーの、
+     ヘッダーの最後尾に挿入されます。
+
+`message-generate-hashcash'
+     メッセージのための `X-Hashcash' ヘッダーを計算して付加すべきかどう
+     かを指示するブール変数 (`nil' か非-`nil') です。
+     *Note Hashcash: (gnus-ja)Hashcash.
+
+
+
+File: message-ja.info, Node: Mail Variables, Next: News Headers, Prev: Mail Headers, Up: Variables
+
+メール変数
+==========
+
+`message-send-mail-function'
+     現在のバッファーをメールとして送るために使われる関数です。ディフォ
+     ルトは `message-send-mail-with-sendmail'、またはシステムによっては
+     `smtpmail-send-it' です。他に `message-send-mail-with-mh',
+     `message-send-mail-with-qmail', `message-smtpmail-send-it' および
+     `feedmail-send-it' が使えます。
+
+`message-mh-deletable-headers'
+     ほとんどの版の MH は、この変数に設定されているヘッダーを含んでいるメッセー
+     ジを食わされるのを嫌います。この変数が `nil' でない (これがディフォ
+     ルトですが) なら、これらのヘッダーは MH を介してメッセージを送る前に取り
+     除かれます。あなたの MH がこれらのヘッダーを扱うことができるのであれば、
+     `nil' に設定して下さい。
+
+`message-qmail-inject-program'
+     qmail-inject プログラムがある場所です。
+
+`message-qmail-inject-args'
+     qmail-inject プログラムに渡す引数です。これは文字列のリストで、そ
+     れぞれの引数は一つの文字列でなければなりません。これは関数でも構い
+     ません。
+
+     例えば、メールが弾かれてしまった場合の正しい戻り先を指定したり、メー
+     リングリストのサーバーのアドレスの仕様規定に対処するために
+     “envelope sender”のアドレスを設定したい場合は、この変数を
+     `'("-f" "you@some.where")' にすれば良いでしょう。
+
+     訳注:“envelope sender”はメールを送信するときに MTA に渡す真の送
+     信者のアドレスで、ヘッダーの `From:' 行に書くものとは別です。
+
+`message-sendmail-f-is-evil'
+     `nil' ではない値にすると、sendmail のコマンド行に `-f username' を
+     付加しません。そうすることは、付加するようにしておくより邪悪ですら
+     あるでしょう。
+
+     訳注: ディフォルトでは“envelope sender”を指定するために付加しま
+     す。sendmail のディフォルトの動作では、それを指定されると「真の送
+     信者が書き換えられた」という意味にも解釈されることが書かれた
+     `X-Authentication-Warning:' ヘッダーを追加します。
+
+`message-sendmail-envelope-from'
+     `message-sendmail-f-is-evil' が `nil' のとき、この文字列で SMTP エ
+     ンベロープで使うアドレス (“envelope sender”) を指定します。
+     `nil' だったら `user-mail-address' を使います。`header' というシン
+     ボルだったら、メッセージの `From' ヘッダーを使います。
+
+`message-mailer-swallows-blank-line'
+     システムのメイラーがヘッダーと本文を一緒にしてしまう場合は `nil'
+     ではない値に設定して下さい。(SunOS 4 において sendmail がリモート
+     モードで動作する場合が該当します。) 値は、障害が実際に起きるかどう
+     かをテストするための式にすべきです。
+
+     訳注: 具体的には、本文の第一行目以降にヘッダーのようなテキストがあ
+     ると、それらがヘッダーの一部だと見なされてしまう問題です。
+
+`message-send-mail-partially-limit'
+     message/partial として送信されるメッセージのサイズの制限です。それ
+     を越えたらメッセージを分割して送るべきメッセージの大きさの下限を、
+     文字数で換算した値です (訳注: 日本語的には「下限」ではなく「上
+     限」)。`nil' だったら、サイズは無制限になります。
+
+
+
+File: message-ja.info, Node: News Headers, Next: News Variables, Prev: Mail Variables, Up: Variables
+
+ニュースヘッダー
+================
+
+`message-required-news-headers' はヘッダーのシンボルのリストです。これ
+らのヘッダーは自動的に作成されるか、もしくはそれが不可能であれば (訳注:
+値が自動で定まらなければ)、利用者に入力してもらうことを要求します。以下
+のシンボルが使えます:
+
+`From'
+     この必須のヘッダーは `message-make-from' 関数によって作られます。そ
+     れは変数 `message-from-style', `user-full-name',
+     `user-mail-address' に依存します。
+
+`Subject'
+     この必須のヘッダーは、まだ存在しない場合は入力を求められます。
+
+`Newsgroups'
+     この必須のヘッダーは、記事を投稿するニュースグループを指定します。
+     まだ存在しない場合は入力を求められます。
+
+`Organization'
+     このあっても無くても良いヘッダーは、`message-user-organization' 変
+     数に応じた値が作られます。この変数が `t' だったら
+     `message-user-organization-file' が使われます。この変数は文字列で
+     も良いし (その場合はその文字列が使われます)、関数であっても構いま
+     せん (その関数は引数無しで呼ばれ、文字列を返さなければなりません)。
+
+`Lines'
+     このあっても無くても良いヘッダーは Message が計算して作ります。
+
+`Message-ID'
+     この必須のヘッダーは Message によって作成されます。日付、時刻、
+     (ローカル部のための) 利用者名、およびドメイン部に基づいたユニーク
+     な ID です。ドメイン部については、有効な FQDN (完全に条件を満たし
+     たドメイン名) らしいものが見つからない場合、message は
+     `message-user-fqdn', `system-name', `mail-host-address' および
+     `message-user-mail-address' (すなわち `user-mail-address') を (こ
+     の順で) 探します。
+
+`User-Agent'
+     このあっても無くても良いヘッダーは、ローカル変数
+     `message-newsreader' に従って作られます。
+
+`In-Reply-To'
+     このあっても無くても良いヘッダーは、返答しようとしている記事の
+     `Date' と `From' ヘッダーを元に作られます。
+
+`Expires'
+     このあろうが無かろうが本当にどうでも良いヘッダーは、
+     `message-expires' 変数に従って挿入されます。これを使うことは強く非
+     難されているので、自分が何をしているかをわかっていないなら、使うべ
+     きではありません。
+
+`Distribution'
+     このあっても無くても良いヘッダーは、
+     `message-distribution-function' 変数が指定する関数が作ります。これ
+     を使うことは非難されていて、非常に誤解されたヘッダーです。
+
+     訳注: `message-distribution-function' のディフォルト値は `nil' な
+     ので、そのままではこれを指定しても `Distribution:' ヘッダーは挿入
+     されません。`C-c C-f C-d' 命令を使って、手で記入することはできます。
+     ただし配送範囲の制限はニュースサーバーが管理すべきであって、利用者
+     が記入する必要は普通は無いはずです。
+
+`Path'
+     このあろうが無かろうが本当にどうでも良いヘッダーは、おそらく決して
+     (利用者が) 使ってはいけないものです。しかしいくつかの *とても* 古
+     いサーバーは、このヘッダーが存在することが必要なのです。
+     `message-user-path' 変数が、この `Path' ヘッダーをどういう見栄えに
+     するかをさらに制御します。`nil' だったらサーバー名を端点 (leaf
+     node) として使います。文字列だったら、その文字列を使います。それが
+     文字列でも `nil' でもなかったら、利用者の名前だけを使います。しか
+     し、この変数をいじくらなければならなくなる機会は非常に少ないでしょ
+     う。
+
+加えて、このリストに cons を入れることができます。この cons の CAR はシ
+ンボルでなければなりません。このシンボルの名前はヘッダー名です。また
+CDR は、このヘッダーの値としてそのまま入れられる文字列か関数のどちらか
+です。例えば `Mime-Version: 1.0' を挿入したい場合は、リストに
+`(Mime-Version . "1.0")' を入れなければなりません。もし滑稽な引用文を挿
+入したいのなら、`(X-Yow . yow)' のようなものをリストに入れることができ
+るでしょう。そうすると、関数 `yow' が引数無しで呼ばれます。
+
+CAR が `optional' である cons をリストが含んでいる場合は、その cons の
+CDR が `nil' でないときだけ (その CDR が) 挿入されます。
+
+このリストからある項目を消したいときは、以下の Lisp の切れ端が役に立つ
+でしょう。他の要素を削除したいときはそれに合わせて下さい。
+
+     (setq message-required-news-headers
+           (delq 'Message-ID message-required-news-headers))
+
+出て行くニュース記事をカスタマイズするための他の変数:
+
+`message-syntax-checks'
+     出て行くメッセージの、どの構文の検査をすべきではないかを制御します。
+     例えば、長い署名の検査を禁止するには、このリストに
+
+          (signature . disabled)
+
+     を加えて下さい。
+
+     有効な検査は以下の通りです (訳注: これらの検査はメールでも行なわれ
+     ます):
+
+     `subject-cmsg'
+          ニュースのコントロールメッセージのような表題があるかどうかを
+          調べます。(訳注: 表題が `cmsg' で始まるもので、ニュースの管理
+          人だけが使います。一般の利用者がニュース記事の取り消し
+          (cancel) を行なうときにも使いますが、その場合は、この検査を通
+          らずに、それ専用の枠組みで実行されます。)
+     `sender'
+          `From' ヘッダーが変だったら、新しい `Sender' ヘッダーを挿入し
+          ます。
+     `multiple-headers'
+          複数の同じヘッダーの存在を調べます。
+     `sendsys'
+          `Sendsys:' か `Version:' ヘッダーがあるかどうかを調べます (訳
+          注: いずれもニュースの管理人だけが使うものです)。
+     `message-id'
+          `Message-ID' がまともかどうかを調べます。
+     `from'
+          `From' ヘッダーがまともかどうかを調べます。
+     `long-lines'
+          長すぎる行を調べます。
+     `control-chars'
+          使ってはいけない文字を調べます。
+     `size'
+          サイズが大きすぎないかどうかを調べます。
+     `new-text'
+          メッセージに新しい文があるかどうか (訳注: 引用ばかりでないか
+          どうか) を調べます。
+     `signature'
+          署名の長さを調べます。
+     `approved'
+          記事に `Approved' ヘッダーがあるかどうかを調べます。それは司
+          会者のような人だけが含めるはずのものです。
+     `empty'
+          記事が空かどうかを調べます。
+     `invisible-text'
+          バッファーに見えないテキストがあるかどうかを調べます。
+     `empty-headers'
+          ヘッダーのどれかが空かどうかを調べます。
+     `existing-newsgroups'
+          `Newsgroups' と `Follouup-to' ヘッダーに記入されているニュー
+          スグループが存在するかどうかを調べます。
+     `valid-newsgroups'
+          `Newsgroups' と `Followup-to' ヘッダーが構文的に正しいかどう
+          かを調べます。
+     `repeated-newsgroups'
+          `Newsgroups' と `Followup-to' ヘッダーで、同じグループ名が繰
+          り返し使われているかどうかを調べます。
+     `shorten-followup-to'
+          投稿するグループの数を `Followup-to' ヘッダーを付け加えること
+          によって少なくするかどうかを調べます (訳注: 複数のニュースグルー
+          プに投稿する記事に `Followup-to' ヘッダーが無い場合に発動され、
+          `Followup-to' ヘッダーに記入する値の入力を要求します)。
+
+     ディフォルトでは、これらすべての条件が調べられます。
+
+`message-ignored-news-headers'
+     投稿する前に取り除かれるヘッダーの正規表現です。
+     ディフォルトは
+     `^NNTP-Posting-Host:\\|^Xref:\\|^[BGF]cc:\\|^Resent-Fcc:\\|
+     ^X-Draft-From:\\|^X-Gnus-Agent-Meta-Information:' です。
+
+`message-default-news-headers'
+     この文字列はニュースとして初期化されたすべてのメッセージバッファー
+     の、ヘッダーの最後尾に挿入されます。
+
+
+
+File: message-ja.info, Node: News Variables, Next: Insertion Variables, Prev: News Headers, Up: Variables
+
+ニュース変数
+============
+
+`message-send-news-function'
+     現在のバッファーをニュースとして送るために使われる関数です。ディフォ
+     ルトは `mesage-send-news' です。
+
+`message-post-method'
+     できあがったニュースメッセージを投稿するために使われる Gnus の「選
+     択方法」(詳細は Gnus マニュアルを見て下さい) です。
+
+
+
+File: message-ja.info, Node: Insertion Variables, Next: Various Message Variables, Prev: News Variables, Up: Variables
+
+挿入するための変数
+==================
+
+`message-ignored-cited-headers'
+     この正規表現に合致するすべてのヘッダーが、引用のために yank された
+     メッセージから取り除かれます。ディフォルトは `.' で、すべてのヘッ
+     ダーが取り除かれると言うことです。
+
+`message-cite-prefix-regexp'
+     行の引用接頭語として見なすことができるものに最大限に合致する正規表
+     現です。
+
+`message-citation-line-function'
+     引用行を挿入するために呼ばれる関数です。ディフォルトは
+     `message-insert-citation-line' で、これは引用行を次のようにします:
+
+          Hallvard B Furuseth <h.b.furuseth@usit.uio.no> writes:
+
+     この関数が呼ばれたとき、ポイントはメッセージの本文の先頭に置かれる
+     でしょう。
+
+     なお Gnus には、`writes:' の上でクリックすると引用されたテキストを
+     隠す機能があります。もしあなたが度を越して引用行を変更してしまうと、
+     それを読む人たちも彼らの Gnus を対応させなければならなくなるでしょ
+     う。変数 `gnus-cite-attribution-suffix' を参照して下さい。詳細は
+     *Note 記事のハイライト: (gnus-ja)Article Highlighting, にあります。
+
+`message-yank-prefix'
+     記事に返答かフォローアップをするときは、普通はあなたが応答しようと
+     している人を引用したいでしょう。引用文の挿入は“yank”することによっ
+     て行なわれ、それぞれの yank された行の前に `message-yank-prefix'
+     が付けられます (すでに引用符 `message-yank-cited-prefix' が付いて
+     いる行と、`message-yank-empty-prefix' が付けられた空行は対象外で
+     す)。ディフォルトは `> ' です。
+
+`message-yank-cited-prefix'
+     すでに引用されたテキストを含む記事から yank するとき、それぞれの行にはこ
+     の変数の値が前置されます。ディフォルトは `>' です。
+     `message-yank-prefix' も参照して下さい。
+
+`message-yank-empty-prefix'
+     記事からテキストを引用するとき、それぞれの空行にこの変数の値が前置されま
+     す。ディフォルトは `>' です。この変数を空文字に設定することによって、
+     引用されたテキストを自動的に段落分けすることができます。
+     `message-yank-prefix' も参照して下さい。
+
+`message-indentation-spaces'
+     Yank されたメッセージを字下げするための空白の数です。
+
+`message-cite-function'
+     元記事を引用するための関数です。ディフォルトは
+     `message-cite-original' で、これは単純に元のメッセージを挿入して、
+     それぞれの行の頭に `> ' をくっ付けます。
+     `message-cite-original-without-signature' は同様のことをしますが、
+     署名を省きます。Supercite を使うために、この変数を
+     `sc-cite-original' に設定することもできます。
+
+`message-indent-citation-function'
+     メールバッファーに挿入された引用文を修正するための関数です。これは
+     関数のリストであることもできます。それぞれの関数は `(point)' と
+     `(mark t)' の間で引用を見つけることができます。そしてそれぞれの関
+     数は、修正された引用文の周り (の修正前と同等の場所) にポイントとマー
+     クが置かれたままになっているようにしなければなりません。
+
+`message-mark-insert-begin'
+     挿入された何らかのテキストの始まりに、印を付けるための文字列です。
+
+`message-mark-insert-end'
+     挿入された何らかのテキストの終りに、印を付けるための文字列です。
+
+`message-signature'
+     メッセージバッファーの最後に挿入される文字列です。もし `t' (これが
+     ディフォルトです) であれば、ファイル `message-signature-file' が代
+     わりに挿入されます。もし関数であれば、関数の結果が代わりに使われま
+     す。もし式であれば、式の結果が変わりに使われます。この変数が
+     `nil' だったら、署名はまったく挿入されません。
+
+`message-signature-file'
+     バッファーの最後に挿入される、署名の入っているファイルです。ディフォ
+     ルトは `~/.signature' です。
+
+`message-signature-insert-empty-line'
+     `t' (ディフォルト値) だったら、署名と本文を分離する記号の前に空行
+     が挿入されます。
+
+RFC1036bis は、署名はその前に `-- ' の三文字だけの行があるべきであると
+言っていることに注意して下さい。これは受け手が自動的に署名を認識して、
+処理をすることを簡単にするためです。ですから、その、あなたの美しいデザ
+インを、それが台無しにしていると感じても、それらの文字を取り除かないで
+下さい。
+
+署名は四行より多くなるべきでは無いと言うことも注意して下さい。ASCII の
+絵を入れることは、皆にあなたが馬鹿で何も重要なことは言わないということ
+を信じさせるための効果的な方法です。
+
+
+
+File: message-ja.info, Node: Various Message Variables, Next: Sending Variables, Prev: Insertion Variables, Up: Variables
+
+いろいろなメッセージ変数
+========================
+
+`message-default-charset'
+     MIME 文字セット名のシンボルです。メッセージ内の非-ASCII 文字は、こ
+     の文字セットを使ってエンコードされることになっています。ディフォル
+     トは MULE 機能が無い Emacsen では `iso-8859-1' です。それ以外では
+     `nil' で、利用者に尋ねることを意味します。(この変数は MULE 機能が
+     無い Emacs でのみ使われます。) MULE から MIME への置き換え処理の詳
+     細は *Note 文字セットの変換: (emacs-mime-ja)Charset Translation,
+     を参照して下さい。
+
+`message-signature-separator'
+     署名と本文を分離する記号に合致する正規表現です。ディフォルトは
+     `^-- *$' です。
+
+`mail-header-separator'
+     ヘッダーを本文から分けるために使われる文字列です。ディフォルトは
+     `--text follows this line--' です。
+
+`message-directory'
+     メールに関係する多くの処理で使われるディレクトリーです。ディフォル
+     トは `~/Mail/' です。メールに関する他のファイル名やディレクトリー
+     名を指定する変数の値は、この `message-directory' の値を基点にして
+     派生します。
+
+`message-auto-save-directory'
+     Gnus が動作していないときに Message がバッファーを自動保存するディ
+     レクトリーです。`nil' だったら Message は自動保存を行ないません。
+     ディフォルトは `~/Mail/drafts/' です。
+
+`message-signature-setup-hook'
+     メッセージバッファーを初期化するときに実行されるフックです。それは
+     ヘッダーが挿入された後の、まだ署名が挿入されていないときに実行され
+     ます。
+
+`message-setup-hook'
+     メッセージバッファーを初期化する処理の最後に、まだ yank される文章
+     が挿入されていないときに実行されるフックです。
+
+`message-header-setup-hook'
+     ヘッダーを初期化した後に、ヘッダーに範囲を狭めて呼ばれるフックです。
+
+     例えば、Gnus を実行していて、すべてのニュース記事とメーリングリス
+     トに送るすべてのメッセージに `Mail-Copies-To' ヘッダーを挿入したい
+     のであれば、以下のようなことができます:
+
+          (defun my-message-header-setup-hook ()
+            (let ((group (or gnus-newsgroup-name "")))
+              (when (or (message-fetch-field "newsgroups")
+                        (gnus-group-find-parameter group 'to-address)
+                        (gnus-group-find-parameter group 'to-list))
+                (insert "Mail-Copies-To: never\n"))))
+
+          (add-hook 'message-header-setup-hook
+                    'my-message-header-setup-hook)
+
+`message-send-hook'
+     メッセージを送る前に実行されるフックです。
+
+     もし送る前に特定のヘッダーを加えたいのであれば、
+     `message-add-header' 関数をこのフックに使うことができます。例えば:
+
+          (add-hook 'message-send-hook 'my-message-add-content)
+          (defun my-message-add-content ()
+            (message-add-header "X-In-No-Sense: Nonsense")
+            (message-add-header "X-Whatever: no"))
+
+     この関数は、そのヘッダーがすでに存在している場合はヘッダーを加えま
+     せん。
+
+`message-send-mail-hook'
+     メールメッセージを送る前に実行されるフックです。このフックは非常に
+     遅い時期--メッセージがメールとして実際に送信される直前--に実行され
+     ます。
+
+`message-send-news-hook'
+     ニュースメッセージを送る前に実行されるフックです。このフックは非常
+     に遅い時期--メッセージがニュースとして実際に送信される直前--に実行
+     されます。
+
+`message-sent-hook'
+     メッセージを送った後で実行されるフックです。
+
+`message-cancel-hook'
+     ニュース記事の取り消し (cancel) を行なうときに実行されるフックです。
+
+`message-mode-syntax-table'
+     メッセージモードのバッファーで使われる構文テーブルです。
+
+`message-cite-articles-with-x-no-archive'
+     非-`nil' だったら、`X-No-Archive' が設定されている記事から引用され
+     たテキストを取り除きません。この変数が `nil' になっていても、
+     `undo' のキー操作を行なうことによって取り除かれたテキストを元に戻
+     すことができます。
+
+`message-strip-special-text-properties'
+     Emacs はメッセージ作成をいろいろに壊してしまうことができる多くの特
+     別なテキスト属性 (text properties) を持っています。この変数が
+     非-`nil' に設定されていると、message はそれらの属性をメッセージを
+     作成するバッファーから剥ぎ取ります。しかしいくつかのパッケージは、
+     動作するためにそれらの属性が存在していることが必要です。それらのパッ
+     ケージの一つを使うのならば、このオプションを off にして、メッセー
+     ジが壊れてしまわないことを祈って下さい。
+
+     訳注: 日本語入力のためのパッケージである tamago 第四版は、まさにテ
+     キスト属性を巧みに駆使しています。そのため、この変数が非-`nil' に
+     設定されていても、message は tamago が使うテキスト属性だけは特別扱
+     いして、剥ぎ取らないようになっています。
+
+`message-send-method-alist'
+     メッセージを送出するための方法を指定する連想リストです。それぞれの
+     要素は次の形式になっています:
+
+          (TYPE PREDICATE FUNCTION)
+
+     TYPE
+          方法の呼称を指定するシンボルです。
+
+     PREDICATE
+          そのメッセージが TYPE の型のメッセージであるかどうかを判定す
+          るために、引数無しで呼ばれる関数です。関数はそのメッセージが
+          あるバッファーで呼び出されます。
+
+     FUNCTION
+          PREDICATE が `nil' ではない値を返したときに呼ばれる関数です。
+          FUNCTION は一つの引数--接頭引数 (訳注: `C-c C-c' 命令に先立っ
+          て与えられた接頭引数)---と共に呼ばれます。
+
+     ディフォルトは次のようになっています:
+
+          ((news message-news-p message-send-via-news)
+           (mail message-mail-p message-send-via-mail))
+
+     `message-news-p' 関数はそのメッセージがニュース記事のように見える
+     場合に `nil' ではない値を返し、`message-send-via-news' 関数は
+     `message-send-news-function' 変数 (*Note News Variables::) に設定
+     された関数を呼び出して、そのメッセージを送信します。
+     `message-mail-p' 関数はそのメッセージがメールのように見える場合に
+     `nil' ではない値を返し、`message-send-via-mail' 関数は
+     `message-send-mail-function' 変数 (*Note Mail Variables::) に設定
+     された関数を呼び出して、そのメッセージを送信します。
+
+     `message-send-method-alist' の各要素は先頭から順にすべて試されるの
+     で、例えば有効な `Newsgroups:' ヘッダーと `To:' ヘッダーの両方を持っ
+     ているメッセージは、まずニュースとして送信された後にメールとしても
+     送信されます。
+
+
+
+File: message-ja.info, Node: Sending Variables, Next: Message Buffers, Prev: Various Message Variables, Up: Variables
+
+送るための変数
+==============
+
+`message-fcc-handler-function'
+     出て行く記事を保存するために呼ばれる関数です。この関数は記事を格納
+     するためのファイル名と共に呼ばれます。ディフォルトの関数は Unix
+     mailbox 様式で保存する `message-output' です。
+
+`message-courtesy-message'
+     複合メッセージ (訳注: ニュースとメールの両方で送信するメッセージ)
+     を送るときに、この文字列がメールで送られる複製の方の本文の先頭に挿
+     入されます。もしその文字列が `%s' 書法仕様を含んでいたら、記事が投
+     稿されたニュースグループがそこに挿入されます。この変数が `nil' だっ
+     たら、そのような親切メッセージは加えられません。ディフォルト値は
+     `"The following message is a courtesy copy of an article\nthat
+     has been posted to %s as well.\n\n"' です。
+
+`message-fcc-externalize-attachments'
+     `nil' だったら、Fcc で保存するメッセージのコピーに通常のパートとし
+     てファイルを添付します。非-`nil' だった場合は、外部パートとしてロー
+     カルファイルを添付します (訳注: そのパートをローカルファイルに書き
+     出して、メッセージにはそのファイルの格納場所を示すタグだけを含んで
+     いるパートを付けます)。
+
+`message-interactive'
+     `nil' でなかったら、メッセージを送信するときにエラーが出るのを待っ
+     て表示します。`nil' だったら、エラーの報告をメールで行ないます。
+
+
+
+File: message-ja.info, Node: Message Buffers, Next: Message Actions, Prev: Sending Variables, Up: Variables
+
+メッセージバッファー
+====================
+
+Message はあなたがメッセージバッファーを要求したときに、ユニークな (唯
+一無二の) バッファー名で新しいバッファーを作ります。メッセージを送った
+ときに、バッファーは普通は削除されません。その名前は変更されて、特定の
+数の古いメッセージバッファーが残されます。
+
+`message-generate-new-buffers'
+     `nil' でなければ、新しいバッファーを作成します。ディフォルトは
+     `t' です。もしこれが関数だったら、その関数を三つの引数--その型、送
+     り先のアドレス、グループ名--と共に呼びます。(これらのどれでもが
+     `nil' かもしれません。) その関数は新しいバッファー名を返さなければ
+     なりません。
+
+`message-max-buffers'
+     この変数はどのくらい古いメッセージバッファーを残しておくかを指定し
+     ます。これより多いメッセージバッファーがあれば、一番古いバッファー
+     が削除されます。ディフォルトは 10 です。この変数が `nil' だったら、
+     古いメッセージバッファーは削除されません。
+
+`message-send-rename-function'
+     メッセージを送った後で、バッファーの名前は、例えば `*reply to
+     Lars*' から `*sent reply to Lars*' に変更されます。もしこれが好き
+     ではないのならば、この変数をあなたの好きな方法でバッファーの名前を
+     変更する関数に設定して下さい。そもそもバッファー名を変更することを
+     好まないのであれば、次のようにすれば良いでしょう:
+
+          (setq message-send-rename-function 'ignore)
+
+`message-kill-buffer-on-exit'
+     `nil' でなければ、終了時にすぐにバッファーを削除します。
+
+
+
+File: message-ja.info, Node: Message Actions, Prev: Message Buffers, Up: Variables
+
+メッセージが請け負う仕事
+========================
+
+Message がニュース/メールリーダーから使われているときに、リーダーにはメッ
+セージが送られた後で行なう何らかの仕事が課せられることがよくあります。
+おそらく前のウィンドウ配置に戻したり、記事にそれが返答されたことを表す
+印を付けるようなことでしょう。
+
+利用者はいろいろな方法でメッセージバッファーを終わらせることができます。
+最も良くあるのは `C-c C-c' で、それはメッセージを送って終了します。
+他の可能性としては `C-c C-s' があります。これはメッセージを送るだけ
+です。`C-c C-d' はメッセージを後で編集することにして、メッセージバッ
+ファーを `bury-buffer' します (訳注: それを Emacs 上に存在するバッ
+ファーのリストの最後の要素にして隠します)。そして `C-c C-k' はメッセー
+ジバッファーを削除します。これらのそれぞれの動作は、それらと関連付けられ
+た請け負い仕事を含んでいるリストを持っています。そのリスト
+は `message-send-actions', `message-exit-actions',
+`message-postpone-actions' および `message-kill-actions' です。
+
+Message はこれらのリストを操作するために `message-add-action' 関数を用
+意しています。第一引数は加えられる請け負い仕事で、残りの引数はどのリス
+トにこの請け負い仕事を加えるかを指定します。これは Gnus から使う例です:
+
+       (message-add-action
+        `(set-window-configuration ,(current-window-configuration))
+        'exit 'postpone 'kill)
+
+これはメッセージバッファーが削除 (kill)、延期 (postpone)、終了 (kill)
+されたときに、Gnus のウィンドウ配置を復活させるためのものです。
+
+第一引数に与える「請け負い仕事」は次のどれかです: 普通の関数、`car' が
+関数で CDR が引数のリストであるリスト、または `eval' (評価) される式で
+す。
+
+訳注: たぶん実際のソースコードを見た方が話が早いでしょう。
+
+
+
+File: message-ja.info, Node: Compatibility, Next: Appendices, Prev: Variables, Up: Top
+
+互換性
+******
+
+Message は事実上それ自身の変数しか使わず (*)、古い `mail-' 変数は考慮に
+入れません。これらの変数を Message が考えに入れるようにさせたいのであれ
+ば、以下のものを `.emacs' ファイルに入れれば良いでしょう:
+
+     (require 'messcompat)
+
+これは多くの Message 変数を、それらに対応する `mail-' 変数の値に基づい
+て初期化します。
+
+訳注*: 実際には随所で Gnus の変数を使っています。世の中うまくいきません。
+
+
+
+File: message-ja.info, Node: Appendices, Next: Index, Prev: Compatibility, Up: Top
+
+付記
+****
+
+* Menu:
+
+* Responses:: 応答がどこに行くかを決定する標準の規則
+
+
+
+File: message-ja.info, Node: Responses, Prev: Appendices, Up: Appendices
+
+応答
+====
+
+メッセージがどこに行くかを決定するために、ディフォルトでは以下のアルゴ
+リズムが使われます。
+
+"reply"
+     「返答」(reply) は、メッセージを送った人 *だけ* にメールで応答した
+     いときのものです。受取人は一人しかいません。受取人が誰であるかを決
+     定するために、以下のヘッダーを順番に調べます:
+
+     `Reply-To'
+
+     `From'
+
+"wide reply"
+     「広い返答」(wide reply) は、応答しようとしているメッセージに書か
+     れていた *すべての* 人々へのメールによる応答です。以下のヘッダーか
+     ら抽出したすべてのメールアドレスを連結して、出て行く `To'/`Cc' ヘッ
+     ダーを作ります:
+
+     `From'
+          (`Reply-To' が無い限りこれが使われますが、ある場合は代わりに
+          それが使われます)。
+
+     `Cc'
+
+     `To'
+
+     `Mail-Copies-To' ヘッダーが存在していたならば、それも宛先のリスト
+     に加えられます。このヘッダーが `never' だったら、`From' (または
+     `Reply-To') のメールアドレスを除外しなければならないということです。
+
+"followup"
+     「フォローアップ」(followup) はニュースで送る応答です。以下のヘッ
+     ダー (優先順位が高い順に並んでいます) で、どこに応答を送るかを決定
+     します:
+
+     `Followup-To'
+
+     `Newsgroups'
+
+     もし `Mail-Copies-To' ヘッダーがあったならば、それが `never' でな
+     い限り、新しい `Cc' ヘッダーの基として使われます。
+
+
+
+File: message-ja.info, Node: Index, Next: Key Index, Prev: Appendices, Up: Top
+
+Index
+*****
+
+* Menu:
+
+* Aw:                           Message Headers.        (line  75)
+* Cancel Locks:                 Canceling News.         (line  11)
+* Distribution:                 News Headers.           (line  67)
+* Expires:                      News Headers.           (line  60)
+* From:                         News Headers.           (line  13)
+* IDNA:                         IDNA.                   (line   5)
+* Importance:                   Header Commands.        (line 105)
+* Importance:                   Header Commands.        (line 110)
+* Lines:                        News Headers.           (line  36)
+* MIME:                         MIME.                   (line   5)
+* MML:                          MIME.                   (line   5)
+* Mail-Followup-To:             Mailing Lists.          (line   6)
+* Message-ID:                   News Headers.           (line  40)
+* Mime-Version:                 News Headers.           (line  78)
+* Newsgroups:                   News Headers.           (line  23)
+* PGP/MIME:                     Security.               (line   5)
+* PGP:                          Security.               (line   5)
+* Re:                           Message Headers.        (line  75)
+* S/MIME:                       Security.               (line   5)
+* Security:                     Security.               (line   5)
+* Sender:                       News Headers.           (line 118)
+* Subject:                      Header Commands.        (line 115)
+* Subject:                      News Headers.           (line  19)
+* Sun:                          News Headers.           (line  40)
+* Supercite:                    Insertion Variables.    (line  61)
+* Sv:                           Message Headers.        (line  75)
+* User-Agent:                   News Headers.           (line  50)
+* X-No-Archive:                 Header Commands.        (line 144)
+* X-Post:                       Header Commands.        (line 123)
+* aliases:                      Mail Aliases.           (line   5)
+* approved:                     News Headers.           (line 151)
+* attachment:                   MIME.                   (line   5)
+* attribution line:             Insertion Variables.    (line  19)
+* canlock:                      Canceling News.         (line  11)
+* charset:                      Various Message Variables.  (line   8)
+* cited:                        Insertion Variables.    (line  44)
+* compatibility:                Compatibility.          (line   5)
+* cross-post:                   Header Commands.        (line 123)
+* describe-mode:                Header Commands.        (line  15)
+* encrypt:                      Security.               (line   5)
+* feedmail-send-it:             Mail Variables.         (line   8)
+* gpg-temp-directory:           Security.               (line 147)
+* i-did-not-set--mail-host-address--so-tickle-me: News Headers.  (line  40)
+* internationalized domain names: IDNA.                 (line   5)
+* ispell-message:               Spelling.               (line   5)
+* ispell-message-dictionary-alist: Spelling.            (line  15)
+* mail aliases:                 Mail Aliases.           (line   5)
+* mail-header-separator:        Various Message Variables.  (line  23)
+* mail-host-address:            News Headers.           (line  40)
+* message-add-archive-header:   Header Commands.        (line 144)
+* message-add-header:           Various Message Variables.  (line  74)
+* message-allow-no-recipients:  Message Headers.        (line 136)
+* message-alternative-emails:   Message Headers.        (line 118)
+* message-archive-header:       Header Commands.        (line 144)
+* message-archive-note:         Header Commands.        (line 144)
+* message-auto-save-directory:  Various Message Variables.  (line  35)
+* message-beginning-of-line:    Movement.               (line  16)
+* message-beginning-of-line:    Movement.               (line  16)
+* message-bounce:               Bouncing.               (line   6)
+* message-caesar-buffer-body:   Various Commands.       (line   8)
+* message-cancel-hook:          Various Message Variables.  (line 101)
+* message-cancel-message:       Canceling News.         (line   8)
+* message-cancel-news:          Canceling News.         (line   6)
+* message-change-subject:       Header Commands.        (line 115)
+* message-citation-line-function: Insertion Variables.  (line  19)
+* message-cite-articles-with-x-no-archive: Various Message Variables.  (line 109)
+* message-cite-function:        Insertion Variables.    (line  61)
+* message-cite-original:        Insertion Variables.    (line  61)
+* message-cite-original-without-signature: Insertion Variables.  (line  61)
+* message-cite-prefix-regexp:   Insertion Variables.    (line  14)
+* message-cross-post-default:   Header Commands.        (line 123)
+* message-cross-post-followup-to: Header Commands.      (line 123)
+* message-cross-post-note-function: Header Commands.    (line 123)
+* message-default-charset:      Various Message Variables.  (line   8)
+* message-default-headers:      Message Headers.        (line  70)
+* message-default-mail-headers: Mail Headers.           (line  21)
+* message-default-news-headers: News Headers.           (line 173)
+* message-deletable-headers:    Message Headers.        (line  58)
+* message-delete-not-region:    Various Commands.       (line  33)
+* message-directory:            Various Message Variables.  (line  28)
+* message-distribution-function: News Headers.          (line  67)
+* message-dont-reply-to-names:  Wide Reply.             (line  16)
+* message-dont-send:            Sending.                (line  23)
+* message-draft-headers:        Message Headers.        (line  29)
+* message-elide-ellipsis:       Various Commands.       (line  16)
+* message-elide-region:         Various Commands.       (line  16)
+* message-exit-actions:         Message Actions.        (line  11)
+* message-expires:              News Headers.           (line  60)
+* message-fcc-externalize-attachments: Sending Variables.  (line  24)
+* message-fcc-handler-function: Sending Variables.      (line   8)
+* message-fill-yanked-message:  Insertion.              (line  18)
+* message-followup:             Followup.               (line   6)
+* message-followup-to-function: Followup.               (line   9)
+* message-forward:              Forwarding.             (line   6)
+* message-forward-as-mime:      Forwarding.             (line  37)
+* message-forward-before-signature: Forwarding.         (line  44)
+* message-forward-ignored-headers: Forwarding.          (line  12)
+* message-forward-subject-author-subject: Forwarding.   (line  24)
+* message-from-style:           Message Headers.        (line  36)
+* message-generate-hashcash:    Mail Headers.           (line  26)
+* message-generate-headers-first: Message Headers.      (line  14)
+* message-generate-new-buffers: Message Buffers.        (line  13)
+* message-generate-unsubscribed-mail-followup-to: Header Commands.  (line  75)
+* message-generate-unsubscribed-mail-followup-to: Mailing Lists.  (line  92)
+* message-goto-bcc:             Header Commands.        (line  28)
+* message-goto-body:            Movement.               (line   8)
+* message-goto-cc:              Header Commands.        (line  36)
+* message-goto-distribution:    Header Commands.        (line  52)
+* message-goto-fcc:             Header Commands.        (line  32)
+* message-goto-followup-to:     Header Commands.        (line  56)
+* message-goto-from:            Header Commands.        (line  23)
+* message-goto-keywords:        Header Commands.        (line  60)
+* message-goto-mail-followup-to: Mailing Lists.         (line  92)
+* message-goto-reply-to:        Header Commands.        (line  44)
+* message-goto-signature:       Movement.               (line  12)
+* message-goto-subject:         Header Commands.        (line  40)
+* message-goto-summary:         Header Commands.        (line  64)
+* message-goto-to:              Header Commands.        (line  19)
+* message-header-format-alist:  Header Commands.        (line  77)
+* message-header-setup-hook:    Various Message Variables.  (line  52)
+* message-header-synonyms:      Message Headers.        (line 156)
+* message-hidden-headers:       Message Headers.        (line 143)
+* message-idna-to-ascii-rhs:    IDNA.                   (line  22)
+* message-ignored-bounced-headers: Bouncing.            (line  11)
+* message-ignored-mail-headers: Mail Headers.           (line  14)
+* message-ignored-news-headers: News Headers.           (line 166)
+* message-ignored-resent-headers: Resending.            (line   9)
+* message-ignored-supersedes-headers: Superseding.      (line   9)
+* message-indent-citation-function: Insertion Variables.  (line  70)
+* message-indentation-spaces:   Insertion Variables.    (line  57)
+* message-insert-canlock:       Canceling News.         (line  11)
+* message-insert-disposition-notification-to: Header Commands.  (line  98)
+* message-insert-headers:       Insertion.              (line  31)
+* message-insert-importance-high: Header Commands.      (line 105)
+* message-insert-importance-low: Header Commands.       (line 110)
+* message-insert-newsgroups:    Header Commands.        (line  87)
+* message-insert-or-toggle-importance: Header Commands.  (line  68)
+* message-insert-signature:     Insertion.              (line  27)
+* message-insert-to:            Header Commands.        (line  82)
+* message-insert-wide-reply:    Header Commands.        (line 139)
+* message-interactive:          Sending Variables.      (line  32)
+* message-kill-actions:         Message Actions.        (line  11)
+* message-kill-address:         Various Commands.       (line  22)
+* message-kill-buffer:          Sending.                (line  28)
+* message-kill-buffer-on-exit:  Message Buffers.        (line  38)
+* message-kill-to-signature:    Various Commands.       (line  28)
+* message-mail:                 New Mail Message.       (line   6)
+* message-mail-alias-type:      Mail Aliases.           (line   6)
+* message-mail-p:               Various Message Variables.  (line 131)
+* message-mailer-swallows-blank-line: Mail Variables.   (line  60)
+* message-make-forward-subject-function: Forwarding.    (line  17)
+* message-mark-insert-begin:    Insertion Variables.    (line  78)
+* message-mark-insert-end:      Insertion Variables.    (line  82)
+* message-mark-insert-file:     Insertion.              (line  44)
+* message-mark-inserted-region: Insertion.              (line  35)
+* message-max-buffers:          Message Buffers.        (line  21)
+* message-mh-deletable-headers: Mail Variables.         (line  16)
+* message-mode-syntax-table:    Various Message Variables.  (line 105)
+* message-newline-and-reformat: Various Commands.       (line  38)
+* message-news:                 New News Message.       (line   6)
+* message-news-p:               Various Message Variables.  (line 131)
+* message-post-method:          News Variables.         (line  13)
+* message-postpone-actions:     Message Actions.        (line  11)
+* message-qmail-inject-args:    Mail Variables.         (line  28)
+* message-qmail-inject-program: Mail Variables.         (line  24)
+* message-reduce-to-to-cc:      Header Commands.        (line 133)
+* message-rename-buffer:        Various Commands.       (line  58)
+* message-reply:                Reply.                  (line   6)
+* message-reply-to-function:    Reply.                  (line   9)
+* message-required-headers:     Message Headers.        (line  20)
+* message-required-mail-headers: Mail Headers.          (line   8)
+* message-required-news-headers: News Headers.          (line   6)
+* message-resend:               Resending.              (line   6)
+* message-send:                 Sending.                (line  19)
+* message-send-actions:         Message Actions.        (line  11)
+* message-send-and-exit:        Sending.                (line   8)
+* message-send-hook:            Various Message Variables.  (line  70)
+* message-send-mail-function:   Mail Variables.         (line   8)
+* message-send-mail-hook:       Various Message Variables.  (line  85)
+* message-send-mail-partially-limit: Mail Variables.    (line  70)
+* message-send-mail-with-mh:    Mail Variables.         (line   8)
+* message-send-mail-with-qmail: Mail Variables.         (line   8)
+* message-send-mail-with-sendmail: Mail Variables.      (line   8)
+* message-send-method-alist:    Various Message Variables.  (line 131)
+* message-send-news-function:   News Variables.         (line   8)
+* message-send-news-hook:       Various Message Variables.  (line  91)
+* message-send-rename-function: Message Buffers.        (line  28)
+* message-send-via-mail:        Various Message Variables.  (line 131)
+* message-send-via-news:        Various Message Variables.  (line 131)
+* message-sendmail-envelope-from: Mail Variables.       (line  53)
+* message-sendmail-f-is-evil:   Mail Variables.         (line  42)
+* message-sent-hook:            Various Message Variables.  (line  97)
+* message-setup-hook:           Various Message Variables.  (line  47)
+* message-signature:            Insertion Variables.    (line  86)
+* message-signature-file:       Insertion Variables.    (line  94)
+* message-signature-insert-empty-line: Insertion Variables.  (line  99)
+* message-signature-separator:  Various Message Variables.  (line  18)
+* message-signature-setup-hook: Various Message Variables.  (line  41)
+* message-smtpmail-send-it:     Mail Variables.         (line   8)
+* message-sort-headers:         Header Commands.        (line  77)
+* message-strip-special-text-properties: Various Message Variables.  (line 116)
+* message-subject-re-regexp:    Message Headers.        (line  75)
+* message-subject-trailing-was-ask-regexp: Message Headers.  (line 108)
+* message-subject-trailing-was-query: Message Headers.  (line 108)
+* message-subject-trailing-was-regexp: Message Headers.  (line 108)
+* message-subscribed-address-file: Mailing Lists.       (line  73)
+* message-subscribed-address-functions: Mailing Lists.  (line  58)
+* message-subscribed-addresses: Mailing Lists.          (line  41)
+* message-subscribed-regexps:   Mailing Lists.          (line  49)
+* message-supersede:            Superseding.            (line   6)
+* message-syntax-checks:        News Headers.           (line  99)
+* message-tab:                  Various Commands.       (line  63)
+* message-tab-body-function:    Various Commands.       (line  63)
+* message-to-list-only:         Header Commands.        (line  93)
+* message-use-followup-to:      Followup.               (line  14)
+* message-use-idna:             IDNA.                   (line  16)
+* message-use-mail-followup-to: Mailing Lists.          (line 106)
+* message-user-fqdn:            News Headers.           (line  40)
+* message-user-organization:    News Headers.           (line  28)
+* message-user-organization-file: News Headers.         (line  28)
+* message-user-path:            News Headers.           (line  79)
+* message-wash-forwarded-subjects: Forwarding.          (line  31)
+* message-wide-reply:           Wide Reply.             (line   6)
+* message-wide-reply-confirm-recipients: Wide Reply.    (line  19)
+* message-wide-reply-to-function: Wide Reply.           (line  11)
+* message-yank-buffer:          Insertion.              (line  13)
+* message-yank-cited-prefix:    Insertion Variables.    (line  44)
+* message-yank-empty-prefix:    Insertion Variables.    (line  50)
+* message-yank-original:        Insertion.              (line   8)
+* message-yank-prefix:          Insertion Variables.    (line  35)
+* messsage-courtesy-messsage:   Sending Variables.      (line  14)
+* mml-dnd-attach-options:       MIME.                   (line  14)
+* mml-dnd-protocol-alist:       MIME.                   (line  14)
+* mml-secure-message-encrypt-pgp: Security.             (line  35)
+* mml-secure-message-encrypt-pgpmime: Security.         (line  40)
+* mml-secure-message-encrypt-smime: Security.           (line  30)
+* mml-secure-message-sign-pgp:  Security.               (line  20)
+* mml-secure-message-sign-pgpmime: Security.            (line  25)
+* mml-secure-message-sign-smime: Security.              (line  15)
+* mml-signencrypt-style-alist:  Security.               (line 162)
+* mml-unsecure-message:         Security.               (line  45)
+* multipart:                    MIME.                   (line   5)
+* non-ascii domain names:       IDNA.                   (line   5)
+* organization:                 News Headers.           (line  28)
+* path:                         News Headers.           (line  79)
+* qmail:                        Mail Variables.         (line  24)
+* quoting:                      Insertion Variables.    (line  35)
+* quoting:                      Insertion Variables.    (line  44)
+* quoting:                      Insertion Variables.    (line  50)
+* sc-cite-original:             Insertion Variables.    (line  61)
+* secure:                       Security.               (line   5)
+* sendmail:                     Mail Variables.         (line  42)
+* sendsys:                      News Headers.           (line 125)
+* sign:                         Security.               (line   5)
+* smtpmail-send-it:             Mail Variables.         (line   8)
+* spelling:                     Spelling.               (line   5)
+* split large message:          Mail Variables.         (line  70)
+* system-name:                  News Headers.           (line  40)
+* undo:                         Buffer Entry.           (line   5)
+* user-full-name:               News Headers.           (line  13)
+* user-mail-address:            News Headers.           (line  13)
+* user-mail-address:            News Headers.           (line  40)
+* yanking:                      Insertion Variables.    (line  35)
+* yanking:                      Insertion Variables.    (line  44)
+* yanking:                      Insertion Variables.    (line  50)
+* yow:                          News Headers.           (line  78)
+
+
+
+File: message-ja.info, Node: Key Index, Prev: Index, Up: Top
+
+Key Index
+*********
+
+* Menu:
+
+* C-_:                          Buffer Entry.           (line   5)
+* C-a:                          Movement.               (line  16)
+* C-c C-M-y:                    Insertion.              (line  13)
+* C-c C-b:                      Movement.               (line   8)
+* C-c C-c:                      Sending.                (line   8)
+* C-c C-d:                      Sending.                (line  23)
+* C-c C-e:                      Various Commands.       (line  16)
+* C-c C-f C-a:                  Header Commands.        (line  75)
+* C-c C-f C-a:                  Mailing Lists.          (line  92)
+* C-c C-f C-b:                  Header Commands.        (line  28)
+* C-c C-f C-c:                  Header Commands.        (line  36)
+* C-c C-f C-d:                  Header Commands.        (line  52)
+* C-c C-f C-f:                  Header Commands.        (line  32)
+* C-c C-f C-i:                  Header Commands.        (line  68)
+* C-c C-f C-k:                  Header Commands.        (line  60)
+* C-c C-f C-m:                  Mailing Lists.          (line  92)
+* C-c C-f C-n:                  Header Commands.        (line  48)
+* C-c C-f C-o:                  Header Commands.        (line  23)
+* C-c C-f C-o:                  Header Commands.        (line  56)
+* C-c C-f C-r:                  Header Commands.        (line  44)
+* C-c C-f C-s:                  Header Commands.        (line  40)
+* C-c C-f C-t:                  Header Commands.        (line  19)
+* C-c C-f C-u:                  Header Commands.        (line  64)
+* C-c C-f a:                    Header Commands.        (line 144)
+* C-c C-f s:                    Header Commands.        (line 115)
+* C-c C-f t:                    Header Commands.        (line 133)
+* C-c C-f w:                    Header Commands.        (line 139)
+* C-c C-f x:                    Header Commands.        (line 123)
+* C-c C-i:                      Movement.               (line  12)
+* C-c C-k:                      Sending.                (line  28)
+* C-c C-l:                      Header Commands.        (line  93)
+* C-c C-m C-n:                  Security.               (line  45)
+* C-c C-m c o:                  Security.               (line  35)
+* C-c C-m c p:                  Security.               (line  40)
+* C-c C-m c s:                  Security.               (line  30)
+* C-c C-m s o:                  Security.               (line  20)
+* C-c C-m s p:                  Security.               (line  25)
+* C-c C-m s s:                  Security.               (line  15)
+* C-c C-n:                      Header Commands.        (line  87)
+* C-c C-o:                      Header Commands.        (line  77)
+* C-c C-q:                      Insertion.              (line  18)
+* C-c C-r:                      Various Commands.       (line   8)
+* C-c C-s:                      Sending.                (line  19)
+* C-c C-t:                      Header Commands.        (line  82)
+* C-c C-v:                      Various Commands.       (line  33)
+* C-c C-w:                      Insertion.              (line  27)
+* C-c C-y:                      Insertion.              (line   8)
+* C-c C-z:                      Various Commands.       (line  28)
+* C-c ?:                        Header Commands.        (line  15)
+* C-c M-f:                      Insertion.              (line  44)
+* C-c M-h:                      Insertion.              (line  31)
+* C-c M-k:                      Various Commands.       (line  22)
+* C-c M-m:                      Insertion.              (line  35)
+* C-c M-n:                      Header Commands.        (line  98)
+* C-c M-r:                      Various Commands.       (line  58)
+* M-RET:                        Various Commands.       (line  38)
+* M-x message-insert-importance-high: Header Commands.  (line 105)
+* M-x message-insert-importance-low: Header Commands.   (line 110)
+* TAB:                          Various Commands.       (line  63)
+
+Tag table:
+Node: Top353
+Node: Interface844
+Node: New Mail Message1620
+Node: New News Message1914
+Node: Reply2220
+Node: Wide Reply3109
+Node: Followup3699
+Node: Canceling News4484
+Node: Superseding5272
+Node: Forwarding5848
+Node: Resending6903
+Node: Bouncing7149
+Node: Mailing Lists7560
+Node: Commands10914
+Node: Buffer Entry11462
+Node: Header Commands11875
+Node: Movement15428
+Node: Insertion15834
+Node: MIME17040
+Node: IDNA17845
+Node: Security18655
+Node: Various Commands23855
+Node: Sending25156
+Node: Mail Aliases25780
+Node: Spelling26451
+Node: Variables27513
+Node: Message Headers28089
+Node: Mail Headers32785
+Node: Mail Variables33526
+Node: News Headers35607
+Node: News Variables40475
+Node: Insertion Variables40809
+Node: Various Message Variables43649
+Node: Sending Variables48119
+Node: Message Buffers49093
+Node: Message Actions50116
+Node: Compatibility51254
+Node: Appendices51607
+Node: Responses51747
+Node: Index52668
+Node: Key Index70773
+
+End tag table

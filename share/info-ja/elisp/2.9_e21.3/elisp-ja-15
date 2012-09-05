@@ -1,0 +1,1813 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Rename or Copy, Next: Numbered Backups, Prev: Making Backups, Up: Backup Files
+
+改名によるバックアップかコピーによるバックアップか *(2003/10/30)*
+-----------------------------------------------------------------
+
+Emacsは2つの方法でバックアップファイルを作れます。
+
+   * Emacsは、元ファイルを改名してバックアップファイルとしてから、保存
+     すべきバッファを新たなファイルに書き出す。この処理のあとでは、元ファ
+     イルの他の名前（つまりハードリンク）はバックアップファイルを指す。
+     新たなファイルの所有者は編集しているユーザーになり、そのグループは
+     当該ディレクトリでユーザーが新規にファイルを書いた場合のデフォルト
+     である。
+
+   * Emacsは元ファイルをバックアップファイルにコピーしてから、元ファイ
+     ルを新たな内容で上書きする。この処理のあとでは、元ファイルの他の名
+     前（つまりハードリンク）はファイルの（更新した）現在の版を指し続け
+     る。ファイルの所有者とグループは変わらない。
+
+最初の改名による方式がデフォルトです。
+
+変数`backup-by-copying'が`nil'以外であると、
+2番目の方式、つまり、元ファイルをコピーしてから
+バッファの新たな内容で上書きすることを指示します。
+変数`file-precious-flag'が`nil'以外であっても
+（その主目的の副作用として）同じ効果があります。
+*Note Saving Buffers::。
+
+ -- Variable: backup-by-copying
+     この変数が`nil'以外であると、Emacsはつねにコピーしてバックアップファ
+     イルを作る。
+
+つぎの2つの変数が`nil'以外であると、特定の場面では2番目の方式を使うこと
+になります。これらの変数は、特別な場面に該当しないファイルの扱い方には
+影響しません。
+
+ -- Variable: backup-by-copying-when-linked
+     この変数が`nil'以外の場合、Emacsは、複数の名前（ハードリンク）を持
+     つファイルはコピーしてバックアップする。
+
+     この変数は`backup-by-copying'が`nil'以外の場合にのみ意味を持つ。と
+     いうのは、その変数が`nil'以外の場合にコピーを用いるからである。
+
+ -- Variable: backup-by-copying-when-mismatch
+     この変数が`nil'以外の場合、Emacsは、改名するとファイルの所有者やグ
+     ループを変更してしまう場合にコピーしてバックアップする。
+
+     改名してもファイルの所有者やグループを変更しなければ、この値は効果
+     を持たない。つまり、ユーザーが所有しているファイルであり、そのグルー
+     プが当該ユーザーが新規作成するファイルのデフォルトに一致する場合で
+     ある。
+
+     この変数は`backup-by-copying'が`nil'以外の場合にのみ意味を持つ。と
+     いうのは、その変数が`nil'以外の場合にコピーを用いるからである。
+
+ -- Variable: backup-by-copying-when-privileged-mismatch
+     この変数が`nil'でなければ、`backup-by-copying-when-mismatch' と同
+     じ動作になる。ただし、あるユーザIDの値、すなわちある数以下のIDの場
+     合に限られる。この変数には数整数を指定する。
+
+     そうして、`backup-by-copying-when-privileged-mismatch' に0を設定す
+     ると、コピーによるバックアップはスーパーユーザで、ファイルの所有者
+     の変更を破棄する必要がある時にのみ、コピーによるバックアップが行わ
+     れる。
+
+     デフォルトは200である。
+
+
+
+File: elisp-ja, Node: Numbered Backups, Next: Backup Names, Prev: Rename or Copy, Up: Backup Files
+
+番号付きバックアップファイルの作成と削除 *(2003/10/30)*
+-------------------------------------------------------
+
+ファイル名が`foo'であると、
+その番号付きバックアップファイルの名前はVを整数として
+`foo.~V~'となります。
+つまり、`foo.~1~'、`foo.~2~'、`foo.~3~'、...、
+`foo.~259~'といった具合です。
+
+ -- User Option: version-control
+     この変数は、番号なしの1つのバックアップファイルを作るのか複数の番
+     号付きバックアップファイルを作るのかを制御する。
+
+     `nil'
+          訪問したファイルにすでに番号付きバックアップファイルがあれば
+          番号付きバックアップを作る。さもなければ作らない。
+
+     `never'
+          番号付きバックアップは作らない。
+
+     その他
+          番号付きバックアップを作る。
+
+番号付きバックアップファイルを使うと、最終的には非常に多くのバックアッ
+プファイルができてしまい、それらは削除しなければなりません。Emacsはそれ
+らを自動的に削除したり、削除するかどうかユーザーに問い合わせることがで
+きます。
+
+ -- User Option: kept-new-versions
+     この変数の値は、新たに番号付きバックアップを作成したときに保存すべ
+     き最新のバックアップの個数である。新たに作成したバックアップも数え
+     る。デフォルト値は2である。
+
+ -- User Option: kept-old-versions
+     この変数の値は、新たに番号付きバックアップを作成したときに保存すべ
+     き最古のバックアップの個数である。デフォルト値は2である。
+
+1、2、3、5、7と番号が付いたバックアップがあり、これらのどちらの変数の値
+も2であるとすると、最古のものとして1と2の番号が付いたバックアップを保存
+し、最新のものとして5と7の番号が付いたバックアップを保存する。関数
+`find-backup-file-name'（*Note Backup Names::）は、どの番号のバックアッ
+プを削除すべきかを決定する責任があるが、それ自身はそれらを削除しない。
+
+ -- User Option: delete-old-versions
+     この変数が`t'であると、ファイルを保存すると黙って範囲外のバックアッ
+     プを削除する。`nil' であれば、それを削除するかどうかユーザーに問い
+     合わせる。さもなければ、すべて削除されない。
+
+ -- User Option: dired-kept-versions
+     この変数は、diredのコマンド`.'（`dired-clean-directory'）で最新の
+     バックアップを何個保存するかを指定する。これは、新たなバックアップ
+     ファイルの作成を指示したときに`kept-new-versions'が指定することと
+     同じである。デフォルト値は2である。
+
+
+
+File: elisp-ja, Node: Backup Names, Prev: Numbered Backups, Up: Backup Files
+
+バックアップファイルの命名方法 *(2003/10/30)*
+---------------------------------------------
+
+本節の関数は、それらを再定義することでバックアップファイルの命名方法を
+カスタマイズできるため、ここで述べることにします。どれか1つを変更すると、
+残りのものも変更する必要があるでしょう。
+
+ -- Function: backup-file-name-p FILENAME
+     この関数は、FILENAMEがバックアップファイルの名前である可能性がある
+     と`nil'以外の値を返す。FILENAMEという名前のファイルが存在する必要
+     はなく、この関数は単に名前だけを検査する。
+
+          (backup-file-name-p "foo")
+               => nil
+          (backup-file-name-p "foo~")
+               => 3
+
+     この関数の標準定義はつぎのとおりである。
+
+          (defun backup-file-name-p (file)
+            "Return non-nil if FILE is a backup file \
+          name (numeric or not)..."
+            (string-match "~\\'" file))
+
+     したがって、ファイル名が`~'で終っていると、この関数は`nil'以外の値
+     を返す。（説明文字列を2行に分けるためにバックスラッシュを使ってい
+     るが、文字列としては1行になる。）
+
+     カスタマイズのために再定義しやすいように、この単純な式を独立した関
+     数にしてある。
+
+ -- Function: make-backup-file-name FILENAME
+     この関数は、ファイルFILENAMEに対する番号なしバックアップファイルに
+     使う名前を表す文字列を返す。UNIXでは、単にFILENAMEの末尾にティルダ
+     を付加したものである。
+
+     ほとんどのオペレーティングシステムでは、この関数の標準定義はつぎの
+     とおりである。
+
+          (defun make-backup-file-name (file)
+            "Create the non-numeric backup file name for FILE..."
+            (concat file "~"))
+
+     この関数を再定義すれば、バックアップファイルの命名方法を変更できる。
+     つぎの例では、ティルダに加えて先頭に`.'を付けるように
+     `make-backup-file-name'を再定義する。
+
+          (defun make-backup-file-name (filename)
+            (expand-file-name
+              (concat "." (file-name-nondirectory filename) "~")
+              (file-name-directory filename)))
+
+          (make-backup-file-name "backups.texi")
+               => ".backups.texi~"
+
+     diredコマンドを含めてEmacsには、バックアップファイルは`~'で終ると
+     仮定しているものがある。この慣習に従わない場合、重大な問題には至ら
+     ないであろうが、それらのコマンドがあまり望ましくない結果をもたらす
+     かもしれない。
+
+ -- Function: find-backup-file-name FILENAME
+     この関数は、FILENAMEに対する新たなバックアップファイルの
+     ファイル名を計算する。
+     さらに、削除すべき既存のバックアップファイルも計算する。
+     `find-backup-file-name'は、
+     CARに新たなバックアップファイルの名前、
+     CDRに削除すべきバックアップファイルのリストを持つリストを返す。
+
+     2つの変数、`kept-old-versions'と`kept-new-versions'は、
+     どのバックアップを保存すべきかを決定する。
+     この関数は、値のCDRではそれらのバックアップファイルは
+     除外してある。
+     *Note Numbered Backups::。
+
+     つぎの例の値では、`~rms/foo.~5~'が新たなバックアップファイルの名前
+     であり、`~rms/foo.~3~'が『範囲外』のものであり、呼び出し側で削除す
+     るかどうか考慮すべきである。
+
+          (find-backup-file-name "~rms/foo")
+               => ("~rms/foo.~5~" "~rms/foo.~3~")
+
+ -- Function: file-newest-backup FILENAME
+     この関数は、FILENAMEの最新のバックアップファイルの名前を返す。当該
+     ファイルにバックアップファイルがなければ`nil'を返す。
+
+     ファイルを比較するコマンドのなかには、最新のバックアップファイルと
+     自動的に比較できるようにこの関数を使うものがある。
+
+
+
+File: elisp-ja, Node: Auto-Saving, Next: Reverting, Prev: Backup Files, Up: Backups and Auto-Saving
+
+自動保存 *(2003/10/30)*
+=======================
+
+Emacsは編集中のすべてのファイルを定期的に保存します。これを"自動保存
+（auto-savign）と呼びます。自動保存により、システムがクラッシュしても、
+一定量以上の作業を失わないようにします。デフォルトでは、300打鍵ごと、あ
+るいは、30秒間なにもしないと自動保存します。ユーザー向けの自動保存に関
+する情報については、*Note 自動保存、不慮の事故に対する備え:
+(emacs)Auto Save。ここでは、自動保存を実装するための関数とそれらを制御
+する変数について述べます。
+
+ -- Variable: buffer-auto-save-file-name
+     このバッファローカルな変数は、カレントバッファの自動保存に用いるファ
+     イル名である。当該バッファを自動保存しない場合には`nil'である。
+
+          buffer-auto-save-file-name
+               => "/xcssun/users/rms/lewis/#backups.texi#"
+
+ -- コマンド: auto-save-mode ARG
+
+     引数なしに対話的に呼ばれると、このコマンドは自動保存機能をトグルす
+     る。つまり、カレントバッファの自動保存がオンであるとオフにし、オフ
+     ならばオンにする。引数ARGを指定すると、ARGの値が`t'、空でないリス
+     ト、正整数のいずれかであれば、このコマンドは自動保存をオンにする。
+     さもなければ自動保存をオフにする。
+
+ -- Function: auto-save-file-name-p FILENAME
+     この関数は、FILENAMEが自動保存ファイルの名前であるならば、`nil'以
+     外を返す。この関数は自動保存ファイルの通常の名前の慣習を仮定する。
+     つまり、名前がハッシュマーク（`#'）で始まりかつ終っていれば、自動
+     保存ファイルの名前である可能性があると判断する。ただし、引数
+     FILENAMEにはディレクトリ部分を含まないこと。
+
+          (make-auto-save-file-name)
+               => "/xcssun/users/rms/lewis/#backups.texi#"
+          (auto-save-file-name-p "#backups.texi#")
+               => 0
+          (auto-save-file-name-p "backups.texi")
+               => nil
+
+     この関数の標準定義はつぎのとおりである。
+
+          (defun auto-save-file-name-p (filename)
+            "Return non-nil if FILENAME can be yielded by..."
+            (string-match "^#.*#$" filename))
+
+     この関数は、自動保存ファイルの名前の慣習を変更したい場合に当該関数
+     をカスタマイズできるようにするためである。当該関数を再定義した場合
+     には、関数`make-auto-save-file-name'もそれに従って必ず再定義するこ
+     と。
+
+ -- Function: make-auto-save-file-name
+     この関数は、カレントバッファの自動保存に使うファイル名を返す。その
+     名前は、単にファイル名の前後にハッシュマーク（`#'）を付加するだけ
+     である。この関数は変数`auto-save-visited-file-name'（下記参照）を
+     調べない。そのため、この関数を呼び出すような関数は、まずその変数を
+     検査しておくべきである。
+
+          (make-auto-save-file-name)
+               => "/xcssun/users/rms/lewis/#backup.texi#"
+
+     この関数の標準定義はつぎのとおりである。
+
+          (defun make-auto-save-file-name ()
+            "Return file name to use for auto-saves \
+          of current buffer...."
+            (if buffer-file-name
+                (concat
+                 (file-name-directory buffer-file-name)
+                 "#"
+                 (file-name-nondirectory buffer-file-name)
+                 "#")
+              (expand-file-name
+               (concat "#%" (buffer-name) "#"))))
+
+     自動保存ファイルの名前の慣習をカスタマイズするために関数を再定義で
+     きるように1つの関数にしてある。関数`auto-save-file-name-p'もそれに
+     従って必ず変更すること。
+
+ -- Variable: auto-save-visited-file-name
+     この変数が`nil'以外であると、
+     Emacsは訪問しているファイルにバッファを自動保存する。
+     つまり、読者が編集しているファイルと同じファイルに自動保存を行う。
+     通常、この変数は`nil'であり、自動保存ファイルには
+     `make-auto-save-file-name'で作成した別の名前がある。
+
+     この変数の値を変更しても、すでにあるバッファでは、バッファの自動保
+     存をつぎにオンにするまで、新しい値は効果を発揮しない。自動保存がす
+     でにオンであると、`auto-save-mode'を再度呼び出すまでは、同じファイ
+     ルの名前に自動保存し続ける。
+
+ -- Function: recent-auto-save-p
+     カレントバッファに最後に読み込んだり保存してから以降に自動保存して
+     いると、この関数は`t'を返す。
+
+ -- Function: set-buffer-auto-saved
+     この関数は、カレントバッファに自動保存済みであると印を付ける。バッ
+     ファのテキストが再度変更されない限り、バッファは自動保存されない。
+     この関数は`nil'を返す。
+
+ -- User Option: auto-save-interval
+     この変数の値は、つぎの自動保存までにEmacsがキーボードから読み取る
+     文字の個数である。これだけの文字を読み取るたびに、自動保存をオンに
+     してあるすべてのバッファを自動保存する。
+
+ -- User Option: auto-save-timeout
+     この変数の値は、自動保存を引き起こすまでのなにもしていない期間の秒
+     数である。この時間だけユーザーがなにもしないと、Emacsは自動保存す
+     る必要があるすべてのバッファを自動保存する。（カレントバッファが大
+     きい場合には、指定した時間にサイズに依存した係数を掛ける。これは
+     100万バイトでおよそ4である）。
+
+     この変数が0かnilの場合には、なにもしていなくても自動保存はさ
+
+ -- Variable: auto-save-hook
+     このノーマルフックは、自動保存を行う直前に毎回実行される。
+
+ -- User Option: auto-save-default
+     この変数が`nil'以外であると、ファイルを訪問しているバッファはデフォ
+     ルトで自動保存をオンにする。さもなければ、そうしない。
+
+ -- コマンド: do-auto-save &optional NO-MESSAGE CURRENT-ONLY
+     この関数は、自動保存する必要があるすべてのバッファを自動保存する。
+     自動保存がオンになっていて、かつ、以前の自動保存からあとで変更され
+     ているすべてのバッファを自動保存する。
+
+     通常、バッファを自動保存すると、自動保存を実行中にはエコー領域にメッ
+     セージ`Auto-saving...'が表示される。しかし、NO-MESSAGEが`nil'以外
+     であると、メッセージを表示しない。
+
+     CURRENT-ONLYが`nil'以外であると、カレントバッファのみを自動保存す
+     る。
+
+ -- Function: delete-auto-save-file-if-necessary
+     この関数は、`delete-auto-save-files'が`nil'以外であると、カレント
+     バッファの自動保存ファイルを削除する。バッファを保存するたびに呼び
+     出される。
+
+ -- Variable: delete-auto-save-files
+     この変数は、関数`delete-auto-save-file-if-necessary'が使う。`nil'
+     以外であると、Emacsは（訪問しているファイルに）実際に保存すると自
+     動保存ファイルを削除する。これによりディスクスペースを節約し、読者
+     のディレクトリを整頓できる。
+
+ -- Function: rename-auto-save-file
+     この関数は、訪問しているファイルの名前が変更されていると、カレント
+     バッファの自動保存ファイルの名前を修正する。さらに、既存の自動保存
+     ファイルも改名する。訪問しているファイルの名前が変更されていなけれ
+     ば、この関数はなにもしない。
+
+ -- Variable: buffer-saved-size
+     このバッファローカルな変数の値は、最後に読み込んだり保存したり自動
+     保存したときのカレントバッファの長さである。サイズの大幅な変更を検
+     知すると自動保存をオフにするために使われる。
+
+     この変数が-1であると、大幅にサイズが減少したために一時的に自動保存
+     をオフにしたことを意味する。明示的にバッファを保存すると、この変数
+     に正の値が保存され、自動保存が再度オンになる。自動保存をオフにした
+     りオンにしても、この変数が変更される。つまり、大幅なサイズ減少の情
+     報は消えてしまうことになる。
+
+ -- Variable: auto-save-list-file-name
+     この変数は（`nil'以外であると）、すべての自動保存ファイルの名前を
+     記録するファイルを指定する。Emacsが自動保存を行うたびに、自動保存
+     がオンである各バッファに関する2行をこのファイルに書き出す。1行目は
+     訪問しているファイルの名前を与え（訪問していなければ空）、2行目は
+     自動保存ファイルの名前を与える。
+
+     Emacsが正常に終ると、このファイルは削除される。Emacsがクラッシュし
+     たら、失われてしまう作業内容を含んでいるかもしれない自動保存ファイ
+     ルを探すために読者はこのファイルを調べられる。コマンド
+     `recover-session'は作業中だったファイルを探すために、このファイル
+     を使う。
+
+     このファイルのデフォルト名は、読者のホームディレクトリにあり
+     `.saves-'で始まる。さらに、EmacsのプロセスIDとホスト名も含む。
+
+ -- Variable: auto-save-list-file-prefix
+     Emacsが初期化ファイルを読み込んだ後に、`auto-save-list-file-name'
+     (すでに`nil'以外を設定していなければ)、この変数を基にホスト名やプ
+     ロセスIDを加えて初期化される。初期化ファイルでこの変数に`nil'を設
+     定すると、Emacsは`auto-save-list-file-name'を初期化しない。
+
+
+
+File: elisp-ja, Node: Reverting, Prev: Auto-Saving, Up: Backups and Auto-Saving
+
+復元 *(2003/10/30)*
+===================
+
+ファイルを大幅に変更したあとで、そのような変更をやめたい場合には、
+コマンド`revert-buffer'でファイルのまえの版を読み込めます。
+*Note バッファを復元する: (emacs)Reverting。
+
+ -- コマンド: revert-buffer &optional IGNORE-AUTO NOCONFIRM
+     このコマンドは、バッファのテキストをディスク上の訪問しているファイ
+     ルのテキストで置き換える。これにより、ファイルを訪問したり保存して
+     から行った変更をすべて取り消せる。
+
+     デフォルトでは、最後の自動保存ファイルが訪問しているファイルよりも
+     新しい場合には、`revert-buffer'は自動保存ファイルを使うかどうかユー
+     ザーに問い合わせる。しかし、引数IGNORE-AUTOが`nil'以外であると、訪
+     問したファイルのみを使う。対話的に呼ばれた場合、数値前置引数を指定
+     しない限り、IGNORE-AUTOは`t'である。したがって、対話的な場合のデフォ
+     ルトでは、自動保存ファイルを検査する。
+
+     通常、バッファを変更するまえに`revert-buffer'は確認してくる。
+     しかし、引数NOCONFIRMが`nil'以外であると、
+     `revert-buffer'は確認しない。
+
+     復元作業では、`insert-file-contents'の置換機能を用いてバッファ内の
+     マーカ位置を保存するように努める。復元操作のまえにバッファの内容と
+     ファイルの内容が同一であれば、すべてのマークが保存される。同一でな
+     ければ、復元によりバッファが変更され、バッファの先頭と末尾の（あれ
+     ば）未変更なテキスト内のマーカを保存する。それ以外のマーカを保存し
+     ても問題を引き起こすだけであろう。
+
+この節の残りで述べる変数を設定することで、
+`revert-buffer'の動作をカスタマイズできます。
+
+ -- Variable: revert-without-query
+     この変数は、問い合わせずに復元すべきファイルのリストを保持する。
+     値は、正規表現のリストである。
+     訪問中のファイル名がこれらの正規表現の1つに一致すると、
+     ディスク上のファイルが変更されていて当該バッファが未変更であれば、
+     `revert-buffer'はユーザーに確認せずに当該ファイルを復元する。
+
+あるメジャーモードは これらの関数をバッファローカルで設定することで、
+`revert-buffer'をカスタマイズしています。
+
+ -- Variable: revert-buffer-function
+     この変数の値は、このバッファを復元するために使う関数である。`nil'
+     以外であれば、復元を行う引数なしの関数として呼び出される。値が
+     `nil'であると、復元操作は通常の方法で行われる。
+
+     diredモードなどのモードでは、編集中のテキストはファイルの内容では
+     なく別の方法で再生成されたものなので、この変数のバッファローカルな
+     値には内容を再生成する関数を指定することができます。
+
+ -- Variable: revert-buffer-insert-file-contents-function
+     この変数の値が`nil'以外であると、このバッファを復元するときに更新
+     内容を挿入するために使われる関数である。当該関数は2つの引数をとる。
+     第1引数は、使用するファイル名である。第2引数は、ユーザーが自動保存
+     ファイルを読むように指示していると`t'である。
+
+     あるモードでこの変数を`revert-buffer-function'のかわりに設定するの
+     は、`revert-buffer'が行う処理の残りが重複したり置き換わってしまう
+     のを避けるためである。つまり、アンドゥ情報を消去する場合や適当なメ
+     ジャーモードを決定する場合、以下で述べるフックを走らせる場合に確認
+     を行う。
+
+ -- Variable: before-revert-hook
+     このノーマルフックは、`revert-buffer-function'が`nil'である場合に
+     のみ、変更内容を挿入するまえに`revert-buffer'が実行する。
+
+ -- Variable: after-revert-hook
+     このノーマルフックは、`revert-buffer-function'が`nil'である場合に
+     のみ、変更内容を挿入したあとに`revert-buffer'が実行する。
+
+
+File: elisp-ja, Node: Buffers, Next: Windows, Prev: Backups and Auto-Saving, Up: Top
+
+バッファ *(2003/10/30)*
+***********************
+
+"バッファ"（buffer）は、編集するテキストを収めているLispオブジェクトで
+す。バッファは、訪問しているファイルのテキストを保持するために使われま
+すが、ファイルを訪問していないバッファもあります。一度に複数のバッファ
+が存在してかまいませんが、ある時点では1つのバッファだけが"カレントバッ
+ファ" （current buffer）として区別されます。ほとんどの編集コマンドは、
+カレントバッファの内容に作用します。カレントバッファを含む各バッファは、
+ウィンドウに表示されることもされないこともあります。
+
+* Menu:
+
+* Buffer Basics::       What is a buffer?
+* Current Buffer::      Designating a buffer as current
+                          so that primitives will access its contents.
+* Buffer Names::        Accessing and changing buffer names.
+* Buffer File Name::    The buffer file name indicates which file is visited.
+* Buffer Modification:: A buffer is "modified" if it needs to be saved.
+* Modification Time::   Determining whether the visited file was changed
+                         "behind Emacs's back".
+* Read Only Buffers::   Modifying text is not allowed in a read-only buffer.
+* The Buffer List::     How to look at all the existing buffers.
+* Creating Buffers::    Functions that create buffers.
+* Killing Buffers::     Buffers exist until explicitly killed.
+* Indirect Buffers::    An indirect buffer shares text with some other buffer.
+* Buffer Gap::          The gap in the buffer.
+
+
+
+File: elisp-ja, Node: Buffer Basics, Next: Current Buffer, Prev: Buffers, Up: Buffers
+
+バッファの基本 *(2003/10/30)*
+=============================
+
+"バッファ"（buffer）は、編集するテキストを収めているLispオブジェクトで
+す。バッファは、訪問しているファイルのテキストを保持するために使われま
+すが、ファイルを訪問していないバッファもあります。複数のバッファは普通
+に存在できますが、常に一つのバッファだけが"カレントバッファ"(current
+buffer)となります。ほとんどの編集コマンドは、カレントバッファの内容に作
+用します。カレントバッファを含む各バッファは、ウィンドウに表示されるこ
+ともされないこともあります。
+
+異なる名前を持ち編集可能なテキストを保持するオブジェクトです。
+バッファは、Lispプログラムには特別なデータ型として見えます。
+バッファの内容は拡張可能な文字列であると考えることができます。
+つまり、バッファのどの部分ででも挿入や削除を行えるのです。
+*Note Text::。
+
+Lispのバッファオブジェクトには、さまざまな情報が含まれています。変数を
+介してプログラマが直接参照できる情報もあれば、特別目的の関数のみを介し
+て参照できる情報もあります。たとえば、訪問しているファイルの名前は、変
+数を介して直接参照できますが、ポイントの値は基本関数を介してのみ参照で
+きます。
+
+直接参照可能なバッファに固有の情報は、
+"バッファローカル"（buffer-local）な変数束縛、
+つまり、特定のバッファでのみ有効な変数に保持されています。
+この機能により、各バッファでは特定の変数の値を優先できます。
+ほとんどのメジャーモードでは、このようにして、
+`fill-column'や`comment-column'などの変数を優先させます。
+バッファローカルな変数とそれらに関する関数について詳しくは、
+*Note Buffer-Local Variables::を参照してください。
+
+バッファで訪問しているファイルに関する関数や変数については、
+*Note Visiting Files::と*Note Saving Buffers::を参照してください。
+ウィンドウにバッファを表示することに関する関数や変数については、
+*Note Buffers and Windows::を参照してください。
+
+ -- Function: bufferp OBJECT
+     この関数は、OBJECTがバッファであれば`t'を返し、さもなければ`nil'を
+     返す。
+
+
+
+File: elisp-ja, Node: Current Buffer, Next: Buffer Names, Prev: Buffers, Up: Buffers
+
+カレントバッファ *(2003/10/30)*
+===============================
+
+いつの時点でも、それらの1つを"カレントバッファ" （current buffer）とし
+て区別します。バッファ内のテキストを検査したり変更する基本関数は暗黙の
+うちにカレントバッファに作用するため、ほとんどの編集はカレントバッファ
+に対して行われます（*Note Text::）。通常、スクリーン上で選択されたウィ
+ンドウに表示されているバッファがカレントバッファですが、つねにそうとは
+限りません。Lispプログラムでは、スクリーン上の表示は変えずに、任意のバッ
+ファの内容を操作するために一時的に当該バッファをカレントバッファにでき
+ます。
+
+Lispプログラムでカレントバッファを指定するには、`set-buffer'を呼び出し
+ます。新たに指定し直すまで指定したバッファがカレントバッファであり続け
+ます。
+
+編集コマンドがエディタコマンドループへ戻ると、コマンドループは、混乱を
+避けるために、選択されているウィンドウに表示されているバッファをカレン
+トバッファとします。つまり、Emacsがコマンドを読むときにカーソルがあるバッ
+ファがコマンドが適用されるバッファです。（*Note Command Loop::。）した
+がって、`set-buffer'は、ユーザーが編集できるように別のバッファへ切り替
+える方法にはなりません。これには、*Note Displaying Buffers::で述べてい
+る関数を使う必要があります。
+
+しかし、別のカレントバッファに替えるLisp関数では、コマンドループがカレ
+ントバッファをあとで戻すということに依存してはいけません。Emacs Lispで
+書かれた編集コマンドは、コマンドループに加えて別のプログラムからも呼ば
+れます。サブルーティンがカレントバッファを替えないほうが（それがサブルー
+ティンの目的でなければ）、呼び出し側にとっては便利です。したがって、関
+数の実行が終るともとのカレントバッファに戻すフォーム
+`save-current-buffer'や`save-excursion'（*Note Excursions::）の内側で、
+普通は`set-buffer'を使います。例として、（説明文字列を簡略にして）コマ
+ンド`append-to-buffer' のコードを示します。
+
+     (defun append-to-buffer (buffer start end)
+       "Append to specified buffer the text of the region.
+     ..."
+       (interactive "BAppend to buffer: \nr")
+       (let ((oldbuf (current-buffer)))
+         (save-current-buffer
+           (set-buffer (get-buffer-create buffer))
+           (insert-buffer-substring oldbuf start end))))
+
+この関数では、ローカル変数を束縛してカレントバッファを記録し、
+`save-current-buffer'でそれがカレントバッファに戻るようにしています。つ
+ぎに、`set-buffer'で指定したバッファをカレントバッファにします。最後に、
+`insert-buffer-substring'でもとのカレントバッファから指定された（いまは
+カレント）バッファに文字列をコピーします。
+
+内容を付加したバッファがどれかのウィンドウに表示されていると、つぎに表
+示を更新したときに変更されたテキストが表示されます。それ以外では、スク
+リーン上でただちには変更を見ることはできません。コマンドの実行中にはバッ
+ファが一時的にカレントバッファになりますが、それによりそのバッファが表
+示されるわけではありません。
+
+バッファローカルな束縛を持つ変数を（`let'や関数の引数で）ローカルに束縛
+する場合には、ローカルな束縛の有効範囲の開始時と終了時には、同じバッファ
+が必ずカレントバッファであるようにします。さもないと、あるバッファでは
+変数を束縛し、別のバッファではその束縛を解除してしまうことがあります。
+これには2つの方法があります。単純な場合には、束縛の有効範囲内でカレント
+バッファが替わらないを確認します。さもなければ、`save-current-buffer'や
+`save-excursion'を使って、始めにカレントバッファであったバッファが、変
+数束縛が解除されるときにはつねにカレントバッファであるようにします。
+
+`set-buffer'でカレントバッファに戻すことを期待してはいけません。正しく
+ないバッファがカレントバッファであるときに中断が起きると戻せないからで
+す。しては*いけない*ことをつぎに示します。
+
+     (let (buffer-read-only
+           (obuf (current-buffer)))
+       (set-buffer ...)
+       ...
+       (set-buffer obuf))
+
+つぎのように`save-current-buffer'を使えば、通常の評価に加えて、中断、エ
+ラー、`throw'も扱えます。
+
+     (let (buffer-read-only)
+       (save-current-buffer
+         (set-buffer ...)
+         ...))
+
+ -- Function: current-buffer
+     この関数はカレントバッファを返す。
+
+          (current-buffer)
+               => #<buffer buffers.texi>
+
+ -- Function: set-buffer BUFFER-OR-NAME
+     この関数は、BUFFER-OR-NAMEをカレントバッファにする。この関数はどの
+     ウィンドウにも当該バッファを表示しないので、ユーザーが当該バッファ
+     を見られるとは限らない。しかし、Lispプログラムはいずれにしても当該
+     バッファを操作できる。
+
+     この関数はBUFFER-OR-NAMEで指定されるバッファを返す。
+     BUFFER-OR-NAMEが既存のバッファを指定しなければ、エラーを通知する。
+
+ -- Special form: save-current-buffer BODY...
+     マクロ`save-current-buffer'は、カレントバッファの識別子を保存し、
+     フォームBODYを評価し、最後にもとのカレントバッファに戻す。戻り値は、
+     BODYの最後のフォームの値である。`throw'やエラー（*Note Nonlocal
+     Exits::）による異常終了であってもカレントバッファは戻される。
+
+     `save-current-buffer'から抜けるときに、もとのカレントバッファとし
+     て使われていたバッファが削除されていると、もちろん、カレントバッファ
+     にはならない。そのかわりに、抜けるまえにカレントバッファであったバッ
+     ファがカレントバッファであり続ける。
+
+ -- Macro: with-current-buffer BUFFER BODY...
+     マクロ`with-current-buffer'は、カレントバッファの識別子を保存し、
+     BUFFERをカレントバッファにし、フォームBODYを評価し、最後にもとのカ
+     レントバッファに戻す。戻り値は、BODYの最後のフォームの値である。
+     `throw'やエラー（*Note Nonlocal Exits::）による異常終了であっても
+     カレントバッファは戻される。
+
+ -- Macro: with-temp-buffer BODY...
+     マクロ`with-temp-buffer'は、一時的なバッファをカレントバッファとし
+     てフォームBODYを評価する。カレントバッファの識別子を保存し、一時的
+     なバッファを作成してそれをカレントバッファにし、フォームBODYを評価
+     し、最後にもとのカレントバッファに戻すとともに一時的なバッファを削
+     除する。
+
+     戻り値は、BODYの最後のフォームの値である。最後のフォームとして
+     `(buffer-string)'を使えば、一時的なバッファの内容を返せる。
+
+     `throw'やエラー（*Note Nonlocal Exits::）による異常終了であっても
+     カレントバッファは戻される。
+
+*Note Writing to Files::の`with-temp-file'も参照してください。
+
+
+
+File: elisp-ja, Node: Buffer Names, Next: Buffer File Name, Prev: Current Buffer, Up: Buffers
+
+バッファ名 *(2003/10/30)*
+=========================
+
+各バッファには、文字列で一意な名前があります。バッファに作用するほとん
+どの関数は、引数としてバッファかバッファ名を受け付けます。
+BUFFER-OR-NAMEという名前の引数はこの種のものであり、当該引数が文字列で
+もバッファでもないとエラーを通知します。BUFFERという名前の引数は実際の
+バッファオブジェクトである必要があり、名前ではだめです。
+
+短命で一般にはユーザーが関心を示さないバッファの名前は空白で始まり、
+コマンド`list-buffers'や`buffer-menu'はそれらを表示しません。
+さらに、空白で始まる名前のバッファでは、
+アンドゥ情報の記録も最初は禁止してあります。
+*Note Undo::を参照してください。
+
+ -- Function: buffer-name &optional BUFFER
+     この関数は、BUFFERの名前を文字列で返す。
+     BUFFERを指定しないと、デフォルトはカレントバッファである。
+
+     `buffer-name'が`nil'を返す場合、
+     BUFFERが削除されたことを意味する。
+     *Note Killing Buffers::。
+
+          (buffer-name)
+               => "buffers.texi"
+
+          (setq foo (get-buffer "temp"))
+               => #<buffer temp>
+          (kill-buffer foo)
+               => nil
+          (buffer-name foo)
+               => nil
+          foo
+               => #<killed buffer>
+
+ -- コマンド: rename-buffer NEWNAME &optional UNIQUE
+     この関数は、カレントバッファをNEWNAMEと改名する。NEWNAMEが文字列で
+     なかったり、当該名のバッファがすでに存在していると、エラーを通知す
+     る。関数はNEWNAMEを返す。
+
+     通常、NEWNAMEがすでに使われていると、`rename-buffer'はエラーを通知
+     する。しかし、UNIQUEが`nil'以外であると、NEWNAMEを未使用な名前に修
+     正する。対話的に呼び出した場合、数値前置引数を指定するとUNIQUEは
+     `nil'以外になる。(このように`rename-uniquely' は実行されるのです)
+
+     このコマンドの1つの用途は、バッファ`*shell*'を別の名前に改名して、
+     同じ`*shell*'という名前で別のシェルを作れるようにすることである。
+
+ -- Function: get-buffer BUFFER-OR-NAME
+     この関数は、BUFFER-OR-NAMEで指定したバッファを返す。
+     BUFFER-OR-NAMEが文字列であり、そのような名前のバッファが存在しなけ
+     れば`nil'を返す。BUFFER-OR-NAMEがバッファであればそれ自身を返す。
+     これは有用ではないので、普通、引数は名前である。例を示す。
+
+          (setq b (get-buffer "lewis"))
+               => #<buffer lewis>
+          (get-buffer b)
+               => #<buffer lewis>
+          (get-buffer "Frazzle-nots")
+               => nil
+
+     *Note Creating Buffers::の関数`get-buffer-create'も参照。
+
+ -- Function: generate-new-buffer-name STARTING-NAME &rest IGNORE
+     この関数は、新たなバッファ向けの一意な名前を返すが、バッファは作成
+     しない。名前はSTARTING-NAMEで始まり、`<...>'で囲った数を追加するこ
+     とで、どのバッファでも現在使っていない名前を作成する。
+
+     2番目のオプション引数IGNOREが`nil'でなければ、文字列を与える必要が
+     ある。一意な名前を探す時に、IGNOREで設定した名前があると動作が異なっ
+     てくる。指定した名前がたとえ既に存在しているバッファの名前であった
+     としても、一意な名前と認識するのである。例えば、`foo', `foo<2>',
+     `foo<3>' and `foo<4>' という名前のバッファがあるとすると、
+
+          (generate-new-buffer-name "foo")
+               => "foo<5>"
+          (generate-new-buffer-name "foo" "foo<3>")
+               => "foo<3>"
+          (generate-new-buffer-name "foo" "foo<6>")
+               => "foo<5>"
+
+     のように、`foo<3>'というバッファが既に存在していても、IGNORE で設
+     定すると、一意なバッファ名として`foo<3>' が返ってくるのである。
+
+     *Note Creating Buffers::の関連する関数`generate-new-buffer'を参照。
+
+
+
+File: elisp-ja, Node: Buffer File Name, Next: Buffer Modification, Prev: Buffer Names, Up: Buffers
+
+バッファファイル名 *(2003/10/30)*
+=================================
+
+"バッファファイル名"（buffer file name）とは、
+当該バッファで訪問しているファイルの名前です。
+バッファでファイルを訪問していないときには、
+バッファファイル名は`nil'です。
+ほとんどの場面で、バッファ名は
+バッファファイル名の非ディレクトリ部分と同じですが、
+バッファファイル名とバッファ名は別のものであり個別に設定できます。
+*Note Visiting Files::。
+
+ -- Function: buffer-file-name &optional BUFFER
+     この関数は、BUFFERで訪問しているファイルの絶対ファイル名を返す。
+     BUFFERがファイルを訪問していなければ、`buffer-file-name'は`nil'を
+     返す。BUFFERを指定しないと、デフォルトはカレントバッファである。
+
+          (buffer-file-name (other-buffer))
+               => "/usr/user/lewis/manual/files.texi"
+
+ -- Variable: buffer-file-name
+     このバッファローカルな変数は、
+     カレントバッファで訪問しているファイルの名前を保持する。
+     あるいは、ファイルを訪問していなければ`nil'である。
+     これは恒久的にバッファローカルな変数であり、
+     `kill-all-local-variables'に影響されない。
+
+          buffer-file-name
+               => "/usr/user/lewis/manual/buffers.texi"
+
+     他のさまざまなことを行わずにこの変数の値だけを変更することは危険で
+     ある。通常、`set-visited-file-name'（下記参照）を使うほうがよい。
+     バッファ名を変更するなどの重要でないことも行うが、Emacsを混乱させ
+     ないように本質的なことも行うからである。
+
+ -- Variable: buffer-file-truename
+     このバッファローカルな変数は、
+     カレントバッファで訪問しているファイルの実名を保持する。
+     あるいは、ファイルを訪問していなければ`nil'である。
+     これは恒久的にバッファローカルであり、
+     `kill-all-local-variables'に影響されない。
+     *Note Truenames::。
+
+ -- Variable: buffer-file-number
+     このバッファローカルな変数は、
+     カレントバッファで訪問しているファイルの
+     ファイル番号とディレクトリ装置番号を保持する。
+     あるいは、ファイルを訪問していなければ`nil'である。
+     これは恒久的にバッファローカルであり、
+     `kill-all-local-variables'に影響されない。
+
+     この値は、通常、`(FILENUM DEVNUM)'の形のリストである。
+     この数の対により、システム上のすべての参照可能なファイルを一意に識別できる。
+     これらについてより詳しくは、
+     *Note File Attributes::の関数`file-attributes'を参照。
+
+ -- Function: get-file-buffer FILENAME
+     この関数は、ファイルFILENAMEを訪問しているバッファを返す。そのよう
+     なバッファが存在しなければ`nil'を返す。引数FILENAMEは文字列であり、
+     展開（*Note File Name Expansion::）してからすべてのバッファの訪問
+     しているファイル名と比較する。
+
+          (get-file-buffer "buffers.texi")
+              => #<buffer buffers.texi>
+
+     稀れな状況では、複数のバッファが同じ名前のファイルを訪問している場
+     合がある。そのような場合、この関数はバッファリストで最初にみつかっ
+     たバッファを返す。
+
+ -- コマンド: set-visited-file-name FILENAME &optional NO-QUERY ALONG-WITH-FILE
+     FILENAMEが空でない文字列であると、この関数はカレントバッファで訪問
+     しているファイルの名前をFILENAMEに変える。（ファイルを訪問していな
+     いバッファでは、当該バッファに訪問しているファイル名を指定する。）
+     バッファを*つぎに*保存すると、指定した新たなファイルに保存される。
+     このコマンドは、バッファに変更済みと印を付ける。変更まえの訪問して
+     いるファイルの内容とバッファ内容が一致していたとしても（Emacsにとっ
+     ては）バッファ内容はFILENAMEの内容と一致しないからである。
+
+     FILENAMEが`nil'だったり空文字列であると、『ファイルを訪問していな
+     い』ことにする。この場合、`set-visited-file-name'は、当該バッファ
+     ではファイルを訪問していないと印を付ける。
+
+     通常、この関数は、指定したファイルが既存の場合には
+     ユーザーに確認をとる。
+     NO-QUERYが`nil'以外であると、確認をとらない。
+
+     ALONG-WITH-FILEが`nil'以外であると、それ以前に訪問していたファイル
+     はFILENAMEと改名してあると仮定する。
+
+     関数`set-visited-file-name'を対話的に呼び出すと、ミニバッファで
+     FILENAMEを問い合わせる。
+
+ -- Variable: list-buffers-directory
+     このバッファローカルな変数は、訪問しているファイル名を持たないバッ
+     ファに対して、バッファ一覧において訪問しているファイル名を表示する
+     部分に表示する文字列を指定する。diredのバッファはこの変数を使う。
+
+
+
+File: elisp-ja, Node: Buffer Modification, Next: Read Only Buffers, Prev: Buffer File Name, Up: Buffers
+
+バッファの変更 *(2003/10/30)*
+=============================
+
+Emacsは、各バッファごとに当該バッファのテキストを変更したかどうかを記録
+する"変更フラグ"（modified flag）と呼ばれるフラグを保持しています。バッ
+ファの内容が変わるたびにこのフラグは`t'に設定され、保存するたびに`nil'
+に設定されます。つまり、このフラグは未保存の変更があるかどうかを表しま
+す。このフラグの値は通常モード行（*Note Mode Line Variables::）に表示さ
+れ、保存（*Note Saving Buffers::）と自動保存（*Note Auto-Saving::）を制
+御します。
+
+このフラグを明示的に設定するLispプログラムもあります。たとえば、関数
+`set-visited-file-name'はこのフラグを`t'に設定します。ファイルを訪問し
+てから変更していなくても、バッファのテキストが新たな訪問しているファイ
+ルとは一致しないからです。
+
+バッファの内容を変更する関数については*Note Text::に述べてあります。
+
+ -- Function: buffer-modified-p &optional BUFFER
+     この関数は、最後にファイルから読み込んだり保存してから
+     バッファBUFFERが変更されていれば`t'を返し、
+     さもなければ`nil'を返す。
+     BUFFERを指定しないとカレントバッファを調べる。
+
+ -- Function: set-buffer-modified-p FLAG
+     この関数は、FLAGが`nil'以外であれば
+     カレントバッファは変更されていると印を付け、
+     `nil'ならば未変更であると印を付ける。
+
+     この関数を呼び出した別の効果として、カレントバッファのモード行を無
+     条件に再表示する。実際、関数`force-mode-line-update'はつぎのように
+     している。
+
+          (set-buffer-modified-p (buffer-modified-p))
+
+ -- コマンド: not-modified
+     このコマンドは、カレントバッファを未変更であり保存する必要がないと
+     印を付ける。前置引数を指定すると、バッファに変更されていると印を付
+     け、以降の適当な場面で保存される。
+
+     エコー領域にメッセージを表示するので、プログラムからこの関数を使わ
+     ないこと。かわりに`set-buffer-modified-p'を使う（上記）。
+
+ -- Function: buffer-modified-tick &optional BUFFER
+     この関数は、BUFFERの変更回数を返す。変更回数はバッファを変更するた
+     びに増やされる。BUFFERが`nil'であると（あるいは省略すると）、カレ
+     ントバッファを使う。
+
+
+
+File: elisp-ja, Node: Modification Time, Next: Read Only Buffers, Prev: Buffer Modification, Up: Buffers
+
+更新時刻の比較 *(2003/10/30)*
+=============================
+
+ファイルを訪問してそのバッファで変更したとします。そのあいだに、ディス
+ク上の当該ファイル自身も変更されたとします。ここでバッファを保存すると、
+ファイルの変更内容を上書きしてしまいます。たしかにこれを望む場合もある
+でしょうが、普通は重要な情報を失うことになります。そのため、Emacsは、ファ
+イルに保存するまえに、以下に述べる関数を用いてファイルの更新時刻を検査
+します。
+
+ -- Function: verify-visited-file-modtime BUFFER
+     この関数は、BUFFERに記録してある訪問しているファイルの更新時刻と、
+     オペレーティングシステムが記録しているファイルの実際の更新時刻を比
+     較する。Emacsが当該ファイルを訪問したり保存してから他のプロセスが
+     当該ファイルに書いていない限り、2つの時刻は同じはずである。
+
+     実際の更新時刻とEmacsに記録している更新時刻が同じならば`t'を返し、
+     さもなければ`nil'を返す。
+
+ -- Function: clear-visited-file-modtime
+     この関数は、カレントバッファで訪問しているファイルの最終更新時刻の
+     記録を破棄する。その結果、つぎにこのバッファを保存しようとしても、
+     ファイルの更新時刻のと不一致を報告しない。
+
+     この関数は、`set-visited-file-name'や変更されたファイルを上書きし
+     ないためのテストを行わない例外的な場面で呼び出される。
+
+ -- Function: visited-file-modtime
+     この関数は、
+     バッファに記録されているファイルの最終更新時刻を
+     `(HIGH . LOW)'の形のリストで返す。
+     （これは`file-attributes'が時刻を返すために使う形と同じである。
+     *Note File Attributes::を参照。）
+
+ -- Function: set-visited-file-modtime &optional TIME
+     この関数は、TIMEが`nil'以外であるときには、バッファに記録してある
+     ファイルの最終更新時刻をTIMEで指定された時刻にする。さもなければ、
+     訪問しているファイルの最終更新時刻にする。
+
+     TIMEが`nil'でないときには、`(HIGH . LOW)'か`(HIGH LOW)'の形である
+     こと。いずれの場合も、2つの整数は時刻の16ビットを保持する。
+
+     この関数は、ファイルから普通に読み込んだのではないバッファやファイ
+     ル自体が明確な理由で変更された場合に有用である。
+
+ -- Function: ask-user-about-supersession-threat FILENAME
+     この関数は、ファイルFILENAMEを訪問している廃れたバッファを変更しよ
+     うとしたときにどのように処理すべきかをユーザーに問い合わせるために
+     用いる。"廃れたバッファ"（obsolete buffer）とは、未変更のバッファ
+     ではあるが、対応するディスク上のファイルがバッファの最終更新時刻よ
+     りも新しいものである。つまり、別のプログラムが当該ファイルを変更し
+     た可能性があることを意味する。
+
+     ユーザーの応答に依存して、関数は正常に戻る。その場合、バッファは変
+     更できる。あるいは、データ`(FILENAME)'を付けてエラー
+     `file-supersession'を通知する。その場合、バッファの変更は許されな
+     い。
+
+     この関数は、適切な場面でEmacsが自動的に呼び出す。これを再定義する
+     ことでEmacsをカスタマイズできるようにしている。標準定義については
+     ファイル`userlock.el'を参照。
+
+     *Note File Locks::のファイルロック機構も参照。
+
+
+
+File: elisp-ja, Node: Read Only Buffers, Next: The Buffer List, Prev: Buffer Modification, Up: Buffers
+
+読み出し専用バッファ *(2003/10/30)*
+===================================
+
+バッファが"読み出し専用"（read-only）であると、スクロールしたりナロイン
+グしてその内容を眺めることはできますが、その内容は変更できません。
+
+読み出し専用バッファは、2種類の場面で使われます。
+
+   * 書き込み不可のファイルを訪問しているバッファは、通常、読み出し専用
+     である。
+
+     ここでの目的は、バッファを編集してファイルに保存しようとしてもそれ
+     に失敗するか望ましくないことであることをユーザーに伝えることである。
+     それにも関わらずバッファのテキストを変更したいユーザーは、読み出し
+     専用フラグを`C-x C-q'でクリアすれば編集できる。
+
+   * diredやrmailなどのモードは、普通の編集コマンドで内容を変更すること
+     が誤りであるような場合にバッファを読み出し専用にする。
+
+     これらのモードの特別なコマンドは、
+     それら自身がテキストを変更する場面では、
+     （`let'で）`buffer-read-only'に`nil'を束縛したり、
+     `inhibit-read-only'に`t'を束縛する。
+
+ -- Variable: buffer-read-only
+     このバッファローカルな変数は、バッファが読み出し専用であるかどうか
+     を指定する。この変数が`nil'以外であると、バッファは読み出し専用で
+     ある。
+
+ -- Variable: inhibit-read-only
+     この変数が`nil'以外であると、読み出し専用バッファや読み出し専用文
+     字を変更できる。バッファ内の読み出し専用文字とは（テキスト属性やオー
+     バレイ属性の）属性`read-only'が`nil'以外の文字である。テキスト属性
+     について詳しくは、*Note Special Properties::。重ね合わせとそれらの
+     属性について詳しくは、*Note Overlays::。
+
+     `inhibit-read-only'が`t'であると、すべての文字の属性`read-only'は
+     効果を失う。`inhibit-read-only'がリストであると、文字の属性
+     `read-only'が（`eq'で比較して）リストのメンバであると効果を失う。
+
+ -- コマンド: toggle-read-only
+     このコマンドは、カレントバッファが読み出し専用かどうかを変更する。
+     対話的な使用を意図しており、プログラムからは使わないこと。
+     プログラムの任意の箇所で、読み出し専用フラグを
+     オンにしたいかオフにしたいかを読者は知っているはずであり、
+     そうすれば、読者は`buffer-read-only'を
+     `t'か`nil'の正しい値に明示的に設定できる。
+
+ -- Function: barf-if-buffer-read-only
+     この関数は、カレントバッファが読み出し専用であるとエラー
+     `buffer-read-only'を通知する。カレントバッファが読み出し専用である
+     ときにエラーを通知する別の方法については、*Note Interactive
+     Call::。
+
+
+
+File: elisp-ja, Node: The Buffer List, Next: Creating Buffers, Prev: Read Only Buffers, Up: Buffers
+
+バッファリスト *(2003/10/30)*
+=============================
+
+"バッファリスト"（buffer list）は、すべてのバッファのリストです。バッファ
+を作成すると当該バッファはこのリストに追加され、削除するとこのリストか
+ら取り除かれます。リスト内のバッファの順序は、各バッファが選択されてい
+るウィンドウにどの程度最近に表示されたかを主な基準にしています。バッファ
+が選択されるとリストの先頭に移動し、隠されると（下記の`bury-buffer'を参
+照）末尾に移動します。`other-buffer'をはじめとするいくつかの関数が、こ
+の順序を使います。ユーザーに表示するバッファ一覧もこの順序を反映してい
+ます。
+
+Emacs基本バッファリストに加えて、各フレームには独自のバッファリストがあ
+ります。そのリストでは、*当該フレームで*もっとも最近に選択されたバッファ
+から順に当該フレームで選択されたバッファが先にきます。（この順番は、フ
+レームのフレームパラメータ`buffer-list'に入っている。*Note Window
+Frame Parameters::を参照。）当該フレームで選択されたことがないバッファ
+は、Emacs基本バッファリストでの順にうしろに続きます。
+
+ -- Function: buffer-list &optional FRAME
+     この関数は、空白で始まる名前のバッファを含めて、すべてのバッファを
+     含んだバッファリストを返す。要素は実際にバッファであり、それらの名
+     前ではない。
+
+     FRAMEがフレームであると、
+     この関数はフレームFRAMEのバッファリストを返す。
+     FRAMEが`nil'であるとEmacs基本バッファリストを使う。
+
+          (buffer-list)
+               => (#<buffer buffers.texi>
+                   #<buffer  *Minibuf-1*> #<buffer buffer.c>
+                   #<buffer *Help*> #<buffer TAGS>)
+
+          ;; ミニバッファの名前は空白で始まることに注意
+          (mapcar (function buffer-name) (buffer-list))
+              => ("buffers.texi" " *Minibuf-1*"
+                  "buffer.c" "*Help*" "TAGS")
+
+`buffer-list'が返すリストは`buffer-list'が構築したものであり、Emacsの内
+部データ構造ではなく、それを変更してもバッファの順序には影響しません。
+フレーム独立なバッファリスト内のバッファ順序を変更するには、つぎのよう
+な簡単な方法があります。
+
+     (defun reorder-buffer-list (new-list)
+       (while new-list
+         (bury-buffer (car new-list))
+         (setq new-list (cdr new-list))))
+
+この方法を使えば、どんな順序でもリストに指定でき、しかも、バッファを失っ
+たり正しくないバッファを追加してしまう危険はありません。
+
+フレームのバッファリストの順序や値を変更するには、
+`modify-frame-parameters'（*Note Parameter Access::）で、フレームのフレー
+ムパラメータ`buffer-list'に設定します。
+
+ -- Function: other-buffer &optional BUFFER VISIBLE-OK FRAME
+     この関数は、バッファリストからBUFFER以外の最初のバッファを返す。通
+     常、当該バッファは、BUFFERを除いて（FRAMEか現在選択されているフレー
+     ムで、*Note Input Focus::）もっとも最近に選択されたバッファである。
+     空白で始まる名前のバッファは完全に除外する。
+
+     BUFFERを指定しないと（あるいはバッファでないと）、`other-buffer'は、
+     選択されているフレームのバッファリストの中から可視フレームのどのウィ
+     ンドウにも表示されていない最初のバッファを返す。
+
+     FRAMEに`nil'以外のパラメータ`buffer-predicate'があると、
+     `other-buffer'は当該述語を使って
+     どのバッファを考慮に入れるかを決定する。
+     各バッファについて当該述語を1回呼び出し、
+     その値が`nil'であると当該バッファを無視する。
+     *Note Window Frame Parameters::。
+
+     VISIBLE-OKが`nil'であると、`other-buffer'は可視フレームのいずれか
+     のウィンドウに表示されているバッファを可能な限り返さないようにする。
+     VISIBLE-OKが`nil'以外であると、バッファが表示されているかどうかは
+     関係ない。
+
+     適当なバッファが存在しない場合には、バッファ`*scratch*'を（必要な
+     らば作成して）返す。
+
+ -- コマンド: bury-buffer &optional BUFFER-OR-NAME
+     この関数は、バッファリストの他のバッファの順序は変えずに
+     BUFFER-OR-NAMEを末尾に置く。この結果、当該バッファは、
+     `other-buffer'が返す候補としてはもっとも可能性が低くなる。
+
+     `bury-buffer'は、Emacsのフレーム独立なバッファリストに加えて、各フ
+     レームのパラメータ`buffer-list'も操作する。したがって、指定したバッ
+     ファは、`(buffer-list FRAME)'と`(buffer-list nil)'のいずれの値でも
+     最後になる。
+
+     BUFFER-OR-NAMEが`nil'であるか省略すると、カレントバッファを最後尾
+     に置くことを意味する。さらに、当該バッファが選択されているウィンド
+     ウに表示されていると、そのウィンドウでは（`other-buffer'で得られる）
+     別のバッファに切り替わる。当該バッファが別のウィンドウにも表示され
+     ている場合、その表示は替わらない。
+
+     すべてのウィンドウに表示している特定のバッファを置き換えるには、
+     `replace-buffer-in-windows'を使う。
+     *Note Buffers and Windows::。
+
+
+
+File: elisp-ja, Node: Creating Buffers, Next: Killing Buffers, Prev: The Buffer List, Up: Buffers
+
+バッファの作成 *(2003/10/30)*
+=============================
+
+本節では、バッファを作成するための2つの基本関数を説明します。
+`get-buffer-create'は、指定した名前のバッファが存在しなければバッファを
+作成します。`generate-new-buffer'は、つねに新たなバッファを作成し、それ
+に一意な名前を与えます。
+
+バッファを作成するために読者が使える他の関数には、
+`with-output-to-temp-buffer'（*Note Temporary Displays::）、
+`create-file-buffer'（*Note Visiting Files::）があります。サブプロセス
+を開始してもバッファを作ります（*Note Processes::）。
+
+ -- Function: get-buffer-create NAME
+     この関数は、NAMEという名前のバッファを返す。その名前のバッファが存
+     在すれば、当該バッファを返す。さもなければ、新たなバッファを作成す
+     る。バッファはカレントバッファにはならない。この関数は、どのバッファ
+     がカレントバッファであるかは変更しない。
+
+     NAMEが文字列でないとエラーを通知する。
+
+          (get-buffer-create "foo")
+               => #<buffer foo>
+
+     新たなバッファのメジャーモードは基本（fundamental）モードに設定される。
+     変数`default-major-mode'は、より高いレベルで処理される。
+     *Note Auto Major Mode::。
+
+ -- Function: generate-new-buffer NAME
+     この関数は、新たに作成した空のバッファを返すが、
+     それをカレントバッファにはしない。
+     NAMEという名前のバッファが存在しなければ、
+     新たなバッファの名前はNAMEである。
+     その名前が使われている場合には、
+     この関数は、Nを整数として`<N>'の形の接尾辞を
+     NAMEに付加する。
+     Nを2から始めて順に使える名前を探す。
+
+     NAMEが文字列でないとエラーを通知する。
+
+          (generate-new-buffer "bar")
+               => #<buffer bar>
+          (generate-new-buffer "bar")
+               => #<buffer bar<2>>
+          (generate-new-buffer "bar")
+               => #<buffer bar<3>>
+
+     新たなバッファのメジャーモードは基本（fundamental）モードに設定される。
+     変数`default-major-mode'は、より高いレベルで処理される。
+     *Note Auto Major Mode::。
+
+     *Note Buffer Names::の関連する関数`generate-new-buffer-name'を参照。
+
+
+
+File: elisp-ja, Node: Killing Buffers, Next: Indirect Buffers, Prev: Creating Buffers, Up: Buffers
+
+バッファの削除 *(2003/10/30)*
+=============================
+
+"バッファを削除する"とは、Emacsに当該バッファの名前を忘れさせ、それが使っ
+ていた場所を他の目的に使えるようにすることです。
+
+削除されたバッファを表すバッファオブジェクトは、
+それを指すものが存在する限り存在し続けますが、
+それをカレントバッファにしたり表示できないように特別な印が付いています。
+削除されたバッファの識別子は残っているので、
+異なる2つのバッファを削除しても、
+`eq'に関する限りそれらは区別できるのです。
+
+カレントバッファやウィンドウに表示しているバッファを削除すると、
+そのかわりにEmacsは別のバッファを選択したり表示します。
+つまり、バッファを削除すると一般にはカレントバッファが
+替わりうることを意味します。
+したがって、バッファを削除するときには、
+（削除するバッファがカレントバッファではないことがわかっていない限り）
+カレントバッファを替える可能性についてあらかじめ注意しておく必要があります。
+*Note Current Buffer::。
+
+複数の間接バッファの基底バッファであるバッファを削除すると、間接バッファ
+も自動的に削除されます。
+
+削除されたバッファの`buffer-name'は`nil'です。これを使えばバッファが削
+除されているかどうか調べられます。
+
+     (defun buffer-killed-p (buffer)
+       "Return t if BUFFER is killed."
+       (not (buffer-name buffer)))
+
+ -- コマンド: kill-buffer BUFFER-OR-NAME
+     この関数はバッファBUFFER-OR-NAMEを削除し、当該バッファが使用してい
+     たすべてのメモリを他の目的に使えるように解放したり、オペレーティン
+     グシステムに返すために解放する。この関数は`nil'を返す。
+
+     当該バッファを`process-buffer'としているすべてのプロセスに
+     シグナル`SIGHUP'を送る。
+     このシグナルは、通常、プロセスを終了させる。
+     （`SIGHUP'の基本的な意味は、接続回線が切断されたである。）
+     *Note Deleting Processes::。
+
+     当該バッファがファイルを訪問していて、かつ、未保存の変更があれば、
+     `kill-buffer'は当該バッファを削除するまえにユーザーに確認をとる。
+     確認をとらないようにするには、`kill-buffer'を呼び出すまえに
+     バッファの変更フラグをクリアしておく。
+     *Note Buffer Modification::。
+
+     削除済みのバッファを削除してもなんの効果もない。
+
+          (kill-buffer "foo.unchanged")
+               => nil
+          (kill-buffer "foo.changed")
+
+          ---------- Buffer: Minibuffer ----------
+          Buffer foo.changed modified; kill anyway? (yes or no) yes
+          ---------- Buffer: Minibuffer ----------
+
+               => nil
+
+ -- Variable: kill-buffer-query-functions
+     未保存の変更を確認したあとで、`kill-buffer'は、リスト
+     `kill-buffer-query-functions'の関数を現れる順に引数なしで呼び出す。
+     これらの関数が呼び出されるときには、削除対象のバッファがカレントバッ
+     ファである。これらの関数でユーザーの確認をとることがこの機能の目的
+     である。いずれかが`nil'を返すと、`kill-buffer'はバッファを削除しな
+     い。
+
+ -- Variable: kill-buffer-hook
+     これは、`kill-buffer'が問い合わせをすべて完了し
+     バッファを実際に削除する直前に実行されるノーマルフックである。
+     フック関数を実行するときには、削除対象のバッファがカレントバッファである。
+     *Note Hooks::。
+
+ -- Variable: buffer-offer-save
+     この変数が特定のバッファで`nil'以外であると、
+     `save-buffers-kill-emacs'と`save-some-buffers'に対してファイルを訪
+     問しているバッファと同様に当該バッファを保存する機会を与えるように
+     指示する。変数`buffer-offer-save'に設定すると自動的にバッファロー
+     カルになる。
+
+
+
+File: elisp-ja, Node: Indirect Buffers, Next: Buffer Gap, Prev: Killing Buffers, Up: Buffers
+
+間接バッファ *(2003/10/30)*
+===========================
+
+"間接バッファ"（indirect buffer）は、間接バッファの"基底バッファ
+（base buffer）と呼ばれる他のバッファのテキストを共有します。ある意味で、
+バッファにおいてファイルのシンボリックリンクに相当するものです。基底バッ
+ファそのものは間接バッファであってはなりません。
+
+間接バッファのテキストは、その基底バッファのテキストとつねに同一です。
+どれかを編集して変更すると、別のものでただちに見えます。これには、文字
+そのものに加えてテキスト属性も含みます。
+
+それ以外に関しては、間接バッファとその基底バッファは完全に別のものです。
+別の名前を持ち、ポイントの値も別であり、異なったナロイングをでき、（い
+ずれかのバッファでテキストを挿入したり削除するとマーカと重ね合わせは再
+配置されるが）マーカやオーバレイも異なり、異なるメジャーモードを持ち、
+バッファローカルな変数も異なります。
+
+間接バッファはファイルを訪問できませんが、その基底バッファでは訪問でき
+ます。間接バッファを保存しようとすると、実際にはその基底バッファを保存
+します。
+
+間接バッファを削除しても、その基底バッファには影響ありません。基底バッ
+ファを削除すると、その間接バッファを実質的には削除することになり、間接
+バッファをカレントバッファにはけっしてできなくなります。
+
+ -- コマンド: make-indirect-buffer BASE-BUFFER NAME
+     BASE-BUFFERを基底バッファとするNAMEという名前の間接バッファを作成
+     する。引数BASE-BUFFERは、バッファか文字列である。
+
+     BASE-BUFFERが間接バッファであると、その基底バッファを新たなバッファ
+     の基底バッファとして用いる。
+
+ -- Function: buffer-base-buffer BUFFER
+     この関数はBUFFERの基底バッファを返す。BUFFERが間接バッファでなけれ
+     ば、値は`nil'である。さもなければ、値は間接バッファではない別のバッ
+     ファである。
+
+
+
+File: elisp-ja, Node: Buffer Gap, Prev: Indirect Buffers, Up: Buffers
+
+バッファ ギャップ *(2003/10/30)*
+================================
+
+Emacsのバッファは挿入や削除を高速にするために、目に見えない"ギャップ
+(gap)を使って実行されます。挿入はギャップの部分を埋めるように、削除は
+ギャップを加えるように働きます。もちろん、このことはギャップを挿入や削
+除の軌跡上に最初に動かさなければならないということです。ユーザが挿入や
+削除をしようとすると、Emacsはギャップだけを動かします。大きなバッファの
+一部だけを素早く編集できる方法であり、先に他の離れた部分を編集した後だ
+と、たまに大きな遅延を生じます。
+
+この方法は目に触れない状態で動いてますし、Lispコードもギャップの現在一
+に影響されるべきではありません。しかし、ギャップの状態を得るための関数
+は利用できます。
+
+ -- Function: gap-position
+     カレントバッファで、現在ギャップがある位置を返します
+
+ -- Function: gap-size
+     カレントバッファで、今のギャップサイズを返します
+
+
+File: elisp-ja, Node: Windows, Next: Frames, Prev: Buffers, Up: Top
+
+ウィンドウ
+**********
+
+本章では、Emacsのウィンドウに関したほとんどの関数と変数について述べます。
+ウィンドウにどのようにテキストが表示されるかに関しては、
+*Note Display::を参照してください。
+
+* Menu:
+
+* Basic Windows::           Basic information on using windows.
+* Splitting Windows::       Splitting one window into two windows.
+* Deleting Windows::        Deleting a window gives its space to other windows.
+* Selecting Windows::       The selected window is the one that you edit in.
+* Cyclic Window Ordering::  Moving around the existing windows.
+* Buffers and Windows::     Each window displays the contents of a buffer.
+* Displaying Buffers::      Higher-lever functions for displaying a buffer
+                              and choosing a window for it.
+* Choosing Window::	    How to choose a window for displaying a buffer.
+* Window Point::            Each window has its own location of point.
+* Window Start::            The display-start position controls which text
+                              is on-screen in the window.
+* Vertical Scrolling::      Moving text up and down in the window.
+* Horizontal Scrolling::    Moving text sideways on the window.
+* Size of Window::          Accessing the size of a window.
+* Resizing Windows::        Changing the size of a window.
+* Coordinates and Windows:: Converting coordinates to windows.
+* Window Configurations::   Saving and restoring the state of the screen.
+* Window Hooks::            Hooks for scrolling, window size changes,
+                              redisplay going past a certain point,
+                              or window configuration changes.
+
+
+
+File: elisp-ja, Node: Basic Windows, Next: Splitting Windows, Prev: Windows, Up: Windows
+
+Emacsウィンドウの基本概念
+=========================
+
+Emacsの"ウィンドウ"（window）は、バッファを表示するスクリーン上の物理的
+な領域のことです。この用語は、Emacs Lispにおいて、当該物理領域を表す
+Lispオブジェクトを意味するためにも使います。どちらの意味かは文脈から明
+らかなはずです。
+
+Emacsではウィンドウをフレームにまとめています。フレームは、Emacsが使え
+るスクリーンの領域を表します。各フレームには少なくとも1つのウィンドウが
+つねにありますが、フレームは上下や左右に重なり合わない複数のEmacsのウィ
+ンドウに分割できます。
+
+ある時点では、各フレームには"フレームの選択されている"ウィンドウと
+区別されるウィンドウがたった1つだけあります。
+フレームのカーソルはそのようなウィンドウに現れます。
+ある時点では、1つのフレームが選択されているフレームであり、
+当該フレームで選択されているウィンドウが"選択されているウィンドウ"です。
+選択されているウィンドウのバッファが、
+（`set-buffer'を使った場合を除いて）普通はカレントバッファです。
+*Note Current Buffer::。
+
+実用上、ウィンドウは、それがフレームに表示されている期間だけ存在します。
+フレームからいったん取りさると、（ウィンドウへの参照が残っているとして
+も）ウィンドウは実質的には削除され使えません。保存したウィンドウ構成を
+復元する以外に、スクリーンから消えたウィンドウを戻す方法はありません。
+（*Note Deleting Windows::。）
+
+各ウィンドウにはつぎの属性があります。
+
+   * ウィンドウを含んでいるフレーム
+
+   * ウィンドウの高さ
+
+   * ウィンドウの幅
+
+   * スクリーンやフレームを基準にしたウィンドウの隅
+
+   * ウィンドウが表示しているバッファ
+
+   * ウィンドウの左上隅に対応するバッファ内の位置
+
+   * コラム単位の水平方向のスクロール量
+
+   * ポイント
+
+   * マーク
+
+   * どの程度最近にウィンドウが選択されたか
+
+複数のバッファを同時に見られるようにユーザーは複数のウィンドウを作りま
+す。さまざまな理由でLispライブラリは複数のウィンドウを使いますが、その
+ほとんどは、関連する情報を表示するためです。たとえば、rmailでは、あるウィ
+ンドウのサマリバッファで移動すると、別のウィンドウでは対応するメッセー
+ジを表示します。
+
+Emacsにおける『ウィンドウ』の意味は、Xのような汎用目的のウィンドウシス
+テムにおける意味に似ていますが、同一ではありません。Xウィンドウシステム
+は、スクリーン上にXのウィンドウを配置します。Emacsは、1つか複数のXのウィ
+ンドウをフレームとして使い、それらをEmacsのウィンドウに分割します。文字
+端末でEmacsを使うと、Emacsは端末のクリーン全体を1つのフレームとして扱い
+ます。
+
+ほとんどのウィンドウシステムは、任意に重ね合わさったウィンドウを扱えます。
+対照的に、Emacsのウィンドウは"タイル型"です。
+つまり、互いに重なり合うことはなく、
+スクリーンやフレームの全面に敷き詰められます。
+Emacsが新たなウィンドウを作成する方法や
+ウィンドウサイズの変更方法に起因するのですが、
+Emacsのフレームを任意の形にウィンドウで敷き詰めることは、
+実際には必ずしも可能であるとは限りません。
+*Note Splitting Windows::と*Note Size of Window::。
+
+ウィンドウのバッファの内容がどのようにウィンドウに表示されるかについては、
+*Note Display::。
+
+ -- Function: windowp OBJECT
+     この関数は、OBJECTがウィンドウであれば`t'を返す。
+
+
+
+File: elisp-ja, Node: Splitting Windows, Next: Deleting Windows, Prev: Basic Windows, Up: Windows
+
+ウィンドウの分割
+================
+
+ここで述べる関数は、ウィンドウを2つに分割するための基本関数です。上位レ
+ベルの2つの関数、`pop-to-buffer'と`display-buffer'もウィンドウを分割し
+ますが、つねに分割するとは限りません（*Note Displaying Buffers::）。
+
+ここに述べる関数は、引数にはバッファを受け付けません。分割されたウィン
+ドウの2つの『部分』には、分割前に表示されていたのと同じバッファが始めは
+表示されます。
+
+ -- コマンド: split-window &optional WINDOW SIZE HORIZONTAL
+     この関数はWINDOWを2つのウィンドウに分割する。もとのウィンドウ
+     WINDOWは、選択されているウィンドウであり続けるが、以前のスクリーン
+     領域の一部を占めるだけである。残りの部分は新たに作成されたウィンド
+     ウが占め、そのウィンドウがこの関数の値として返される。
+
+     HORIZONTALが`nil'以外であると、WINDOWは左右に分かれる。もとのウィ
+     ンドウWINDOWは左端のSIZEコラムに留まり、残りのコラムは新たなウィン
+     ドウに与えられる。さもなければ、ウィンドウは上下に分かれ、WINDOWは
+     上側のSIZE行に留まり、残りの行は新たなウィンドウに与えられる。した
+     がって、もとのウィンドウは左側か上側にあり、新たなウィンドウは右側
+     か下側にある。
+
+     WINDOWを省略したり`nil'であると、選択されているウィンドウを分割す
+     る。SIZEを省略したり`nil'であると、WINDOWを均等に分ける。（余分な
+     行は新たなウィンドウに与える。）`split-window'が対話的に呼び出され
+     ると、すべての引数は`nil'である。
+
+     つぎの例では、50行×80コラムのスクリーン上の1つのウィンドウを分割
+     する。
+
+          (setq w (selected-window))
+               => #<window 8 on windows.texi>
+          (window-edges)          ; 順に
+               => (0 0 80 50)     ;   左端--上端--右端--下端
+
+          ;; 作成したウィンドウを返す
+          (setq w2 (split-window w 15))
+               => #<window 28 on windows.texi>
+          (window-edges w2)
+               => (0 15 80 50)    ; 下側のウィンドウの上端は15行目
+          (window-edges w)
+               => (0 0 80 15)     ; 上側のウィンドウ
+
+     スクリーンはつぎのようになる。
+
+          　　　┌──────┐
+          　　　│　　　　　　│ 0行目
+          　　　│　　　ｗ　　│
+          　　　│　　　　　　│
+          　　　├──────┤
+          　　　│　　　　　　│15行目
+          　　　│　　　ｗ２　│
+          　　　│　　　　　　│
+          　　　└──────┘
+          　　　　　　　　　　　50行目
+          コラム0         コラム80
+
+     つぎに上側のウィンドウを左右に分割する。
+
+          (setq w3 (split-window w 35 t))
+               => #<window 32 on windows.texi>
+          (window-edges w3)
+               => (35 0 80 15)  ; 左端は35コラム目
+          (window-edges w)
+               => (0 0 35 15)   ; 右端は35コラム目
+          (window-edges w2)
+               => (0 15 80 50)  ; 下側のウィンドウは未変更
+
+     スクリーンはつぎのようになる。
+
+             コラム35
+          　　　┌─┬────┐
+          　　　│　│　　　　│ 0行目
+          　　　│ｗ│　ｗ３　│
+          　　　│　│　　　　│
+          　　　├─┴────┤
+          　　　│　　　　　　│15行目
+          　　　│　　　ｗ２　│
+          　　　│　　　　　　│
+          　　　└──────┘
+          　　　　　　　　　　　50行目
+          コラム0         コラム80
+
+     通常、Emacsは左右に並んだウィンドウの境界を
+     スクロールバー（*Note Scroll Bars: Window Frame Parameters.）か
+     文字`|'で表す。
+     表示テーブルで境界に別の文字を指定できる。
+     *Note Display Tables::を参照。
+
+ -- コマンド: split-window-vertically SIZE
+     この関数は、選択されているウィンドウを上下に2つに分割する。上側が
+     選択されているウィンドウのままで、SIZE行の大きさになる。（SIZEが負
+     であると、下側のウィンドウが- SIZE行になり、上側のウィンドウは残り
+     になる。しかし、それでも上側が選択されているウィンドウである。）
+
+     この関数は`split-window'の単なるインターフェイスである。その完全な
+     関数定義はつぎのとおりである。
+
+          (defun split-window-vertically (&optional arg)
+            "Split current window into two windows, ..."
+            (interactive "P")
+            (split-window nil (and arg (prefix-numeric-value arg))))
+
+ -- コマンド: split-window-horizontally SIZE
+     この関数は、選択されているウィンドウを左右に2つに分割し、選択され
+     ているウィンドウにはSIZEコラム残す。
+
+     この関数は`split-window'の単なるインターフェイスである。
+     `split-window-horizontally'の完全な関数定義は（説明文字列を除けば）
+     つぎのとおりである。
+
+          (defun split-window-horizontally (&optional arg)
+            "Split selected window into two windows, side by side..."
+            (interactive "P")
+            (split-window nil (and arg (prefix-numeric-value arg)) t))
+
+ -- Function: one-window-p &optional NO-MINI ALL-FRAMES
+     この関数は、ウィンドウがたった1つしかなければ`nil'以外を返す。引数
+     NO-MINIが`nil'以外であると、ミニバッファが活性であってもそれを数え
+     ないことを意味する。さもなければ、ミニバッファが活性であればそれも
+     総ウィンドウ個数に数えて1と比較する。
+
+     引数ALL-FRAMESは、どのフレームを対象にするかを指定する。指定できる
+     値とその意味はつぎのとおりである。
+
+     `nil'
+          選択されているフレームのウィンドウに加えて、ミニバッファがど
+          こに置かれていようと当該フレームが使っているミニバッファを数
+          える。
+
+     `t'
+          既存のすべてのフレームのウィンドウを数える。
+
+     `visible'
+          すべての可視フレームのすべてのウィンドウを数える。
+
+     0
+          すべての可視フレームやアイコンになっているフレームのすべての
+          ウィンドウを数える。
+
+     その他
+          選択されているフレームだけでウィンドウを正確に数える。
+
+
+
+File: elisp-ja, Node: Deleting Windows, Next: Selecting Windows, Prev: Splitting Windows, Up: Windows
+
+ウィンドウの削除
+================
+
+ウィンドウを削除するある種の関数を呼び出してウィンドウを"削除"しない限
+り、ウィンドウはそのフレームに表示され続けます。削除されたウィンドウが
+スクリーンに現れることはありませんが、それを参照するものがある限りLisp
+オブジェクトととしては存在し続けます。保存したウィンドウ構成（*Note
+Window Configurations::）を復元する以外には、ウィンドウの削除は取り消せ
+ません。ウィンドウ構成を復元すると、その構成に含まれないウィンドウはす
+べて削除されます。
+
+ウィンドウを削除すると、それが使っていた場所は近接する兄弟ウィンドウの
+1つに与えられます。
+
+ -- Function: window-live-p WINDOW
+     この関数は、WINDOWが削除されていると`nil'を返し、さもなければ`t'を
+     返す。
+
+     *警告：*` ' 削除されたウィンドウを正しいものとして使うと、誤った情
+     報や重大なエラーを引き起こす。
+
+ -- コマンド: delete-window &optional WINDOW
+     この関数は、ディスプレイからWINDOWを取りさり、`nil'を返す。WINDOW
+     を省略すると、選択されているウィンドウを削除する。`delete-window'
+     を呼び出したときにたった1つのウィンドウしかないとエラーを通知する。
+
+ -- コマンド: delete-other-windows &optional WINDOW
+     この関数は、WINDOWのフレームにある他のウィンドウを削除してWINDOWを
+     当該フレームで唯一のウィンドウにする。WINDOWを省略したり`nil'であ
+     ると、選択されているウィンドウをデフォルトで使う。
+
+     これは`nil'を返す。
+
+ -- コマンド: delete-windows-on BUFFER &optional FRAME
+     この関数は、BUFFERを表示しているすべてのウィンドウを削除する。
+     BUFFERを表示しているウィンドウがなければなにもしない。
+
+     `delete-windows-on'はフレームを1つ1つ処理する。
+     フレームに異なるバッファを表示しているウィンドウが複数ある場合、
+     それらのうちでBUFFERを表示しているものを削除し、
+     他のものは空いた領域を埋めるために拡張される。
+     あるフレームのすべてのウィンドウ（たった1つのウィンドウである場合も含む）
+     がBUFFERを表示している場合、当該フレームは、
+     `other-buffer'で選ばれる別のバッファを表示する
+     1つのウィンドウだけになる。
+     *Note The Buffer List::。
+
+     引数FRAMEは、どのフレームを対象にするかを指定する。この関数は、す
+     べてのウィンドウを走査する他の関数と同じようにはFRAMEを使わない。
+     特に、`t'と`nil'の値の意味は他の関数とは逆である。以下に詳細を示す。
+
+        * `nil'であると、すべてのフレームを対象にする。
+        * `t'であると、選択されているフレームを対象にする。
+        * `visible'であると、すべての可視フレームを対象にする。
+        * 0であると、すべての可視フレームやアイコンになっているフレーム
+          を対象にする。
+        * フレームであると、当該フレームを対象にする。
+
+     この関数はつねに`nil'を返す。
+
+
+
+File: elisp-ja, Node: Selecting Windows, Next: Buffers and Windows, Prev: Deleting Windows, Up: Windows
+
+ウィンドウの選択
+================
+
+ウィンドウを選択すると、当該ウィンドウのバッファがカレントバッファにな
+り、カーソルがそのウィンドウに現れます。
+
+ -- Function: selected-window
+     この関数は、選択されているウィンドウを返す。カーソルが表示され多く
+     のコマンドが作用するウィンドウがそれである。
+
+ -- Function: select-window WINDOW
+     この関数は、WINDOWを選択されているウィンドウにする。
+     すると、カーソルは（再表示すると）WINDOWに現れる。
+     WINDOWに表示されているバッファがただちにカレントバッファになる。
+
+     戻り値はWINDOWである。
+
+          (setq w (next-window))
+          (select-window w)
+               => #<window 65 on windows.texi>
+
+ -- Macro: save-selected-window FORMS...
+     このマクロは、選択されているウィンドウを記録して、FORMSを順に実行
+     し、もとの選択されているウィンドウに戻す。
+
+     このマクロは、ウィンドウサイズ、配置、内容に関して
+     いっさいなにも保存したり復元しないので、
+     FORMSがそれらを変更するとその変更は持続する。
+
+     ある時点で、各フレームにはフレームの選択されているウィンドウがある。
+     このマクロは、選択されているウィンドウ*だけ*を保存し、他のフレーム
+     についてはなにも保存しない。FORMSが別のフレームを選択してそのフレー
+     ムの選択されているウィンドウを変更すると、その変更は持続する。
+
+以下の関数は、さまざま条件でスクリーン上のウィンドウの1つを選びます。
+
+ -- Function: get-lru-window &optional FRAME
+     この関数は、もっとも昔に『使われた』（つまり選択されていた）ウィン
+     ドウを返す。選択されているウィンドウはつねにもっとも最近に使われた
+     ウィンドウである。
+
+     ウィンドウがたった1つであると、選択されているウィンドウがもっとも
+     昔に使われたウィンドウであることもありうる。新たに作成されたウィン
+     ドウは、選択されるまではもっとも昔に使われたウィンドウになる。ミニ
+     バッファ用ウィンドウは候補にはならない。
+
+     引数FRAMEは、どのウィンドウを対象とするかを制御する。
+
+        * `nil'であると、選択されているフレームのウィンドウを対象とする。
+        * `t'であると、すべてのフレームのウィンドウを対象とする。
+        * `visible'であると、すべての可視フレームのウィンドウを対象とす
+          る。
+        * 0であると、すべての可視フレームやアイコンになっているフレーム
+          のウィンドウを対象にする。
+        * フレームであると、当該フレームのウィンドウを対象にする。
+
+ -- Function: get-largest-window &optional FRAME
+     この関数は、もっとも大きな領域（高さ×幅）のウィンドウを返す。左右
+     に並んだウィンドウがなければ、これがもっとも行数を持つウィンドウで
+     ある。ミニバッファ用ウィンドウは候補にはならない。
+
+     同じ大きさのウィンドウが2つある場合、この関数は、選択されているウィ
+     ンドウから始めてウィンドウの巡回順序（次節参照）で最初のウィンドウ
+     を返す。
+
+     引数FRAMEは、ウィンドウのどのような集まりを対象にするかを指定する。
+     うえの`get-lru-window'を参照。
+
+
+

@@ -1,0 +1,1500 @@
+-*- coding: utf-8 -*-
+This is eieio-j.info, produced by makeinfo version 4.13 from eieio-j.texi.
+
+START-INFO-DIR-ENTRY
+* eieio: (eieio-j.info).     Emacsのためのオブジェクト
+END-INFO-DIR-ENTRY
+
+
+File: eieio-j.info,  Node: Top,  Up: (dir)Top
+
+   EIEIOは、emacs
+lispでオブジェクト指向アプリケーションを書くためのフレー
+ムワークであり、私が仕事で担当するさまざまなオブジェクト指向の授業の結
+果であり、実装することでそのいくつかをより理解しようとする試みである。
+私がeieioを始めた本当の理由は、私のクラスの誰かが「emacsはそれはできな
+いことに賭ける!」と言ったからである。それなら、彼らが間違っていると証
+明しなければならない!
+
+* Menu:
+
+* 入門::                     なぜeieioを使うのか? 基本的概観、サンプルリスト
+* CLOSとの互換性::           相違は何か?
+* クラスの作成::             新しいクラス構造を書く方法
+* 既定のスーパークラス::     ルートのスーパークラス
+* 新しいオブジェクトの作成:: 新しいオブジェクトの作成方法
+* スロットのアクセス::       スロットをアクセスする方法
+* メソッドを書く::           CLOSスタイルのメソッドを書く方法
+* 述語::                     Class-p、Object-p、etc-p
+* 連想リスト::               連想リストとしてのオブジェクトのリスト
+* イントロスペクション::     クラスの内部を見る
+* シグナル::                 エラーになった時
+* 基底クラス::               それからの継承に使える付加的クラス
+* ブラウズ::                 あなたのクラスリストをブラウズする
+* クラスの値::               クラスやオブジェクトについての情報を表示する
+* カスタマイズ::             オブジェクトをカスタマイズする
+* 文書::                     texinfo文書の自動作成
+* 命名規約::                 Emacsに都合がよい方法でオブジェクトを名付ける
+* デモプログラム::           eieioを使ったいくつかの例
+* 関数インデクス::
+
+   この文書の最新版は、下記で見つけることができる:
+`ftp://ftp.ultranet.com/pub/zappo'.
+
+
+File: eieio-j.info,  Node: 入門,  Next: CLOSとの互換性,  Prev: Top,  Up: Top
+
+1 入門
+********
+
+EIEIOは、CLOS(Common Lisp Object System)互換層である。Emacs Lisp言語の
+制限のために、CLOSを完全にサポートすることはできず、いくつかの関数が
+setfの場所に加えられた。
+
+1.1 EIEIOがサポートするもの
+====================================
+
+  1.
+     CLOSに似ている単一継承を使った、属性とメソッドを持つ基本的なクラスの作
+     成のための構造化されたフレームワーク。
+
+  2. 型照合、そしてスロット未束縛。
+
+  3. CLOSに似ているメソッド定義。
+
+  4. 単純で複雑なクラスブラウザ。
+
+  5. メソッドのEdebugサポート。
+
+  6. Imenu更新。
+
+  7. メソッドのバイトコンパイルサポート。
+
+  8. クラスとメソッド用のヘルプシステム拡張。
+
+  9. 自動的なtexinfo文書ジェネレータ。
+
+ 10. 興味深い仕事用のいくつかの基底クラス。
+
+ 11. 単純なテストスイート。
+
+ 12. スロットのpublicとprivateのクラス分け(CLOSへの拡張)。
+
+ 13. クラスのカスタマイズのサポート(CLOSへの拡張)。
+
+1.2 EIEIO使用時の問題
+===========================
+
+完全な`defclass'タグサポート
+     すべてのCLOSタグは現在サポートされているが、いくつかは現在正しく実装さ
+     れていない。
+
+にせのオブジェクトイニシャライザ
+     それぞれのクラスは、実体化されたオブジェクトのすばやい初期化のために使
+     われる、にせのオブジェクトを含む。オブジェクトのスロット値に副作用を起
+     こす関数を使うことは、もしかするとにせのオブジェクトに修正を引き起こす
+     かもしれない。EIEIOは深いコピーを使うべきだが、現在は使わない。
+
+:AROUNDメソッドタグ
+     このCLOSメソッドタグは関数的ではない。
+
+1.3 ほとんど有用なEIEIOプログラム例。
+===================================================
+
+linemark
+     行のハイライトを管理する。個々の行は背景色、またはその他のグラフィック
+     の特徴を与えられる。現在Emacsにロードされていないファイルの中の行もハ
+     イライトできる。それらが読み込まれるとき、行はグラフィックの属性を与え
+     られる。
+
+     MS Visual Studioに似たブックマーク機能を含む。
+
+tree
+     `木ノード'クラスオブジェクトの組み込まれたリストの列を造ることで、構造
+     化された木を描く。あなたの現在のeieio継承構造をブラウズするための、関
+     数`eieio-class-tree'を含む。
+
+call-tree
+     tree
+     toolを使って呼び出し木を生成するためには、(バイトコンパイルされて
+     いない)Emacs Lisp関数をこれに渡す。
+
+chart
+     図/軸/列を管理するためにeieioを使い、単純な棒グラフを表示することを可
+     能にする。プログラム例は、ファイル数やサイズの図に加えて、emacsのメモ
+     リ使用やリストの占拠を表示するために利用できる。誰が最も多くの電子メー
+     ルをあなたへ送ったかを示す図を表示するサンプルさえある!
+     あなた自身の棒
+     グラフを手軽に作るためには、`chart-bar-quickie'の文書文字列を参照。
+
+eieio-speedbar
+     speedbar表示を実装するためのクラス。オブジェクトシステムを使うプログラ
+     ムを書き、あなたのクラスが`eieio-speedbar'内のクラスを継承する場
+     合、あなたのオブジェクトのためのspeedbar表示をほとんど時間をかけずに書
+     くことができる。*note eieio-speedbar::。
+
+1.4 EIEIO願望リスト
+========================
+
+  1. いっそうのCLOSとの互換性。
+
+  2. 望まれた組み込みメソッドをオブジェクトブラウザに統合すること。
+
+  3.
+     楽しみのために、たとえばフェイスやプロセス、バッファ、フレーム、ウィン
+     ドウなど、すでに存在するemacs-lispのものの上にいくつかのオブジェクトを
+     作ること。
+
+
+File: eieio-j.info,  Node: CLOSとの互換性,  Next: クラスの作成,  Prev: 入門,  Up: Top
+
+2 CLOSとの互換性
+*********************
+
+これを読むとき、私はほんの最近CLOS文法のいくつかを学んだばかりで、
+EIEIOフレームワークの外では、それを自分では使ったことがないことを知っ
+ておくことは重要である。私は主に、私自身がオブジェクト指向プログラミン
+グのメカニズムのいくつかを学ぶことを助けるためにEIEIOを書いたEmacs
+Lispハッカーである。
+
+   現在は、下記の関数はほとんどCLOSから期待されるように振る舞うだろう。
+
+`defclass'
+     すべてのスロットキーワードは利用できるが、すべてが正しく働くわけではな
+     い。スロットキーワードの相違は:
+
+    :readerと:writerタグ
+          修飾のないメソッドを作る代わりにエラーをスローするメソッドを作る。その
+          仕事をするために、新しいものをなお作ることができる。
+
+    :accessor
+          これはスロットをアクセスするための修飾のないメソッドを作るべきだが、そ
+          の代わりにスロットの値を取得する前もって作られたメソッドを作る。
+
+    :type
+          この指定子は、`cl'パッケージの`typep'関数を使う。 *Note
+          (cl)Type
+          Predicates::.。従って、これはそのパッケージと同じ問題を持っ
+          ている。拡張は、オブジェクト名を提供する能力を含む。
+
+     defclassはクラスオプションもサポートするが、現在は`:metaclass'や
+     `:default-initargs'の値は使わない。
+
+`make-instance'
+     インスタンス作成は期待するように動作するが、新しいクラスが作られたとき
+     に自動的に生成されたEIEIOインスタンスクリエータを単に使うだけである。
+     *Note 新しいオブジェクトの作成::.。
+
+`defgeneric'
+     望まれたシンボルを作り、`:AROUND'以外のすべての予期される引数を受
+     け入れる。
+
+`defmethod'
+     defgenericを呼び出し、予期される引数の多くを受け入れる。作られたメソッ
+     ドの第1引数だけが型キャストであってよいが、すべての引数は文法的には型
+     キャストでありえる(そして即座に無視される)。クラスに対して型キャストす
+     るために、クラスはdefmethodが呼び出される前に存在しなければならない。
+     さらに、`:AROUND'タグはサポートされない。
+
+`call-next-method'
+     メソッド内で、与えられたオブジェクトの継承木を上って次に利用できるメソッ
+     ドを呼び出す。EIEIOではこの関数は置き換え引数を受け入れるので、CLOSで
+     見られるものと異なる。これは、上の方の木へ渡すときに、サブクラスが引数
+     を修正することを許す。一つも引数が与えられない場合、予期されるCLOSの振
+     る舞いが使われる。
+
+`setf'
+     common-lispサブシステムがロードされた場合、フォーム `(setf
+     (slot-value object slot) t)'が動作するようにsetfパラメータ
+     もロードされる。
+
+   CLOSは`describe'コマンドをサポートするが、eieioは
+`eieio-describe-class'と`eieio-describe-generic'を提供するだ
+けである。これらの関数は、`describe-variable'と
+`describe-function'にアドバイスされる。
+
+   新しいクラスを作るとき(*note クラスの作成::)、EIEIOでサポートされるい
+くつかの新しいキーワードがある。
+
+   EIEIOではタグは小文字であり、大文字小文字の混合ではない。
+
+
+File: eieio-j.info,  Node: クラスの作成,  Next: 既定のスーパークラス,  Prev: CLOSとの互換性,  Up: Top
+
+3 クラスの作成
+********************
+
+EIEIOのクラスは、他の言語で見られるものと類似の構造を持っている。新し
+いクラスは`defclass'で作られる。
+
+ -- Function: defclass class-name superclass-list slot-list
+          options-or-doc
+     この関数はCLOSによって指定され、EIEIOはその構造に従う。
+
+     `class-name'と呼ばれる新しいクラスを作成する。作成された変数の文
+     書文字列は、OPTIONS-OR-DOCで見られる文書文字列の修正された版へ設
+     定される。スロットが定義されるたびに、変数文書文字列はメソッド文書を含
+     むように同様に更新される。
+
+     `class-name'の親クラスは、リストでなければならない
+     SUPERCLASS-LISTである。リストの各要素はクラスでなければならない。
+     これらのクラスは、作られているクラスの親を形成する。親の各スロットは、
+     新しいクラスに複製される。2つの親が同じスロット名をともに持つ場合、リ
+     ストに最初に現れる親がそのスロットの属性を設定する。新しいクラスのスロッ
+     トリストの中のスロットが親とマッチする場合、子クラスの新しい指定が親の
+     それを無効にする。
+
+     SLOT-LISTはリストのリストである。それぞれの副リストは属性を定義
+     する。これらのリストは `(name :tag1 value1 :tag2 value2 :tagn
+     valuen)'の形式である。いく つかの有効なCLOSタグは:
+
+    `:initarg'
+          初期化時に使われる引数。*Note
+          新しいオブジェクトの作成::.。initargに使
+          うよいシンボルは、コロン`:'で始まるものである。
+
+    `:initform'
+          このスロットの既定値を生成するために使われるLisp式。:initformが省略さ
+          れた場合、スロットは既定で未束縛である。initformへ渡される値は自動的に
+          引用される。従って、
+               :initform (1 2 3)
+          は既定のオブジェクトに指定されたリストとして現れる。以下のような関数:
+               :initform +
+          はシンボルとして引用される。
+
+          最後に、`lambda'の代わりに関数`lambda-default'を使うことは、
+          評価することなしに値として使われるためのラムダ式を指定することを許す。
+
+    `:type'
+          このスロットへ設定されるデータを確認するために使われる、引用されていな
+          い型指定子。*Note (cl)Type
+          Predicates::.。以下はいくつかの例である:
+         `symbol'
+               シンボル。
+
+         `number'
+               数の型。
+
+         `my-class-name'
+               あなたのクラス型のオブジェクト。
+
+         `(or null symbol)'
+               シンボルまたはnil。
+
+         `function'
+               関数シンボル、または`lambda-default'式。
+
+    `:allocation'
+          どのようにデータが格納されるかを指定するために使われる、:classまたは
+          :instanceのどちらか(既定は:instance)。インスタンスごとに格納されるスロッ
+          トは、それぞれのオブジェクトに独自の値を持つ。クラスごとに格納されるス
+          ロットは、それぞれのオブジェクトに共有される値を持つ。あるオブジェクト
+          が:class割り当てのスロットを変更する場合、そのクラスのすべてのオブジェ
+          クトが新しい値を得る。
+
+    `:documentation'
+          スロットの使用を詳述する文書。この文書は、ユーザがクラスを記述するとき
+          や、オブジェクトをカスタマイズするときに見られる。
+
+     その振る舞いがまだCLOSとマッチしないいくつかのタグは:
+
+    `:accessor'
+          スロットの値をとってくるために使うことができる総称関数の名前。後であな
+          たのオブジェクト上でこの関数を呼び出し、スロットの値を取り戻すことがで
+          きる。
+
+    `:writer'
+          このスロットに書く総称関数の名前。
+
+    `:reader'
+          このスロットを読む総称関数の名前。
+
+     いくつかのEIEIOに独自のタグは:
+
+    `:custom'
+          この型のオブジェクトを編集するときに使われる、独自の:type指定子。詳細
+          は`defcustom'の文書を参照。この指定子は、`defcustom'呼び出し
+          の:typeフィールドと同等である。
+
+    `:label'
+          オブジェクトをカスタマイズするときに、:labelの値はスロット名の代わりに
+          使われる。これは、通常与えられるものよりもよりよいデータの記述を可能に
+          する。
+
+    `:group'
+          `defcustom'の:groupコマンドと似て、これはオブジェクトの異なるスロッ
+          トをグループに組織化する。オブジェクトをカスタマイズするとき、特有のグ
+          ループに属すスロットだけが一緒に動作される必要があり、表示の大きさを簡
+          単にする。
+
+    `:protection'
+          このクラスのメソッドだけがこのスロットをアクセスしてよいことを示す、
+          CLOSがサポートしない指定子。
+
+          スロット参照関数を使うとき、SLOTの背後の値がprivateまたは
+          protectedの場合、操作の現在のスコープは呼び出すオブジェクトのメソッド
+          内でなければならない。
+
+          有効な値は:
+
+         `:public'
+               誰でもどんなスコープからでもこのスロットをアクセスしてよい。
+
+         `:protected'
+               同じクラス、または子クラスのメソッドのみがこのスロットをアクセスできる。
+
+         `:private'
+               このスロットの定義と同じクラスのメソッドのみがこのスロットをアクセスで
+               きる。
+          スロット参照関数を使うとき、SLOTの後ろの値がprivateの場合、現在
+          の作用のスコープはオブジェクト呼び出しのメソッド内でなければならない。
+
+     さらに、CLOSスタイルのクラスオプションが利用できる。これらは、クラスに
+     属するさまざまなオプションである。これらのオプションは決まった場所か、
+     文書文字列に加えて存在できる。両方が存在する場合、オプションは文書文字
+     列の前に現れる。CLOSでは、文書はクラスで利用できるオプションの一つであ
+     り、独立した文書文字列を持てる能力はEmacs特有である。
+
+     可能なクラスオプションは:
+    `:documentation'
+          このクラスの使用のための文書文字列。Emacsスタイルの文書文字列も提供さ
+          れる場合、このオプションは無視される。
+
+    `:allow-nil-initform'
+          これはCLOSオプションではない。
+
+          このオプションが非nilで、`:initform'が`nil'で、しかし
+          `:type'が何か`string'のようなものを指定されている場合、これ
+          を渡すことを許す。既定はこのオプションをオフにする。これはスロットの未
+          束縛化の代替として実装される。
+
+    `:abstract'
+          これはCLOSオプションではない。
+
+          抽象、またはインスタンス化不能としてクラスにタグをつける。
+
+    `:custom-groups'
+          これは、このクラス内でカスタマイズ可能なグループのリストである。このス
+          ロットは、クラスが作成されるときに自動生成され、指定される必要はない。
+          しかし、どのグループが利用可能かを見るために、`class-option'コマ
+          ンドで取得することができる。
+
+    `:metaclass'
+          サポートされていないCLOSオプション。`standard-class'以外の既定ク
+          ラスの使用を可能にする。
+
+    `:default-initargs'
+          サポートされていないCLOSオプション。新しいオブジェクトを作るときに使わ
+          れるinitargのリストを指定する。私が言える限りでは、これは
+          `:initform'関数と重複している。
+
+     CLOSタグ対EIEIO特有のタグのこれ以上の詳細については、 *Note
+     CLOSとの互換性::.。
+
+     全体の定義は以下のように見えるだろう:
+          (defclass data-object ()
+            ((value :initarg :value
+                    :initform nil
+                    :accessor get-value
+                    :documentation
+                    "Lisp object which represents the data this object maintains."
+                    :protection :protected)
+             (reference :initarg :reference
+                        :initform nil
+                        :type list
+                        :custom (repeat object)
+                        :documentation
+                        "List of objects looking at this object.
+          The method `update-symbol' is called for each member of `reference' whenever
+          `value' is modified."
+                        :protection :protected)
+             )
+            "Data object which tracks referencers.")
+
+
+ -- Variable: eieio-error-unsupported-class-tags
+     非nilの場合、スロット指定子のタグがサポートされていなければ、
+     `defclass'はエラーをスローする。
+
+
+File: eieio-j.info,  Node: 既定のスーパークラス,  Next: 新しいオブジェクトの作成,  Prev: クラスの作成,  Up: Top
+
+4 既定のスーパークラス
+********************************
+
+すべての定義されたクラスは、スーパークラスとして(親クラスを指定されず
+に)作られた場合、実際には`eieio-default-superclass'に格納されてい
+る特殊なスーパークラスから継承する。このスーパークラスは実際にはたいへ
+ん単純だが、それがあれば、将来(変更があった場合)それらのコードを更新す
+ることなしに、ある種の既定のメソッドや属性がいつでもすべてのオブジェク
+トに加えられる。CLOSでは、これは`STANDARD-CLASS'と名付けられてお
+り、別名を持っている。
+
+   現在は、既定のスーパークラスは以下のように定義されている:
+
+     (defclass eieio-default-superclass nil
+       nil
+       )
+      "スーパークラス用の親クラスとして使われる既定のクラス。そのスロットは
+     そのようなスーパークラスによって自動的に採用されるが、`親'スロット内に
+     は格納されない。属性やメソッドを検索するとき、最後の親が見つかったら、
+     検索はこのクラスへ再帰する。"
+
+   あらゆる型のオブジェクトを作るとき、そのコンストラクタか
+`make-instance'を使うことができる。これは、順にメソッド
+`initialize-instance'を呼び出し、それからメソッド
+`shared-initialize'を呼び出す。
+
+ -- Function: initialize-instance obj &rest slots
+     OBJを初期化する。OBJのスロットを、名前/値の対のリストであ
+     るSLOTSで設定する。これらは、実際には単に
+     `shared-initialize'へ渡されるだけである。
+
+ -- Function: shared-initialize obj &rest slots
+     OBJのスロットを、名前/値の対のリストであるSLOTSで設定する。
+
+   これらのメソッドは、エラーを無効にするために使われる:
+
+ -- Function: slot-missing object slot operation &optional new-value
+     このメソッドは、与えられたオブジェクトに存在しないスロットにアクセスを
+     試みたときに呼び出される。既定のメソッドは、型`invalid-slot-name'
+     のエラーを通知する。*Note シグナル::.。
+
+     この振る舞いを無効にすることはできるが、現在の実装から戻ることは予期さ
+     れていない。
+
+     この関数は、CLOSとは異なる順序で引数をとる。
+
+ -- Function: slot-unbound object class slot-name fn
+     このメソッドは、束縛されていないスロットをアクセスしようと試みたときに
+     呼び出される。これは、`unbound-slot'シグナルをスローする。無効に
+     された場合、その戻り値は、その値を参照しようと試みた関数から戻されるだ
+     ろう。
+
+ -- Function: no-applicable-method object method
+     このメソッドは、呼び出すメソッドがないときにOBJECT上でメソッドを
+     呼び出そうと試みた場合に呼び出される。既定のメソッドは、
+     `no-method-definition'シグナルをスローする。この関数の戻り値は、
+     存在しないメソッドの戻り値になる。
+
+ -- Function: no-next-method object args
+     このメソッドは、`call-next-method'の呼び出しが試みられ、呼び出せ
+     る次のメソッドがないときに呼び出される。戻り値は、
+     `call-next-method'の戻り値になる。
+
+   追加の有用なメソッドは:
+
+ -- Function: clone obj &rest params
+     OBJの深いコピーを作る。一度このコピーが作られると、PARAMS
+     で指定された修正がなされる。PARAMSは、`initialize-instance'
+     のSLOTSと同じフォーマットを使う。その他のただ一つの修正は、増加
+     する数で名前を修正することである。
+
+ -- Function: object-print obj &rest strings
+     OBJの印字lispシンボルを構築する。これは以下のようになるだろう:
+           #<class-name "objname">
+     STRINGSは、短縮印字にさらにデータを加えるために、オーバーロード関数に
+     よって渡される追加のパラメータである。
+
+          (defclass data-object ()
+             (value)
+             "1つのデータスロットを含むオブジェクト。")
+
+          (defmethod object-print ((this data-object) &optional strings)
+            "その名前の一部がデータオブジェクトの要約である文字列を戻す。"
+            (apply 'call-next-method this
+                   (cons (format " value: %s" (render this)) strings)))
+
+     以下はある出力がどのように見えるかである:
+          (object-print test-object)
+             => #<data-object test-object value: 3>
+
+ -- Function: object-write obj &optional comment
+     OBJを読み込めるような仕方でストリームへ書く。結果の出力は、その
+     オブジェクトを元通りにするために`read'と`eval'が使うことがで
+     きるlispコードである。`:initarg'を持つスロットだけがストリームへ
+     書かれる。
+
+
+File: eieio-j.info,  Node: 新しいオブジェクトの作成,  Next: スロットのアクセス,  Prev: 既定のスーパークラス,  Up: Top
+
+5 新しいオブジェクトの作成
+**************************************
+
+いったんクラスを定義すれば、指定した構造でオブジェクトを作る時である。
+`defclass'を呼び出した後は、2つの新しい関数が作られる。その1つが
+`classname'である。従って、前の章*Note クラスの作成::.の終わりの例
+から、我々は関数`data-object'と`data-object-p'を持つだろう。
+
+ -- Function: classname object-name &rest slots
+     これは、新しいオブジェクトをつくって返す。このオブジェクトは何にも代入
+     されず、セーブされない場合はガベジコレクトされるだろう。このオブジェク
+     トは文字列の名前OBJECT-NAMEを与えられるだろう。多数の同じ名前の
+     オブジェクトが存在し得るが、名前スロットがあなたのオブジェクトを見失わ
+     ないようにするための便利な方法を提供する。SLOTSは、単に前もって
+     セットしたいすべてのスロットである。そのように設定されたどんなスロット
+     もその既定値を取得しないし、属性の既定関数からのどんな副作用も生じない。
+     たとえば対は単に`:value 1'として現れるかもしれない。もちろん、
+     `:value (if (boundp 'special-symbol) special-symbol nil)'のように、
+     どんな有効なLisp的なことも望めばできる。
+
+     クラスからオブジェクトを作成する例、*note クラスの作成:::
+
+          (data-object "test" :value 3 :reference nil)
+
+
+
+File: eieio-j.info,  Node: スロットのアクセス,  Next: メソッドを書く,  Prev: 新しいオブジェクトの作成,  Up: Top
+
+6 スロットのアクセス
+*****************************
+
+オブジェクトのスロット値をアクセスするにはいくつかの方法がある。命名規
+約と引数の順序は、ベクタの参照にEmacs Lispで見られるものと類似している。
+参照や設定、メソッドの呼び出しの基本はすべて説明される。
+
+ -- Function: oset object slot value
+     これは、OBJECTのSLOTの値へVALUEを設定する。 `oset'はVALUEを戻す。
+
+ -- Function: oset-default class slot value
+     これは、CLASSの`:initform'タグで初期化されたSLOTに
+     VALUEを設定する。これは、クラスが構築された後に、ユーザがpublic
+     とprivateのどちらの既定も設定することを許す。この関数は侵入的であり、
+     `setq-default'がバッファローカル変数として使われるのと同じように、
+     クラスとともに構築されたパッケージの既定の振る舞いをユーザが指定するこ
+     とを許す方法として提供される。
+
+     たとえば、ユーザがすべての`data-objects'に(*note クラスの作成::)、
+     特殊な彼自身が工夫したオブジェクトが変わった時に知らせたい場合、単にこ
+     のようなコード片を実行することで準備できる:
+
+          (oset-default data-object reference (list my-special-object))
+
+
+ -- Function: oref object slot
+     これは、OBJECTのスロットSLOTの値を呼び戻し、それを戻す。
+     OBJECTがクラスで、SLOTがクラス割り当てのスロットの場合、
+     orefはその値を戻す。OBJECTがクラスで、SLOTがクラス割り当て
+     ではない場合、シグナルがスローされるだろう。
+
+ -- Function: oref-default object slot
+     これは、OBJECTのクラス定義の`slot'の既定値を取得する。これ
+     は、`oref'によって返される値と異なる可能性がある。OBJECTは
+     クラスシンボルか実体化されたオブジェクトでもよい。
+
+これらの次のアクセサは、CLOSによってスロットの値を参照または修正するた
+めに定義され、前に述べた設定/参照ルーチンを使う。
+
+ -- Function: slot-value object slot
+     この関数は、OBJECTからSLOTの値を取り戻す。`oref'とは
+     異なり、SLOTのシンボルは引用されなければならない。
+
+ -- Function: set-slot-value object slot value
+     これはCLOS関数ではないが、clパッケージの`setf'関数を使いたくない
+     場合、`slot-value'の対称物を意図する。この関数は、OBJECTの
+     SLOTの値を設定する。`oset'とは異なり、SLOTのシンボル
+     は引用されなければならない。
+
+ -- Function: slot-makeunbound object slot
+     この関数は、OBJECTのSLOTを未束縛にする。未束縛のスロットを
+     参照することは、エラーをスローしてもよい。
+
+ -- Function: object-add-to-list object slot &optional append
+     OBJECTのSLOTに、すでに存在する要素のリストにITEMを追
+     加する。付加引数APPENDは、リストの末尾に追加する必要があることを
+     示す。ITEMがすでにSLOTのリストに存在する場合、それは加えら
+     れない。比較は、"member"関数呼び出し中に"equal"で行なわれる。
+     SLOTが未束縛の場合、ITEMを含むリストに束縛する。
+
+ -- Function: with-slots entries object forms
+     OBJECTの指定されたスロットの値へENTRIESをレキシカルに束縛
+     し、FORMSを実行する。CLOSでは、`setf'を使って値を代入するこ
+     とで、オブジェクトに値を設定することが可能だが、Emacsでは値を読むこと、
+     または局所変数に新しい値を設定することだけが許される。
+
+          (defclass myclass () (x :initarg 1))
+          (setq mc (make-instance 'myclass))
+          (with-slots (x) mc x)                      => 1
+          (with-slots ((something x)) mc something)  => 1
+
+
+File: eieio-j.info,  Node: メソッドを書く,  Next: 述語,  Prev: スロットのアクセス,  Up: Top
+
+7 メソッドを書く
+***********************
+
+CLOSスタイルのメソッドを書くことは、関数を書くことに似ている。違いは、
+いくつかの特別なオプションがあることと、互いに興味深い相互作用を行なう
+単一のメソッドの多重の実装がありえることである。
+
+   作られたそれぞれのメソッドは、付加できる"総称メソッド"があるか確か
+める。総称メソッドは本体を持たず、その上にメソッドが付加される単なるシ
+ンボルである。
+
+ -- Function: defgeneric method arglist [doc-string]
+     METHODは、関数になる引用されないシンボルである。ARGLISTは
+     使われる既定の引数リストである(まだ実装されていない)。DOC-STRING
+     はこのシンボル用に使われる文書である。
+
+     総称関数はメソッドの場所確保用として振る舞う。`defgeneric'をあな
+     た自身が呼び出す必要はない。必要なら`defmethod'が呼び出すからであ
+     る。現在は、引数リストは使われていない。
+
+     `defgeneric'は、既存のemacs lisp関数を総称関数へ変えることを妨げ
+     るだろう。
+
+ -- Function: defmethod method [:BEFORE | :PRIMARY | :AFTER | :STATIC ]
+          arglist [doc-string] forms
+     METHODは、作成される関数の名前である。
+
+     :BEFORE | :AFTERは、いつこのフォームが呼び出されるかを表現する。
+     これらのシンボルのどちらもない場合、既定の優先度は、:AFTERの前、
+     :BEFOREの後、そしてCLOSではPRIMARYと表現される。
+
+     :STATICが使われる場合、この関数を呼ぶときの第1引数はクラスまたは
+     オブジェクトであってよい。STATICメソッドの第1引数をオブジェクトとして
+     扱わず、常に`oref-default'または`oset-default'を使うこと。ク
+     ラスの構築はstaticメソッドとして定義される。
+
+     `arglist'は引数リストである。CLOSとは異なり、第1引数だけが型キャ
+     ストしてよく、EIEIOオブジェクトへのタイプキャストのみが許可される。
+     `(a b)'のような引数リストは、総称呼び出しとしての関数に分類され、
+     それが話すオブジェクトを持たず(何も渡されない)、単に副作用の作成を許す。
+     引数リストが`((this data-object) b)'として現れる場合、そのフォー
+     ムはクラス`data-object'に属するものとして格納される。
+
+     第1引数はタイプキャストされる必要はない。タイプキャストのないメソッド
+     は`generic'である。与えられたクラスが実装を持たない場合、そのクラ
+     スの与えられたオブジェクト上でメソッドが使われるときにgenericが呼び出
+     されるだろう。
+
+     `(a b)'と`(c d)'のように、引数リストに2つの`defmethod'
+     が現れる場合1つの実装は上書きされるが、総称的で多重な型キャスト引数リ
+     ストは共存できる。
+
+     呼び出されるときに、オブジェクトの親クラスに対するメソッドキャストはあ
+     るがオブジェクトのクラスにはない場合、親クラスのメソッドが呼び出される
+     だろう。両方のために定義されたメソッドがある場合、子どものメソッドだけ
+     が呼び出される。
+
+     DOC-STRINGは実装に付加される文書である。すべてのメソッドの文書文
+     字列は、総称メソッドの関数文書に連結される。
+
+     FORMSは関数の本体である。
+
+     複数のメソッドとgenericが同じメソッド名のために定義される場合、それら
+     は以下の順で実行される:
+
+    method :BEFORE
+
+    generic :BEFORE
+
+    method :PRIMARY
+
+    generic :PRIMARY
+
+    method :AFTER
+
+    generic :AFTER
+
+   メソッドが存在せず、しかしgenericは存在する場合はどんな状況でも、
+genericがメソッドの代わりに呼び出される。
+
+   メソッドが存在しない場合、シグナル`no-method-definition'がスロー
+される。*Note シグナル::.
+
+   これらの異なってタグを付けられたメソッドをテストする例は、ファイル
+`eieio-test.el'を参照すること。
+
+ -- Function: call-next-method &rest replacement-args
+     CLOSメソッドの中で実行されている場合、この関数を呼び出すと、現在実行さ
+     れているメソッドのクラスの親と関連づけられているメソッドが、同じパラメ
+     ータで呼び出されるだろう。
+
+     次のメソッドが利用可能ではないが、(`:BEFORE'のように)与えられたキ
+     ーのためにgenericが実装されている場合、genericが呼び出されるだろう。
+
+     付加引数REPLACEMENT-ARGSは、次のメソッドが呼び出されるときに置き
+     換えるために使われることができる。子クラスがパラメータの変更を通して付
+     加的な振る舞いを加えたい場合に有用である。これはCLOSの機能ではない。
+
+     コードの例は*Note 既定のスーパークラス::.。
+
+
+ -- Function: call-next-method-p
+     呼び出すことができる次のメソッドがある場合、tを戻す。
+
+
+   この実装には、CLOSのすべての機能が存在するわけではない。
+
+  1. :AROUNDタグは現在はない。
+
+  2.
+     CLOSは型キャスト引数の多重集合を許すが、eieioは第1引数がキャストされる
+     ことだけを許す。
+
+
+File: eieio-j.info,  Node: 述語,  Next: 連想リスト,  Prev: メソッドを書く,  Up: Top
+
+8 述語とユーティリティ
+********************************
+
+今、我々はクラスの作成方法、スロットのアクセス方法、そしてメソッドの定
+義方法を知っているので、すべてがうまくいっているかを確かめることは有用
+かもしれない。これを助けるために、多くの述語が作られた。
+
+ -- Function: class-v class
+     そのクラスの中のすべての重要な部分をベクタで戻す。このベクタはコピーで
+     はない。このベクタの変更はクラスを変更する。CLOSメソッド
+     `find-class'は同じ効果を持つだろう。
+
+ -- Function: find-class symbol &optional errorp
+     CLOS関数である。EIEIOでは、クラスのベクタ定義を戻す。クラスがない場合、
+     ERRORPが`nil'ならば`nil'が戻される。
+
+ -- Function: class-p class
+     CLASSがクラス型の場合、非`nil'を戻す。
+
+ -- Function: object-p obj
+     OBJがオブジェクトの場合、非`nil'を戻す。
+
+ -- Function: slot-exists-p obj-or-class slot
+     OBJ-OR-CLASSがそのクラスの中にSLOTを含む場合、非`nil' を戻す。
+
+ -- Function: slot-boundp object slot
+     オブジェクトのSLOTが束縛されている場合、非`nil'である。スロッ
+     トの値を設定することはそれを束縛する。"slot-makeunbound"を呼び出す
+     ことはスロットを非束縛にする。OBJECTはインスタンスまたはクラスで
+     ありえる。
+
+ -- Function: class-name class
+     バッファやプロセスのような他のlispオブジェクトと類似して見えるフォーム
+     #<class
+     myclassname>の文字列を戻す。クラスを印字することは、単にシンボ
+     ルを結果として生じる。
+
+ -- Function: class-option class option
+     CLASSの中の与えられたOPTIONの値を戻す。たとえば:
+
+          (class-option eieio-default-superclass :documentation)
+
+     は`eieio-default-superclass'の文書文字列を取得するだろう。
+
+ -- Function: class-constructor class
+     CLASSのためのコンストラクタとして使われるシンボルを戻す。このよ
+     うにして、それが何であるかを知ることなしに、クラスに渡されたオブジェク
+     トを作ることができる。これはCLOSの一部ではない。
+
+ -- Function: object-name obj
+     OBJのための形式#<object-class myobjname>の文字列を戻す。これは、
+     バッファやプロセスのようなemacsの他の部分からのlispシンボルのように見
+     えるべきであり、オブジェクトのベクタを印字するより短くてきれいである。
+     オブジェクトの印字フォームを取得するためには、`object-print'を使
+     うほうがより有用である。なぜならこれは、オブジェクトが余分の表示情報を
+     シンボルに加えることを許すからである。
+
+ -- Function: object-class obj
+     OBJからクラスシンボルを戻す。
+
+ -- Function: class-of obj
+     `object-class'と同じことをするCLOSシンボル。
+
+ -- Function: object-class-fast obj
+     これはマクロであり、型照合を行なわないことを例外として
+     `object-class'と同じである。
+
+ -- Function: object-class-name obj
+     OBJのクラスのシンボルを戻す。
+
+ -- Function: class-parents class
+     CLASSの直接の親クラスを戻す。それがスーパークラスの場合は
+     `nil'を戻す。
+
+ -- Function: class-parents-fast class
+     それはマクロであり、型照合を行なわないことを例外として
+     `class-parent'と同じである。
+
+ -- Function: class-parent class
+     CLASSの第1の親を戻す、非難された関数。
+
+ -- Function: class-children class
+     CLASSから継承しているクラスのリストを戻す。
+
+ -- Function: class-children-fast class
+     `class-children'と同じだが、型照合を行なわない。
+
+ -- Function: same-class-p obj class
+     OBJのクラスがCLASSと同じ場合`t'を戻す。
+
+ -- Function: same-class-fast-p obj class
+     これはマクロであり、型照合を行なわないことを例外として
+     `same-class-p'と同じである。
+
+ -- Function: object-of-class-p obj class
+     OBJがCLASSから何かを継承する場合、`t'を戻す。継承を調
+     べるので、これは`same-class-p'とは異なる。
+
+ -- Function: child-of-class-p child class
+     CHILDがCLASSのサブクラスの場合、`t'を戻す。
+
+ -- Function: generic-p method-symbol
+     `method-symbol'が、正規のemacs lisp関数と対称的に、総称関数である
+     場合に`t'を戻す。
+
+すべての作成されたクラスに対して、二つの述語が作られることに注意するこ
+とも重要である。したがって我々の例では、関数`data-object-p'が作ら
+れ、適切な型のオブジェクトが渡された場合に`t'を戻す。また、渡され
+るオブジェクトが`data-object'から継承する型である場合、`t'を
+戻す関数`data-object-child-p'が作られる。
+
+
+File: eieio-j.info,  Node: 連想リスト,  Next: イントロスペクション,  Prev: 述語,  Up: Top
+
+9 連想リスト
+*****************
+
+Lispは連想リストの概念を、それらにアクセスするために使われる
+`assoc'のようなプリミティブと一緒に提供する。Eieioは、オブジェク
+トのリストを手軽に使うことを助けるためにいくつかそのような関数を提供す
+る。
+
+ -- Function: object-assoc key slot list
+     LISTの中で、KEYがSLOTの中にある最初のオブジェクトを 戻す。
+
+ -- Function: object-assoc-list slot list
+     LISTの中のすべてのオブジェクトからSLOTを抽出することで生成
+     された連想リストを戻す。LISTのすべての要素に関して、`car'は
+     SLOTの値であり、`cdr'はそれから抽出されたオブジェクトである。
+     これは補完表の生成に有用である。
+
+ -- Function: eieio-build-class-alist &optional base-class
+     現在定義されているクラスすべての連想リストを戻す。この連想リストは、補
+     完リスト用にインタラクティブ関数がクラスを選ぶために使われるのに適して
+     いる。付加引数BASE-CLASSは、必要だと証明されているクラスのサブセッ
+     トからだけ選択することをプログラマに許す。
+
+
+File: eieio-j.info,  Node: イントロスペクション,  Next: シグナル,  Prev: 連想リスト,  Up: Top
+
+10 イントロスペクション
+*********************************
+
+イントロスペクションは、クラスの前提知識を何も必要とせずに、プログラマ
+がクラスの内容を覗くことを許す。EIEIOはベクタの上にオブジェクトを実装
+する。したがって、すべては技術的には可視だが、いくつかの関数が提供され
+る。これらのどの関数もCLOSの一部ではない。
+
+ -- Function: object-slots obj
+     OBJに関して、publicスロットのリストを戻す。
+
+ -- Function: class-slot-initarg class slot
+     与えられたCLASSに関して、SLOTに関連づけられた:initargを戻
+     す。すべてのスロットがinitargを持つわけではないので、戻り値はnilの可能
+     性がある。
+
+
+File: eieio-j.info,  Node: シグナル,  Next: 基底クラス,  Prev: イントロスペクション,  Up: Top
+
+11 シグナル
+***************
+
+eieio使用中に捕らえることができる、新しいシグナル型がある。
+
+ -- Signal: invalid-slot-name obj-or-class slot
+     このシグナルは、OBJ-OR-CLASSの中のスロットへの参照の試みがなされ、
+     SLOTがそれに定義されていない場合に呼び出される。
+
+ -- Signal: no-method-definition method arguments
+     このシグナルは、METHODがARGUMENTSとともに呼び出され、何も
+     解決しない時に呼び出される。これは、METHODは定義されているが、引
+     数はどのメソッド本体を走らせるかをeieioが決定することを不可能にする時
+     に生じる。
+
+     このシグナルから保護するためには、メソッド`no-method-definition'
+     をオーバーロードせよ。
+
+ -- Signal: no-next-method class arguments
+     このシグナルは、関数`call-next-method'が呼び出され、呼び出す次の
+     メソッドがない場合に呼び出される。
+
+     このシグナルから保護するためには、メソッド`no-next-method'をオー
+     バーロードせよ。
+
+ -- Signal: invalid-slot-type slot spec value
+     このシグナルは、SLOTの設定が試みられ、VARが指定された型
+     SPECにマッチしない時に呼び出される。
+
+     EIEIOでは、`defclass'の中でスロット指定子が無効な値を持つ時にも使
+     われる。
+
+ -- Signal: unbound-slot object class slot
+     このシグナルは、OBJECTの中のSLOTへの参照の試みがなされ、そ
+     のインスタンスが現在は未束縛の場合に呼び出される。
+
+
+File: eieio-j.info,  Node: 基底クラス,  Next: ブラウズ,  Prev: シグナル,  Up: Top
+
+12 基底クラス
+******************
+
+`eieio-default-superclass'は別として、EIEIOはあなたが使えるいくつ
+かの付加的なクラスとともに来ている。多重継承を使うことで、同時にいくつ
+かの機能を使うことが可能である。
+
+* Menu:
+
+* eieio-instance-inheritor::    インスタンス間の値の継承を可能にする。
+* eieio-instance-tracker::      自己追跡するインスタンスを可能にする。
+* eieio-singleton::             与えられたクラスのただ一つのインスタンス。
+* eieio-persistent::            クラスの存続を可能にする。
+* eieio-named::                 :nameフィールドとしてオブジェクト名を使用する。
+* eieio-speedbar::      あなたのオブジェクト中でspeedbarのサポートを可能にする。
+
+
+File: eieio-j.info,  Node: eieio-instance-inheritor,  Next: eieio-instance-tracker,  Prev: 基底クラス,  Up: 基底クラス
+
+12.1 `eieio-instance-inheritor'
+===============================
+
+このクラスはパッケージ`eieio-base'にある。
+
+インスタンス継承は、オブジェクトインスタンス中のスロットの値が親インス
+タンスを参照できるメカニズムである。親のスロット値が変わる場合、子のイ
+ンスタンスもまた変わる。子のスロットが代入される場合、親のスロットは修
+正されない。
+
+ -- Class: eieio-instance-inheritor parent-instance
+     そのインスタンスがインスタンス継承できるクラス。PARENT-INSTANCE
+     スロットは、現在のインスタンスの親と考えられるインスタンスを示す。既定
+     は`nil'である。
+
+このクラスを使うためには、あなたのクラスと一緒にそれを継承すること。そ
+こから継承する新しいインスタンスや、あなたのクラスの既存のインスタンス
+を作るためには、局所値を指定するための付加パラメータと一緒に
+`clone'メソッドを使うこと。
+
+   `eieio-instance-inheritor'クラスは、複製されたオブジェクトのすべて
+のスロットを未束縛にすることで動作する。このクラスの
+`slot-unbound'メソッドは、未束縛のスロットへの参照が親インスタン
+スへリダイレクトされることを引き起こすだろう。親スロットも未束縛の場合、
+`slot-unbound'は`slot-unbound'シグナルをスローするだろう。
+
+
+File: eieio-j.info,  Node: eieio-instance-tracker,  Next: eieio-singleton,  Prev: eieio-instance-inheritor,  Up: 基底クラス
+
+12.2 `eieio-instance-tracker'
+=============================
+
+このクラスは、パッケージ`eieio-base'にある。
+
+ときどき、与えられたクラスのすべてのインスタンスのマスターリストを保つ
+ことが有用である。クラス`eieio-instance-tracker'はこの仕事を実行 する。
+
+ -- Class: eieio-instance-tracker tracker-symbol
+     このクラスのインスタンス追跡を可能にする。フィールド
+     TRACKER-SYMBOLは、このクラスの継承者の中で、`defvar'で作ら
+     れたシンボルへ初期化されるべきである。このシンボルは、与えられたクラス
+     のすべてのオブジェクトのマスターリストとして使われる変数として役にたつ
+     だろう。
+
+ -- Method on eieio-instance-tracker: initialize-instance obj fields
+     このメソッドは、`:AFTER'メソッドとして定義される。マスターリスト
+     に新しいインスタンスを追加する。あなたが`call-next-method'を使わ
+     ない限り、このメソッドをオーバーロードしないこと。
+
+ -- Method on eieio-instance-tracker: delete-instance obj
+     このクラスのインスタンスのマスターリストからOBJを取り除く。これ
+     は、ガベジコレクタがこのインスタンスを捕らえることを許すかもしれない。
+
+ -- eieio-instance-tracker-find: key field list-symbol
+     この便利な関数は、あなたがインスタンスを発見できるようにする。
+     KEYは検索するための値である。FIELDは、それに対して
+     KEYを比較するフィールドである。関数`equal'が比較に使われる。
+     パラメータLIST-SYMBOLは、検索されるオブジェクトのリストを含む変
+     数シンボルである。
+
+
+File: eieio-j.info,  Node: eieio-singleton,  Next: eieio-persistent,  Prev: eieio-instance-tracker,  Up: 基底クラス
+
+12.3 `eieio-singleton'
+======================
+
+このクラスは、パッケージ`eieio-base'にある。
+
+ -- Class: eieio-singleton
+     シングルトンクラスから継承することは、このクラスの一つのインスタンスだ
+     けがあることを保証する。`make-instance'への複数回の呼び出しは、常
+     に同じオブジェクトを戻すだろう。
+
+
+File: eieio-j.info,  Node: eieio-persistent,  Next: eieio-named,  Prev: eieio-singleton,  Up: 基底クラス
+
+12.4 `eieio-persistent'
+=======================
+
+このクラスは、パッケージ`eieio-base'にある。
+
+オブジェクト、またはオブジェクトの集合を存続させたい場合、つまりセッショ
+ン間でセーブされることがスロットの値に重要な場合、あなたのトップレベル
+オブジェクトが`eieio-persistent'から継承することを欲するだろう。
+
+あなたの存続するオブジェクトが移動され得ることを確実にするために、ディ
+スクへストアされるすべてのファイル名は
+`eieio-persistent-path-relative'から相対的にすることを確実にする こと。
+
+ -- Class: eieio-persistent file file-header-line
+     このクラスのインスタンスのために存続を可能にする。初期引数`:file'
+     を持つスロットFILEは、その中にこのオブジェクトがセーブされるファ
+     イル名である。クラス割り当てのスロットFILE-HEADER-LINEは、ヘッダ
+     注釈として`object-write'とともに使われる。
+
+すべてのオブジェクトはそれ自身をファイルへ書けるが、存続するオブジェク
+トは、それらを維持するのを助けるいくつかの付加的メソッドを持つ。
+
+ -- Method on eieio-persistent: eieio-save obj &optional file
+     オブジェクトOBJをそのファイルへ書く。付加引数FILEが指定さ
+     れる場合、代わりにそのファイル名を使う。
+
+ -- Method on eieio-persistent: eieio-persistent-path-relative obj file
+     OBJの格納される場所から相対的な、FILEから派生したファイル
+     名を戻す。このメソッドは、どんなシステムでもファイルをある場所から他の
+     場所へ移動できるようにするために、ファイル名がセーブファイルから相対的
+     になるよう変換するために使われるべきである。
+
+ -- Method on eieio-persistent: object-write obj &optional comment
+     `standard-object'にとっての`object-write'と似ているが、提供
+     されない場合はクラス割り当てのスロットからヘッダ行注釈を継承するだろう。
+
+ -- Function: eieio-persistent-read filename
+     以前に`eieio-persistent-save'とともに書かれた
+     `eieio-persistent'オブジェクトを含むFILENAMEを読む。
+
+
+File: eieio-j.info,  Node: eieio-named,  Next: eieio-speedbar,  Prev: eieio-persistent,  Up: 基底クラス
+
+12.5 `eieio-named'
+==================
+
+このクラスは、パッケージ`eieio-base'にある。
+
+ -- Class: eieio-named
+     名前を持つオブジェクト。名前記憶領域はオブジェクトの中にすでに存在する。
+     このオブジェクトはそれへの取得/設定アクセスを提供する。
+
+
+File: eieio-j.info,  Node: eieio-speedbar,  Prev: eieio-named,  Up: 基底クラス
+
+12.6 `eieio-speedbar'
+=====================
+
+このクラスは、パッケージ`eieio-speedbar'にある。
+
+   クラスインスタンスの連続が木構造にマップできる場合、あなたのクラスを
+Speedbarに表示することが可能である。*Note Top:
+(speedbar)Top.。このクラス から継承すると、最小の努力でspeedbar major
+display modeを可能にするだ ろう。
+
+ -- Class: eieio-speedbar buttontype buttonface
+     クラスが基本のspeedbar表示を可能にする。 スロットBUTTONTYPEは、EXP-BUTTON-TYPE引数のために関数
+     `speedbar-make-tag-line'によって許可されるすべてのシンボルである。
+     *Note Extending:
+     (speedbar)Extending.。スロットBUTTONFACEは、speedbar中に
+     表示される文字列のために使われるフェイスである。スロット
+     BUTTONTYPEとBUTTONFACEはクラス割り当てのスロットであり、あ
+     なたのインスタンス中には空間をとらない。
+
+ -- Class: eieio-speedbar-directory-button buttontype buttonface
+     このクラスは`eieio-speedbar'から継承し、ディレクトリレベル行とし
+     て現れるためにBUTTONTYPEとBUTTONFACEを初期化する。
+
+ -- Class: eieio-speedbar-file-button buttontype buttonface
+     このクラスは`eieio-speedbar'から継承し、ファイルレベル行として現
+     れるためにBUTTONTYPEとBUTTONFACEを初期化する。
+
+これらのクラスを使うためには、あなたのクラスの中でこれらの一つから継承
+すること。それらといっしょに、多重継承を安全に使える。speedbar表示のた
+めにあなたのクラスをカスタマイズするには、望みの効果を得るために
+BUTTONTYPEとBUTTONFACEに対する既定値を上書きすること。
+
+   新しいクラスを定義するのに有用なメソッドは以下を含む:
+
+ -- Method on eieio-speedbar: eieio-speedbar-derive-line-path obj depth
+     OBJのインスタンスに関連づけられたディレクトリを表わす文字列を戻
+     す。DEPTHは、OBJが見える時に何レベルのインデントがユーザに
+     よって開かれたかを示すのに使うことができる。
+
+ -- Method on eieio-speedbar: eieio-speedbar-description obj
+     OBJを記述する文字列を戻す。これは、マウスがspeedbarのこのインス
+     タンスの上にある時に、ミニバッファかtooltipに表示される。
+
+ -- Method on eieio-speedbar: eieio-speedbar-child-description obj
+     子がオブジェクトではない時、OBJの子を記述する文字列を戻す。
+     `speedbar-item-info-file-helper'のような項目情報補助関数を単に使
+     う場合にしばしば有用である。
+
+ -- Method on eieio-speedbar: eieio-speedbar-object-buttonname obj
+     OBJのためにspeedbarに表示されるテキストの文字列を戻す。
+
+ -- Method on eieio-speedbar: eieio-speedbar-object-children obj
+     OBJの子のリストを戻す。
+
+ -- Method on eieio-speedbar: eieio-speedbar-child-make-tag-lines obj
+          depth
+     このメソッドは、OBJがその子を表わすように、speedbarタグ行のリス
+     トを挿入する。子自身がオブジェクトではない場合、クラスにこのメソッドを
+     実装すること。まだなお、`eieio-speedbar-object-children'を実装す
+     る必要がある。
+
+     このメソッドでは、speedbarマニュアルで指定されたテクニックを使うこと。
+     *Note Extending: (speedbar)Extending.。
+
+   学ぶ必要がある他のいくつかの関数は:
+
+ -- eieio-speedbar-create: make-map key-map menu name toplevelfn
+     オブジェクトをspeedbarのディスプレイモードに登録する。MAKE-MAPは
+     キーマップを初期化する関数である。KEY-MAPはキーマップがインスト
+     ールされるシンボルである。MENUはオブジェクト表示に特有のメニュー
+     項目を示す容易なメニューベクタである。NAMEはモードを識別する名前
+     として使う短い文字列である。TOPLEVELFNは、speedbarの中でブラウズ
+     したいインスタンスシステムの中でそれらを表現するオブジェクトのリストを
+     戻さなければならない関数呼び出しである。
+
+     speedbarモードがどのように動作するかについてのより多くの情報は、
+     speedbarマニュアルの拡張の章を読むこと。*Note Extending:
+     (speedbar)Extending.。
+
+
+File: eieio-j.info,  Node: ブラウズ,  Next: クラスの値,  Prev: 基底クラス,  Up: Top
+
+13 クラス木をブラウズする
+************************************
+
+emacsに現在ロードされている全てのクラスをブラウズするには、単にEIEIOブ
+ラウザを起動する。`M-x eieio-browse'。これは、既定のスーパークラス
+であるeieio-default-superclassから全てをブラウズし、インデントされた木
+構造に全ての子をリストする。
+
+特有のクラスからだけをブラウズするには、代替パラメータとしてそれを渡す
+こと。
+
+   以下は現在の例からのサンプルの木である:
+
+     eieio-default-superclass
+       +--data-object
+            +--data-object-symbol
+
+   eieio-default-superclassから始めることに注意せよ。 *Note
+既定のスーパークラス::.。
+
+   注: 新しいクラスは継承リストにコンスされるので、木は上下逆になる。
+
+   関数`eieio-class-tree'を`tree.el'パッケージの中で使うことも
+可能である。これは対話的な木を作るだろう。ノードをクリックすることは枝
+の展開/収縮や、クラスの編集を許すだろう。*Note クラスの値::.。
+
+
+File: eieio-j.info,  Node: クラスの値,  Next: カスタマイズ,  Prev: ブラウズ,  Up: Top
+
+14 クラスの値
+******************
+
+全てのクラスやオブジェクトの詳細は、関数`eieio-describe-class'を
+使って取り出せる。対話的には、クラス名の中の型である。プログラムの中で
+は、クラス名を持つ文字列、クラスシンボル、あるいはオブジェクトを渡す。
+結果として生じるバッファは、全てのスロット名を表示するだろう。
+
+さらに、このクラス上に機能を持たせるために定義された全てのメソッドが表
+示される。
+
+
+File: eieio-j.info,  Node: カスタマイズ,  Next: 文書,  Prev: クラスの値,  Up: Top
+
+15 オブジェクトをカスタマイズする
+************************************************
+
+Emacs 20では、`custom'と呼ばれる有用なカスタマイズユーティリティが利用
+できるようになった。EIEIOは、2つの新たなウィジェット型を通じてcustomを
+サポートする。変数が型`'object'として宣言されている場合、ウィジェッ
+ト経由で全てのスロットの編集が可能になっている。しかし、これは注意深く
+使われるべきである。なぜなら、修正されるオブジェクトは複製されるので、
+これらのオブジェクトへの他の参照がある場合、もはや相互に結合されていな
+いだろうからだ。
+
+   オブジェクトを適切に編集したい場合、以下のメソッドを用いること:
+
+ -- Function: eieio-customize-object object
+     カスタムバッファを作り、OBJECTを編集するためのウィジェットを挿入
+     する。終わりには、`Apply'と`Reset'ボタンが使える。これは、そ
+     れへの参照も変更されるように"適切に"オブジェクトを編集するだろう。1つ
+     のオブジェクトを複数で編集することを防ぐ効果はないので、この関数のユー
+     ザが注意しなければならない。
+
+ -- Function: eieio-custom-widget-insert object flags
+     このメソッドは、編集オブジェクトをカレントバッファへ適切に挿入する。そ
+     の唯一のコードは`(widget-create 'object-edit :value object)'であ
+     り、あらゆるオブジェクトに対するトラッキングの追加と、ウィジェット挿入
+     手続きを特殊化するためのロカールとして提供される。
+
+   その中にオブジェクトを持つスロットを定義するには、`object'タグを
+使う。あなたのオブジェクトの編集を適切に行なう場合、このウィジェット型
+は、`object-edit'へ自動的に変換されるだろう。
+
+   ユーザが`Apply'ボタンをクリックしたときに付加的な実行を行ないたい
+場合、メソッド`eieio-done-customizing'をオーバーロードすること。
+このメソッドはデフォルトでは何も行なわないが、将来には変わるかもしれな
+い。これは、適切な編集を使ったときに、あなたのオブジェクトを持続的にす
+る最も良い方法だろう。
+
+15.1 ウィジェット拡張
+=============================
+
+ウィジェットが作られているとき、`:slotofchoices'と呼ばれる新たな
+ウィジェット拡張が加えられた。これがウィジェット定義に生じたとき、その
+後のすべての要素は取り除かれ、指定されたスロットは尋ねられ、定数の列へ
+変換される。
+
+     (choice (const :tag "None" nil)
+             :slotofchoices morestuff)
+
+   そして、スロット`morestuff'が`(sym1 sym2 sym3)'を含む場合、
+上の例は以下に変換される:
+
+     (choice (const :tag "None" nil)
+             (const sym1)
+             (const sym2)
+             (const sym3))
+
+   これは、与えられる項目がこの2番目のスロットで定義される項目のリストか
+ら選ばれる必要があるときに有用である。
+
+
+File: eieio-j.info,  Node: 文書,  Next: 命名規約,  Prev: カスタマイズ,  Up: Top
+
+16 文書
+*********
+
+ファイル`eieio-doc.el'の中のツールを使って、あなたのクラスに対す
+る文書をtexinfoフォーマットで自動的に作ることが可能である。
+
+ -- Command: eieiodoc-class class indexstring &optional skiplist
+     これは、現在の地点から始め、CLASSとその全ての子クラスのインデン
+     ト付けられたメニューを作るが、SKIPLISTにあるかもしれないあらゆる
+     クラスをスキップする。それから、これらのクラスの全て、副節の表題、そし
+     て索引に対するノードを作るだろう。
+
+     各クラスは、2文字の記述であるtexinfoのラベル付けされた索引
+     INDEXSTRINGを用いて索引を付けられるだろう。 *Note (texinfo) New
+     Indices::.
+
+     このコマンドを使うと、以下のtexinfoマクロでは
+
+          @defindex @var { indexstring }
+
+     INDEXSTRINGが2文字のコードに置き換えられる。
+
+     次に、継承木が、その節のクラスの全ての親をリストして作られるだろう。
+
+     それから、全てのスロットが表に展開され、コードの文書文字列を用いて記述
+     されるだろう。デフォルト値も表示される。`:initarg'が指定されたス
+     ロットだけが展開され、その他は隠される。スロットが親から継承されている
+     場合、そのスロットも、デフォルト値が違わない限りスキップされるだろう。
+     変更がある場合、スロットの文書部分は、@xrefで親へ戻って置き換えられる。
+
+     emacsのメモリにロードされたクラスだけが文書化され得る。
+
+
+
+File: eieio-j.info,  Node: 命名規約,  Next: デモプログラム,  Prev: 文書,  Up: Top
+
+17 命名規約
+***************
+
+Emacs Lispリファレンスマニュアルには、それぞれのEmacsパッケージがシス
+テム全体と共にうまく動作し続けることを助ける、プログラミング規約の素晴
+らしい章がある。*note (elisp)Standards:: EIEIOに基づくプログラムはこの規
+約に従う必要があるが、同時に、オブジェクト指向の機能も利用している。
+
+   以下のヒントは、私がEIEIOに基づくパッケージをプログラムするときのもの
+である。
+
+   * 比較的短いパッケージ接頭辞を見つける。
+     あなたの接頭辞を全てのクラスとメソッドの前につける。これは、Emacsでの
+     関数と変数に対する標準規約である。
+
+   * クラス名をメソッド名の前につけてはいけない。
+     EIEIOの全てのメソッドは"仮想"であり、動的にディスパッチされる。誰で
+     も、いつでも、あなたのメソッドを無効にできる。メソッドには、パッケージ
+     名を前につけるべきである。
+
+   * クラスの中のスロットに接頭辞をつけてはいけない。
+     スロットは、常にクラスに対して局所的にスコープされているので、接頭辞は
+     必要ない。
+
+   * ライブラリが、他のライブラリのクラスから継承する場合、
+     `require'コマンドを用いてそのライブラリを"要求"しなければならな
+     い。
+
+
+File: eieio-j.info,  Node: デモプログラム,  Next: 関数インデクス,  Prev: 命名規約,  Up: Top
+
+18 デモプログラム
+************************
+
+eieioのために私が書いた、他のアプリケーションの有用な構成要素になり得
+そうな、あるいは、何らかの有用な機能を提供する良いスタンドアローンのプ
+ログラムであるような、多くのサンプルプログラムがある。それらのファイル
+と機能は以下に示す通り:
+
+`tree'
+     バッファの中の木構造を維持および表示する。木の中のノードは、編集、ノー
+     ド展開、そして単純な情報のために、その上でクリックされ得る。ディレクト
+     リツリーを示すサンプルプログラム、そして、eieioクラス構造の木を描くサ
+     ンプルプログラムを含んでいる。
+
+`call-tree'
+     バイトコンパイルされていない関数を構文解析し、それからの呼び出し木を生
+     成する。そして全てのその下のバイトコンパイルされていない関数も同様に行
+     なう。再帰的関数からの保護を提供する。
+
+`chart'
+     データから棒グラフを描く。例は、emacsの値の大きさの表示、ファイル配布、
+     そしてrmail配布を含んでいる。
+
+
+File: eieio-j.info,  Node: 関数インデクス,  Prev: デモプログラム,  Up: Top
+
+関数インデクス
+*********************
+
+ [index ]
+* Menu:
+
+* call-next-method:                      メソッドを書く.      (line  90)
+* call-next-method-p:                    メソッドを書く.      (line 105)
+* child-of-class-p:                      述語.                (line 102)
+* class-children:                        述語.                (line  85)
+* class-children-fast:                   述語.                (line  88)
+* class-constructor:                     述語.                (line  48)
+* class-name:                            述語.                (line  35)
+* class-of:                              述語.                (line  64)
+* class-option:                          述語.                (line  41)
+* class-p:                               述語.                (line  20)
+* class-parent:                          述語.                (line  82)
+* class-parents:                         述語.                (line  74)
+* class-parents-fast:                    述語.                (line  78)
+* class-slot-initarg:                    イントロスペクション.
+                                                              (line  15)
+* class-v:                               述語.                (line  11)
+* classname:                             新しいオブジェクトの作成.
+                                                              (line  12)
+* clone:                                 既定のスーパークラス.
+                                                              (line  69)
+* defclass:                              クラスの作成.        (line  11)
+* defgeneric:                            メソッドを書く.      (line  15)
+* defmethod:                             メソッドを書く.      (line  28)
+* delete-instance on eieio-instance-tracker: eieio-instance-tracker.
+                                                              (line  24)
+* eieio-build-class-alist:               連想リスト.          (line  21)
+* eieio-custom-widget-insert:            カスタマイズ.        (line  24)
+* eieio-customize-object:                カスタマイズ.        (line  17)
+* eieio-persistent-path-relative on eieio-persistent: eieio-persistent.
+                                                              (line  30)
+* eieio-persistent-read:                 eieio-persistent.    (line  40)
+* eieio-save on eieio-persistent:        eieio-persistent.    (line  26)
+* eieio-speedbar-child-description on eieio-speedbar: eieio-speedbar.
+                                                              (line  47)
+* eieio-speedbar-child-make-tag-lines on eieio-speedbar: eieio-speedbar.
+                                                              (line  59)
+* eieio-speedbar-derive-line-path on eieio-speedbar: eieio-speedbar.
+                                                              (line  38)
+* eieio-speedbar-description on eieio-speedbar: eieio-speedbar.
+                                                              (line  43)
+* eieio-speedbar-object-buttonname on eieio-speedbar: eieio-speedbar.
+                                                              (line  52)
+* eieio-speedbar-object-children on eieio-speedbar: eieio-speedbar.
+                                                              (line  55)
+* eieiodoc-class:                        文書.                (line  10)
+* find-class:                            述語.                (line  16)
+* generic-p:                             述語.                (line 105)
+* initialize-instance:                   既定のスーパークラス.
+                                                              (line  30)
+* initialize-instance on eieio-instance-tracker: eieio-instance-tracker.
+                                                              (line  19)
+* invalid-slot-name:                     シグナル.            (line   9)
+* invalid-slot-type:                     シグナル.            (line  29)
+* key:                                   eieio-instance-tracker.
+                                                              (line  28)
+* make-map:                              eieio-speedbar.      (line  70)
+* no-applicable-method:                  既定のスーパークラス.
+                                                              (line  56)
+* no-method-definition:                  シグナル.            (line  13)
+* no-next-method <1>:                    シグナル.            (line  22)
+* no-next-method:                        既定のスーパークラス.
+                                                              (line  62)
+* object-add-to-list:                    スロットのアクセス.  (line  57)
+* object-assoc:                          連想リスト.          (line  12)
+* object-assoc-list:                     連想リスト.          (line  15)
+* object-class:                          述語.                (line  61)
+* object-class-fast:                     述語.                (line  67)
+* object-class-name:                     述語.                (line  71)
+* object-name:                           述語.                (line  53)
+* object-of-class-p:                     述語.                (line  98)
+* object-p:                              述語.                (line  23)
+* object-print:                          既定のスーパークラス.
+                                                              (line  75)
+* object-slots:                          イントロスペクション.
+                                                              (line  12)
+* object-write:                          既定のスーパークラス.
+                                                              (line  94)
+* object-write on eieio-persistent:      eieio-persistent.    (line  36)
+* oref:                                  スロットのアクセス.  (line  29)
+* oref-default:                          スロットのアクセス.  (line  35)
+* oset:                                  スロットのアクセス.  (line  11)
+* oset-default:                          スロットのアクセス.  (line  14)
+* same-class-fast-p:                     述語.                (line  94)
+* same-class-p:                          述語.                (line  91)
+* set-slot-value:                        スロットのアクセス.  (line  47)
+* shared-initialize:                     既定のスーパークラス.
+                                                              (line  35)
+* slot-boundp:                           述語.                (line  29)
+* slot-exists-p:                         述語.                (line  26)
+* slot-makeunbound:                      スロットのアクセス.  (line  53)
+* slot-missing:                          既定のスーパークラス.
+                                                              (line  40)
+* slot-unbound:                          既定のスーパークラス.
+                                                              (line  50)
+* slot-value:                            スロットのアクセス.  (line  43)
+* unbound-slot:                          シグナル.            (line  36)
+* with-slots:                            スロットのアクセス.  (line  64)
+
+
+
+Tag Table:
+Node: Top177
+Node: 入門2328
+Node: CLOSとの互換性6680
+Node: クラスの作成10556
+Node: 既定のスーパークラス20634
+Node: 新しいオブジェクトの作成26020
+Node: スロットのアクセス27797
+Node: メソッドを書く32049
+Node: 述語37890
+Node: 連想リスト43178
+Node: イントロスペクション44568
+Node: シグナル45483
+Node: 基底クラス47274
+Node: eieio-instance-inheritor48214
+Node: eieio-instance-tracker49876
+Node: eieio-singleton51851
+Node: eieio-persistent52373
+Node: eieio-named54880
+Node: eieio-speedbar55319
+Node: ブラウズ60015
+Node: クラスの値61277
+Node: カスタマイズ61936
+Node: 文書65363
+Node: 命名規約67195
+Node: デモプログラム68812
+Node: 関数インデクス70178
+
+End Tag Table

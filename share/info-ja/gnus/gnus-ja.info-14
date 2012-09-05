@@ -1,0 +1,2126 @@
+Info file: gnus-ja.info,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `gnus-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
+2004, 2005, 2006 Free Software Foundation, Inc.
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU Free Documentation License,
+     Version 1.2 or any later version published by the Free Software
+     Foundation; with no Invariant Sections, with the Front-Cover
+     texts being "A GNU Manual", and with the Back-Cover Texts as in
+     (a) below.  A copy of the license is included in the section
+     entitled "GNU Free Documentation License" in the Emacs manual.
+
+     この文書を、フリーソフトウェア財団発行の GNU フリー文書利用許諾契
+     約書第 1.2 版またはそれ以降の版が定める条件の下で複製、配布、ある
+     いは変更することを許可します。変更不可部分は指定しません。“A GNU
+     Manual”は表表紙テキスト、以下の (a) は裏表紙テキストです。この利
+     用許諾契約書の複写は“Emacs manual”の「GNU フリー文書利用許諾契約
+     書」という章に含まれています。
+
+     (a) The FSF's Back-Cover Text is: "You have freedom to copy and
+     modify this GNU Manual, like GNU software.  Copies published by
+     the Free Software Foundation raise funds for GNU development."
+
+     (a) FSF の裏表紙テキスト:「あなたにはこの GNU Manual を GNU ソフト
+     ウェアのように複製したり変更する自由があります。複製はフリーソフト
+     ウェア財団によって出版されました。(フリーソフトウェア財団は) GNU
+     の開発のために必要な資金を集めています。」
+
+     This document is part of a collection distributed under the GNU
+     Free Documentation License.  If you want to distribute this
+     document separately from the collection, you can do so by adding
+     a copy of the license to the document, as described in section 6
+     of the license.
+
+     この文書は「GNU フリー文書利用許諾契約書」に基づいて配布された収集
+     著作物の一部です。もしあなたがこの文書を収集著作物から分離して配布
+     したいときは、契約書の第 6 章に記述されているように、文書に契約書
+     の複写を付加することによって、行なうことができます。
+
+
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Gnus-ja: (gnus-ja).           The newsreader Gnus (Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+
+
+File: gnus-ja.info, Node: Error Messaging, Next: Writing New Back Ends, Prev: Optional Back End Functions, Up: Back End Interface
+
+エラーメッセージの発行
+......................
+
+バックエンドはエラーの状況の報告に `nnheader-report' を使わなければなり
+ません--要求を実行できないときにエラーを生起させてはいけません。この関
+数の最初の引数はバックエンド名のシンボルで、残りは、複数の引数があれば
+`format' への引数として解釈され、一つであればただの文字列です。この関数
+は常に `nil' を返さなければなりません。
+
+     (nnheader-report 'nnchoke "You did something totally bogus")
+
+     (nnheader-report 'nnchoke "Could not request group %s" group)
+
+一方 Gnus は、サーバーから `nil' を返されたときに
+`nnheader-get-report' を呼び出します。するとこの関数が、当のバックエン
+ドに対して最後に報告されたメッセージを返します。この関数は一つの引数--
+サーバーのシンボルを取ります。
+
+内部的には、これらの関数は BACK-END`-status-string' にアクセスます、し
+たがって `nnchoke' バックエンドはそのエラーメッセージを
+`nnchoke-status-string' に格納します。
+
+
+
+File: gnus-ja.info, Node: Writing New Back Ends, Next: Hooking New Back Ends Into Gnus, Prev: Error Messaging, Up: Back End Interface
+
+新しいバックエンドを書く
+........................
+
+多くのバックエンドはよく似通っています。`nnml' は `nnspool' と瓜二つで
+すが、サーバー上の記事を編集することができます。`nnmh' はまるで `nnml'
+のようですが、アクティブファイルを使わないし、概要データベースも保持し
+ません。`nndir' は `nnml' にとても似ていますが、これには「グループ」の
+概念は無く、記事の編集はできません。
+
+新しいバックエンドを書くときに他のバックエンドから関数を「継承」できた
+らなあ、と思うのは理に適っています。そしてまさに、あなたがそうしたけれ
+ば、それができるのです。(あなたがそうしたくなければしなくても良いですよ、
+もちろん。)
+
+すべてのバックエンドは、公共変数と公共関数を `nnoo' というパッケージを
+使って宣言します。
+
+他のバックエンドから関数を継承するには (そして現在のバックエンドから他
+のバックエンドに関数を継承できるようにするには)、以下のマクロを使用しな
+ければなりません:
+
+`nnoo-declare'
+     このマクロは、最初の引数を、その後に続く引数の子供であることを宣言
+     します。例えば:
+
+          (nnoo-declare nndir
+            nnml nnmh)
+
+     ここで `nndir' は、`nnml' と `nnmh' の両方から関数を継承するつもり
+     であることを宣言しています。
+
+`defvoo'
+     このマクロは `defvar' と等価ですが、その変数を公共サーバー変数とし
+     て登録します。ほとんどの状態志向型の変数は、`defvar' ではなく
+     `defvoo' によって宣言するべきです。
+
+     通常の `defvar' の引数に加えて、このマクロは親バックエンドにおける
+     変数のリストを取ります。それらの親バックエンドで定義されている関数
+     を子のバックエンドで実行するときに、その関数の中でアクセスされる親
+     の変数を、子の変数で置き換えます。
+
+          (defvoo nndir-directory nil
+            "Where nndir will look for groups."
+            nnml-current-directory nnmh-current-directory)
+
+     これは `nndir' のために `nnml' の関数が呼び出されたときに、
+     `nnml-current-directory' は `nndir-directory' に設定されるという意
+     味です。(`nnmh' も同様です。)
+
+`nnoo-define-basics'
+     このマクロは、ほとんどすべてのバックエンドが持つべき共通関数をいく
+     つか定義します。
+
+          (nnoo-define-basics nndir)
+
+`deffoo'
+     このマクロはまさに `defun' のようなもので、同一の引数を取ります。
+     通常の `defun' の処理に加えて、このマクロは他のバックエンドがそれ
+     を継承できるように、その関数が公共物になっているものとして登録しま
+     す。
+
+`nnoo-map-functions'
+     このマクロは、現在のバックエンドの関数から親バックエンドの関数への、
+     置き換えができるようにします。
+
+          (nnoo-map-functions nndir
+            (nnml-retrieve-headers 0 nndir-current-group 0 0)
+            (nnmh-request-article 0 nndir-current-group 0 0))
+
+     これは `nndir-retrieve-headers' が呼び出されたときに、一番目、三番
+     目、および四番目の引数が `nnml-retrieve-headers' に渡され、一方、
+     二番目の引数は `nndir-current-group' の値として設定されるという意
+     味です。
+
+`nnoo-import'
+     このマクロは他のバックエンドから関数を輸入します。これは単にまだ定
+     義されていない関数を定義するだけなので、ソースファイルの最後に書か
+     なければなりません。
+
+          (nnoo-import nndir
+            (nnmh
+             nnmh-request-list
+             nnmh-request-newgroups)
+            (nnml))
+
+     これは、`nndir-request-list' への呼び出しは単に
+     `nnmh-request-list' に引き渡されなければならず、一方 `nnml' の公共
+     関数でまだ `nndir' で定義されていないものをここで定義するというこ
+     とです。
+
+以下は `nndir' バックエンドのちょっと短縮した版です。
+
+     ;;; nndir.el -- 単一のディレクトリーをニュースグループにする
+     ;; Copyright (C) 1995,96 Free Software Foundation, Inc.
+
+     ;;; Code:
+
+     (require 'nnheader)
+     (require 'nnmh)
+     (require 'nnml)
+     (require 'nnoo)
+     (eval-when-compile (require 'cl))
+
+     (nnoo-declare nndir
+       nnml nnmh)
+
+     (defvoo nndir-directory nil
+       "nndir がグループを探す場所。"
+       nnml-current-directory nnmh-current-directory)
+
+     (defvoo nndir-nov-is-evil nil
+       "*これが nil でなかったら NOV ヘッダーを取得しません。"
+       nnml-nov-is-evil)
+
+     (defvoo nndir-current-group ""
+       nil
+       nnml-current-group nnmh-current-group)
+     (defvoo nndir-top-directory nil nil nnml-directory nnmh-directory)
+     (defvoo nndir-get-new-mail nil nil nnml-get-new-mail nnmh-get-new-mail)
+
+     (defvoo nndir-status-string "" nil nnmh-status-string)
+     (defconst nndir-version "nndir 1.0")
+
+     ;;; インターフェース用の関数。
+
+     (nnoo-define-basics nndir)
+
+     (deffoo nndir-open-server (server &optional defs)
+       (setq nndir-directory
+             (or (cadr (assq 'nndir-directory defs))
+                 server))
+       (unless (assq 'nndir-directory defs)
+         (push `(nndir-directory ,server) defs))
+       (push `(nndir-current-group
+               ,(file-name-nondirectory
+                 (directory-file-name nndir-directory)))
+             defs)
+       (push `(nndir-top-directory
+               ,(file-name-directory (directory-file-name nndir-directory)))
+             defs)
+       (nnoo-change-server 'nndir server defs))
+
+     (nnoo-map-functions nndir
+       (nnml-retrieve-headers 0 nndir-current-group 0 0)
+       (nnmh-request-article 0 nndir-current-group 0 0)
+       (nnmh-request-group nndir-current-group 0 0)
+       (nnmh-close-group nndir-current-group 0))
+
+     (nnoo-import nndir
+       (nnmh
+        nnmh-status-message
+        nnmh-request-list
+        nnmh-request-newgroups))
+
+     (provide 'nndir)
+
+
+
+File: gnus-ja.info, Node: Hooking New Back Ends Into Gnus, Next: Mail-like Back Ends, Prev: Writing New Back Ends, Up: Back End Interface
+
+新しいバックエンドを Gnus に繋げる
+..................................
+
+あなたの新しいバックエンドを Gnus で使い始めるのはとても簡単です--単に
+`gnus-declare-backend' 関数で宣言するだけです。これはバックエンドを
+`gnus-valid-select-methods' 変数に追加します。
+
+`gnus-declare-backend' は二つの引数を取ります--バックエンドの名前と任意
+の数の能力 "abilities" です。
+
+これが例です。
+
+     (gnus-declare-backend "nnchoke" 'mail 'respool 'address)
+
+そして上記の行が `nnchoke.el' ファイルに入ります。
+
+能力には以下のものがあります:
+
+`mail'
+     これはメール風バックエンドです--フォローアップは (たいていは) メー
+     ルで送られるはずです。
+`post'
+     これはニュース風バックエンドです--フォローアップは (たいていは)
+     ニュースで送られるはずです。
+`post-mail'
+     このバックエンドはメールとニュースの両方をサポートします。
+`none'
+     これはニュースでもメールでもないバックエンドです--まったく違った何
+     かです。
+`respool'
+     これは再スプールをサポートします--というか、その元の記事とグループ
+     を書き換えることができます。
+`address'
+     サーバーの名前が仮想サーバー名に含まれていなければなりません。これ
+     はほとんど全部のバックエンドに当てはまります。
+`prompt-address'
+     グループバッファーで `B' などの命令を実行したときに、利用者はアド
+     レスの入力を求められるはずです。例えばこれは `nntp' のようなバック
+     エンドに当てはまりますが、`nnmbox' はそうではありません。
+
+
+
+File: gnus-ja.info, Node: Mail-like Back Ends, Prev: Hooking New Back Ends Into Gnus, Up: Back End Interface
+
+メール風バックエンド
+....................
+
+メールバックエンドがその他のバックエンドに対して一線を画しているのは、
+ほとんどのメールバックエンドが `nnmail.el' で定義されている共通の関数に
+強く依存しているという点です。例えばこれは `nnml-request-scan' の定義で
+す:
+
+     (deffoo nnml-request-scan (&optional group server)
+       (setq nnml-article-file-alist nil)
+       (nnmail-get-new-mail 'nnml 'nnml-save-nov nnml-directory group))
+
+単に `nnmail-get-new-mail' にいくつか引数を与えて呼び出すだけで、
+`nnmail' がメールの移動や分割のすべての面倒を見てくれます。
+
+この関数は四つの引数を取ります。
+
+METHOD
+     これは、どのバックエンドがこの呼び出しの責任を負うかを指示するシン
+     ボルでなければなりません。
+
+EXIT-FUNCTION
+     この関数は、分割が実行された後で呼び出されるものでなければなりませ
+     ん。
+
+TEMP-DIRECTORY
+     一時ファイルを格納する場所です。
+
+GROUP
+     この引数は省略可能です。分割が一つのグループだけに対して行なわれる
+     場合は、この引数でグループ名を指定しなけれなばりません。
+
+`nnmail-get-new-mail' は、それぞれの記事を保存するために
+BACK-END`-save-mail' を呼び出します。BACK-END`-active-number' は、この
+記事に割り当てられた記事番号を調べるために呼び出されます。
+
+この関数は次の変数も使用します: BACK-END`-get-new-mail' (このバックエン
+ドの新着メールを受け取るかどうか)、新しいアクティブファイルを生成するた
+めの BACK-END`-group-alist' および BACK-END`-active-file' です。
+BACK-END`-group-alist' は、以下のようなグループとアクティブの連想リスト
+です:
+
+     (("a-group" (1 . 10))
+      ("some-group" (34 . 39)))
+
+
+
+File: gnus-ja.info, Node: Score File Syntax, Next: Headers, Prev: Back End Interface, Up: Gnus Reference Guide
+
+スコアファイルの構文
+--------------------
+
+スコアファイルは簡単に分析できるだけでなく、極めて柔軟な対応ができるよ
+うになっています。それには Emacs Lisp のリストとして読み込むことができ
+るような構文がふさわしいだろうと判断されました。
+
+これは良くあるスコアファイルです:
+
+     (("summary"
+       ("win95" -10000 nil s)
+       ("Gnus"))
+      ("from"
+       ("Lars" -1000))
+      (mark -100))
+
+スコアファイルの BNF 定義です。
+
+     score-file      = "" / "(" *element ")"
+     element         = rule / atom
+     rule            = string-rule / number-rule / date-rule
+     string-rule     = "(" quote string-header quote space *string-match ")"
+     number-rule     = "(" quote number-header quote space *number-match ")"
+     date-rule       = "(" quote date-header quote space *date-match ")"
+     quote           = <ascii 34>
+     string-header   = "subject" / "from" / "references" / "message-id" /
+                       "xref" / "body" / "head" / "all" / "followup"
+     number-header   = "lines" / "chars"
+     date-header     = "date"
+     string-match    = "(" quote <string> quote [ "" / [ space score [ "" /
+                       space date [ "" / [ space string-match-t ] ] ] ] ] ")"
+     score           = "nil" / <integer>
+     date            = "nil" / <natural number>
+     string-match-t  = "nil" / "s" / "substring" / "S" / "Substring" /
+                       "r" / "regex" / "R" / "Regex" /
+                       "e" / "exact" / "E" / "Exact" /
+                       "f" / "fuzzy" / "F" / "Fuzzy"
+     number-match    = "(" <integer> [ "" / [ space score [ "" /
+                       space date [ "" / [ space number-match-t ] ] ] ] ] ")"
+     number-match-t  = "nil" / "=" / "<" / ">" / ">=" / "<="
+     date-match      = "(" quote <string> quote [ "" / [ space score [ "" /
+                       space date [ "" / [ space date-match-t ] ] ] ] ")"
+     date-match-t    = "nil" / "at" / "before" / "after"
+     atom            = "(" [ required-atom / optional-atom ] ")"
+     required-atom   = mark / expunge / mark-and-expunge / files /
+                       exclude-files / read-only / touched
+     optional-atom   = adapt / local / eval
+     mark            = "mark" space nil-or-number
+     nil-or-number   = "nil" / <integer>
+     expunge         = "expunge" space nil-or-number
+     mark-and-expunge = "mark-and-expunge" space nil-or-number
+     files           = "files" *[ space <string> ]
+     exclude-files   = "exclude-files" *[ space <string> ]
+     read-only       = "read-only" [ space "nil" / space "t" ]
+     adapt        = "adapt" [ space "ignore" / space "t" / space adapt-rule ]
+     adapt-rule      = "(" *[ <string> *[ "(" <string> <integer> ")" ] ")"
+     local           = "local" *[ space "(" <string> space <form> ")" ]
+     eval            = "eval" space <form>
+     space           = *[ " " / <TAB> / <NEWLINE> ]
+
+認識不可能なスコアファイルの要素は無視されるべきですが、捨ててしまって
+はいけません。
+
+ご覧のように空白が必要ですが、空白の量と型は重要ではありません。つまり、
+スコアファイルの様式はプログラマーに任されています--すべてを一つの長ーー
+い行に吐き出す方がより簡単なのであれば、それでも構いません。
+
+いろいろなアトムの意味は、このマニュアルのどこかで説明されています
+(*Note Score File Format::)。
+
+
+
+File: gnus-ja.info, Node: Headers, Next: Ranges, Prev: Score File Syntax, Up: Gnus Reference Guide
+
+ヘッダー
+--------
+
+Gnus は記事のヘッダーを溜めておくために、内部的には NOV の規格を怪しげ
+なやり方で踏襲する様式を使っています。NOV の仕様を見た作者が、恥知らず
+にもすべてを *盗んだ* と思うかもしれませんが、それは正しいです。
+
+「ヘッダー」はひどく荷の重い用語です。「ヘッダー」は RFC1036 では記事の
+頭の行 (例えば、`From') について話すのに用いられています。それは多くの
+人が「ヘッド」---「ヘッダーと本文」の同義語として使っています。(私に言
+わせれば、これは避けるべきです。) そして Gnus は、私がここで話す「ヘッ
+ダー」と言う様式を内部的に使っています。これは基本的には九つの要素から
+なるベクトルで、それぞれのヘッダー (あ痛っ) が一つの場所を占めます。
+
+これらの場所は、順番に `number', `subject', `from', `date', `id',
+`chars', `lines', `xref', および `extra' です。これらの場所を読み出した
+り設定するマクロがあります--それらはすべて、それぞれ `mail-header-' と
+`mail-header-set-' いう予想しやすい名前を持っています。
+
+`extra' のための場所がヘッダーと値の対の連想リストであることを除いて、
+これらすべての場所には文字列が入ります (*Note To From Newsgroups::)。
+
+
+
+File: gnus-ja.info, Node: Ranges, Next: Group Info, Prev: Headers, Up: Gnus Reference Guide
+
+範囲
+----
+
+GNUS は非常に有用な概念を導入してくれました。私はそれをたくさん使い、か
+なり入念に仕上げました。
+
+設問は単純です: 何か番号で呼ぶことができる大量のもの (*粗雑な* 例として
+は、例えば記事) を持っていて、それらが「含まれている」ことを表現したい
+としましょう。それらを順番に並べるのは、あまり便利ではありません。
+(20,000 個を順番に並べたものは、ちょっと長たらしいですよね。)
+
+解決策は設問と同じくらい単純です。単にその並びを折りたためば良いのです。
+
+     (1 2 3 4 5 6 10 11 12)
+
+は次のように変形されます。
+
+     ((1 . 6) (10 . 12))
+
+単独のものを表すために `(13 . 13)' のようなやっかいな要素を持たなくても
+良いように、`13' は有効な要素になっています。例えば:
+
+     ((1 . 6) 7 (10 . 12))
+
+以下のような二つの範囲を比較して、それらが等しいがとうかを調べるのは、
+少し手のこんだことになります:
+
+     ((1 . 5) 7 8 (10 . 12))
+
+と
+
+     ((1 . 5) (7 . 8) (10 . 12))
+
+は等しいです。実際のところ、下り順で並んでいないリストは範囲です:
+
+     (1 2 3 4 5)
+
+これはかなり長ったらしいものですが、完璧に有効な範囲です。以下も有効で
+す:
+
+     (1 . 5)
+
+そして、これはその前の範囲と等しいものです。
+
+これは範囲の BNF 定義です。もちろん、数値の並びが下り順であってはならな
+いことを覚えておかなければなりません。(同じ数値を任意の回数にわたって繰
+り返すことができますが、範囲の扱いにおいて消え去る傾向があります。)
+
+     range           = simple-range / normal-range
+     simple-range    = "(" number " . " number ")"
+     normal-range    = "(" start-contents ")"
+     contents        = "" / simple-range *[ " " contents ] /
+                       number *[ " " contents ]
+
+現在 Gnus は既読記事と記事の印を維持するために範囲を使っています。当局
+が私にそれをさせたがっているのなら、私は数の範囲の操作を C で実装しよう
+と思っています。(私はまだ尋ねていません。と言うのは、普通の連続体に変換
+し直さずに、世の中を完全に範囲に基づいたものにするためには何が必要かを、
+私はもっと考えなければならないからです。)
+
+
+
+File: gnus-ja.info, Node: Group Info, Next: Extended Interactive, Prev: Ranges, Up: Gnus Reference Guide
+
+グループ情報
+------------
+
+Gnus はグループのすべての永続的な情報を "group info" リストに格納します。
+このリストは 3 から 6 (またはそれ以上) の長さの要素で、徹底的にグループ
+を記述します。
+
+ここにあるのはグループ情報 (group info) の二つの例です。一つは非常に単
+純なグループですが、二つ目はもっと複雑なものです:
+
+     ("no.group" 5 ((1 . 54324)))
+
+     ("nnml:my.mail" 3 ((1 . 5) 9 (20 . 55))
+                     ((tick (15 . 19)) (replied 3 6 (19 . 3)))
+                     (nnml "")
+                     ((auto-expire . t) (to-address . "ding@gnus.org")))
+
+最初の要素は「グループ名」---とにかく Gnus が知っているグループです。二
+番目の要素は「購読度」で、普通は小さな整数です。(それは「階級」(rank)
+になることもできます。`car' がレベルで `cdr' がスコアのコンスセルです。)
+三番目の要素は既読記事の範囲のリストです。四番目の要素はいろいろな種類
+の記事の印のリストのリストです。五番目の要素は選択方法です (もしくは、
+そう言いたければ仮想サーバーです)。六番目の要素は「グループパラメーター」
+のリストで、この章はそのためにあります (訳注: ほんとうに?)。
+
+最後の三つの要素はどれでも、必要が無ければ存在しないこともあります。実
+際、グループの非常に大部分は最初の三つの要素だけを持ち、それは (最後の
+三要素が省略できることは) 非常に多くのコンスセルを節約します。
+
+これはグループ情報様式の BNF 定義です:
+
+     info          = "(" group space ralevel space read
+                     [ "" / [ space marks-list [ "" / [ space method [ "" /
+                     space parameters ] ] ] ] ] ")"
+     group         = quote <string> quote
+     ralevel       = rank / level
+     level         = <integer in the range of 1 to inf>
+     rank          = "(" level "." score ")"
+     score         = <integer in the range of 1 to inf>
+     read          = range
+     marks-lists   = nil / "(" *marks ")"
+     marks         = "(" <string> range ")"
+     method        = "(" <string> *elisp-forms ")"
+     parameters    = "(" *elisp-forms ")"
+
+実は `marks' の規則はごまかしです。`marks' は `range' とともに cons を
+構成する `<string>' ですが、疑似 BNF でそれを現すのは難しいのです。
+
+情報の要素群にアクセスして、それらの値を取得または設定するために、Gnus
+は一連のマクロを提供しています。
+
+`gnus-info-group'
+`gnus-info-set-group'
+     グループ名を取得/設定 (get/set) します。
+
+`gnus-info-rank'
+`gnus-info-set-rank'
+     グループの階級 (rank) を取得/設定します (*Note Group Score::)。
+
+`gnus-info-level'
+`gnus-info-set-level'
+     グループのレベルを取得/設定します。
+
+`gnus-info-score'
+`gnus-info-set-score'
+     グループのスコアを取得/設定します (*Note Group Score::)。
+
+`gnus-info-read'
+`gnus-info-set-read'
+     既読記事の範囲を取得/設定します。
+
+`gnus-info-marks'
+`gnus-info-set-marks'
+     印が付いている記事の範囲のリストを取得/設定します。
+
+`gnus-info-method'
+`gnus-info-set-method'
+     グループの選択方法を取得/設定します。
+
+`gnus-info-params'
+`gnus-info-set-params'
+     グループパラメーターを取得/設定します。
+
+取得するためのすべての関数は一つの引数を取ります--情報のリストです。設
+定するための関数は二つの引数を取ります--情報のリストと新しい値です。
+
+グループ情報の最後の三つの要素は必須ではないので、要素を設定する前にグ
+ループ情報を拡張する必要があるでしょう。それが必要な場合、最後の三つの
+設定するための関数の第三引数に `nil' ではない値を指定すれば、自動的に拡
+張させることができます。(訳注: 例えば三つの要素しかない情報に四つ目の要
+素を加える処理を第三引数を使わずに行なうと、`(setcar (nthcdr 3 INFO)
+VALUE)' というコードが実行される結果、エラーになってしまいます。)
+
+
+
+File: gnus-ja.info, Node: Extended Interactive, Next: Emacs/XEmacs Code, Prev: Group Info, Up: Gnus Reference Guide
+
+対話形式の拡張
+--------------
+
+Gnus は Emacs 標準の `interactive' の仕様を、シンボル接頭引数を簡単に使
+うことができるようにするために、少し拡張しています (*Note Symbolic
+Prefixes::)。これはその使い方の例です:
+
+     (defun gnus-summary-increase-score (&optional score symp)
+       (interactive (gnus-interactive "P\ny"))
+       ...
+       )
+
+最上のものは `interactive' の式を返すマクロとして `gnus-interactive' を
+実装することでしょうが、Emacs は関数が対話的かどうかを調べるために、ラ
+ムダ式に対して単純に `assq' を行なうので、これは不可能です。そこで、文
+字列を受け取って `interactive' で使うことができる値を返す
+`gnus-interactive' 関数を、代わりに持つことにしました。
+
+この関数は (ほとんど) すべての `interactive' の指定を受け付けますが、も
+う少し加えることにします。
+
+`y'
+     現在のシンボル接頭引数--変数 `gnus-current-prefix-symbol' です。
+
+`Y'
+     現在のシンボル接頭引数のリスト--変数 `gnus-current-prefix-symbol'
+     です。
+
+`A'
+     現在の記事番号--関数 `gnus-summary-article-number' です。
+
+`H'
+     現在の記事ヘッダー --関数 `gnus-summary-article-header' です。
+
+`g'
+     現在のグループ名--関数 `gnus-group-group-name' です。
+
+
+
+File: gnus-ja.info, Node: Emacs/XEmacs Code, Next: Various File Formats, Prev: Extended Interactive, Up: Gnus Reference Guide
+
+Emacs/XEmacs コード
+-------------------
+
+Gnus は Emacs, XEmacs と Mule で動作するので、そのうちの一つを主環境と
+することに決めました。私は Emacs を選びました。私が XEmacs や Mule を好
+きではないということではなく、それがアルファベット順で最初に来たからで
+す。(訳注: 現在 Gnus がサポートしている (X)Emacs については *Note
+Emacsen:: を参照して下さい。)
+
+これは、Gnus は Emacs で少しの警告も無くバイトコンパイルできるのに対し
+て、XEmacs はバイトコンパイルをしている間にギガバイトくらいの警告を出す
+ということでもあります (訳注: 現在はそんなことはありません)。私は些細な
+失敗を見つけ出すことに役立てるためにバイトコンパイルの警告を使っている
+ので、それはとても助けになります。
+
+さらに、私は首尾一貫して Emacs の関数のインターフェースを使ってきました
+が、それらの関数のために Gnus の別名 (aliases) を使ってきました。例を出
+しましょう: Emacs が関数 `run-at-time' を定義している一方で、XEmacs は
+関数 `start-itimer' を定義しています。そこで、私は Emacs の
+`run-at-time' と同じ引数を受け取る `gnus-run-at-time' という関数を定義
+しました (訳注: 現在は `run-at-time' に統一されています)。Gnus を
+Emacs で実行しているときは、`gnus-run-at-time' は単に `run-at-time' の
+別名になっています。しかし XEmacs で実行したときは、`gnus-run-at-time'
+は次の関数の別名となっています (訳注: 現在こういうものはありません):
+
+     (defun gnus-xmas-run-at-time (time repeat function &rest args)
+       (start-itimer
+        "gnus-run-at-time"
+        `(lambda ()
+           (,function ,@args))
+        time repeat))
+
+この種のことが多くの関数のために行なわれています。Gnus は XEmacs で実行
+しているときに、元からある Emacs の関数を再定義しません--代わりにそれは、
+Gnus の等価なものに `defalias' をすることによって行ないます。その方が、
+よりきれいです。
+
+XEmacs の関数のインターフェースの方が明らかにきれいな場合は、私は代わり
+にそれを使います。例えば、`gnus-region-active-p' は XEmacs では
+`region-active-p' の別名であるのに対して、Emacs では関数です。
+
+もちろん XEmacs を私の基本プラットフォームに選んで、関数の割り当てを逆
+にすることもできましたが、私はそうしませんでした。XEmacs で Gnus を実行
+するときの、これらの遠回しな割り当てが強いる性能への打撃は、僅かなはず
+です。
+
+
+
+File: gnus-ja.info, Node: Various File Formats, Prev: Emacs/XEmacs Code, Up: Gnus Reference Guide
+
+いろいろなファイル様式
+----------------------
+
+* Menu:
+
+* Active File Format::          使用可能な記事とグループの情報
+* Newsgroups File Format::      グループの説明
+
+
+
+File: gnus-ja.info, Node: Active File Format, Next: Newsgroups File Format, Prev: Various File Formats, Up: Various File Formats
+
+アクテイブファイルの様式
+........................
+
+アクティブファイルは、対象になっているサーバーのすべての使用可能なグルー
+プの目録を保持します。そこには、それぞれのグループの最高と最低の記事番
+号の目録もあります。
+
+これは普通のアクティブファイルからの抜粋です:
+
+     soc.motss 296030 293865 y
+     alt.binaries.pictures.fractals 3922 3913 n
+     comp.sources.unix 1605 1593 m
+     comp.binaries.ibm.pc 5097 5089 y
+     no.general 1000 900 y
+
+これはこのファイルの疑似 BNF 定義です:
+
+     active      = *group-line
+     group-line  = group spc high-number spc low-number spc flag <NEWLINE>
+     group       = <non-white-space string>
+     spc         = " "
+     high-number = <non-negative integer>
+     low-number  = <positive integer>
+     flag        = "y" / "n" / "m" / "j" / "x" / "=" group
+
+このファイルの完全な説明は、`innd' のマニュアルページ、特に
+`active(5)' を見て下さい。
+
+
+
+File: gnus-ja.info, Node: Newsgroups File Format, Prev: Active File Format, Up: Various File Formats
+
+ニュースグループファイルの様式
+..............................
+
+ニュースグループファイルは、グループの目録をそれらの説明とともに保持し
+ます。サーバーにあるすべてのグループがある必要は無いし、そのファイルに
+あるすべてのグループがサーバーに存在しなければならないこともありません。
+このファイルは純粋に利用者の情報のためにあります。
+
+様式はとても単純です: グループ名、タブ、そして説明です。これが定義です:
+
+     newsgroups    = *line
+     line          = group tab description <NEWLINE>
+     group         = <non-white-space string>
+     tab           = <TAB>
+     description   = <string>
+
+
+
+File: gnus-ja.info, Node: Emacs for Heathens, Next: Frequently Asked Questions, Prev: Gnus Reference Guide, Up: Appendices
+
+異教徒への Emacs
+================
+
+信じるかどうかはともかく、Gnus Love Boat の旅に搭乗する前にあまり
+Emacs を使ったことが無いという Gnus の利用者たちがいます。“`C-M-a'”や
+「リージョンを kill する」、それに「`gnus-flargblossen' を連想リストに
+設定して下さい。そのキーはグループ名に合致するために使われる正規表現で
+す。」といったことが、あなたにとって少しかまったく意味の無い魔法の言葉
+ならば、この付録はあなたのためにあります。もしあなたがすでに Emacs に親
+しんでいるのであれば、これを無視してあなたの猫を可愛がりに行って下さい。
+
+* Menu:
+
+* Keystrokes::                  文章を入力して命令を実行する
+* Emacs Lisp::                  備え付けの Emacs プログラミング言語
+
+
+
+File: gnus-ja.info, Node: Keystrokes, Next: Emacs Lisp, Prev: Emacs for Heathens, Up: Emacs for Heathens
+
+打鍵
+----
+
+   * Q: 経験のある Emacs の利用者とは何ですか?
+
+   * A: 端末にペダルがあったらなぁと願う人のことです。
+
+はい、Emacs を使うとコントロールキー、シフトキー、メタキーをたくさん使
+うようになるでしょう。これは一部の人々 (主に `vi' 利用者) には非常に煩
+わしいものですが、私たちはその地獄を愛します。諦めてそれを甘受して下さ
+い。Emacs は本当は“Escape-Meta-Alt-Control-Shift”の略で、あなたがいか
+がわしい (Emacs の作者のような) 出どころから聞いているかもしれない
+“Editing Macros”ではありません。
+
+シフトキーは普通は両手の小指の近くにあって、普通は大文字などを打つため
+に使われています。あなたは絶え間なくそれを使いますよね。コントロールキー
+には普通“CTRL”のような印が付いています。メタキーは奇妙なことにどのキー
+ボードでもそういう印が付いていません。それは普通はキーボードの左手側に
+あって、最下段にあるのが一般的です。
+
+さて、私たち Emacs 人は、それがひどく不便なので「meta-control-m キーを
+押す」とは言いません。私たちが使うのは「`C-M-m' を押す」です。`M-' は
+「メタ」を現す接頭語で、“C-”は「コントロール」を意味する接頭語です。
+ですから「`C-k' を押す」は、「コントロールキーを押し続けながら次に `k'
+を押す」ということです。「`C-M-k' を押す」は「メタキーとコントロールキー
+を押し続けながら次に `k' を押す」ということです。簡単です、よね?
+
+このことは、すべてのキーボードがメタキーを持っているわけではないという
+事実によりって、多少ややこしくなっています。そういう場合には「エスケー
+プ」キーを使えばよいでしょう。ただしメタキーを持っているときより作業が
+増えるので、メタキーのあるキーボードを手に入れていただくことを謹んでお
+勧め申し上げます。それ無しでは生きて行けないでしょう。
+
+
+
+File: gnus-ja.info, Node: Emacs Lisp, Prev: Keystrokes, Up: Emacs for Heathens
+
+Emacs Lisp
+----------
+
+Emacs はエディターの王様です。なぜなら、それが真の Lisp インタープリター
+だからです。あなたが叩くすべてのキーは、何らかの Emacs Lisp コードの小
+片を実行します。Emacs Lisp はインタープリターで実行される言語なので、ど
+のキーが何のコードを実行するかを任意に設定することができます。あなたは、
+ただそうすれば良いのです。
+
+Gnus は Emacs Lisp によって書かれていて、インタープリターで実行されるた
+くさんの関数によって動作します。(これらは速度のためにバイトコンパイルさ
+れていますが、インタープリターで実行されることに変わりはありません。)
+もし Gnus のある動作が好みではないと感じたら、それを違うやり方で実行さ
+せるのは取るに足らないことです。(えーと、少なくとも Lisp コードの書き方
+を知っていれば。) でもそれはこのマニュアルの範疇ではないので、Gnus をカ
+スタマイズするために `~/.gnus.el' ファイルで普段使われるいくつかの一般
+的な構文のことだけを話すことにしましょう。(`~/.emacs' ファイルを使うこ
+ともできますが、Gnus に関する設定には `~/.gnus.el' ファイルを使う方がは
+るかに良いです。)
+
+もし変数 `gnus-florgbnize' を四 (4) に設定したいのであれば、以下のもの
+を書きましょう:
+
+     (setq gnus-florgbnize 4)
+
+この関数 (本当は「特殊形式」(special form)) `setq' は、変数を何かの値に
+設定することができるものです。これがあなたが本当に知っていなければなら
+ないことのすべてです。これからは Gnus の動作を変更するために、たくさん
+のこういうもので `~/.gnus.el' ファイルを埋め尽くすことができます。
+
+そういうものを `~/.gnus.el' ファイルに入れておくと、それらは次回に
+Gnus を起動したときに読み込まれ、`eval' (それは「実行」の Lisp 語です)
+されます。もし変数をすぐに変更したいのであれば、閉じ括弧の後ろで `C-x
+C-e' とタイプすれば良いのです。それは前にある「式」(ここでは簡単な
+`setq' 文) を `eval' します。
+
+さあ、やってみましょう--あなたが Emacs の前にいるのなら試してみて下さい。
+`C-x C-e' をタイプすると、エコーエリア (訳注: 一般には Emacs の画面の一
+番下) に `4' が現われるのが見えるでしょう。それはあなたが `eval' した式
+の戻り値です。
+
+いくつかの落とし穴:
+
+もしマニュアルが「`gnus-read-active-file' を `some' に設定しなさい」と
+言ったなら、それは
+
+     (setq gnus-read-active-file 'some)
+
+ということです。
+
+一方、マニュアルが「`gnus-nntp-server' を `nntp.ifi.uio.no' に設定しな
+さい」と言ったなら、それは
+
+     (setq gnus-nntp-server "nntp.ifi.uio.no")
+
+ということです。
+
+ですから、文字列 (後者) を シンボル (前者) と混同しないように注意して下
+さい。マニュアルは明確に区別していますが、混乱しやすいかもしれません。
+
+
+
+
+File: gnus-ja.info, Node: Frequently Asked Questions, Prev: Emacs for Heathens, Up: Appendices
+
+よく尋ねられる質問
+==================
+
+* Menu:
+
+* FAQ - Changes::
+* FAQ - Introduction::         Gnus およびこの FAQ について
+* FAQ 1 - Installation FAQ::   Gnus のインストール
+* FAQ 2 - Startup / Group buffer:: 起動に関する質問と、最初に表示するバッファー
+* FAQ 3 - Getting Messages::   Gnus でメールとニュースを読めるようにする
+* FAQ 4 - Reading messages::   効率良くメッセージを読む方法
+* FAQ 5 - Composing messages:: メッセージの作成、または Usenet への投稿
+* FAQ 6 - Old messages::       移入、書庫への保存、検索、およびメッセージの消去
+* FAQ 7 - Gnus in a dial-up environment:: オフラインでメールとニュースを読む
+* FAQ 8 - Getting help::       この FAQ では不充分だったら
+* FAQ 9 - Tuning Gnus::        Gnus を速くするには
+* FAQ - Glossary::             この FAQ で使われる用語
+
+
+要約
+----
+
+これは新しい Gnus のよく尋ねられる質問のリストです。Web ブラウザーがあ
+れば `http://my.gnus.org/FAQ/' にある公式なハイパーテキスト版を読むこと
+ができます。Docbook のソースは http://sourceforge.net
+(http://sourceforge.net/projects/gnus/) から手に入れることができます。
+
+機能に関することや提案は FAQ discussion メーリングリスト
+<faq-discuss@my.gnus.org> に送って下さい。このメーリングリストは
+qconfirm (http://smarden.org/qconfirm/index.html) によって、ごみメール
+から守られています。参加者からの投稿は自動的に通過するでしょう。さらに
+空のメールを <faq-discuss-subscribe@my.gnus.org> に送るか、ここ
+(http://mail1.kens.com/cgi-bin/ezmlm-browse?command=monthbythread%26list=faq-discuss)
+を閲覧することによっても、このメーリングリストを講読することができます
+(残念ながら現在は壊れています)。
+
+
+
+File: gnus-ja.info, Node: FAQ - Changes, Next: FAQ - Introduction, Prev: Frequently Asked Questions, Up: Frequently Asked Questions
+
+変更履歴
+--------
+
+   * Gnus 5.10 のリリースと No Gnus の開発の開始を反映して FAQ を更新し
+     ました。
+
+
+
+File: gnus-ja.info, Node: FAQ - Introduction, Next: FAQ 1 - Installation FAQ, Prev: FAQ - Changes, Up: Frequently Asked Questions
+
+序
+--
+
+これは Gnus のよく尋ねられる質問のリストです。
+
+Gnus は Emacs の要素として実装された Usenet ニュースリーダーおよび電子
+メールのユーザーエージェントです。それはほぼこの十年間何らかの形で存在
+しており、その期間の多くにおいて Emacs の標準要素として配布されてきまし
+た。Gnus 5 は最新の (そして最も偉大な) 作品です。オリジナルの版は GNUS
+と言い、梅田政信さんが書きました。1994年の秋が忍び寄る頃、退屈していた
+ラルス・マッグヌ・イングブリグットスン (Lars Magne Ingebrigtsen) は
+Gnus を書き直そうと決心しました。
+
+その最大の強みは、極めてカスタマイズに適しているという事実にあります。
+このことを始めて目にすると引いてしまうかもしれませんが、それを利用する
+準備ができるまでは、複雑なもののほとんどは無視することができます。そこ
+そこの量の (いろんなメーリングリストに配信される) 電子メールがやって来
+るのならば、流通量が多いメーリングリストを読みたいけれども遅れずについ
+ていくことができないのならば、流通量が多いニュースグループを読んでいる
+のならば、あるいは単に退屈しているのならば、Gnus はあなたが望むものです。
+
+この FAQ は 2002年3月まで Justin Sheehy によって維持されていました。彼
+は、それ以前にすばらしい仕事をしてくれた Steve Baur と Per Abrahamsen
+に感謝を表明しています。私たちも同じことをしましょう - ありがとう
+Justin!
+
+Web ブラウザーがあれば `http://my.gnus.org/FAQ/' にある公式なハイパーテ
+キスト版を読むことができます。この版は、ユトレヒト大学、オックスフォー
+ド、Smart Pages、オハイオ州立大学に保存されている非公式なハイパーテキス
+ト版や他の FAQ のアーカイブに比べて、はるかに良いものです。別のフォーマッ
+トでそれを手に入れるための情報が欲しいなら、以下にある質問集を見て下さ
+い。
+
+ここにある情報は、Gnus 開発メーリングリストの援助でコンパイルされました。
+どんなエラーあるいはミスプリントも my.gnus.org チームが犯した誤りです。
+すみません。
+
+訳注: そしてどんな誤訳の責任も gnus-doc-ja チームにあります。
+
+
+
+File: gnus-ja.info, Node: FAQ 1 - Installation FAQ, Next: FAQ 2 - Startup / Group buffer, Prev: FAQ - Introduction, Up: Frequently Asked Questions
+
+インストールに関する FAQ
+------------------------
+
+* Menu:
+
+* [1.1]::    Gnus の最新版は何ですか?
+* [1.2]::    5.10 では何が新しいですか?
+* [1.3]::    Gnus はどこで、どうやって取得することができますか?
+* [1.4]::    tarball で何をすれば良いですか?
+* [1.5]::    ときどき目にする No Gnus と Oort Gnus って何ですか?
+* [1.6]::    Emacs のどの版が必要ですか?
+* [1.7]::    Gnus を Emacs と XEmacs の両方で走らせるには?
+
+
+
+File: gnus-ja.info, Node: [1.1], Next: [1.2], Prev: FAQ 1 - Installation FAQ, Up: FAQ 1 - Installation FAQ
+
+質問 1.1
+........
+
+Gnus の最新版は何ですか?
+
+
+回答
+....
+
+ジャーン: Gnus 5.10 がリリースされました。熱いうちに召し上がれ!
+バージョン番号の歩みがいささか小さいのに反して、Gnus 5.10 には見逃せない
+何トンもの新しい機能があります。現在のリリース (5.10.6) は、少なくと
+も 5.8 系のリリースの最新版と同じくらい安定なはずです。
+
+
+
+File: gnus-ja.info, Node: [1.2], Next: [1.3], Prev: [1.1], Up: FAQ 1 - Installation FAQ
+
+質問 1.2
+........
+
+5.10 では何が新しいですか?
+
+
+回答
+....
+
+第一に Gnus tarball の先頭のディレクトリーにある GNUS-NEWS ファイルに目
+を通すべきです。そこでは最も重要な変更が羅列されています。ここでは特に
+重要/興味深いものの短いリストを挙げるに留めます:
+
+   * Gnus エージェントの大幅な書き直し。ディフォルトで有効になっていま
+     す。
+
+   * 見苦しく形成された記事を洗濯するための多くの機能。
+
+   * Spam 除け機能。
+
+   * Message-utils が Gnus に含まれました。
+     (訳注: Holger Schauer さんが書いた message-utils.el の諸機能
+     が message.el に移入されました。)
+
+   * 概略行のための新しい書法仕様。例えば %B は複雑な trn 様式のスレッ
+     ド木 (tree) を指定する書法仕様です。
+
+
+
+File: gnus-ja.info, Node: [1.3], Next: [1.4], Prev: [1.2], Up: FAQ 1 - Installation FAQ
+
+質問 1.3
+........
+
+Gnus はどこで、どうやって取得することができますか?
+
+
+回答
+....
+
+リリースされた最新版の Gnus は Emacs 21 に含まれていないので、
+`http://www.gnus.org/dist/gnus.tar.gz' から、または匿名 ftp で
+`http://www.gnus.org/dist/gnus.tar.gz' から Gnus の tarball を取得する
+必要があります。Emacs ではなくて XEmacs を使っているのなら、XEmacs のパッ
+ケージシステムを使うことができます。
+
+
+
+File: gnus-ja.info, Node: [1.4], Next: [1.5], Prev: [1.3], Up: FAQ 1 - Installation FAQ
+
+質問 1.4
+........
+
+tarball で何をすれば良いですか?
+
+
+回答
+....
+
+`tar xvzf gnus.tar.gz' でアーカイブを展開して、ありふれた
+`./configure; make; make install' の手順を実行して下さい。
+
+     MS-Windows では `http://www.cygwin.com' から Cygwin の環境も取得し
+     て下さい。それによって上述のことを行なうこと、またはある梱包器
+     (packer) (例えば `http://www.winace.com' にある Winace) で
+     tarball を開梱すること、そして tarball に含まれている Gnus をイン
+     ストールするためのバッチファイル `make.bat' を使うことができるよう
+     になります。
+
+Gnus をシステム領域にインストールしたくない (またはその権限が与えられて
+いない) ならば、ホームディレクトリーにインストールすることもできます。
+その場合は `~/.xemacs/init.el' ファイルか `~/.emacs' ファイルに以下の行
+を加えて下さい。
+
+     (add-to-list 'load-path "/path/to/gnus/lisp")
+     (if (featurep 'xemacs)
+         (add-to-list 'Info-directory-list "/path/to/gnus/texi/")
+       (add-to-list 'Info-default-directory-list "/path/to/gnus/texi/"))
+
+この行より前に、どんな Gnus に関係するものも確実に無いようにして下さい。
+MS Windows では "C:/path/to/lisp" のように書いて下さい (そう、"/" です)。
+
+
+
+File: gnus-ja.info, Node: [1.5], Next: [1.6], Prev: [1.4], Up: FAQ 1 - Installation FAQ
+
+質問 1.5
+........
+
+ときどき目にする No Gnus と Oort Gnus って何ですか?
+
+
+回答
+....
+
+Oort Gnus は Gnus の開発版の名前で、2003年の秋に Gnus 5.10 になりました。
+No Gnus は現行の開発版の名前で、Gnus 5.12 か Gnus 6 になるでしょう。(な
+ぜ 5.11 ではないのかが不思議ですか?  奇数のバージョン番号は通常 Emacs
+に同梱される Gnus の版に使われるのです。)
+
+
+
+File: gnus-ja.info, Node: [1.6], Next: [1.7], Prev: [1.5], Up: FAQ 1 - Installation FAQ
+
+質問 1.6
+........
+
+Emacs のどの版が必要ですか?
+
+
+回答
+....
+
+Gnus 5.10 は Emacs 20.7 以上、または XEmacs 21.1 以上を必要とします。開
+発版の Gnus (No Gnus として知られているもの) は Emacs 21 か XEmacs
+21.4 を必要とします。
+
+
+
+File: gnus-ja.info, Node: [1.7], Prev: [1.6], Up: FAQ 1 - Installation FAQ
+
+質問 1.7
+........
+
+Gnus を Emacs と XEmacs の両方で走らせるには、どうすれば良いですか?
+
+
+回答
+....
+
+バイトコンパイルされた Gnus の同じコピーを両者で使うことはできません。
+Emacs では Emacs でコンパイルしたものを、XEmacs では XEmacs でコンパイ
+ルしたものを使って下さい。
+
+
+
+File: gnus-ja.info, Node: FAQ 2 - Startup / Group buffer, Next: FAQ 3 - Getting Messages, Prev: FAQ 1 - Installation FAQ, Up: Frequently Asked Questions
+
+起動 / グループバッファー
+-------------------------
+
+* Menu:
+
+* [2.1]:: 　いつも Gnus を起動すると
+            "Gnus auto-save file exists. Do you want to read it?"
+            というメッセージを受け取るのですが、これは何を意味し
+            ているのですか?  また、どうやったら回避できますか?
+
+* [2.2]:: 　Gnus は私がどのグループを講読するかを覚えてくれませ
+            ん。どうしてですか?
+
+* [2.3]:: 　グループバッファーの各行の形式を変更するには、どう
+            したら良いですか?
+
+* [2.4]:: 　私のグループバッファーはちょっと混んでいるのですが、
+            それらを楽に巡回できるように、カテゴリーごとにまとま
+            るように並べ変える方法はありますか?
+
+* [2.5]:: 　グループバッファーを手で並べ変えるにはどうしたら良い
+            ですか? トピック内のグループを並べ変えるにはどうした
+            ら良いですか?
+
+
+
+File: gnus-ja.info, Node: [2.1], Next: [2.2], Prev: FAQ 2 - Startup / Group buffer, Up: FAQ 2 - Startup / Group buffer
+
+質問 2.1
+........
+
+いつも Gnus を起動すると "Gnus auto-save file exists. Do you want to
+read it?" というメッセージを受け取るのですが、これは何を意味しているの
+ですか?  また、どうやったら回避できますか?
+
+
+回答
+....
+
+このメッセージが意味するのは、最後に Gnus を使ったときに適切に終了させ
+なかったために、ディスクにその情報 (例えばどのメッセージを読んだかの)
+を書き込むことができなかったので、今、それらの情報を自動保存
+(auto-save) ファイルから復活させるかどうかを尋ねられているということで
+す。
+
+このメッセージが発せられるのを回避するには、Gnus を終了させるときに単に
+Emacs を kill するのではなく、グループバッファーで `q' を使うようにして
+下さい。
+
+
+
+File: gnus-ja.info, Node: [2.2], Next: [2.3], Prev: [2.1], Up: FAQ 2 - Startup / Group buffer
+
+質問 2.2
+........
+
+Gnus は私がどのグループを講読するかを覚えてくれません。どうしてですか?
+
+
+回答
+....
+
+Gnus を起動したときに、上記の質問と回答 (*Note [2.1]::) で述べられてい
+るメッセージを受け取りませんでしたか?  これは同じ問題の別の症状なので、
+上記の回答を読んで下さい。
+
+
+
+File: gnus-ja.info, Node: [2.3], Next: [2.4], Prev: [2.2], Up: FAQ 2 - Startup / Group buffer
+
+質問 2.3
+........
+
+グループバッファーの各行の形式を変更するには、どうしたら良いですか?
+
+
+回答
+....
+
+変数 `gnus-group-line-format' の値を調整しなければなりません。そのやり
+方についてはマニュアル (*Note グループ行の仕様: (gnus-ja)Group Line
+Specification.) を見て下さい。このための例です (質問者の `~/.gnus.el'
+ファイルからの推測です :-):
+
+     (setq gnus-group-line-format "%P%M%S[%5t]%5y : %(%g%)\n")
+
+
+
+File: gnus-ja.info, Node: [2.4], Next: [2.5], Prev: [2.3], Up: FAQ 2 - Startup / Group buffer
+
+質問 2.4
+........
+
+私のグループバッファーはちょっと混んでいるのですが、それらを楽に巡回で
+きるように、カテゴリーごとにまとまるように並べ変える方法はありますか?
+
+
+回答
+....
+
+Gnus はトピックモードを提供します。それによってグループをその中へ入れて
+並べ変えることができるようになります。えーとトピックを使うというのは、
+例えば Linux を扱うすべてのグループは linux というトピックに収め、音楽
+を扱うすべては music というトピックに収め、スコットランド音楽を扱うすべ
+ては scottish という music のサブトピックに収める、といったことです。
+
+トピックモードに入るには、グループバッファーで単に `t' を叩いて下さい。
+すると `T n' を使って現在位置でトピックを作ったり、あるグループを `T
+m' を使って指定したトピックに移すことができます。さらなるコマンドについ
+てはマニュアルかメニューを見て下さい。グループ行をより良く行下げ
+(indent) させるためには、`gnus-group-line-format' 変数の先頭に `%P' 書
+法仕様を含ませる必要があるでしょう。
+
+
+
+File: gnus-ja.info, Node: [2.5], Prev: [2.4], Up: FAQ 2 - Startup / Group buffer
+
+質問 2.5
+........
+
+グループバッファーを手で並べ変えるにはどうしたら良いですか? トピック内
+のグループを並べ変えるにはどうしたら良いですか?
+
+
+回答
+....
+
+移動させたいグループの上にポイントを移動して `C-k' を叩き、次にそのグルー
+プを移動させる目的の場所にポイントを移動して `C-y' を叩いて下さい。
+
+
+
+File: gnus-ja.info, Node: FAQ 3 - Getting Messages, Next: FAQ 4 - Reading messages, Prev: FAQ 2 - Startup / Group buffer, Up: Frequently Asked Questions
+
+メッセージの取得
+----------------
+
+* Menu:
+
+* [3.1]::  　今まさに Gnus をインストールして `M-x gnus' で起動
+             したのですが、"nntp (news) open error" としか言って
+             くれません。どうしたら良いですか?
+
+* [3.2]::  　Windows を使っているのですが `~/.gnus.el' の意味が
+             わかりません。
+
+* [3.3]::  　ニュースサーバーが認証を要求します。ディスクにユー
+             ザ名とパスワードを保存しておくには、どうすれば良い
+             ですか?
+
+* [3.4]::  　Gnus はうまく起動したようなのですが、グループを講読
+             する方法が見つけられません。
+
+* [3.5]::  　Gnus がすべてのグループを表示してくれません / この
+             サーバーへの投稿が許可されません。どうしてですか?
+
+* [3.6]::  　複数のサーバーからニュースを取り込みたいのですが、
+             それは可能ですか?
+
+* [3.7]::  　それから、ローカル・スプール・ファイルからニュース
+             を取り込むことは可能ですか?
+
+* [3.8]::  　ニュースを読むのはうまくいきましたが、Gnus でメール
+             も読めるようにしたいのです。どうすれば良いですか?
+
+* [3.9]::  　それから、IMAP でメールを読めるようにするには、どう
+             すれば良いですか?
+
+* [3.10]:: 　職場で MS Exchange サーバーの一つを使っているのです
+             が、Gnus を使ってそこからメールを読むことはできます
+             か?
+
+* [3.11]:: 　POP3 でメールを取得するサーバーで、メールを消さない
+             ように Gnus に指示することはできますか?
+
+
+
+File: gnus-ja.info, Node: [3.1], Next: [3.2], Prev: FAQ 3 - Getting Messages, Up: FAQ 3 - Getting Messages
+
+質問 3.1
+........
+
+今まさに Gnus をインストールして `M-x gnus' で起動したのですが、"nntp
+(news) open error" としか言ってくれません。どうしたら良いですか?
+
+
+回答
+....
+
+どこからニュースを取得すべきかを Gnus に教えてあげなければなりません。
+やり方については文献を読んで下さい。初めて起動するのであれば、次のよう
+なものを `~/.gnus.el' ファイルに書き込んでみて下さい:
+
+     (setq gnus-select-method '(nntp "news.yourprovider.net"))
+     (setq user-mail-address "you@yourprovider.net")
+     (setq user-full-name "Your Name")
+
+
+
+File: gnus-ja.info, Node: [3.2], Next: [3.3], Prev: [3.1], Up: FAQ 3 - Getting Messages
+
+質問 3.2
+........
+
+Windows を使っているのですが `~/.gnus.el' の意味がわかりません。
+
+
+回答
+....
+
+`~/' とは Gnus と Emacs が設定ファイルを探す場所であるホームディレクト
+リーのことです。でも、実はその意味を知らなくても構わないのです。Emacs
+がわかっていれば十分ですから。:-) `C-x C-f ~/.gnus.el RET' とタイプすれ
+ば (そう、Windows でもスラッシュでいいのです) Emacs は正しいファイルを
+開いてくれるでしょう (それが新規ファイルであるために中身が空っぽである
+ことは、おおいにあり得るでしょう)。しかしちょっと待って下さい。Emacs が
+選ぶディレクトリーは、きっとあなたの希望通りにはならないので、正しいや
+り方でそれを行ないましょう。第一に、例えば c:\myhome のような適当なディ
+レクトリーを (ディレクトリー名に空白を含めないで) 作って下さい。そして、
+このディレクトリーを環境変数 HOME に設定しましょう。これを Win9x か Me
+で行なうには、`autoexec.bat' ファイルに以下の行を追加して、再起動して下
+さい。
+
+     SET HOME=C:\myhome
+
+NT, 2000 および XP では、システム・オプションを入力するために `Winkey
++ Pause/Break' を叩いて (もしそれが使えなかったら「コントロールパネ
+ル -> システム」を辿って) 下さい。そこで環境変数を設定できるでしょうか
+ら、HOME という名前で値が C:\myhome のものを作って下さい。再起動は不要
+です。
+
+では、Emacs に `C-x C-f ~/.gnus.el RET C-x C-s' を指示して、
+`~/.gnus.el' ファイルを作りましょう。
+
+
+
+File: gnus-ja.info, Node: [3.3], Next: [3.4], Prev: [3.2], Up: FAQ 3 - Getting Messages
+
+質問 3.3
+........
+
+ニュースサーバーが認証を要求します。ディスクにユーザー名とパスワードを
+保存しておくには、どうすれば良いですか?
+
+
+回答
+....
+
+次のように、それぞれのサーバーに関する行を含んだ `~/.authinfo' ファイル
+を作って下さい。
+
+     machine news.yourprovider.net login YourUserName password YourPassword
+
+OS が対応しているならば、そのファイルを他人が読めないようにしておきましょ
+う。Unix ではシェル上で次のコマンドを実行して下さい。
+
+     chmod 600 ~/.authinfo
+
+
+
+File: gnus-ja.info, Node: [3.4], Next: [3.5], Prev: [3.3], Up: FAQ 3 - Getting Messages
+
+質問 3.4
+........
+
+Gnus はうまく起動したようなのですが、グループを講読する方法が見つけられ
+ません。
+
+
+回答
+....
+
+そのグループの名前がわかっているのなら、グループバッファーで `U
+name.of.group RET' を使って下さい (タブ補完を使え、ルーク (訳注: オビ=
+ワン・ケノービの声で))。あるいはグループバッファーで `^' を使いましょう。
+これはあなたをサーバーバッファーへ連れて行きます。その場合は、目的のグ
+ループがあるサーバーの上にポイント (カーソル) を置いて `RET' を叩き、読
+みたいグループにポイントを移動してから `u' でそのグループを講読しましょ
+う。
+
+
+
+File: gnus-ja.info, Node: [3.5], Next: [3.6], Prev: [3.4], Up: FAQ 3 - Getting Messages
+
+質問 3.5
+........
+
+Gnus がすべてのグループを表示してくれません / このサーバーへの投稿が許
+可されません。どうしてですか?
+
+
+回答
+....
+
+プロバイダーのいくつかは匿名での接続を制限していて、認証してからでない
+と完全なアクセスを許しません。Gnus に認証のための情報 (authinfo) を送出
+させるには、`~/.authinfo' ファイルの該当するサーバーの行の最後に
+
+     force yes
+
+を追加して下さい。
+
+
+
+File: gnus-ja.info, Node: [3.6], Next: [3.7], Prev: [3.5], Up: FAQ 3 - Getting Messages
+
+質問 3.6
+........
+
+複数のサーバーからニュースを取り込みたいのですが、それは可能ですか?
+
+
+回答
+....
+
+もちろん。変数 `gnus-secondary-select-methods' に、もっと多くの記事の供
+給元を設定することができます。以下のようなものを `~/.gnus.el' ファイル
+に追加して下さい:
+
+     (add-to-list 'gnus-secondary-select-methods
+                  '(nntp "news.yourSecondProvider.net"))
+     (add-to-list 'gnus-secondary-select-methods
+                  '(nntp "news.yourThirdProvider.net"))
+
+
+
+File: gnus-ja.info, Node: [3.7], Next: [3.8], Prev: [3.6], Up: FAQ 3 - Getting Messages
+
+質問 3.7
+........
+
+それから、ローカル・スプール・ファイルからニュースを取り込むことは可能
+ですか?
+
+
+回答
+....
+
+問題ありません。それは `nnspool' というもう一つの選択方法です。こんなふ
+うに設定して下さい:
+
+     (add-to-list 'gnus-secondary-select-methods '(nnspool ""))
+
+あるいは NNTP を第一ニュースソースとして使う必要が無いのであれば、こう
+して下さい:
+
+     (setq gnus-select-method '(nnspool ""))
+
+これで Gnus は `/usr/spool/news' にあるスプール・ファイルを探します。何
+か違うことをやりたいのならば、上記の行を次のようなものに変更して下さい:
+
+     (add-to-list 'gnus-secondary-select-methods
+                  '(nnspool ""
+                            (nnspool-directory "/usr/local/myspoolddir")))
+
+これは、このサーバーだけのために、スプールが存在するディレクトリーを設
+定します。さらに記事を投稿するために使うプログラムなどを設定する必要が
+あるかもしれません。そういう場合にどうしたら良いかについては、Gnus のマ
+ニュアルを参照して下さい。
+
+
+
+File: gnus-ja.info, Node: [3.8], Next: [3.9], Prev: [3.7], Up: FAQ 3 - Getting Messages
+
+質問 3.8
+........
+
+ニュースを読むのうまくいきましたが、Gnus でメールも読めるようにしたいの
+です。どうすれば良いですか?
+
+
+回答
+....
+
+それは少しばかり難しいです。使うことができるメールソースはいっぱいある
+し、メールを格納する方法はたくさんあるし、送信するための方法も様々なの
+で。最もありふれているのは、次の二つの事例のようなものでしょう:
+
+  1. POP3 サーバーからメールを読み、SMTP サーバーに直接メールを送信しま
+     す。
+
+  2. fetchmail のようなプログラムでメールを取り込んで、Gnus が読むこと
+     になっているディレクトリーに格納します。外に行くメールは
+     Sendmail, Postfix または他の MTA によって送出されます。
+
+ときには、これらを併用する必要さえあります。
+
+しかし最初に行なうことは、どの方法でメールを格納するか、Gnus の用語で言
+うと、どのバックエンドを使うかを Gnus に指示することです。Gnus は多くの
+異なるバックエンドをサポートしますが、最も一般的に使われているのは
+`nnml' です。それは一通のメールを一つのファイルに格納し、そのため極めて
+高速です。でも、あなたが使っているファイルシステムがたくさんの小さなファ
+イルを扱う上で問題があるのならば、一つのグループのすべてのメールを一つ
+のファイルに収める方法を使う必要があるかもしれません。おそらくそういう
+場合の選択肢が `nnfolder' バックエンドです。
+
+`nnml' を使うには、以下を `~/.gnus.el' ファイルに加えて下さい:
+
+     (add-to-list 'gnus-secondary-select-methods '(nnml ""))
+
+`nnfolder' を使いたいのならば、あなたの想像した通り、こうすれば良いでしょ
+う:
+
+     (add-to-list 'gnus-secondary-select-methods '(nnfolder ""))
+
+次に、メールをどこから取得するかを Gnus に伝えなければなりません。それ
+が POP3 サーバーであるのなら、このように設定して下さい:
+
+     (add-to-list 'mail-sources '(pop :server "pop.YourProvider.net"
+                                      :user "yourUserName"
+                                      :password "yourPassword"))
+
+もしそこにパスワードを書いておくのなら、他人が `~/.gnus.el' ファイルを
+読めないようにしておいて下さい。メールをローカルマシンの伝統的なスプー
+ルファイルから読みたい場合は、以下のように設定して下さい:
+
+     (add-to-list 'mail-sources '(file :path "/path/to/spool/file"))
+
+もしそれが Postfix, Qmail または (そういうふうに設定されている)
+fetchmail によって使われる、一通/一ファイル形式の Maildir であるのなら
+ば、こんなふうにしましょう:
+
+     (add-to-list 'mail-sources '(maildir :path "/path/to/Maildir/"
+                                          :subdirs ("cur" "new")))
+
+そして最後に、メールを一つのディレクトリーにある複数のファイルから読む
+ようにしたいのであれば (例えば procmail がすでに分割してあるという理由
+で)、設定は以下のようになります:
+
+     (add-to-list 'mail-sources
+                  '(directory :path "/path/to/procmail-dir/"
+                              :suffix ".prcml"))
+
+ここで `:suffix' に指定した ".prcml" は、Gnus に拡張子が .prcml のファ
+イルだけを使うことを指示するためのものです。
+
+さあ、後はどうやってメールを送信するかを Gnus に教えるだけです。メール
+の送信に sendmail を使いたければ (または、あなたのシステムの MTA が何で
+あれ sendmail の役を演じるのならば)、何もしなくても良いのです。でも、も
+し SMTP サーバーにメールを送りたいのだったら、以下のようなものが
+`~/.gnus.el' ファイルに書かれている必要があります:
+
+     (setq send-mail-function 'smtpmail-send-it)
+     (setq message-send-mail-function 'smtpmail-send-it)
+     (setq smtpmail-default-smtp-server "smtp.yourProvider.net")
+
+
+
+File: gnus-ja.info, Node: [3.9], Next: [3.10], Prev: [3.8], Up: FAQ 3 - Getting Messages
+
+質問 3.9
+........
+
+それから、IMAP でメールを読めるようにするには、どうすれば良いですか?
+
+
+回答
+....
+
+Gnus で IMAP を使うには二つの方法があります。最初のは IMAP を POP3 のよ
+うに使うもので、Gnus は IMAP サーバーからメールを取得してディスクに格納
+します。これをやりたいのなら (本当にそんなことをしたい人はいないでしょ
+うけれど)、以下の設定を `~/.gnus.el' ファイルに加えて下さい:
+
+     (add-to-list 'mail-sources '(imap :server "mail.mycorp.com"
+                                       :user "username"
+                                       :pass "password"
+                                       :stream network
+                                       :authentication login
+                                       :mailbox "INBOX"
+                                       :fetchflag "\\Seen"))
+
+`:stream' および/または `:authentication' の項はいじる必要があるかもし
+れません。使うことができる値については Gnus マニュアル (*Note メールソー
+ス指示子: (gnus-ja)Mail Source Specifiers.) を参照して下さい。
+
+IMAP をそれが意図された方法で使いたい場合は、違うやり方に従う必要があり
+ます。そうするには選択方法に `nnimap' を加え、そこでサーバーに関する情
+報を与えて下さい:
+
+     (add-to-list 'gnus-secondary-select-methods
+                  '(nnimap "Give the baby a name"
+                           (nnimap-address "imap.yourProvider.net")
+                           (nnimap-port 143)
+                           (nnimap-list-pattern "archive.*")))
+
+さらに Gnus が正しいやり方を推測できない場合には、サーバーに認証しても
+らう方法を指定しなければならないでしょう。詳しい情報はマニュアル
+(*Note IMAP: (gnus-ja)IMAP.) を参照して下さい。
+
+
+
+File: gnus-ja.info, Node: [3.10], Next: [3.11], Prev: [3.9], Up: FAQ 3 - Getting Messages
+
+質問 3.10
+.........
+
+職場で MS Exchange サーバーの一つを使っているのですが、Gnus を使ってそ
+こからメールを読むことはできますか?
+
+
+回答
+....
+
+サーバーに IMAP という新しい運動靴を一足はかせてくれるように、管理人に
+お願いして下さい。そして上記の説明に従って、必要なことを行なって下さい。
+
+
+
+File: gnus-ja.info, Node: [3.11], Prev: [3.10], Up: FAQ 3 - Getting Messages
+
+質問 3.11
+.........
+
+POP3 でメールを取得するサーバーで、メールを消さないように Gnus に指示す
+ることはできますか?
+
+
+回答
+....
+
+そもそも POP3 はそういうふうに動作することが意図されていません。それが
+可能なら、メッセージをサーバー上に残すためには IMAP プロトコルを使うべ
+きです。それでもなお、そういう機能を必要とする状況があるかもしれません
+が、悲しいかな、Gnus 自体はそうするための既設の機能を持っていないのです。
+
+しかしここは Gnus 村ですから、あなたの希望を達成する見込みが無いわけで
+はありません。最も簡単な方法は、メールのコピーを取り込んで、それらをディ
+スクに格納してくれる外部プログラムを手に入れることです。そうすれば
+Gnus はそこから読むことができます。例えば Unix システムでは fetchmail
+がそれです。MS Windows では、優れたニュースとメールのサーバーである
+Hamster を使うことができます。
+
+別の解は、Gnus が POP3 サーバーからメールを取得する手段を、メールをサー
+バーに残すことができるもので置き換えることでしょう。XEmacs を使っている
+のであれば mail-lib パッケージを手に入れて下さい。それは拡張された
+`pop3.el' を含んでいます。ファイルの中身を見て下さい。それを使うように
+Gnus に指示するやり方と、取得したメールを削除しない方法の説明が書かれて
+います。GNU Emacs を使っている場合は、同じことを行なうことができる
+`epop3.el' を探して下さい (そのファイルの元の出どころを知っている人は、
+私 (訳注: Simon Josefsson さんだと思います、たぶん) にメールを送って下
+さい)。さらに Gnus に外部プログラム (例えば fetchmail) を使ってメールを
+取り寄せるようにさせることもできます。やり方は Gnus マニュアル (*Note
+メールソース指示子: (gnus-ja)Mail Source Specifiers.) を参照して下さい。
+
+     訳注: T-gnus に含まれている `pop3.el' は、XEmacs のやり方をさらに
+     発展させて、完全に Gnus とともに動作するようになっています (した)。
+
+
+
+File: gnus-ja.info, Node: FAQ 4 - Reading messages, Next: FAQ 5 - Composing messages, Prev: FAQ 3 - Getting Messages, Up: Frequently Asked Questions
+
+メッセージを読む
+----------------
+
+* Menu:
+
+* [4.1]::  　グループに入ると、以前に読んだメッセージが全部なく
+             なってしまっています。もう一度読むには、どうしたら
+             良いですか?
+
+* [4.2]::  　大事なメッセージを、すでに読んだことがあっても、グ
+             ループに入ったときはいつでも見えるように Gnus に指
+             示するには、どうすれば良いですか?
+
+* [4.3]::  　メッセージのヘッダーを見るにはどうしたら良いですか?
+
+* [4.4]::  　整形されていない生のメッセージを見るには、どうすれ
+             ば良いですか?
+
+* [4.5]::  　記事バッファーの先頭に Gnus がディフォルトで表示す
+             るヘッダーを変更するには、どうしたら良いですか?
+
+* [4.6]::  　HTML メールを描画するのではなく、それがある場合には
+             テキストのパートを Gnus に表示して欲しいです。どう
+             すれば良いですか?
+
+* [4.7]::  　HTML メールを w3 以外のブラウザーを使って描画させる
+             ことはできますか?
+
+* [4.8]::  　見苦しい体裁のメールをもっと読みやすくするための何
+             かがありますか?
+
+* [4.9]::  　特定の著者が送信したものや、表題に特定の語が含まれ
+             ているメッセージを、自動的に無視する方法はあります
+             か?  また、より興味深いものを何らかの方法で強調表示
+             させることはできますか?
+
+* [4.10]:: 　いくつかの (例えばメールの) グループで、スレッド表
+             示をさせなくすることはできますか?  あるいは、いくつ
+             かのグループに固有の変数を設定することができますか?
+
+* [4.11]:: 　私が書いたメッセージとフォロー記事を、強調表示させ
+             ることはできますか?
+
+* [4.12]:: 　特にメールのグループで、Gnus がグループバッファーに
+             表示するメッセージの合計の数が非常に大きいのです。
+             これはバグですか?
+
+* [4.13]:: 　概略バッファーと記事バッファーの配置が気に入らない
+             のですが、どうやったら変更できますか?  できるなら三
+             面で表示させたいです。
+
+* [4.14]:: 　概略バッファーを見せるやり方が好きではありません。
+             調整するには、どうすれば良いですか?
+
+* [4.15]:: 　やってきたメールをいろいろなグループに振り分けるに
+             は、どうしたら良いですか?
+
+
+
+File: gnus-ja.info, Node: [4.1], Next: [4.2], Prev: FAQ 4 - Reading messages, Up: FAQ 4 - Reading messages
+
+質問 4.1
+........
+
+グループに入ると、以前に読んだメッセージが全部なくなってしまっています。
+もう一度読むには、どうしたら良いですか?
+
+
+回答
+....
+
+グループバッファーにおいて、そのグループの上にポイントが置かれている状
+態で `RET' を使うと、未読と可視記事の印 (ticked) が付いたメッセージだけ
+が現れます。存在するすべてのメッセージが表示されるようにするには、代わ
+りに `C-u RET' を使って下さい。もし最新の、例えば 300通だけが所望ならば、
+`C-u 300 RET' を使いましょう。
+
+スレッド表示を有効にしていると、未読のメッセージだけを表示するのはじれっ
+たいかもしれません。スレッドがちぎれてしまうことを防止するのに十分な量
+の古い記事を取り込むには、以下の設定を追加すれば良いでしょう:
+
+     (setq gnus-fetch-old-headers 'some)
+
+`some' を `t' に替えると、すべての記事を表示するようになります (警告:
+どちらの設定もグループに入ったときに取り込むデータ量を増加させ、グルー
+プに入る処理を遅くしてしまいます)。
+
+すでに Gnus 5.10 を使っているならば、最後の N 通のメッセージを取り込む
+ために、概略バッファーで `/o N' 命令を使うことができます。この機能は
+5.8.8 にはありません。
+
+すべての古いメッセージは要らないけれども、今まさに読んでいるメッセージ
+の親を辿りたいならば `^' 命令を使って下さい。今まさに読んでいるメッセー
+ジが属しているスレッドのすべての記事を表示したい場合は、`A T' 命令があ
+なたの望むものです。
+
+
+
+File: gnus-ja.info, Node: [4.2], Next: [4.3], Prev: [4.1], Up: FAQ 4 - Reading messages
+
+質問 4.2
+........
+
+大事なメッセージを、すでに読んだことがあっても、グループに入ったときは
+いつでも見えるように Gnus に指示するには、どうすれば良いですか?
+
+
+回答
+....
+
+大事なメッセージには可視記事の印 (ticked) を付けることができます。それ
+には、概略バッファーでポイントがその記事を指しているときに `u' を叩いて
+下さい。可視記事の印を消す命令は `d' (これは可視記事の印を消してから未
+読の印を付けます) または `M c' (そのメッセージに付いているすべての印を
+消します) です。
+
+
+
+File: gnus-ja.info, Node: [4.3], Next: [4.4], Prev: [4.2], Up: FAQ 4 - Reading messages
+
+質問 4.3
+........
+
+メッセージのヘッダーを見るにはどうしたら良いですか?
+
+
+回答
+....
+
+`t' 命令を使うとすべてのヘッダーを表示し、もう一度使うとそれらを隠しま
+す。
+
+
+
+File: gnus-ja.info, Node: [4.4], Next: [4.5], Prev: [4.3], Up: FAQ 4 - Reading messages
+
+質問 4.4
+........
+
+整形されていない生のメッセージを見るには、どうすれば良いですか?
+
+
+回答
+....
+
+`C-u g' 命令を使うと生のメッセージを表示し、`g' で通常の表示に戻ります。
+
+
+
+File: gnus-ja.info, Node: [4.5], Next: [4.6], Prev: [4.4], Up: FAQ 4 - Reading messages
+
+質問 4.5
+........
+
+記事バッファーの先頭に Gnus がディフォルトで表示するヘッダーを変更する
+には、どうしたら良いですか?
+
+
+回答
+....
+
+変数 `gnus-visible-headers' がどのヘッダーを表示するかを制御します。そ
+の値は正規表現で、それに合致するヘッダー行が表示されます。したがって、
+著者、表題、日付、そしてもし存在する場合は Followup-To と MUA / NUA を
+表示したい場合には、`~/.gnus.el' ファイルで以下の設定を行なって下さい:
+
+     (setq gnus-visible-headers
+           '("^From" "^Subject" "^Date" "^Newsgroups" "^Followup-To"
+             "^User-Agent" "^X-Newsreader" "^X-Mailer"))
+
+
+
+File: gnus-ja.info, Node: [4.6], Next: [4.7], Prev: [4.5], Up: FAQ 4 - Reading messages
+
+質問 4.6
+........
+
+HTML メールを描画するのではなく、テキストのパートがある場合には、そちら
+の方を Gnus に表示して欲しいです。どうすれば良いですか?
+
+
+回答
+....
+
+`~/.gnus.el' ファイルで以下の設定を行なって下さい:
+
+     (add-to-list 'mm-discouraged-alternatives "text/html")
+     (add-to-list 'mm-discouraged-alternatives "text/richtext")
+
+HTML のパートと同じ内容のテキストのパートが無い場合でさえも HTML のパー
+トを描画して欲しくないのであれば、以下の設定を追加して下さい:
+
+     (setq mm-automatic-display (remove "text/html" mm-automatic-display))
+
+
+
+File: gnus-ja.info, Node: [4.7], Next: [4.8], Prev: [4.6], Up: FAQ 4 - Reading messages
+
+質問 4.7
+........
+
+HTML メールを w3 以外のブラウザーを使って描画させることはできますか?
+
+
+回答
+....
+
+Gnus 5.10 またはより新しいものを使う場合だけですが、w3, w3m, links,
+lynx および html2text の中から選ぶことができ、どれを使うかは変数
+`mm-text-html-renderer' で指定することができます。したがって links で
+HTML メールを描画したいときは、こうして下さい:
+
+     (setq mm-text-html-renderer 'links)
+
+
+
+File: gnus-ja.info, Node: [4.8], Next: [4.9], Prev: [4.7], Up: FAQ 4 - Reading messages
+
+質問 4.8
+........
+
+見苦しい体裁のメールをもっと読みやすくするための何かがありますか?
+
+
+回答
+....
+
+Gnus は入ってきたメールを「洗濯」するために複数の関数を提供します。それ
+らはメニューの Article->Washing 項目を辿ることによって見つけることがで
+きるでしょう。最も興味深いものを挙げてみましょう:
+
+`W w (Wrap long lines)'
+     長い行を折り畳みます。
+
+`W r (Decode ROT13)'
+     ROT13 をデコードします。
+
+`W Y f (Outlook Deuglify)'
+     Outlook を見苦しくなくさせます。これは、マイクロソフトの製品を使っ
+     ている多くのユーザーが送ってくる間の抜けた引用付き返信 (訳注: 折り
+     畳まれた長い引用行の二行目以降に引用符が前置されないなど) を修繕し
+     ます。
+
+     他の見苦しくなくさせる機能については `W Y C-h' を使うかメニューを
+     眺めて下さい。Outlook Deuglify は Gnus 5.10 以上で使うことができま
+     す。
+
+
+
+File: gnus-ja.info, Node: [4.9], Next: [4.10], Prev: [4.8], Up: FAQ 4 - Reading messages
+
+質問 4.9
+........
+
+特定の著者が送信したものや、表題に特定の語が含まれているメッセージを、
+自動的に無視する方法はありますか?  また、より興味深いものを何らかの方法
+で強調表示させることはできますか?
+
+
+回答
+....
+
+あなたに必要なのはスコア付けです。スコア付けと言うのは、それぞれのメッ
+セージに整数の値を割り付けるための規則を定義することです。値に基づいて
+概略バッファーでメッセージを強調表示したり (それが +2000 といった高い値
+だったら)、自動的に既読にしたり (その値が例えば -800 のような低い値だっ
+たら)、あるいは他のいくつかの作用を行なったりします。
+
+メッセージにスコアの値を割り付ける規則を設定するための、基本的な三つの
+やり方があります。
+
+  1. 最初の最も簡単なやり方は、今まさに読んでいる記事に基づいて規則を設
+     定することです。いつもたわごとを書いてよこすやつからのメッセージを
+     読んで、今後はそいつからのメッセージを無視しようと決心したならば、
+     `L' を叩いてスコアを下げる規則を設定して下さい。
+
+     すると Gnus は、スコアを下げる基準をどれにすれば良いかを尋ねてくる
+     でしょう。`?' を二回叩くと、すべての候補を見ることができますが、こ
+     こで選択すべきなのは著者 (From ヘッダー) を意味する `a' です。
+
+     次に Gnus はどの種類の合致を使うべきかを尋ねてくるので、厳密な合致
+     のための `e' を叩くか、あるいは文字の一部への合致を求める `s' を叩
+     いてから、後ですべてを削除して下さい。どんな電子メールアドレスであっ
+     ても、それを持つすべての著者のスコアを下げるために、その名前が使わ
+     れます。
+
+     さらに、その規則をいつ適用するべきか、またどれくらいの時間続けるべ
+     きかを Gnus に伝える必要があります。例えば `p' では、その規則を今
+     すぐ適用して、それを永久に持続させます。
+
+     スコアを下げるのではなくて上げたいのであれば、`L' の代わりに `I'
+     を使って下さい。
+
+  2. 規則を手で設定することもできます。そうするには概略バッファーで `V
+     f' 命令を使って下さい。するとスコアファイルの名前を尋ねられるでしょ
+     う。一つのグループだけで有効なのは `name.of.group.SCORE' で、すべ
+     てのグループに対して有効なのが `all.SCORE' です。厳密な構文につい
+     ては Gnus のマニュアルを参照して下さい。それは一つの大きなリストで、
+     その要素もまた多くのリストです。その後者の単位リストの第一要素はス
+     コアの対象であるヘッダーで、残りは、何に合致するか、いくらのスコア
+     を割り当てるか、規則を期限切れ消去するのはいつか、そしてどうやって
+     合致させるかを示すもう一つのリストです。私にとても興味を持ったなら
+     ば、例えば以下のようなものを `all.SCORE' ファイルに加えてみて下さ
+     い:
+
+          (("references" ("hschmi22.userfqdn.rz-online.de" 500 nil s))
+           ("message-id" ("hschmi22.userfqdn.rz-online.de" 999 nil s)))
+
+     これは私が書いたメッセージのスコアに 999 を加えて、それに対する
+     (たぶん間接的な) 回答のメッセージのスコアに 500 を加えるでしょう。
+     もちろん分別のある人は誰も、こんなことはしないでしょうが。:-)
+
+  3. 三番目の選択肢は適応スコア付けです。これは、Gnus があなたを観察して、あ
+     なたが何に興味を持って何に幻滅するかを見つけ出し、それらを反映した規則を
+     設定してくれるものです。流通量の多いグループを読むときに、適応スコア付け
+     は大きな助けになるでしょう。適応スコア付けをやってみたいならば、
+     `~/.gnus.el' ファイルで以下の宣言を行なって下さい:
+
+          (setq gnus-use-adaptive-scoring t)
+
+
+
+File: gnus-ja.info, Node: [4.10], Next: [4.11], Prev: [4.9], Up: FAQ 4 - Reading messages
+
+質問 4.10
+.........
+
+いくつかの (例えばメールの) グループで、スレッド表示をさせなくすること
+はできますか?  あるいは、いくつかのグループに固有の変数を設定することが
+できますか?
+
+
+回答
+....
+
+グループバッファーにいるときに、そのグループにポイントを移動してから
+`G c' を叩いて下さい。すると、そのグループのためのオプションを設定する
+ことができるバッファーが開きます。そして、そのバッファーのおしまいの方
+で、そのグループでローカルに変数を設定するための項目を見つけることがで
+きるでしょう。スレッド表示をさせなくするには、変数名として
+`gnus-show-threads' を、値として `nil' を入力して下さい。作業を終えたら、
+そのバッファーの最初の方にある [done] ボタンを叩きましょう。
+
+
+
+File: gnus-ja.info, Node: [4.11], Next: [4.12], Prev: [4.10], Up: FAQ 4 - Reading messages
+
+質問 4.11
+.........
+
+私が書いたメッセージとフォロー記事を、強調表示させることはできますか?
+
+
+回答
+....
+
+「できますか?」なんて質問はやめて下さい。Gnus 村では答えはいつも yes な
+のですから。:-) これは三段階の作業になります。まず、それらの投稿のため
+のフェース (概略行がどんなふうに見えるかの仕様) を作りましょう。続いて、
+それらにいくばくかの特別なスコアを与えましょう。最後に、その新しいフェー
+スを使うように Gnus に指示しましょう。それをどう行なうかの詳しい説明が
+my.gnus.org (http://my.gnus.org/node/view/224) にあります。
+
+
+
+File: gnus-ja.info, Node: [4.12], Next: [4.13], Prev: [4.11], Up: FAQ 4 - Reading messages
+
+質問 4.12
+.........
+
+特にメールのグループで、Gnus がグループバッファーに表示するメッセージの
+合計の数が非常に大きいのです。これはバグですか?
+
+
+回答
+....
+
+いいえ、これは Gnus の設計上の問題で、これを直すには Gnus のバックエン
+ドの主要な部分を実装し直さなければなりません。Gnus は最大の記事番号から
+最小の記事番号を減算したものが合計の記事数であると解釈します。これは
+Usenet のグループでは OK なのですが、メールのグループでたくさんのメッセー
+ジを消去したり移動すると計算に失敗します。この病を治療するには `C-u
+RET' でそのグループに入り (この命令は Gnus にすべてのメッセージを持って
+来させます)、`M P b' ですべてのメッセージに印を付けてから、`B m
+name.of.group' でメッセージを全部、それらが元あったグループに移動して下
+さい。この処理によってそれらは新しいメッセージ番号を持たせられて、合計
+の記事数は再び正しくなるでしょう (またもやそれらを消したり別のグループ
+に移動するまでは)。
+
+
+
+File: gnus-ja.info, Node: [4.13], Next: [4.14], Prev: [4.12], Up: FAQ 4 - Reading messages
+
+質問 4.13
+.........
+
+概略バッファーと記事バッファーの配置が気に入らないのですが、どうやった
+ら変更できますか?  できるなら三面で表示させたいです。
+
+
+回答
+....
+
+`gnus-add-configuration' 関数を呼ぶことによって、ウィンドウの配置を制御
+することができます。構文はいささか複雑ですが、マニュアルで非常に良く説
+明されています (*Note ウィンドウの配置: (gnus-ja)Window Layout.)。いく
+つかのやさしい例を挙げてみましょう。
+
+概略 25% 記事 75% というディフォルトの割合を、概略 35% 記事 65% の割合
+に変更します (記事のための 1.0 は、残った空き地を取るという意味です):
+
+     (gnus-add-configuration
+      '(article (vertical 1.0 (summary .35 point) (article 1.0))))
+
+グループバッファーが左、概略バッファーが右上、記事バッファーが右下とい
+う三面配置です:
+
+     (gnus-add-configuration
+      '(article
+        (horizontal 1.0
+                    (vertical 25
+                              (group 1.0))
+                    (vertical 1.0
+                              (summary 0.25 point)
+                              (article 1.0)))))
+     (gnus-add-configuration
+      '(summary
+        (horizontal 1.0
+                    (vertical 25
+                              (group 1.0))
+                    (vertical 1.0
+                              (summary 1.0 point)))))
+
+
+

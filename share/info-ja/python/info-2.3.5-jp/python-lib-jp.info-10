@@ -1,0 +1,1202 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: Codec オブジェクト,  Next: StreamWriter オブジェクト,  Prev: Codec 基底クラス,  Up: Codec 基底クラス
+
+Codec オブジェクト
+..................
+
+`Codec' クラスは以下のメソッドを定義します。これらのメソッドは、状
+態を保持しないエンコーダとデコーダ関数のインターフェイスを定義します。
+
+`encode(input[, errors])'
+     オブジェクト INPUT エンコードし、(出力  オブジェクト,  消費した 長
+     さ) のタプルを返します。codecs は Unicode 専用で  はありませんが、
+     Unicode の文脈では、エンコーディングは Unicode オブ
+     ジェクトを、特定 の  文字集合エンコーディング（たとえば `cp1252'
+     や `iso-8859-1'） を使って文字 列オブジェクトに変換します。
+
+     ERRORS は適用するエラー処理を定義します。`'strict'' 処理が
+     デフォルトです。
+
+     このメソッドは `Codec' の状態を保持しなくてかまいません。  効率
+     よくエンコード／デコードするために、状態を保持しなければならない
+     codecs には `StreamCodec' を使いましょう。
+
+     エンコーダは長さが0の入力を受け付け、その場合には、空のオブジェクトを
+     出力オブジェクトとして返す必要があります。
+
+`decode(input[, errors])'
+     オブジェクト INPUT をデコードし、(出力オブジェクト,  消費した長
+     さ) のタプルを返します。Unicode の文脈では、デコードは特定の
+     文字集合 エンコーディングでエンコードされた文字列を Unicode
+     オブジェクトに変換 します。
+
+     INPUT は `bf_getreadbuf' バッファスロットを提供するオブジェ
+     クトでなければいけません。Python
+     文字列オブジェクト、バッファオブジェ
+     クト、メモリにマップされたファイルが、バッファスロットの例です。
+
+     ERRORS は適用するエラー処理を定義します。`'strict'' がデフ
+     ォルト値です。
+
+     このメソッドは、`Codec' インスタンス内部の状態を保持しなくてもか
+     まいません。効率よくエンコード／デコードするために、状態を保持しなけれ
+     ばならない codecs には `StreamCodec' を使いましょう。
+
+     エンコーダは長さが0の入力を受け付け、その場合には、空のオブジェクトを
+     出力オブジェクトとして返す必要があります。
+
+`StreamWriter' と `StreamReader' クラスは、新しいエンコーデ
+ィングモジュールを、非常に簡単に実装するのに使用できる、一般的なインターフ
+ェイス提供します。実装例は `encodings.utf_8' をご覧ください。
+
+
+File: python-lib-jp.info,  Node: StreamWriter オブジェクト,  Next: StreamReader オブジェクト,  Prev: Codec オブジェクト,  Up: Codec 基底クラス
+
+StreamWriter オブジェクト
+.........................
+
+`StreamWriter' クラスは `Codec' のサブクラスで、以下のメソッ
+ドを定義しています。全てのストリーム・ライターは、Python の codec レジス
+トリとの互換性を保つために、これらのメソッドを定義する必要があります。
+
+`StreamWriter(stream[, errors])'
+     Constructor for a `StreamWriter' instance.  `StreamWriter'
+     インスタンスのコンストラクタ。
+
+     全てのストリーム・ライターのコンストラクタは、このインターフェイスを提
+     供しなければなりません。キーワード引数を追加しても構いませんが、Python
+     の codec レジストリは、ここで定義される引数だけを使います。
+
+     STREAM は、（バイナリで）書き込み可能なファイル的なオブジェクト
+     でなくてはいけ  ません。
+
+     `StreamWriter' は、ERRORS キーワード引数を受けて、異なった
+     エラー処理の仕組みを実装しても構いません。以下のパラメータは、あらか
+     じめ定義されています。
+
+        * `'strict'' `ValueError' (または、そのサブクラス)
+          を発生。これがデフォルトです。
+
+        * `'ignore'' 文字を無視して、次の文字から続ける。
+
+        * `'replace'' 適切な置換文字で置換。
+
+        * `'xmlcharrefreplace'' 適切な XML 文字参照で置換。
+
+        * `'backslashreplace'' バックスラッシュ付きのエスケープシー
+          ケンスで置換。
+
+     ERRORS 引数は、同名の属性に代入されます。この属性を変更するこ
+     とで、`StreamWriter' オブジェ  クトが生きている間に、異なるエ
+     ラー処理に変更することができます。
+
+     ERRORS 引数が取り得る値の種類は、`register_error()' で
+     拡張できます。
+
+`write(object)'
+     Writes the object's contents encoded to the stream.
+     エンコードされた object の内容をストリームに書き出す。
+
+`writelines(list)'
+     連結した、文字列リストを(おそらくは `write()'   メソッドを再利
+     用して)ストリームに書き出す。
+
+`reset()'
+     状態保持に使われていた codec
+     のバッファを、強制的に出力し、リセットす る。
+
+     このメソッドの呼び出したとき、出力先データをきれいな状態にし、状態を
+     元に戻すのにストリーム全体
+     を再スキャンすることなく、新しくフラッシュ
+     するデータを追加できるように保障するべきです。
+
+ここまでで挙げたメソッドに加えて、`StreamWriter' は、元になってい
+るストリームから、他の全てのメソッドや属性を、継承しなければなりません。
+
+
+File: python-lib-jp.info,  Node: StreamReader オブジェクト,  Next: StreamReaderWriter オブジェクト,  Prev: StreamWriter オブジェクト,  Up: Codec 基底クラス
+
+StreamReader オブジェクト
+.........................
+
+`StreamReader' クラスは `Codec' のサブクラスで、以下のよう
+なメソッドを定義します。Python の codec レジストリと互換性を保つには、こ
+れらのメソッド全てを定義しなければなりません。
+
+`StreamReader(stream[, errors])'
+     `StreamReader' インスタンスのコンストラクタ。
+
+     全てのストリーム・リーダは、このインターフェースを持つコンストラクタを
+     定義しなければいけません。キーワード引数を追加しても構いませんが、ここ
+     で定義されているものだけが、Python の codec
+     レジストリから使われます。
+
+     ここでは Python の codec レジストリが使うものを説明します。
+
+     STREAM は（バイナリ）データを読み込み可能なファイル的オブジェク
+     トでなければいけません。
+
+     The `StreamReader' は、ERRORS キーワード引数を受けて、異なった
+     エラー処理の仕組みを実装しても構いません。以下のパラメータは、あらか
+     じめ定義されています。
+
+        * `'strict'' `ValueError' (または、そのサブクラス)
+          を発生。これがデフォルトです。
+
+        * `'ignore'' 文字を無視して、次の文字から続ける。
+
+        * `'replace'' 適切な置換文字で置換。
+
+     ERRORS 引数は、同名の属性に代入されます。この属性を変更するこ
+     とで、`StreamReader' オブジェクトが生きている間に、異なるエ
+     ラー処理に変更することができます。
+
+     ERRORS 引数が取り得る値の種類は、`register_error()' で
+     拡張できます。
+
+`read([size])'
+     ストリームからのデータをデコードし、デコード済のオブジェクトを返す。
+
+     SIZE は、デコードするためにストリームから読み込む、およその最大バ
+     イト数を意味します。デコーダは、この値を適切な値に変更できます。デフォ
+     ルト値 -1 にすると、可能な限りたくさんのデータを読み込みます。
+     SIZE の目的は、巨大なファイルを1度にデコードするのを防ぐことです。
+
+     このメソッドは貪欲な読み込み戦略を取るべきです。すなわち、エンコーディ
+     ング定義と size
+     の値が許す範囲で、できるだけ多くのデータを読むべきだと
+     いうことです。たとえば、ストリーム上にエンコーディングの終端や状態の目
+     印があれば、それも読み込みます。
+
+`readline([size])'
+     入力ストリームから1行読み込み、デコード済みのデータを返す。
+
+     `readlines()' とは異なり、このメソッドは改行情報を、元のストリ
+     ームの `readline()' メソッドから継承します。- 行バッファの不足
+     のため、 現在、cedec
+     のデコーダを使った改行のサポートはありません。し
+     かし、サブクラスは可能であるなら、独自の改行情報を使って、このメソッド
+     の実装を試みるべきです。
+
+     SIZE が与えられた場合、ストリームにおける `readline()' の size
+     引数に渡されます。
+
+`readlines([sizehint])'
+     インプットストリームから全ての行を読み込み、行のリストとして返します。
+
+     改行は、codec デコーダ
+     のメソッド実装され、リスト要素の中に含まれます。
+
+     SIZEHINT が与えられた場合、 ストリームの `read()' メソッ ドに SIZE
+     引数として渡されます。
+
+`reset()'
+     状態保持に使われた codec のバッファをリセットする。
+
+     ストリームの再配置を行うべきではないので注意してください。このメソッドは
+     デコードの際のエラーから復帰できるようにすることを目的としたものです。
+
+ここまでで挙げたメソッドに加えて、`StreamReader' は、元になってい
+るストリームから、他の全てのメソッドや属性を、継承しなければなりません。
+
+次に挙げる2つの基底クラスは、利便性のために含まれています。codec
+レジスト
+リは、これらを必要としませんが、実際のところ、あると有用なものでしょう。
+
+
+File: python-lib-jp.info,  Node: StreamReaderWriter オブジェクト,  Next: StreamRecoder オブジェクト,  Prev: StreamReader オブジェクト,  Up: Codec 基底クラス
+
+StreamReaderWriter オブジェクト
+...............................
+
+`StreamReaderWriter' を使って、読み書き両方に使えるストリームをラ
+ップできます。
+
+`lookup()' 関数が返すファクトリ関数を使って、インスタンスを生成
+するという設計です。
+
+`StreamReaderWriter(stream, Reader, Writer, errors)'
+     `StreamReaderWriter' インスタンスを生成する。  STREAM はフ
+     ァイル的オブジェクトです。  READER と WRITER は、それぞれ
+     `StreamReader' と   `StreamWriter' インターフェイスを提供
+     するファクトリ関数かファク  トリクラスでなければなりません。
+     エラー処
+     理は、ストリーム・リーダーとライターで定義したものと同じように行
+     われ ます。
+
+`StreamReaderWriter' インスタンスは、`StreamReader' クラスと
+`StreamWriter'クラスを合わせたインターフェイスを継承します。元にな
+るストリームからは、他のメソッドや属性を継承します。
+
+
+File: python-lib-jp.info,  Node: StreamRecoder オブジェクト,  Prev: StreamReaderWriter オブジェクト,  Up: Codec 基底クラス
+
+StreamRecoder オブジェクト
+..........................
+
+`StreamRecoder' はエンコーディングデータの、フロントエンド-バック
+エンドを観察する機能を提供します。異なるエンコーディング環境を扱うとき、
+便利な場合があります。
+
+`lookup()' 関数が返すファクトリ関数を使って、インスタンスを生成
+するという設計になっています。
+
+`StreamRecoder(stream, encode, decode, Reader, Writer, errors)'
+     双方向変換を実装する `StreamRecoder' インスタンスを生成します。
+     ENCODE と DECODE はフロントエンド (`read()' への入
+     力と`write()'からの出力) を処理し、READER と WRITER は
+     バックエンド (ストリームに対する読み書き) を処理します。
+
+     これらのオブジェクトを使って、たとえば、Latin-1 から
+     UTF-8、あるいは逆 向きの変換を、透過に記録することができます。
+
+     STREAM はファイル的オブジェクトでなくてはいけません。
+
+     ENCODE と DECODE は `Codec' のインターフェイスに忠
+     実でなくてはいけません。READER と WRITER は、それぞれ
+     `StreamReader' と `StreamWriter' のインターフェイスを提供
+     するオブジェクトのファクトリ関数かクラスでなくてはいけません。
+
+     ENCODE と DECODE はフロントエンドの変換に必要で、 READER と WRITER
+     はバックエンドの変換に必要です。中間のフ
+     ォーマットはコデックの組み合わせによって決定されます。たとえば、
+     Unicode コデックは中間エンコーディングに Unicode を使います。
+
+     エラー処理はストリーム・リーダやライタで定義されている方法と同じように
+     行われます。
+
+`StreamRecoder' インスタンスは、`StreamReader' と `StreamWriter'
+クラスを合わせたインターフェイスを定義します。また、
+元のストリームのメソッドと属性も継承します。
+
+
+File: python-lib-jp.info,  Node: 標準エンコーディング,  Next: encodingsidna --- アプリケーションにおける国際化ドメイン名 IDNA,  Prev: Codec 基底クラス,  Up: codecs
+
+標準エンコーディング
+--------------------
+
+Python には数多くの codec が組み込みで付属します。これらは C 言語の
+関数、対応付けを行うテーブルの両方で提供されています。以下のテーブル
+では codec と、いくつかの良く知られている別名と、エンコーディング
+が使われる言語を列挙します。別名のリスト、言語のリストともしらみつぶしに
+網羅されているわけではありません。大文字と小文字、またはアンダースコア
+の代りにハイフンにしただけの綴りも有効な別名です。
+
+多くの文字セットは同じ言語をサポートしています。これらの文字セットは
+個々の文字 (例えば、EURO SIGN がサポートされているかどうか) や、
+文字のコード部分への割り付けが異なります。特に欧州言語では、
+典型的に以下の変種が存在します:
+
+   * ISO 8859 コードセット
+
+   * Microsoft Windows コードページで、8859 コード形式から導出されて
+     いるが、制御文字を追加のグラフィック文字と置き換えたもの
+
+   * IBM EBCDIC コードページ
+
+   * ASCII 互換の IBM PC コードページ
+
+Codec                    別名                     言語
+------                   -----                    -----
+ascii                    646, us-ascii            イギリス
+cp037                    IBM037, IBM039           イギリス
+cp424                    EBCDIC-CP-HE, IBM424     ヘブライ
+cp437                    437, IBM437              イギリス
+cp500                    EBCDIC-CP-BE,            西ヨーロッパ
+                         EBCDIC-CP-CH, IBM500     
+cp737                                             ギリシャ
+cp775                    IBM775                   バルト沿岸国
+cp850                    850, IBM850              西ヨーロッパ
+cp852                    852, IBM852              中央および東ヨーロッパ
+cp855                    855, IBM855              ブルガリア、ベラルーシ、マケドニア、ロシア、セルビア
+cp856                                             ヘブライ
+cp857                    857, IBM857              トルコ
+cp860                    860, IBM860              ポルトガル
+cp861                    861, CP-IS, IBM861       アイスランド
+cp862                    862, IBM862              ヘブライ
+cp863                    863, IBM863              カナダ
+cp864                    IBM864                   アラビア
+cp865                    865, IBM865              デンマーク、ノルウェー
+cp869                    869, CP-GR, IBM869       ギリシャ
+cp874                                             タイ
+cp875                                             ギリシャ
+cp1006                                            Urdu
+cp1026                   ibm1026                  トルコ
+cp1140                   ibm1140                  西ヨーロッパ
+cp1250                   windows-1250             中央および東ヨーロッパ
+cp1251                   windows-1251             ブルガリア、ベラルーシ、マケドニア、ロシア、セルビア
+cp1252                   windows-1252             西ヨーロッパ
+cp1253                   windows-1253             ギリシャ
+cp1254                   windows-1254             トルコ
+cp1255                   windows-1255             ヘブライ
+cp1256                   windows1256              アラビア
+cp1257                   windows-1257             バルト沿岸国
+cp1258                   windows-1258             ベトナム
+latin_1                  iso-8859-1, iso8859-1,   西ヨーロッパ
+                         8859, cp819, latin,      
+                         latin1, L1               
+iso8859_2                iso-8859-2, latin2, L2   中央および東ヨーロッパ
+iso8859_3                iso-8859-3, latin3, L3   エスペラント、マルタ
+iso8859_4                iso-8859-4, latin4, L4   バルト沿岸国
+iso8859_5                iso-8859-5, cyrillic     ブルガリア、ベラルーシ、マケドニア、ロシア、セルビア
+iso8859_6                iso-8859-6, arabic       アラビア
+iso8859_7                iso-8859-7, greek,       ギリシャ
+                         greek8                   
+iso8859_8                iso-8859-8, hebrew       ヘブライ
+iso8859_9                iso-8859-9, latin5, L5   トルコ
+iso8859_10               iso-8859-10, latin6, L6  北欧
+iso8859_13               iso-8859-13              バルト沿岸国
+iso8859_14               iso-8859-14, latin8, L8  ケルト
+iso8859_15               iso-8859-15              西ヨーロッパ
+koi8_r                                            ロシア
+koi8_u                                            ウクライナ
+mac_cyrillic             maccyrillic              ブルガリア、ベラルーシ、マケドニア、ロシア、セルビア
+mac_greek                macgreek                 ギリシャ
+mac_iceland              maciceland               アイスランド
+mac_latin2               maclatin2,               中央および東ヨーロッパ
+                         maccentraleurope         
+mac_roman                macroman                 西ヨーロッパ
+mac_turkish              macturkish               トルコ
+utf_16                   U16, utf16               全ての言語
+utf_16_be                UTF-16BE                 全ての言語 (BMP only)
+utf_16_le                UTF-16LE                 全ての言語 (BMP only)
+utf_7                    U7                       全ての言語
+utf_8                    U8, UTF, utf8            全ての言語
+
+数多くの codec は Python 特有なので、それらの codec 名は Python
+の外では無意味なものとなります。これらの codec のいくつかは Unicode
+文字列からバイト文字列への変換を行わず、むしろ単一の
+引数をもつ全写像関数はエンコーディングとみなすことができるという Python
+codec の性質を利用しています。
+
+以下に列挙した codec では、"エンコード" 方向の結果は常にバイト文字列
+方向です。"デコード" 方向の結果はテーブル内の被演算子型として列挙
+されています。
+
+Codec              別名               被演算子の型       目的
+------             ------             ------             ------
+base64_codec       base64, base-64    byte string        被演算子を MIME
+                                                         base64
+                                                         に変換します
+hex_codec          hex                byte string        被演算子をバイトあたり
+                                                         2 桁の 16
+                                                         進数の表現に変換します
+idna                                  Unicode string     RFC 3490
+                                                         を実装しています。
+                                                         _Added in Python
+                                                         version 2.3_
+                                                         `encodings.idna'
+                                                         も参照してください
+mbcs               dbcs               Unicode string     Windows のみ:
+                                                         被演算子を ANSI
+                                                         コードページ
+                                                         (CP_ACP)
+                                                         に従ってエンコードします
+palmos                                Unicode string     PalmOS 3.5
+                                                         のエンコーディングです
+punycode                              Unicode string     RFC 3492
+                                                         を実装しています。
+                                                         _Added in Python
+                                                         version 2.3_
+quopri_codec       quopri,            byte string        被演算子を MIME
+                   quoted-printable,                     quoted printable
+                   quotedprintable                       形式に変換します
+raw_unicode_escape                    Unicode string     Python
+                                                         ソースコードにおける
+                                                         raw Unicode
+                                                         リテラルとして
+                                                         適切な文字列を生成します。
+rot_13             rot13              byte string        被演算子のシーザー暗号
+                                                         (Caesar-cypher)
+                                                         を返します
+string_escape                         byte string        Python
+                                                         ソースコードにおける文字列リテラルとして適切な
+                                                         文字列を生成します。
+undefined                             any                全ての変換に対して例外を送出します。
+                                                         バイト列と
+                                                         Unicode
+                                                         文字列との間で自動的な型強制をおこないたくない
+                                                         時にシステムエンコーディングとして使うことができます。
+unicode_escape                        Unicode string     Python
+                                                         ソースコードにおける
+                                                         Unicode
+                                                         リテラルとして適切な
+                                                         文字列を生成します。
+unicode_internal                      Unicode string     被演算子の内部表現を返します。
+uu_codec           uu                 byte string        被演算子を
+                                                         uuencode
+                                                         を用いて変換します。
+zlib_codec         zip, zlib          byte string        被演算子を gzip
+                                                         を用いて圧縮します。
+
+
+File: python-lib-jp.info,  Node: encodingsidna --- アプリケーションにおける国際化ドメイン名 IDNA,  Prev: 標準エンコーディング,  Up: codecs
+
+`encodings.idna' -- アプリケーションにおける国際化ドメイン名 (IDNA)
+-------------------------------------------------------------------
+
+国際化ドメイン名実装
+
+_Added in Python version 2.3_
+
+このモジュールでは RFC 3490 (アプリケーションにおける国際化 ドメイン名,
+IDNA: Internationalized Domain Names in Applications) および RFC 3492
+(Nameprep: 国際化ドメイン名 (IDN) の ための stringprep プロファイル)
+を実装しています。 このモジュールは `punycode' エンコーディングおよび
+`stringprep' の上に構築されています。
+
+これらの RFC はともに、ドメイン名における非 ASCII 文字をサポートする
+ためのプロトコルを定義しています。 ("www.Alliancefranc,aise.nu"
+のような) 非 ASCII 文字を含む ドメイン名は
+ASCIIと互換性のあるエンコーディング (ACE、
+"www.xn-alliancefranaise-npb.nu" のような形式) に変換されます。
+ドメイン名の ACE 形式は、DNS クエリ、HTTP `Host' フィールド
+などといった、プロトコルが任意の文字を使うことができない
+全ての場所で用いられます。 この変換はアプリケーション内で行われます;
+可能ならユーザからは 不可視となります: アプリケーションは Unicode
+ドメインラベルを ワイヤ上に載せる際に IDNA に、 ACE ドメインラベルを
+ユーザに提供する前に Unicode に、それぞれ透過的に変換しなければ
+なりません。
+
+Python ではこの変換をいくつかの方法でサポートします: `idna' codec は
+Unicode と ACE 間の変換を行います。さらに、 `socket' モジュールは
+Unicode ホスト名を ACE に透過的に
+変換するため、アプリケーションはホスト名を `socket'
+モジュールに渡す際にホスト名の変換に煩わされることがありません。
+その上で、ホスト名を関数パラメタとして持つ、`httplib' や `ftplib'
+のようなモジュールでは Unicode ホスト名を 受理します (`httplib'
+でもまた、`Host:' フィールドにある IDNA
+ホスト名を、フィールド全体を送信する場合に透過的に送信 します)。
+
+(逆引きなどによって) ワイヤ越しにホスト名を受信する際、Unicode
+への自動変換は行われません: こうしたホスト名をユーザに提供
+したいアプリケーションでは、Unicode にデコードしてやる必要が あります。
+
+`encodings.idna' ではまた、nameprep 手続きを実装しています。 nameprep
+はホスト名に対してある正規化を行って、国際化ドメイン名の
+大小文字非区別を達成するとともに、類似の文字を一元化します。 nameprep
+関数は必要なら直接使うこともできます。
+
+`nameprep(label)'
+     LABEL を nameprep したバージョンを返します。現在の実装では
+     クエリ文字列を仮定しているので、 `AllowUnassigned' は真です。 true.
+
+`ToASCII(label)'
+     RFC 3490 で指定されているようにして、ラベルを ASCIIに変換します。
+     `UseSTD3ASCIIRules' は偽であると仮定します。
+
+`ToUnicode(label)'
+     RFC 3490 で指定されているようにして、ラベルを Unicode
+     に変換します。
+
+
+File: python-lib-jp.info,  Node: unicodedata,  Next: stringprep,  Prev: codecs,  Up: 文字列処理
+
+Unicode データベース
+====================
+
+Access the Unicode Database.
+
+このモジュールは、全ての Unicode 文字の属性を定義している Unicode
+文字データベースへのアクセスを提供します。このデータベース内のデータは、<ftp://ftp.unicode.org/>
+で公開されている `UnicodeData.txt' ファイルのバージョン 3.2.0
+に基づいています。
+
+このモジュールは、UnicodeData ファイルフォーマット 3.2.0
+（<http://www.unicode.org/Public/UNIDATA/UnicodeData.html>
+を参照）で定義されているものと、同じ名前と記号を使います。このモジュールで定義されている関数は、以下のとおりです。
+
+`lookup(name)'
+     名前に対応する文字を探します。その名前の文字が見つ かった場合、
+     その Unicode
+     文字が返されます。見つからなかった場合には、`KeyError'
+     を発生させます。
+
+`name(unichr[, default])'
+     Unicode 文字 UNICHR
+     に付いている名前を、文字列で返します。名前が定義されていない場合には
+     DEFAULT が返されますが、この引数が与えられていなければ
+     `ValueError' を発生させます。
+
+`decimal(unichr[, default])'
+     Unicode 文字 UNICHR
+     に割り当てられている十進数を、整数で返します。この値が定義されていない場合には
+     DEFAULT が返されますが、この引数が与えられていなければ
+     `ValueError' を発生させます。
+
+`digit(unichr[, default])'
+     Unicode 文字 UNICHR
+     に割り当てられている二進数を、整数で返します。この値が定義されていない場合には
+     DEFAULT が返されますが、この引数が与えられていなければ
+     `ValueError' を発生させます。
+
+`numeric(unichr[, default])'
+     Unicode 文字 UNICHR に割り当てられている数値を、float
+     型で返します。 この値が定義されていない場合には DEFAULT
+     が返されますが、この引 数が与えられていなければ `ValueError'
+     を発生させます。
+
+`category(unichr)'
+     Unicode 文字 UNICHR に割り当てられた、汎用カテゴリを返します。
+
+`bidirectional(unichr)'
+     Unicode 文字 UNICHR
+     に割り当てられた、双方向カテゴリを返します。そのような値が定義されていない場合、空の文字列が返されます。
+
+`combining(unichr)'
+     Unicode 文字 UNICHR
+     に割り当てられた正規結合クラスを返します。結合クラス定義されていない場合、`0'
+     が返されます。
+
+`mirrored(unichr)'
+     Unicode 文字 UNICHR
+     に割り当てられた、鏡像化のプロパティを返します。
+     その文字が双方向テキスト内で鏡像化された文字である場合には `1'
+     を、それ以外の場合には `0' を返します。
+
+`decomposition(unichr)'
+     Unicode 文字 UNICHR
+     に割り当てられた、文字分解マッピングを、文字列型で返します。そのようなマッピングが定義されていない場合、空の文字列が返されます。
+
+`normalize(form, unistr)'
+     Unicode 文字列 UNISTR の正規形 FORM を返します。 FORM
+     の有効な値は、'NFC'、'NFKC'、'NFD'、'NFKD' です。
+
+     Unicode 規格は標準等価性 (canonical equivalence) と 互換等価性
+     (compatibility equivalence) に基づいて、様々な
+     Unicode文字列の正規形を定義します。Unicode
+     では、複数の方法で表現できる文字があります。たとえば、文字 U+00C7
+     (LATIN CAPITAL LETTER C WITH CEDILLA) は、U+0043 (LATIN CAPITAL
+     LETTER C) U+0327 (COMBINING CEDILLA)
+     というシーケンスとしても表現できます。
+
+     各文字には、2つの正規形があり、それぞれ 正規形 C と 正規形 D
+     といいます。正規形 D (NFD) は標準分解 (canonical decomposition)
+     としても知られており、各文字を分解された形に変換します。正規形 C
+     (NFC) は標準分解を適用した後、結合済文字を再構成します。
+
+     互換等価性に基づいて、2つの正規形が加えられています。Unicode
+     では、一般に他の文字との統合がサポートされている文字があります。たとえば、U+2160
+     (ROMAN NUMERAL ONE) は事実上 U+0049 (LATIN CAPITAL LETTER I)
+     と同じものです。しかし、Unicode では、既存の文字集合 (たとえば
+     gb2312) との互換性のために、これがサポートされています。
+
+     正規形 KD (NFKD) は、互換分解 (compatibility decomposition)
+     を適用します。すなわち、すべての互換文字を、等価な文字で置換します。
+     正規形 KC (NFKC) は、互換分解を適用してから、標準分解を適用します。
+
+     _Added in Python version 2.3_
+
+更に、本モジュールは以下の定数を公開します。
+
+`unidata_version'
+     このモジュールで使われている Unicode データベースのバージョン。
+
+     _Added in Python version 2.3_
+
+
+File: python-lib-jp.info,  Node: stringprep,  Next: zipimport,  Prev: unicodedata,  Up: 文字列処理
+
+インターネットのための文字列調製
+================================
+
+RFC 3453 による文字列調製
+
+(ホスト名のような) インターネット上にある存在に識別名をつける際、
+しばしば識別名間の "等価性" 比較を行う必要があります。
+厳密には、例えば大小文字の区別をするかしないかいったように、
+比較をどのように行うかはアプリケーションの領域に依存します。
+また、例えば "印字可能な" 文字で構成された識別名だけを許可すると
+いったように、可能な識別名を制限することも必要となるかもしれません。
+
+RFC 3454 では、インターネットプロトコル上で Unicode 文字列を "調製
+(prepare)" するためのプロシジャを定義しています。文字列は
+通信路に載せられる前に調製プロシジャで処理され、その結果ある正規化
+された形式になります。RFC ではあるテーブルの集合を定義しており、
+それらはプロファイルにまとめられています。各プロファイルでは、どの
+テーブルを使い、`stringprep' プロシジャのどのオプション部分が
+プロファイルの一部になっているかを定義しています。 `stringprep'
+プロファイルの一つの例は `nameprep' で、
+国際化されたドメイン名に使われます。
+
+`stringprep' は RFC 3453 のテーブルを公開しているに
+過ぎません。これらのテーブルは辞書やリストとして表　現するには
+バリエーションが大きすぎるので、このモジュールでは Unicode
+文字データベースを内部的に利用しています。モジュールソースコード 自体は
+`mkstringprep.py' ユーティリティを使って生成されました。
+
+その結果、これらのテーブルはデータ構造体ではなく、関数として
+公開されています。RFC には 2 種類のテーブル: 集合およびマップ、
+が存在します。集合については、`stringprep' は "特性関数 (characteristic
+function)" 、すなわち引数が
+集合の一部である場合に真を返す関数を提供します。マップに対しては、
+マップ関数: キーが与えられると、それに関連付けられた値を返す関数、
+を提供します。以下はこのモジュールで利用可能な全ての関数を列挙した
+ものです。
+
+`in_table_a1(code)'
+     CODE がテーブル {A.1} (Unicode 3.2 における未割り当てコード点:
+     unassigned code point) かどうか判定します。
+
+`in_table_b1(code)'
+     CODE がテーブル {B.1} (一般には何にも対応付けられていない:
+     commonly mapped to nothing) かどうか判定します。
+
+
+`map_table_b2(code)'
+     テーブル {B.2} (NFKC で用いられる大小文字の対応付け) に従って、
+     CODE に対応付けられた値を返します。
+
+
+`map_table_b3(code)'
+     テーブル {B.3} (正規化を伴わない大小文字の対応付け) に従って、
+     CODE に対応付けられた値を返します。
+
+`in_table_c11(code)'
+     CODE がテーブル {C.1.1} (ASCII スペース文字) かどうか判定します。
+
+`in_table_c12(code)'
+     CODE がテーブル {C.1.2} (非 ASCII スペース文字)
+     かどうか判定します。
+
+
+`in_table_c11_c12(code)'
+     CODE がテーブル {C.1} (スペース文字、C.1.1 および C.1.2 の和集合)
+     かどうか判定します。
+
+
+`in_table_c21(code)'
+     CODE がテーブル {C.2.1} (ASCII 制御文字) かどうか判定します。
+
+`in_table_c22(code)'
+     CODE がテーブル {C.2.2} (非 ASCII 制御文字) かどうか判定します。
+
+`in_table_c21_c22(code)'
+     CODE がテーブル {C.2} (制御文字、C.2.1 および C.2.2 の和集合)
+     かどうか判定します。
+
+`in_table_c3(code)'
+     CODE がテーブル {C.3} (プライベート利用) かどうか判定します。
+
+`in_table_c4(code)'
+     CODE がテーブル {C.4} (非文字コード点: non-character code points)
+     かどうか判定します。
+
+`in_table_c5(code)'
+     CODE がテーブル {C.5} (サロゲーションコード) かどうか判定します。
+
+`in_table_c6(code)'
+     CODE がテーブル {C.6} (平文:plain text として不適切) かどうか
+     判定します。
+
+
+`in_table_c7(code)'
+     CODE がテーブル {C.7} (標準表現:canonical representation
+     として不適切) かどうか判定します。
+
+`in_table_c8(code)'
+     CODE がテーブル {C.8} (表示プロパティの変更または撤廃) か
+     どうか判定します。
+
+`in_table_c9(code)'
+     CODE がテーブル {C.9} (タグ文字) かどうか判定します。
+
+`in_table_d1(code)'
+     CODE がテーブル {D.1} (双方向プロパティ "R" または "AL"
+     を持つ文字) かどうか判定します。
+
+`in_table_d2(code)'
+     CODE がテーブル {D.2} (双方向プロパティ "L" を持つ文字)
+     かどうか判定します。
+
+
+File: python-lib-jp.info,  Node: zipimport,  Prev: stringprep,  Up: 文字列処理
+
+Zip アーカイブからモジュールを import する
+==========================================
+
+Python モジュール を ZIP アーカイブから import する機能のサポート
+
+_Added in Python version 2.3_
+
+このモジュールは， Python モジュール (`*.py'，`*.py[co]' やパッケージを
+ZIP 形式のアーカイブから import できるように します。通常，`zipimport'
+を明示的に使う必要はありません; 組み込みの `import' は，`sys.path'
+の要素が ZIP
+アーカイブへのパスを指している場合にこのモジュールを自動的に 使います。
+
+普通，`sys.path' はディレクトリ名の文字列からなるリストです。
+このモジュールを使うと，`sys.path' の要素に ZIP ファイル
+アーカイブを示す文字列を使えるようになります。ZIP アーカイブには
+サブディレクトリ構造を含めることができ，パッケージの import を
+サポートさせしたり，アーカイブ内のパスを指定してサブディレクトリ 下から
+import を行わせたりできます。例えば， `/tmp/example.zip/lib/'
+のように指定すると，アーカイブ中の `lib/' サブディレクトリ下だけから
+import を行います。
+
+ZIP アーカイブ内にはどんなファイルを置いてもかまいませんが， import
+できるのは`.py' および `.py[co]' だけです。 動的モジュール
+(`.pyd'，`.so') の ZIP import は行えません。 アーカイブ内に `.py'
+ファイルしか入っていない場合， Python がアーカイブを変更して， `.py'
+ファイルに対応する `.pyc' や`.pyo' ファイルを追加したりはしません。
+つまり，ZIP アーカイブ中に `.pyc' が入っていない 場合， import
+はやや低速になるかもしれないので注意してください。
+
+ZIP アーカイブからロードしたモジュールに対して組み込み関数 `reload()'
+を呼び出すと失敗します; `reload()' が 必要になるということは，実行時に
+ZIPファイルが置き換えられてしまう
+ことになり，あまり起こりそうにない状況だからです。
+
+このモジュールで使える属性を以下に示します:
+
+`ZipImporterError'
+     zipimporter オブジェクトが送出する例外です。 `ImportError'
+     のサブクラスなので，`ImportError' としても捕捉できます。
+
+`zipimporter'
+     ZIP ファイルを import するためのクラスです。 コンストラクタの詳細は
+     "" (*Note unittest:: 節) を参照してください。
+
+See also:
+     `PKZIP Application Note'{ZIP ファイル形式の作者であり，ZIP
+     で使われて いるアルゴリズムの作者でもある Phil Katz による，ZIP
+     ファイル形式 についてのドキュメントです。}
+
+    *PEP0273 Import Modules from Zip Archives*
+          このモジュールの実装も行った、James C. Ahlstrom による PEP
+          です。 Python 2.3 は PEP 273 の仕様に従っていますが、 Just
+          van Rossum の書いた import フックによる実装を使っています。
+          import フックは PEP 302 で解説されています。
+
+    *PEP0302 New Import Hooks*
+          このモジュールを動作させる助けに なっている import
+          フックの追加を提案している PEP です。
+
+
+* Menu:
+
+* zipimporter オブジェクト::
+* zipimport Examples::
+
+
+File: python-lib-jp.info,  Node: zipimporter オブジェクト,  Next: zipimport Examples,  Prev: zipimport,  Up: zipimport
+
+zipimporter オブジェクト
+------------------------
+
+`zipimporter(archivepath)'
+     新たな zipimporter インスタンスを生成します。ARCHIVEPATH は ZIP
+     ファイルへのパスでなければなりません。 ARCHIVEPATH が 有効な ZIP
+     アーカイブを指していない場合、`ZipImportError' を送出します。
+
+`find_module(fullname[, path])'
+     FULLNAME に指定したモジュールを検索します。FULLNAME は 完全指定の
+     (ドット表記の) モジュール名でなければなりません。
+     モジュールが見つかった場合には zipimporter インスタンス自体を返し、
+     そうでない場合には `None' を返します。 PATH 引数は無視されます --
+     この引数は importer プロトコルとの 互換性を保つためのものです。
+
+`get_code(fullname)'
+     FULLNAME に指定したモジュールのコードオブジェクトを返します。
+     モジュールがない場合には`ZipImportError' を送出します。
+
+`get_data(pathname)'
+     PATHNAME に関連付けられたデータを返します。該当するファイルが
+     見つからなかった場合には `IOError' を送出します。
+
+`get_source(fullname)'
+     FULLNAME に指定したモジュールのソースコードを返します。
+     モジュールが見つからなかった場合には `ZipImportError'
+     を送出します。モジュールは存在するが、ソースコードがない場合には
+     `None' を返します。
+
+`is_package(fullname)'
+     FULLNAME で指定されたモジュールがパッケージの場合に `True'
+     を返します。モジュールが見つからなかった場合には `ZipImportError'
+     を送出します。
+
+`load_module(fullname)'
+     FULLNAME に指定したモジュールをロードします。FULLNAME は完全指定の
+     (ドット表記の) モジュール名でなくてはなりません。 import
+     済みのモジュールを返します。モジュールがない場合には
+     `ZipImportError' を送出します。
+
+
+File: python-lib-jp.info,  Node: zipimport Examples,  Prev: zipimporter オブジェクト,  Up: zipimport
+
+使用例
+------
+
+モジュールを ZIP アーカイブから import する例を以下に示します -
+`zipimport' モジュールが明示的に使われていないことに注意 してください。
+
+     $ unzip -l /tmp/example.zip
+     Archive:  /tmp/example.zip
+       Length     Date   Time    Name
+      --------    ----   ----    ----
+          8467  11-26-02 22:30   jwzthreading.py
+      --------                   -------
+          8467                   1 file
+     $ ./python
+     Python 2.3 (#1, Aug 1 2003, 19:54:32)
+     >>> import sys
+     >>> sys.path.insert(0, '/tmp/example.zip')  # パス先頭に .zip ファイル追加
+     >>> import jwzthreading
+     >>> jwzthreading.__file__
+     '/tmp/example.zip/jwzthreading.py'
+
+
+File: python-lib-jp.info,  Node: 各種サービス,  Next: 汎用オペレーティングシステムサービス,  Prev: 文字列処理,  Up: Top
+
+各種サービス
+************
+
+この章では、Pythonのすべてのバージョンで利用可能な各種サービスについて説明します。
+以下に概要を示します。
+
+* Menu:
+
+* pydoc::
+* doctest::
+* unittest::
+* test::
+* math::
+* cmath::
+* random::
+* whrandom::
+* bisect::
+* heapq::
+* array::
+* sets::
+* itertools::
+* ConfigParser::
+* fileinput::
+* xreadlines::
+* calendar::
+* cmd::
+* shlex::
+
+
+File: python-lib-jp.info,  Node: pydoc,  Next: doctest,  Prev: 各種サービス,  Up: 各種サービス
+
+ドキュメント生成とオンラインヘルプシステム
+==========================================
+
+ドキュメント生成とオンラインヘルプシステム
+
+_Added in Python version 2.1_
+
+`pydoc'モジュールは、Pythonモジュールから自動的にドキュメントを生成します。
+生成されたドキュメントをテキスト形式でコンソールに表示したり、 Web
+browserにサーバとして提供したり、HTMLファイルとして保存したりできます。
+
+組み込み関数の`help()'を使うことで、対話型のインタプリタから
+オンラインヘルプを起動することができます。コンソール用のテキスト形式の
+ドキュメントをつくるのにオンラインヘルプでは`pydoc'を使っています。
+`pydoc'をPythonインタプリタからはなく、オペレーティングシステムの
+コマンドプロンプトから起動した場合でも、同じテキスト形式のドキュメントを見ることができます。
+例えば、以下をshellから実行すると
+
+     pydoc sys
+
+`sys'モジュールのドキュメントを、UNIX の`man'コマンドの
+ような形式で表示させることができます。
+`pydoc'の引数として与えることができるのは、関数名・モジュール名・パッケージ名、
+また、モジュールやパッケージ内のモジュールに含まれるクラス・メソッド・関数への
+ドット"."形式での参照です。
+`pydoc'への引数がパスと解釈されるような場合で(オペレーティングシステムの
+パス区切り記号を含む場合です。例えばUNIXならば
+"/"(スラッシュ)含む場合になります)、
+さらに、そのパスがPythonのソースファイルを指しているなら、そのファイルに対する
+ドキュメントが生成されます。
+
+引数の前に `-w'フラグを指定すると、コンソールにテキストを表示させる
+かわりにカレントディレクトリにHTMLドキュメントを生成します。
+
+引数の前に `-k'フラグを指定すると、引数をキーワードとして
+利用可能な全てのモジュールの概要を検索します。
+検索のやりかたは、UNIXの`man'コマンドと同様です。
+モジュールの概要というのは、モジュールのドキュメントの一行目のことです。
+
+また、`pydoc'を使うことでローカルマシンに Web browserから
+閲覧可能なドキュメントを提供するHTTPサーバーを起動することもできます。
+`pydoc' `-p 1234'とすると、HTTPサーバーをポート1234に起動します。
+これで、お好きなWeb browserを使って`http://localhost:1234/'から
+ドキュメントを見ることができます。
+
+`pydoc'でドキュメントを生成する場合、その時点での環境とパス情報に基づいて
+モジュールがどこにあるのか決定されます。 そのため、`pydoc'
+`spam'を実行した場合につくられる
+ドキュメントは、Pythonインタプリタを起動して`import
+spam'と入力したときに
+読み込まれるモジュールに対するドキュメントになります。
+
+
+File: python-lib-jp.info,  Node: doctest,  Next: unittest,  Prev: pydoc,  Up: 各種サービス
+
+ドキュメンテーション文字列に本当のことが書かれているか調べる
+============================================================
+
+ドキュメンテーション文字列内の例を検証するためのフレームワーク。
+
+`doctest' モジュールは、モジュールのドキュメンテーション文字列
+(docstring) から、対話的 Python
+セッションのように見えるテキストを探しだし、これらのセッションを実際に実行して、そこに書かれている通りに動作するか検証します。以下に小さな、しかし完全な例を示します:
+
+     """
+     This is module example.
+     
+     Example supplies one function, factorial.  For example,
+     
+     >>> factorial(5)
+     120
+     """
+     
+     def factorial(n):
+         """Return the factorial of n, an exact integer >= 0.
+     
+         If the result is small enough to fit in an int, return an int.
+         Else return a long.
+     
+         >>> [factorial(n) for n in range(6)]
+         [1, 1, 2, 6, 24, 120]
+         >>> [factorial(long(n)) for n in range(6)]
+         [1, 1, 2, 6, 24, 120]
+         >>> factorial(30)
+         265252859812191058636308480000000L
+         >>> factorial(30L)
+         265252859812191058636308480000000L
+         >>> factorial(-1)
+         Traceback (most recent call last):
+             ...
+         ValueError: n must be >= 0
+     
+         Factorials of floats are OK, but the float must be an exact integer:
+         >>> factorial(30.1)
+         Traceback (most recent call last):
+             ...
+         ValueError: n must be exact integer
+         >>> factorial(30.0)
+         265252859812191058636308480000000L
+     
+         It must also not be ridiculously large:
+         >>> factorial(1e100)
+         Traceback (most recent call last):
+             ...
+         OverflowError: n too large
+         """
+
+
+         import math
+         if not n >= 0:
+             raise ValueError("n must be >= 0")
+         if math.floor(n) != n:
+             raise ValueError("n must be exact integer")
+         if n+1 == n:  # catch a value like 1e300
+             raise OverflowError("n too large")
+         result = 1
+         factor = 2
+         while factor <= n:
+             try:
+                 result *= factor
+             except OverflowError:
+                 result *= long(factor)
+             factor += 1
+         return result
+     
+     def _test():
+         import doctest, example
+         return doctest.testmod(example)
+     
+     if __name__ == "__main__":
+         _test()
+
+`example.py' をコマンドラインから直接実行すると、 `doctest'
+はその魔法を働かせます:
+
+     $ python example.py
+     $
+
+出力は何もありません！ しかしこれが正常で、全ての例が正しく動作する
+ことを意味しています。 スクリプトに `-v' を与えると、`doctest'
+は何を行おうとしているのかを記録した詳細なログを出力し、
+最後にまとめを出力します:
+
+     $ python example.py -v
+     Running example.__doc__
+     Trying: factorial(5)
+     Expecting: 120
+     ok
+     0 of 1 examples failed in example.__doc__
+     Running example.factorial.__doc__
+     Trying: [factorial(n) for n in range(6)]
+     Expecting: [1, 1, 2, 6, 24, 120]
+     ok
+     Trying: [factorial(long(n)) for n in range(6)]
+     Expecting: [1, 1, 2, 6, 24, 120]
+     ok
+     Trying: factorial(30)
+     Expecting: 265252859812191058636308480000000L
+     ok
+
+And so on, eventually ending with:
+
+     Trying: factorial(1e100)
+     Expecting:
+     Traceback (most recent call last):
+         ...
+     OverflowError: n too large
+     ok
+     0 of 8 examples failed in example.factorial.__doc__
+     2 items passed all tests:
+        1 tests in example
+        8 tests in example.factorial
+     9 tests in 2 items.
+     9 passed and 0 failed.
+     Test passed.
+     $
+
+これが、`doctest' を使って生産性の向上を目指す上で知っておく
+必要があることの全てです！ さあやってみましょう。`doctest.py'
+内のドキュメンテーション 文字列には `doctest'
+の全ての側面についての詳細な情報が入っており、
+ここではより重要な点をカバーするだけにします。
+
+* Menu:
+
+* 通常の利用法::
+* どのドキュメンテーション文字列が検証されるのか?::
+* 実行コンテキストとは何か?::
+* 例外については?::
+* 進んだ使い方::
+* ドキュメンテーション文字列内の例をどうやって認識するのか?::
+* 注意事項::
+* 提言::
+
+
+File: python-lib-jp.info,  Node: 通常の利用法,  Next: どのドキュメンテーション文字列が検証されるのか?,  Prev: doctest,  Up: doctest
+
+通常の利用法
+------------
+
+通常の利用法では、各モジュール `M' の最後を、以下:
+
+     def _test():
+         import doctest, M           # replace M with your module's name
+         return doctest.testmod(M)   # ditto
+     
+     if __name__ == "__main__":
+         _test()
+
+のようにして締めくくります。
+
+もしテスト対象のモジュールがメインモジュールであるなら、 `testmod()' に
+M を指定する必要はありません;
+この場合、実行中のモジュールがテストされます。
+
+次に、モジュールをスクリプトとして走らせ、ドキュメンテーション文字列
+を実行して検証します:
+
+     python M.py
+
+ドキュメンテーション文字列に書かれた例の実行が失敗しない限り、何も
+表示されません。失敗すると、失敗した例と、その原因が
+(場合によっては複数) 標準出力に印字され、出力の最後の行が `'Test
+failed.'' と なります。
+
+一方、`-v' スイッチをつけて走らせると:
+
+     python M.py -v
+
+実行を試みた全ての例について詳細に報告し、最後に各種まとめをおこなった
+内容が標準出力に印字されます。
+
+`verbose=1' を `testmod()' に渡せば、 詳細報告 (verbose)
+モードを強制することができます。また、 `verbose=0'
+とすれば禁止することができます。 どちらの場合にも、`testmod()' は
+`sys.argv' 上のスイッチ を調べません。
+
+いずれの場合も、`testmod()' は整数 2 要素、 `(F, T)'
+からなるタプルを返し、F が失敗した ドキュメンテーション文字列内の例、T
+が実行を試みた例の総数となります。
+
+
+File: python-lib-jp.info,  Node: どのドキュメンテーション文字列が検証されるのか?,  Next: 実行コンテキストとは何か?,  Prev: 通常の利用法,  Up: doctest
+
+どのドキュメンテーション文字列が検証されるのか?
+-----------------------------------------------
+
+全ての詳細は `doctest.py' のドキュメンテーション文字列を
+参照してください。混乱させる ようなことはありません:
+モジュールのドキュメンテーション文字列、
+全ての関数、クラスおよびメソッドのドキュメンテーション文字列が
+検索されます。オプションとして、テスタはプライベートな名前を
+もつオブジェクトに添付されたドキュメンテーション文字列を除外
+することができます。モジュールに import されたオブジェクトは
+検索されません。
+
+加えて、 `M.__test__' が存在し、 "真の値を持つ" 場合、
+この値は辞書で、辞書の各エントリは (文字列の) 名前を
+関数オブジェクト、クラスオブジェクト、または文字列に対応付けて
+いなくてはなりません。`M.__test__' から得られた関数および
+クラスオブジェクトのドキュメンテーション文字列は、その名前が
+プライベートなものでも検索され、文字列の場合にはそれが
+ドキュメンテーション文字列であるかのように直接検索を行います。
+出力においては、`M.__test__' におけるキー `K' は、
+
+       <name of M>.__test__.K
+
+のように表示されます。
+
+検索中に見つかったクラスも同様に再帰的に検索が行われ、
+クラスに含まれているメソッドおよびネストされたクラスについて
+ドキュメンテーション文字列のテストが行われます。 `M'
+内のグローバル変数から到達したプライベートな名前は
+オプションでスキップされますが、`M.__test__' から到達した
+名前は全て検索されます。
+
+
+File: python-lib-jp.info,  Node: 実行コンテキストとは何か?,  Next: 例外については?,  Prev: どのドキュメンテーション文字列が検証されるのか?,  Up: doctest
+
+実行コンテキストとは何か?
+-------------------------
+
+デフォルトでは、`testmod' がテストを行うべきドキュメン
+テーション文字列を見つけるたびに、`M' のグローバルを _コピーして_
+使うため、モジュール上でテストを動作させても
+モジュールの実際のグローバル
+変数を変更することはありません。このため、`M' 内でテストを
+行った際に痕跡が残り (left behind crumbs)、偶発的に別のテストが
+作動することはないはずです。すなわち、例では `M' 内の
+トップレベルで定義されたどんな名前も、ドキュメンテーション文字列
+が動作する以前に定義された名前も自由に使うことができます。
+
+`testmod()' に `globs=your_dict' を渡すことで、
+自前の辞書を実行コンテキストとして使うこともできます。 おそらくこの値は
+`M.__dict__' を他の import されたモジュール
+由来のグローバル変数とマージしたものになるでしょう。
+
+
+File: python-lib-jp.info,  Node: 例外については?,  Next: 進んだ使い方,  Prev: 実行コンテキストとは何か?,  Up: doctest
+
+例外については?
+---------------
+
+例で生成される出力がトレースバックのみである限り問題ありません。 例えば:
+
+     >>> [1, 2, 3].remove(42)
+     Traceback (most recent call last):
+       File "<stdin>", line 1, in ?
+     ValueError: list.remove(x): x not in list
+     >>>
+
+例外型と値だけが比較される (詳しくはトレースバックの最後の行だけ) が
+比較されるので注意してください。途中の様々な "File" 行は
+(例の中のドキュメンテーション値に明示的に追加しない限り)
+放っておかれます。
+

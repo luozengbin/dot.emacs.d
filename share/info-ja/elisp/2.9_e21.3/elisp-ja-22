@@ -1,0 +1,2013 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Invisible Text, Next: Selective Display, Prev: The Echo Area, Up: Display
+
+不可視なテキスト
+================
+
+属性`invisible'で文字群を"不可視"にできます。つまり、それらをスクリーン
+に表示されないようにするのです。テキスト属性（*Note Text Properties::）
+かオーバレイの属性（*Note Overlays::）を使います。
+
+もっとも単純な場合、属性`invisible'が`nil'以外であると文字は見えなくな
+ります。これはデフォルトの場合、つまり、`buffer-invisibility-spec'のデ
+フォルト値を変更していない場合であり、このようにして属性`invisible'は動
+作します。
+
+より一般的には、変数`buffer-invisibility-spec'を使って、属性
+`invisible'のどの値のものを不可視なテキストにするかを制御できます。つま
+り、`invisible'の異なる値を与えてテキストをあらかじめいくつかのグループ
+に分類しておき、そのあとで`buffer-invisibility-spec'の値を変更してさま
+ざまなグループを可視／不可視にします。
+
+`buffer-invisibility-spec'で可視性を制御することは、データベースの項目
+の一覧を表示するようなプログラムで特に有用です。データベースの特定の項
+目だけを見るための便利なフィルタコマンドを実装できます。この変数に設定
+するのはとても速くでき、変更すべき属性を探すためにバッファ内の全テキス
+トを走査するよりも速いのです。
+
+ -- Variable: buffer-invisibility-spec
+     この変数は、属性`invisible'のどの種類を実際に不可視な文字にするか
+     を指定する。
+
+     `t'
+          属性`invisible'が`nil'以外の文字を不可視にする。これがデフォ
+          ルト。
+
+     リスト
+          リストの各要素で不可視にする条件を指定する。文字の属性
+          `invisible'がこれらの条件の1つを満たすと、その文字を不可視に
+          する。リストには2種類の要素がありうる。
+
+          `ATOM'
+               文字の属性`invisible'の値がATOMであるか、そのリストのメ
+               ンバにATOMがあると、文字を不可視にする。
+
+          `(ATOM . t)'
+               文字の属性`invisible'の値がATOMであるか、
+               そのリストのメンバにATOMがあると、
+               文字を不可視にする。
+               さらに、その文字が行末にあり、直後に目に見える改行がある場合には、
+               `...'を表示する。
+
+`buffer-invisibility-spec'に要素を追加したり削除するために2つの関数が特
+別にあります。
+
+ -- Function: add-to-invisibility-spec ELEMENT
+     （リストにELEMENTが既存でなければ）
+     `buffer-invisibility-spec'に要素ELEMENTを追加する。
+
+ -- Function: remove-from-invisibility-spec ELEMENT
+     `buffer-invisibility-spec'から要素ELEMENTを削除する。
+
+`buffer-invisibility-spec'の使い方の慣習の1つに、メジャーモードでは
+`buffer-invisibility-spec'の1要素と属性`invisible'の値にモード自体の名
+前を使うべきであるというのがあります。
+
+     ;; `...'を表示したければ
+     (add-to-invisibility-spec '(my-symbol . t))
+     ;; `...'を表示しくなければ
+     (add-to-invisibility-spec 'my-symbol)
+
+     (overlay-put (make-overlay beginning end)
+                  'invisible 'my-symbol)
+
+     ;; オーバレイを終了したら
+     (remove-from-invisibility-spec '(my-symbol . t))
+     ;; 同じように
+     (remove-from-invisibility-spec 'my-symbol)
+
+普通、テキストを操作したりポイントを移動するコマンドは、テキストの可視
+性に注意しません。ユーザーレベルの移動コマンドは、
+`line-move-ignore-invisible'が`nil'以外であれば不可視な改行を明示的に無
+視しますが、それはそのように明示的にプログラムしてあるからにすぎません。
+
+インクリメンタルサーチでは、不可視なテキストを含む一致箇所では、不可視
+なオーバレイを一時的にあるいは恒久的に可視にできます。これを可能にする
+には、オーバレイの属性`isearch-open-invisible'が`nil'以外である必要があ
+ります。その属性の値は、オーバレイを引数として呼ばれる関数である必要が
+あります。その関数がオーバレイを恒久的に可視にします。その関数は、探索
+から抜けるときに一致箇所がオーバレイにまたがっているときに使われます。
+
+探索中には、そのようなオーバレイは、それらの属性`invisible'と
+`intangible'を一時的に変更することで一時的に可視にされます。特定のオー
+バレイに対して異なる扱いをしたければ、属性
+`isearch-open-invisible-temporary'に関数を与えておきます。その関数は2つ
+の引数で呼ばれます。第1引数はオーバレイ、第2引数は、オーバレイを可視に
+する`t'、あるいは、オーバレイを再度不可視にする`nil'です。
+
+
+
+File: elisp-ja, Node: Selective Display, Next: Overlay Arrow, Prev: Invisible Text, Up: Display
+
+選択表示
+========
+
+"選択表示"とは、スクリーン上の特定の行を隠すための関連する機能対を指し
+ます。
+
+最初の変種は、明示的な選択表示で、Lispプログラムで使用するために設計さ
+れています。テキストを変更することでどの行を隠すかを制御します。テキス
+トを不可視にする機能（*Note Invisible Text::）は、この機能で部分的に置
+き換えてあります。
+
+2番目の変種は、字下げに基づいて自動的に隠す行を選択します。この変種は、
+ユーザーレベルの機能であるように設計されています。
+
+明示的な選択表示を制御するには、改行（コントロールJ）を復帰（コントロー
+ルM）に置き換えます。置換前の改行に続いていたそれまでの行は見えなくなり
+ます。厳密にいえば、改行だけが行を区切るため、一時的にはもう行ではなく
+なっているのです。つまり、先行する行の一部になっているのです。
+
+選択表示は、編集コマンドに直接には影響しません。たとえば、
+`C-f'（`forward-char'）は躊躇なく不可視なテキストの中へポイントを移動し
+ます。しかし、改行文字を復帰文字に置換すると影響を受ける編集コマンドも
+あります。たとえば、`next-line'は、改行だけを探すため不可視な行を飛び越
+してしまいます。選択表示を使用するモードでは、改行を考慮するようにコマ
+ンドを定義したり、テキストの一部を可視／不可視にするコマンドを定義でき
+ます。
+
+選択表示しているバッファをファイルに書き出すときには、すべてのコントロー
+ルM（復帰）は改行として出力されます。つまり、つぎにファイルを読み込むと
+不可視なものはなく、普通に見えるのです。選択表示の効果は、Emacsの内側だ
+けで見えるのです。
+
+ -- Variable: selective-display
+     このバッファローカルな変数は、選択表示をオンにする。つまり、行や行
+     の一部を不可視にできる。
+
+        * `selective-display'の値が`t'であると、行内のコントロールM（復
+          帰）以降の部分を表示しない。これは明示的な選択表示である。
+
+        * `selective-display'の値が正整数であると、字下げのコラム幅がそ
+          の数より大きな行を表示しない。
+
+     バッファのある部分が不可視であると、垂直方向に移動するコマンドは、
+     その部分が存在しないがごとく動作し、1つのコマンド`next-line'で任意
+     個数の不可視行を飛び越えられる。しかし、（`forward-char'などの）文
+     字単位の移動コマンドは不可視な部分を無視せず、不可視な部分へのテキ
+     ストの挿入／削除は可能である。
+
+     つぎの例では、`selective-display'の値を変えてバッファ`foo'の*見た
+     目*を示す。バッファの*内容*に変更はない。
+
+          (setq selective-display nil)
+               => nil
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column
+            3n this column
+            3n this column
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+          (setq selective-display 2)
+               => 2
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+ -- Variable: selective-display-ellipses
+     このバッファローカルな変数が`nil'以外であると、不可視なテキストが
+     続く行末に`...'を表示する。つぎの例は、上の例の続きである。
+
+          (setq selective-display-ellipses t)
+               => t
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column ...
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+     表示テーブルを使って`...'にかわる別のテキストを指定できる。
+     *Note Display Tables::。
+
+
+
+File: elisp-ja, Node: Overlay Arrow, Next: Temporary Displays, Prev: Selective Display, Up: Display
+
+オーバレイ矢印
+==============
+
+"オーバレイ矢印"（overlay arrow）は、バッファの特定の行にユーザーの注意
+を向けるために有用です。たとえば、デバッガとのインターフェイスを取るた
+めのモードでは、オーバレイ矢印で実行するコードの行を示します。
+
+ -- Variable: overlay-arrow-string
+     この変数は、特定の行に注意を向けるために表示する文字列を保持する。
+     矢印機能を使っていなければ`nil'である。
+
+ -- Variable: overlay-arrow-position
+     この変数は、オーバレイ矢印を表示する箇所を表すマーカを保持する。行
+     頭を指すこと。矢印のテキストはその行の先頭に現れ、その場所に本来現
+     れるべきテキストを隠す。矢印は普通は短く、行には字下げがあるので、
+     重要なものは普通はなにも上書きされない。
+
+     オーバレイ文字列は、マーカが指すバッファでのみ表示される。したがっ
+     て、ある時点では、1つのバッファだけにオーバレイ矢印を表示できる。
+
+同様のことは、属性`before-string'のオーバレイを
+作成してもできます。
+*Note Overlay Properties::。
+
+
+
+File: elisp-ja, Node: Temporary Displays, Next: Overlays, Prev: Overlay Arrow, Up: Display
+
+一時的な表示
+============
+
+一時的な表示は、出力をバッファに置き編集目的にではなくユーザーに読むよ
+うに提示するためにLispプログラムが使います。
+
+ -- Special form: with-output-to-temp-buffer BUFFER-NAME FORMS...
+     この関数は、BUFFER-NAMEという名前のバッファにFORMSの任意の出力が挿
+     入されるように準備してFORMSを実行する。そのバッファは適当なウィン
+     ドウに表示されるが、そのバッファは選択されない。
+
+     文字列BUFFER-NAMEは、既存である必要はない一時的なバッファを指定する。
+     引数は、バッファではなく文字列であること。
+     （問い合わせずに）はじめにバッファを消去し、
+     `with-output-to-temp-buffer'が終了すると未変更と印を付ける。
+
+     `with-output-to-temp-buffer'は、
+     `standard-output'に一時的なバッファを束縛し、
+     FORMSのフォーム群を評価する。
+     FORMS内で用いたLisp出力関数からの出力は
+     デフォルトでそのバッファに入る
+     （しかし、スクリーン表示やエコー領域のメッセージは、
+     用語の一般的な意味で『出力』であるが、
+     影響されない。）
+     *Note Output Functions::。
+
+     FORMSの最後のフォームの値を返す。
+
+          ---------- Buffer: foo ----------
+           This is the contents of foo.
+          ---------- Buffer: foo ----------
+
+          (with-output-to-temp-buffer "foo"
+              (print 20)
+              (print standard-output))
+          => #<buffer foo>
+
+          ---------- Buffer: foo ----------
+          20
+
+          #<buffer foo>
+
+          ---------- Buffer: foo ----------
+
+ -- Variable: temp-buffer-show-function
+     この変数が`nil'以外であると、ヘルプバッファを表示するために
+     `with-output-to-temp-buffer'がこの値を関数として呼び出す。関数は1
+     つの引数、つまり、表示すべきバッファを受け取る。
+
+     この関数では、
+     `save-window-excursion'を使いウィンドウとバッファを選択した内側で、
+     `with-output-to-temp-buffer'が普通に行うように
+     `temp-buffer-show-hook'を呼び出すのがよい。
+
+ -- Variable: temp-buffer-show-hook
+     このノーマルフックは、ヘルプバッファを表示後に
+     `with-output-to-temp-buffer'が実行する。フックを実行するときには、
+     ヘルプバッファがカレントバッファであり、それを表示しているウィンド
+     ウが選択されているウィンドウである。
+
+ -- Function: momentary-string-display STRING POSITION &optional CHAR MESSAGE
+     この関数は、カレントバッファ内の位置POSITIONに文字列STRINGを瞬間的
+     に表示する。アンドゥリストやバッファの変更状態には影響しない。
+
+     瞬間的な表示は、つぎの入力イベントまで持続する。つぎの入力イベント
+     がCHARであると、`momentary-string-display'はそれを無視して戻る。さ
+     もなければ、そのイベントは入力として使われるように保存される。した
+     がって、CHARを打つと文字列の表示が単に消えるだけであるが、（たとえ
+     ば）`C-f'を打つと文字列の表示が消えるだけでなく（たぶん）ポイント
+     を進めることになる。引数CHARはデフォルトでは空白である。
+
+     `momentary-string-display'の戻り値に意味はない。
+
+     文字列STRINGにコントロール文字が含まれなければ、
+     属性`before-string'のオーバレイを作成（のちに削除）することで
+     より一般的な方法で同じことを行える。
+     *Note Overlay Properties::。
+
+     MESSAGEが`nil'以外であると、STRINGをバッファに表示中には、MESSAGE
+     をエコー領域に表示する。`nil'であると、デフォルトは「継続するには
+     文字CHARを打つこと」といったメッセージである。
+
+     つぎの例では、ポイントは始めは2行目の先頭に位置している。
+
+          ---------- Buffer: foo ----------
+          This is the contents of foo.
+          -!-Second line.
+          ---------- Buffer: foo ----------
+
+          (momentary-string-display
+            "**** Important Message! ****"
+            (point) ?\r
+            "Type RET when done reading")
+          => t
+
+          ---------- Buffer: foo ----------
+          This is the contents of foo.
+          **** Important Message! ****Second line.
+          ---------- Buffer: foo ----------
+
+          ---------- Echo Area ----------
+          Type RET when done reading
+          ---------- Echo Area ----------
+
+
+
+File: elisp-ja, Node: Overlays, Next: Width, Prev: Temporary Displays, Up: Display
+
+オーバレイ
+==========
+
+ユーザーに提示するためにスクリーン上でのバッファのテキストの見た目を変
+えるために"オーバレイ"（overlay）を使えます。オーバレイは、特定のバッファ
+に属するオブジェクトであり、指定された開始位置と終了位置があります。ま
+た、調べたり設定できる属性もあります。これらの属性は、オーバレイの内側
+のテキストの表示に影響します。
+
+* Menu:
+
+* Overlay Properties::	How to read and set properties.
+			What properties do to the screen display.
+* Managing Overlays::   Creating, moving, finding overlays.
+
+
+
+File: elisp-ja, Node: Overlay Properties, Next: Managing Overlays, Prev: Overlays, Up: Overlays
+
+オーバレイ属性
+--------------
+
+オーバレイ属性はある意味でテキスト属性に似ていて、どちらの属性でも文字
+の表示方法を変更できます。しかし、多くの点で異なります。テキスト属性は、
+テキストの一部であるとみなされますが、オーバレイはテキストの一部とはみ
+なしません。したがって、さまざまなバッファや文字列のあいだでテキストを
+コピーしてもテキスト属性は保存されますが、オーバレイは保存されません。
+バッファ内のテキスト属性を変更するとバッファを変更済みと印を付けますが、
+オーバレイを移動したりその属性を変更してもバッファの変更とは考えません。
+テキスト属性の変更と異なり、オーバレイの変更はバッファのアンドゥリスト
+には記録されません。比較のために*Note Text Properties::。
+
+`priority'
+     この属性の値（非負の数であること）は、オーバレイの優先順位を決定す
+     る。優先順位は、複数のオーバレイが同じ文字を覆い、いずれも表示用の
+     フェイスを指定している場合に意味を持つ。`priority'の値の大きなもの
+     が他に優先し、そのフェイス属性が他の低い順位の属性のフェイス属性に
+     優先する。
+
+     現在、すべてのオーバレイ属性はテキスト属性に優先する。負の優先順位
+     の意味を決めかねているので、負の優先順位は避けてほしい。
+
+`window'
+     属性`window'が`nil'以外であると、オーバレイをそのウィンドウだけに
+     適用する。
+
+`category'
+     オーバレイに属性`category'があると、それをオーバレイの"カテゴリ
+     （category）と呼ぶ。これはシンボルであること。シンボルの属性がオー
+     バレイの属性のデフォルトの役割を果たす。
+
+`face'
+     この属性は、テキストの表示方法、たとえば、フォントや表示色を制御す
+     る。その値は、フェイス名であるかフェイス名のリストである。詳しくは、
+     *Note Faces::。
+
+     属性値がリストであると、その要素は、`(foreground-color .
+     COLOR-NAME)'か`(background-color . COLOR-NAME)'の形でもよい。これ
+     らの要素は、前景色だけや背景色だけを指定する。したがって、使用する
+     各色を表すフェイスを作成する必要はない。
+
+`mouse-face'
+     この属性は、マウスがオーバレイの範囲に入っているときに
+     `face'のかわりに使われる。
+
+`modification-hooks'
+     この属性の値は、オーバレイの内側の文字を変更したり、オーバレイの内
+     側にテキストを挿入したときに呼び出される関数のリストである。
+
+     フック関数は、各変更の前後に呼び出される。関数が受け取った情報を保
+     存し呼び出しごとに比較すればバッファテキストにどのような変更が行わ
+     れたかを正確に判定できる。
+
+     変更前に呼ばれるときには、各関数は4つの引数を受け取る。オーバレイ、
+     `nil'、変更対象のテキスト範囲の先頭と末尾である。
+
+     変更後に呼ばれるときには、各関数は5つの引数を受け取る。オーバレイ、
+     `t'、変更済みのテキスト範囲の先頭と末尾、その範囲の変更前のテキス
+     トの長さである。（挿入では変更前の長さはゼロである。削除では変更前
+     の長さは削除された文字数であり、変更後の先頭位置と末尾位置は同じで
+     ある。）
+
+`insert-in-front-hooks'
+     この属性の値は、オーバレイの開始位置へのテキスト挿入の前後に呼び出
+     される関数のリストである。呼び出し方法は`modification-hooks'の関数
+     群と同じである。
+
+`insert-behind-hooks'
+     この属性の値は、オーバレイの終了位置へのテキスト挿入の前後に呼び出
+     される関数のリストである。呼び出し方法は`modification-hooks'の関数
+     群と同じである。
+
+`invisible'
+     属性`invisible'は、オーバレイ内のテキストを不可視にする。つまり、
+     それらはスクリーン上に現れない。詳しくは、*Note Invisible Text::。
+
+`intangible'
+     属性`intangible'は、オーバレイにおいてテキスト属性`intangible'と同
+     様に働く。詳しくは、*Note Special Properties::。
+
+`isearch-open-invisible'
+     この属性は、インクリメンタルサーチに対して、
+     一致箇所がオーバレイに重なったときに
+     不可視なオーバレイを恒久的に可視にする方法を指示する。
+     *Note Invisible Text::。
+
+`isearch-open-invisible-temporary'
+     この属性は、インクリメンタルサーチに対して、
+     探索中に不可視なオーバレイを一時的に可視にする方法を指示する。
+     *Note Invisible Text::。
+
+`before-string'
+     この属性の値は、オーバレイの先頭位置に追加表示する文字列である。文
+     字列はいかなる意味においてもバッファには現れず、スクリーン上のみに
+     現れる。文字列は1コラムで表示される文字のみであること。タブや改行
+     を含むコントロール文字を含むと奇妙な結果を生じる。
+
+`after-string'
+     この属性の値は、オーバレイの末尾位置に追加表示する文字列である。文
+     字列はいかなる意味においてもバッファには現れず、スクリーン上のみに
+     現れる。文字列は1コラムで表示される文字のみであること。タブや改行
+     を含むコントロール文字を含むと奇妙な結果を生じる。
+
+`evaporate'
+     この属性が`nil'以外であると、オーバレイが空に（つまり覆う文字がな
+     く）なると、自動的にオーバレイを削除する。
+
+`local-map'
+     この属性が`nil'以外であると、当該部分のテキストに対する
+     キーマップを指定する。
+     ポイントの直後の文字がオーバレイに入っていると、
+     属性の値はバッファローカルなキーマップに置き換わる。
+     *Note Active Keymaps::。
+
+つぎは、オーバレイの属性を読み書きするための関数です。
+
+ -- Function: overlay-get OVERLAY PROP
+     この関数は、オーバレイOVERLAYに記録されている属性PROPの値をあれば
+     返す。OVERLAYにそのような属性に対する値が記録されていなくても、属
+     性`category'がありそれがシンボルであれば、そのシンボルの属性PROPを
+     使う。さもなければ値は`nil'である。
+
+ -- Function: overlay-put OVERLAY PROP VALUE
+     この関数は、オーバレイOVERLAYに属性PROPの値として
+     VALUEを設定する。
+     VALUEを返す。
+
+与えられた文字のオーバレイ属性とテキスト属性の両方を調べる
+関数code{get-char-property}も参照してください。
+*Note Examining Properties::。
+
+
+
+File: elisp-ja, Node: Managing Overlays, Prev: Overlay Properties, Up: Overlays
+
+オーバレイの管理
+----------------
+
+本節では、オーバレイを作成、削除、移動したり、それらの内容を調べる関数
+について述べます。
+
+ -- Function: make-overlay START END &optional BUFFER FRONT-ADVANCE REAR-ADVANCE
+     この関数は、バッファBUFFERに属する
+     STARTからENDまでを覆うオーバレイを作成しそれを返す。
+     STARTとENDのどちらもバッファ内位置を指定する
+     整数かマーカであること。
+     BUFFERを省略すると、カレントバッファにオーバレイを作成する。
+
+     引数FRONT-ADVANCEとREAR-ADVANCEは、
+     オーバレイの開始位置と終了位置における挿入型を指定する。
+     *Note Marker Insertion Types::。
+
+ -- Function: overlay-start OVERLAY
+     この関数は、オーバレイOVERLAYの開始位置を整数で返す。
+
+ -- Function: overlay-end OVERLAY
+     この関数は、オーバレイOVERLAYの終了位置を整数で返す。
+
+ -- Function: overlay-buffer OVERLAY
+     この関数は、オーバレイOVERLAYが属するバッファを返す。
+
+ -- Function: delete-overlay OVERLAY
+     この関数は、オーバレイOVERLAYを削除する。Lispオブジェクトとしては
+     オーバレイは存在し続けるが、それが属したバッファとの対応付けは消失
+     し、表示上の効果もなくなる。
+
+     削除したオーバレイは恒久的に無意味ではない。
+     `move-overlay'を呼び出して新たなバッファ内位置をそれに与えられる。
+
+ -- Function: move-overlay OVERLAY START END &optional BUFFER
+     この関数は、オーバレイOVERLAYをバッファBUFFERに移し、
+     STARTからENDを覆うようにする。
+     STARTとENDのどちらもバッファ内位置を指定し、
+     整数かマーカである。
+     BUFFERを省略すると、オーバレイは同じバッファに留まる。
+
+     戻り値はOVERLAYである。
+
+     これは、オーバレイの端を変更する唯一の正しい方法である。オーバレイ
+     のマーカを手で修正しようとしないこと。他の重要なデータ構造を更新し
+     そこない、いくつかのオーバレイを『失う』ことにもなりかねない。
+
+ -- Function: overlays-at POS
+     この関数は、カレントバッファの位置POSを覆うすべてのオーバレイのリ
+     ストを返す。このリスト内の順番に意味はない。オーバレイが位置POSか
+     そのまえで始まり、かつ、位置POSかそのうしろで終るときに、オーバレ
+     イは位置POSを覆う。
+
+ -- Function: overlays-in BEG END
+     この関数は、BEGからENDまでの領域と重なり合っているすべてのオーバレ
+     イのリストを返す。『重なり合っている』とは、少なくとも1文字がオー
+     バレイに覆われていて、かつ、その文字が指定された領域に入っているこ
+     とを意味する。しかし、空のオーバレイであってもそれがBEGにあるか
+     BEGとENDのあいだにあれば、空のオーバレイも結果に含まれる。
+
+ -- Function: next-overlay-change POS
+     この関数は、位置POSのうしろにあるオーバレイのつぎの開始位置か終了
+     位置を返す。
+
+ -- Function: previous-overlay-change POS
+     この関数は、位置POSのまえにあるオーバレイのまえの開始位置か終了位
+     置を返す。
+
+
+
+File: elisp-ja, Node: Width, Next: Faces, Prev: Overlays, Up: Display
+
+表示幅
+======
+
+すべての文字が同じ表示幅ではありませんから、これらの関数で文字の表示幅
+を検査できます。関連する関数については、*Note Primitive Indent::と
+*Note Screen Lines::
+
+ -- Function: char-width CHAR
+     この関数は、文字CHARを選択されているウィンドウでカレントバッファに
+     表示した場合のコラム幅を返す。
+
+ -- Function: string-width STRING
+     この関数は、文字列STRINGを選択されているウィンドウでカレントバッファ
+     に表示した場合のコラム幅を返す。
+
+ -- Function: truncate-string-to-width STRING WIDTH &optional START-COLUMN PADDING
+     この関数は、幅WIDTHに収まる文字列STRINGの部分を新たな文字列として
+     返す。
+
+     STRINGが幅WIDTHに満たない場合、STRINGの終りで結果は終る。STRING内
+     の1つの複数コラム文字がコラムWIDTHを越える場合には、その文字は結果
+     に含めない。したがって、結果はWIDTHより短くなりえるがそれを越える
+     ことはない。
+
+     省略可能な引数START-COLUMNは、開始コラムを指定する。これが`nil'以
+     外であると、文字列のはじめのSTART-COLUMNコラムを結果から省く。
+     STRING内の1つの複数コラム文字がコラムSTART-COLUMNを越える場合には、
+     その文字は結果に含めない。
+
+     省略可能な引数PADDINGが`nil'以外であると、結果の文字列の先頭や末尾
+     に付加してちょうどWIDTHコラムにするためのパディング文字である。
+     WIDTHより短くなる場合に結果の末尾にパディング文字を使う。複数コラ
+     ム文字がコラムSTART-COLUMNを越える場合には、結果の先頭にパディング
+     文字を使う。
+
+          (truncate-string-to-width "\tab\t" 12 4)
+               => "ab"
+          (truncate-string-to-width "\tab\t" 12 4 ?\ )
+               => "    ab  "
+
+
+
+File: elisp-ja, Node: Faces, Next: Blinking, Prev: Width, Up: Display
+
+フェイス
+========
+
+"フェイス"（face）とは、図形的な属性、つまり、フォント、前景色、背景色、
+下線の名前付きの集合体です。フェイスはスクリーン上のテキストの表示を制
+御します。
+
+各フェイスには固有の"フェイス番号"（face number）があり、Emacs内部の下
+位レベルでフェイスを区別するために使われます。しかし、ほとんどの目的に
+は、Lispプログラムでは名前でフェイスを参照できます。
+
+ -- Function: facep OBJECT
+     この関数は、OBJECTがフェイスを指名するシンボル（あるいは、フェイス
+     データを記録するために内部的に使われる種類のベクトル）であると`t'
+     を返す。さもなければ`nil'を返す。
+
+各フェイス名はすべてのフレームで有効であり、デフォルトではすべてのフレー
+ムで同じ意味を持ちます。しかし、望みの1つのフレームで特定のフェイス名に
+特定の意味を持たせることもできます。
+
+* Menu:
+
+* Standard Faces::      The faces Emacs normally comes with.
+* Defining Faces::      How to define a face with `defface'.
+* Merging Faces::	How Emacs decides which face to use for a character.
+* Face Functions::	How to define and examine faces.
+
+
+
+File: elisp-ja, Node: Standard Faces, Next: Defining Faces, Prev: Faces, Up: Faces
+
+標準フェイス
+------------
+
+つぎの表はすべての標準フェイスとその用途です。
+
+`default'
+     このフェイスは通常のテキストに対して使う。
+
+`modeline'
+     このフェイスはモード行とメニューバーに対して使う。
+
+`region'
+     このフェイスは、暫定マーク（transient-mark）モードでリージョンを強
+     調表示するために使う。
+
+`secondary-selection'
+     このフェイスは、指定した任意の二次セレクションを示すために使う。
+
+`highlight'
+     このフェイスは、さまざま目的向けに強調表示するために使う。
+
+`underline'
+     このフェイスは、テキストに下線を引く。
+
+`bold'
+     このフェイスは、可能ならば太字（bold）フォントを使う。フレームのフォ
+     ントに太字（bold）変種があればそれを使う。太字変種を使用したい場合
+     には、太字フォント変種を有するデフォルトフォントを選ぶのは読者の責
+     任である。
+
+`italic'
+     このフェイスは、フレームのフォントに斜体（italic）変種があればそれ
+     を使う。
+
+`bold-italic'
+     このフェイスは、フレームのフォントに太字斜体（bold-italic）変種が
+     あればそれを使う。
+
+
+
+File: elisp-ja, Node: Defining Faces, Next: Merging Faces, Prev: Standard Faces, Up: Faces
+
+フェイスを定義する
+------------------
+
+新たなフェイスを定義する方法は、`defface'を使うことです。これは、カスタ
+マイズバッファ（*Note 簡便なカスタマイズ方法: (emacs)Easy
+Customization.）を用いてユーザーがカスタマイズできるカスタマイズ項目
+（*Note Customization::）の一種を作成します。
+
+ -- Macro: defface FACE SPEC DOC [KEYWORD VALUE]...
+     SPECに従ったデフォルトを持つカスタマイズ可能なフェイスとしてFACEを
+     宣言する。シンボルFACEをクォートしないこと。引数DOCは、フェイスの
+     説明文字列を指定する。
+
+     `defface'を実行すると、SPECに従ったフェイスを定義し、
+     ファイル`.emacs'から読み取った任意のカスタマイズを
+     SPECの指定に優先させる。
+
+     SPECの目的は、異なる種類の端末でフェイスがどのような見た目になるか
+     を指定することである。`(DISPLAY ATTS)'の形の要素から成る連想リスト
+     であること。要素のCARのDISPLAYは端末の種類を指定する。CDRのATTSは
+     フェイスの属性とその値のリストであり、その種類の端末上でそのフェイ
+     スがどのように見えるかを指定する。可能な属性は、
+     `custom-face-attributes'の値で定義される。
+
+     SPECの要素のDISPLAY部分は、要素を適用するフレームを決定する。
+     SPECの1つより多くの要素が指定されたフレームに一致する場合、
+     そのフレームに一致した最初の要素だけを用いる。
+     DISPLAYには2つの可能性がある。
+
+     `t'
+          SPECの要素はすべてのフレームで一致する。したがって、SPECの以
+          降の要素をけっして使わない。通常、`t'はSPECの最後の（あるいは
+          唯一）の要素に使う。
+
+     リスト
+          DISPLAYがリストであると、各要素は`(CHARACTERISTIC VALUE...)'
+          の形であること。ここで、CHARACTERISTICはフレームの分類方法で
+          あり、VALUEはDISPLAYを適用すべき分類とみなす値である。特性
+          CHARACTERISTICの可能な値はつぎのとおりである。
+
+          `type'
+               フレームが使用するウィンドウシステムの種類であり、
+               `x'、`pc'（MS-DOSのコンソール）、
+               `w32'（MS Windows 9X/NT）、`tty'のいずれかである。
+
+          `class'
+               フレームで扱える表示色の種類であり、
+               `color'、`grayscale'、`mono'のいずれかである。
+
+          `background'
+               背景の種類であり、`light'か`dark'のいずれかである。
+
+          DISPLAYの1つの要素において、
+          指定されたCHARACTERISTICに
+          1つより多くのVALUEを指定すると、
+          それらのいずれの値でも受け入れる。
+          DISPLAYに1つより多くの要素がある場合、
+          各要素は異なるCHARACTERISTICを指定すること。
+          そうすれば、フレームの*各*特性は
+          DISPLAYに指定されたそのフレーム向けの
+          VALUEの1つに一致するはずである。
+
+標準フェイス`region'を`defface'で定義するとつぎのようになります。
+
+     (defface region
+              ((((class color) (background dark))
+                (:background "blue"))
+               (t (:background "gray")))
+       "Used for displaying the region.")
+
+内部的には`defface'は、`defface'に指定されたフェイス属性の記録にはシン
+ボルの属性`face-defface-spec'、カスタマイズバッファでユーザーが保存した
+属性の記録には`saved-face'、説明文字列の記録には`face-documentation'を
+使います。
+
+ -- User Option: frame-background-mode
+     このオプションが`nil'以外であると、フェイスの定義を解釈する際に用
+     いる背景の型を指定する。これが`dark'であると、実際の背景色に関わら
+     ずEmacsはすべてのフレームの背景は暗いとみなす。これが`light'である
+     と、Emacsはすべてのフレームの背景は明るいとみなす。
+
+
+
+File: elisp-ja, Node: Merging Faces, Next: Face Functions, Prev: Defining Faces, Up: Faces
+
+表示向けにフェイスを併合する
+----------------------------
+
+テキストの表示に使用するフェイスを指定する方法はつぎのとおりです。
+
+   * デフォルトを使う。各フレームには"デフォルトのフェイス"があり、他の
+     フェイスを指定していないすべてのテキストに使用される。（Emacsの将
+     来の版では、すべてのテキスト向けのデフォルトに変更するかもしれな
+     い。）
+
+   * テキスト属性を使う。
+     文字は属性`face'を持てる。
+     それがある場合、そのフェイスで表示される。
+     *Note Special Properties::。
+
+     文字に属性`mouse-face'がある場合は、マウスが文字に『十分近い』とき
+     には属性`face'のかわりにそれを使う。
+
+   * オーバレイを使う。オーバレイは属性`face'や`mouse-face'を持てる。そ
+     のオーバレイが覆うすべてのテキストに適用される。
+
+   * 活性なリージョンを使う。暫定マーク（transient-mark）モードでは、リー
+     ジョンを特定のフェイス（下記の`region-face'を参照）で強調表示する。
+
+   * 特別な字形を使う。
+     各字形では特定のフェイス番号を指定できる。
+     *Note Glyphs::。
+
+ある文字に対してこれらのさまざまな指定が1つより多くのフェイスを指定する
+場合、Emacsは指定されたさまざまなフェイスの属性を併合します。特別な字形
+のフェイスが最初です。適切ならば、つぎはリージョンの強調表示のフェイス
+です。そのつぎはオーバレイのフェイスの属性、さらにテキスト属性のフェイ
+スが続き、最後はデフォルトのフェイスです。
+
+複数のオーバレイが1つの文字を覆う場合、
+高い優先順位のオーバレイが低いものに優先します。
+*Note Overlays::。
+
+フォントや表示色のような属性がうえのどれでも指定されていない場合には、
+フレーム独自のフォントや表示色を使います。
+
+
+
+File: elisp-ja, Node: Face Functions, Prev: Merging Faces, Up: Faces
+
+フェイスを扱う関数
+------------------
+
+フェイスの属性で指定できるのは、フォント、前景色、背景色、下線です。フェ
+イスでは値`nil'を指定することでこれらを未指定にできます。
+
+以下は、フェイスを作成したり変更する基本関数です。
+
+ -- Function: make-face NAME
+     この関数は、すべての属性を`nil'とした
+     NAMEという名前の新たなフェイスを定義する。
+     NAMEという名前のフェイスが既存ならばなにもしない。
+
+ -- Function: face-list
+     この関数は、定義済みのすべてのフェイス名のリストを返す。
+
+ -- Function: copy-face OLD-FACE NEW-NAME &optional FRAME NEW-FRAME
+     この関数は、既存のOLD-FACEという名前のフェイスのコピーとして
+     フェイスNEW-NAMEを定義する。
+     NEW-NAMEが既存でなければ、フェイスNEW-NAMEを作成する。
+
+     省略可能な引数フレームFRAMEを指定すると、この関数はそのフレームだ
+     けに適用する。さもなければ、各フレームにおいて個別に、そのフレーム
+     のOLD-FACEの属性を同じフレームのNEW-FACEにコピーする。
+
+     省略可能な引数フレームNEW-FRAMEを指定すると、`copy-face'はフレーム
+     FRAMEのOLD-FACEの属性をフレームNEW-FRAMEのNEW-FACEにコピーする。
+
+以下の関数を使って既存のフレームの属性を変更できます。フレームFRAMEを指
+定すると、そのフレームだけに影響します。さもなければ、新たなフレームに
+適用されるデフォルトに加えてすべてのフレームに影響します。
+
+ -- Function: set-face-foreground FACE COLOR &optional FRAME
+ -- Function: set-face-background FACE COLOR &optional FRAME
+     これらの関数は、フェイスFACEの前景色（あるいは背景色）としてCOLOR
+     を設定する。引数COLORは、表示色名の文字列であること。
+
+     白黒スクリーンでは、濃淡は点猫パターンで実現する。
+
+ -- Function: set-face-stipple FACE PATTERN &optional FRAME
+     この関数は、フェイスFACEの背景点猫パターンとしてPATTERNを設定する。
+     引数PATTERNは、Xサーバーで定義された背景点猫パターンの名前であるこ
+     と。あるいは、点猫を使わないことを意味する`nil'であること。
+
+     白黒階調の特定の濃淡を扱うために自動的に点猫パターンを使うため、普
+     通は点猫パターンに注意する必要はない。
+
+ -- Function: set-face-font FACE FONT &optional FRAME
+     この関数は、フェイスFACEのフォントを設定する。引数FONTは、読者のシ
+     ステムの正しいフォント名かEmacsのフォントセット名（*Note
+     Fontsets::）の文字列であること。フォントを明示的に設定するとつねに
+     正確にそれを使うため、太字（bold）や斜体（italic）の属性の効果は消
+     失することに注意。
+
+ -- Function: set-face-bold-p FACE BOLD-P &optional FRAME
+     この関数は、フェイスFACEの太字（bold）の属性を設定する。
+     `nil'以外は太字あり、`nil'は太字なしを意味する。
+
+ -- Function: set-face-italic-p FACE ITALIC-P &optional FRAME
+     この関数は、フェイスFACEの斜体（italic）の属性を設定する。
+     `nil'以外は斜体あり、`nil'は斜体なしを意味する。
+
+ -- Function: set-face-underline-p FACE UNDERLINE-P &optional FRAME
+     この関数は、フェイスFACEの下線の属性を設定する。
+     `nil'以外は下線あり、`nil'は下線なしを意味する。
+
+ -- Function: invert-face FACE &optional FRAME
+     フェイスFACEの前景色と背景色を入れ換える。フェイスに前景色と背景色
+     の両者が設定されていないと、その前景色と背景色にはデフォルトの背景
+     色と前景色を設定する。
+
+つぎの関数は、フェイスの属性を調べます。フレームFRAMEを指定しない場合、
+新たなフレーム向けのデフォルトのデータを参照します。
+
+ -- Function: face-foreground FACE &optional FRAME
+ -- Function: face-background FACE &optional FRAME
+     この関数は、フェイスFACEの前景色（あるいは背景色）を文字列で返す。
+
+ -- Function: face-stipple FACE &optional FRAME
+     この関数は、フェイスFACEの背景点猫パターンの名前を返す。なければ
+     `nil'を返す。
+
+ -- Function: face-font FACE &optional FRAME
+     この関数はフェイスFACEのフォントの名前を返す。
+
+ -- Function: face-bold-p FACE &optional FRAME
+     この関数はフェイスFACEの太字（bold）属性を返す。
+
+ -- Function: face-italic-p FACE &optional FRAME
+     この関数はフェイスFACEの斜体（italic）属性を返す。
+
+ -- Function: face-underline-p FACE &optional FRAME
+     この関数はフェイスFACEの下線属性を返す。
+
+ -- Function: face-id FACE
+     この関数はフェイスFACEのフェイス番号を返す。
+
+ -- Function: face-documentation FACE
+     この関数はフェイスFACEの説明文字列を返す。なければ`nil'を返す。
+
+ -- Function: face-equal FACE1 FACE2 &optional FRAME
+     この関数は、フェイスFACE1とFACE2が表示上の同じ属性を持てば`t'を返
+     す。
+
+ -- Function: face-differs-from-default-p FACE &optional FRAME
+     この関数は、フェイスFACEの表示がデフォルトのフェイスの表示と異なる
+     場合には`t'を返す。フェイスの各属性がデフォルトフェイスの対応する
+     属性に等しいか（デフォルトから継承すること意味する）`nil'であると、
+     フェイスはデフォルトのフェイスと『等しい』とみなす。
+
+ -- Variable: region-face
+     この変数の値は、リージョンが活性（暫定マーク（transient-mark）モー
+     ドのみ）の場合にリージョン内の文字の表示に使用するフェイス番号を指
+     定する。リージョン内の文字では、これが指定するフェイスがテキスト属
+     性やオーバレイのすべてのフェイスに優先する。暫定マーク
+     （transient-mark）モードについて詳しくは、*Note The Mark::。
+
+     通常、値は`region'という名前のフェイスのフェイス番号である。
+
+ -- Function: frame-update-face-colors FRAME
+     この関数は、フレームFRAMEの前景色や背景色を変更後にフレームFRAME上
+     のフェイスの表示を更新する。
+
+
+
+File: elisp-ja, Node: Blinking, Next: Inverse Video, Prev: Faces, Up: Display
+
+括弧を点滅する
+==============
+
+本節では、ユーザーが閉じ括弧を挿入したときにEmacsが対応する開き括弧を指
+し示す機構について述べます。
+
+ -- Variable: blink-paren-function
+     この変数の値は、閉じ括弧構文の文字が挿入されるたびに
+     呼び出される（引数なしの）関数であること。
+     `blink-paren-function'の値が`nil'であると、なにもしない。
+
+ -- User Option: blink-matching-paren
+     この変数が`nil'であると、`blink-matching-open'はなにもしない。
+
+ -- User Option: blink-matching-paren-distance
+     この変数は、対応する括弧の走査を諦めるまでの最大距離を指定する。
+
+ -- User Option: blink-matching-delay
+     この関数は、対応する括弧にカーソルを留める秒数を指定する。秒未満を
+     指定してもしばしば結果は良好であるが、デフォルトはすべてのシステム
+     で動作する1である。
+
+ -- コマンド: blink-matching-open
+     この関数は、`blink-paren-function'のデフォルト値である。
+     閉じ括弧構文の文字のうしろにポイントがあることを仮定し、
+     カーソルを対応する開き括弧へ一時的に移動する。
+     その文字がスクリーン上になければ、
+     その文字が現れる文脈をエコー領域に表示する。
+     遅れが大きくならないように、
+     `blink-matching-paren-distance'文字より離れては探さない。
+
+     つぎは、この関数を明示的に呼び出す例である。
+
+          (defun interactive-blink-matching-open ()
+            "Indicate momentarily the start of sexp before point."
+            (interactive)
+            (let ((blink-matching-paren-distance
+                   (buffer-size))
+                  (blink-matching-paren t))
+              (blink-matching-open)))
+
+
+
+File: elisp-ja, Node: Inverse Video, Next: Usual Display, Prev: Blinking, Up: Display
+
+反転表示
+========
+
+ -- User Option: inverse-video
+     この変数は、スクリーン上のすべてのテキストに反転表示を使うかどうか
+     を制御する。`nil'以外は使うことを意味し、`nil'は使わないことを意味
+     する。デフォルトは`nil'である。
+
+ -- User Option: mode-line-inverse-video
+     この変数は、モード行に反転表示を使うかどうかを制御する。`nil'以外
+     であると、モード行を反転表示する。さもなければ、テキストと同様にモー
+     ド行を普通に表示する。デフォルトは`t'である。
+
+     ウィンドウフレームでは、`modeline'という名前のフェイスを使ってモー
+     ド行を表示する。このフェイスは、変更していなければ、デフォルトフェ
+     イスの反転表示である。
+
+
+
+File: elisp-ja, Node: Usual Display, Next: Display Tables, Prev: Inverse Video, Up: Display
+
+通常の画面表示慣習
+==================
+
+通常の画面表示慣習は、各文字コードをどのように表示するかを定義します。
+表示テーブル（*Note Display Tables::）を設定すれば、これらの慣習を無効
+にできます。通常の画面表示慣習をつぎに示します。
+
+   * 文字コード32から126は、字形コード32から126に対応付ける。これは各文
+     字をそのまま表示することを普通は意味する。
+
+   * 文字コード9は水平タブである。
+     `tab-width'で決定される位置まで空白として表示する。
+
+   * 文字コード10は改行である。
+
+   * 0から31の範囲とコード127のコードすべてには、`ctl-arrow'の値に従っ
+     て2つの表示方法の一方を使う。`ctl-arrow'が`nil'以外であると、これ
+     らのコードを2つの字形列に対応付け、最初の字形は`^'のASCIIコードで
+     ある。（表示テーブルで`^'のかわりに使う字形を指定できる。）さもな
+     ければ、これらは128から255の範囲のコードと同様に対応付ける。
+
+   * 文字コード128から255は、4つの字形列に対応付ける。つまり、最初の字
+     形は`\'のASCIIコード、残りは文字コードを8進数表示した数字文字であ
+     る。（表示テーブルで`\'のかわりに使う字形を指定できる。）
+
+   * 256を越えるマルチバイト文字コードは、そのまま表示する。あるいは、
+     端末に表示できない文字は、疑問符か白抜きの箱で表示する。
+
+通常の画面表示慣習は、たとえ表示テーブルがあっても、活性な表示テーブル
+においてその文字に対する項目が`nil'であるような文字すべてに適用されます。
+したがって、表示テーブルを設定するときには、特別なふるまいをさせたい文
+字だけを指定すればよいのです。
+
+これらの変数は、特定の文字群のスクリーンへの表示方法に影響します。これ
+らは文字が占めるコラム数を変化させるので、字下げ関数にも影響します。こ
+れらの変数は、モード行の表示方法にも影響します。新たな値を用いてモード
+行の再表示を強制したいときには、関数`force-mode-line-update'（*Note
+Mode Line Format::）を呼び出します。
+
+ -- User Option: ctl-arrow
+     このバッファローカルな変数は、コントロール文字の表示方法を制御する。
+     `nil'以外であると、`^A'のようにカレットに続けて文字を表示する。
+     `nil'であると、`\001'のようにバックスラッシュに続けて3桁の8進数字
+     で表示する。
+
+ -- Variable: default-ctl-arrow
+     この変数の値は、`ctl-arrow'を書き換えていないバッファ向けの
+     `ctl-arrow'のデフォルト値である。
+     *Note Default Value::。
+
+ -- User Option: tab-width
+     この変数の値は、Emacsのバッファ内のタブ文字の表示に使う
+     タブストップの間隔である。
+     デフォルトは8である。
+     この機能は、コマンド`tab-to-tab-stop'で設定する
+     ユーザー設定可能なタブストップとはまったく独立であることに注意。
+     *Note Indent Tabs::。
+
+
+
+File: elisp-ja, Node: Display Tables, Next: Beeping, Prev: Usual Display, Up: Display
+
+表示テーブル
+============
+
+"表示テーブル"（display table）機能を使って、すべての可能な文字コードの
+スクリーンへの表示方法を制御できます。これは、ASCII文字集合にない文字を
+用いるヨーロッパの言語を表示するのに有用です。
+
+表示テーブルは、各文字コードを"字形"（glyph）の列に対応付けます。各字形
+は、スクリーン上で1文字を占める像です。"字形テーブル"（glyph table）を
+使えば、読者の端末に各字形を表示する方法を定義することもできます。
+
+表示テーブルは、モード行の表示方法にも影響します。新たな表示テーブルを
+用いてモード行の再表示を強制したいときには、関数
+`force-mode-line-update'（*Note Mode Line Format::）を呼び出します。
+
+* Menu:
+
+* Display Table Format::	What a display table consists of.
+* Active Display Table::	How Emacs selects a display table to use.
+* Glyphs::			How to define a glyph, and what glyphs mean.
+
+
+
+File: elisp-ja, Node: Display Table Format, Next: Active Display Table, Prev: Display Tables, Up: Display Tables
+
+表示テーブルの書式
+------------------
+
+表示テーブルは、実際にはサブタイプが`display-table'である文字テーブル
+（*Note Char-Tables::）です。
+
+ -- Function: make-display-table
+     表示テーブルを作成して返す。テーブルのすべての要素の初期値は`nil'
+     である。
+
+表示テーブルの通常の要素は、文字コードで添字付けします。添字Cの要素は、
+文字コードCの表示方法を指定します。値は`nil'であるか、字形の値のベクト
+ル（*Note Glyphs::）です。要素が`nil'であると、その文字を通常の画面表示
+慣習（*Note Usual Display::）に従って表示する指定です。
+
+表示テーブルを使って改行文字の表示を変更すると、バッファ全体は長い1つの
+『行』として表示されます。
+
+表示テーブルには6つの『追加スロット』もあり、それらは特別な目的を果たし
+ます。それらの意味をつぎに示します。スロットの内容が`nil'であると、その
+スロットに対して以下に述べるデフォルトを使うことを意味します。
+
+0
+     切り詰めたスクリーン行の末尾に使う字形
+     （デフォルトは`$'）。
+     *Note Glyphs::。
+1
+     継続している行の末尾に使う字形（デフォルトは`\'）。
+2
+     文字を8進数文字コードで表示したことを表す字形（デフォルトは`\'）。
+3
+     コントロール文字を表す字形（デフォルトは`^'）。
+4
+     符可視な行があることを表す字形のベクトル
+     （デフォルトは`...'）。
+     *Note Selective Display::。
+5
+     左右に隣り合ったウィンドウの境界に使う字形
+     （デフォルトは`|'）。
+     *Note Splitting Windows::。
+
+たとえば、`ctl-arrow'に`nil'以外の値を設定した効果を模倣する表示テーブ
+ルの作成方法をつぎに示します。
+
+     (setq disptab (make-display-table))
+     (let ((i 0))
+       (while (< i 32)
+         (or (= i ?\t) (= i ?\n)
+             (aset disptab i (vector ?^ (+ i 64))))
+         (setq i (1+ i)))
+       (aset disptab 127 (vector ?^ ??)))
+
+ -- Function: display-table-slot DISPLAY-TABLE SLOT
+     この関数は表示テーブルDISPLAY-TABLEの
+     追加スロットSLOTの値を返す。
+     引数SLOTは0から5までの数であるか、
+     スロット名（シンボル）であること。
+     正しいシンボルは、`truncation'、`wrap'、
+     `escape'、`control'、`selective-display'、
+     `vertical-border'である。
+
+ -- Function: set-display-table-slot DISPLAY-TABLE SLOT VALUE
+     この関数は表示テーブルDISPLAY-TABLEの
+     追加スロットSLOTに値VALUEを保存する。
+     引数SLOTは0から5までの数であるか、
+     スロット名（シンボル）であること。
+     正しいシンボルは、`truncation'、`wrap'、
+     `escape'、`control'、`selective-display'、
+     `vertical-border'である。
+
+
+
+File: elisp-ja, Node: Active Display Table, Next: Glyphs, Prev: Display Table Format, Up: Display Tables
+
+活性な表示テーブル
+------------------
+
+各ウィンドウに表示テーブルを指定でき、各バッファにも表示テーブルを指定
+できます。バッファBがウィンドウWに表示されているとき、ウィンドウWに表示
+テーブルがあればそれを使って表示します。さもなければ、バッファBに表示テー
+ブルがあればそれを使います。それ以外では、標準の表示テーブルがあればそ
+れを使います。選択されている表示テーブルを"活性な"表示テーブルと呼びま
+す。
+
+ -- Function: window-display-table WINDOW
+     この関数は、ウィンドウWINDOWの表示テーブルを返す。
+     WINDOWに表示テーブルが割り付けられていなければ`nil'を返す。
+
+ -- Function: set-window-display-table WINDOW TABLE
+     この関数は、ウィンドウWINDOWの表示テーブルとしてTABLEを設定する。
+     引数TABLEは、表示テーブルであるか`nil'であること。
+
+ -- Variable: buffer-display-table
+     この変数はすべてのバッファで自動的にバッファローカルである。バッファ
+     での値は、そのバッファに対して用いる表示テーブルを指定する。それが
+     `nil'であると、バッファに表示テーブルを割り付けていないことを意味
+     する。
+
+ -- Variable: standard-display-table
+     この変数の値はデフォルトの表示テーブルであり、ウィンドウに表示テー
+     ブルがなくそのウィンドウのバッファにも表示テーブルがない場合に使わ
+     れる。この変数はデフォルトでは`nil'である。
+
+特定のウィンドウにおいて使用する表示テーブルがない場合には、
+つまり、ウィンドウで未指定であり、そのバッファでも未指定であり、
+`standard-display-table'が`nil'である場合には、
+そのウィンドウ内のすべての文字コードには通常の画面表示慣習を使います。
+*Note Usual Display::。
+
+
+
+File: elisp-ja, Node: Glyphs, Prev: Active Display Table, Up: Display Tables
+
+字形
+----
+
+"字形"（glyph）は、文字を一般化したものです。スクリーン上で1文字を占め
+る像を表します。文字と同様に、字形はLispでは整数で表現します。
+
+字形としての各整数の意味は、字形テーブルで定義されます。これは変数
+`glyph-table'の値です。
+
+ -- Variable: glyph-table
+     この変数の値は、現在の字形テーブルである。これはベクトルであること。
+     G番目の要素は、字形コードGを定義する。値がベクトルではなく`nil'で
+     あると、すべての字形は単純（下記参照）である。
+
+字形テーブルの要素として可能な型はつぎのとおりです。
+
+STRING
+     この字形を出力するために端末へSTRINGの文字群を送出する。これは文字
+     端末では使えるがウィンドウシステムでは使えない。
+
+INTEGER
+     この字形コードを字形コードINTEGERの別称として定義する。字形に対し
+     てフェイスコードを指定するために別称を使うことができる。下記参照。
+
+`nil'
+     この字形は単純である。通常の端末では、字形コード mod 524288 は出力
+     すべき文字である。ウィンドウシステムでは、字形コード mod 524288 は
+     出力すべき文字あり、字形コードを524288で除した値は出力中に使用すべ
+     きフェイス番号（*Note Face Functions::）である。（524288は2**19。）
+     *Note Faces::。
+
+字形コードが字形テーブルの長さに等しいか大きいと、そのコードは自動的に
+単純とします。
+
+
+
+File: elisp-ja, Node: Beeping, Next: Window Systems, Prev: Display Tables, Up: Display
+
+ベルを鳴らす
+============
+
+本節では、ユーザーの注意を引くためにEmacsにベルを鳴らせる（あるいはスク
+リーンを点滅させる）方法について述べます。ベルを鳴らす頻度はなるべく控
+えめにしてください。頻繁にベルが鳴るとわずらわしいものです。エラーを通
+知するほうがふさわしいときには、単にベルを鳴らさないように注意してくだ
+さい。（*Note Errors::。）
+
+ -- Function: ding &optional DO-NOT-TERMINATE
+     この関数は、ベルを鳴らすかスクリーンを点滅する（下記の
+     `visible-bell'を参照）。また、DO-NOT-TERMINATEが`nil'であると現在
+     実行中のキーボードマクロを終了する。
+
+ -- Function: beep &optional DO-NOT-TERMINATE
+     `ding'の同義語。
+
+ -- User Option: visible-bell
+     この変数は、ベルを鳴らすかわりにスクリーンを点滅させるかどうかを決
+     定する。`nil'以外であると点滅するを意味し、`nil'であると点滅しない
+     を意味する。これは、ウィンドウシステムを用いている場合か、端末の
+     termcapの定義にビジュアルベル機能（`vb'）がある文字端末で有効であ
+     る。
+
+ -- Variable: ring-bell-function
+     これが`nil'以外であると、Emacsに『ベルを鳴らす』方法を指定する。こ
+     の値は、引数なしの関数であること。
+
+
+
+File: elisp-ja, Node: Window Systems, Prev: Beeping, Up: Display
+
+ウィンドウシステム
+==================
+
+Emacsはいくつかのウィンドウシステムで、特にXウィンドウシステムで動作し
+ます。EmacsもXも用語『ウィンドウ』を使いますが、用法は異なります。
+Emacsの1つのフレームは、Xでは1つのウィンドウです。Emacsの個々のウィンド
+ウについては、Xはまったくわかりません。
+
+ -- Variable: window-system
+     この変数は、Emacsが動作しているウィンドウシステムの種類をLispプロ
+     グラムに伝える。可能な値はつぎのとおりである。
+
+     `x'
+          Xを用いて表示している。
+     `pc'
+          MSDOSを用いて表示している。
+     `w32'
+          Windows NTかWindows 95を用いて表示している。
+     `nil'
+          文字ベースの端末を用いて表示している。
+
+ -- Variable: window-setup-hook
+     この変数は、Emacsが初期化ファイルを処理したあとに実行するノーマル
+     フックである。読者のファイル`.emacs'、（あれば）デフォルトの初期化
+     ファイル、端末固有のLispコードをすべてロードし、フック
+     `term-setup-hook'を実行し終えてから、このフック実行する。
+
+     このフックは内部目的用であり、ウィンドウシステムとの通信を設定し、
+     最初のウィンドウを作成する。ユーザーが干渉すべきではない。
+
+
+File: elisp-ja, Node: Calendar, Next: System Interface, Prev: Display, Up: Top
+
+カレンダーと日誌のカスタマイズ
+******************************
+
+カレンダーや日誌を個人の好みに合わせるためのカスタマイズ項目がたくさん
+あります。
+
+* Menu:
+
+* Calendar Customizing::   Defaults you can set.
+* Holiday Customizing::    Defining your own holidays.
+* Date Display Format::    Changing the format.
+* Time Display Format::    Changing the format.
+* Daylight Savings::       Changing the default.
+* Diary Customizing::      Defaults you can set.
+* Hebrew/Islamic Entries:: How to obtain them.
+* Fancy Diary Display::    Enhancing the diary display, sorting entries,
+                             using included diary files.
+* Sexp Diary Entries::     Fancy things you can do.
+* Appt Customizing::	   Customizing appointment reminders.
+
+
+
+File: elisp-ja, Node: Calendar Customizing, Next: Holiday Customizing, Prev: Calendar, Up: Calendar
+
+カレンダーのカスタマイズ
+========================
+
+変数`view-diary-entries-initially'に`t'を設定しておくと、カレンダーを呼
+び出すと現在の日に対する日誌記録を自動的に表示できます。その日がウィン
+ドウで見える場合に限って日誌記録が表示されます。つぎの行、
+
+     (setq view-diary-entries-initially t)
+     (calendar)
+
+を個人のファイル`.emacs'に入れておくと、Emacsを起動するたびに、カレンダー
+と日誌の両者のウィンドウを表示します。
+
+同様に、変数`view-calendar-holidays-initially'に`t'を設定しておくと、カ
+レンダーに入ると自動的に3か月分の祝祭日一覧を表示します。祝祭日一覧は別
+のウィンドウに現れます。
+
+変数`mark-diary-entries-in-calendar'に`t'を設定すると、日誌に入れてある
+日付に印を付けられます。カレンダーのウィンドウ内容を再計算するときにこ
+の効果が現れます。これらの日付に印を付ける方法は2つあります。ディスプレ
+イで使えるならばフェイス（*Note Faces::）を変更するか、日付にプラス記号
+（`+'）を付加します。
+
+同様に、変数`mark-holidays-in-calendar'に`t'を設定すると、フェイスを変
+えるかアスタリスク（`*'）を付加することで祝祭日に印を付けられます。
+
+変数`calendar-holiday-marker'は、祝祭日の日付にどのように印を付けるかを
+指定します。その値は、日付に付加する文字か日付の表示に使うフェイス名で
+す。同様に、変数`diary-entry-marker'は、日誌に入っている日付にどのよう
+に印を付けるかを指定します。カレンダー（calendar）モードは、このような
+目的のために`holiday-face'と`diary-face'という名前のフェイスを作成しま
+す。Emacsが端末で複数のフェイスを扱える場合には、これらの変数のデフォル
+ト値はこれらのシンボルです。
+
+変数`calendar-load-hook'は、（カレンダーを実際に表示し始めるまえに）カ
+レンダーパッケージを初めてロードしたときに実行されるノーマルフックです。
+
+カレンダーを開始するとノーマルフック`initial-calendar-window-hook'を実
+行します。カレンダーの表示を再計算してもこのフックは実行されません。し
+かし、コマンド`q'でカレンダーを抜けてから再度カレンダーに入るとこのフッ
+クを再度実行します。
+
+変数`today-visible-calendar-hook'は、今日の日付がウィンドウで見えるとき
+にカレンダーバッファにカレンダーの準備を終えてから実行されるノーマルフッ
+クです。このフックの1つの用途は、今日の日付をアスタリスクで置き換えるこ
+とです。それにはフック関数`calendar-star-date'を使います。
+
+     (add-hook 'today-visible-calendar-hook 'calendar-star-date)
+
+他の標準的なフック関数は、フェイスを変更するかアスタリスクを付加するこ
+とで現在の日付に印を付けます。つぎのように使います。
+
+     (add-hook 'today-visible-calendar-hook 'calendar-mark-today)
+
+変数`calendar-today-marker'は、今日の日付の印の付け方を指定します。その
+値は、日付に付加する文字か日付の表示に使うフェイス名です。この目的のた
+めに`calendar-today-face'という名前のフェイスがあります。Emacsが端末で
+複数のフェイスを扱える場合には、この変数のデフォルト値はこのシンボルで
+す。
+
+同様なノーマルフック`today-invisible-calendar-hook'は、現在の日付がウィ
+ンドウで見え*ない*ときに実行されます。
+
+
+
+File: elisp-ja, Node: Holiday Customizing, Next: Date Display Format, Prev: Calendar Customizing, Up: Calendar
+
+祝祭日のカスタマイズ
+====================
+
+Emacsは、複数のリストの中の1つのリストに入っている項目群で定義される祝
+祭日を把握しています。これらの祝祭日のリストに祝祭日を追加したり削除し
+て個人の目的に合うようにカスタマイズできます。Emacsが使用する祝祭日のリ
+ストは、一般祝祭日（`general-holidays'）、地域祝祭日
+（`local-holidays'）、キリスト教祝祭日（`christian-holidays'）、ヘブラ
+イ（ユダヤ教）祝祭日（`hebrew-holidays'）、イスラム（回教徒）祝祭日
+（`islamic-holidays'）、その他の祝祭日（`other-holidays'）です。
+
+一般祝祭日は、デフォルトでは、合州国に共通の祝祭日です。これらの祝祭日
+を削除するには、`general-holidays'に`nil'を設定します。
+
+デフォルトの地域祝祭日はありません（サイトによってはある）。以下に述べ
+るように、変数`local-holidays'に祝祭日の任意のリストを設定できます。
+
+デフォルトでは、Emacsが承知している宗教のすべての祝祭日が
+Emacsに入っているのではなく、世俗的なカレンダーに共通するものだけです。
+宗教上の祝祭日を網羅的に入れるには、
+`all-christian-calendar-holidays'、
+`all-hebrew-calendar-holidays'、
+`all-islamic-calendar-holidays'の変数のいずれか（あるいは、すべて）に
+`t'を設定します。
+宗教上の祝祭日を削除するには、対応する
+`christian-holidays'、`hebrew-holidays'、
+`islamic-holidays'の変数のいずれか（あるいは、すべて）に
+`nil'を設定します。
+
+変数`other-holidays'には、祝祭日の任意のリストを設定できます。このリス
+トは、普通は空ですが、個人的な使用を意図しています。
+
+リスト（`general-holidays'、`local-holidays'、
+`christian-holidays'、`hebrew-holidays'、
+`islamic-holidays'、`other-holidays'）のおのおのは、
+祝祭日（あるいは祝祭日のリスト）を記述する
+"祝祭日形式"（holiday form）から成るリストです。
+
+可能な祝祭日形式の一覧をつぎに示します。月と日は1から数えますが、『曜日』
+は日曜日を0と数えます。要素STRINGは、文字列で表した祝祭日の名称です。
+
+`(holiday-fixed MONTH DAY STRING)'
+     グレゴリオ暦の固定した日付。
+
+`(holiday-float MONTH DAYNAME K STRING)'
+     グレゴリオ暦のMONTH月のK番目の曜日DAYNAME。
+     （日曜日はDAYNAME=0、…。）
+     Kが負であると、月末から数える。
+
+`(holiday-hebrew MONTH DAY STRING)'
+     ヘブライ暦の固定した日付。
+
+`(holiday-islamic MONTH DAY STRING)'
+     イスラム暦の固定した日付。
+
+`(holiday-julian MONTH DAY STRING)'
+     ユリウス暦の固定した日付。
+
+`(holiday-sexp SEXP STRING)'
+     Lisp式SEXPで計算される日付。計算式では、年として変数`year'を使い、
+     祝祭日の日付を返す。あるいは、その年に該当する祝祭日がなければ
+     `nil'を返す。SEXPの値は、`(MONTH DAY YEAR)'の形のリストで表した日
+     付であること。
+
+`(if CONDITION HOLIDAY-FORM)'
+     条件CONDITIONが真である場合にのみ祝祭日になる。
+
+`(FUNCTION [ARGS])'
+     引数ARGSで関数FUNCTIONを呼び出して計算される日付のリスト。
+
+たとえば、フランスで7月14日に祝われる革命記念日（Bastille Day）を扱える
+ようにするにはつぎのようにします。
+
+     (setq other-holidays '((holiday-fixed 7 14 "Bastille Day")))
+
+祝祭日形式 `(holiday-fixed 7 14 "Bastille Day")'は、7の月（7月）の14日
+目を指定します。
+
+多くの祝祭日は、特定の月の特定の週にあります。バージン諸島で4月の第4月
+曜日に祝われるハリケーン祈願日（Hurricane Supplication Day）を記述する
+祝祭日形式はつぎのようになります。
+
+     (holiday-float 8 1 4 "Hurricane Supplication Day")
+
+ここで、8は8月、1は月曜日（日曜日は0、火曜日は2といった具合）、4はその
+月の4回目（1は最初、2は2回目、-1は最後、-2は最後の1つまえといった具合）
+を意味します。
+
+ヘブライ暦、イスラム暦、ユリウス暦の固定した日付の祝祭日も指定できます。
+たとえば、
+
+     (setq other-holidays
+           '((holiday-hebrew 10 2 "Last day of Hanukkah")
+             (holiday-islamic 3 12 "Mohammed's Birthday")
+             (holiday-julian 4 2 "Jefferson's Birthday")))
+
+は、ハヌカー祭の最終日（ヘブライ暦の月はニサンNisanを1と数える）、イス
+ラムが祝うモハメッドの誕生日（イスラム暦の月はムハラMuharramを1と数え
+る）、ユリウス暦の1743年4月2日のトーマスジェファーソンの誕生日を追加し
+ます。
+
+条件付きの祝祭日を含めるには、Emacs Lispの`if'や`holiday-sexp'を使いま
+す。たとえば、アメリカ大統領選挙は、4で割り切れる年の11月の第1月曜日の
+あとの最初の火曜日に行われます。
+
+     (holiday-sexp (if (= 0 (% year 4))
+                        (calendar-gregorian-from-absolute
+                         (1+ (calendar-dayname-on-or-before
+                               1 (+ 6 (calendar-absolute-from-gregorian
+                                       (list 11 1 year))))))
+                   "US Presidential Election"))
+
+あるいは、
+
+     (if (= 0 (% displayed-year 4))
+         (fixed 11
+                (extract-calendar-day
+                  (calendar-gregorian-from-absolute
+                    (1+ (calendar-dayname-on-or-before
+                          1 (+ 6 (calendar-absolute-from-gregorian
+                                   (list 11 1 displayed-year)))))))
+                "US Presidential Election"))
+
+特別な計算を必要とする祝祭日は、これまでの形式にあてはまりません。その
+ような場合、計算を行うLisp関数を書く必要があります。たとえば、日食月食
+を含めるには、`other-holidays'に`(eclipses)'を追加して、以下のような形
+でカレンダーウィンドウの見えている範囲の期間内の対応するグレゴリオ暦の
+日付の（空である可能性もある）リストを返すEmacs Lisp関数`(eclipses)'を
+書きます。
+
+     (((6 27 1991) "Lunar Eclipse") ((7 11 1991) "Solar Eclipse") ... )
+
+
+
+File: elisp-ja, Node: Date Display Format, Next: Time Display Format, Prev: Holiday Customizing, Up: Calendar
+
+日付表示書式
+============
+
+日誌、モード行、メッセージに現れる日付の表示方法は、
+`calendar-date-display-form'を設定することでカスタマイズできます。この
+変数は、文字列で表した数字が入った`month'、`day'、`year'の各変数と、英
+字の文字列が入った`monthname'と`dayname'の各変数を用いた式のリストを保
+持しています。アメリカスタイルでは、このリストのデフォルト値はつぎのよ
+うになります。
+
+     ((if dayname (concat dayname ", ")) monthname " " day ", " year)
+
+一方、ヨーロッパスタイルでは、この値のデフォルトはつぎのようになります。
+
+     ((if dayname (concat dayname ", ")) day " " monthname " " year)
+
+ISO規格の日付の表記法はつぎのとおりです。
+
+     (year "-" month "-" day)
+
+典型的なアメリカの書式はつぎのとおりです。
+
+     (month "/" day "/" (substring year -2))
+
+
+
+File: elisp-ja, Node: Time Display Format, Next: Daylight Savings, Prev: Date Display Format, Up: Calendar
+
+時刻表示書式
+============
+
+カレンダーと日誌はデフォルトではアメリカスタイル、
+つまり、12時制で時刻を表示します。
+ヨーロッパスタイルやアメリカ軍の24時制を好むならば、
+変数`calendar-time-display-form'を変更します。
+この変数は、
+文字列で表した数字が入った`12-hours'、`24-hours'、
+`minutes'の各変数と、
+英字の文字列が入った`am-pm'と`time-zone'の各変数を
+用いた式のリストを保持しています。
+`calendar-time-display-form'のデフォルト値はつぎのとおりです。
+
+     (12-hours ":" minutes am-pm
+               (if time-zone " (") time-zone (if time-zone ")"))
+
+つぎの値では、ヨーロッパスタイルの時刻になります。
+
+     (24-hours ":" minutes
+               (if time-zone " (") time-zone (if time-zone ")"))
+
+
+
+File: elisp-ja, Node: Daylight Savings, Next: Diary Customizing, Prev: Time Display Format, Up: Calendar
+
+夏時間
+======
+
+Emacsは、標準時間と夏時間の違いを理解しています。つまり、日出入時刻、夏
+至冬至、春分秋分、朔弦望ではその違いを考慮します。夏時間の規則は、地域
+ごと、年ごとに変わりえます。正しく扱うためには、どの規則が適用されるか
+をEmacsが知っている必要があります。
+
+読者の居住地域に適用される規則を記録しているオペレーティングシステムも
+あります。これらのシステム上では、Emacsは自動的にシステムから必要な情報
+を得られます。この情報の一部やすべてが欠落していると、GNU世界の中心であ
+るマサチューセッツ州ケンブリッジで現在使用している規則で補います。
+
+
+デフォルトで選んだ規則が読者の地域に適切でないときには、変数
+`calendar-daylight-savings-starts'と`calendar-daylight-savings-ends'に
+設定してEmacsに伝えます。これらの値は、変数`year'を使ったLisp式である必
+要があります。これらの式を評価すると、夏時間を開始／終了するグレゴリオ
+暦の日付を表す`(MONTH DAY YEAR)'の形のリストになる必要があります。夏時
+間をとらない場合には、値は`nil'であるべきです。
+
+Emacsは、これらの式を用いて夏時間の開始と終了を判定し、祝祭日や太陽／月
+に関する時刻を補正します。
+
+マサチューセッツ州ケンブリッジに対する値は、つぎのとおりです。
+
+     (calendar-nth-named-day 1 0 4 year)
+     (calendar-nth-named-day -1 0 10 year)
+
+つまり、指定された`year'年の4月の最初の日曜日とその年の10月の最後の日曜
+日です。10月1日に夏時間を始めると変更したとすると、変数
+`calendar-daylight-savings-starts'につぎのように設定します。
+
+     (list 10 1 year)
+
+より複雑な例として、ヘブライ暦のニサンの初日に夏時間が始まるとしましょ
+う。`calendar-daylight-savings-starts'には、つぎの値を設定します。
+
+     (calendar-gregorian-from-absolute
+       (calendar-absolute-from-hebrew
+         (list 1 1 (+ year 3760))))
+
+これは、ニサンはヘブライ暦の最初の月であり、ヘブライ暦年とグレゴリオ暦
+年はニサンで3760年違うからです。
+
+読者の地域で夏時間をとっていなかったり、
+つねに標準時間を望む場合には、
+`calendar-daylight-savings-starts'と
+`calendar-daylight-savings-ends'に`nil'を設定します。
+
+変数`calendar-daylight-time-offset'は、夏時間と標準時間の分で計った差を
+指定します。ケンブリッジに対する値は60です。
+
+変数`calendar-daylight-savings-starts-time'と
+`calendar-daylight-savings-ends-time'は、夏時間と標準時間との移行が行わ
+れる地方時の真夜中の0時からの経過分を指定します。ケンブリッジでは、どち
+らの変数の値も120です。
+
+
+
+File: elisp-ja, Node: Diary Customizing, Next: Hebrew/Islamic Entries, Prev: Daylight Savings, Up: Calendar
+
+日誌のカスタマイズ
+==================
+
+通常、日誌用バッファのウィンドウのモード行には、日誌記録の日付に一致す
+る祝祭日があれば表示されます。祝祭日を検査する処理には数秒を要するので、
+祝祭日情報を含めると日誌用バッファの表示に遅れが生じます。祝祭日情報を
+なくして日誌用バッファの表示を速くしたい場合には、変数
+`holidays-in-diary-buffer'に`nil'を設定します。
+
+変数`number-of-diary-entries'は、一度に表示する日誌記録の日数を制御しま
+す。これは、`view-diary-entries-initially'が`t'であるときの最初の表示に
+影響します。たとえば、デフォルト値は1で、現在の日付の日誌記録のみを表示
+します。値が2であると、現在とつぎの日付の日誌記録を表示します。この値は
+7要素のベクトルでもかまいません。たとえば、値が`[0 2 2 2 2 4 1]'である
+と、日曜日には日誌記録をなにも表示せず、月曜日から木曜日には現在とつぎ
+の日付の日誌記録を表示し、金曜日には金曜日から月曜日の日誌記録を表示し、
+土曜日にはその日だけの日誌記録を表示します。
+
+変数`print-diary-entries-hook'は、日誌用バッファで現在見えている日誌記
+録のみを収めた一時的なバッファの準備ができると実行されるノーマルフック
+です。（他の関係ない日誌記録は一時的なバッファには入っていない。日誌用
+バッファではそれらは隠されている。）このフックのデフォルト値は、コマン
+ド`lpr-buffer'で印刷します。別のコマンドで印刷したい場合には、単にこの
+フックの値を変更します。別の用途は、たとえば、行を日付と時刻で並び替え
+ることです。
+
+`diary-date-forms'に設定すれば、目的に合うように個人の日誌ファイル内の
+日付の書式をアメリカスタイルやヨーロッパスタイルにカスタマイズできます。
+この変数は、日付を認識するパターンのリストです。各パターンは、正規表現
+（*Note Regular Expressions::）や`month'、`day'、`year'、`monthname'、
+`dayname'のシンボルを要素とするリストです。これらの要素すべては、日誌ファ
+イル内の特定種類のテキストに一致するパターンとして働きます。全体として
+日付パターンとして一致するには、すべての要素が順に一致する必要がありま
+す。
+
+日付パターンの正規表現は、`*'を単語構成文字に変更した標準の構文テーブル
+を用いて通常どおりに一致をとります。
+
+`month'、`day'、`year'、`monthname'、`dayname'のシンボルは、対象にして
+いる月、日、年、月の名前、曜日です。数に一致するシンボルは、数の先頭に
+ある0を許します。名前に一致するシンボルは、3文字の省略形や大文字で始ま
+ることを許します。日誌記録では`*'は『任意の日』『任意に月』などを表し、
+対象とする日付に関係なく一致するべきなので、すべてのシンボルは`*'に一致
+できます。
+
+アメリカスタイルの`diary-date-forms'のデフォルト値はつぎのとおりです。
+
+     ((month "/" day "[^/0-9]")
+      (month "/" day "/" year "[^0-9]")
+      (monthname " *" day "[^,0-9]")
+      (monthname " *" day ", *" year "[^0-9]")
+      (dayname "\\W"))
+
+リスト内の日付パターンは、*互いに排他的*であり、日誌記録の日付と1つの白
+文字以外には他の部分に一致してはいけません。互いに排他的であるためには、
+パターンは日付を終える白文字を越えて日誌記録本文に一致する必要がありま
+す。それには、日付パターンの最初の要素は`backup'である必要があります。
+これにより、日付を認識する処理では、一致し終えてから日誌記録の現在の単
+語の先頭に戻ります。たとえ`backup'を使ったとしても、日付パターンは日誌
+本体の最初の単語を越えて一致してはいけません。ヨーロッパスタイルの
+`diary-date-forms'のデフォルト値は、つぎのとおりです。
+
+     ((day "/" month "[^/0-9]")
+      (day "/" month "/" year "[^0-9]")
+      (backup day " *" monthname "\\W+\\<[^*0-9]")
+      (day " *" monthname " *" year "[^0-9]")
+      (dayname "\\W"))
+
+ここでは、3番目のパターンで`backup'を使っています。4番目のパターンと区
+別するために、日付のつぎの単語の一部と一致する必要があるからです。
+
+
+
+File: elisp-ja, Node: Hebrew/Islamic Entries, Next: Fancy Diary Display, Prev: Diary Customizing, Up: Calendar
+
+ヘブライ暦日付やイスラム暦日付の日誌記録
+========================================
+
+日誌ファイルには、世界標準のグレゴリオ暦日付に加えて、ヘブライ暦日付や
+イスラム暦日付を入れることもできます。しかし、そのような記録の認識には
+時間がかかり、ほとんどの人はそれらを使わないので、それらは明示的にオン
+にする必要があります。日誌でヘブライ暦日付の日誌記録を認識できるように
+望むなら、たとえば、つぎのようにする必要があります。
+
+     (add-hook 'nongregorian-diary-listing-hook 'list-hebrew-diary-entries)
+     (add-hook 'nongregorian-diary-marking-hook 'mark-hebrew-diary-entries)
+
+イスラム暦日付の日誌記録を望むなら、つぎのようにします。
+
+     (add-hook 'nongregorian-diary-listing-hook 'list-islamic-diary-entries)
+     (add-hook 'nongregorian-diary-marking-hook 'mark-islamic-diary-entries)
+
+ヘブライ暦日付やイスラム暦日付の日誌記録は、グレゴリオ暦日付と同じ形式
+ですが、ヘブライ暦日付のまえには`H'、イスラム暦日付のまえには`I'がある
+点が異なります。さらに、ヘブライ暦やイスラム暦の月は、最初の3文字で一意
+に決まらないため、月の省略形は使えません。たとえば、ヘブライ暦日付
+Heshvan 25の日誌記録はつぎのようになります。
+
+     HHeshvan 25 Happy Hebrew birthday!
+
+これはヘブライ暦日付Heshvan 25に対する任意の日誌に現れます。イスラム暦
+日付Dhu al-Qada 25に一致する日誌記録はつぎのようになります。
+
+     IDhu al-Qada 25 Happy Islamic birthday!
+
+グレゴリオ暦日付の日誌記録では、ヘブライ暦日付とイスラム暦日付の記録は、
+それらの前にアンパサンド（`&'）があると印付けされません。
+
+ヘブライ暦やイスラム暦において指定した日付や似た日付に一致する日誌記録
+を作成するためのカレンダーのコマンド一覧をつぎに示します。
+
+`i h d'
+     選択した日付に対応するヘブライ暦日付に日誌記録を追加する
+     （`insert-hebrew-diary-entry'）。
+`i h m'
+     選択した日付に対応するヘブライ暦月の日に日誌記録を追加する
+     （`insert-monthly-hebrew-diary-entry'）。この日誌記録は、選択した
+     日付のヘブライ暦の月内の日と同じ任意の日付に一致する。
+`i h y'
+     選択した日付のヘブライ暦年の日に日誌記録を追加する
+     （`insert-yearly-hebrew-diary-entry'）。この日誌記録は、選択した日
+     付のヘブライ暦の月とその月内の日と同じ任意の日付に一致する。
+`i i d'
+     選択した日付に対応するイスラム暦日付に日誌記録を追加する
+     （`insert-islamic-diary-entry'）。
+`i i m'
+     選択した日付に対応するイスラム暦の月内の日に日誌記録を追加する
+     （`insert-monthly-islamic-diary-entry'）。
+`i i y'
+     選択した日付のイスラム暦年の日に日誌記録を追加する
+     （`insert-yearly-islamic-diary-entry'）。
+
+これらのコマンドは、日誌記録の対応する普通のコマンドと同様に働きます。
+カレンダーウィンドウにおいてポイントがある日付に作用し、日誌記録の日付
+に関する部分のみを挿入します。日誌記録の本文は自分で入力する必要があり
+ます。
+
+
+
+File: elisp-ja, Node: Fancy Diary Display, Next: Sexp Diary Entries, Prev: Hebrew/Islamic Entries, Up: Calendar
+
+装飾日誌表示
+============
+
+日誌表示は、日誌用バッファを準備してからフック`diary-display-hook'を実
+行することで動作します。このフックのデフォルト値
+（`simple-diary-display'）は、関係ない日誌記録を隠してからバッファを表
+示します。しかし、つぎのようにフックを指定すると
+
+     (add-hook 'diary-display-hook 'fancy-diary-display)
+
+装飾日誌表示を行えます。日誌記録と祝祭日を表示専用の特別なバッファにコ
+ピーして表示します。別のバッファにコピーするので、表示テキストが綺麗に
+なるように変更できます。たとえば、日付順に記録をソートするなどです。
+
+単純な日誌表示では、`print-diary-entries'でバッファ内容を印刷できます。
+1週間分の毎日の日誌を印刷するには、その週の日曜日にポイントを置いて`7
+d'と打ってから`M-x print-diary-entries'を行います。祝祭日が入っていると
+表示が遅くなりますが、変数`holidays-in-diary-buffer'に`nil'を設定すると
+速くできます。
+
+通常、装飾日誌用バッファでは、たとえ祝祭日であっても日誌記録がない日は
+表示しません。そのような日を装飾日誌用バッファに表示するには、変数
+`diary-list-include-blanks'に`t'を設定します。
+
+装飾日誌表示を使うときには、ノーマルフック`list-diary-entries-hook'を使っ
+て各日誌記録を時刻でソートできます。つぎのようにします。
+
+     (add-hook 'list-diary-entries-hook 'sort-diary-entries t)
+
+これは、各日ごとに認識できる時刻で始まる日誌記録をソートします。各日の
+先頭には時刻のついていない日誌項目がきます。
+
+装飾日誌表示には、取り込んだ日誌ファイルを処理する能力もあります。これ
+により、グループのメンバは、グループに共通な行事を記述した日誌ファイル
+を共有できます。つぎのような行を日誌ファイルに書きます。
+
+     #include "FILENAME"
+
+そうすると、ファイルFILENAMEから日誌記録を装飾日誌用バッファに取り込み
+ます。取り込み機構は再帰的ですから、取り込んだファイル内で別のファイル
+を取り込むことができます。もちろん、取り込みが循環しないように注意して
+ください。取り込み機能をオンにするにはつぎのようにします。
+
+     (add-hook 'list-diary-entries-hook 'include-other-diary-files)
+     (add-hook 'mark-diary-entries-hook 'mark-included-diary-files)
+
+通常の日誌表示は個人の日誌ファイルの記録を直接表示するため、取り込み機
+構は装飾日誌表示でのみ動作します。
+
+
+
+File: elisp-ja, Node: Sexp Diary Entries, Next: Appt Customizing, Prev: Fancy Diary Display, Up: Calendar
+
+S式項目と装飾日誌表示
+=====================
+
+S式を使った日誌記録は、複雑な条件で適用される日誌記録を作る以上のことが
+できます。装飾日誌表示を使っている場合には、S式日誌項目は、日付に依存し
+た記録テキストを生成できます。たとえば、記念日の記録では、テキストに何
+回目の記念日であるかを入れられます。したがって、つぎの日誌記録の`%d'は
+年齢で置き換えられます。
+
+     %%(diary-anniversary 10 31 1948) Arthur's birthday (%d years old)
+
+つまり、装飾日誌用バッファでは、1990年10月31日の項目はつぎのようになり
+ます。
+
+     Arthur's birthday (42 years old)
+
+日誌ファイルにつぎの項目が入っていると、
+
+     %%(diary-anniversary 10 31 1948) Arthur's %d%s birthday
+
+装飾日誌用バッファでは、1990年10月31日の項目はつぎのようになります。
+
+     Arthur's 42nd birthday
+
+同様に、周期的な日誌項目では繰り返し回数を計算できます。
+
+     %%(diary-cyclic 50 1 1 1990) Renew medication (%d%s time)
+
+は、1990年9月8日の装飾日誌表示ではつぎのようになります。
+
+     Renew medication (5th time)
+
+@noindent
+
+当日の日誌項目としてだけでなく、それよりまえの日の日誌項目にも含めるた
+めのS式日誌項目があります。たとえば、記念日の1週間前に督促がほしいとき
+には、つぎのようにします。
+
+     %%(diary-remind '(diary-anniversary 12 22 1968) 7) Ed's anniversary
+
+すると、装飾日誌には、12月15日と12月22日にRuth & Ed's anniversary と表
+示されます。
+
+関数`diary-date'は、整数や整数のリストや`t'で指定した月、日、年の組み合
+わせで表される日付に適用されます。たとえば、
+
+     %%(diary-date '(10 11 12) 22 t) Rake leaves
+
+により、装飾日誌には、各年の10月22日、11月22日、12月22日には
+
+     Rake leaves
+
+と表示されます。
+
+関数`diary-float'により、11月の第3金曜日とか4月の最後の火曜日といった日
+付に適用する日誌記録を記述できます。パラメータは、月MONTH、曜日DAYNAME、
+添字Nです。日曜日をDAYNAME=0、月曜日をDAYNAME=1、…として、MONTH月のN番
+目の曜日DAYNAMEに項目が現れます。Nが負であると、MONTH月の月末から数えま
+す。MONTHは、月のリストでも、1つの月でも、全部の月を指定する`t'でもかま
+いません。省略可能なパラメータDAYを指定して、MONTH月のN番目の曜日
+DAYNAMEの前後のDAY日を指定できます。Nが正だとDAYのデフォルトは1であり、
+Nが負だとDAYのデフォルトはMONTH月の月末です。たとえば、
+
+     %%(diary-float t 1 -1) Pay rent
+
+は、装飾日誌に各月の最後の月曜日に
+
+     Pay rent
+
+を表示します。
+
+S式日誌項目の一般性により、アルゴリズムで日誌項目を指定できます。S式日
+誌項目には、項目を当該日に適用するどうかを計算する式を含められます。そ
+の値が`nil'以外であると、その項目を当該日に適用します。その式では、対象
+とする日付を知るために変数`date'を使えます。この変数の値は、グレゴリオ
+暦で表したリスト`(MONTH DAY YEAR)'です。
+
+毎月のウィークデイである21日か、21日が週末の場合にはそのまえの金曜日に
+給料を支払われるとしましょう。そのような日付に一致するS式日誌項目はつぎ
+のように書けます。
+
+     &%%(let ((dayname (calendar-day-of-week date))
+              (day (car (cdr date))))
+           (or (and (= day 21) (memq dayname '(1 2 3 4 5)))
+               (and (memq day '(19 20)) (= dayname 5)))
+              ) Pay check deposited
+
+以下のS式日誌項目は、日付に依存して変わるテキストを日誌項目に入れる機能
+を（装飾日誌表示で）利用できます。
+
+`%%(diary-sunrise-sunset)'
+     今日の地方時での日出入時刻に対する日誌項目を作る。
+`%%(diary-phases-of-moon)'
+     月に朔弦望に対する日誌項目を作る。
+`%%(diary-day-of-year)'
+     年内の通算日数と残り日数で今日の日誌項目を作る。
+`%%(diary-iso-date)'
+     今日に対応するISO商用暦の日誌項目を作る。
+`%%(diary-julian-date)'
+     今日に対応するユリウス暦の日誌項目を作る。
+`%%(diary-astro-day-number)'
+     今日に対応する天文通算日（ユリウス日）の日誌項目を作る。
+`%%(diary-hebrew-date)'
+     今日に対応するヘブライ暦の日誌項目を作る。
+`%%(diary-islamic-date)'
+     今日に対応するイスラム暦の日誌項目を作る。
+`%%(diary-french-date)'
+     今日に対応するフランス革命暦の日誌項目を作る。
+`%%(diary-mayan-date)'
+     今日に対応するマヤ暦の日誌項目を作る。
+
+したがって、
+
+     &%%(diary-hebrew-date)
+
+を含んだ日誌項目は、装飾日誌表示を使っていると、毎日の日誌表示に対応す
+るヘブライ暦の日付を含めることになります。（単純な日誌表示では、行
+`&%%(diary-hebrew-date)'はすべての日付の日誌に現れるが、特別なことはな
+にもしない。）
+
+つぎの関数は、ある標準的な方法でヘブライ暦に基づくS式日誌項目を構成する
+ために使えます。
+
+`%%(diary-rosh-hodesh)'
+     各ヘブライ月の礼拝の始まりと終りを教える日誌項目を作る。
+`%%(diary-parasha)'
+     毎週のシナゴーグ朗読会を教える土曜日の日誌項目を作る。
+`%%(diary-sabbath-candles)'
+     安息日のたそがれの*地方時*を教える金曜日の日誌項目を作る。
+`%%(diary-omer)'
+     適切ならばオーメル (1) (*Note Sexp Diary Entries-Footnotes::) の回
+     数を与える日誌項目を作る。
+`%%(diary-yahrzeit MONTH DAY YEAR) NAME'
+     命日に対応した日誌項目を作る。
+     命日の日付は*グレゴリオ暦*で指定する。
+     正しいヘブライ暦の追悼日とその前日に日誌項目が現れる。
+     （ヨーロッパスタイルでは、パラメータの順序を
+     DAY、MONTH、YEARと変える。）
+
+

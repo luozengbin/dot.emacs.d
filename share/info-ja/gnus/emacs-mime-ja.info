@@ -1,0 +1,1856 @@
+Info file: emacs-mime-ja.info,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-mime-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Emacs MIME-ja: (emacs-mime-ja). Emacs MIME de/composition library (Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+
+
+File: emacs-mime-ja.info, Node: Top, Next: Decoding and Viewing, Prev: (dir), Up: (dir)
+
+Emacs MIME
+**********
+
+このマニュアルは MIME メッセージの作成と表示に使われるライブラリーを文
+書化したものです。
+
+このマニュアルは MIME のエンコード/デコード処理の振る舞いを変更したい利
+用者、Emacs MIME ライブラリーがどのように動作するかをもっと詳しく知りた
+い利用者、および MIME の要素を操作する関数や命令を書きたい人たちを対象
+にしています。
+
+MIME は "Multipurpose Internet Mail Extensions" の省略表記です。この標
+準は多数の RFC に文書化されていて、主なものは次の通りです: RFC2045 (イ
+ンターネット・メッセージの本文の書式), RFC2046 (メディアタイプ),
+RFC2047 (非-ASCII テキストのためのメッセージヘッダーの拡張), RFC2048
+(登録手続), RFC2049 (適合基準と事例)。MIME に準拠したソフトウェアを書こ
+うと思っている人は誰でも、少なくとも RFC2045 と RFC2047 は読んでおくこ
+とを強く勧めます。
+
+* Menu:
+
+* Decoding and Viewing::  デコードと表示のための枠組み
+* Composing::             MML; MIME パート記述用言語
+* Interface Functions::   基本的な関数の抽象化
+* Basic Functions::       ユーティリティーおよび基本的な解析のための関数
+* Standards::             使われている RFC と作業文書の概略
+* Index::                 関数および変数の索引
+
+
+
+File: emacs-mime-ja.info, Node: Decoding and Viewing, Next: Composing, Prev: Top, Up: Top
+
+デコードと表示
+**************
+
+この章は、上位階層での MIME メッセージのデコードと表示を扱います。
+
+その主な目的は、最初に MIME の記事を解析してから、その解析の結果として
+返される「ハンドル」のリストに基づいて、他のプログラムが処理を行なうこ
+とができるようにすることです。
+
+* Menu:
+
+* Dissection::             MIME メッセージの解析
+* Non-MIME::               非-MIME メッセージの解析
+* Handles::                ハンドルの取り扱い
+* Display::                ハンドルの表示
+* Display Customization::  表示に影響を及ぼす変数
+* Files and Directories::  添付ファイルの保存と命名
+* New Viewers::            自分用ビューワーの書き方
+
+
+
+File: emacs-mime-ja.info, Node: Dissection, Next: Non-MIME, Prev: Decoding and Viewing, Up: Decoding and Viewing
+
+解体
+====
+
+`mm-dissect-buffer' は MIME 記事の解体を担当する関数です。マルチパート
+のメッセージが与えられると、メッセージを再帰的に掘り下げて構造をたどり、
+そのメッセージの構造を描写する MIME ハンドルの木構造を返します。
+
+
+
+File: emacs-mime-ja.info, Node: Non-MIME, Next: Handles, Prev: Dissection, Up: Decoding and Viewing
+
+非-MIME
+=======
+
+Gnus はいくつかの MIME ではない添付ファイルも理解します。それらは
+postscript, uuencode, binhex, yenc, shar, forward, gnatsweb, pgp, diff
+のようなものです。それぞれの機能は、`mm-uu-configure-list' に項目を追加
+することによって無効にすることができます。例です。
+
+     (require 'mm-uu)
+     (add-to-list 'mm-uu-configure-list '(pgp-signed . disabled))
+
+`postscript'
+     ポストスクリプトのファイル。
+
+`uu'
+     Uuencode されたファイル。
+
+`binhex'
+     Binhex でエンコードされたファイル。
+
+`yenc'
+     Yenc でエンコードされたファイル。
+
+`shar'
+     Shar で作られたアーカイブ・ファイル。
+
+`forward'
+     MIME を使わずに転送されたメッセージ。
+
+`gnatsweb'
+     Gnatsweb の添付ファイル。
+
+`pgp-signed'
+     PGP で署名された平文 (clear text, ひらぶん)。
+
+`pgp-encrypted'
+     PGP で暗号化された平文 (clear text, ひらぶん)。
+
+`pgp-key'
+     PGP の公開鍵。
+
+`emacs-sources'
+     Emacs のソースコード。この項目は `mm-uu-emacs-sources-regexp' に合
+     致するグループでのみ動作します。
+
+`diff'
+     パッチ。これは、コミットされたファイルの差分が自動的に送られるグルー
+     プを対象にしたものです。`mm-uu-diff-groups-regexp' に合致するグルー
+     プでのみ動作します。
+
+`verbatim-marks'
+     Slrn ふうの verbatim (文章を一言一句そのまま表す) 記号の対。
+
+     (訳注: `#v+' と `#v-' の二行で囲まれたテキストを MIME パートに見立
+     てます。)
+
+`LaTeX'
+     LaTeX の文献。`mm-uu-tex-groups-regexp' に合致する名前のグループで
+     のみ動作します。
+
+いくつかの MIME ではない添付は `mm-uu-extract' というフェースを使って表
+示されます。ディフォルトではそれらのパートに MIME ボタンが付きません。
+`K b' (`gnus-summary-display-buttonized') を使うか
+`gnus-buttonized-mime-types' に `text/x-verbatim' を加えることによって、
+ボタンの表示を強制することができます。*Note MIME コマンド:
+(gnus-ja)MIME Commands.
+
+(訳注: ここで唐突に `text/x-verbatim' のことが出てくるのは、フェースが
+使われてボタンが付かない代表的なパートが `verbatim-marks' だからです。)
+
+
+
+File: emacs-mime-ja.info, Node: Handles, Next: Display, Prev: Non-MIME, Up: Decoding and Viewing
+
+ハンドル
+========
+
+MIME ハンドルは、MIME の構成要素を完全に描写するリストです。
+
+ハンドルの要素をアクセスするために、以下のマクロを使うことができます:
+
+`mm-handle-buffer'
+     デコードされていない MIME パートの内容物を保持しているバッファーを
+     返します。
+
+`mm-handle-type'
+     パートの解析された `Content-Type' を返します。
+
+`mm-handle-encoding'
+     パートの `Content-Transfer-Encoding' を返します。
+
+`mm-handle-undisplayer'
+     表示されているパートを消すことができるもの (訳注: 関数など) を (そ
+     れが表示されている場合に) 返します。
+
+`mm-handle-set-undisplayer'
+     表示されているパートを消すことができるもの (訳注: 関数など) を設定
+     します。
+
+`mm-handle-disposition'
+     パートの解析された `Content-Disposition' (訳注: 配置指定) を返しま
+     す。
+
+`mm-get-content-id'
+     `Content-ID' で参照されるハンドル (単数または複数) を返します。
+
+
+
+File: emacs-mime-ja.info, Node: Display, Next: Display Customization, Prev: Handles, Up: Decoding and Viewing
+
+表示
+====
+
+表示し、消去し、保存するための関数です。
+
+`mm-display-part'
+     パートを表示します。
+
+`mm-remove-part'
+     パートを (それが表示されていたら) 消去します。
+
+`mm-inlinable-p'
+     MIME タイプがインラインで表示可能かどうかを返します。
+
+`mm-automatic-display-p'
+     MIME タイプが自動的に表示されるべきかどうかを返します。
+
+`mm-destroy-part'
+     パートによって使われているすべての資源を開放します (訳注: パートの
+     表示、およびパートを解体して得た個々の部品を一時的に保持しているバッ
+     ファーやファイルを消去します)。
+
+`mm-save-part'
+     パートをファイルに保存します。
+
+`mm-pipe-part'
+     パートを何かのプロセスにパイプします。
+
+`mm-interactively-view-part'
+     パートを表示するために使う mailcap の手段を利用者が入力することを
+     求めて、それを使って表示します。
+
+
+
+File: emacs-mime-ja.info, Node: Display Customization, Next: Files and Directories, Prev: Display, Up: Decoding and Viewing
+
+表示のカスタマイズ
+==================
+
+`mm-inline-media-tests'
+     これは連想リストです。鍵 (第一要素) は MIME タイプ、第二要素はパー
+     トを「インライン」で (すなわち Emacs の画面に埋め込んで) 表示する
+     ための関数、そして第三要素はそのパートがインラインで表示することが
+     可能かどうかを調べるために `eval' (評価) される式です。
+
+     この変数は、あるパートがインライン表示可能かどうかと、もし可能なら
+     そのやり方を指定します。パートが現実にインライン表示されているかど
+     うかを示すものではありません。
+
+`mm-inlined-types'
+     一方これは、上記の変数によって設定された条件を満足した場合に、イン
+     ライン表示を行なうタイプを示します。これは MIME メディアタイプのリ
+     ストです。(訳注: それぞれの要素は正規表現です。)
+
+`mm-automatic-display'
+     これは上記の変数が認めるタイプに限って「自動的」に表示されるタイプ
+     のリストです。つまり、インライン表示が可能なパートだけが自動的に表
+     示されます。
+
+`mm-automatic-external-display'
+     これは外部ビューワーで自動的に表示されるタイプのリストです。
+
+`mm-keep-viewer-alive-types'
+     これは、別の記事を選択しても外部ビューワーが kill されないメディア
+     タイプのリストです。
+
+     訳注: postscript や dvi など (変数のディフォルト値を参照のこと) の
+     ように、読むのに時間がかかるかもしれないパートのタイプを含むリスト
+     です。一方、これに含まれない単純な画像のパートなどは、それが含まれ
+     ていた記事の表示をやめたときに、自動的に外部ビューワーが kill され
+     ます。
+
+`mm-attachment-override-types'
+     いくつかの MIME エージェントは「添付ファイル」(attachment) の配置
+     指定 (content-disposition) を持つパートを生成します。この変数に含
+     まれる MIME タイプの場合はそんな配置指定を無視して、そのパートをイ
+     ンライン表示することができるようにします。(そのパートをインライン
+     表示することが可能で、私たちがそうすることを望む場合に限って、配置
+     指定が無視されることに注意して下さい。)
+
+`mm-discouraged-alternatives'
+     `multipart/alternative' に含まれている、見たくないパートの MIME タ
+     イプのリストです。メッセージの後半にあるパートが最も豊かな内容になっ
+     ていると想定しているので、表示エージェントはそれを表示することになっ
+     ています。しかし、利用者は代わりに他のタイプを見ることを好むかもし
+     れません。このリストは、どんなタイプを最も見たくないかを指定するた
+     めに使います。例えばもし `text/html' パートをぜんぜん見たくなくて、
+     `text/richtext' パートはあまり見たくないということであれば、以下の
+     ように宣言することができます:
+
+          (setq mm-discouraged-alternatives
+                '("text/html" "text/richtext")
+                mm-automatic-display
+                (remove "text/html" mm-automatic-display))
+
+     さらに、これに `"image/.*"' を追加することは役に立つでしょう。
+     Spammers は `multipart/alternative' メッセージの優先される側で画像
+     を使っていることがあるので、あなたはそれ以外のパートがあることに気
+     が付かないかもしれません。`gnus-buttonized-mime-types' も参照して
+     下さい (*Note MIME コマンド: (gnus-ja)MIME Commands.)。
+     `gnus-buttonized-mime-types' に `"multipart/alternative"' を追加し
+     た後では、見たい側を手で選ぶことができます。例えば、このように設定
+     するれば良いでしょう:
+
+          (setq gnus-buttonized-mime-types
+                '("multipart/alternative" "multipart/signed")
+                mm-discouraged-alternatives
+                '("text/html" "image/.*"))
+
+     この場合、Gnus はそのような種類の spam メッセージのために、以下の
+     ようにラジオボタンを表示するでしょう:
+
+          1.  (*) multipart/alternative  ( ) image/gif
+
+          2.  (*) text/plain          ( ) text/html
+
+`mm-inline-large-images'
+     ウィンドウより大きなインライン画像を表示すると、Emacs はスクロール
+     することができません。つまり画像の全体を見ることができないというこ
+     とです。これを避けるために、ライブラリーはそれをインライン表示する
+     前に画像のサイズを計って、それがウィンドウに合わない場合は、ライブ
+     ラリーはそれを外部で (例えば `ImageMagick' や `xv' で) 表示します。
+     この変数を `t' に設定すると、この検査をさせなくして、ライブラリー
+     にすべての画像をサイズに関わりなくインラインで表示させます。
+
+`mm-inline-override-types'
+     `mm-inlined-types' は、例えばすべての `text/.*' パートをインライン
+     で表示することを指示するような正規表現を含んでいるかもしれません。
+     一方、インライン表示が可能だけれども添付ファイルとして扱いたいタイ
+     プがあるならば、そのタイプに合致する正規表現のリストをこの変数に設
+     定することによって、それを実現することができます。例えば
+     `mm-inlined-types' が `text/.*' を含んでいるものとすると、この変数
+     に `text/html' を含ませることによって、`text/html' パートは添付ファ
+     イルとして扱われるようになります。
+
+`mm-text-html-renderer'
+     HTML を描画するために使う関数を選択します。すでに用意してある描画
+     プログラムは、`w3', `w3m' (1) (*Note Display
+     Customization-Footnotes::), `links', `lynx', `w3m-standalone' また
+     は `html2text' のシンボル群のうちの一つを指定することによって選択
+     します。もし `nil' だったら、外部ビューワーを使います。さらに関数
+     (引数として MIME ハンドルが与えられて呼ばれる) を設定することもで
+     きます。
+
+`mm-inline-text-html-with-images'
+     HTML メールには `<img>' タグを使った spammers (spam をばらまくやか
+     ら) の卑劣な悪巧みが含まれているかもしれません。最もありそうなのは、
+     あなたがそのメールを読んだことを確認するための意図があることです。
+     このオプションを `nil' に設定する (それがディフォルトです) ことに
+     よって、あなたの個人情報が流出するのを防ぐことができます。今のとこ
+     ろ Emacs/W3 はこれを無視します。Emacs-w3m では、これが `nil' であっ
+     ても、画像が埋め込まれた場所で `t' 命令を使うことによって画像を表
+     示することができます。 (2) (*Note Display
+     Customization-Footnotes::)
+
+`mm-w3m-safe-url-regexp'
+     安全な URL 名、すなわち HTML メールを描画するときに個人情報が流出
+     しそうもない URL に合致する正規表現です (ディフォルト値は
+     `\\`cid:' です)。`nil' にすると、すべての URL が安全だと判断します。
+
+`mm-inline-text-html-with-w3m-keymap'
+     このオプションを非-`nil' に設定することによって、インライン表示さ
+     れた text/html パートで emacs-w3m の命令キーを使うことができます。
+     ディフォルト値は `t' です。
+
+`mm-external-terminal-program'
+     外部の端末を起動するために使われるプログラムです。
+
+`mm-enable-external'
+     外部の MIME ハンドラーを使うべきかどうかを指定します。
+
+     `t' だったら、定義されているすべての外部の MIME ハンドラーが使われ
+     ます。`nil' にすると、ファイルはディスクに保存されます
+     (`mailcap-save-binary-file')。これが `ask' というシンボルだったら、
+     外部の MIME ハンドラーが起動される前に尋ねられるでしょう。
+
+     Mailcap (*Note mailcap::) を介して添付ファイルの表示を始めると、安
+     全なビューワーを最も安全なオプションで使うことを試みます (添付ファ
+     イルをディスクに保存して、異なる手段 (コマンドラインかダブルクリッ
+     ク) でその表示を始める場合とは違います)。とにかく、必ずどんな外部
+     プログラムも使わないようにしたいのであれば、この変数を `nil' か
+     `ask' に設定して下さい。
+
+
+File: emacs-mime-ja.info  Node: Display Customization-Footnotes, Up: Display Customization
+
+(1) emacs-w3m についての詳細は
+`http://emacs-w3m.namazu.org/' を見て下さい。
+
+(2) `T' 命令はすべての画像を取り込みます。
+`w3m-key-binding' オプションを `info' に設定した場合は、
+代わりに `i' か `I' を使って下さい。
+
+
+
+File: emacs-mime-ja.info, Node: Files and Directories, Next: New Viewers, Prev: Display Customization, Up: Decoding and Viewing
+
+ファイルとディレクトリー
+========================
+
+`mm-default-directory'
+     添付ファイルを保存するための、ディフォルトのディレクトリーです。
+     `nil' だったら `default-directory' を使います。
+
+`mm-tmp-directory'
+     一時ファイルを格納するためのディレクトリーです。
+
+`mm-file-name-rewrite-functions'
+     MIME パートのファイル名を書き換えるために使われる関数のリストです。
+     それぞれの関数はファイル名に対して順繰りに実行されます (訳注: ある
+     関数の戻り値が次の関数の引数になります)。出来合いの関数は以下の通
+     りです。
+
+     `mm-file-name-delete-control'
+          すべての制御文字を消去します。
+
+     `mm-file-name-delete-gotchas'
+          欠陥があるシェルスクリプトで使われると意図しない結果を生じる
+          文字、すなわち `|', `>' および `<'、加えて最初の文字として使
+          われる `-' と `.' を消去します。
+
+     `mm-file-name-delete-whitespace'
+          すべての空白文字を取り除きます。
+
+     `mm-file-name-trim-whitespace'
+          先頭と末尾の空白文字を取り除きます。
+
+     `mm-file-name-collapse-whitespace'
+          複数の連続した空白文字を単一のスペース文字で置き換えます。
+
+     `mm-file-name-replace-whitespace'
+          空白文字を下線 (underscore) で置き換えます。下線がお好みでな
+          ければ、他の文字を `mm-file-name-replace-whitespace' 変数に設
+          定して下さい。
+
+     Emacs 標準の関数である `capitalize', `downcase', `upcase' および
+     `upcase-initials' も役に立つことがあるかもしれません。
+
+`mm-path-name-rewrite-functions'
+     MIME パートのフル・ファイル名を書き換えるために使われる関数のリス
+     トです。これはパートを外部で表示するとき (すなわち、融通の効かない
+     プログラムが、ファイルが保存された場所を見つけることができるように、
+     絶対パス名を変換するため) に使われます。
+
+
+
+File: emacs-mime-ja.info, Node: New Viewers, Prev: Files and Directories, Up: Decoding and Viewing
+
+新しいビューワー
+================
+
+これは `text/enriched' パートをインライン表示するビューワーの例です:
+
+     (defun mm-display-enriched-inline (handle)
+       (let (text)
+         (with-temp-buffer
+           (mm-insert-part handle)
+           (save-window-excursion
+             (enriched-decode (point-min) (point-max))
+             (setq text (buffer-string))))
+         (mm-insert-inline handle text)))
+
+この関数がパラメーターとして MIME ハンドルを受け取ることがわかりますね。
+それは一時バッファーに作業場所を移し、パートのテキストを挿入し、そのテ
+キストに何かの処理を施し、結果を覚えておいて、関数が呼ばれたときのバッ
+ファーに戻ってその結果を挿入します。
+
+ここにある二つの重要なお助け関数は `mm-insert-part' と
+`mm-insert-inline' です。最初の関数は、ハンドルのテキストを現在のバッ
+ファーに挿入します。これは文字セットおよびエンコーディグ (content
+transfer decoding) を取り扱います。二番目の関数は、挿入しろと言ったどん
+なテキストでも単に挿入しますが、テキストを手軽な方法で「表示されなくす
+る」(undisplayed にする) ことができるような諸設定をも行ないます。
+
+
+
+File: emacs-mime-ja.info, Node: Composing, Next: Interface Functions, Prev: Decoding and Viewing, Up: Top
+
+MIME メッセージの作成
+*********************
+
+MIME メッセージの作成はうんざりする仕事だし簡単でもありません。そこで、
+MML (MIME Meta Language) という言語を解析して、MIME メッセージを生成す
+るための、`mml' というライブラリーが作られました。
+
+主要なインターフェース関数は `mml-generate-mime' です。これは現在の (狭
+められた) バッファーの内容物を調べて、MIME メッセージを含む文字列を返し
+ます。
+
+* Menu:
+
+* Simple MML Example::             MML 文書の例
+* MML Definition::                 すべての有効な MML 要素
+* Advanced MML Example::           もう一つの MML 文書の例
+* Encoding Customization::         エンコーディングに作用する変数
+* Charset Translation::            MULE 文字セットから MIME 文字セットへの割り当て
+* Conversion::                     MIME から MML へ、およびその逆
+* Flowed text::                    ソフトおよびハード改行
+
+
+
+File: emacs-mime-ja.info, Node: Simple MML Example, Next: MML Definition, Prev: Composing, Up: Composing
+
+単純な MML の例
+===============
+
+`multipart/alternative' の単純な例です:
+
+     <#multipart type=alternative>
+     This is a plain text part.
+     これはプレーンテキストのパートです。
+     <#part type=text/enriched>
+     <center>This is a centered enriched part</center>
+     <center>これは中心に置かれる enriched パートです</center>
+     <#/multipart>
+
+これを `mml-generate-mime' に通すと、次のものが得られます:
+
+     Content-Type: multipart/alternative; boundary="=-=-="
+
+     --=-=-=
+     Content-Type: text/plain; charset=iso-2022-jp
+
+     This is a plain text part.
+     これはプレーンテキストのパートです。
+
+     --=-=-=
+     Content-Type: text/enriched; charset=iso-2022-jp
+
+     <center>This is a centered enriched part</center>
+     <center>これは中心に置かれる enriched パートです</center>
+
+     --=-=-=--
+
+(実際には、日本語の部分は `charset=iso-2022-jp' でエンコードされたもの
+になります。)
+
+
+
+File: emacs-mime-ja.info, Node: MML Definition, Next: Advanced MML Example, Prev: Simple MML Example, Up: Composing
+
+MML の定義
+==========
+
+MML 言語はとても単純です。SGML アプリケーションに少し似ていますが、異な
+るものです。
+
+MML の主要な概念は「パート」です。それぞれのパートを異なるタイプにした
+り、異なる文字セットを使うことができます。パートは `<#part ...>' タグで
+記述します。マルチパート型のパートは `<#multipart ...>' タグで始めます。
+それぞれのパートは `<#/part>' タグか `<#/multipart>' タグで終端しますが、
+(それらが無くても) `<#part ...>' で始まったタグは次のパートの始まりによっ
+ても閉じられます。
+
+`<#external ...>' タグというものもあります。これは
+`external/message-body' 型のパートを記述するために使われます。
+
+それぞれのタグは「parameter=値」の形式で、一つ以上のパラメーターを含む
+ことができます (もちろん無いこともあります)。値をクォーテーションマーク
+("...") で囲むことができますが、値が空白文字を含む場合以外は囲む必要が
+ありません。したがって、`filename=/home/user/#hello$^yes' は完全に有効
+です。
+
+以下のパラメーターは MML で使われるものです。意味を持たないパラメーター
+は無視されます。MML パラメーターの名前は MIME パラメーターの名前と同じ
+で、括弧の中に付記してあるのは、それが使われるヘッダーです。
+
+`type'
+     パートの MIME タイプです (`Content-Type')。
+
+`filename'
+     そのパートの本体が含むことになるファイルの名前です
+     (`Content-Disposition')。
+
+`charset'
+     パートの内容物をエンコードするときに使われる文字セットです
+     (`Content-Type')。*Note Charset Translation::.
+
+`name'
+     パートをファイルに保存するときのファイル名を示唆するために使われる
+     かもしれません (`Content-Type')。
+
+`disposition'
+     配置指定に使います。有効な値は `inline' と `attachment' です
+     (`Content-Disposition')。
+
+`encoding'
+     有効な値は `7bit', `8bit', `quoted-printable' および `base64' です
+     (`Content-Transfer-Encoding')。*Note Charset Translation::.
+
+`description'
+     パートの説明書きです (`Content-Description')。
+
+`creation-date'
+     パートが作成された時刻 (RFC822 形式) です (`Content-Disposition')。
+
+`modification-date'
+     パートが変更された時刻 (RFC822 形式) です (`Content-Disposition')。
+
+`read-date'
+     パートが読まれた時刻 (RFC822 形式) です (`Content-Disposition')。
+
+`recipients'
+     パートを誰宛てに暗号化/署名するかを指定します。これは To/CC を基に
+     した自動検出よりも優先されます。
+
+`sender'
+     パートに署名するときの名義です。このフィールドはディフォルトの鍵が
+     使われないようにするために使われます。
+
+`size'
+     パートのサイズを octet (8-bit) の単位で表します
+     (`Content-Disposition')。
+
+`sign'
+     この MML のパートに、何の技術手段 (`smime', `pgp' または
+     `pgpmime') で署名するかを指定します。
+
+`encrypt'
+     この MML のパートを、何の技術手段 (`smime', `pgp' または
+     `pgpmime') で暗号化するかを指定します。
+
+以下は `text/plain' のためのパラメーターです:
+
+`format'
+     テキストを整形するためのパラメーターで、有効な値は `fixed' (ディフォ
+     ルト) と `flowed' です。普通はこれを手で設定しません。それは、テキ
+     ストの本文が、RFC 2646 で定められた特別な方法で整形されることを必
+     要とするからです。*Note Flowed text::.
+
+以下は `application/octet-stream' のためのパラメーターです:
+
+`type'
+     パートのタイプです (`Content-Type')。これは人間が読むことを想定し
+     た、非公式なものです。
+
+以下は `message/external-body' のためのパラメーターです:
+
+`access-type'
+     ファイルを取得するための、サポートされているアクセス手段を示す語で
+     す。値は `ftp', `anon-ftp', `tftp', `localfile' および
+     `mailserver' のどれかです。(`Content-Type'.)
+
+`expiration'
+     ファイルが取得できなくなるかもしれない日時 (RFC822 形式) です。
+     (`Content-Type'.)
+
+`size'
+     Octet (8-bit) の単位で表したファイルのサイズです。
+     (`Content-Type'.)
+
+`permission'
+     有効な値は `read' と `read-write' です (`Content-Type')。
+
+以下は `sign=smime' のためのパラメーターです:
+
+`keyfile'
+     署名する人の鍵と証明書を含んでいるファイルです。
+
+以下は `encrypt=smime' のためのパラメーターです:
+
+`certfile'
+     受取人の証明書を含んでいるファイルです。
+
+
+
+File: emacs-mime-ja.info, Node: Advanced MML Example, Next: Encoding Customization, Prev: MML Definition, Up: Composing
+
+高度な MML の例
+===============
+
+複雑なマルチパート・メッセージの例です。これは `multipart/mixed' です。
+多数のパートを含んでいて、その一つは `multipart/alternative' です。
+
+     <#multipart type=mixed>
+     <#part type=image/jpeg filename=~/rms.jpg disposition=inline>
+     <#multipart type=alternative>
+     This is a plain text part.
+     これはプレーンテキストのパートです。
+     <#part type=text/enriched name=enriched.txt>
+     <center>This is a centered enriched part</center>
+     <center>これは中心に置かれる enriched パートです</center>
+     <#/multipart>
+     This is a new plain text part.
+     これは新しいプレーンテキストのパートです。
+     <#part disposition=attachment>
+     This plain text part is an attachment.
+     このプレーンテキストのパートは添付ファイルです。
+     <#/multipart>
+
+そして、これが結果の MIME メッセージです:
+
+     Content-Type: multipart/mixed; boundary="=-=-="
+
+     --=-=-=
+     Content-Type: image/jpeg
+     Content-Disposition: inline; filename=rms.jpg
+     Content-Transfer-Encoding: base64
+
+     /9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRof
+     Hh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAAwADABAREA/8QAHwAA
+     AQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQR
+     BRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RF
+     RkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ip
+     qrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oACAEB
+     AAA/AO/rifFHjldNuGsrDa0qcSSHkA+gHrXKw+LtWLrMb+RgTyhbr+HSug07xNqV9fQtZrNI
+     AyiaE/NuBPOOOP0rvRNE880KOC8TbXXGCv1FPqjrF4LDR7u5L7SkTFT/ALWOP1xXgTuXfc7E
+     sx6nua6rwp4IvvEM8chCxWxOdzn7wz6V9AaB4S07w9p5itow0rDLSY5Pt9K43xO66P4xs71m
+     2QXiGCbA4yOVJ9+1aYORkdK434lyNH4ahCnG66VT9Nj15JFbPdX0MS43M4VQf5/yr2vSpLnw
+     5ZW8dlCZ8KFXjOPX0/mK6rSPEGt3Angu44fNEReHYNvIH3TzXDeKNO8RX+kSX2ouZkicTIOc
+     L+g7E810ulFjpVtv3bwgB3HJyK5L4quY/C9sVxk3ij/xx6850u7t1mtp/wDlpEw3An3Jr3Dw
+     34gsbWza4nBlhC5LDsaW6+IFgupQyCF3iHH7gA7c9R9ay7zx6t7aX9jHC4smhfBkGCvHGfrm
+     tLQ7hbnRrV1GPkAP1x1/Hr+Ncr8Vzjwrbf8AX6v/AKA9eQRyYlQk8Yx9K6XTNbkgia2ciSIn
+     7p5Ga9Atte0LTLKO6it4i7dVRFJDcZ4PvXN+JvEMF9bILVGXJLSZ4zkjivRPDaeX4b08HOTC
+     pOffmua+KkbS+GLVUGT9tT/0B68eeIpIFYjB70+OOVXyoOM9+M1eaWeCLzHPyHGO/NVWvJJm
+     jQ8KGH1NfQWhXSXmh2c8eArRLwO3HSv/2Q==
+     --=-=-=
+     Content-Type: multipart/alternative; boundary="==-=-="
+
+     --==-=-=
+     Content-Type: text/plain; charset=iso-2022-jp
+
+     This is a plain text part.
+     これはプレーンテキストのパートです。
+
+     --==-=-=
+     Content-Type: text/enriched; charset=iso-2022-jp; name=enriched.txt
+
+     <center>This is a centered enriched part</center>
+     <center>これは中心に置かれる enriched パートです</center>
+
+     --==-=-=--
+
+     --=-=-=
+     Content-Type: text/plain; charset=iso-2022-jp
+
+     This is a new plain text part.
+     これは新しいプレーンテキストのパートです。
+
+     --=-=-=
+     Content-Type: text/plain; charset=iso-2022-jp
+     Content-Disposition: attachment
+
+     This plain text part is an attachment.
+     このプレーンテキストのパートは添付ファイルです。
+
+     --=-=-=--
+
+(実際には、日本語の部分は `charset=iso-2022-jp' でエンコードされたもの
+になります。)
+
+
+
+File: emacs-mime-ja.info, Node: Encoding Customization, Next: Charset Translation, Prev: Advanced MML Example, Up: Composing
+
+エンコーディングのカスタマイズ
+==============================
+
+`mm-body-charset-encoding-alist'
+     MIME 文字セットに割り当てるエンコーディングです。この変数は、例え
+     ば他の要件によって特定のエンコーディングが強制されないときに、通常
+     使われます (電子署名されたメッセージは 7bit エンコーディングを必要
+     とします)。ディフォルト値は次の通りです。
+
+          ((iso-2022-jp . 7bit)
+           (iso-2022-jp-2 . 7bit)
+           (utf-16 . base64)
+           (utf-16be . base64)
+           (utf-16le . base64))
+
+     例えば ISO-8859-1 文字セットが quoted-printable でエンコードされな
+     いようにしたい場合は、この変数に `(iso-8859-1 . 8bit)' を追加すれ
+     ば良いでしょう。MML の `encoding' タグを使って、メッセージ毎にそれ
+     で指定した値をこの変数より優先させることもできます (*Note MML
+     Definition::)。
+
+`mm-coding-system-priorities'
+     送出するメッセージで使う coding system の優先度を指定します。ディ
+     フォルト値は `nil' です (その場合は Emacs におけるディフォルトの優
+     先順位が適用されます) が、日本語環境で Emacs を実行する場合は
+     `(iso-8859-1 iso-2022-jp iso-2022-jp-2 shift_jis utf-8)' になりま
+     す。値は coding system のシンボルのリストです (coding system の別
+     名を使っても構いません。設定するときは `M-x
+     describe-coding-system' を使って、coding system の名前が正確である
+     ことを確かめて下さい)。例えば UTF-8 を最優先とするように Emacs を
+     設定したものの、可能な場合は ISO-8859-1 でメッセージを送信するよう
+     にしたいという場合だったら、この変数を `(iso-8859-1)' にすれば良い
+     でしょう。MML の `charset' タグを使って、メッセージ毎にそれで指定
+     した値をこの変数より優先させることもできます (*Note MML
+     Definition::)。
+
+          訳注: 日本語環境とは `current-language-environment' 変数の値
+          が `Japanese' になっている環境のことです。日本語のメッセージ
+          のエンコードには伝統的に `iso-2022-jp' が使われているのに対し、
+          Emacs で定められた優先順位に基づくと `euc-jp' や `shift_jis'
+          などが第一候補になってしまうので、この値が `nil' ではよろしく
+          ないのです。
+
+          なお、ラテン語圏の人たちに宛てて送るメッセージが、彼らがデコー
+          ドできないかもしれない `iso-2022-jp-2' などでエンコードされて
+          しまうのを防ぐために、ディフォルト値の先頭に `iso-8859-1' が
+          置かれています。
+
+`mm-content-transfer-encoding-defaults'
+     MIME のタイプに割り当てるエンコーディングです。この変数は、例えば
+     他の要件によってより安全なエンコーディングが強制されないときに、通
+     常使われます (電子署名されたメッセージは 7bit エンコーディングを必
+     要とします)。通常の MIME エンコーディングの他に、quoted-printable
+     と base64 のうちで最も効率的な方を個々の場合に使うべきであることを
+     示す `qp-or-base64' を使うこともできます (訳注: `qp-or-base64' の
+     実際の動作は、quoted-printable と base64 の両方でエンコードしてみ
+     て、サイズが小さくなる方を採用することです)。
+
+     `qp-or-base64' にはもう一つの効果があります。それは MIME のパート
+     が MTA によって壊されないようにするために、長い行を折り畳みます。
+     `quoted-printable' と `base64' もそうです。
+
+     パートが受信したときのままの生の転送されたメッセージ (例えば、引数
+     に 2 を与えた `gnus-summary-mail-forward' によって作られるもの) で
+     あるか、`text/*' タイプや `message/*' ではない場合に、これが本文の
+     エンコーディグに影響を及ぼすことに注意して下さい。それらの場合でさ
+     え、MML の `encoding' タグを使って、メッセージ毎にそれで指定した値
+     をこの変数より優先させることもできます (*Note MML Definition::)。
+
+`mm-use-ultra-safe-encoding'
+     これが非-`nil' である場合、本文に 76 文字よりも長い行や "From " で
+     始まる行があったら、それらのテキストのパートは quoted-printable で
+     エンコードされます。非-7bit エンコーディング (8bit, バイナリー) は
+     一般に認められていません。この変数を `nil' 以外の値に設定しておく
+     ことは、8bit を通さない MTA か MDA がメッセージを改変してしまう確
+     率を下げます。これは直接に設定されるのではなく、他の関数によって
+     (例えば、電子署名されるメッセージをエンコードするときに) 必要に応
+     じて束縛されるべきです。
+
+
+
+File: emacs-mime-ja.info, Node: Charset Translation, Next: Conversion, Prev: Encoding Customization, Up: Composing
+
+文字セットの変換
+================
+
+MML を MIME に変換するときに、Emacs の内部で作られた MIME パートのそれ
+ぞれについて、適切な文字セットを選ばなければなりません。
+
+MULE 機能が無い Emacs を走らせている場合だったら、この処理は単純です。
+パートがどんな非-ASCII (8-bit) 文字を含んでいても、
+`mail-parse-charset' で与えられる MIME 文字セット (シンボル) を使えば良
+いのです。(もっとも、この変数を直接に設定しないで下さい。ディフォルトの
+文字セットを変更したい場合は、MIME メッセージを処理するために使うパッケー
+ジの説明書を調べてください。例えば: *Note いろいろなメッセージ変数:
+(message-ja)Various Message Variables.)。ASCII 文字セットしか無ければ、
+US-ASCII が MIME 文字セットとして使われるのはもちろんです。
+
+MULE 機能を備えた Emacs を走らせている場合は、ものごとは多少複雑になり
+ます。この場合は、パートで使われている MULE 文字セットのリストを取得し、
+Emacs 自身が提供するテーブルか、XEmacs のための
+`mm-mime-mule-charset-alist' 変数の値に基づいて、それらの MULE 文字セッ
+トを MIME 文字セットに変換します。結果が単一の MIME 文字セットだったら、
+それを使ってパートをエンコードします。しかし、結果の MIME 文字セットの
+リストが二つ以上の要素を含んでいる場合には、二つのことが起こり得ます。
+もしパートを UTF-8 でエンコードすることが可能だったら、その文字セットを
+使います。(このために Emacs は `utf-8' coding system をサポートしていな
+ければなりません。また、そのパートを構成するすべての文字に対応するもの
+が、Unicode の定義に存在していなければなりません。) 何らかの理由によっ
+て UTF-8 を利用できない場合、そのパートは、それぞれが単一の MIME 文字セッ
+トでエンコードすることができるように、いくつかに分割されます。もっとも、
+パートは行の境界でしか分割することができないので、単一の行をエンコード
+するために複数の MIME 文字セットが必要だとすると、そのパートをエンコー
+ドすることは不可能です。
+
+MULE 機能を備えた Emacs を走らせている場合、どの coding system を使うか
+の優先順位は Emacs 自身から継承されます。これは、もし Emacs が UTF-8 を
+優先するように設定されていると、それがメッセージのエンコードに使われる
+ということです。ただし `mm-coding-system-priorities' 変数の値を変えるこ
+とによって、これを変更することはできます (*Note Encoding
+Customization::)。
+
+メッセージを作成するときに MML の `charset' タグを設定することによって、
+使われる文字セットをそれにすることができます。
+
+文字列のエンコーディング (quoted-printable, 8bit など) はここでの議論と
+直交する概念です。それは `mm-body-charset-encoding-alist' 変数と
+`mm-content-transfer-encoding-defaults' 変数によって制御されます
+(*Note Encoding Customization::)。
+
+
+
+File: emacs-mime-ja.info, Node: Conversion, Next: Flowed text, Prev: Charset Translation, Up: Composing
+
+変換
+====
+
+`mime-to-mml' 関数を使って MIME メッセージ (マルチパートでも可) を MML
+に変換することができます。これは現在のバッファーにある MIME メッセージ
+に作用して、MIME の境界を MML の印付け (markup) で置き換えます。テキス
+トではないパートの内容物は、そのバッファーに置かれる代わりに MML タグを
+介して参照される別のバッファーに置かれます。
+
+`mml-to-mime' 関数を使って、逆に MML メッセージを MIME に変換することが
+できます。
+
+これらの関数が行なうことはある意味で「不可逆」(lossy) です。
+`mime-to-mml' を実行し、次に `mml-to-mime' を実行すると、元とまったく同
+じメッセージには戻らないでしょう。ヘッダーの順序のようなどうでも良いこ
+とが違ってしまうだけでなく、それぞれのヘッダーの内容も変化してしまうか
+もしれません。例えば、元のメッセージが base64 でテキストをエンコードし
+てあっても、`mml-to-mime' は quoted-printable を使うかもしれない、とい
+うようなことです。
+
+しかし本質的には、これら二つは互いに逆関数であるべきです。結果として生
+成されるメッセージの内容物が、同一でないにしても等価なままであるような。
+
+
+
+File: emacs-mime-ja.info, Node: Flowed text, Prev: Conversion, Up: Composing
+
+流動テキスト
+============
+
+Emacs MIME ライブラリーは、メッセージをエンコードするときは
+`use-hard-newlines' 変数 (*Note Hard and Soft Newlines: (emacs)Hard
+and Soft Newlines.) に従い、メッセージをデコードするときは
+Content-Type パラメーターの“format=flowed”を尊重します。
+
+テキストをエンコードするとき、ソフト改行文字で終端されている各行は、
+`use-hard-newlines' に関わらずに `fill-flowed-encode-column' で決定され
+る桁の後ろで折り畳まれて、耳を揃えられ (filled され) ます。引用の印
+(`^>* ?') は尊重されます。その変数は、流動テキストをサポートしないクラ
+イアントにおけるテキストの見え方を制御し、ディフォルトでは 66文字の後ろ
+で折り畳みます。バッファーにハード改行文字が無ければ、流動 (flowed) テ
+キストのためのエンコードは行ないません。
+
+流動 (flowed) テキストをデコードするとき、ソフト改行文字を持つ各行は
+`fill-flowed-display-column' で決定される桁の後ろで折り畳まれて耳を揃え
+られ (filled され) ます。ディフォルトでは `fill-column' の後ろで折り畳
+みます。
+
+`mm-fill-flowed'
+     非-`nil' だったら、format=flowed の記事は流動的に表示されます。
+
+
+
+File: emacs-mime-ja.info, Node: Interface Functions, Next: Basic Functions, Prev: Composing, Up: Top
+
+インターフェース関数
+********************
+
+`mail-parse' ライブラリーは、次の章で述べる実際の低レベルなライブラリー
+を抽象化したものです。
+
+標準は変化するので、プログラムも新しい鋳型に適合するために変化しなけれ
+ばなりません。例えば RFC2045 は、パラメーターのリストにおいて ASCII 文
+字だけを許容する `Content-Type' ヘッダーのための構文について述べていま
+す。RFC2231 は、複数行に渡って継続する単一のヘッダーと非-ASCII 文字の構
+成を規定するための RFC2045 の構文について詳しく記述しています。
+
+これに対処する従来の方法は、単に新しい構文を解析するためにライブラリー
+の関数を更新することでした。しかしながら、これは時には誤った行為です。
+場合によっては、新しい構文と古い構文の両方を理解できるようにすることが
+重要かもしれないし、ライブラリーが一つしか無い場合には、ライブラリーの
+古いバージョンと新しいバージョンのどちらかを選ばなければなりません。
+
+Emacs MIME ライブラリーは異なる方針で行くことにしました。これは、対応す
+る標準に従って厳密に解析する一連の低レベルのライブラリー
+(`rfc2047.el', `rfc2231.el' など) を定義します。とは言え、正規のプログ
+ラムは、これらのライブラリーが直接に提供する関数ではなく、代わりに
+`mail-parse' ライブラリーが提供する関数を使うべきです。このライブラリー
+にある関数は、最新の低レベルのライブラリーの、対応する関数への単なる別
+名です。この構成を使うことによって、プログラムはそれらが使うことができ
+る首尾一貫したインターフェースを手に入れました。また、ライブラリーの開
+発者は、新しい標準を扱うコードを自由に作成することができます。
+
+以下の関数が、このライブラリーで定義されています:
+
+`mail-header-parse-content-type'
+     `Content-Type' ヘッダーを解析して、以下の形式でリストを返します:
+
+          ("type/subtype"
+           (attribute1 . value1)
+           (attribute2 . value2)
+           ...)
+
+     例です:
+
+          (mail-header-parse-content-type
+           "image/gif; name=\"b980912.gif\"")
+          => ("image/gif" (name . "b980912.gif"))
+
+`mail-header-parse-content-disposition'
+     `Content-Disposition' ヘッダーを解析して、上記の関数と同じ形式のリ
+     ストを返します。
+
+`mail-content-type-get'
+     上記の形式のリストと属性の二つのパラメーターを受け取り、その属性の
+     値を返します。
+
+          (mail-content-type-get
+           '("image/gif" (name . "b980912.gif")) 'name)
+          => "b980912.gif"
+
+`mail-header-encode-parameter'
+     パラメーターに使う文字列を受け取り、それをエンコードしたものを返し
+     ます。これは `Content-Type' と `Content-Disposition' のようなヘッ
+     ダーに入れるパラメーターのために使われます。
+
+`mail-header-remove-comments'
+     ヘッダーからコメントを取り除いたものを返します。
+
+          (mail-header-remove-comments
+           "Gnus/5.070027 (Pterodactyl Gnus v0.27) (Finnish Landrace)")
+          => "Gnus/5.070027  "
+
+`mail-header-remove-whitespace'
+     ヘッダーから“linear white space”を取り除きます。クォートされた
+     ("..." で囲まれた) 文字列の中にある空白文字とコメントは保存されま
+     す。
+
+     訳注:“linear white space”とは一つ以上の空白文字のことで、その前
+     に改行文字を置いたものは、長いヘッダーを折り畳むときに使われます。
+
+          (mail-header-remove-whitespace
+           "image/gif; name=\"Name with spaces\"")
+          => "image/gif;name=\"Name with spaces\""
+
+`mail-header-get-comment'
+     ヘッダーの最後のコメントを返します。
+
+          (mail-header-get-comment
+           "Gnus/5.070027 (Pterodactyl Gnus v0.27) (Finnish Landrace)")
+          => "Finnish Landrace"
+
+     訳注: `Finnish Landrace' は 1998年8月23日にリリースされた XEmacs
+     21.0-pre11 のコードネームです。まあ、どうでもいいことですが。
+
+`mail-header-parse-address'
+     アドレスを解析して、メールアドレスとプレーンテキストの名前を含むリ
+     ストを返します。
+
+          (mail-header-parse-address
+           "Hrvoje Niksic <hniksic@srce.hr>")
+          => ("hniksic@srce.hr" . "Hrvoje Niksic")
+
+`mail-header-parse-addresses'
+     アドレスのリストを含んでいる文字列を解析して、上で述べたような要素
+     のリストを返します。
+
+          (mail-header-parse-addresses
+           "Hrvoje Niksic <hniksic@srce.hr>, Steinar Bang <sb@metis.no>")
+          => (("hniksic@srce.hr" . "Hrvoje Niksic")
+               ("sb@metis.no" . "Steinar Bang"))
+
+`mail-header-parse-date'
+     日付の文字列を解析して、Emacs 形式の時刻を返します。
+
+`mail-narrow-to-head'
+     バッファーをヘッダーの区域に狭めます。ポイントは狭められたバッファー
+     の先頭に置かれます。
+
+`mail-header-narrow-to-field'
+     バッファーを現在位置の (単一の) ヘッダーに狭めます。複数行に渡って
+     継続するヘッダーを理解します。
+
+`mail-header-fold-field'
+     現在位置のヘッダーを折り畳みます。
+
+`mail-header-unfold-field'
+     現在位置のヘッダーの折り畳みを解除します。
+
+`mail-header-field-value'
+     現在位置のフィールドの値を返します。
+
+`mail-encode-encoded-word-region'
+     領域にある ASCII 以外の語をエンコードします。例えば `Na"ive' は
+     `=?iso-8859-1?Q?Na=EFve?=' としてエンコードされます。
+
+     訳注: ここで言わんとしていることを確かめるには、以下を `eval' して
+     下さい:
+
+          (rfc2047-decode-string "=?iso-8859-1?Q?Na=EFve?=")
+
+`mail-encode-encoded-word-buffer'
+     現在のバッファーにある ASCII 以外の語をエンコードします。この関数
+     は、ヘッダーの区域に狭められたメッセージで呼ばれることを意図してい
+     ます。
+
+`mail-encode-encoded-word-string'
+     文字列に含まれているエンコードする必要がある語をエンコードして、結
+     果を返します。
+
+          (mail-encode-encoded-word-string
+           "This is na"ive, baby")
+          => "This is =?iso-8859-1?Q?na=EFve,?= baby"
+
+`mail-decode-encoded-word-region'
+     領域にあるエンコードされた語をデコードします。
+
+`mail-decode-encoded-word-string'
+     文字列に含まれているエンコードされた語をデコードして、結果を返しま
+     す。
+
+          (mail-decode-encoded-word-string
+           "This is =?iso-8859-1?Q?na=EFve,?= baby")
+          => "This is na"ive, baby"
+
+現在 `mail-parse' は `ietf-drums', `rfc2047', `rfc2045' および
+`rfc2231' を網羅して抽象化します。これらについて、次以降の章で説明しま
+す。
+
+
+
+File: emacs-mime-ja.info, Node: Basic Functions, Next: Standards, Prev: Interface Functions, Up: Top
+
+基本的な関数
+************
+
+この章は、下位の階層に位置していて、解析と処理を行なうための基本的な関
+数について説明します。ここで扱うことは `From' 行の解析、ヘッダーの各行
+にあるコメントの削除、エンコードされた語のデコード、時刻ヘッダーの解析
+などです。上位階層の機能は最初の章 (*Note Decoding and Viewing::) で扱
+われています。
+
+* Menu:
+
+* rfc2045::      `Content-Type' ヘッダーのエンコード
+* rfc2231::      `Content-Type' ヘッダーの解析
+* ietf-drums::   RFC822bis で定義されているメールヘッダーの処理
+* rfc2047::      ヘッダーにある語のエンコードとデコード
+* time-date::    日付の解析と時刻を操作する関数
+* qp::           Quoted-Printable のエンコードとデコード
+* base64::       Base64 のエンコードとデコード
+* binhex::       Binhex のデコード
+* uudecode::     Uuencode のデコード
+* yenc::         Yenc のデコード
+* rfc1843::      HZ-エンコードされたテキストのデコード
+* mailcap::      パートの表示の仕方は `.mailcap' ファイルに明記されている
+
+訳注: RFC822bis == draft-ietf-drums-msg-fmt-09.txt
+
+
+
+File: emacs-mime-ja.info, Node: rfc2045, Next: rfc2231, Prev: Basic Functions, Up: Basic Functions
+
+rfc2045
+=======
+
+RFC2045 は「主要な」MIME の文献です。ならば、そこにはたくさんの実装があ
+るだろうと想像するでしょう。しかし、ほとんどの詳細な実装はその後の RFC
+に委ねられていて、そこにはありません。
+
+と言うわけで `rfc2045.el' にはたった一つの関数があります:
+
+`rfc2045-encode-string'
+     パラメーターと値を受け取り、`PARAM=VALUE' の形式の文字列を返します。
+     VALUE に安全ではない文字があったらクォートされ ("..." で囲まれ) ま
+     す。
+
+
+
+File: emacs-mime-ja.info, Node: rfc2231, Next: ietf-drums, Prev: rfc2045, Up: Basic Functions
+
+rfc2231
+=======
+
+RFC2231 は `Content-Type' と `Content-Disposition' ヘッダーの構文を定義
+します。その小粋な名称は「MIME パラメーター値と符号化単語拡張文字セット・
+言語そして継続」です。
+
+一口で言うと、それらのヘッダーはこんなふうです:
+
+     Content-Type: application/x-stuff;
+      title*0*=us-ascii'en'This%20is%20even%20more%20;
+      title*1*=%2A%2A%2Afun%2A%2A%2A%20;
+      title*2="isn't it!"
+
+普通はこんなにひどくないですが。
+
+以下の関数がこのライブラリーで定義されています:
+
+`rfc2231-parse-string'
+     `Content-Type' ヘッダーを解析して、その要素を表すリストを返します。
+
+          (rfc2231-parse-string
+           "application/x-stuff;
+           title*0*=us-ascii'en'This%20is%20even%20more%20;
+           title*1*=%2A%2A%2Afun%2A%2A%2A%20;
+           title*2=\"isn't it!\"")
+          => ("application/x-stuff"
+              (title . "This is even more ***fun*** isn't it!"))
+
+`rfc2231-get-value'
+     上記の形式のリストの一つを受け取り、指定された属性の値を返します。
+
+`rfc2231-encode-string'
+     `Content-Type' と `Content-Disposition' のようなヘッダーに入れるパ
+     ラメーターをエンコードします。
+
+
+
+File: emacs-mime-ja.info, Node: ietf-drums, Next: rfc2047, Prev: rfc2231, Up: Basic Functions
+
+ietf-drums
+==========
+
+"drums" は RFC822 の置き換え作業をしている IETF の作業部会です。
+
+このライブラリーによって提供される関数は次の通りです:
+
+`ietf-drums-remove-comments'
+     引数からコメントを取り除いて、結果を返します。
+
+`ietf-drums-remove-whitespace'
+     文字列から“linear white space”を取り除き、結果を返します。クォー
+     トされた ("..." で囲まれた) 文字列の中にある空白文字とコメントには
+     手を付けません。
+
+     訳注:“linear white space”とは一つ以上の空白文字のことで、その前
+     に改行文字を置いたものは、長いヘッダーを折り畳むときに使われます。
+
+`ietf-drums-get-comment'
+     文字列の最後尾にあるコメントを返します。
+
+`ietf-drums-parse-address'
+     アドレスの文字列を解析して、メールアドレスとプレーンテキストの名前
+     を含むリストを返します。
+
+`ietf-drums-parse-addresses'
+     カンマで区切られた複数のアドレスを含んでいる文字列を解析して、メー
+     ルアドレスとプレーンテキストの対を含むリストを返します。
+
+`ietf-drums-parse-date'
+     日付の文字列を解析して、Emacs 形式の時刻を返します。
+
+`ietf-drums-narrow-to-header'
+     現在のバッファーをヘッダーの区域に狭めます。
+
+
+
+File: emacs-mime-ja.info, Node: rfc2047, Next: time-date, Prev: ietf-drums, Up: Basic Functions
+
+rfc2047
+=======
+
+RFC2047 (メッセージ・ヘッダーでの非-ASCII テキスト拡張) は、ヘッダーに
+ある非-ASCII テキストをどのようにエンコードするかを定めています。実際こ
+れは少々複雑になるので、このライブラリーが行なうことを調整するために、
+多くの変数が必要です。
+
+以下の変数が調整可能です:
+
+`rfc2047-header-encoding-alist'
+     これはヘッダーとエンコーディング・タイプの対を収めた連想リストです。
+     その主な目的は、ある種のヘッダーがエンコードされないようにすること
+     です。
+
+     鍵 (訳注: 各要素の `car' 項) はヘッダーに合致する正規表現か `t' の
+     どちらかです。
+
+     値 (訳注: 各要素の `cdr' 項) は `nil' にすることができて、その場合、
+     鍵に相当するヘッダーはエンコードされません。`mime' はそれらをエン
+     コードすることを意味しますが、`address-mime' の場合はヘッダーがア
+     ドレスを含んでいることを想定して注意深くエンコードします。
+
+`rfc2047-charset-encoding-alist'
+     RFC2047 は二つのエンコーディングの形式を定めています。一つは `Q'
+     (Quoted-Printable のようなエンコーディング) で、もう一つは `B'
+     (base64) です。この連想リストは、ある文字セットに対してどのエンコー
+     ディングを使うかを規定します。
+
+`rfc2047-encode-function-alist'
+     これはエンコーディングとそれを実施するための関数の対を収めた連想リ
+     ストです。エンコーディングとは `Q', `B' および `nil' のことです。
+
+`rfc2047-encoded-word-regexp'
+     デコードを行なうとき、このライブラリーはこの正規表現に合致するもの
+     を探します。
+
+`rfc2047-encode-encoded-words'
+     エンコード済みの語 (例えば `=?hello?=') を再度エンコードするかどう
+     かを決めるブール変数です。
+
+以上は変数でした。次は関数です:
+
+`rfc2047-narrow-to-field'
+     バッファーを現在の行のヘッダーに狭めます。
+
+`rfc2047-encode-message-header'
+     メッセージのヘッダーに狭められたバッファーで使わなければなりません。
+     `rfc2047-header-encoding-alist' に従ってエンコードを行ないます。
+
+`rfc2047-encode-region'
+     指定された領域にあるすべてのエンコード可能な語をエンコードします。
+
+`rfc2047-encode-string'
+     文字列をエンコードして結果を返します。
+
+`rfc2047-decode-region'
+     領域にあるエンコードされた語をデコードします。
+
+`rfc2047-decode-string'
+     文字列をデコードして結果を返します。
+
+`rfc2047-encode-parameter'
+     パラメーターを RFC2047 ふうの様式でエンコードします。これは
+     `rfc2231-encode-string' の置き換えです。*Note rfc2231::.
+
+     ファイルを MIME のパートとして添付するとき、非-ASCII 文字を含むファ
+     イル名を指定するには RFC2231 のエンコーディングを使わなければなり
+     ません。しかし、実際問題として多くのメールソフトがそれをサポートし
+     ていないので、受信者は正しいファイル名を抽出することができません。
+     代わりに RFC2047 ふうのエンコーディングが広く受け入れられています。
+     そんな情けない風潮を甘受して、この関数は RFC2047 によく似たエンコー
+     ディングの機能を提供します。これを使うには `~/.gnus.el' ファイルに
+     次の行を入れて下さい:
+
+          (defalias 'mail-header-encode-parameter 'rfc2047-encode-parameter)
+
+
+
+File: emacs-mime-ja.info, Node: time-date, Next: qp, Prev: rfc2047, Up: Basic Functions
+
+time-date
+=========
+
+本当は MIME ライブラリーの一部ではありませんが、ここで説明することは都
+合が良いのです。これは日付ヘッダーの解析と時刻の操作を扱います。(もっと
+も四次元立方体は使いません。ごめんなさい。)
+
+これらの関数は五つの形式 (時刻の文字列、Emacs 形式の時刻、デコードされ
+た時刻のリスト、秒数、および日数) の間で変換を行ないます。
+
+時刻/日付/秒数/日数の相互変換の例です:
+
+     (parse-time-string "Sat Sep 12 12:21:54 1998 +0200")
+     => (54 21 12 12 9 1998 6 nil 7200)
+
+     (date-to-time "Sat Sep 12 12:21:54 1998 +0200")
+     => (13818 19266)
+
+     (time-to-seconds '(13818 19266))
+     => 905595714.0
+
+     (seconds-to-time 905595714.0)
+     => (13818 19266 0)
+
+     (time-to-days '(13818 19266))
+     => 729644
+
+     (days-to-time 729644)
+     => (961933 65536)
+
+     (time-since '(13818 19266))
+     => (0 430)
+
+     (time-less-p '(13818 19266) '(13818 19145))
+     => nil
+
+     (subtract-time '(13818 19266) '(13818 19145))
+     => (0 121)
+
+     (days-between "Sat Sep 12 12:21:54 1998 +0200"
+                   "Sat Sep 07 12:21:54 1998 +0200")
+     => 5
+
+     (date-leap-year-p 2000)
+     => t
+
+     (time-to-day-in-year '(13818 19266))
+     => 255
+
+     (time-to-number-of-days
+      (time-since
+       (date-to-time "Mon, 01 Jan 2001 02:22:26 GMT")))
+     => 4.146122685185185
+
+あと、`safe-date-to-time' というものもあります。これは `date-to-time'
+と同じことをしますが、日付が構文的に不完全だった場合にゼロ時刻を返しま
+す。
+
+五つのデータは以下のように表現されます:
+
+DATE
+     RFC822 (または類似の) 形式の日付の文字列。例: `"Sat Sep 12
+     12:21:54 1998 +0200"'
+
+TIME
+     Emacs の内部形式の時刻。例: `(13818 26466)'
+
+SECONDS
+     Emacs の内部形式の時刻を浮動小数で表したもの。例: `905595714.0'
+
+DAYS
+     00000101 を基点とする経過日数を整数で表したもの。例: `729644'
+
+     訳注: 00000101 が何を意味するのか不明ですが、ソースコードによれば
+     グレゴリオ歴・紀元前 (BC ではなく BCE の方の) 0001年12月31日のこと
+     らしいです。
+
+DECODED TIME
+     デコードされた時刻のリスト。例: `(54 21 12 12 9 1998 6 t 7200)'
+
+上記のすべての例は、同じ時を表しています。
+
+関数には以下のようなものがあります:
+
+`date-to-time'
+     日付を受け取って時刻を返します。
+
+`time-to-seconds'
+     時刻を受け取って秒数を返します。
+
+`seconds-to-time'
+     秒数を受け取って時刻を返します。
+
+`time-to-days'
+     時刻を受け取って日数を返します。
+
+`days-to-time'
+     日数を受け取って時刻を返します。
+
+`date-to-day'
+     日付を受け取って日数を返します。
+
+`time-to-number-of-days'
+     時刻を受け取って、それが表している日数を返します。
+
+`safe-date-to-time'
+     日付を受け取って時刻を返します。日付が構文的に正しくなかったら「ゼ
+     ロ」時刻を返します。
+
+`time-less-p'
+     二つの時刻を受け取って、一つ目が二つ目より少ない (すなわち早い) か
+     どうかを示します。
+
+`time-since'
+     時刻を受け取って、その時刻からどれほど時間が経過したかを示します。
+
+`subtract-time'
+     二つの時刻を受け取って、一つ目から二つ目を減算します。すなわち、二
+     つの時刻の間の時間差を返します。
+
+`days-between'
+     二つの日付を受け取って、それら二つの日付の間の日数を返します。
+
+`date-leap-year-p'
+     年の数値を受け取って、それがうるう年かどうかを示します。
+
+`time-to-day-in-year'
+     時刻を受け取って、その年の元日から経過した日数を返します。
+
+
+
+File: emacs-mime-ja.info, Node: qp, Next: base64, Prev: time-date, Up: Basic Functions
+
+qp
+==
+
+このライブラリーは Quoted-Printable によるテキストのデコードとエンコー
+ドを扱います。
+
+非常に手短かに説明すれば、qp エンコーディングはすべての 8-bit 文字 (と
+多くの制御文字) を `=EF' のようなもの (イコール記号と、それに続く 16進
+数にエンコードされたバイト) に変換することです。
+
+このライブラリーでは、以下の関数が定義されています:
+
+`quoted-printable-decode-region'
+     指定された領域にあるすべてのエンコードされたテキストを QP-デコード
+     します。
+
+`quoted-printable-decode-string'
+     文字列に含まれている QP-エンコードされたテキストをデコードして、結
+     果を返します。
+
+`quoted-printable-encode-region'
+     指定された領域にあるすべてのエンコード可能な文字を QP-エンコードし
+     ます。省略できる第三引数 FOLD は、長い行を折り畳むかどうかを指定し
+     ます。(ここで「長い」は 72桁を越えるもののことを意味します。)
+
+`quoted-printable-encode-string'
+     文字列に含まれているすべてのエンコード可能な文字を QP-エンコードし
+     て、結果を返します。
+
+
+
+File: emacs-mime-ja.info, Node: base64, Next: binhex, Prev: qp, Up: Basic Functions
+
+base64
+======
+
+Base64 は 3-バイトを 4-バイトにエンコードします。そのため、約 33% サイ
+ズが増えます。アルファベットだけでエンコードするので、伝送される途中で
+出会うかもしれない障害に対してとても耐久力があります。
+
+以下の関数がこのライブラリーによって定義されています:
+
+`base64-encode-region'
+     選択された領域を base64 でエンコードして、エンコードされたテキスト
+     の長さを返します。省略できる第三引数 NO-LINE-BREAK は、長い行をよ
+     り短い行に折り畳まないことを指図します。
+
+`base64-encode-string'
+     文字列を base64 でエンコードして結果を返します。
+
+`base64-decode-region'
+     選択された領域を base64 でデコードして、デコードされたテキストの長
+     さを返します。領域がデコード可能でなかったら、`nil' を返すだけでバッ
+     ファーは変更しません。
+
+`base64-decode-string'
+     文字列を base64 でデコードして結果を返します。文字列がデコード可能
+     でなかったら `nil' を返します。
+
+
+
+File: emacs-mime-ja.info, Node: binhex, Next: uudecode, Prev: base64, Up: Basic Functions
+
+binhex
+======
+
+`binhex' はマッキントッシュの環境に源を発するエンコーディングです。以下
+の関数がそれらを扱うために供給されています:
+
+`binhex-decode-region'
+     領域にあるエンコードされたテキストをデコードします。第三パラメーター
+     が与えられると、`binhex' のヘッダーをデコードしてファイル名を返す
+     ことだけをします。
+
+
+
+File: emacs-mime-ja.info, Node: uudecode, Next: yenc, Prev: binhex, Up: Basic Functions
+
+uudecode
+========
+
+`base64' がメールの世界を支配しているものの、おそらく `uuencode' はまだ
+Usenet で使われているものの中で、最も普及しているバイナリーのエンコーディ
+ングです。
+
+以下の関数がこのパッケージによって供給されています:
+
+`uudecode-decode-region'
+     領域にあるテキストをデコードします。
+
+
+
+File: emacs-mime-ja.info, Node: yenc, Next: rfc1843, Prev: uudecode, Up: Basic Functions
+
+yenc
+====
+
+`yenc' は Usenet でバイナリーをエンコードするために使われます。以下の関
+数がこのパッケージによって供給されています:
+
+`yenc-decode-region'
+     領域にあるエンコードされたテキストをデコードします。
+
+
+
+File: emacs-mime-ja.info, Node: rfc1843, Next: mailcap, Prev: yenc, Up: Basic Functions
+
+rfc1843
+=======
+
+RFC1843 はメッセージにおける中国語と ASCII 文字の混在文を扱います。本質
+的には、RFC1843 は以下のように ASCII と中国語を切り替えるものです:
+
+     This sentence is in ASCII.
+     The next sentence is in GB.~{<:Ky2;S{#,NpJ)l6HK!#~}Bye.
+
+まったく単純で、中国では広く使われています。
+
+このエンコーディングを扱うために、以下の関数を使うことができます:
+
+`rfc1843-decode-region'
+     領域にある HZ-エンコードされたテキストをデコードします。
+
+`rfc1843-decode-string'
+     HZ-エンコードされた文字列をデコードして結果を返します。
+
+
+
+File: emacs-mime-ja.info, Node: mailcap, Prev: rfc1843, Up: Basic Functions
+
+mailcap
+=======
+
+`~/.mailcap' ファイルはほとんどの MIME に対応したメッセージ・ハンドラー
+によって解析されます。それには、各要素がどのように表示されるものと想定
+されているかを記述します。ファイルの例です:
+
+     image/*; gimp -8 %s
+     audio/wav; wavplayer %s
+     application/msword; catdoc %s ; copiousoutput ; nametemplate=%s.doc
+
+これは、すべての画像ファイルは `gimp' で表示されるべきであること、WAVE
+音響ファイルは `wavplayer' で再生されるべきであること、そして MS-WORD
+ファイルは `catdoc' によってインライン表示されるべきであると言っていま
+す。
+
+`mailcap' ライブラリーはこのファイルを解析して、合致するタイプのための
+関数を提供します。
+
+`mailcap-mime-data'
+     この変数は、バックアップされた (訳注: mailcap ファイルの内容を解析
+     して Emacs が扱い易い形式にした) 表示規則を含んでいる、連想リスト
+     の連想リストです。
+
+インターフェース関数:
+
+`mailcap-parse-mailcaps'
+     `~/.mailcap' ファイルを解析します。
+
+`mailcap-mime-info'
+     引数として MIME タイプを受け取り、合致するビューワーを返します。
+
+
+
+File: emacs-mime-ja.info, Node: Standards, Next: Index, Prev: Basic Functions, Up: Top
+
+標準
+****
+
+Emacs MIME ライブラリーは、(やや) 多くの RFC、ドラフトおよび標準ドキュ
+メントに従って、様々な要素を取り扱います。この章では関連するものを列挙
+します。これらはすべて `http://quimby.gnus.org/notes/' から取得可能です。
+
+"RFC822"
+"STD11"
+     ARPA インターネットテキストメッセージの書式のための標準。
+
+"RFC1036"
+     USENET メッセージ交換のための標準。
+
+"RFC2045"
+     インターネットメッセージの本文の書式。
+
+"RFC2046"
+     メディアタイプ。
+
+"RFC2047"
+     メッセージヘッダーでの非-ASCII テキスト拡張。
+
+"RFC2048"
+     登録手続。
+
+"RFC2049"
+     適合基準と事例。
+
+"RFC2231"
+     MIME パラメーター値とエンコードされた単語の拡張: 文字セット、言語
+     および継続。
+
+"RFC1843"
+     HZ - 中英混在文を含むファイル交換のためのデータ形式。
+
+"draft-ietf-drums-msg-fmt-05.txt"
+     RFC822 の後継のための草稿。
+
+"RFC2112"
+     MIME Multipart/Related Content-type。
+
+"RFC1892"
+     メールシステムの管理メッセージをリポートするための
+     Multipart/Report Content Type。
+
+"RFC2183"
+     インターネットメッセージの情報通信表現: Content-Disposition ヘッダー
+     フィールド。
+
+"RFC2646"
+     流動テキストのための text/plain 書式パラメーター。
+
+
+
+File: emacs-mime-ja.info, Node: Index, Prev: Standards, Up: Top
+
+Index
+*****
+
+* Menu:
+
+* Apple:                        binhex.                 (line   5)
+* Chinese:                      rfc1843.                (line   5)
+* Composing:                    Composing.              (line   5)
+* HZ:                           rfc1843.                (line   5)
+* LaTeX:                        Non-MIME.               (line  74)
+* MIME Composing:               Composing.              (line   5)
+* MIME Meta Language:           Composing.              (line   5)
+* MML:                          Composing.              (line   5)
+* MULE:                         Charset Translation.    (line  18)
+* Macintosh:                    binhex.                 (line   5)
+* UTF-8:                        Charset Translation.    (line  18)
+* Unicode:                      Charset Translation.    (line  18)
+* base64:                       base64.                 (line   5)
+* base64-decode-region:         base64.                 (line  24)
+* base64-decode-string:         base64.                 (line  30)
+* base64-encode-region:         base64.                 (line  14)
+* base64-encode-string:         base64.                 (line  20)
+* binhex:                       Non-MIME.               (line  24)
+* binhex:                       binhex.                 (line   5)
+* binhex-decode-region:         binhex.                 (line  11)
+* charsets:                     Charset Translation.    (line   5)
+* diff:                         Non-MIME.               (line  61)
+* emacs-sources:                Non-MIME.               (line  56)
+* format=flowed:                Flowed text.            (line   5)
+* forward:                      Non-MIME.               (line  36)
+* gnatsweb:                     Non-MIME.               (line  40)
+* ietf-drums-get-comment:       ietf-drums.             (line  25)
+* ietf-drums-narrow-to-header:  ietf-drums.             (line  43)
+* ietf-drums-parse-address:     ietf-drums.             (line  29)
+* ietf-drums-parse-addresses:   ietf-drums.             (line  34)
+* ietf-drums-parse-date:        ietf-drums.             (line  39)
+* ietf-drums-remove-comments:   ietf-drums.             (line  12)
+* ietf-drums-remove-whitespace: ietf-drums.             (line  16)
+* interface functions:          Interface Functions.    (line   5)
+* mail-content-type-get:        Interface Functions.    (line  55)
+* mail-decode-encoded-word-region: Interface Functions.  (line 172)
+* mail-decode-encoded-word-string: Interface Functions.  (line 176)
+* mail-encode-encoded-word-buffer: Interface Functions.  (line 157)
+* mail-encode-encoded-word-region: Interface Functions.  (line 147)
+* mail-encode-encoded-word-string: Interface Functions.  (line 163)
+* mail-header-encode-parameter: Interface Functions.    (line  64)
+* mail-header-field-value:      Interface Functions.    (line 143)
+* mail-header-fold-field:       Interface Functions.    (line 135)
+* mail-header-get-comment:      Interface Functions.    (line  91)
+* mail-header-narrow-to-field:  Interface Functions.    (line 130)
+* mail-header-parse-address:    Interface Functions.    (line 102)
+* mail-header-parse-addresses:  Interface Functions.    (line 111)
+* mail-header-parse-content-disposition: Interface Functions.  (line  50)
+* mail-header-parse-content-type: Interface Functions.  (line  35)
+* mail-header-parse-date:       Interface Functions.    (line 121)
+* mail-header-remove-comments:  Interface Functions.    (line  70)
+* mail-header-remove-whitespace: Interface Functions.   (line  78)
+* mail-header-unfold-field:     Interface Functions.    (line 139)
+* mail-narrow-to-head:          Interface Functions.    (line 125)
+* mail-parse:                   Interface Functions.    (line   5)
+* mail-parse-charset:           Charset Translation.    (line   9)
+* mailcap-mime-data:            mailcap.                (line  24)
+* mailcap-parse-mailcaps:       mailcap.                (line  31)
+* mime-to-mml:                  Conversion.             (line   6)
+* mm-attachment-override-types: Display Customization.  (line  46)
+* mm-automatic-display:         Display Customization.  (line  25)
+* mm-automatic-display-p:       Display.                (line  22)
+* mm-automatic-external-display: Display Customization.  (line  31)
+* mm-body-charset-encoding-alist: Encoding Customization.  (line   8)
+* mm-coding-system-priorities:  Encoding Customization.  (line  27)
+* mm-content-transfer-encoding-defaults: Encoding Customization.  (line  55)
+* mm-default-directory:         Files and Directories.  (line   8)
+* mm-destroy-part:              Display.                (line  26)
+* mm-discouraged-alternatives:  Display Customization.  (line  55)
+* mm-display-part:              Display.                (line  10)
+* mm-enable-external:           Display Customization.  (line 151)
+* mm-external-terminal-program: Display Customization.  (line 147)
+* mm-file-name-collapse-whitespace: Files and Directories.  (line  42)
+* mm-file-name-delete-control:  Files and Directories.  (line  24)
+* mm-file-name-delete-gotchas:  Files and Directories.  (line  28)
+* mm-file-name-delete-whitespace: Files and Directories.  (line  34)
+* mm-file-name-replace-whitespace: Files and Directories.  (line  46)
+* mm-file-name-replace-whitespace: Files and Directories.  (line  46)
+* mm-file-name-rewrite-functions: Files and Directories.  (line  17)
+* mm-file-name-trim-whitespace: Files and Directories.  (line  38)
+* mm-fill-flowed:               Flowed text.            (line  26)
+* mm-handle-buffer:             Handles.                (line  12)
+* mm-handle-disposition:        Handles.                (line  35)
+* mm-handle-encoding:           Handles.                (line  21)
+* mm-handle-set-undisplayer:    Handles.                (line  30)
+* mm-handle-type:               Handles.                (line  17)
+* mm-handle-undisplayer:        Handles.                (line  25)
+* mm-inlinable-p:               Display.                (line  18)
+* mm-inline-large-images:       Display Customization.  (line  92)
+* mm-inline-media-tests:        Display Customization.  (line   8)
+* mm-inline-override-types:     Display Customization.  (line 102)
+* mm-inline-text-html-with-images: Display Customization.  (line 123)
+* mm-inline-text-html-with-w3m-keymap: Display Customization.  (line 141)
+* mm-inlined-types:             Display Customization.  (line  19)
+* mm-interactively-view-part:   Display.                (line  40)
+* mm-keep-viewer-alive-types:   Display Customization.  (line  35)
+* mm-mime-mule-charset-alist:   Charset Translation.    (line  18)
+* mm-path-name-rewrite-functions: Files and Directories.  (line  49)
+* mm-pipe-part:                 Display.                (line  36)
+* mm-remove-part:               Display.                (line  14)
+* mm-save-part:                 Display.                (line  32)
+* mm-text-html-renderer:        Display Customization.  (line 113)
+* mm-tmp-directory:             Files and Directories.  (line  13)
+* mm-use-ultra-safe-encoding:   Encoding Customization.  (line  77)
+* mm-uu-configure-list:         Non-MIME.               (line   5)
+* mm-uu-diff-groups-regexp:     Non-MIME.               (line  61)
+* mm-uu-emacs-sources-regexp:   Non-MIME.               (line  56)
+* mm-uu-extract:                Non-MIME.               (line  63)
+* mm-w3m-safe-url-regexp:       Display Customization.  (line 135)
+* mml-generate-mime:            Composing.              (line  10)
+* mml-to-mime:                  Conversion.             (line  12)
+* pgp-encrypted:                Non-MIME.               (line  48)
+* pgp-key:                      Non-MIME.               (line  52)
+* pgp-signed:                   Non-MIME.               (line  44)
+* postscript:                   Non-MIME.               (line  16)
+* quoted-printable-decode-region: qp.                   (line  17)
+* quoted-printable-decode-string: qp.                   (line  22)
+* quoted-printable-encode-region: qp.                   (line  27)
+* quoted-printable-encode-string: qp.                   (line  33)
+* rfc1843:                      rfc1843.                (line   5)
+* rfc2045-encode-string:        rfc2045.                (line  14)
+* rfc2047-charset-encoding-alist: rfc2047.              (line  29)
+* rfc2047-decode-region:        rfc2047.                (line  65)
+* rfc2047-decode-string:        rfc2047.                (line  69)
+* rfc2047-encode-encoded-words: rfc2047.                (line  46)
+* rfc2047-encode-function-alist: rfc2047.               (line  36)
+* rfc2047-encode-message-header: rfc2047.               (line  52)
+* rfc2047-encode-parameter:     rfc2047.                (line  73)
+* rfc2047-encode-region:        rfc2047.                (line  57)
+* rfc2047-encode-string:        rfc2047.                (line  61)
+* rfc2047-encoded-word-regexp:  rfc2047.                (line  41)
+* rfc2047-header-encoding-alist: rfc2047.               (line  15)
+* rfc2047-narrow-to-field:      rfc2047.                (line  48)
+* rfc2231-encode-string:        rfc2231.                (line  39)
+* rfc2231-get-value:            rfc2231.                (line  35)
+* rfc2231-parse-string:         rfc2231.                (line  23)
+* shar:                         Non-MIME.               (line  32)
+* text/x-verbatim:              Non-MIME.               (line  63)
+* uu:                           Non-MIME.               (line  20)
+* uudecode-decode-region:       uudecode.               (line  14)
+* uudecode:                     uudecode.               (line   5)
+* uuencode:                     uudecode.               (line   5)
+* verbatim-marks:               Non-MIME.               (line  67)
+* yenc:                         Non-MIME.               (line  28)
+* yenc-decode-region:           yenc.                   (line  11)
+* yenc:                         yenc.                   (line   5)
+
+Tag table:
+Node: Top312
+Node: Decoding and Viewing1166
+Node: Dissection1699
+Node: Non-MIME1948
+Node: Handles3483
+Node: Display4195
+Node: Display Customization4834
+Node: Files and Directories9932
+Node: New Viewers11305
+Node: Composing12160
+Node: Simple MML Example12893
+Node: MML Definition13779
+Node: Advanced MML Example16660
+Node: Encoding Customization19747
+Node: Charset Translation22699
+Node: Conversion24387
+Node: Flowed text25093
+Node: Interface Functions25871
+Node: Basic Functions30346
+Node: rfc204531166
+Node: rfc223131553
+Node: ietf-drums32557
+Node: rfc204733396
+Node: time-date35445
+Node: qp37969
+Node: base6438681
+Node: binhex39339
+Node: uudecode39635
+Node: yenc39919
+Node: rfc184340145
+Node: mailcap40615
+Node: Standards41386
+Node: Index42288
+
+End tag table

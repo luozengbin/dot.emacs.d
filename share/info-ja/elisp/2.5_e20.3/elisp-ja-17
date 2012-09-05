@@ -1,0 +1,1976 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Window Hooks, Next: Frames, Prev: Window Configurations, Up: Windows
+
+ウィンドウのスクロールとサイズ変更向けのフック
+==============================================
+
+本節では, ウィンドウにバッファの別の部分を表示したり別のバッファを表示
+するたびに, Lispプログラムが動作する方法を述べます.  変更できる動作は3
+種類, ウィンドウをスクロールするとき, ウィンドウでバッファを切り替える
+とき, ウィンドウサイズを変えるときです.  最初の2つの動作では
+`window-scroll-functions'を実行し, 3つ目は
+`window-size-change-functions'を実行します.  これらのフックの模範的な
+使用例は遅延ロック（lazy-lock）モードの実装の中にあります.  *Note フォ
+ントロックのモード: (emacs-ja)Support Modes.を参照してください。
+
+ -- Variable: window-scroll-functions
+     この変数は, スクロールによりウィンドウを再表示するまえにEmacsが呼
+     び出すべき関数のリストを保持する.  各関数はウィンドウと新たな表示
+     開始位置の2つの引数で呼ばれるため, これはノーマルフックではない.
+
+     ウィンドウに別のバッファを表示する場合でもこれらの関数が実行され
+     る.
+
+     これらの関数で`window-end'（*Note Window Start::）を使うには注意
+     が必要である.  更新された値が必要なときには, 確実に更新値を得るた
+     めに引数UPDATEを使う必要がある.
+
+ -- Variable: window-size-change-functions
+     この変数は, いかなる理由であれウィンドウサイズが変わるときに呼び
+     出される関数のリストを保持する.  関数は, 再表示のたびにサイズ変更
+     が起きたフレームごとに呼ばれる.
+
+     各関数はフレームを唯一の引数として受け取る.  当該フレームで大きさ
+     が変更されたウィンドウを探す直接的な方法や正確な方法はない.  しか
+     し, サイズ変更関数が呼ばれるたびに既存のウィンドウとそれらの大き
+     さを記録すれば, 現在の大きさと以前の大きさを比較できる.
+
+     ウィンドウを作成したり削除してもサイズ変更とみなすので, これらの
+     関数が呼び出される.  フレームの大きさが変わると既存のウィンドウの
+     大きさも変わるので, これもサイズ変更とみなす.
+
+     これらの関数で`save-window-excursion' （*Note Window
+     Configurations::）を使うのはよくない.  この関数はつねにサイズ変更
+     とみなしこれらの関数を呼び出し, これが繰り返されてしまうからであ
+     る.  多くの場合, ここで必要なのは`save-selected-window' （*Note
+     Selecting Windows::）である.
+
+ -- Variable: redisplay-end-trigger-functions
+     このアブノーマルフックは, ウィンドウの再表示において, 指定された
+     終了トリガ位置を超えて伸びるテキストを使うたびに実行される.  終了
+     トリガ位置は関数`set-window-redisplay-end-trigger'で設定する.  フッ
+     ク関数は2つの引数, ウィンドウと終了トリガ位置で呼ばれる.  終了ト
+     リガ位置として`nil'を保存するとこの機能をオフにし, フックを実行直
+     後にトリガ値は自動的に`nil'に再設定される.
+
+ -- Function: set-window-redisplay-end-trigger WINDOW POSITION
+     この関数は, WINDOWの終了トリガ位置をPOSITIONとする.
+
+ -- Function: window-redisplay-end-trigger WINDOW
+     この関数は, WINDOWの現在の終了トリガ位置を返す.
+
+ -- Variable: window-configuration-change-hook
+     このノーマルフックは, 既存のフレームのウィンドウの構成を変更する
+     たびに呼び出される.  これには, ウィンドウの分割や削除, ウィンドウ
+     サイズの変更, ウィンドウに別のバッファを表示することが含まれる. 
+     このフックを実行するときには, ウィンドウの構成が変更されたフレー
+     ムが選択されているフレームである.
+
+
+File: elisp-ja, Node: Frames, Next: Positions, Prev: Windows, Up: Top
+
+フレーム
+********
+
+"フレーム"（frame）とは, 1つかそれ以上のEmacsのウィンドウを収めている
+スクリーン上の矩形です.  フレームには最初は1つのウィンドウ（およびミニ
+バッファ用ウィンドウ）がありますが, それを上下や左右に小さなウィンドウ
+に分割できます.
+
+Emacsを文字端末で実行すると, 1つの"端末フレーム"（terminal frame）を使
+います.  別のフレームを作成すると, もちろん端末画面上では, Emacsは一度
+に1つのフレームしか表示しません.
+
+EmacsがXウィンドウのような対応しているウィンドウシステムと直接通信して
+いるときには, 端末フレームは使いません.  そのかわりに, 1つの"ウィンド
+ウフレーム"（window frame）で始まりますが, いくつでもフレームを作れま
+すし, ウィンドウシステムでは普通のことですが, Emacsはそのようなフレー
+ムを同時に複数表示できます.
+
+ -- Function: framep OBJECT
+     この関数は, OBJECTがフレームならば`t'を返し, さもなければ`nil'を
+     返す.
+
+* Menu:
+
+* Creating Frames::		Creating additional frames.
+* Multiple Displays::           Creating frames on other displays.
+* Frame Parameters::		Controlling frame size, position, font, etc.
+* Frame Titles::                Automatic updating of frame titles.
+* Deleting Frames::		Frames last until explicitly deleted.
+* Finding All Frames::		How to examine all existing frames.
+* Frames and Windows::		A frame contains windows;
+				  display of text always works through windows.
+* Minibuffers and Frames::	How a frame finds the minibuffer to use.
+* Input Focus::			Specifying the selected frame.
+* Visibility of Frames::	Frames may be visible or invisible, or icons.
+* Raising and Lowering::	Raising a frame makes it hide other windows;
+				  lowering it makes the others hide them.
+* Frame Configurations::	Saving the state of all frames.
+* Mouse Tracking::		Getting events that say when the mouse moves.
+* Mouse Position::		Asking where the mouse is, or moving it.
+* Pop-Up Menus::		Displaying a menu for the user to select from.
+* Dialog Boxes::                Displaying a box to ask yes or no.
+* Pointer Shapes::              Specifying the shape of the mouse pointer.
+* Window System Selections::    Transferring text to and from other X clients.
+* Font Names::                  Looking up font names.
+* Fontsets::                    A fontset is a collection of fonts
+                                  for displaying various character sets.
+* Color Names::	                Getting the definitions of color names.
+* Resources::		        Getting resource values from the server.
+* Server Data::		        Getting info about the X server.
+
+Emacsの再表示の制御に関連する情報については*Note Display::.
+
+
+
+File: elisp-ja, Node: Creating Frames, Next: Multiple Displays, Prev: Frames, Up: Frames
+
+フレームの作成
+==============
+
+新たなフレームを作成するには, 関数`make-frame'を呼び出します.
+
+ -- Function: make-frame &optional ALIST
+     この関数は新たなフレームを作成する.  対応しているウィンドウシステ
+     ムを使っていれば, ウィンドウフレームを作る.  さもなければ端末フレー
+     ムを作る.
+
+     引数ALISTはフレームパラメータを指定する連想リストである.  ALISTで
+     指定していないパラメータは, 変数`default-frame-alist'の値に従って
+     決まる.  それでも決まらないパラメータは, 標準のXリソースやそれに
+     かわる読者のシステムの設定を使う.
+
+     指定可能なパラメータは, Emacsがフレームの表示に使うウィンドウシス
+     テムの種類に原理的には依存します.  指定可能な各パラメータの説明は,
+     *Note Window Frame Parameters::.
+
+ -- Variable: before-make-frame-hook
+     `make-frame'がフレームを実際に作成する直前に実行するノーマルフッ
+     ク.
+
+ -- Variable: after-make-frame-hook
+     `make-frame'がフレームを作成後に実行するアブノーマルフック.
+     `after-make-frame-hook'の各関数は, 1つの引数, つまり, 作成したば
+     かりのフレームを受け取る.
+
+
+
+File: elisp-ja, Node: Multiple Displays, Next: Frame Parameters, Prev: Creating Frames, Up: Frames
+
+複数ディスプレイ
+================
+
+1つのEmacsは複数のXディスプレイと通信できます.  Emacsは始めは1つのディ
+スプレイ, つまり, 環境変数`DISPLAY'かオプション`--display' （*Note 初
+期化オプション: (emacs-ja)Initial Options..）で決まるものを使います. 
+別のディスプレイに接続するには, コマンド`make-frame-on-display'を使う
+か, フレームを作るときにフレームパラメータ`display'を指定します.
+
+Emacsは各Xサーバーを別々の端末として扱い, それらのおのおのには選択され
+ているフレームとミニバッファ用ウィンドウがあります.
+
+少数のLisp変数は"端末にローカル"（terminal-local）です.  つまり, 各端
+末ごとに別々の束縛があります.  ある時点で有効な束縛は, 選択されている
+フレームが属する端末のものです.  このような変数には,
+`default-minibuffer-frame', `defining-kbd-macro', `last-kbd-macro',
+`system-key-alist'があります.  これらはつねに端末にローカルであり, バッ
+ファローカル（*Note Buffer-Local Variables::）やフレームローカルにはけっ
+してなりません.
+
+1つのXサーバーは複数のスクリーンを扱えます.  ディスプレイ名
+`HOST:SERVER.SCREEN'には3つの部分があり, 最後の部分で指定したサーバー
+のスクリーン番号を指定します.  1つのサーバーに属する2つのスクリーンを
+使うと, Emacsはそれらの名前の類似性からそれらが1つのキーボードを共有し
+ていると判断し, それらのスクリーンを1つの端末として扱います.
+
+ -- コマンド: make-frame-on-display DISPLAY &optional PARAMETERS
+     新たなフレームをディスプレイDISPLAY上に作成する.  他のフレームパ
+     ラメータはPARAMETERSから得る.  引数DISPLAYを除けば`make-frame'
+     （*Note Creating Frames::）と同様である.
+
+ -- Function: x-display-list
+     Emacsが接続しているXディスプレイを表すリストを返す.  リストの要素
+     は文字列であり, それぞれはディスプレイ名である.
+
+ -- Function: x-open-connection DISPLAY &optional XRM-STRING
+     この関数はXディスプレイDISPLAYとの接続を開く.  当該ディスプレイ上
+     にフレームは作らないが, これにより当該ディスプレイと通信可能かど
+     うか検査できる.
+
+     省略可能な引数XRM-STRINGが`nil'でなければ, ファイル`.Xresources'
+     で使われ書式と同じリソース名と値を表す文字列である.  これに指定し
+     た値は, Xサーバー自体に記録されているリソースの値に優先し, Emacs
+     が当該ディスプレイ上に作成するすべてのフレームに適用される.  この
+     文字列の例を以下に示す.
+
+          "*BorderWidth: 3\n*InternalBorder: 2\n"
+
+     *Note Resources::.
+
+ -- Function: x-close-connection DISPLAY
+     この関数はディスプレイDISPLAYとの接続を閉じる.  これを行うまえに, 
+     まず当該ディスプレイ上に作ったフレームをすべて削除しておくこと.
+
+
+
+File: elisp-ja, Node: Frame Parameters, Next: Frame Titles, Prev: Multiple Displays, Up: Frames
+
+フレームパラメータ
+==================
+
+フレームには, その見ためやふるまいを制御する多くのパラメータがあります. 
+フレームのパラメータの種類は, 使用する表示機構に依存します.
+
+フレームパラメータはウィンドウシステム向けです.  端末フレームにはごく
+少数のパラメータがありますが, そのほとんどは互換性のためであり,
+`height', `width', `name', `title', `buffer-list', `buffer-predicate'
+のパラメータだけが意味を持ちます.
+
+* Menu:
+
+* Parameter Access::       How to change a frame's parameters.
+* Initial Parameters::	   Specifying frame parameters when you make a frame.
+* Window Frame Parameters:: List of frame parameters for window systems.
+* Size and Position::      Changing the size and position of a frame.
+
+
+
+File: elisp-ja, Node: Parameter Access, Next: Initial Parameters, Prev: Frame Parameters, Up: Frame Parameters
+
+フレームパラメータの参照
+------------------------
+
+これらの関数は, フレームのパラメータの値を読んだり変更するためのもので
+す.
+
+ -- Function: frame-parameters FRAME
+     関数`frame-parameters'は, FRAMEのすべてのパラメータとそれらの値か
+     ら成る連想リストを返す.
+
+ -- Function: modify-frame-parameters FRAME ALIST
+     この関数は, ALISTの要素に基づいてフレームFRAMEのパラメータを変更
+     する.  ALISTの各要素は`(PARM . VALUE)'の形であり, PARMはパラメー
+     タを表すシンボルである.  ALISTに指定しないパラメータの値は変更さ
+     れない.
+
+
+
+File: elisp-ja, Node: Initial Parameters, Next: Window Frame Parameters, Prev: Parameter Access, Up: Frame Parameters
+
+初期フレームのパラメータ
+------------------------
+
+読者のファイル`.emacs'で`initial-frame-alist'に設定すれば, 起動時の初
+期フレームのパラメータを指定できます.
+
+ -- Variable: initial-frame-alist
+     この変数の値は, 初期フレームを作るときに使用するパラメータの値か
+     ら成る連想リストである.  この変数を指定すれば初期フレームの見ため
+     を指定できるが, それ以降に作成するフレームには影響しない.  各要素
+     はつぎの形である.
+
+          (PARAMETER . VALUE)
+
+     Emacsは読者のファイル`~/.emacs'を読むまえに初期フレームを作る. 
+     このファイルを読んだあとに, Emacsは`initial-frame-alist'を検査し
+     異なる値が設定されているパラメータをすでに作成した初期フレームに
+     適用する.
+
+     これらの設定がフレームの大きさと位置や見ために関するものであると, 
+     指定とは違うフレームが現れてから指定したものに変わるのを目にする. 
+     これがわずらわしい場合には, Xリソースにも同じ大きさと位置や見ため
+     を指定する.  Xリソースはフレームを作成するまえに適用される.
+     *Note Xリソース: (emacs-ja)Resources X.
+
+     Xリソースの設定は, 典型的にはすべてのフレームに適用される.  初期
+     フレームだけに特定のXリソースを指定し, それ以降のフレームに適用し
+     たくない場合には, つぎのようにする.  パラメータを
+     `default-frame-alist'で指定し, 以降のフレーム向けのXリソースを無
+     効にする.  そしてそれらが初期フレームに影響しないように,
+     `initial-frame-alist'のパラメータでXリソースに一致する値を指定す
+     る.
+
+これらのパラメータにミニバッファ専用のフレームを作る`(minibuffer
+. nil)'を指定しているのにミニバッファ専用フレームを作っていないと,
+Emacsがそれを作成します.
+
+ -- Variable: minibuffer-frame-alist
+     この変数の値は, 初期のミニバッファ専用フレームを作るときに使用す
+     るパラメータの連想リストである.  初期フレームのパラメータからミニ
+     バッファ専用フレームが必要であると判断するとそれを作る.
+
+ -- Variable: default-frame-alist
+     これは, Emacsのすべてのフレーム, つまり, 初期フレームとそれ以降の
+     フレームのフレームパラメータのデフォルト値を指定する連想リストで
+     ある.  Xウィンドウシステムを使っているときには, 多くの場合, Xリソー
+     スによっても同じ結果を得られる.
+
+*Note Choosing Window::の`special-display-frame-alist'も参照してくださ
+い.
+
+Emacsを起動するときにウィンドウの見ためを指定するオプションを使うと, 
+それらは`default-frame-alist'に要素を追加することで効果を発揮します.
+1つの例外は`-geometry'で, 指定位置は`initial-frame-alist'に追加されま
+す.  *Note コマンド行引数: (emacs-ja)Command Arguments.
+
+
+
+File: elisp-ja, Node: Window Frame Parameters, Next: Size and Position, Prev: Initial Parameters, Up: Frame Parameters
+
+ウィンドウフレームのパラメータ
+------------------------------
+
+フレームのパラメータの種類は, 使用する表示機構に依存します.  ウィンド
+ウフレームにおいて特別な意味を持つパラメータの一覧をつぎに示します. 
+これらのうち, `name', `title', `height', `width', `buffer-list',
+`buffer-predicate'は端末フレームでも意味を持ちます.
+
+`display'
+     このフレームを開くディスプレイ.  環境変数`DISPLAY'と同様に,
+     `"HOST:DPY.SCREEN"'の形の文字列であること.
+
+`title'
+     フレームのタイトル`title'が`nil'以外であると, フレーム向けのウィ
+     ンドウシステムの枠にタイトルが現れる.  また,
+     `mode-line-frame-identification'に`%F' （*Note %-Constructs::）を
+     使っていれば, 当該フレームのモード行にもタイトルが現れる.  Emacs
+     がウィンドウシステムを使っていない場合には, これは普通はモード行
+     に表示され一度に1つのフレームだけを表示できる.  *Note Frame
+     Titles::.
+
+`name'
+     フレームの名前.  パラメータ`title'を指定しないか`nil'であると, フ
+     レーム名はフレームタイトルのデフォルトになる.  `name'を指定しない
+     と, Emacsが自動的にフレーム名を設定する（*Note Frame Titles::）.
+
+     フレームを作るときにフレーム名を明示的に指定すると, その名前は
+     （Emacsの実行形式ファイルの名前のかわりに）フレーム向けのXリソー
+     スを探すためにも使われる.
+
+`left'
+     スクリーンの左端を基準にしたピクセル単位の左端位置.  この値は正の
+     数POSであるか, 負のPOSの値を指定できる`(+ POS)'の形のリストである.
+
+     負の数-POSや`(- POS)'の形のリストは, 実際には, スクリーンの右端を
+     基準にしたウィンドウの右端位置を指定する.  POSの正の値は左へ向け
+     て数える.  *注意：*` 'パラメータが負の整数-POSであると, POSは正で
+     ある.
+
+     プログラムが指定した位置を無視するウィンドウマネージャもある.  指
+     定した位置が無視されないように保証したい場合には, パラメータ
+     `user-position'にも`nil'以外の値を指定する.
+
+`top'
+     スクリーンの上端を基準にしたピクセル単位の上端位置.  この値は正の
+     数POSであるか, 負のPOSの値を指定できる`(+ POS)'の形のリストである.
+
+     負の数-POSや`(- POS)'の形のリストは, 実際には, スクリーンの下端を
+     基準にしたウィンドウの下端位置を指定する.  POSの正の値は上へ向け
+     て数える.  *注意：*` 'パラメータが負の整数-POSであると, POSは正で
+     ある.
+
+     プログラムが指定した位置を無視するウィンドウマネージャもある.  指
+     定した位置が無視されないように保証したい場合には, パラメータ
+     `user-position'にも`nil'以外の値を指定する.
+
+`icon-left'
+     スクリーンの左端を基準にした*フレームのアイコン*のピクセル単位の
+     左端位置.  フレームをアイコンにしたときに効果を発揮する.
+
+`icon-top'
+     スクリーンの上端を基準にした*フレームのアイコン*のピクセル単位の
+     上端位置.  フレームをアイコンにしたときに効果を発揮する.
+
+`user-position'
+     パラメータ`left'と`top'でスクリーン上の位置を指定してフレームを作
+     るときに, このパラメータは指定位置が, （利用者がなんらかの方法で
+     与えた）ユーザー指定のものなのか, （プログラムが選んだ）プログラ
+     ム指定のものなのかを指定する.  `nil'以外の値であるとユーザー指定
+     の位置であることを意味する.
+
+     ウィンドウマネージャはユーザー指定の位置を一般に尊重し, プログラ
+     ム指定の位置も尊重するものもある.  しかしその多くはプログラム指定
+     の位置を無視し, デフォルトに基づいてウィンドウを配置したり, マウ
+     スでユーザーに配置させる.  `twm'を含むウィンドウマネージャには, 
+     プログラム指定の位置に従うかそれらを無視するかをユーザーが指定で
+     きるものもある.
+
+     `make-frame'を呼び出すときには, パラメータ`left'と`top'の値がユー
+     ザーの希望を表す場合にはこのパラメータの値には`nil'以外を指定する
+     こと.  さもなければ`nil'を指定する.
+
+`height'
+     フレームの内側の文字単位の高さ.  （ピクセル単位の高さを得るには
+     `frame-pixel-height'を呼び出す.  *Note Size and Position::を参
+     照. ）
+
+`width'
+     フレームの内側の文字単位の幅.  （ピクセル単位の幅を得るには
+     `frame-pixel-width'を呼び出す.  *Note Size and Position::を参
+     照. ）
+
+`window-id'
+     フレームとして使うウィンドウシステムのウィンドウ番号.
+
+`minibuffer'
+     このフレームに独自のミニバッファがあるかどうかを表す.  値`t'はあ
+     ることを表し, `nil'はないことを表す.  `only'は, このフレームがミ
+     ニバッファだけであることを表す.  （別のフレームの）値がミニバッファ
+     だけであると, 新たなフレームはそのミニバッファを使う.
+
+`buffer-predicate'
+     このフレーム向けのバッファ述語関数.  これが`nil'でなければ, 関数
+     `other-buffer'が（選択されているフレームから）この述語を使用して, 
+     どのバッファにするかを決定する.  `other-buffer'は各バッファごとに
+     バッファを引数としてこの述語を呼び出す.  この述語が`nil'以外を返
+     すと当該バッファを選ぶ.
+
+`buffer-list'
+     このフレームで選択されたバッファをもっとも最近に選択されたものか
+     ら順に並べたリスト.
+
+`font'
+     フレーム内でテキストの表示に使うフォントの名前.  これは, 読者のシ
+     ステムにおいて正しいフォントの名前であるかEmacsのフォントセット
+     （*Note Fontsets::）の名前を表す文字列である.
+
+`auto-raise'
+     フレームを選択したときにフレームを手前に移動するかどうかを表す
+     （`nil'以外であるとそのようにする）.
+
+`auto-lower'
+     フレームの選択を止めたときにフレームを奥へ移動するかどうかを表す
+     （`nil'以外であるとそのようにする）.
+
+`vertical-scroll-bars'
+     フレームに垂直スクロール用のスクロールバーを付けるかどうか, どち
+     ら側に付けるかを表す.  指定できる値は, `left', `right', あるいは
+     スクロールバーなしを意味する`nil'.
+
+`horizontal-scroll-bars'
+     水平スクロール用のスクロールバーを付けるかどうかを表す（`nil'以外
+     だと付ける）.  （水平スクロールバーはいまのところ実装してない. ）
+
+`scroll-bar-width'
+     垂直スクロールバーのピクセル単位の幅.
+
+`icon-type'
+     このフレームをアイコンにしたときに使うアイコンの種類.  値が文字列
+     であると, 使用するビットマップを収めたファイルを指定する.  それ以
+     外の`nil'以外の値はデフォルトのビットマップアイコン（gnuの絵）を
+     指定する.  `nil'はテキストのアイコンを指定する.
+
+`icon-name'
+     このフレーム向けのアイコンを表示するときに使用するアイコンの名前. 
+     これが`nil'であると, フレームのタイトルを使う.
+
+`foreground-color'
+     文字の描画に使う表示色.  これは文字列である.  ウィンドウシステム
+     が妥当な表示色の名称を定義する.
+
+     フレームパラメータ`foreground-color'に設定したときには, それに対
+     応してフェイスを更新するために`frame-update-face-colors'を呼び出
+     すこと.
+
+`background-color'
+     文字の背景に使う表示色.
+
+     フレームパラメータ`background-color'に設定したときには, それに対
+     応してフェイスを更新するために`frame-update-face-colors'を呼び出
+     すこと.  *Note Face Functions::.
+
+`background-mode'
+     背景色が明るいか暗いかにしたがって, このパラメータは`dark'か
+     `light'である.
+
+`mouse-color'
+     マウスポインタの表示色.
+
+`cursor-color'
+     ポイントを表すカーソルの表示色.
+
+`border-color'
+     フレームの枠の表示色.
+
+`display-type'
+     このパラメータはこのフレームで使用可能な表示色の範囲を表す.  値は,
+     `color', `grayscale', `mono'のいずれかである.
+
+`cursor-type'
+     カーソルの表示方法.  正しい値は, `bar', `box', `(bar . WIDTH)'の
+     いずれかである.  シンボル`box'は, ポイント直後の文字に重なる通常
+     の黒い箱型のカーソルを指定し, これがデフォルトである.  シンボル
+     `bar'は, カーソルとして文字のあいだに縦棒を置く指定である.  `(bar
+     . WIDTH)'は, ピクセル幅WIDTHの縦棒を指定する.
+
+`border-width'
+     ウィンドウ枠のピクセル単位の幅.
+
+`internal-border-width'
+     枠とテキストのあいだのピクセル単位の間隔.
+
+`unsplittable'
+     `nil'以外であると, このフレームのウィンドウをけっして自動的に分割
+     しない.
+
+`visibility'
+     フレームの可視性.  不可視を表す`nil', 可視を表す`t', アイコンになっ
+     ていることを表す`icon'の3の可能性がある.  *Note Visibility of
+     Frames::.
+
+`menu-bar-lines'
+     フレームの上端に割り当てるメニューバー向けの行の個数.  デフォルト
+     は1である.  *Note Menu Bar::.  （Xツールキットを使うEmacsでは, メ
+     ニューバーは1行だけである.  この場合, 0より大きな数を指定したかど
+     うかに意味がある. ）
+
+
+
+
+File: elisp-ja, Node: Size and Position, Next: Frame Titles, Prev: Window Frame Parameters, Up: Frame Parameters
+
+フレームのサイズと位置
+----------------------
+
+フレームパラメータ`left', `top', `height', `width'を使って, フレームの
+サイズや位置を読み取ったり変更できます.  指定しなかった大きさと位置の
+パラメータは, ウィンドウマネージャが通常どおりに選びます.
+
+以下はサイズや位置を操作する特別な機能です.
+
+ -- Function: set-frame-position FRAME LEFT TOP
+     この関数は, フレームFRAMEの左上隅の位置をLEFT（左端）とTOP（上端）
+     にする.  これらの引数は, スクリーンの左上隅からピクセル単位で数え
+     る.
+
+     パラメータ値が負であると, スクリーンの下端から測ってウィンドウの
+     下端を位置決めしたり, スクリーンの右端から測ってウィンドウの右端
+     を位置決めする.  つねに左端や上端から測った値にして, 負の値はフレー
+     ムをスクリーンの上端や左端から部分的にはみ出して位置決めする意味
+     にするほうがよいかもしれないが, 現状ではそのように変えるのは不適
+     当と思われる.
+
+ -- Function: frame-height &optional FRAME
+ -- Function: frame-width &optional FRAME
+     この関数は, フレームFRAMEの高さや幅を行単位やコラム単位で返す.
+     FRAMEを指定しないと, 選択されているフレームを使う.
+
+ -- Function: screen-height
+ -- Function: screen-width
+     これらの関数は`frame-height'や`frame-width'の古い別名である.  文
+     字端末を使っている場合, 通常, フレームの大きさは端末スクリーンの
+     大きさと同じである.
+
+ -- Function: frame-pixel-height &optional FRAME
+ -- Function: frame-pixel-width &optional FRAME
+     これらの関数は, フレームFRAMEの高さや幅をピクセル単位で返す.
+     FRAMEを指定しないと, 選択されているフレームを使う.
+
+ -- Function: frame-char-height &optional FRAME
+ -- Function: frame-char-width &optional FRAME
+     これらの関数は, フレーム内の文字の高さや幅をピクセル単位で返す.
+     FRAMEを指定しないと, 選択されているフレームを使う.
+
+ -- Function: set-frame-size FRAME COLS ROWS
+     この関数は, フレームFRAMEの大きさを文字単位で指定する.  COLSと
+     ROWSは, 新たな幅と高さを指定する.
+
+     ピクセル単位で大きさを指定するには, `frame-char-height'と
+     `frame-char-width'でピクセル単位の値を文字単位に変換する.
+
+ -- Function: set-frame-height FRAME LINES &optional PRETEND
+     この関数は, フレームFRAMEの高さをLINES行に変える.  それに合わせて
+     FRAME内の既存のウィンドウの大きさは比例して変わる.
+
+     PRETENDが`nil'以外であると, EmacsはFRAMEのLINESだけを表示するが, 
+     フレームの実際の高さは変更しない.  これは端末フレームでのみ有用で
+     ある.  実際の端末より小さな高さを使うと, 小さなスクリーンでの動作
+     を再現したり, スクリーン全体を使うと端末が誤動作するような場合に
+     有用である.  フレームの『実際』の高さを指定してもつねにそうなると
+     は限らない.  端末フレーム上で正しくカーソルを位置決めするには, 実
+     サイズを知る必要がある場合もあるからである.
+
+ -- Function: set-frame-width FRAME WIDTH &optional PRETEND
+     この関数は, フレームFRAMEの幅を設定する.  引数PRETENDは
+     `set-frame-height'と同じ意味を持つ.
+
+`set-screen-height'と`set-screen-width'の古い関数は, 複数フレームを扱
+えないEmacsの版でスクリーンの高さや幅を指定するために使われていました. 
+これらはほぼ廃れていますが, まだ動作します.  これらは選択されているフ
+レームに適用されます.
+
+ -- Function: x-parse-geometry GEOM
+     関数`x-parse-geometry'は, Xウィンドウの標準のジオメトリ文字列を
+     `make-frame'の引数の一部に使えるように連想リストに変換する.
+
+     この連想リストは, GEOMで指定されているパラメータとその値を記述す
+     る.  各要素は`(PARAMETER . VALUE)'の形である.  PARAMETERの可能な
+     値は, `left', `top', `width', `height'である.
+
+     大きさを表すパラメータでは, その値は整数であること.  位置を表すパ
+     ラメータでは, 右端や下端の位置を表す値もあるので, `left'や`top'と
+     いうパラメータ名は必ずしも正確ではない.  位置を表すパラメータの可
+     能なVALUEはつぎのとおりである.
+
+     整数
+          正の整数は, ウィンドウの左端や上端をスクリーンの左端や上端に
+          関連付ける.  負の整数は, ウィンドウの右端や下端をスクリーン
+          の右端や下端に関連付ける.
+
+     `(+ POSITION)'
+          スクリーンの左端や上端を基準にしたウィンドウの左端や上端の位
+          置を指定する.  整数POSITIONは正でも負でもよいが, 負の値はス
+          クリーンからはみ出した位置を指定する.
+
+     `(- POSITION)'
+          スクリーンの右端や下端を基準にしたウィンドウの右端や下端の位
+          置を指定する.  整数POSITIONは正でも負でもよいが, 負の値はス
+          クリーンからはみ出した位置を指定する.
+
+     例を示す.
+
+          (x-parse-geometry "35x70+0-0")
+               => ((height . 70) (width . 35)
+                   (top - 0) (left . 0))
+
+
+
+File: elisp-ja, Node: Frame Titles, Next: Deleting Frames, Prev: Frame Parameters, Up: Frames
+
+フレームタイトル
+================
+
+各フレームにはパラメータ`name'があります.  これは, 典型的にはウィンド
+ウシステムがフレームの先頭に表示するフレームタイトルのデフォルトにもな
+ります.  フレーム属性`name'に設定することで明示的に名前を指定できます.
+
+通常は名前を明示的に指定しないでしょうから, 変数`frame-title-format'に
+保持してある雛型からEmacsが自動的にフレーム名を計算します.  Emacsは, 
+フレームを再表示するたびに名前を再計算します.
+
+ -- Variable: frame-title-format
+     この変数は, 読者がフレーム名を明示的に指定しなかったときのフレー
+     ム向けの名前の計算方法を指定する.  変数の値は実際には,
+     `mode-line-format'のようなモード行構成である.  *Note Mode Line
+     Data::.
+
+ -- Variable: icon-title-format
+     この変数は, フレームタイトルを明示的に指定しなかったときのアイコ
+     ンにしたフレーム向けの名前の計算方法を指定する.  これはアイコンそ
+     のものに現れる.
+
+ -- Variable: multiple-frames
+     この変数はEmacsが自動的に設定する.  （ミニバッファ専用のフレーム
+     や不可視フレームを数えずに）複数個のフレームがあるとこの値が`t'で
+     ある.  `frame-title-format'のデフォルト値では`multiple-frames'を
+     使っており, 複数のフレームがあるときに限りフレームタイトルにバッ
+     ファ名が入るようにする.
+
+
+
+File: elisp-ja, Node: Deleting Frames, Next: Finding All Frames, Prev: Frame Titles, Up: Frames
+
+フレームの削除
+==============
+
+フレームを明示的に"削除"（delete）しない限り, フレームは見える可能性が
+あります.  フレームを削除するとスクリーンに表示できなくなりますが, そ
+れを参照するものがなくならない限りLispオブジェクトとしては存在し続けま
+す.  保存したフレーム構成（*Note Frame Configurations::）を復元する以
+外には, フレームの削除を取り消すことはできません.  これはウィンドウと
+同様です.
+
+ -- コマンド: delete-frame &optional FRAME
+     この関数はフレームFRAMEを削除する.  デフォルトでは, FRAMEは選択さ
+     れているフレームである.
+
+ -- Function: frame-live-p FRAME
+     関数`frame-live-p'は, フレームFRAMEが削除されていなければ`nil'以
+     外を返す.
+
+ウィンドウを削除するコマンドを与えるウィンドウマネージャもあります. 
+それらは, ウィンドウを操作しているプログラムに特別なメッセージを送るこ
+とで動作します.  Emacsがそのようなコマンドを受け取ると, イベント
+`delete-frame'を生成します.  このイベントの普通の定義は, 関数
+`delete-frame'を呼び出すコマンドです.  *Note Misc Events::.
+
+
+
+File: elisp-ja, Node: Finding All Frames, Next: Frames and Windows, Prev: Deleting Frames, Up: Frames
+
+すべてのフレームを探す
+======================
+
+ -- Function: frame-list
+     関数`frame-list'は, 削除されていないすべてのフレームから成るリス
+     トを返す.  これは, バッファに対する`buffer-list'に相当する.  得ら
+     れるリストは新たに作成したものであり, このリストを変更してもEmacs
+     内部にはなんの効果もない.
+
+ -- Function: visible-frame-list
+     この関数は, 現在可視のフレームだけのリストを返す.  *Note
+     Visibility of Frames::.  （選択されているフレームだけが実際に表示
+     されている場合でも, 端末フレームはすべてつねに『可視』とみな
+     す. ）
+
+ -- Function: next-frame &optional FRAME MINIBUF
+     関数`next-frame'により, 任意の位置から始めてすべてのフレームを便
+     利に巡回できる.  巡回順の中でFRAMEの『つぎ』のフレームを返す.
+     FRAMEを省略したり`nil'であると, デフォルトでは選択されているフレー
+     ムを使う.
+
+     第2引数MINIBUFは, 対象とするフレームを指定する.
+
+     `nil'
+          ミニバッファ専用のフレームを除外する.
+     `visible'
+          すべての可視なフレームを対象にする.
+     0
+          すべての可視なフレームやアイコンにしたフレームを対象にする.
+     ウィンドウ
+          ミニバッファとして特定のウィンドウを使っているフレームのみを
+          対象にする.
+     その他
+          すべてのフレームを対象にする.
+
+ -- Function: previous-frame &optional FRAME MINIBUF
+     `next-frame'と同様であるが, すべてのフレームを逆方向に巡回する.
+
+*Note Cyclic Window Ordering::の`next-window'と`previous-window'も参照
+してください.
+
+
+
+File: elisp-ja, Node: Frames and Windows, Next: Minibuffers and Frames, Prev: Finding All Frames, Up: Frames
+
+フレームとウィンドウ
+====================
+
+各ウィンドウはある1つのフレームだけの一部であり, `window-frame'で当該
+フレームを得られます.
+
+ -- Function: window-frame WINDOW
+     この関数は, WINDOWが属するフレームを返す.
+
+フレーム内のミニバッファ用以外のすべてウィンドウには, 巡回順序がついて
+います.  その順序は, フレームの左上隅の先頭のウィンドウから始まって, 
+右下隅のウィンドウ（フレームにミニバッファがあれば, これはつねにミニバッ
+ファ用ウィンドウ）に達するまで下向き右向きに進み, そして先頭へ戻ります.
+
+ -- Function: frame-top-window FRAME
+     この関数は, フレームFRAMEのもっとも上端のもっとも左端の先頭のウィ
+     ンドウを返す.
+
+ある時点では, 各フレームではたった1つのフレームが"当該フレームで選択さ
+れている"のです.  このような区別の意味は, フレームを選択するとそのよう
+なウィンドウも選択されるということです.  フレームで現在選択されている
+フレームは`frame-selected-window'で得られます.
+
+ -- Function: frame-selected-window FRAME
+     この関数は, フレームFRAMEで選択されているFRAME内のウィンドウを返
+     す.
+
+逆に, `select-window'でEmacsのウィンドウを選ぶと, それがそのフレームで
+選択されているウィンドウになります.  *Note Selecting Windows::.
+
+指定したフレームのウィンドウの1つを返す別の関数は`minibuffer-window'で
+す.  *Note Minibuffer Misc::.
+
+
+
+File: elisp-ja, Node: Minibuffers and Frames, Next: Input Focus, Prev: Frames and Windows, Up: Frames
+
+ミニバッファとフレーム
+======================
+
+通常, 各フレームにはそれ独自のミニバッファ用ウィンドウが底にあり, フレー
+ムが選択されているときにはいつもそれが使われます.  フレームにミニバッ
+ファがあれば, `minibuffer-window' （*Note Minibuffer Misc::）でそれを
+得られます.
+
+しかし, ミニバッファのないフレームを作ることもできます.  そのようなフ
+レームでは, 別のフレームのミニバッファ用ウィンドウを使う必要があります. 
+そのようなフレームを作成するときには, 使用する（他のフレームの）ミニバッ
+ファを明示的に指定できます.  そうしないと, 変数
+`default-minibuffer-frame'の値で指定されるフレームのミニバッファを使い
+ます.  その値は, ミニバッファを有したフレームである必要があります.
+
+ミニバッファ専用のフレームを使うときは, ミニバッファで入力するときにそ
+のフレームが自動的に手前にくるようにしたいでしょう.  そうしたい場合に
+は, 変数`minibuffer-auto-raise'に`t'に設定します.  *Note Raising and
+Lowering::.
+
+ -- Variable: default-minibuffer-frame
+     この変数は, デフォルトで使うミニバッファ用ウィンドウのフレームを
+     指定する.  この変数は現在の端末につねにローカルであり, バッファロー
+     カルにはなりえない.  *Note Multiple Displays::.
+
+
+
+File: elisp-ja, Node: Input Focus, Next: Visibility of Frames, Prev: Minibuffers and Frames, Up: Frames
+
+入力フォーカス
+==============
+
+ある時点では, Emacsの1つのフレームが"選択されているフレーム" 
+（selected frame）です.  選択されているウィンドウは選択されているフレー
+ムの中につねにあります.
+
+ -- Function: selected-frame
+     この関数は選択されているフレームを返す.
+
+マウスが入っているウィンドウにキーボード入力を振り向けるウィンドウシス
+テムやウィンドウマネージャがあります.  ウィンドウに"フォーカスを置くた
+めに", 明示的にクリックしたりコマンドを必要とするものもあります.  いず
+れであっても, Emacsはどのフレームにフォーカスがあるかを自動的に追跡し
+ます.
+
+Lispプログラムからは, 関数`select-frame'を呼ぶことで, 『一時的に』フレー
+ムを切り替えることもできます.  これは, ウィンドウシステムのフォーカス
+は変えません.  というよりは, プログラムで指定するまでウィンドウシステ
+ムの制御を回避します.
+
+文字端末を使っているときには, 選択されているフレームのみが端末に実際に
+表示されます.  フレームを切り替える唯一の方法は`switch-frame'であり, 
+それ以降に`switch-frame'を呼び出すまで切り替えた効果は持続します.  初
+期フレーム以外の各端末フレームには番号が付いていて, 選択されているフレー
+ムの番号がモード行内のバッファ名のまえに現れます（*Note Mode Line
+Variables::）.
+
+ -- Function: select-frame FRAME
+     この関数はフレームFRAMEを選択し, Xサーバーのフォーカスを一時的に
+     無視する.  FRAMEを選択している状態は, ユーザーが別のフレームを選
+     択する動作を行うか再度この関数が呼ばれるまで持続する.
+
+サーバーやウィンドウマネジャーの要請にしたがってフレームを選択するよう
+にして, Emacsはウィンドウシステムと協調します.  必要なときには"focus"
+イベントと呼ばれる特別な入力イベントを生成することでこのようにします. 
+コマンドループは`handle-switch-frame'を呼び出すことでイベント"focus"を
+処理します.  *Note Focus Events::.
+
+ -- コマンド: handle-switch-frame FRAME
+     この関数は, フレームFRAMEを選択することでフォーカスイベントを処理
+     する.
+
+     フォーカスイベントは, 通常, このコマンドを起動することで処理され
+     る.  それ以外の理由ではこれを呼び出さないこと.
+
+ -- Function: redirect-frame-focus FRAME FOCUS-FRAME
+     この関数は, フォーカスをFRAMEからFOCUS-FRAMEへ振り向ける.  つまり, 
+     以降の打鍵やイベントは, FOCUSではなく, FOCUS-FRAMEが受け取ること
+     になる.  そのようなイベントのあとでは, `last-event-frame'の値は
+     FOCUS-FRAMEになる.  また, FOCUSを指定したイベント`switch-frame'は,
+     FOCUS-FRAMEを選ぶことになる.
+
+     FOCUS-FRAMEが`nil'であると, FRAMEでの振り向けを取り消す.  つまり,
+     FRAMEはイベントをふたたび受けるようになる.
+
+     フォーカスの振り向けの用途の1つは, ミニバッファを持たないフレーム
+     のためである.  これらのフレームでは, 別のフレームのミニバッファを
+     使う.  別のフレームのミニバッファを活性にすると, フォーカスを当該
+     フレームへ振り向ける.  これにより, ミニバッファを活性にしたフレー
+     ムにマウスが入っていても, ミニバッファのフレームにフォーカスを置
+     ける.
+
+     フレームを選択してもフォーカスの振り向けを変更する.  フレーム
+     `foo'を選択しているときにフレーム`bar'を選択すると, `foo'への振り
+     向けを`bar'へ振り向けるように変更する.  これにより,
+     `select-window'を使ってユーザーが別のフレームへ切り替えても, フォー
+     カスの振り向けが正しく動作する.
+
+     これは, フォーカスを自分自身へ振り向けているフレームは, フォーカ
+     スを振り向けていないフレームとは異なる扱いを受けることを意味する.
+     `select-frame'は前者に影響するが後者には影響しない.
+
+     `redirect-frame-focus'で変更するまで, 振り向けは持続する.
+
+ -- User Option: focus-follows-mouse
+     このオプションは, ユーザーがマウスを動かしたときにウィンドウマネー
+     ジャがフォーカスを移動するかどうかをEmacsに伝える.  `nil'以外であ
+     るとフォーカスが移動することを意味する.  その場合, コマンド
+     `other-frame'は, 新たに選択されたフレームに適合するような位置にマ
+     ウスを移動する.
+
+
+
+File: elisp-ja, Node: Visibility of Frames, Next: Raising and Lowering, Prev: Input Focus, Up: Frames
+
+フレームの可視性
+================
+
+ウィンドウフレームは, "可視", "不可視", "アイコンになっている"のいずれ
+かです.  フレームが可視であると, その内容を見ることができます.  アイコ
+ンになっているとフレームの内容はスクリーンで見えませんが, アイコンは見
+えます.  フレームが不可視であると, それはスクリーン上に見えずアイコン
+でもありません.
+
+端末フレームは選択されているものだけが表示されるので, 端末フレームでは
+可視性は意味がありません.
+
+ -- コマンド: make-frame-visible &optional FRAME
+     この関数は, フレームFRAMEを可視にする.  FRAMEを省略すると, 選択さ
+     れているフレームを可視にする.
+
+ -- コマンド: make-frame-invisible &optional FRAME
+     この関数は, フレームFRAMEを不可視にする.  FRAMEを省略すると, 選択
+     されているフレームを不可視にする.
+
+ -- コマンド: iconify-frame &optional FRAME
+     この関数は, フレームFRAMEをアイコンにする.  FRAMEを省略すると, 選
+     択されているフレームをアイコンにする.
+
+ -- Function: frame-visible-p FRAME
+     この関数は, フレームFRAMEの可視性を返す.  その値は, FRAMEが可視な
+     らば`t', 不可視ならば`nil', アイコンになっていれば`icon'である.
+
+フレームの可視性は, フレームパラメータとしても得られます.  フレームパ
+ラメータとして読んだり変更できます.  *Note Window Frame Parameters::.
+
+ユーザーは, ウィンドウマネージャを用いてフレームをアイコンにしたりアイ
+コンを開けます.  これは, Emacsが制御できるレベルよりしたで行われますが,
+Emacsはそのような変更を追跡できるようにイベントを提供します.  *Note
+Misc Events::.
+
+
+
+File: elisp-ja, Node: Raising and Lowering, Next: Frame Configurations, Prev: Visibility of Frames, Up: Frames
+
+フレームを手前にしたり奥へ置く
+==============================
+
+ほとんどのウィンドウシステムでは, 机のたとえを使います.  つまり, スク
+リーンの面に垂直な方向を概念的な3軸目と考えて, ウィンドウは積み重なっ
+ていて, もっとも手前からもっとも奥に順序がついています.  2つのウィンド
+ウが重なり合っているところでは, 手前のものがそのしたのものを隠していま
+す.  もっとも奥にあるウィンドウであっても, それに重なるウィンドウがな
+ければ見ることができます.
+
+ウィンドウのこのような順序は固定されていません.  実際, ユーザーは順序
+を頻繁に変更します.  ウィンドウを"手前に置く"（raising）とは, ウィンド
+ウを積み重ねのもっとも上に移動することです.  ウィンドウを"奥に置く"
+（lowering）とは, ウィンドウを積み重ねのもっとも下に移動することです. 
+この移動は概念的な3軸目に限り, スクリーン上でのウィンドウの位置は変え
+ません.
+
+Emacsのフレームを表すウィンドウは, つぎの関数で手前へ置いたり奥へ置け
+ます.
+
+ -- コマンド: raise-frame &optional FRAME
+     この関数は, フレームFRAMEを手前に置く（デフォルトは選択されている
+     フレーム）.
+
+ -- コマンド: lower-frame &optional FRAME
+     この関数は, フレームFRAMEを奥に置く（デフォルトは選択されているフ
+     レーム）.
+
+ -- User Option: minibuffer-auto-raise
+     これが`nil'以外であると, ミニバッファが活性になるとミニバッファ用
+     ウィンドウがあるフレームを手前に置く.
+
+フレームパラメータを使うと, フレームが選択されると自動的に手前に置いた
+り（`auto-raise'）, 選択を止めると奥へ置け（`auto-lower'）ます.  *Note
+Window Frame Parameters::.
+
+
+
+File: elisp-ja, Node: Frame Configurations, Next: Mouse Tracking, Prev: Raising and Lowering, Up: Frames
+
+フレーム構成
+============
+
+"フレーム構成"（frame configuration）は, 現在のフレームの配置, それら
+のすべての属性, それぞれのウィンドウ構成を記録したものです.  （*Note
+Window Configurations::. ）
+
+ -- Function: current-frame-configuration
+     この関数は, 現在のフレームの配置とそれらの内容を記述したフレーム
+     構成のリストを返す.
+
+ -- Function: set-frame-configuration CONFIGURATION
+     この関数は, CONFIGURATIONで記述されたフレームの状態に復元する.
+
+
+
+File: elisp-ja, Node: Mouse Tracking, Next: Mouse Position, Prev: Frame Configurations, Up: Frames
+
+マウスの追跡
+============
+
+マウスを"追跡"（track）できると有用なことがあります.  つまり, マウスが
+どこにあるかを表す指示子を表示してマウスの移動に従って指示子を動かすの
+です.  効率よくマウスを追跡するには, マウスが実際に移動するまで待つ手
+段が必要です.
+
+マウスを追跡する便利な方法は, マウスの移動を表すイベントを待つことです. 
+そうすれば, そのようなイベントを待てばマウスの移動を待てます.  さらに, 
+発生しうるそれ以外の種類のイベントを扱うのも簡単です.  普通はマウスを
+永遠に追跡し続けたいのではなくボタンを離すなどの別のイベントを待ちたい
+のでしょうから, これは有用です.
+
+ -- Special form: track-mouse BODY...
+     このスペシャルフォームは, マウスモーションイベントを生成するよう
+     にしてBODYを実行する.  典型的にはBODYでは`read-event'を使ってモー
+     ションイベントを読み, それに従って表示を変更する.  マウスモーショ
+     ンイベントの形式については, *Note Motion Events::.
+
+     `track-mouse'の値はBODYの最後のフォームの値である.  BODYは, ボタ
+     ンを離したことを表すイベントや追跡を終えるべきイベントに出会うと
+     戻るように設計すること.
+
+マウスの移動を追跡する普通の目的は, 現在の位置でボタンを押したり離すと
+なにが起こるかをスクリーン上に示すことです.
+
+多くの場面では, テキスト属性`mouse-face'（*Note Special Properties::）
+を使えば, マウスを追跡する必要はなくなります.  これはとても低いレベル
+で動作し, Lispレベルでマウスを追跡するより滑らかに動作します.
+
+
+
+
+File: elisp-ja, Node: Mouse Position, Next: Pop-Up Menus, Prev: Mouse Tracking, Up: Frames
+
+マウスの位置
+============
+
+関数`mouse-position'と`set-mouse-position'で, マウスの現在位置を参照で
+きます.
+
+ -- Function: mouse-position
+     この関数は, マウスの位置を表すものを返す.  その値は`(FRAME X
+     . Y)'の形であり, XとYはフレームFRAMEの内側の左上隅を基準にした文
+     字数で数えた位置を表す整数である.
+
+ -- Function: set-mouse-position FRAME X Y
+     この関数は, フレームFRAME内でXとYの位置にマウスを移動する.  引数X
+     とYは整数であり, フレームFRAMEの内側の左上隅を基準にした文字数で
+     数えた位置である.  FRAMEが不可視であると, この関数はなにもしない. 
+     戻り値には意味はない.
+
+ -- Function: mouse-pixel-position
+     この関数は`mouse-position'に似ているが, 文字単位ではなくピクセル
+     単位で座標を返す.
+
+ -- Function: set-mouse-pixel-position FRAME X Y
+     この関数は`set-mouse-position'のようにマウスを移動するが, XとYは
+     文字単位でなくピクセル単位である.  これらの座標はフレームの内側に
+     ある必要はない.
+
+     FRAMEが不可視であると, この関数はなにもしない.  戻り値には意味は
+     ない.
+
+
+
+
+File: elisp-ja, Node: Pop-Up Menus, Next: Dialog Boxes, Prev: Mouse Position, Up: Frames
+
+ポップアップメニュー
+====================
+
+ウィンドウシステムを使っているときには, ユーザーがマウスで選択できるよ
+うにLispプログラムからメニューをポップアップできます.
+
+ -- Function: x-popup-menu POSITION MENU
+     この関数はポップアップメニューを表示し, ユーザーが行った選択を表
+     す指示子を返す.
+
+     引数POSITIONは, スクリーンのどこにメニューを置くかを指定する.  そ
+     れはマウスのボタンイベント（ユーザーがボタンを押した場所にメニュー
+     を置く）かつぎの形のリストでもよい.
+
+          ((XOFFSET YOFFSET) WINDOW)
+
+     ここで, XOFFSETとYOFFSETはウィンドウWINDOWのフレームの左上隅から
+     測ったピクセル単位の座標である.
+
+     POSITIONが`t'であるとマウスの現在位置を使うことを意味する.
+     POSITIONが`nil'であると, メニューを実際には表示せずに, MENUに指定
+     してあるキーマップに等価なキーバインディングをあらかじめ計算する
+     ことを意味する.
+
+     引数MENUは, メニューに表示するものを指定する.  それはキーマップか
+     キーマップのリストである（*Note Menu Keymaps::）.  あるいは, つぎ
+     の形でもよい.
+
+          (TITLE PANE1 PANE2...)
+
+     ここで, 各ペインはつぎの形のリストである.
+
+          (TITLE (LINE . ITEM)...)
+
+     各LINEは文字列であり, 各ITEMは対応するLINEが選ばれたときに返され
+     る値であること.
+
+*使用上の注意：*` ' メニューキーマップで定義したプレフィックスキーでで
+きることには, メニューを表示するために`x-popup-menu'を使わないこと. 
+メニューキーマップを使ってメニューを実装すると, `C-h c'や`C-h a'で当該
+メニューの個々の項目を見ることができ, それらに対するヘルプを提供できる.
+`x-popup-menu'を呼び出すコマンドを定義してメニューを実装すると, ヘルプ
+機能には当該コマンドの内側でなにがなされるかわからないので, メニューの
+項目に対するヘルプを提供できない.
+
+マウスの移動でサブメニューを切り替えられるメニューバーの機構では,
+`x-popup-menu'を呼び出すコマンドの定義を調べられません.  したがって,
+`x-popup-menu'を使ってサブメニューを実装すると, それらはメニューバーに
+適応した動作をできません.  このために, メニューバーのすべてのサブメニュー
+は, 親メニュー内のメニューキーマップとして実装してあり, `x-popup-menu'
+は使っていません.  *Note Menu Bar::.
+
+メニューバーに内容が変化するサブメニューを使いたいときでも, メニューキー
+マップを使って実装するべきです.  内容を変えるには, 必要に応じてメニュー
+キーの内容を更新するために`menu-bar-update-hook'にフック関数を追加しま
+す.
+
+
+
+File: elisp-ja, Node: Dialog Boxes, Next: Pointer Shapes, Prev: Pop-Up Menus, Up: Frames
+
+対話ボックス
+============
+
+対話ボックスはポップアップメニューの変形です.  少々異なって見えますが, 
+フレームの中央につねに現れ, たった1つのレベルで1つのペインです.  対話
+ボックスの主な用途は, ユーザーが『yes』, 『no』, および他の少数の選択
+肢で答えるような問い合わせを行うためです.  関数`y-or-n-p'と
+`yes-or-no-p'は, マウスクリックで起動されたコマンドから呼ばれるとキー
+ボードではなく対話ボックスを使います.
+
+ -- Function: x-popup-dialog POSITION CONTENTS
+     この関数は, 対話ボックスを表示し, ユーザーが選んだ選択肢を表す指
+     示子を返す.  引数CONTENTSは表示する選択肢を指定し, つぎの形である.
+
+          (TITLE (STRING . VALUE)...)
+
+     これは, `x-popup-menu'に対して単一のペインを指定するリストに似て
+     いる.
+
+     戻り値は, 選ばれた選択肢のVALUEである.
+
+     リストの要素は, `(STRING . VALUE)'の形のコンスセルのかわりに単に
+     文字列でもよい.  そうすると, 対話ボックスでは選択できなくなる.
+
+     リストに`nil'が現れると, それは左側の項目と右側の項目を区切る.
+     `nil'のまえの項目は左側に現れ, `nil'に続く項目は右側に現れる.  リ
+     ストに`nil'を含めなければ, 項目のほぼ半分がそれぞれの側に現れる.
+
+     対話ボックスはフレームの中央につねに現れ, 引数POSITIONはそのフレー
+     ムを指定する.  可能な値は`x-popup-menu'と同様であるが, 正確な座標
+     は関係なくフレームだけが意味を持つ.
+
+     場合によっては, Emacsは本当の対話ボックスを表示できない.  そのと
+     きにはフレームの中央にポップアップメニューで同じ項目を表示する.
+
+
+
+File: elisp-ja, Node: Pointer Shapes, Next: Window System Selections, Prev: Dialog Boxes, Up: Frames
+
+ポインタの形状
+==============
+
+これらの変数は, Xウィンドウシステムを使っているときにさまざまな場面で
+使用するマウスポインタの形状を指定します.
+
+`x-pointer-shape'
+     この変数は, Emacsのフレーム内で普通に使うポインタ形状を指定する.
+
+`x-sensitive-text-pointer-shape'
+     この変数は, マウスに反応するテキスト上にマウスがあるときに使用す
+     るポインタ形状を指定する.
+
+これらの変数は, 新たに作成したフレームに影響します.  既存のフレームに
+は通常は影響しません.  しかし, フレームのマウスの表示色を設定すると, 
+これらの変数の現在値に基づいてポインタ形状も更新します.  *Note Window
+Frame Parameters::.
+
+これらのポインタ形状の指定に使える値は, ファイル`lisp/term/x-win.el'で
+定義してあります.  それらの一覧を見るには`M-x apropos RET x-pointer
+RET'を使います.
+
+
+
+File: elisp-ja, Node: Window System Selections, Next: Font Names, Prev: Pointer Shapes, Up: Frames
+
+ウィンドウシステムのセレクション
+================================
+
+Xサーバーは, アプリケーションプログラムのあいだでデータを転送するため
+の"セレクション"（selection）の集まりを記録します.  さまざまなセレクショ
+ンは, Emacsではシンボルで表した"セレクション型"（selection type）で区
+別されます.  Emacsを含むXクライアントは, 任意の型のセレクションを読ん
+だり設定できます.
+
+ -- Function: x-set-selection TYPE DATA
+     この関数は, Xサーバーに『セレクション』を設定する.  これは2つの引
+     数, セレクション型TYPEとそれに割り当てる値DATAを取る.  DATAが
+     `nil'であると, 当該セレクションを削除することを意味する.  さもな
+     ければDATAは, 文字列, 整数（あるいは2つの数のコンスセルかリスト）, 
+     オーバレイ, 同じバッファを指す2つのマーカのコンスセルのいずれかで
+     ある.  オーバレイやマーカの対は, オーバレイのテキストやマーカのあ
+     いだのテキストを表す.
+
+     引数DATAは, ベクトルではない正しいセレクション値のベクトルでもよ
+     い.
+
+     可能な各TYPEには型に依存した独自のセレクション値がある.  TYPEの普
+     通の値は`PRIMARY'か`SECONDARY'である.  これらのシンボルは, Xウィ
+     ンドウシステムの慣習に従って大文字の名前である.  デフォルトは
+     `PRIMARY'である.
+
+ -- Function: x-get-selection &optional TYPE DATA-TYPE
+     この関数は, Emacsや他のXクライアントが設定したセレクションを参照
+     する.  これは2つの引数, TYPEとDATA-TYPEを取る.  セレクション型
+     TYPEのデフォルトは`PRIMARY'である.
+
+     引数DATA-TYPEは, 他のXクライアントから得た生データをLispデータに
+     変換するために使用するデータ変換の書式を指定する.  意味のある値は,
+     `TEXT', `STRING', `CHARACTER_POSITION', `LINE_NUMBER',
+     `COLUMN_NUMBER', `OWNER_OS', `HOST_NAME', `USER', `CLASS',
+     `NAME', `ATOM', `INTEGER'である.  （これらのシンボルは, Xウィンド
+     ウシステムの慣習に従って大文字の名前である. ）DATA-TYPEのデフォル
+     トは`STRING'である.
+
+Xサーバーには, アプリケーションのあいだで移動するテキストや他のデータ
+を保存できる番号付きの"カットバッファ"（cut buffer）の集まりもあります. 
+カットバッファは廃れているとみなされますが, それらを使っているXクライ
+アント向けにEmacsはカットバッファを扱えます.
+
+ -- Function: x-get-cut-buffer N
+     この関数は, 番号Nのカットバッファの内容を返す.
+
+ -- Function: x-set-cut-buffer STRING
+     Emacsが連続したキルをキルリングで順に下向きに移動するのと同様に, 
+     この関数は一連のカットバッファの値を順に下向きに移動してから文字
+     列STRINGを最初のカットバッファ（番号0）に保存する.
+
+ -- Variable: selection-coding-system
+     この変数は, セレクション, クリップボード, カットバッファを読み書
+     きするときに使うコーディングシステムを指定する.  *Note Coding
+     Systems::.  デフォルトは`compound-text'である.
+
+
+
+File: elisp-ja, Node: Font Names, Next: Fontsets, Prev: Window System Selections, Up: Frames
+
+フォント名の探索
+================
+
+ -- Function: x-list-font PATTERN &optional FACE FRAME MAXIMUM
+     この関数は, パターンPATTERNに一致する利用可能なフォント名のリスト
+     を返す.  省略可能な引数FACEとFRAMEを指定すると, FRAMEで現在オンに
+     なっているFACEと同じサイズのフォントにリストを制限する.
+
+     引数PATTERNは文字列であること.  これはワイルドカード文字を含んで
+     いてもよい.  `*'は任意の部分文字列に一致し, `?'は任意の1文字に一
+     致する.  フォント名とパターンの一致を取る際には, 大文字小文字を区
+     別しない.
+
+     FACEとFRAMEを指定するときには, FACEはフェイス名（シンボル）であり,
+     FRAMEはフレームであること.
+
+     省略可能な引数MAXIMUMは, 返すフォントの個数を制限する.  これが
+     `nil'以外であると, 戻り値は最初のMAXIMUM個の一致したフォントに切
+     り詰める.  MAXIMUMに小さな値を指定すると, 多くのフォントに一致す
+     る場合ではこの関数の動作がだいぶ速くなる.
+
+
+
+File: elisp-ja, Node: Fontsets, Next: Color Names, Prev: Font Names, Up: Frames
+
+フォントセット
+==============
+
+"フォントセット"（fontset）は, フォントのリストであって, 各フォントが
+文字コードのある範囲に割り付けられています.  個々のフォントだけでは,
+Emacsが扱う文字集合の範囲全体を表示できませんが, フォントセットならば
+可能です.  フォントセットにはフォントと同様に名前があり, フレームやフェ
+イス向けに『フォント』を指定するときのフォント名のかわりにフォントセッ
+ト名を使えます.  ここでは, Lispプログラムの制御のもとにフォントセット
+を定義することに関する情報を述べます.
+
+ -- Function: create-fontset-from-fontset-spec FONTSET-SPEC &optional STYLE-VARIANT-P NOERROR
+     この関数は, 指定文字列FONTSET-SPECに従って新たなフォントセットを
+     定義する.  文字列はつぎの形であること.
+
+          FONTPATTERN, [CHARSETNAME:FONTNAME]...
+
+     コンマの前後の白文字は無視する.
+
+     文字列の始めの部分FONTPATTERNは, 最後の2つのフィールドが
+     `fontset-ALIAS'であることを除いて, Xの標準フォント名であること.
+
+     新たなフォントセットには2つの名前, つまり, 長い名前と短い名前があ
+     る.  長い名前はFONTPATTERNそのものである.  短い名前は
+     `fontset-ALIAS'である.  どちらの名前でもフォントセットを参照でき
+     る.  同じ名前のフォントセットがすでに存在する場合, NOERRORが`nil'
+     であるとエラーを通知し, この関数はなにもしない.
+
+     省略可能な引数STYLE-VARIANT-Pが`nil'以外であると, フォントセット
+     のbold（太字）, italic（斜体）, bold-italic（太字斜体）の各変種も
+     作成することを指示する.  これらの変種のフォントセットには短い名前
+     はなく, FONTPATTERNのboldやitalicを変更して作った長い名前だけであ
+     る.
+
+     指定文字列ではフォントセットで使うフォントも指定する.  詳しくは下
+     記参照.
+
+`CHARSET:FONT'という構成は, 特定の1つの文字集合向けに（このフォントセッ
+トで）使うフォントを指定します.  ここで, CHARSETは文字集合の名前であり,
+FONTはその文字集合に使うフォントです.  この構成は, 指定文字列で何回で
+も使えます.
+
+明示してない残りの文字集合向けには, FONTPATTERNに基づいてEmacsがフォン
+トを選びます.  つまり, `fontset-ALIAS'を1つの文字集合を指名する値で置
+き換えます.  ASCII文字集合向けには, `fontset-ALIAS'を`ISO8859-1'で置き
+換えます.
+
+これに加えて, いくつか連続したフィールドがワイルドカードであるなら,
+Emacsはそれらを1つのワイルドカードにまとめます.  これは, 自動的に拡大
+縮小したフォントの使用を避けるためです.  大きめのフォントを縮小したフォ
+ントは編集には使えません.  また, 小さめのフォントを拡大したフォントも
+有用ではありません.  というのは, Emacsがそうするように, もともと小さな
+フォントを使うほうがよいからです.
+
+したがって, FONTPATTERNがつぎのようであると,
+
+     -*-fixed-medium-r-normal-*-24-*-*-*-*-*-fontset-24
+
+ASCII文字に対するフォント指定はつぎのようになります.
+
+     -*-fixed-medium-r-normal-*-24-*-ISO8859-1
+
+また, Chinese GB2312文字に対するフォント指定はつぎのようになります.
+
+     -*-fixed-medium-r-normal-*-24-*-gb2312*-*
+
+上のフォント指定に一致する中国語フォントがないかもしれません.  多くのX
+の配布には, FAMILYフィールドが`song ti'か`fangsong ti'の中国語フォント
+だけが含まれています.  そういった場合, `Fontset-N'をつぎのように指定し
+ます.
+
+     Emacs.Fontset-0: -*-fixed-medium-r-normal-*-24-*-*-*-*-*-fontset-24,\
+             chinese-gb2312:-*-*-medium-r-normal-*-24-*-gb2312*-*
+
+そうすると, Chinese GB2312の文字を除くフォント指定ではFAMILYフィールド
+が`fixed'となり, Chinese GB2312の文字に対するフォント指定ではFAMILYフィー
+ルドが`*'となります.
+
+
+
+File: elisp-ja, Node: Color Names, Next: Resources, Prev: Fontsets, Up: Frames
+
+表示色名
+========
+
+ -- Function: x-color-defined-p COLOR &optional FRAME
+     この関数は, 表示色名が意味のあるものかどうかを報告する.  意味があ
+     れば`t'を返し, さもなければ`nil'を返す.  引数FRAMEは, どのフレー
+     ムで調べるかを指定する.  FRAMEを省略したり`nil'であると, 選択され
+     ているフレームを使う.
+
+     この関数では, 読者が使用しているディスプレイで当該表示色を実際に
+     表示できるかどうかはわからない.  どんな種類のディスプレイでも定義
+     されていればどんな表示色でも問い合わせることができ, なんらかの結
+     果を得られる.  Xサーバーはこのように動作するのである.  読者のディ
+     スプレイで表示色COLORを使えるかどうかを検査する近似方法はつぎのと
+     おりである.
+
+          (defun x-color-supported-p (color &optional frame)
+            (and (x-color-defined-p color frame)
+                 (or (x-display-color-p frame)
+                     (member color '("black" "white"))
+                     (and (> (x-display-planes frame) 1)
+                          (equal color "gray")))))
+
+ -- Function: x-color-values COLOR &optional FRAME
+     この関数は, 表示色COLORが理想的にはどのように見えるかを記述した値
+     を返す.  COLORが定義されていれば, その値は, 赤の分量, 緑の分量, 
+     青の分量を表す3つの整数のリストである.  各整数の範囲は原理的には0
+     から65535であるが, 実際には65280を超えることはないようである.
+     COLORが定義されていなければ, 値は`nil'である.
+
+          (x-color-values "black")
+               => (0 0 0)
+          (x-color-values "white")
+               => (65280 65280 65280)
+          (x-color-values "red")
+               => (65280 0 0)
+          (x-color-values "pink")
+               => (65280 49152 51968)
+          (x-color-values "hungry")
+               => nil
+
+     フレームFRAMEのディスプレイに対する表示色の値を返す.  FRAMEを省略
+     したり`nil'であると, 選択されているフレームのディスプレイに対する
+     値を返す.
+
+
+
+File: elisp-ja, Node: Resources, Next: Server Data, Prev: Color Names, Up: Frames
+
+Xリソース
+=========
+
+ -- Function: x-get-resource ATTRIBUTE CLASS &optional COMPONENT SUBCLASS
+     関数`x-get-resource'は, Xウィンドウのデフォルトのデータベースから
+     リソースの値を取り出す.
+
+     リソースは, "key"と"class"の組み合わせで添字付けされる.  この関数
+     は`INSTANCE.ATTRIBUTE'の形（INSTANCEはEmacsを起動した名前）のキー
+     とクラスとして`Emacs.CLASS'を使って探索する.
+
+     省略可能な引数COMPONENTとSUBCLASSは, それぞれ, キーとクラスに追加
+     される.  2つを指定するかまったく指定しないこと.  これらを指定する
+     と, キーは`INSTANCE.COMPONENT.ATTRIBUTE'であり, クラスは
+     `Emacs.CLASS.SUBCLASS'である.
+
+ -- Variable: x-resource-class
+     この変数は, `x-get-resource'が探すアプリケーション名を指定する. 
+     デフォルト値は`"Emacs"'である.  `x-get-resource'を呼び出す周りで
+     この変数に別の文字列を束縛すれば, 『Emacs』以外のアプリケーション
+     名でXリソースを探せる.
+
+  *Note Xリソース: (emacs-ja)Resources X.
+
+
+
+File: elisp-ja, Node: Server Data, Next: Positions, Prev: Resources, Up: Frames
+
+Xサーバーに関するデータ
+=======================
+
+本節では, Emacsが使っているXディスプレイの能力や製造元に関する情報を得
+るために使う関数について述べます.  これらの関数のそれぞれには, どのディ
+スプレイを対象にするか引数DISPLAYで指定できます.  引数DISPLAYは, ディ
+スプレイ名かフレーム（が表示されいるディスプレイを意味する）のいずれか
+です.  引数DISPLAYを省略したり`nil'であると, 選択されているフレームの
+ディスプレイを使うことを意味します.
+
+ -- Function: x-display-screens &optional DISPLAY
+     この関数は, ディスプレイに対応付けられているスクリーンの個数を返
+     す.
+
+ -- Function: x-server-version &optional DISPLAY
+     この関数は, ディスプレイで動作中のXサーバーの版番号のリストを返す.
+
+ -- Function: x-server-vendor &optional DISPLAY
+     この関数は, Xサーバーソフトウェアの提供業者を返す.
+
+ -- Function: x-display-pixel-height &optional DISPLAY
+     この関数はスクリーンのピクセル単位の高さを返す.
+
+ -- Function: x-display-mm-height &optional DISPLAY
+     この関数はスクリーンのミリメートル単位の高さを返す.
+
+ -- Function: x-display-pixel-width &optional DISPLAY
+     この関数はスクリーンのピクセル単位の幅を返す.
+
+ -- Function: x-display-mm-width &optional DISPLAY
+     この関数はスクリーンのミリメートル単位の幅を返す.
+
+ -- Function: x-display-backing-store &optional DISPLAY
+     この関数は, スクリーンのバッキングストア機能を返す.  その値は,
+     `always', `when-mapped', `not-useful'のシンボルのいずれかである.
+
+ -- Function: x-display-save-under &optional DISPLAY
+     この関数は, ディスプレイにセーブアンダー機能があれば`nil'以外を返
+     す.
+
+ -- Function: x-display-planes &optional DISPLAY
+     この関数は, ディスプレイのプレイン数を返す.
+
+ -- Function: x-display-visual-class &optional DISPLAY
+     この関数は, スクリーンのビジュアルクラスを返す.  その値は,
+     `static-gray', `gray-scale', `static-color', `pseudo-color',
+     `true-color', `direct-color'のシンボルのいずれかである.
+
+ -- Function: x-display-grayscale-p &optional DISPLAY
+     この関数は, スクリーンで白黒の濃淡を表示できると`t'を返す.
+
+ -- Function: x-display-color-p &optional DISPLAY
+     この関数は, スクリーンがカラースクリーンならば`t'を返す.
+
+ -- Function: x-display-color-cells &optional DISPLAY
+     この関数はスクリーンで使えるカラーセルの個数を返す.
+
+
+
+
+
+File: elisp-ja, Node: Positions, Next: Markers, Prev: Frames, Up: Top
+
+バッファ内の位置
+****************
+
+バッファ内"位置"（position）は, バッファ内のテキストの文字を添字付けし
+ます.  より正確にいえば, バッファ内位置は2つの文字のあいだの箇所（ある
+いは, 先頭文字ではそのまえ, 最後の文字ではそのうしろ）を識別して, 指定
+位置のまえやうしろの文字を指定できるようにします.  しかし, しばしば位
+置『にある』文字といいますが, これは位置の直後の文字を意味します.
+
+バッファ内位置は, 通常, 1から始まる整数で表しますが, "マーカ"（marker）
+で表すこともできます.  マーカは特別なオブジェクトであり, テキストを挿
+入したり削除しても同じ周りの文字に留まるように自動的に再配置されます.
+*Note Markers::.
+
+* Menu:
+
+* Point::         The special position where editing takes place.
+* Motion::        Changing point.
+* Excursions::    Temporary motion and buffer changes.
+* Narrowing::     Restricting editing to a portion of the buffer.
+
+
+
+File: elisp-ja, Node: Point, Next: Motion, Prev: Positions, Up: Positions
+
+ポイント
+========
+
+"ポイント"（point）は, 自己挿入文字やテキスト挿入関数を含む多くの編集
+コマンドが使うバッファ内の特別な位置です.  他のコマンドは, バッファ内
+の別の箇所で編集したり挿入できるようにポイントをテキスト内で移動します.
+
+他のバッファ内位置と同様に, ポイントは文字そのものではなく, 2つの文字
+のあいだの箇所（あるいは, 先頭文字ではそのまえ, 最後の文字ではそのうし
+ろ）を指定します.  通常, 端末では, ポイントの直後の文字に重ねてカーソ
+ルを表示します.  ポイントはカーソルがある文字のまえに実際にはあります.
+
+ポイントの値は, 1からバッファのサイズ足す1です.  ナロイング（*Note
+Narrowing::）していると, ポイントはバッファの参照可能な（バッファの端
+を含むかもしれない）範囲内に制限されます.
+
+各バッファには独自のポイント値があり, それは他のバッファのポイント値と
+は独立です.  各ウィンドウにも独自のポイント値があり, 同じバッファを表
+示している他のウィンドウのポイント値とは独立です.  このようなわけで, 
+同じバッファを表示しているさまざまなウィンドウで異なるポイント値を持て
+るのです.  1つのウィンドウだけにバッファが表示されているときには, バッ
+ファのポイントとウィンドウのポイントは, 通常, 同じ値であり, それらを区
+別することはほとんど重要ではありません.  詳しくは, *Note Window
+Point::.
+
+ -- Function: point
+     この関数はカレントバッファのポイント値を整数で返す.
+
+          (point)
+               => 175
+
+ -- Function: point-min
+     この関数は, カレントバッファで参照可能なポイント値の最小値を返す. 
+     これは通常1であるが, ナロイングしているときには, ナロイングした領
+     域の開始位置である.  （*Note Narrowing::. ）
+
+ -- Function: point-max
+     この関数は, カレントバッファで参照可能なポイント値の最大値を返す. 
+     ナロイングしていなければ, これは`(1+ (buffer-size))'である.  ナロ
+     イングしているときには, ナロイングした領域の終了位置である. 
+     （*Note Narrowing::. ）
+
+ -- Function: buffer-end FLAG
+     この関数は, FLAGが1未満であれば`(point-min)'を返し, さもなければ
+     `(point-max)'を返す.  引数FLAGは整数であること.
+
+ -- Function: buffer-size
+     この関数は, カレントバッファ内の総文字数を返す.  ナロイング
+     （*Note Narrowing::）していなければ, `point-max'はこの値より1大き
+     な値を返す.
+
+          (buffer-size)
+               => 35
+          (point-max)
+               => 36
+
+
+
+File: elisp-ja, Node: Motion, Next: Excursions, Prev: Point, Up: Positions
+
+移動
+====
+
+移動関数は, 現在のポイント値やバッファの先頭や末尾を基準にして, あるい
+は, 選択されているウィンドウの端を基準にして, ポイント値を変更します.
+*Note Point::.
+
+* Menu:
+
+* Character Motion::       Moving in terms of characters.
+* Word Motion::            Moving in terms of words.
+* Buffer End Motion::      Moving to the beginning or end of the buffer.
+* Text Lines::             Moving in terms of lines of text.
+* Screen Lines::           Moving in terms of lines as displayed.
+* List Motion::            Moving by parsing lists and sexps.
+* Skipping Characters::    Skipping characters belonging to a certain set.
+
+
+
+File: elisp-ja, Node: Character Motion, Next: Word Motion, Prev: Motion, Up: Motion
+
+文字単位の移動
+--------------
+
+これらの関数は, 文字数に基づいてポイントを移動します.  `goto-char'が基
+本になる基本関数であり, 他の関数はこれを使っています.
+
+ -- コマンド: goto-char POSITION
+     この関数は, カレントバッファのポイント位置を値POSITIONとする.
+     POSITIONが1未満であると, バッファの先頭にポイントを移動する.
+     POSITIONがバッファの長さより大きい場合には, バッファの末尾にポイ
+     ントを移動する.
+
+     ナロイングしている場合であっても, POSITIONはバッファの先頭から数
+     えるが, 参照可能部分の外側にはポイントは移動できない.  POSITIONが
+     範囲外であると, `goto-char'は参照可能部分の先頭か末尾にポイントを
+     移動する.
+
+     この関数を対話的に呼び出すと, 前置引数があればPOSITIONは数値前置
+     引数である.  さもなければミニバッファから読む.
+
+     `goto-char'はPOSITIONを返す.
+
+ -- コマンド: forward-char &optional COUNT
+     この関数は, 前方へ, つまり, バッファの末尾に向けて（COUNTが負であ
+     れば, 後方へ, つまり, バッファの先頭へ向けて）COUNT文字分ポイント
+     を移動する.  バッファの先頭や末尾を越えて（ナロイングしているとき
+     には参照可能部分を越えて）ポイントを移動しようとすると,
+     `beginning-of-buffer'か`end-of-buffer'のエラーコードでエラーを通
+     知する.
+
+     対話的に呼び出されると, COUNTは数値前置引数である.
+
+ -- コマンド: backward-char &optional COUNT
+     この関数は, 後方へ, つまり, バッファの先頭に向けて（COUNTが負であ
+     れば, 前方へ, つまり, バッファの末尾へ向けて）COUNT文字分ポイント
+     を移動する.  バッファの先頭や末尾を越えて（ナロイングしているとき
+     には参照可能部分を越えて）ポイントを移動しようとすると,
+     `beginning-of-buffer'か`end-of-buffer'のエラーコードでエラーを通
+     知する.
+
+     対話的に呼び出されると, COUNTは数値前置引数である.
+
+
+
+File: elisp-ja, Node: Word Motion, Next: Buffer End Motion, Prev: Character Motion, Up: Motion
+
+単語単位の移動
+--------------
+
+これらの単語を解析する関数は, 当該文字が単語の一部かどうかを判定するた
+めに構文テーブルを使います.  *Note Syntax Tables::.
+
+ -- コマンド: forward-word COUNT
+     この関数は, 前方へ（COUNTが負ならば後方へ）COUNT単語分ポイントを
+     移動する.  『1単語分移動する』とは, 単語構成文字を越えてから単語
+     区切り文字（あるいはバッファの参照可能部分の境界）に出会うまでポ
+     イントを移動することを意味する.
+
+     バッファの境界で止まらず（最後の単語は除く）にCOUNT単語分移動でき
+     ると, 値は`t'である.  さもなければ値は`nil'であり, ポイントはバッ
+     ファの境界で止まる.
+
+     対話的に呼び出されると, COUNTは数値前置引数である.
+
+ -- コマンド: backward-word COUNT
+     この関数は`forward-word'と同様であるが, 前方へではなく後方へ単語
+     の先頭に出会うまで移動する.
+
+     対話的に呼び出されると, COUNTは数値前置引数である.
+
+     この関数は, プログラムではほとんど使われない.  負の引数で
+     `forward-word'を呼び出すほうが効率的だからである.
+
+ -- Variable: words-include-escapes
+     この変数は, `forward-word'とそれを使うもののふるまいに影響する.
+     `nil'以外であると, 『エスケープ』や『文字クォート』の構文クラスに
+     属する文字も単語の一部とみなす.  さもなければ, 単語の一部とはみな
+     さない.
+
+
+
+File: elisp-ja, Node: Buffer End Motion, Next: Text Lines, Prev: Word Motion, Up: Motion
+
+バッファの両端への移動
+----------------------
+
+バッファの先頭にポイントを移動するには, つぎのように書きます.
+
+     (goto-char (point-min))
+
+同様に, バッファの末尾に移動するには, つぎのようにします.
+
+     (goto-char (point-max))
+
+上のことを行うためにユーザーが使うコマンドが2つあります.  これらはマー
+クを設定してエコー領域にメッセージを表示するので, これらをLispプログラ
+ムからは使わないように警告しておきます.
+
+ -- コマンド: beginning-of-buffer &optional N
+     この関数は, バッファ（あるいはナロイングしているときには参照可能
+     部分）の先頭にポイントを移動し, 移動前の位置にマークを設定する.
+     Nが`nil'以外であると, バッファの先頭から10分のNの箇所にポイントを
+     移動する.
+
+     対話的に呼び出すと, 前置引数があればNは数値前置引数である.  さも
+     なければNのデフォルトは`nil'である.
+
+     *警告：*` 'Lispプログラムではこの関数を使わないこと！
+
+ -- コマンド: end-of-buffer &optional N
+     この関数は, バッファ（あるいはナロイングしているときには参照可能
+     部分）の末尾にポイントを移動し, 移動前の位置にマークを設定する.
+     Nが`nil'以外であると, バッファの末尾から10分のNの箇所にポイントを
+     移動する.
+
+     対話的に呼び出すと, 前置引数があればNは数値前置引数である.  さも
+     なければNのデフォルトは`nil'である.
+
+     *警告：*` 'Lispプログラムではこの関数を使わないこと！
+
+
+
+File: elisp-ja, Node: Text Lines, Next: Screen Lines, Prev: Buffer End Motion, Up: Motion
+
+テキスト行単位の移動
+--------------------
+
+テキスト行とは, 改行文字で区切られたバッファの部分です.  改行文字はま
+えの行に属するとみなします.  最初のテキスト行がバッファの先頭から始ま
+り, バッファの末尾の文字が改行であってもなくても, 最後のテキスト行はバッ
+ファの末尾で終ります.  バッファをテキスト行に分割することは, ウィンド
+ウの幅, 表示上の行の継続, タブやコントロール文字の表示方法には影響され
+ません.
+
+ -- コマンド: goto-line LINE
+     この関数は, バッファの先頭を1行目と数えてLINE行目の先頭にポイント
+     を移動する.  LINEが1未満であると, バッファの先頭へポイントを移動
+     する.  LINEがバッファ内の行数より大きいと, バッファの末尾, つまり,
+     *バッファの最後の行の末尾*にポイントを移動する.  これは,
+     `goto-line'が行頭にポイントを移動しない唯一の場面である.
+
+     ナロイングしているときでも, LINEはバッファの先頭から数えるが, 参
+     照可能部分の外側にはポイントは移動しない.  したがって, 行番号が参
+     照不可な部分を指定するときには, `goto-line'は参照可能部分の先頭か
+     末尾へポイントを移動する.
+
+     `goto-line'の戻り値は, （ナロイングを考慮せずにバッファ全体でみた）
+     LINEと実際のポイントの移動先の行の行番号との差である.  したがって, 
+     指定した行に達するまえにバッファの末尾に出会うと値は正である.  バッ
+     ファの実際の末尾にではなく参照可能部分の末尾に出会うと値は0である.
+
+     対話的に呼び出すと, 前置引数があればLINEは数値前置引数である.  さ
+     もなければLINEをミニバッファから読む.
+
+ -- コマンド: beginning-of-line &optional COUNT
+     この関数は, 現在行の先頭にポイントを移動する.  引数COUNTが`nil'で
+     も1でもないと, COUNT-1行だけ前方へ移動してから行頭に移動する.
+
+     バッファ（ナロイングしているときには参照可能部分）の末尾に達する
+     とポイントをそこへ移動する.  エラーは通知しない.
+
+ -- コマンド: end-of-line &optional COUNT
+     この関数は, 現在行の末尾にポイントを移動する.  引数COUNTが`nil'で
+     も1でもないと, COUNT-1行だけ前方へ移動してから行末に移動する.
+
+     バッファ（ナロイングしているときには参照可能部分）の末尾に達する
+     とポイントをそこへ移動する.  エラーは通知しない.
+
+ -- コマンド: forward-line &optional COUNT
+     この関数は, COUNT行前方の行頭にポイントを移動する. 
+     COUNTが負であると, 
+     -COUNT行後方の行頭にポイントを移動する. 
+     COUNTが0であると, 現在行の先頭にポイントを移動する.
+
+     指定行数だけ移動するまえにバッファ（ナロイングしているときには参
+     照可能部分）の先頭や末尾に達するとポイントをそこへ移動する.  エラー
+     は通知しない.
+
+     `forward-line'は, COUNTと実際に移動した行数の差を返す.  3行しかな
+     いバッファの先頭で5行前方へ移動しようとすると, ポイントは最後の行
+     の末尾で止まり, 値は2になる.
+
+     対話的に呼び出すと, COUNTは数値前置引数である.
+
+ -- Function: count-lines START END
+     この関数は, カレントバッファのSTARTとENDのあいだの部分にある行の
+     行数を返す.  STARTとENDが等しければ0を返す.  さもなければ, START
+     とENDが同じ行にある場合であっても少なくとも1を返す.  というのは, 
+     それらのあいだのテキストは孤立しているとみなされ, 空でなければ少
+     なくとも1行はあるはずだからである.
+
+     `count-lines'の使用例を示す.
+
+          (defun current-line ()
+            "Return the vertical position of point..."
+            (+ (count-lines (window-start) (point))
+               (if (= (current-column) 0) 1 0)
+               -1))
+
+
+*Note Near Point::の関数`bolp'や`eolp'も参照してください.  これらの関
+数はポイントを移動しませんが, ポイントがすでに行の先頭や末尾にあるかど
+うかを検査します.
+
+
+
+File: elisp-ja, Node: Screen Lines, Next: List Motion, Prev: Text Lines, Up: Motion
+
+スクリーン行分の移動
+--------------------
+
+前節の行単位の関数は, 改行文字で区切られたテキスト行だけを数えます. 
+対照的に, これらの関数は, スクリーン上にどのようにテキストが現れるかで
+定義されるスクリーン上の行を数えます.  テキスト行が選択されているウィ
+ンドウの幅に収まるだけ短ければ, 1テキスト行は1スクリーン行ですが, しか
+し, それ以外では1テキスト行は複数のスクリーン行を占めます.
+
+テキスト行を複数のスクリーン行に継続せずにスクリーン上で切り詰める場合
+もあります.  このような場合, `vertical-motion'は, `forward-line'によく
+似たポイントの移動を行います.  *Note Truncation::.
+
+与えられた文字列の幅は, 各文字の見ためを制御するフラグに依存するので,
+`vertical-motion'は, テキストを収めたバッファや選択されているウィンド
+ウ（その幅や切り詰めフラグ, ウィンドウごとに異なりうる表示テーブルがあ
+るため）に依存して, 特定のテキスト部分に対して異なったふるまいをします.
+*Note Usual Display::.
+
+これらの関数は, スクリーン行がどこで区切れるかを決定するためにテキスト
+を走査するので, 走査する量に比例して時間がかかります.  読者がこれらを
+多用する意図があるときには, 読者のコードの効率を改善するキャッシュを
+Emacsが提供します.  *Note cache-long-line-scans: Truncation.
+
+
+ -- Function: vertical-motion COUNT &optional WINDOW
+     この関数は, ポイントを含むスクリーン行からCOUNTスクリーン行数だけ
+     下向きにポイントを移動する.  COUNTが負であると上向きに移動する.
+
+     `vertical-motion'は, ポイントを移動したスクリーン行数を返す.  バッ
+     ファの先頭や末尾に達すると, この値は絶対値ではCOUNTより小さい.
+
+     ウィンドウWINDOWは, 幅, 水平スクロール, 表示テーブルなどのパラメー
+     タを得るために使われる.  しかし, WINDOWに別のバッファが表示されて
+     いるとしても, `vertical-motion'はつねにカレントバッファに作用する.
+
+ -- コマンド: move-to-window-line COUNT
+     この関数は, 選択されているウィンドウに現在表示されているテキストに
+     基づいてポイントを移動する. 
+     ウィンドウの先頭からCOUNTスクリーン行の先頭にポイントを移動する. 
+     COUNTが負であると, 底（あるいはバッファの末尾がスクリーンの
+     底より上にある場合にはバッファの最終行）から数えて
+     -COUNTスクリーン行位置を指定する. 
+
+     COUNTが`nil'であると, ウィンドウの中央の行の先頭にポイントを移動
+     する.  COUNT の絶対値がウィンドウのサイズよりも大きいときには, ウィ
+     ンドウに十分な高さがあった場合に移動するであろうスクリーン行の箇
+     所にポイントを移動する.  そのため, スクロールして当該箇所がスクリー
+     ンに現れるように再表示する.
+
+     対話的に呼び出されると, COUNTは数値前置引数である.
+
+     戻り値は, ウィンドウの先頭行を0と数えて, 移動先の行のウィンドウ行
+     番号である.
+
+ -- Function: compute-motion FROM FROMPOS TO TOPOS WIDTH OFFSETS WINDOW
+     この関数は, スクリーン上での位置を計算しながらカレントバッファを
+     走査する.  バッファ内位置FROMがスクリーン座標FROMPOSに対応すると
+     仮定して, FROMから前方へ向けてTOかTOPOSのどちらかに達するまでバッ
+     ファを走査する.  バッファ内の終了位置とスクリーン座標を返す.
+
+     座標引数FROMPOSとTOPOSは, `(HPOS . VPOS)'の形のコンスセルである.
+
+     引数WIDTHは, テキストを表示できるコラム数であり, これは継続行の扱
+     いに影響する.  読者が選んだウィンドウに対して`window-width'が返し
+     た値, つまり, 通常, `(window-width WINDOW)'を使う.
+
+     引数OFFSETSは, `nil'であるか, `(HSCROLL . TAB-OFFSET)'の形のコン
+     スセルである.  ここで, HSCROLLは左端に表示されていないコラム数で
+     あり, 多くの場合は`window-hscroll'を呼び出して得た値を使う.  一方,
+     TAB-OFFSETはスクリーン上でのコラム番号とバッファ内でのコラム番号
+     の差である.  この値は, 継続行においてまえのスクリーン行の幅が
+     `tab-width'で終らない場合に0以外になる.  継続しない行ではつねに0
+     である.
+
+     ウィンドウWINDOWは, 使用する表示テーブルを指定するためだけに使わ
+     れる.  WINDOWに表示されているバッファに関わらず, `compute-motion'
+     はつねにカレントバッファに作用する.
+
+     戻り値は, 5要素のリストである.
+
+          (POS VPOS HPOS PREVHPOS CONTIN)
+
+     ここで, POSは走査を終えたバッファ内位置であり, VPOSは垂直方向のス
+     クリーン位置, HPOSは水平方向のスクリーン位置である.
+
+     結果のPREVHPOSは, POSから1文字分戻った箇所の水平位置である.  この
+     文字のあとで最終行が継続しているときには, 結果のCONTINは`t'である.
+
+     たとえば, あるウィンドウのLINEスクリーン行のCOLコラムに対応するバッ
+     ファ内位置を探すには, FROMとしてウィンドウの表示開始位置, FROMPOS
+     としてウィンドウの左上隅の座標を渡します.  TOにはバッファの
+     `(point-max)'を渡して走査をバッファの参照可能部分のみに制限し,
+     TOPOSとしてLINEとCOLを渡す.  つぎのように呼び出す.
+
+          (defun coordinates-of-position (col line)
+            (car (compute-motion (window-start)
+                                 '(0 . 0)
+                                 (point-max)
+                                 (cons col line)
+                                 (window-width)
+                                 (cons (window-hscroll) 0)
+                                 (selected-window))))
+
+     ミニバッファに対して`compute-motion'を使うときには,
+     `minibuffer-prompt-width'を使って最初のスクリーン行の先頭の水平位
+     置を得る必要がある.  *Note Minibuffer Misc::.
+
+
+

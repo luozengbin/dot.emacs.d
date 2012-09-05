@@ -1,0 +1,147 @@
+.\" sd.4
+.\" Copyright 1992 Rickard E. Faith (faith@cs.unc.edu)
+.\"
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\"
+.\" Japanese Version Copyright (c) 1996,1997 ISHIKAWA Mutsumi
+.\"         all rights reserved.
+.\" Translated 1997-02-06, ISHIKAWA Mutsumi <ishikawa@linux.or.jp>
+.\" Updated 2005-11-19, Akihiro MOTOKI <amotoki@dd.iij4u.or.jp>
+.\"
+.\" WORD:	pointer		ãƒã‚ã‚ƒƒæ½Ÿ‚¿
+.\" WORD:	structure	ç½•‹é€ ç¯“
+.\" WORD:	geometry	ã‚å¾‚õ€Žƒï¼œƒˆãƒª
+.\" WORD:	sector		ã‚ç¥‰‚õ€•¦‚¿
+.\" WORD:	implement	çµŽŸèŒ–…
+.\" WORD:	raw device	ãƒõ€’ªƒè‹¥ƒ‡ãƒã‚ã‚ƒ‚¹
+.\"
+.TH SD 4 1992-12-17 "Linux" "Linux Programmer's Manual"
+.SH åå‰
+sd \- SCSI ãƒ‡ã‚ï½ƒ‚é´»‚õ€•¦ƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ãõ€”ˆŸã‚ãõ€”ˆƒ‰ãƒõ€Œ²‚ã‚ƒƒ
+.SH æ›å¾Œ¼
+.nf
+.BR "#include <linux/hdreg.h>        " "/* for HDIO_GETGEO */"
+.BR "#include <linux/fs.h>           " "/* for BLKGETSIZE and BLKRRPART */"
+.fi
+.SH èõ€’¬®š
+ã“ãõ€”ˆƒ–ãƒõ€’ªƒƒã‚õ€•¦ƒ‡ãƒã‚ã‚ƒ‚¹ (block device) ãõ€”Šå‰ãõ€•¦€ç½¨ï¼œõ€”ˆ‚ˆã†ãõ€Ž’å°±ç¶£ã‚’ãõ€‹”‚‹:
+.BI sd lp,
+ã“ãõ€”ˆ†ãï¼œ€
+.I l
+ãõ€•ª‰õ€Œ¶†ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ã‚’æ„å‘æ½Ÿ™ã‚‹æ–‡çµ–—ãÑ‚ã‚Šã€
+.I p
+ãõ€•¦ãõ€”Œ‰õ€Œ¶†ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ç­Šãõ€”ˆƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒ³ (partition) ã‚’æ„å‘æ½Ÿ™ã‚‹æ•åŒ»­—ãÑ‚ã‚‹ã€‚
+ãƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒæ½ŸƒŠãƒæ½Ÿƒãƒ¼
+.I p
+ãŒãõ€Ž„å ç¿«ˆãõ€•¦€ããõ€”ˆƒ‡ãƒã‚ã‚ƒ‚é´»ƒ•ã‚ï¼œ‚ã‚ƒƒõ€®õ€•¦ƒ‰ãƒõ€Œ²‚ã‚ƒƒ–å…õ€‹•½“ã‚’ã•ã™ã€‚
+
+SCSI ãƒ‡ã‚ï½ƒ‚é´»‚õ€•¦õ€•¦ƒï¼œ‚å¾ƒï½ƒƒè‹¥ƒŠãƒæ½Ÿƒãƒ¼ 8 ã‚’æŒãï¼œ€ç½¨ï¼œõ€”ˆ‚ˆã†ãõ€Ž’å°±ç¶£ãõ€”ˆƒžã‚ã‚ƒƒŠãƒè‹¥ƒŠãƒæ½Ÿƒãƒ¼
+ã‚’æŒãã‚ƒ€‚(16 *
+.IR drive_number ") + " partition_number ã€
+ã“ã®
+.I drive_number
+ãõ€•©¤œå‡å†´•ã‚ŒãŸç‰õ€Œ¶†ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ãõ€”Œ•õ€Ž’åž©Ñ‚ã‚Šã€
+.I partition_number
+ãõ€•©õ€Šãõ€”ˆ‚ˆã†ãõ€®õ€Ž‚‹:
+.sp
+ãƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒ³ 0 ãõ€•¦ƒ‰ãƒõ€Œ²‚ã‚ƒƒ–å…õ€‹•½“
+.br
+ãƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒ³ 1 ã€œ 4 ã¯ DOS ã® "åŸå ºœ¬ (primary)" ãƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒ³
+.br
+ãƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒ³ 5 ã€œ 8 ã¯ DOS ã® "æ‹â‰¦å® (extended)" (ãéšœŸãõ€•¦€"èŒ«–ç†
+(logical)") ãƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒæ½Ÿ€‚
+
+ç®´‹ãˆãé•€
+.I /dev/sda
+ãõ€•¦ƒï¼œ‚å¾ƒï½ƒƒè‹¥ƒŠãƒæ½Ÿƒãƒ¼ 8 ãƒžã‚ã‚ƒƒŠãƒè‹¥ƒŠãƒæ½Ÿƒãƒ¼ 0 ã‚’æŒãï¼œ€ã‚æ¿€‚é´»ƒ†ãƒ ãõ€”‹œ€åˆã® SCSI
+ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–å…õ€‹•½“ã‚’å‚ç…Ñ™ã‚‹ã€‚ãã—ãõ€ˆ˜€
+.I /dev/sdb3
+ãõ€•¦ƒï¼œ‚å¾ƒï½ƒƒè‹¥ƒŠãƒæ½Ÿƒãƒ¼ 8 ãƒžã‚ã‚ƒƒŠãƒè‹¥ƒŠãƒæ½Ÿƒãƒ¼ 19 ã‚’æŒãï¼œ€ã‚æ¿€‚é´»ƒ†ãƒ ãõ€”‰ºŒãã‚‡›õ€”ˆ®
+SCSI ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ãõ€”‰¸‰ç•õ€Ž”›õ€”ˆ® DOS "åŸå ºœ¬" ãƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒæ½Ÿ‚’å‚ç…Ñ™ã‚‹ã€‚
+
+çæ†œœõ€‹”õ€•¦€ãƒ–ãƒõ€’ªƒƒã‚õ€•¦ƒ‡ãƒã‚ã‚ƒ‚é´» ã‘ãŒæç®´›ã•ã‚Œãõ€ˆ˜„ã‚‹ã€‚ãƒõ€’ªƒè‹¥ƒç¥‰ƒ‡ãƒã‚ã‚ƒ‚¹ (raw device)
+ãõ€•¦éšœ çµŽŸèŒ–…ã•ã‚Œãõ€ˆ˜„ãõ€Ž„ã€‚
+.SH èŒ¯õ€‘˜Ž
+ç½¨ï¼œ®
+.I ioctl
+ãŒæç®´›ã•ã‚Œãõ€ˆ˜„ã‚‹:
+.TP
+.B HDIO_GETGEO
+.RS
+ç½¨ï¼œõ€”ˆ‚ˆã†ãõ€Ž“§‹é€ ç¯“ã‚’ç”õ€‹”„ã¦ BIOS ãõ€”ˆƒ‡ã‚ï½ƒ‚é´»‚õ€•¦ƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥‚’è´”ã™:
+.in +4n
+.nf
+
+struct hd_geometry {
+    unsigned char  heads;
+    unsigned char  sectors;
+    unsigned short cylinders;
+    unsigned long  start;
+};
+.fi
+.in
+
+ã“ãõ€”‹§‹é€ ç¯“ãå¾õ€”ˆƒã‚ã‚ƒƒæ½Ÿ‚å¸¥Œ
+.BR ioctl (2)
+ãå¾õ€”ˆƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€‹”—ãõ€ˆ›æ¤œã•ã‚Œã‚‹ã€‚
+
+ã“ãõ€”ˆƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€°…ãƒ£‚Œã‚‰ã‚Œãõ€ˆ¿”ã•ã‚Œã‚‹æƒ…å å®´õ€•¦€
+.I "DOS ãõ€®‚ˆãï½ƒõ€ˆœ†èŒ¹ï½ƒ•ã‚Œã‚‹ã‚ˆã†ãª"
+ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ãõ€”ˆ‚å¾‚õ€Žƒï¼œƒˆãƒõ€ŽÑ‚ã‚‹ã€‚
+ã“ãõ€”ˆ‚å¾‚õ€Žƒï¼œƒˆãƒõ€Žõ€•¦€ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ãõ€”Œ‰õ€Œ¶†çš„ãõ€Ž‚å¾‚õ€Žƒï¼œƒˆãƒª
+.I ãÑõ€•¦õ€Ž„ã€‚
+ã“ãõ€”‹ƒ…å å®´õ€•¦ƒ‰ãƒõ€Œ²‚ã‚ƒƒ–ãõ€”ˆƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒæ½Ÿƒ†ãƒè‹¥ƒ–ãƒõ€®‚’ç¯œæˆã™ã‚‹æ™‚ãõ€²”õ€‹”„ã‚‰ã‚Œã‚‹ã€
+ãéšœŸã€
+.BR fdisk (1),
+.BR efdisk (1),
+.BR lilo (1)
+ãõ€”Žõ€Œ´ˆ‡ãõ€Ž““ç¯œãõ€°¿…è€ãÑ‚ã‚‹ã€‚
+ã‚‚ã—ã€ã‚å¾‚õ€Žƒï¼œƒˆãƒõ€Žõ€”‹ƒ…å å®´Œç·‡—ã‚‰ã‚Œãõ€Ž‘ã‚Œãé•€ãã‚Œãžã‚Œãõ€”Š€ã‚……õ€‹”õ€ˆ˜õ€®‚è‹¥ƒõ€’ªŒå…ãƒ£‚Œ
+ã‚‰ã‚Œãõ€ˆ¿”ã•ã‚Œã‚‹ã€‚
+.RE
+.TP
+.B BLKGETSIZE
+ã‚ç¥‰‚õ€•¦‚å¸¥õ€”‹•é•Ñ†ï¼›ã—ãŸãƒ‡ãƒã‚ã‚ƒ‚é´»õ€”ˆ‚æ³£‚ã‚ƒ‚å†´Œè´”ã•ã‚Œã‚‹ã€‚
+.BR ioctl (2)
+ãõ€”ˆƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€•¦€
+.I long
+ãå¾õ€”ˆƒã‚ã‚ƒƒæ½Ÿ‚å¸¥Ñõ€Ž‘ã‚Œãé•õ€Ž‚‰ãõ€Ž„ã€‚
+.TP
+.B BLKRRPART
+ç¶£æ¡ˆå¥š„ãõ€®€SCSI ãƒ‡ã‚ï½ƒ‚é´»‚õ€•¦õ€”ˆƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒæ½Ÿƒ†ãƒè‹¥ƒ–ãƒõ€®õ€”Š†èŒ¯õ€’ªç²‹æ˜­ãå¸¥‚’èŒµŒã†ã€‚
+ãƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥õ€•¨¿…è€ãõ€Ž„ã€‚
+
+.BR scsi (4)
+ã®
+.BR ioctl (2)
+æ“ç¯œã‚‚åŒç½•˜ãõ€®‚æ³£ƒãƒè‹¥ƒˆã•ã‚Œã‚‹ã€‚
+.BR ioctl (2)
+ãõ€”ˆƒ‘ãƒõ€Œ²ƒï¼œƒè‹¥‚å¸¥Œç¶½…è€ãÑ€ãã‚ŒãŒ NULL ãõ€Ž‚‰ãé•€
+.BR ioctl (2)
+ãõ€•¦‚õ€‹”ƒõ€Œ²ƒ¼
+.B EINVAL
+ãÑƒã‘æ•—ã™ã‚‹ã€‚
+.SH ãƒ•ã‚ï¼œ‚ã‚ƒƒ«
+/dev/sd[a\-h]: ãƒ‰ãƒõ€Œ²‚ã‚ƒƒ–å…õ€‹•½“
+.br
+/dev/sd[a\-h][0\-8]: å€‹ã€…ãõ€”ˆƒ–ãƒõ€’ªƒƒã‚õ€•¦ƒ‘ãƒè‹¥ƒ†ã‚ï½ƒ‚æ¿€ƒÑƒ³
+.\" .SH é–âˆ«€ï½‰ …ç›®
+.\" .BR scsi (4)

@@ -1,0 +1,1917 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Completion, Next: Yes-or-No Queries, Prev: Minibuffer History, Up: Minibuffers
+
+補完
+====
+
+"補完"（completion）とは、名前の省略から始まる名前の残り部分を補充する
+機能です。ユーザー入力を正しい名前のリストと比較し、すでにユーザーが入
+力したものに名前がどの程度一致するかを決定することで補完します。たとえ
+ば、`C-x b'（`switch-to-buffer'）と打って、切り替えたいバッファ名の始め
+の数文字を打ってTAB（`minibuffer-complete'）を打つと、Emacsは可能な限り
+その名前を補充します。
+
+Emacsの標準のコマンドは、シンボル、ファイル、バッファ、プロセスの名前を
+補完できます。本節の関数を用いれば、その他の種類の名前の補完も実装でき
+ます。
+
+関数`try-completion'は補完のための基本関数です。与えられた文字列の集ま
+りから初期文字列にもっとも適合する最長のものを返します。
+
+関数`completing-read'は補完のための上位レベルのインターフェイスを提供し
+ます。`completing-read'の呼び出しには、正しい名前のリストを決定する方法
+を指定します。この関数は、補完に有用なコマンドを数個のキーにバインドし
+たローカルキーマップを使うミニバッファを活性にします。その他の関数は、
+特定の種類の名前を補完して読み取るために単純化したインターフェイスを提
+供します。
+
+* Menu:
+
+* Basic Completion::       Low-level functions for completing strings.
+                             (These are too low level to use the minibuffer.)
+* Minibuffer Completion::  Invoking the minibuffer with completion.
+* Completion Commands::    Minibuffer commands that do completion.
+* High-Level Completion::  Convenient special cases of completion
+                             (reading buffer name, file name, etc.)
+* Reading File Names::     Using completion to read file names.
+* Programmed Completion::  Finding the completions for a given file name.
+
+
+
+File: elisp-ja, Node: Basic Completion, Next: Minibuffer Completion, Prev: Completion, Up: Completion
+
+基本補完関数
+------------
+
+2つの関数`try-completion'と`all-completions'は、それ自身ではミニバッファ
+を使いません。これらについて本章で述べるのは、ミニバッファを使う上位レ
+ベルの補完機能と同列にしておくためです。
+
+ -- Function: try-completion STRING COLLECTION &optional PREDICATE
+     この関数は、COLLECTIONにあるSTRINGを補完する共通の最長な部分文字列
+     を返す。COLLECTIONの値は、連想リスト、オブジェクト配列、あるいは、
+     実質的な文字列の集まりを返す関数（下記参照）であること。
+
+     補完では、COLLECTIONで指定した各補完候補とSTRINGを比較する。補完候
+     補の先頭部分がSTRINGに等しければ、その補完候補は一致するという。一
+     致する補完候補がなければ、`try-completion'は`nil'を返す。たった1つ
+     の補完候補に一致し、かつ、完全に一致すれば、`try-completion'は`t'
+     を返す。さもなければ、一致する補完候補すべてに共通する最長の文字列
+     を値とする。
+
+     COLLECTIONが連想リスト（*Note Association Lists::）であると、連想
+     リストの要素のCAR群が補完候補の集まりになる。
+
+     COLLECTIONがオブジェクト配列（*Note Creating Symbols::）であると、
+     オブジェクト配列内のすべてのシンボルの名前が補完候補の集まりになる。
+     グローバル変数`obarray'は、インターンしたすべてのLispシンボルの名
+     前を収めたオブジェクト配列を保持する。
+
+     新たなオブジェクト配列を作成する唯一の正しい方法は、まず空で作成し
+     てから`intern'で1つ1つシンボルを追加することであることに注意。なお、
+     1つのシンボルを複数のオブジェクト配列にはインターンできない。
+
+     引数PREDICATEが`nil'以外である場合、それは1引数の関数であること。
+     その関数は一致する補完候補の検査に使われ、PREDICATEが`nil'以外を返
+     す場合にのみ一致した候補とみなす。PREDICATEに渡す引数は、（CARが文
+     字列である）連想リストのコンスセルであるか、オブジェクト配列からの
+     （シンボル名では*ない*）シンボルである。
+
+     COLLECTIONには、関数であるシンボルを使うこともできる。
+     その関数には補完処理を完遂する責任がある。
+     `try-completion'はその関数が返したものを返す。
+     その関数は3引数、つまり、
+     STRING、PREDICATE、`nil'で呼ばれる。
+     （第3引数がある理由は、
+     `all-completions'でも同じ関数を使い、
+     いずれの場合にも適切に動作できるようにするため。）
+     *Note Programmed Completion::。
+
+     以下の最初の例では、文字列`foo'は連想リストの3つのCARに一致する。
+     すべての一致は`fooba'で始まるため、これが結果になる。2番目の例では、
+     たった1つの一致があり、しかも、完全に一致するので、値は`t'である。
+
+          (try-completion
+           "foo"
+           '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4)))
+               => "fooba"
+
+          (try-completion "foo" '(("barfoo" 2) ("foo" 3)))
+               => t
+
+     つぎの例では、`forw'で始まるシンボルが多数あり、それらはすべて単語
+     `forward'で始まる。ほとんどのシンボルでは、これに`-'が続くが、すべ
+     てがそうではないので、`forward'までしか補完できない。
+
+          (try-completion "forw" obarray)
+               => "forward"
+
+     最後の例は、述語`test'の検査に通るのは3つの一致のうち2つだけである
+     （文字列`foobaz'は短すぎる）。両者は文字列`foobar'で始まる。
+
+          (defun test (s)
+            (> (length (car s)) 6))
+               => test
+          (try-completion
+           "foo"
+           '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4))
+           'test)
+               => "foobar"
+
+ -- Function: all-completions STRING COLLECTION &optional PREDICATE NOSPACE
+     この関数はSTRINGの補完すべてのリストを返す。この関数の引数は、
+     `try-completion'のものと同じである。
+
+     COLLECTIONが関数であると、
+     STRING、PREDICATE、`t'の3引数で呼ばれる。
+     `all-completions'はこの関数が返す値を返す。
+     *Note Programmed Completion::。
+
+     NOSPACEが`nil'以外であると、
+     STRINGが空白で始まらない限り、空白で始まる補完は無視する。
+
+     `try-completion'の例に示した関数`test'を用いた例を示す。
+
+          (defun test (s)
+            (> (length (car s)) 6))
+               => test
+
+          (all-completions
+           "foo"
+           '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4))
+           'test)
+               => ("foobar1" "foobar2")
+
+ -- Variable: completion-ignore-case
+     この変数の値が`nil'以外であると、Emacsは補完において大文字小文字を
+     区別しない。
+
+
+
+File: elisp-ja, Node: Minibuffer Completion, Next: Completion Commands, Prev: Basic Completion, Up: Completion
+
+補完とミニバッファ
+------------------
+
+本節ではミニバッファからの補完による読み取り用の基本インターフェイスに
+ついて述べます。
+
+ -- Function: completing-read PROMPT COLLECTION &optional PREDICATE REQUIRE-MATCH INITIAL HIST DEFAULT INHERIT-INPUT-METHOD
+     この関数は、与えられた補完でユーザーを補佐してミニバッファで文字列
+     を読み取る。文字列であるプロンプトPROMPTでミニバッファを活性にする。
+
+     実際の補完は、COLLECTIONとPREDICATEを関数`try-completion'に渡して
+     行う。これは、補完を用いるローカルキーマップでバインドされたコマン
+     ドで行われる。
+
+     REQUIRE-MATCHが`nil'であると、ミニバッファでの入力に関わらずミニバッ
+     ファから抜けるコマンドは動作する。REQUIRE-MATCHが`t'であると、ミニ
+     バッファでの入力がCOLLECTIONの1つの要素に補完できない限り、ミニバッ
+     ファから抜ける通常のコマンドは動作しない。REQUIRE-MATCHが`nil'でも
+     `t'でもないと、ミニバッファでの入力がCOLLECTIONの1つの要素に一致し
+     ない限り、ミニバッファから抜けるコマンドは動作しない。
+
+     しかし、REQUIRE-MATCHの値に関わらず、空の入力はつねに許される。そ
+     の場合、`completing-read'はDEFAULTを返す。DEFAULTの値は（`nil'でな
+     ければ）履歴コマンドを介してもユーザーが使える。
+
+     ミニバッファが空の状態でRETを打つと、ユーザーは空入力で抜けること
+     ができる。そうすると、`completing-read'は`""'を返す。これにより、
+     読み取った値に対してコマンドが使うどんなデフォルトでも指定できる。
+     REQUIRE-MATCHの値、および、COLLECTIONに空文字列が含まれるかどうか
+     に関わらず、ユーザーはこのようにしてRETで戻れる。
+
+     関数`completing-read'は`read-minibuffer'を呼び出すことで動作する。
+     REQUIRE-MATCHが`nil'であると、
+     キーマップとして`minibuffer-local-completion-map'を使い、
+     `nil'以外であると`minibuffer-local-must-match-map'を使う。
+     *Note Completion Commands::。
+
+     引数HISTは、入力を保存しミニバッファ履歴コマンドで
+     使う履歴リスト変数を指定する。
+     デフォルトは`minibuffer-history'である。
+     *Note Minibuffer History::。
+
+     INITIALが`nil'以外であると、`completing-read'はこれを入力の一部と
+     してミニバッファに挿入する。これにより、ユーザーは補完コマンドとと
+     もに入力を編集できる。ほとんどの場合、INITIALではなくDEFAULTを使う
+     ことを勧める。
+
+     引数INHERIT-INPUT-METHODが`nil'以外であると、ミニバッファに入るま
+     えのカレントバッファがなんであれ、カレントバッファから現在の入力方
+     式（*Note Input Methods::）と`enable-multibyte-characters'（*Note
+     Text Representations::）の設定を継承する。
+
+     組み込み変数`completion-ignore-case'が`nil'以外であると、
+     大文字小文字を区別せずに候補に対して入力を比較する。
+     *Note Basic Completion::。
+
+     `completing-read'を用いた例を以下に示す。
+
+          (completing-read
+           "Complete a foo: "
+           '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4))
+           nil t "fo")
+
+          ;; 上の式を評価するとミニバッファはつぎのようになる
+
+          ---------- Buffer: Minibuffer ----------
+          Complete a foo: fo-!-
+          ---------- Buffer: Minibuffer ----------
+
+     ユーザーが`DEL DEL b RET'を打つと、
+     `completing-read'は`barfoo'を返す。
+
+     関数`completing-read'は、補完を実際に行うコマンドに情報を渡すため
+     に3つの変数を束縛する。3つの変数とは、
+     `minibuffer-completion-table'、`minibuffer-completion-predicate'、
+     `minibuffer-completion-confirm'である。これらについて詳しくは、
+     *Note Completion Commands::を参照。
+
+
+
+File: elisp-ja, Node: Completion Commands, Next: High-Level Completion, Prev: Minibuffer Completion, Up: Completion
+
+補完を行うミニバッファコマンド
+------------------------------
+
+本節では、補完を行うためにミニバッファで用いられるキーマップ、コマンド、
+ユーザーオプションについて述べます。
+
+ -- Variable: minibuffer-local-completion-map
+     `completing-read'は、補完候補の1つと完全に一致しなくてもよい場合に
+     ローカルキーマップとしてこの値を使う。デフォルトでは、このキーマッ
+     プのバインディングはつぎのとおり。
+
+     `?'
+          `minibuffer-completion-help'
+
+     SPC
+          `minibuffer-complete-word'
+
+     TAB
+          `minibuffer-complete'
+
+     他の文字は`minibuffer-local-map' （*Note Text from Minibuffer::）
+     と同様にバインドされる。
+
+ -- Variable: minibuffer-local-must-match-map
+     `completing-read'は、補完候補の1つと完全に一致する必要がある場合に
+     ローカルキーマップとしてこの値を使う。そのため、ミニバッファから無
+     条件に抜けるコマンド`exit-minibuffer'にバインドしたキーはない。デ
+     フォルトでは、このキーマップのバインディングはつぎのとおり。
+
+     `?'
+          `minibuffer-completion-help'
+
+     SPC
+          `minibuffer-complete-word'
+
+     TAB
+          `minibuffer-complete'
+
+     `C-j'
+          `minibuffer-complete-and-exit'
+
+     RET
+          `minibuffer-complete-and-exit'
+
+     他の文字は`minibuffer-local-map'と同様にバインドされる。
+
+ -- Variable: minibuffer-completion-table
+     この変数の値は、ミニバッファでの補完に用いられる連想リストやオブジェ
+     クト配列である。これは、`completing-read'が`try-completion'に渡す
+     ものを保持したグローバル変数である。`minibuffer-complete-word'など
+     のミニバッファ補完コマンドで使用される。
+
+ -- Variable: minibuffer-completion-predicate
+     この変数の値は、`completing-read'が`try-completion'へ渡す述語であ
+     る。この変数は、他のミニバッファ補完関数でも使われる。
+
+ -- コマンド: minibuffer-complete-word
+     この関数は、ミニバッファの内容を多くても1単語分補完する。
+     ミニバッファの内容に対応する補完がたった1つであっても、
+     単語構成文字ではない文字以降は補充しない。
+     *Note Syntax Tables::。
+
+ -- コマンド: minibuffer-complete
+     この関数は、ミニバッファの内容を可能な限り補完する。
+
+ -- コマンド: minibuffer-complete-and-exit
+     この関数は、確認が必要でないとき、つまり、
+     `minibuffer-completion-confirm'が`nil'であるときには、ミニバッファ
+     の内容を補完後に抜ける。確認が必要*である*ときには、このコマンドを
+     ただちに繰り返すことで確認をとる。このコマンドは、連続して2回呼ば
+     れると、確認しないようにプログラムしてある。
+
+ -- Variable: minibuffer-completion-confirm
+     この変数の値が`nil'以外の場合、Emacsはミニバッファから抜けるまえに
+     補完を確認してくる。関数`minibuffer-complete-and-exit'は、抜けるま
+     えにこの変数の値を検査する。
+
+ -- コマンド: minibuffer-completion-help
+     この関数は、ミニバッファの現在の内容に対する補完のリストを作る。引
+     数COLLECTIONとして変数`minibuffer-completion-table'の値を、引数
+     PREDICATEとして`minibuffer-completion-predicate'の値を用いて
+     `all-completions'を呼び出すことで動作する。補完のリストは、
+     `*Completions*'という名前のバッファにテキストとして表示される。
+
+ -- Function: display-completion-list COMPLETIONS
+     この関数は、通常はバッファであるストリーム`standard-output'に
+     COMPLETIONSを表示する。（ストリームについては詳しくは*Note Read
+     and Print::。）引数COMPLETIONSは、普通は、`all-completions'が返し
+     た補完のリストであるが、そうでなくてもよい。各要素は、シンボルか文
+     字列であり、その場合、そのまま表示される。各要素が2つの文字列から
+     成るリストである場合、文字列を連結したものを表示する。
+
+     この関数は、`minibuffer-completion-help'から呼ばれる。以下のように、
+     `with-output-to-temp-buffer'とともに用いるのがもっとも一般的である。
+
+          (with-output-to-temp-buffer "*Completions*"
+            (display-completion-list
+              (all-completions (buffer-string) my-alist)))
+
+ -- User Option: completion-auto-help
+     この変数が`nil'以外であると、つぎの補充文字が一意に決まらない場合
+     には、自動的に補完のリストを表示する。
+
+
+
+File: elisp-ja, Node: High-Level Completion, Next: Reading File Names, Prev: Completion Commands, Up: Completion
+
+高レベルの補完関数
+------------------
+
+本節では、特定の種類の名前を補完付きで読み取るための高レベルの便利な関
+数について述べます。
+
+多くの場合、これらの関数をLisp関数の途中では呼び出さないでください。
+可能な場合には、`interactive'の指定で、
+コマンドの引数を読み取る操作の一部としてすべてのミニバッファ入力を
+行ってください。
+*Note Defining Commands::。
+
+ -- Function: read-buffer PROMPT &optional DEFAULT EXISTING
+     この関数はバッファ名を読み取り、文字列として返す。引数DEFAULTはデ
+     フォルトの名前を表し、ユーザーがミニバッファから空で抜け出したとき
+     に返される値である。`nil'以外であるときには、文字列かバッファであ
+     ること。これはプロンプトとして現れるが、ミニバッファには初期入力と
+     して挿入されない。
+
+     EXISTINGが`nil'以外であると、指定した名前は既存のバッファ名である
+     こと。テキストが正しくないとミニバッファから抜ける通常のコマンドは
+     動作せず、RETは正しい名前を探すため補完を行う。（しかし、DEFAULTが
+     正しいかどうかは検査しない。ユーザーがミニバッファを空で抜ければ、
+     なんであろうとDEFAULTが返される。）
+
+     以下の例では、ユーザーは`minibuffer.t'と入力してからRETを打つ。引
+     数EXISTINGは`t'であり、入力した名前で始まる唯一のバッファ名は
+     `minibuffer.texi'であるので、この名前が値になる。
+
+          (read-buffer "Buffer name? " "foo" t)
+          ;; 上の式を評価すると、ミニバッファは空で
+          ;; つぎのようなプロンプトが表示される
+
+          ---------- Buffer: Minibuffer ----------
+          Buffer name? (default foo) -!-
+          ---------- Buffer: Minibuffer ----------
+
+          ;; ユーザーはminibuffer.t RETと打つ
+               => "minibuffer.texi"
+
+ -- Variable: read-buffer-function
+     この変数は、バッファ名の読み取り方を指定する。たとえば、この変数に
+     `iswitchb-read-buffer'を設定すると、バッファ名を読み取るために
+     `read-buffer'を呼び出すすべてのEmacsコマンドは、バッファ名を読むた
+     めにパッケージ`iswitchb'を使うようになる。
+
+ -- Function: read-command PROMPT &optional DEFAULT
+     この関数はコマンド名を読み取り、Lispシンボルとして返す。
+     引数PROMPTは、`read-from-minibuffer'と同様に使われる。
+     なんであっても`commandp'が`t'を返せばコマンドであり、
+     `commandp'が`t'を返すシンボルはコマンド名であることに注意。
+     *Note Interactive Call::。
+
+     引数DEFAULTは、ユーザー入力が空だった場合に返したい値を指定する。
+     これは、シンボルか文字列であること。文字列であると、
+     `read-command'は、これを返すまえにインターンする。DEFAULTが`nil'で
+     あると、デフォルトを指定しないことを意味し、ユーザー入力が空である
+     と戻り値は`nil'である。
+
+          (read-command "Command name? ")
+
+          ;; 上の式を評価後には、ミニバッファは空で
+          ;; つぎのようなプロンプトが表示される
+
+          ---------- Buffer: Minibuffer ----------
+          Command name?
+          ---------- Buffer: Minibuffer ----------
+
+     ユーザーが`forward-c RET'と打つと、この関数は`forward-char'を返す。
+
+     関数`read-command'は`completing-read'のインターフェイスを単純化し
+     たものである。既存のLispシンボルの集まりから補完するために変数
+     `obarray'を使い、コマンド名のみを対象とするために述語`commandp'を
+     使う。
+
+          (read-command PROMPT)
+          ==
+          (intern (completing-read PROMPT obarray
+                                   'commandp t nil))
+
+ -- Function: read-variable PROMPT &optional DEFAULT
+     この関数はユーザー変数の名前を読み取り、シンボルとして返す。
+
+     引数DEFAULTは、ユーザー入力が空だった場合に返したい値を指定する。
+     これは、シンボルか文字列であること。文字列であると、
+     `read-variable'は、これを返すまえにインターンする。DEFAULTが`nil'
+     であると、デフォルトを指定しないことを意味し、ユーザー入力が空であ
+     ると戻り値は`nil'である。
+
+          (read-variable "Variable name? ")
+
+          ;; 上の式を評価後には、ミニバッファは空で
+          ;; つぎのようなプロンプトが表示される
+
+          ---------- Buffer: Minibuffer ----------
+          Variable name? -!-
+          ---------- Buffer: Minibuffer ----------
+
+     ユーザーが`fill-p RET'と打つと、
+     `read-variable'は`fill-prefix'を返す。
+
+     この関数は`read-command'に似ているが、
+     `commandp'のかわりに述語`user-variable-p'を使う。
+
+          (read-variable PROMPT)
+          ==
+          (intern
+           (completing-read PROMPT obarray
+                            'user-variable-p t nil))
+
+*Note User-Chosen Coding Systems::の関数`read-coding-system'や
+`read-non-nil-coding-system'も参照してください。
+
+
+
+File: elisp-ja, Node: Reading File Names, Next: Programmed Completion, Prev: High-Level Completion, Up: Completion
+
+ファイル名の読み取り
+--------------------
+
+ここでは、ファイル名を読み取るように設計された高レベルの別の補完関数に
+ついて述べます。デフォルトディレクトリの自動挿入などの特別な機能を提供
+します。
+
+ -- Function: read-file-name PROMPT &optional DIRECTORY DEFAULT EXISTING INITIAL
+     この関数は、PROMPTをプロンプトとし、補完を行ってミニバッファでファ
+     イル名を読み取る。DEFAULTが`nil'以外であると、ユーザーが単にRETを
+     打つと、この関数はDEFAULTを返す。DEFAULTが正しいかどうかは検査せず、
+     それがなんであれ、ユーザーがミニバッファを空で抜けるとそれを返す。
+
+     EXISTINGが`nil'以外であると、ユーザーは既存ファイルの名前を指定す
+     る必要がある。RETは、可能ならば正しい名前に補完を行うが、それが正
+     しくない場合には抜けない。EXISTINGの値が`nil'でも`t'でもないと、
+     RETは補完後の確認を必要とする。EXISTINGが`nil'であると、存在しない
+     ファイルの名前も許す。
+
+     引数DIRECTORYは、相対ファイル名の補完に用いるディレクトリを指定す
+     る。`insert-default-directory'が`nil'以外であると、初期入力として
+     DIRECTORYをミニバッファに挿入する。カレントバッファの
+     `default-directory'の値がデフォルトになる。
+
+     INITIALを指定すると、（DIRECTORYがあればそれを挿入後に）バッファに
+     挿入される初期ファイル名になる。この場合、ポイントはINITIALの先頭
+     に置かれる。INITIALのデフォルトは`nil'であり、いかなるファイル名も
+     挿入しない。INITIALの動作を見るには、コマンド`C-x C-v'を試してほし
+     い。*注意：*` ' ほとんどの場合、INITIALではなくDEFAULTを使うことを
+     勧める。
+
+     例を示す。
+
+          (read-file-name "The file is ")
+
+          ;; 上の式を評価後には、ミニバッファはつぎのようになる
+
+          ---------- Buffer: Minibuffer ----------
+          The file is /gp/gnu/elisp/-!-
+          ---------- Buffer: Minibuffer ----------
+
+     `manual TAB'を打つと、つぎのようになる。
+
+          ---------- Buffer: Minibuffer ----------
+          The file is /gp/gnu/elisp/manual.texi-!-
+          ---------- Buffer: Minibuffer ----------
+
+     ユーザーがRETと打つと、`read-file-name'はファイル名を文字列
+     `"/gp/gnu/elisp/manual.texi"'として返す。
+
+ -- User Option: insert-default-directory
+     この変数は`read-file-name'が使う。その値は、`read-file-name'が、デ
+     フォルトディレクトリの名前と（あれば）初期ファイル名をミニバッファ
+     に入れて動作を開始するかどうかを制御する。この変数の値が`nil'であ
+     ると、`read-file-name'は（引数INITIALで初期入力を指定しない限り）
+     ミニバッファに初期入力を入れない。その場合でも、相対ファイル名の補
+     完にはデフォルトディレクトリを使うが表示はしない。
+
+     例を示す。
+
+          ;; デフォルトディレクトリを入れて始める
+          (let ((insert-default-directory t))
+            (read-file-name "The file is "))
+
+          ---------- Buffer: Minibuffer ----------
+          The file is ~lewis/manual/-!-
+          ---------- Buffer: Minibuffer ----------
+
+          ;; ミニバッファは空であり、プロンプトのみ
+          (let ((insert-default-directory nil))
+            (read-file-name "The file is "))
+
+          ---------- Buffer: Minibuffer ----------
+          The file is -!-
+          ---------- Buffer: Minibuffer ----------
+
+
+
+File: elisp-ja, Node: Programmed Completion, Prev: Reading File Names, Up: Completion
+
+プログラム補完
+--------------
+
+意図した補完候補を持った連想リストやオブジェクト配列を作成することが困
+難な場合もあります。そのような場合、与えられた文字列に対する補完を計算
+する独自の関数を与えることができます。これを"プログラム補完
+（programmed completion）と呼びます。
+
+この機能を使うには、`completing-read'の引数COLLECTIONに関数定義を持つシ
+ンボルを渡します。関数`completing-read'は、`try-completion'や
+`all-completions'に読者の補完関数を渡すようにして、読者の関数にすべてを
+任せます。
+
+補完関数はつぎの3つの引数を受け取ります。
+
+   * 補完すべき文字列。
+
+   * 補完候補を選別する述語関数、あるいは、選別しないのならば`nil'。
+     読者の関数では、各補完候補についてこの述語を呼び出し、
+     `nil'が返されたら当該候補を無視する。
+
+   * 操作の型を示すフラグ。
+
+3つの操作型に対応してフラグの値は3つあります。
+
+   * `nil'は`try-completion'を指定する。補完関数は、指定された文字列の
+     補完を返すこと。あるいは、文字列が一意に完全に一致する場合には`t'
+     を返し、文字列の補完がまったくなければ`nil'を返す。
+
+     文字列が一意に完全に一致する場合であっても、より長い候補に一致する
+     場合には、この関数は`t'ではなく文字列を返すこと。
+
+   * `t'は`all-completions'を指定する。補完関数は、指定された文字列に対
+     する補完のリストを返すこと。
+
+   * `lambda'は、完全な一致を指定する。補完関数は、指定された文字列が候
+     補に完全に一致する場合には`t'を返し、さもなければ`nil'を返すこと。
+
+補完関数COLLECTIONには関数シンボルに加えて、ラムダ式（関数であるリスト）
+も許すほうが一貫性があって見通しがよいはずですが、それは不可能です。リ
+ストには補完候補表としての意味がすでにあり、連想リストがそれです。関数
+としての可能性もある通常の連想リストの扱いに失敗するようでは、信頼性が
+なくなります。そのため、読者が補完に使用したい関数は、シンボルに入れて
+おく必要があるのです。
+
+Emacsは、ファイル名の補完にはプログラム補完を用います。
+*Note File Name Completion::。
+
+
+
+File: elisp-ja, Node: Yes-or-No Queries, Next: Multiple Queries, Prev: Completion, Up: Minibuffers
+
+Yes/Noの問い合わせ
+==================
+
+本節ではユーザーにyes/noを問い合わせるための関数について述べます。関数
+`y-or-n-p'には、1文字で答えます。誤った答えでも重大な問題に至らないよう
+な問い合わせに便利です。`yes-or-no-p'には3文字か4文字で答える必要がある
+ため、より重要な問い合わせに適しています。
+
+これらの関数がマウスを使って起動されたコマンドから呼ばれると、より正確
+には、`last-nonmenu-event'（*Note Command Loop Info::）が`nil'かリスト
+であると、関数は問い合わせのための対話ボックスやポップアップメニューを
+使います。さもなければ、キーボード入力を使います。呼び出しにおいて
+`last-nonmenu-event'に適切な値を束縛することでマウスかキーボード入力の
+使用を強制できます。
+
+厳密にいえば、`yes-or-no-p'はミニバッファを使いますが、`y-or-n-p'は使い
+ません。ですが、両者をここで説明しておきます。
+
+ -- Function: y-or-n-p PROMPT
+     この関数はユーザーに問い合わせ、エコー領域で入力を待ちます。ユーザー
+     が`y'を打てば`t'を返し、`n'を打てば`nil'を返します。さらに、SPCを
+     「y」、DELを「n」ともみなします。`C-]'を`C-g'のように『中断』とも
+     みなします。というのは、問い合わせはミニバッファを使っているように
+     みえるので、これから抜けるためにユーザーが`C-]'を使いそうだからで
+     ある。応答は1文字であり、RETで終える必要はない。大文字と小文字は同
+     じ意味である。
+
+     『問い合わせ』では、エコー領域にPROMPTを表示し、
+     文字列`(y or n) 'が続きます。
+     入力が正しい応答（`y'、`n'、`SPC'、
+     `DEL'、中断など）でないと、
+     関数は`Please answer y or n.'を表示して
+     問い合わせるを繰り返す。
+
+     応答は編集できないので、この関数は実際にはミニバッファを使わない。
+     ミニバッファが使うのと同じ画面領域を使うエコー領域（*Note The
+     Echo Area::）を実際には使う。問い合わせ中は、カーソルはエコー領域
+     に移動する。
+
+     応答とその意味は、
+     たとえ`y'や`n'であっても組み込まれているわけではない。
+     キーマップ`query-replace-map'がそれらを指定する。
+     *Note Search and Replace::。
+
+     以下の例では、ユーザーはまず`q'を打つが、これは正しくない。つぎの
+     プロンプトに対して、ユーザーは`y'を打つ。
+
+          (y-or-n-p "Do you need a lift? ")
+
+          ;; 上の式を評価後には、エコー領域には
+          ;; つぎのプロンプトが表示される
+
+          ---------- Echo area ----------
+          Do you need a lift? (y or n)
+          ---------- Echo area ----------
+
+          ;; ユーザーがqを打つと、つぎのようになる
+
+          ---------- Echo area ----------
+          Please answer y or n.  Do you need a lift? (y or n)
+          ---------- Echo area ----------
+
+          ;; ユーザーが正しい応答を打つと
+          ;; 問い合わせのうしろに表示される
+
+          ---------- Echo area ----------
+          Do you need a lift? (y or n) y
+          ---------- Echo area ----------
+
+     ここでは、エコー領域のメッセージを複数行示したが、実際には、1度に
+     1つのメッセージだけが表示される。
+
+ -- Function: y-or-n-p-with-timeout PROMPT SECONDS DEFAULT-VALUE
+     `y-or-n-p'と同様だが、ユーザーがSECONDS秒以内に答えないと、入力を
+     待たずにDEFAULT-VALUEを返す。これにはタイマを使う。*Note Timers::
+     を参照。引数SECONDSは整数でも浮動小数点でもよい。
+
+ -- Function: yes-or-no-p PROMPT
+     この関数はユーザーに問い合わせ、ミニバッファでの入力を仮定する。ユー
+     ザーが`yes'を入力すると`t'を返し、`no'を入力すると`nil'を返す。応
+     答を終えるためにユーザーはRETを打つ必要がある。大文字と小文字は同
+     じ意味である。
+
+     `yes-or-no-p'は、まず、PROMPTに続けて
+     `(yes or no) 'をエコー領域に表示する。
+     ユーザーは正しい応答の1つを入力する必要がある。
+     さもないと、この関数は`Please answer yes or no.'を2秒ほど
+     表示してから問い合わせを繰り返す。
+
+     `yes-or-no-p'は`y-or-n-p'よりもユーザーの手間を必要とし、より重要
+     な決定に適している。
+
+     例を示す。
+
+          (yes-or-no-p "Do you really want to remove everything? ")
+
+          ;; 上の式を評価後には、つぎのプロンプトが
+          ;; 空のミニバッファとともに表示される
+
+          ---------- Buffer: minibuffer ----------
+          Do you really want to remove everything? (yes or no)
+          ---------- Buffer: minibuffer ----------
+
+     ユーザーは、まず`y RET'を打つが、この関数は完全な単語`yes'を要求す
+     るので正しくない。以下のプロンプトを少し時間をおいて表示する。
+
+          ---------- Buffer: minibuffer ----------
+          Please answer yes or no.
+          Do you really want to remove everything? (yes or no)
+          ---------- Buffer: minibuffer ----------
+
+
+
+File: elisp-ja, Node: Multiple Queries, Next: Reading a Password, Prev: Yes-or-No Queries, Up: Minibuffers
+
+複数のY/Nの問い合わせ
+=====================
+
+各バッファについて『バッファを保存するか』などの
+一連の単純な問い合わせをする場合には、
+個々に問い合わせるかわりに
+`map-y-or-n-p'を用いてまとめて問い合わせるべきです。
+
+ -- Function: map-y-or-n-p PROMPTER ACTOR LIST &optional HELP ACTION-ALIST
+     この関数は、各問について1文字の応答をエコー領域から読み取ることで、
+     ユーザーに一連の問い合わせを行う。
+
+     LISTの値は、問い合わせ対象のオブジェクトを指定する。オブジェクトの
+     リストであるか、生成関数であること。関数である場合、それは引数なし
+     で呼ばれ、つぎの問い合わせ対象のオブジェクトを返すか、問い合わせの
+     終了を意味する`nil'を返す。
+
+     引数PROMPTERは、各問い合わせをどのように問うかを指定する。
+     PROMPTERが文字列であると、問い合わせ文はつぎのように計算される。
+
+          (format PROMPTER OBJECT)
+
+     ここで、OBJECTは（LISTから得た）問い合わせ対象のオブジェクトである。
+
+     文字列でなければ、PROMPTERは
+     1引数（問い合わせ対象のオブジェクト）の関数であり、
+     問い合わせ文を返す。
+     値が文字列であれば、それがユーザーへの問い合わせ文になる。
+     関数は、（ユーザーに問い合わせずに）
+     当該オブジェクトを処理することを意味する`t'か、
+     （ユーザーに問い合わせずに）当該オブジェクトを無視することを意味する
+     `nil'を返してもよい。
+
+     引数ACTORは、ユーザーの応答に対してどのように動作するかを指定する。
+     これは1引数の関数であり、ユーザーが「はい」と答えたオブジェクトで
+     呼ばれる。引数は、つねにLISTから得たオブジェクトである。
+
+     引数HELPを指定する場合、つぎの形のリストであること。
+
+          (SINGULAR PLURAL ACTION)
+
+     ここで、
+     SINGULARは操作対象のオブジェクトを
+     記述する単数形の名詞を含んだ文字列であり、
+     PLURALは対応する複数形の名詞であり、
+     ACTIONは動作を記述する他動詞であること。
+
+     HELPを指定しないと、デフォルトは
+     `("object" "objects" "act on")'である。
+
+     各問い合わせでは、ユーザーは当該対象オブジェクトに対する操作に
+     `y'、`Y'、`SPC'で答える。
+     `n'、`N'、DELは、そのオブジェクトを無視する。
+     `!'はそのオブジェクトを含めて後続のものも処理する。
+     ESCや`q'は（後続のオブジェクトをすべて無視して）抜ける。
+     `.'（ピリオド）は現在の対象オブジェクトを処理してから抜ける。
+     `C-h'はヘルプメッセージを表示する。
+     これらは、`query-replace'が受け付ける応答と同じである。
+     キーマップ`query-replace-map'が、
+     `query-replace'と同様に
+     `map-y-or-n-p'に対する（応答の）意味を定義する。
+     *Note Search and Replace::を参照。
+
+     ACTION-ALISTを使って、
+     可能な応答とそれらの意味を追加指定することもできる。
+     これは、`(CHAR FUNCTION HELP)'の形の要素から成る
+     連想リストであり、それぞれが1つの追加応答を定義する。
+     この要素の中で、
+     CHARは（応答である）1つの文字、
+     FUNCTIONは1引数（LISTからのオブジェクト）の関数、
+     HELPは文字列である。
+
+     ユーザーがCHARで答えると、
+     `map-y-or-n-p'はFUNCTIONを呼び出す。
+     これが`nil'以外を返せば、当該オブジェクトを『処理』したとみなして、
+     `map-y-or-n-p'はLISTのつぎのオブジェクトに移る。
+     `nil'であると、同じオブジェクトについてプロンプトを繰り返す。
+
+     `map-y-or-n-p'がマウスを使って起動されたコマンドから呼ばれると、よ
+     り正確には、`last-nonmenu-event'（*Note Command Loop Info::）が、
+     `nil'かリストであると、関数は問い合わせのための対話ボックスやポッ
+     プアップメニューを使う。その場合、キーボード入力やエコー領域は使わ
+     ない。呼び出しにおいて`last-nonmenu-event'に適切な値を束縛すること
+     でマウスかキーボード入力の使用を強制できる。
+
+     `map-y-or-n-p'の戻り値は、処理したオブジェクトの個数である。
+
+
+
+File: elisp-ja, Node: Reading a Password, Next: Minibuffer Misc, Prev: Multiple Queries, Up: Minibuffers
+
+パスワードの読み取り
+====================
+
+別のプログラムへ渡すパスワードを読み取るには、関数`read-passwd'を使いま
+す。
+
+ -- Function: read-passwd PROMPT &optional CONFIRM DEFAULT
+     この関数は、プロンプトPROMPTを表示してパスワードを読み取る。ユーザー
+     が入力するパスワードは表示せず、そのかわりにパスワードの各文字ごと
+     に`.'を表示する。
+
+     省略可能な引数CONFIRMが`nil'以外であると、パスワードを2回読み取り、
+     両者が同一である必要がある。同一でないと、連続して2回同じパスワー
+     ドを打つまでユーザーは何度でも繰り返す必要がある。
+
+     省略可能な引数DEFAULTは、ユーザーが空のパスワードを
+     入力したときに返すデフォルトのパスワードを指定する。
+     DEFAULTが`nil'であると、
+     `read-passwd'はそのような場面では空文字列を返す。
+
+
+
+File: elisp-ja, Node: Minibuffer Misc, Prev: Reading a Password, Up: Minibuffers
+
+ミニバッファに関するその他
+==========================
+
+本節では、ミニバッファに関係する他の基本関数や変数について述べます。
+
+ -- コマンド: exit-minibuffer
+     このコマンドは活性なミニバッファから抜ける。通常、ミニバッファのロー
+     カルキーマップでキーにバインドされる。
+
+ -- コマンド: self-insert-and-exit
+     このコマンドは（*Note Command Loop Info::の`last-command-char'にあ
+     る）最新のキーボード入力文字を活性なミニバッファに挿入してから抜け
+     る。
+
+ -- コマンド: previous-history-element N
+     このコマンドは、ミニバッファの内容を
+     N番目まえの（古い）履歴要素の値で置き換える。
+
+ -- コマンド: next-history-element N
+     このコマンドは、ミニバッファの内容を
+     N番目先のより新しい履歴要素の値で置き換える。
+
+ -- コマンド: previous-matching-history-element PATTERN
+     このコマンドは、ミニバッファの内容を
+     PATTERN（正規表現）に一致するまえの（古い）履歴要素の値で置き換える。
+
+ -- コマンド: next-matching-history-element PATTERN
+     このコマンドは、ミニバッファの内容を
+     PATTERN（正規表現）に一致するつぎの（新しい）履歴要素の値で置き換える。
+
+ -- Function: minibuffer-prompt
+     この関数は、現在活性なミニバッファのプロンプト文字列を返す。活性な
+     ミニバッファがなければ`nil'を返す。
+
+ -- Function: minibuffer-prompt-width
+     この関数は、現在活性なミニバッファのプロンプト文字列の表示幅を返す。
+     活性なミニバッファがなければ0を返す。
+
+ -- Variable: minibuffer-setup-hook
+     ミニバッファに入るたびに実行されるノーマルフック。
+     *Note Hooks::。
+
+ -- Variable: minibuffer-exit-hook
+     ミニバッファから抜けるたびに実行されるノーマルフック。
+     *Note Hooks::。
+
+ -- Variable: minibuffer-help-form
+     この変数の現在値は、ミニバッファの内側で`help-form'のローカルな束
+     縛に使われる。（*Note Help Functions::）。
+
+ -- Function: active-minibuffer-window
+     この関数は、現在活性なミニバッファのウィンドウを返す。あるいは、活
+     性なミニバッファがなければ`nil'を返す。
+
+ -- Function: minibuffer-window &optional FRAME
+     この関数は、フレームFRAMEで使われるミニバッファ用ウィンドウを返す。
+     FRAMEが`nil'であると、カレントフレームを意味する。フレームで使うミ
+     ニバッファ用ウィンドウは、そのフレームの一部である必要はない。ミニ
+     バッファを持たないフレームでは、他のフレームのミニバッファ用ウィン
+     ドウを使う。
+
+ -- Function: window-minibuffer-p WINDOW
+     この関数は、WINDOWがミニバッファ用ウィンドウであると
+     `nil'以外を返す。
+
+与えられたウィンドウがミニバッファ用であるかどうかを調べるために、
+`(minibuffer-window)'の戻り値と比較するのは正しくありません。というのは、
+フレームが複数個あると複数のミニバッファ用ウィンドウがあるからです。
+
+ -- Function: minibuffer-window-active-p WINDOW
+     この関数は、ミニバッファ用ウィンドウWINDOWが活性であると
+     `nil'以外を返す。
+
+ -- Variable: minibuffer-scroll-window
+     この変数の値が`nil'以外であると、
+     値はウィンドウオブジェクトであること。
+     ミニバッファで関数`scroll-other-window'が呼ばれると、
+     `scroll-other-window'はこのウィンドウをスクロールする。
+
+最後に、再帰ミニバッファ（*Note Recursive Editing::）を扱う関数と変数に
+ついて述べます。
+
+ -- Function: minibuffer-depth
+     この関数は、活性なミニバッファの現在の深さを非負整数で返す。活性な
+     ミニバッファがなければ0を返す。
+
+ -- User Option: enable-recursive-minibuffers
+     この変数が`nil'以外であると、ミニバッファ用ウィンドウが活性であっ
+     ても、（`find-file'などの）ミニバッファを使うコマンドを起動できる。
+     そのような起動では、新たなミニバッファに対する再帰編集レベルが作ら
+     れる。内側の（深い）ミニバッファを編集中には、外側の（浅い）レベル
+     のミニバッファは見えない。
+
+     この変数が`nil'であると、ミニバッファ用ウィンドウが活性なときには、
+     別のウィンドウに切り替えたとしてもミニバッファコマンドは使えない。
+
+コマンド名に`nil'以外の属性`enable-recursive-minibuffers'があると、当該
+コマンドをミニバッファから起動したときでさえ、当該コマンドはミニバッファ
+を使って引数を読み取れます。ミニバッファコマンド
+`next-matching-history-element' （ミニバッファでは通常`M-s'）は、この機
+能を使っています。
+
+
+File: elisp-ja, Node: Command Loop, Next: Keymaps, Prev: Minibuffers, Up: Top
+
+コマンドループ
+**************
+
+読者がEmacsを起動すると、Emacsはほぼただちに"エディタコマンドループ"
+（editor command loop）に入ります。このループは、キー列を読み取り、それ
+らの定義を実行し、結果を表示します。本章では、これがどのように行われる
+のか、および、Lispプログラムからこれを行うためのサブルーティンについて
+述べます。
+
+* Menu:
+
+* Command Overview::    How the command loop reads commands.
+* Defining Commands::   Specifying how a function should read arguments.
+* Interactive Call::    Calling a command, so that it will read arguments.
+* Command Loop Info::   Variables set by the command loop for you to examine.
+* Input Events::	What input looks like when you read it.
+* Reading Input::       How to read input events from the keyboard or mouse.
+* Special Events::      Events processed immediately and individually.
+* Waiting::             Waiting for user input or elapsed time.
+* Quitting::            How `C-g' works.  How to catch or defer quitting.
+* Prefix Command Arguments::    How the commands to set prefix args work.
+* Recursive Editing::   Entering a recursive edit,
+                          and why you usually shouldn't.
+* Disabling Commands::  How the command loop handles disabled commands.
+* Command History::     How the command history is set up, and how accessed.
+* Keyboard Macros::     How keyboard macros are implemented.
+
+
+
+File: elisp-ja, Node: Command Overview, Next: Defining Commands, Prev: Command Loop, Up: Command Loop
+
+コマンドループの概要
+====================
+
+コマンドループがまず始めに行うことはキー列、つまり、コマンドへ変換され
+るイベント列を読むことです。これには関数`read-key-sequence'を呼び出しま
+す。読者のLispコードでもこの関数を呼び出せます（*Note Key Sequence
+Input::）。Lispプログラムでは、`read-event'（*Note Reading One Event::）
+で低レベルの入力を行ったり、`discard-input'（*Note Event Input Misc::）
+で処理待ち中の入力を破棄できます。
+
+キー列は現在活性なキーマップを介してコマンドに変換されます。この処理方
+法については*Note Key Lookup::。この結果は、キーボードマクロであるか、
+対話的に呼び出し可能な関数であるはずです。キーが`M-x'であると、別のコマ
+ンドの名前を読み取り、そのコマンドを呼び出します。これはコマンド
+`execute-extended-command'（*Note Interactive Call::）で処理されます。
+
+コマンドを実行するには、まず、その引数を読む必要があります。これは、
+`command-execute'（*Note Interactive Call::）を呼び出して行います。
+Lispで書かれたコマンドでは、`interactive'指定が引数の読み方を指示します。
+前置引数（*Note Prefix Command Arguments::）を使ったり、プロンプトを表
+示してミニバッファ（*Note Minibuffers::）から読みます。たとえば、コマン
+ド`find-file'には、ミニバッファからファイル名を読むことを指示した
+`interactive'指定があります。コマンドの関数本体ではミニバッファを使いま
+せん。このコマンドをLispコードから関数として呼び出す場合、通常のLisp関
+数の引数としてファイル名文字列を指定する必要があります。
+
+コマンドが文字列やベクトル（つまり、キーボードマクロ）である場合、
+`execute-kbd-macro'を用いてそれらを実行します。読者自身がこの関数を呼び
+出してもかまいません（*Note Keyboard Macros::）。
+
+動作中のコマンドの実行を止めるには、`C-g'を打ちます。この文字は"中断
+（quitting）を引き起こします（*Note Quitting::）。
+
+ -- Variable: pre-command-hook
+     エディタコマンドループは、各コマンドのまえにこのノーマルフックを実行する。
+     その際、`this-command'にはこれから実行するコマンドが保持され、
+     `last-command'には直前のコマンドがある。
+     *Note Hooks::。
+
+ -- Variable: post-command-hook
+     エディタコマンドループは、
+     （中断やエラーのために完了しなかったコマンドを含めて）
+     各コマンドのあとにこのノーマルフックを実行する。
+     初めてコマンドループに入ったときにも実行する。
+     その際、`this-command'には実行し終えたばかりのコマンドがあり、
+     `last-command'にはその前のコマンドがある。
+     *Note Hooks::。
+
+`pre-command-hook'や`post-command-hook'の実行中は、中断を禁止します。こ
+れらのフックの1つを実行中にエラーが起きると、エラーの無限ループを防ぐた
+めに、フックの実行を終了しフック変数を`nil'にします。
+
+
+
+File: elisp-ja, Node: Defining Commands, Next: Interactive Call, Prev: Command Overview, Up: Command Loop
+
+コマンドの定義
+==============
+
+Lisp関数の本体に、スペシャルフォーム`interactive'を呼び出すフォームがトッ
+プレベルにあると、Lisp関数はコマンドになります。このフォームは実際に呼
+び出されてもなにもしませんが、このフォームがあることで、対話的に呼び出
+せることを表します。その引数が、対話的呼び出しにおける引数の読み方を制
+御します。
+
+* Menu:
+
+* Using Interactive::     General rules for `interactive'.
+* Interactive Codes::     The standard letter-codes for reading arguments
+                             in various ways.
+* Interactive Examples::  Examples of how to read interactive arguments.
+
+
+
+File: elisp-ja, Node: Using Interactive, Prev: Defining Commands, Up: Defining Commands
+
+`interactive'の使い方
+---------------------
+
+本節では、Lisp関数を対話的に呼び出し可能なコマンドにするフォーム
+`interactive'の書き方について述べます。
+
+ -- Special form: interactive ARG-DESCRIPTOR
+     このスペシャルフォームは、これを含む関数がコマンドであり、（`M-x'
+     や当該関数にバインドしたキー列を入力することで）対話的に呼び出せる
+     ことを宣言する。引数ARG-DESCRIPTORは、コマンドを対話的に呼び出した
+     ときにコマンドに対する引数の計算方法を宣言する。
+
+     他の関数と同様に、コマンドはLispプログラムからも呼び出せるが、その
+     場合、呼び出し側が引数を渡し、ARG-DESCRIPTORにはなんの効果もない。
+
+     フォーム`interactive'が効果を発揮するのは、
+     コマンドループ（実際にはサブルーティン`call-interactively'）が
+     関数を呼び出すまえに関数定義を走査してこのフォームを探すからである。
+     関数が呼び出されると、フォーム`interactive'を含めて
+     その本体のフォームが実行されるが、そのとき、
+     `interactive'は引数を評価せずに単に`nil'を返す。
+
+引数ARG-DESCRIPTORには3つの可能性があります。
+
+   * 省略するか`nil'。この場合、コマンドは引数なしで呼ばれる。コマンド
+     が1つ以上の引数を必要とする場合、これはただちにエラーになる。
+
+   * 文字列ではないLisp式。この場合、それはフォームであり、コマンドに渡
+     す引数リストを得るために評価される。
+
+     この式が（ミニバッファを使うことを含めて）キーボード入力を読む場合
+     には、入力を読むまえのポイントの整数値やマークは、入力を読んだあと
+     では正しくない可能性があることに留意すること。カレントバッファがサ
+     ブプロセスの出力を受け取る可能性があるからである。コマンドが入力を
+     待っているあいだにサブプロセスの出力が到着すると、ポイントやマーク
+     を再配置する可能性がある。
+
+     しては*いけない*ことの例を示す。
+
+          (interactive
+           (list (region-beginning) (region-end)
+                 (read-string "Foo: " nil 'my-history)))
+
+     キーボード入力を読み終えてからポイントやマークを調べることで、問題
+     を回避する。
+
+          (interactive
+           (let ((string (read-string "Foo: " nil 'my-history)))
+             (list (region-beginning) (region-end) string)))
+
+   * 文字列。この場合、その内容は、コード文字とそれに続く（コード文字に
+     よっては使ったり無視する）プロンプトから成ること。プロンプトは、文
+     字列の終りか改行で終る。簡単な例を示す。
+
+          (interactive "bFrobnicate buffer: ")
+
+     コード文字`b'は、補完を用いて既存のバッファ名を読むことを指示する。
+     バッファ名は、コマンドに渡される唯一の引数である。文字列の残りはプ
+     ロンプトである。
+
+     文字列内に改行文字があると、それはプロンプトを終える。その部分で文
+     字列が終らないときには、文字列の残りの部分には、別の引数を指定する
+     コード文字やプロンプトがある。このようにして、何個の引数でも指定で
+     きる。
+
+     プロンプトの文字列では、プロンプト内の（第1引数から始まる）まえの
+     引数値を含めるために`%'を使える。これは`format'（*Note Formatting
+     Strings::）を用いて行う。たとえば、既存バッファの名前を読み、続け
+     てそのバッファに与える新たな名前を読むにはつぎのようにする。
+
+          (interactive "bBuffer to rename: \nsRename buffer %s to: ")
+
+     文字列の最初の文字が`*'である場合、バッファが読み出し専用であると
+     エラーを通知する。
+
+     文字列の最初の文字が`@'であり、コマンドを起動したキー列にマウスイ
+     ベントが含まれる場合、コマンドを実行するまえにそれらのイベントの最
+     初のものに関連したウィンドウを選択する。
+
+     `*'と`@'は同時に使え、その順序は関係ない。引数の実際の読み取りはプ
+     ロンプトの（`*'でも`@'でもない最初の文字で始まる）残りの部分で制御
+     される。
+
+
+
+File: elisp-ja, Node: Interactive Codes, Prev: Using Interactive, Up: Defining Commands
+
+`interactive'のコード文字
+-------------------------
+
+以下に述べるコード文字の説明では、つぎに定義するいくつかのキーワードを
+含みます。
+
+「補完」
+     補完を使える。
+     `completing-read'を使って引数を読むため、
+     TAB、SPC、RETは名前を補完する
+     （*Note Completion::）。
+     `?'は補完候補のリストを表示する。
+
+「既存」
+     既存オブジェクトの名前を必要とする。不正な名前は受け付けない。現在
+     の入力が正しくないとミニバッファから抜けるコマンドは動作しない。
+
+「デフォルト」
+     ミニバッファにユーザーがなにもテキストを入力しないときに使われるな
+     んらかのデフォルト値。デフォルトはコード文字に依存する。
+
+「入出力なし」
+     このコード文字は、入力をまったく読まずに引数を計算する。したがって、
+     プロンプト文字列を使わず、読者が指定したプロンプト文字列は無視する。
+
+     コード文字はプロンプト文字列を使わないが、この文字が文字列の最後の
+     文字でない場合には改行を続けること。
+
+「プロンプト」
+     コード文字の直後にプロンプトが続く。プロンプトは文字列の終りか改行
+     で終る。
+
+「スペシャル」
+     このコード文字は、対話指定文字列の先頭でのみ意味を持ち、プロンプト
+     や改行を必要としない。これは1つの孤立した文字である。
+
+以下に、`interactive'に使うコード文字を説明します。
+
+`*'
+     カレントバッファが読み出し専用であるとエラーを通知する。「スペシャ
+     ル」。
+
+`@'
+     このコマンドを起動したキー列の最初のマウスイベントが表すウィンドウ
+     を選択する。「スペシャル」。
+
+`a'
+     関数名（つまり、`fboundp'を満たすシンボル）。「既存」、「補完」、
+     「プロンプト」。
+
+`b'
+     既存バッファの名前。デフォルトでは、カレントバッファ（*Note
+     Buffers::）の名前を使う。「既存」、「補完」、「デフォルト」、「プ
+     ロンプト」。
+
+`B'
+     バッファ名。バッファが既存である必要はない。デフォルトでは、カレン
+     トバッファ以外の最近使ったバッファの名前を使う。「補完」、「デフォ
+     ルト」、「プロンプト」。
+
+`c'
+     文字。カーソルはエコー領域には移動しない。「プロンプト」。
+
+`C'
+     コマンド名（つまり、`commandp'を満たすシンボル）。「既存」、「補
+     完」、「プロンプト」。
+
+`d'
+     整数としてのポイント位置（*Note Point::）。「入出力なし」。
+
+`D'
+     ディレクトリ名。デフォルトは、カレントバッファのカレントデフォルト
+     ディレクトリ`default-directory'（*Note System Environment::）。
+     「既存」、「補完」、「デフォルト」、「プロンプト」。
+
+`e'
+     コマンドを起動したキー列の最初やつぎのマウスイベント。より正確には、
+     `e'はリストであるイベントを取得するので、読者はリスト内のデータを
+     調べられる。*Note Input Events::。「入出力なし」。
+
+     1つのコマンドの対話指定で複数回`e'を使える。コマンドを起動したキー
+     列がN個のリストであるイベントである場合、N番目の`e'は、N番目のその
+     ようなイベントを与える。`e'では、ファンクションキーやASCII文字など
+     のリストでないイベントは数えない。
+
+`f'
+     既存ファイルの名前（*Note File Names::）。デフォルトディレクトリは
+     `default-directory'。「既存」、「補完」、「デフォルト」、「プロン
+     プト」。
+
+`F'
+     ファイル名。ファイルが既存である必要はない。「補完」、「デフォル
+     ト」、「プロンプト」。
+
+`i'
+     無関係な引数。このコードは、引数の値につねに`nil'を与える。「入出
+     力なし」。
+
+`k'
+     キー列（*Note Keymap Terminology::）。現在のキーマップにおいてコマ
+     ンドがみつかる（あるいは未定義コマンド）までイベントを読み続ける。
+     キー列引数は、文字列かベクトルとして表現される。カーソルはエコー領
+     域には移動しない。「プロンプト」。
+
+     この種の入力は、`describe-key'や`global-set-key'などのコマンドで使
+     われる。
+
+`K'
+     キー列であり、読者がその定義を変更することを意図している。これは
+     `k'と同様に動作するが、キー列の最後の入力イベントに対しては、未定
+     義キーを定義済みのものに変換するために（必要なときに）普通使われる
+     変換処理を抑制する。
+
+`m'
+     整数としてのマーク位置。「入出力なし」。
+
+`M'
+     カレントバッファの入力方式を用いてミニバッファで読んだ任意のテキス
+     ト。文字列として返す（*Note 入力方式: (emacs)Input Methods.）。
+     「プロンプト」。
+
+`n'
+     ミニバッファで読んだ数。入力が数でないと、ユーザーに再入力を促す。
+     もし前置引数があってもそれは使わない。「プロンプト」。
+
+`N'
+     数値前置引数。前置引数がなければ、`n'で数を読む。数を必要とする。
+     *Note Prefix Command Arguments::。「プロンプト」。
+
+`p'
+     数値前置引数。（この`p'は小文字。）「入出力なし」。
+
+`P'
+     生の前置引数。（この`P'は大文字。）「入出力なし」。
+
+`r'
+     2つの数値引数としてのポイントとマーク。小さいほうが先にくる。これ
+     は、1つではなく2つの連続した引数を指定する唯一のコード文字。「入出
+     力なし」。
+
+`s'
+     ミニバッファで読んだ任意のテキスト。文字列として返す（*Note Text
+     from Minibuffer::）。`C-j'かRETで入力を終える。（これらの文字を入
+     力に含めるには`C-q'を使う。）「プロンプト」。
+
+`S'
+     ミニバッファで読んだ名前をインターンしたシンボル。白文字で入力を終
+     える。（文字列に白文字を含めるには`C-q'を使う。）（丸括弧や角括弧
+     などの）通常はシンボルを終える他の文字は、ここではシンボルを終端し
+     ない。「プロンプト」。
+
+`v'
+     ユーザーオプションと宣言された変数（つまり、述語`user-variable-p'
+     を満たす）。*Note High-Level Completion::。「既存」、「補完」、
+     「プロンプト」。
+
+`x'
+     入力構文で表されたLispオブジェクト。`C-j'かRETで終える。オブジェク
+     トは評価しない。*Note Object from Minibuffer::。「プロンプト」。
+
+`X'
+     `x'のようにLispフォームを読むが、評価しその値がコマンドの引数にな
+     る。「プロンプト」。
+
+`z'
+     コーディングシステム名（シンボル）。ユーザーの入力が空であると、引
+     数の値は`nil'。*Note Coding Systems::。「補完」、「既存」、「プロ
+     ンプト」。
+
+`Z'
+     このコマンドに前置引数を指定した場合にのみ、コーディングシステム名
+     （シンボル）。前置引数がないと、`Z'は引数の値に`nil'を与える。「補
+     完」、「既存」、「プロンプト」。
+
+
+
+File: elisp-ja, Node: Interactive Examples, Prev: Using Interactive, Up: Defining Commands
+
+`interactive'の使用例
+---------------------
+
+ここでは`interactive'の例を示します。
+
+     (defun foo1 ()              ; `foo1'は引数なし
+         (interactive)           ; 2単語分先へ進める
+         (forward-word 2))
+          => foo1
+
+     (defun foo2 (n)             ; `foo2'は1引数
+         (interactive "p")       ; 数値前置引数
+         (forward-word (* 2 n)))
+          => foo2
+
+     (defun foo3 (n)             ; `foo3'は1引数
+         (interactive "nCount:") ; ミニバッファで読む
+         (forward-word (* 2 n)))
+          => foo3
+
+     (defun three-b (b1 b2 b3)
+       "Select three existing buffers.
+     Put them into three windows, selecting the last one."
+         (interactive "bBuffer1:\nbBuffer2:\nbBuffer3:")
+         (delete-other-windows)
+         (split-window (selected-window) 8)
+         (switch-to-buffer b1)
+         (other-window 1)
+         (split-window (selected-window) 8)
+         (switch-to-buffer b2)
+         (other-window 1)
+         (switch-to-buffer b3))
+          => three-b
+     (three-b "*scratch*" "declarations.texi" "*mail*")
+          => nil
+
+
+
+File: elisp-ja, Node: Interactive Call, Next: Input Events, Prev: Defining Commands, Up: Command Loop
+
+対話的呼び出し
+==============
+
+コマンドループでは、キー列をコマンドへ変換し終えると、関数
+`command-execute'を用いてそのコマンドを起動します。コマンドが関数であれ
+ば、`command-execute'は引数を読み取り、コマンドを呼び出す
+`call-interactively'を呼びます。読者自身がこれらの関数を呼び出してもか
+まいません。
+
+ -- Function: commandp OBJECT
+     OBJECTが対話的呼び出しに適していれば、つまり、OBJECTがコマンドであ
+     れば`t'を返す。さもなければ`nil'を返す。
+
+     対話的呼び出しが可能なオブジェクトには、（キーボードマクロとして扱
+     われる）文字列やベクトル、トップレベルで`interactive'を呼び出して
+     いるラムダ式、そのようなラムダ式をコンパイルしたバイトコード関数オ
+     ブジェクト、対話的（`autoload'の4番目の引数が`nil'以外）と宣言され
+     た自動ロードオブジェクト、一部の基本関数が含まれる。
+
+     シンボルの関数定義が`commandp'を満たせば、シンボルも`commandp'を満
+     たす。
+
+     キーやキーマップはコマンドではない。それらはコマンドを探すために使
+     われる（*Note Keymaps::）。
+
+     `commandp'の実用的な使用例については、
+     *Note Accessing Documentation::の`documentation'を参照。
+
+ -- Function: call-interactively COMMAND &optional RECORD-FLAG KEYS
+     この関数は、対話的呼び出し可能な関数COMMANDをその対話指定に従って
+     引数を読み取り呼び出す。COMMANDが関数でなかったり、対話的に呼び出
+     せない（つまり、コマンドでない）場合には、エラーを通知する。キーボー
+     ドマクロ（文字列やベクトル）はコマンドとみなすが、それらは関数でな
+     いため、この関数はキーボードマクロを受け付けない。
+
+     RECORD-FLAGが`nil'以外であると、
+     コマンドとその引数を無条件にリスト`command-history'に追加する。
+     さもなければ、引数を読むために
+     コマンドがミニバッファを使った場合にのみ追加する。
+     *Note Command History::。
+
+     もし引数KEYSを指定すると、コマンドがそれを起動したイベントを問い合
+     わせたときに与えるイベント列を指定する。
+
+ -- Function: command-execute COMMAND &optional RECORD-FLAG KEYS
+     この関数はCOMMANDを実行する。引数COMMANDは`commandp'を満たすこと。
+     つまり、対話的呼び出し可能な関数かキーボードマクロであること。
+
+     `command'が文字列やベクトルであると、
+     `execute-kbd-macro'で実行される。
+     関数であると、省略可能なRECORD-FLAGとともに関数を
+     `call-interactively'に渡す。
+
+     シンボルは、その関数定義を使って処理する。`autoload'で定義されたシ
+     ンボルは、対話的呼び出し可能な関数と宣言されていればコマンドとみな
+     す。そのような定義では、指定されたライブラリをロードしてからシンボ
+     ルの定義を再検査して処理する。
+
+     もし引数KEYSを指定すると、コマンドがそれを起動したイベントを問い合
+     わせたときに与えるイベント列を指定する。
+
+ -- コマンド: execute-extended-command PREFIX-ARGUMENT
+     この関数は`completing-read'（*Note Completion::）を使ってミニバッ
+     ファでコマンド名を読む。そして`command-execute'を使って指定された
+     コマンドを実行する。コマンドが返した値が
+     `execute-extended-command'の値になる。
+
+     コマンドが前置引数を必要とする場合、PREFIX-ARGUMENTの値を受け取る。
+     `execute-extended-command'が対話的に呼ばれた場合、現在の生の前置引
+     数がPREFIX-ARGUMENTとして使われ、それが実行するコマンドへ渡される。
+
+     `execute-extended-command'は通常`M-x'に定義付けられ、
+     そのため、プロンプトとして文字列`M-x 'を使う。
+     （`execute-extended-command'を起動するために使われた
+     イベントをプロンプトにするべきであるが、
+     それを実装するのは手間がかかる。）
+     もし前置引数を指定すると、その内容もプロンプトの一部になる。
+
+          (execute-extended-command 1)
+          ---------- Buffer: Minibuffer ----------
+          1 M-x forward-word RET
+          ---------- Buffer: Minibuffer ----------
+               => t
+
+ -- Function: interactive-p
+     この関数は、これ（`interactive-p'の呼び出し）を含んだ関数が
+     `call-interactively'で対話的に呼び出されると`t'を返す。（Lispから
+     `call-interactively'が呼び出されても、エディタコマンドループが直接
+     呼び出しても違いはない。）これを含んだ関数がLispの評価（あるいは
+     `apply'や`funcall'）で呼び出された場合は、対話的呼び出しではない。
+
+`interactive-p'のもっとも一般的な用途は、情報メッセージを表示するかどう
+か決めることです。特別な例外として、キーボードマクロを実行中にはいつで
+も、`interactive-p'は`nil'を返します。これは情報メッセージを省いてマク
+ロの実行を速くするためです。
+
+つぎのように使います。
+
+     (defun foo ()
+       (interactive)
+       (when (interactive-p)
+         (message "foo")))
+          => foo
+
+     (defun bar ()
+       (interactive)
+       (setq foobar (list (foo) (interactive-p))))
+          => bar
+
+     ;; M-x fooと打つ
+          -| foo
+
+     ;; M-x barと打つ
+     ;; これはなにも表示しない
+
+     foobar
+          => (nil t)
+
+この種のことを行う別の方法は、コマンドを対話的呼び出しでは`nil'以外の値
+になる引数`print-message'を取るようにし、その引数が`nil'以外になるよう
+な`interactive'指定を使うことです。つぎのようにします。
+
+     (defun foo (&optional print-message)
+       (interactive "p")
+       (when print-message
+         (message "foo")))
+
+`p'で与えられる数値前置引数はけっして`nil'になりません。
+
+
+
+File: elisp-ja, Node: Command Loop Info, Next: Input Events, Prev: Interactive Call, Up: Command Loop
+
+コマンドループからの情報
+========================
+
+エディタコマンドループは、自身や実行中のコマンドのために状態記録を数個
+のLisp変数に設定します。
+
+ -- Variable: last-command
+     この変数は、コマンドループが（現在のコマンドの）まえに実行したコマ
+     ンドの名前を記録する。通常、この値は関数定義を持つシンボルであるが、
+     保証はしない。
+
+     コマンドが後続のコマンドに対する前置引数を指定する場合を除いて、コ
+     マンドからコマンドループへ戻ると`this-command'から値をコピーする。
+
+     この変数は現在の端末に対してつねにローカルであり、
+     バッファに対してローカルにはならない。
+     *Note Multiple Displays::。
+
+ -- Variable: real-last-command
+     `last-command'と同様にEmacsがこの変数に設定するが、Lispプログラム
+     ではけっして変更しない。
+
+ -- Variable: this-command
+     この変数は、エディタコマンドループが
+     いま実行しているコマンドの名前を記録する。
+     `last-command'と同様に、通常は関数定義を持つシンボルである。
+
+     コマンドループは、コマンドを実行する直前にこの変数に設定し、コマン
+     ドが終了すると（コマンドが後続のコマンドに対する前置引数を指定する
+     場合を除いて）この値を`last-command'にコピーする。
+
+     後続のコマンドに対するフラグとして実行中にこの変数に設定するコマン
+     ドもある。特に、テキストをキルする関数群は`this-command'に
+     `kill-region'を設定して、直後に続くキルコマンドではキルしたテキス
+     トをまえのキルに追加するようにする。
+
+特定のコマンドがエラーを起こした場合に直前のコマンドとは認識されたくな
+い場合には、読者はそのコマンドがそれを防ぐように書く必要があります。1つ
+の方法は、以下に示すように、コマンドの始めで`this-command'に`t'を設定し、
+コマンドの終りで`this-command'に正しい値を戻します。
+
+     (defun foo (args...)
+       (interactive ...)
+       (let ((old-this-command this-command))
+         (setq this-command t)
+         ...do the work...
+         (setq this-command old-this-command)))
+
+`let'で`this-command'を束縛しません。というのは、エラーがあると`let'は
+古い値を復元するからです。これこそがここでは避けたい`let'の機能です。
+
+ -- Function: this-command-keys
+     この関数は、現在のコマンドに対して直前のコマンドが生成した前置引数を含めて、
+     現在のコマンドを起動したキー列を含んだ文字列かベクトルを返す。
+     すべてのイベントが文字であれば、値は文字列である。
+     *Note Input Events::。
+
+          (this-command-keys)
+          ;; C-u C-x C-eを使ってこの式を評価する
+               => "^U^X^E"
+
+ -- Function: this-command-keys-vector
+     `this-command-keys'と同様だが、つねにベクトルでイベントを返すため、
+     文字列に入力イベントを保持する際の複雑さを扱う必要がない（*Note
+     Strings of Events::）。
+
+ -- Variable: last-nonmenu-event
+     この変数は、マウスメニューによるイベントを考慮せずに、キー列として
+     読んだ最後の入力イベントを保持する。
+
+     この変数の1つの用途は、
+     メニューをポップアップする位置を`x-popup-menu'に指示することである。
+     `y-or-n-p'（*Note Yes-or-No Queries::）も内部的に使っている。
+
+ -- Variable: last-command-event
+ -- Variable: last-command-char
+     この変数には、コマンドの一部としてコマンドループが
+     読んだ最後の入力イベントが設定される。
+     この変数の主な用途は、どの文字を挿入すべきかを決定するために
+     `self-insert-command'が使うことである。
+
+          last-command-event
+          ;; C-u C-x C-eを使ってこの式を評価する
+               => 5
+
+     `C-e'のASCIIコードは5なので、値は5である。
+
+     Emacs 18版との互換性のために別名`last-command-char'がある。
+
+ -- Variable: last-event-frame
+     この変数は、最後の入力イベントを振り向けたフレームを記録する。
+     通常これは、イベントが生成されたときに選択されていたフレームであるが、
+     そのフレームが入力フォーカスを別のフレームに振り向けていると、
+     この値はイベントを振り向けた先のフレームである。
+     *Note Input Focus::。
+
+
+
+File: elisp-ja, Node: Input Events, Next: Reading Input, Prev: Interactive Call, Up: Command Loop
+
+入力イベント
+============
+
+Emacsのコマンドループは、キーボードやマウスのユーザーの操作を表す"入力
+イベント"（input event）列を読みます。キーボード操作に対するイベントは、
+文字かシンボルです。マウスイベントはつねにリストです。本節では、入力イ
+ベントの表現方法やその意味を詳しく説明します。
+
+ -- Function: eventp OBJECT
+     この関数は、OBJECTが入力イベントであるかイベント型であると
+     `nil'以外を返す。
+
+     任意のシンボルがイベントやイベント型として使われることに注意。
+     `eventp'は、Lispのプログラムコードがシンボルを
+     イベントとして使うかどうか区別できない。
+     そのかわりに、シンボルが、Emacsの現在のセッションにおいて入力として読まれた
+     イベントに使われたことがあるかどうかを区別する。
+     シンボルがそのように使われたことがなければ、
+     `eventp'は`nil'を返す。
+
+* Menu:
+
+* Keyboard Events::		Ordinary characters--keys with symbols on them.
+* Function Keys::		Function keys--keys with names, not symbols.
+* Mouse Events::                Overview of mouse events.
+* Click Events::		Pushing and releasing a mouse button.
+* Drag Events::			Moving the mouse before releasing the button.
+* Button-Down Events::		A button was pushed and not yet released.
+* Repeat Events::               Double and triple click (or drag, or down).
+* Motion Events::		Just moving the mouse, not pushing a button.
+* Focus Events::		Moving the mouse between frames.
+* Misc Events::                 Other events window systems can generate.
+* Event Examples::		Examples of the lists for mouse events.
+* Classifying Events::		Finding the modifier keys in an event symbol.
+				Event types.
+* Accessing Events::		Functions to extract info from events.
+* Strings of Events::           Special considerations for putting
+				  keyboard character events in a string.
+
+
+
+File: elisp-ja, Node: Keyboard Events, Next: Function Keys, Prev: Input Events, Up: Input Events
+
+キーボードイベント
+------------------
+
+キーボードからは2種類の入力があります。
+普通のキーとファンクションキーです。
+普通のキーは文字に対応します。
+それらが生成するイベントは、Lispでは文字として表現されます。
+文字イベントのイベント型は文字自身（整数）です。
+*Note Classifying Events::を参照してください。
+
+入力文字イベントは、0から524287までの"基本コード"（basic code）と以下の
+修飾ビット"（modifier bit）の任意の組み合わせです。
+
+meta
+     文字コードのビット2**27 は、メタキーを押し下げながら文字を打ったこ
+     とを表す。
+
+control
+     文字コードのビット2**26 は非ASCII文字のコントロール文字を表す。
+
+     `C-a'などのASCIIコントロール文字には独自の特別な基本コードがあるた
+     め、Emacsはそれを表すための特別なビットを必要としない。つまり、
+     `C-a'のコードは単に1である。
+
+     しかし、コントロールキーを使った`%'などのASCIIにないコントロールと
+     の組み合わせを打った場合、得られる数値は`%'のコードに2**26 を加え
+     たものである（端末で非ASCIIのコントロール文字を扱えるとして）。
+
+shift
+     文字コードのビット2**25
+     は、シフトキーを押し下げながら
+     ASCIIコントロール文字を打ったことを表す。
+
+     英文字では、基本コードそのものが大文字か小文字かを表す。数字文字と
+     区切り文字では、シフトキーは異なる基本コードのまったく異なる文字を
+     選ぶ。可能な限りASCII文字集合ですませるために、これらの文字に対し
+     ては、Emacsはビット2**25 を使わない。
+
+     しかし、ASCIIでは`C-A'と`C-a'を区別できないため、Emacsは、`C-A'で
+     はビット2**25 を使うが、`C-a'ではこのビットを使わない。
+
+hyper
+     文字コードのビット2**24 は、ハイパーキーを押し下げながら文字を打っ
+     たことを表す。
+
+super
+     文字コードのビット2**23 は、スーパーキーを押し下げながら文字を打っ
+     たことを表す。
+
+alt
+     文字コードのビット2**22 は、アルトキーを押し下げながら文字を打った
+     ことを表す。（ALTとラベルされたキーが実際にはメタキーである端末も
+     存在する。）
+
+読者のプログラム内では、特定の修飾ビットの値を明示することは避けるのが
+最良です。文字の修飾ビットを検査するには、関数`event-modifiers'（*Note
+Classifying Events::）を使います。キーバインディングを作るときには、
+（`\C-'、`\M-'などの）修飾ビットを伴う文字の入力表現を使います。
+`define-key'でキーバインディングを作るときには、文字の指定には
+`(control hyper ?x)'のようなリストを使います（*Note Changing Key
+Bindings::）。関数`event-convert-list'は、そのようなリストをイベント型
+に変換します（*Note Classifying Events::）。
+
+
+
+File: elisp-ja, Node: Function Keys, Next: Mouse Events, Prev: Keyboard Events, Up: Input Events
+
+ファンクションキー
+------------------
+
+ほとんどのキーボードには、"ファンクションキー"（function key）、つまり、
+文字ではない名前や記号のキーがあります。Emacs Lispでは、ファンクション
+キーはシンボルで表現されます。シンボルの（小文字の）名前がファンクショ
+ンキーのラベルです。たとえば、F1というラベルのキーを押すと、入力ストリー
+ムにはシンボル`f1'が置かれます。
+
+ファンクションキーイベントのイベント型は、イベントシンボルそれ自身です。
+*Note Classifying Events::。
+
+ファンクションキーに対するシンボル命名慣習の特例を以下に示します。
+
+`backspace', `tab', `newline', `return', `delete'
+     これらのキーは、ほとんどのキーボードにある特別なキーを持つ一般的な
+     ASCIIコントロール文字に対応する。
+
+     ASCIIでは、`C-i'とTABは同じ文字である。これらを区別できる端末では、
+     前者を整数9、後者をシンボル`tab'と表現することで、EmacsはLispプロ
+     グラムに区別を伝える。
+
+     ほとんどの場面では、これら2つを区別しても有用ではない。そのため、
+     通常、`function-key-map'（*Note Translating Input::）は、`tab'を9
+     に対応付けるようには設定してある。したがって、文字コード9（文字
+     `C-i'）に対するキーバインディングは`tab'にも適用される。この種の他
+     のシンボルについても同様である。関数`read-char'も同様にこれらのイ
+     ベントを文字に変換する。
+
+     ASCIIでは、BSは実際には`C-h'である。しかし、`backspace'は文字コー
+     ド127（DEL）に変換され、文字コード8（BS）には変換されない。ほとん
+     どのユーザーはこれを好む。
+
+`left', `up', `right', `down'
+     カーソル矢印キー
+`kp-add', `kp-decimal', `kp-divide', ...
+     （普通のキーボードの右側にある）キーパッドのキー。
+`kp-0', `kp-1', ...
+     キーパッドの数字キー。
+`kp-f1', `kp-f2', `kp-f3', `kp-f4'
+     キーパッドのPFキー
+`kp-home', `kp-left', `kp-up', `kp-right', `kp-down'
+     キーパッドの矢印キー。
+     Emacsは、通常、これらを対応するキーパッドのものではない
+     `home'、`left'、...のキーに変換する。
+`kp-prior', `kp-next', `kp-end', `kp-begin', `kp-insert', `kp-delete'
+     普通のキーに対応するキーパッドのキー。Emacsは、通常、同じ名前のキー
+     パッドのものではないキーに変換する。
+
+ファンクションキーにもALT、CTRL、HYPER、META、SHIFT、SUPERの修飾キーを
+使えます。それらを表現するには、シンボル名に接頭辞を付けます。
+
+`A-'
+     アルト修飾。
+`C-'
+     コントロール修飾。
+`H-'
+     ハイパー修飾。
+`M-'
+     メタ修飾。
+`S-'
+     シフト修飾。
+`s-'
+     スーパー修飾。
+
+したがって、METAを押し下げたF3キーのシンボルは`M-f3'です。複数の接頭辞
+を使うときには、アルファベット順に書くことを勧めますが、キーバインディ
+ングの探索関数や修飾関数の引数では関係ありません。
+
+
+
+File: elisp-ja, Node: Mouse Events, Next: Click Events, Prev: Function Keys, Up: Input Events
+
+マウスイベント
+--------------
+
+Emacsでは4種類のマウスイベント、つまり、クリックイベント、ドラッグイベ
+ント、ボタン押し下げイベント、モーションイベントを扱えます。すべてのマ
+ウスイベントは、リストで表現します。リストのCARはイベント型であり、どの
+修飾キーとともにどのマウスボタンを使ったかを表します。イベント型では、
+ダブル（連続2回）／トリプル（連続3回）の押し下げも区別できます（*Note
+Repeat Events::）。リストの残りの要素は、位置情報と時間情報です。
+
+キーの探索では、イベント型のみが意味を持ちます。
+型が同じであれば、異なるイベントでも同じコマンドを実行します。
+コマンドでは、対話指定コード`e'を用いてイベントの完全な値を参照できます。
+*Note Interactive Codes::。
+
+マウスイベントで始まるキー列は、カレントバッファのキーマップではなく、
+マウスが入っているウィンドウのバッファのキーマップを用いて読まれます。
+つまり、あるウィンドウ内でクリックしても、当該ウィンドウやバッファを選
+択するとは限らず、その動作はキー列のコマンドバインディングで完全に制御
+されます。
+
+
+
+File: elisp-ja, Node: Click Events, Next: Drag Events, Prev: Mouse Events, Up: Input Events
+
+クリックイベント
+----------------
+
+ユーザーがマウスのボタンを同じ場所で押し下げてから離すと、"クリック
+（click）イベントが生成されます。マウスクリックイベントはつぎの形式です。
+
+     (EVENT-TYPE
+      (WINDOW BUFFER-POS (X . Y) TIMESTAMP)
+      CLICK-COUNT)
+
+通常の各要素の意味はつぎのとおりです。
+
+EVENT-TYPE
+     どのマウスボタンが使われたかを表すシンボル。ボタンを左から右へ番号
+     を付けて、シンボル`mouse-1'、`mouse-2'、...の1つである。
+
+     ファンクションキーの場合と同様に、
+     アルト、コントロール、ハイパー、メタ、シフト、スーパーの
+     修飾キーを表す接頭辞`A-'、`C-'、`H-'、`M-'、
+     `S-'、`s-'も使える。
+
+     このシンボルはイベントのイベント型としての役割も果たす。キーバイン
+     ディングはイベント型でイベントを指定する。したがって、`mouse-1'に
+     対するキーバインディングは、イベント型EVENT-TYPEが`mouse-1'である
+     すべてのイベントに適用される。
+
+WINDOW
+     クリックを行ったウィンドウ。
+
+X, Y
+     ウィンドウWINDOWの左上端を`(0 . 0)'としたクリック位置のピクセル単
+     位の座標。
+
+BUFFER-POS
+     クリックした文字のバッファ内位置。
+
+TIMESTAMP
+     イベントが発生したときのミリ秒単位の時刻。（この値は、Emacs Lispの
+     整数の範囲では約5時間で一周するので、時間的に近傍のイベントを関連
+     付ける場合にのみ有用である。）
+
+CLICK-COUNT
+     同じマウスボタンを素早く押し下げた繰り返し回数。
+     *Note Repeat Events::。
+
+モード行やスクロールバーなどのスクリーンの特別な部分で発生したイベントでは、
+BUFFER-POS、XとYの意味は少々異なります。
+
+スクロールバーの内側でのクリックでは、
+BUFFER-POSはシンボル`vertical-scroll-bar'か
+`horizontal-scroll-bar'であり、
+`(X . Y)'は`(PORTION . WHOLE)'に
+置き換えられます。
+ここで、PORTIONはスクロールバーの先頭や左端からのクリック位置、
+WHOLEはスクロールバー全体の長さです。
+
+モード行やウィンドウWINDOWを右隣のものと区切る縦方向の区切り行の内側で
+は、BUFFER-POSはシンボル`mode-line'か`vertical-line'です。モード行では、
+Yは意味のあるデータではありません。縦方向の区切り行では、Xは意味のある
+データではありません。
+
+1つの特別な場面では、
+BUFFER-POSは単一のシンボルではなく（上に述べた1つの）シンボルを
+含んだリストになります。
+イベントに対する仮想的なプレフィックスキーを入力ストリームに挿入すると
+このようになります。
+*Note Key Sequence Input::。
+
+
+
+File: elisp-ja, Node: Drag Events, Next: Button-Down Events, Prev: Click Events, Up: Input Events
+
+ドラッグイベント
+----------------
+
+Emacsには、ドラッグイベントがあります。ユーザーがマウスボタンを押し下げ
+てから、ボタンを離すまえに別の文字位置へマウスを動かすと"ドラッグ
+（drag）イベントが発生します。マウスのすべてのイベントのように、Lispで
+はドラッグイベントはリストとして表現されます。つぎのように、リストは開
+始マウス位置と終了位置を記録しています。
+
+     (EVENT-TYPE
+      (WINDOW1 BUFFER-POS1 (X1 . Y1) TIMESTAMP1)
+      (WINDOW2 BUFFER-POS2 (X2 . Y2) TIMESTAMP2)
+      CLICK-COUNT)
+
+ドラッグイベントでは、シンボルEVENT-TYPEの名前には接頭辞`drag-'が付きま
+す。たとえば、ボタン2を押し下げてマウスをドラッグするとイベント
+`drag-mouse-2'が生成されます。イベントの2番目と3番目の要素は、ドラッグ
+の開始位置と終了位置を与えます。なお、データにはクリックイベントと同じ
+意味があります（*Note Click Events::）。ドラッグイベントかどうかを区別
+せずに、マウスの任意のイベントの2番目の要素は同じ方法で参照できます。
+
+接頭辞`drag-'は、
+`C-'や`M-'のような修飾キー接頭辞に続きます。
+
+`read-key-sequence'が、キーバインディングを持たないドラッグイベントを受
+け取り、かつ、それに対応するクリックイベントにはバインディングがある場
+合、ドラッグイベントの開始位置をクリック位置とするクリックイベントに変
+換します。つまり、望まなければ、読者はクリックイベントとドラッグイベン
+トを区別する必要がありません。
+
+
+

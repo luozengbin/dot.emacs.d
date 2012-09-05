@@ -1,0 +1,2020 @@
+Info file: eintr-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-lisp-intro.texi.patched'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELisp-Intro-ja: (eintr-ja).       Emacs-Lisp入門ガイド
+END-INFO-DIR-ENTRY
+
+
+これはプログラマではない人のための `Emacs Lisp プログラミング' 解説書で
+ある．
+
+Edition 2.04, 2001 Dec 17
+
+Copyright (C) 1990, '91, '92, '93, '94, '95, '97, 2001 Free Software
+Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Section being the Preface, with the Front-Cover Texts being
+no Front-Cover Texts, and with the Back-Cover Texts being no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File: eintr-ja, Node: Whitespace Bug, Prev: Counting Words, Up: Counting Words
+
+`count-words-region'の空白に関するバグ *(2004/08/10)*
+-----------------------------------------------------
+
+上の節で説明したコマンド`count-words-region'には、2つのバグ、あるいは、
+2通りの現れ方をする1つのバグがある。1つめは、文の中程にある空白のみをリー
+ジョンとすると、コマンド`count-words-region'は単語は1個あると報告する！
+　2つめは、バッファの最後やナロイングしたバッファの参照可能な部分の最後
+にある空白のみを含むリージョンでは、コマンドはつぎのようなエラーメッセー
+ジを表示する。
+
+     Search failed: "\\w+\\W*"
+
+GNU EmacsのInfoで読んでいる場合には、これらのバグを読者自身で確認できる。
+
+まず、いつものように関数を評価してインストールする。Here is a copy of
+the definition.  Place your cursor after the closing parenthesis and
+type `C-x C-e' to install it.
+
+     ;; 第1版。バグあり！
+     (defun count-words-region (beginning end)
+       "Print number of words in the region.
+     Words are defined as at least one word-constituent character followed
+     by at least one character that is not a word-constituent.  The buffer's
+     syntax table determines which characters these are."
+       (interactive "r")
+       (message "Counting words in region ... ")
+
+     ;;; 1. 適切な条件を設定する
+       (save-excursion
+         (goto-char beginning)
+         (let ((count 0))
+
+     ;;; 2.  while ループを実行する
+           (while (< (point) end)
+             (re-search-forward "\\w+\\W*")
+             (setq count (1+ count)))
+
+     ;;; 3. ユーザーにメッセージを与える
+           (cond ((zerop count)
+                  (message "The region does NOT have any words."))
+                 ((= 1 count) (message "The region has 1 word."))
+                 (t (message "The region has %d words." count))))))
+
+つぎを評価すれば、キーバインドをインストールできる。
+
+     (global-set-key "\C-c=" 'count-words-region)
+
+第一のテストを行うには、つぎの行の先頭と末尾にマークとポイントを設定し、
+`C-c ='（`C-c ='にバインドしていなければ、
+`M-x count-words-region'）とタイプする。
+
+         one   two  three
+
+Emacsは、リージョンには単語が3個あると正しく報告する。
+
+行の先頭にマークを、単語`one'の*直前に*ポイントを置いて、テストを繰り返
+してみる。コマンド`C-c ='（あるいは`M-x count-words-region'）とタイプす
+る。行の始めにある空白のみなので、リージョンには単語がないとEmacsは報告
+すべきである。しかし、Emacsはリージョンには単語が1個あると報告する。
+
+3つめのテストとしては、上の例の行をバッファ`*scratch*'の最後にコピーし
+行末に空白を数個タイプする。単語`three'の直後にマークを置き、行末にポイ
+ントを置く（行末はバッファの最後でもある）。まえと同じように、`C-c
+='（あるいは`M-x count-words-region'）とタイプする。行末に空白のみがあ
+るので、Emacsはリージョンに単語はないと報告すべきである。しかし、Emacs
+は`Search failed'というエラーメッセージを表示する。
+
+2つのバグは同じ問題から生じている。
+
+バグの第一の現れ方では、行の先頭の空白を1語と数える。これはつぎのことが
+起きているのである。コマンド`M-x count-words-region'は、リージョンの先
+頭にポイントを移動する。`while'では、ポイントの値が`end'の値より小さい
+かどうかを調べるが、たしかにそのとおりである。したがって、正規表現の探
+索が行われ、最初の単語を探す。それによりポイントは単語の直後に移動する。
+`count'は1になる。`while'ループが繰り返されるが、ポイントの値が`end'の
+値より大きいのでループから抜け、関数はリージョン内に単語が1個ある旨のメッ
+セージを表示する。つまり、正規表現は単語を探し出すのであるが、その単語
+はリージョンの外側にあるのである。
+
+バグの第二の現れ方では、リージョンはバッファの最後の空白である。Emacsは
+`Search failed'と報告する。`while'ループの判定条件は真であるため、正規
+表現の探索が行われる。しかし、バッファには単語がないので、探索に失敗す
+る。
+
+バグのいずれの現れ方でも、探索の範囲がリージョンの外側にまでおよんでし
+まっている。
+
+解決策は、探索をリージョン内に制限することであり、これは比較的簡単なこ
+とであるが、しかし、思ったほどは簡単なことでもない。
+
+すでに説明したように、関数`re-search-forward'は、探索すべきパターンを第
+1引数に取る。これは必須引数であるが、これに加えて、3つの引数を取ること
+ができる。省略できる第2引数は、探索範囲を制限する。省略できる第3引数に
+`t'を指定すると、探索に失敗した場合にはエラーを通知するかわりに`nil'を
+返す。省略できる第4引数は、繰り返し回数である（Emacsでは、`C-h f'に続け
+て関数名、RETをタイプすれば、関数の説明文を見ることができる）。
+
+`count-words-region'の定義では、リージョンの最後は変数`end'が保持してお
+り、これは関数への引数として渡される。したがって、正規表現の探索式の引
+数に`end'を追加できる。
+
+     (re-search-forward "\\w+\\W*" end)
+
+しかし、`count-words-region'の定義にこの変更だけを施して、
+この新たな定義を空白だけのリージョンに対してテストすると、
+`Search failed'のエラーメッセージを得ることになる。
+
+ここでは、探索はリージョン内に制限されるが、リージョンには単語の構成文
+字がないので予想どおりに失敗するのである。失敗したので、エラーメッセー
+ジを得たのである。しかし、このような場合にエラーメッセージを得たくはな
+く、「The region does NOT have any words.」のようなメッセージを得たいの
+である。
+
+この問題に対する解決策は、`re-search-forward'の第3引数に`t'を指定して、
+探索に失敗した場合にはエラーを通知するかわりに`nil'を返すようにする。
+
+しかし、この変更を施して試してみると、メッセージ「Counting words in
+region ... 」が表示され、`C-g'（`keyboard-quit'）をタイプするまで、この
+メッセージが表示され続ける。
+
+なにが起こっているかというと……。まえと同じように探索はリージョン内に
+限られ、リージョン内には単語を構成する文字がないので探索に失敗する。そ
+の結果、`re-search-forward'式は`nil'を返す。それ以外のことはしない。特
+に、探索に成功した場合の副作用としてのポイントの移動は行われない。
+`re-search-forward'式が`nil'を返すと、`while'ループのつぎの式が評価され
+る。この式はカウンタを増やす。ついでループが繰り返される。
+`re-search-forward'式はポイントを移動しないので、ポイントの値は変数
+`end'の値より小さく、判定条件は真になる。これが繰り返されるのである。
+
+`count-words-region'の定義をさらに変更する必要があり、探索に失敗した場
+合には`while'ループの判定条件が偽になるようにする。つまり、カウンタを増
+やすまえに判定条件で満たすべき条件が2つある。ポイントはリージョン内にあ
+り、かつ、探索式で単語を探し終えていることである。
+
+第一の条件と第二の条件は同時に真である必要があるので、
+2つの式、リージョンの検査と探索式をスペシャルフォーム `and'で結び、
+`while'ループの判定条件をつぎのようにする。
+
+     (and (< (point) end) (re-search-forward "\\w+\\W*" end t))
+
+(*Note forward-paragraph::, for information about `and'.)
+
+`re-search-forward'式が真を返すのは、探索に成功し、かつ、副作用としてポ
+イントを移動した場合である。つまり、単語を探し出すと、リージョン内でポ
+イントが移動する。別の単語を探すのに失敗したり、リージョンの最後にポイ
+ントが達すると、判定条件は偽になり、`while'ループを抜け出し、関数
+`count-words-region'はメッセージの1つを表示する。
+
+これらの最終的な変更を施すと、`count-words-region'はバグなしに（あるい
+は、少なくとも、筆者にはバグのない）動作をする。つぎのとおりである。
+
+     ;;; 最終版 `while'
+     (defun count-words-region (beginning end)
+       "Print number of words in the region."
+       (interactive "r")
+       (message "Counting words in region ... ")
+
+     ;;; 1. 適切な条件を設定する
+       (save-excursion
+         (let ((count 0))
+           (goto-char beginning)
+
+     ;;; 2.  while ループ
+           (while (and (< (point) end)
+                       (re-search-forward "\\w+\\W*" end t))
+             (setq count (1+ count)))
+
+     ;;; 3. ユーザーにメッセージを与える
+           (cond ((zerop count)
+                  (message
+                   "The region does NOT have any words."))
+                 ((= 1 count)
+                  (message
+                   "The region has 1 word."))
+                 (t
+                  (message
+                   "The region has %d words." count))))))
+
+
+
+File: eintr-ja, Node: recursive-count-words, Next: Counting Exercise, Prev: Counting Words, Up: Counting Words
+
+再帰による単語の数え上げ *(2004/08/10)*
+=======================================
+
+`while'ループのかわりに再帰的に単語を数え上げる関数を書くこともできる。
+どのようにするかを説明しよう。
+
+まず、関数`count-words-region'が3つの処理を行うことを認識する必要がある。
+数え上げのための適切な条件を設定する、リージョン内の単語を数え上げる、
+単語の個数をユーザーに伝えるメッセージを送るである。
+
+すべてを行う単一の再帰的関数を書くと、再帰呼び出しごとにメッセージを受
+け取ることになる。たとえば、リージョンに13個の単語があった場合、順番に
+13個のメッセージを得る。こうはしたくない。かわりに、それぞれの処理を行
+う2つの関数を書き、一方（再帰的関数）を他方の内部で使う。一方の関数で条
+件を設定してメッセージを表示し、他方は数え上げた単語数を返す。
+
+メッセージを表示する関数から始めよう。これも`count-words-region'と呼ぶ
+ことにする。
+
+ユーザーが呼び出すのは、この関数である。これは対話的にする。もちろん、
+これはまえの版の関数に似ているが、リージョン内の単語を数えるために
+`recursive-count-words'を呼び出す。
+
+まえの版をもとにして、この関数の雛型を作ることができる。
+
+     ;; 再帰版；正規表現の探索を用いる
+     (defun count-words-region (beginning end)
+       "説明文..."
+       (INTERACTIVE-EXPRESSION...)
+
+     ;;; 1. 適切な条件を設定する
+       (説明メッセージを表示)
+       (関数を設定する...
+
+     ;;; 2. 単語を数える
+         再帰呼び出し
+
+     ;;; 3. ユーザーにメッセージを与える
+         単語数を与えるメッセージ))
+
+定義は単純であるが、再帰呼び出しで得られた単語数をどうにかして表示メッ
+セージに渡す必要がある。少し考えれば、`let'式を使えばよいことがわかる。
+`let'式の変数リストにて、再帰呼び出しで得られたリージョン内の単語数を変
+数に束縛し、この束縛を使って`cond'式でユーザーに値を表示する。
+
+しばしば、`let'式内の束縛は、関数の「主要」な処理に対して
+副次的なものと考えられる。
+しかし、この場合には、関数の「主要」な処理、つまり単語を数えることが、
+`let'式の内側で行われていると考えられる。
+
+`let'を使うと、関数定義はつぎのようになる。
+
+     (defun count-words-region (beginning end)
+       "Print number of words in the region."
+       (interactive "r")
+
+     ;;; 1. 適切な条件を設定する
+       (message "Counting words in region ... ")
+       (save-excursion
+         (goto-char beginning)
+
+     ;;; 2. 単語を数える
+         (let ((count (recursive-count-words end)))
+
+     ;;; 3. ユーザーにメッセージを与える
+           (cond ((zerop count)
+                  (message
+                   "The region does NOT have any words."))
+                 ((= 1 count)
+                  (message
+                   "The region has 1 word."))
+                 (t
+                  (message
+                   "The region has %d words." count))))))
+
+つぎは、再帰的に数え上げる関数を書くことである。
+
+再帰関数には少なくとも3つの部分が必要である。つまり、「再帰条件」、「次
+段式」、再帰呼び出しである。
+
+再帰条件は、関数が再度呼び出しを行うかどうかを決定する。リージョン内の
+単語を数えるのであり、また、単語ごとにポイントを進めるために関数を使え
+るので、再帰条件ではポイントがリージョン内にあるかどうかを調べる。再帰
+条件では、ポイントの値を調べて、リージョンの最後のまえか、最後か、その
+うしろかを決定する。ポイントの位置を知るには関数`point'を使う。明らかに、
+再帰的に単語を数える関数の引数には、リージョンの最後を渡す必要がある。
+
+さらに、再帰条件では、単語を探せたかどうかを調べるべきである。みつから
+なかった場合には、関数は自身を再度呼び出すべきではない。
+
+次段式は、再帰関数が自身の呼び出しを止めるべきときに止めるように値を変
+更する。より正確には、次段式は、再帰条件が再帰関数の自身の呼び出しを止
+めるように値を変更する。この場合、次段式はポイントを1単語分進める式であ
+る。
+
+再帰関数の3番目の部分は、再帰呼び出しである。
+
+関数の処理、つまり、数え上げを行う部分も必要である。これは本質的な部分
+である！
+
+再帰的に数え上げる関数の概略はすでに説明してある。
+
+     (defun recursive-count-words (region-end)
+       "説明分..."
+        再帰条件
+        次段式
+        再帰呼び出し)
+
+これらの項目を埋めればよい。もっとも簡単な部分から始めよう。ポイントが
+リージョンの最後か最後を越えていれば、リージョン内に単語があるはずはな
+いので、関数は0を返すべきである。同様に、探索に失敗した場合にも、数える
+べき単語はないので、関数は0を返すべきである。
+
+一方、ポイントがリージョン内にあり、探索に成功した場合には、関数は自身
+を再度呼び出す必要がある。
+
+したがって、再帰条件はつぎのようになる。
+
+     (and (< (point) region-end)
+          (re-search-forward "\\w+\\W*" region-end t))
+
+探索式は再帰条件の一部であることに注意してほしい。
+探索に成功すると`t'を返し、失敗すると`nil'を返す
+（`re-search-forward'の動作の説明は、
+*Note Whitespace Bug::）。
+
+再帰条件は、`if'節の判定条件である。明らかに、再帰条件が真ならば、`if'
+節の真の場合の動作では関数を呼び出す。偽ならば、ポイントがリージョンの
+外側にあるか、探すべき単語がなくて探索に失敗するので偽の場合の動作では
+0を返すべきである。
+
+しかし、再帰呼び出しを考えるまえに、次段式を考える必要がある。どうすべ
+きだろう？　興味深いことに、次段式は再帰条件の探索部分である。
+
+再帰条件に`t'や`nil'を返すことに加えて、`re-search-forward'は、探索に成
+功したときの副作用としてポイントを進める。この動作は、ポイントがリージョ
+ンの最後に達した場合に、再帰関数が自身の呼び出しを止めるようにポイント
+の値を変更する。つまり、`re-search-forward'式は次段式でもある。
+
+したがって、関数`recursive-count-words'の概略はつぎのようになる。
+
+     (if 再帰条件と次段式
+         ;; 真の場合の動作
+         個数を返す再帰呼び出し
+       ;; 偽の場合の動作
+       0を返す)
+
+数え上げる機構をどのように組み込むか？
+
+再帰関数を書き慣れていないと、このような問いかけは混乱のもとかもしれな
+い。しかし、系統的に扱う必要があり、また、そうすべきである。
+
+数え上げる機構は、再帰呼び出しに関連付けられるべきであることは知ってい
+る。次段式はポイントを1単語分先へ進め、各単語に対して再帰呼び出しが行わ
+れるので、数え上げる機構は、`recursive-count-words'を呼び出して返された
+値に1を加える式である必要がある。
+
+いくつかの場合を考えてみよう。
+
+   * リージョン内に2つの単語がある場合、関数は最初の単語を数えて返され
+     た値、つまり、リージョン内の残りの単語を数えて返された値1に1を加え
+     た値を返す。
+
+   * リージョン内に1つの単語がある場合には、関数はその単語を数えて返さ
+     れた値、つまり、リージョンの残りの単語を数えて返された値0に1を加え
+     た値を返す。
+
+   * リージョン内に単語がない場合には、関数は0を返す。
+
+以上のスケッチから、`if'の偽の場合の動作では、単語がなければ0を返すこと
+がわかる。また、`if'の真の場合の動作では、残りの単語を数えて返された値
+に1を加えた値を返す必要がある。
+
+引数に1を加える関数を`1+'とすれば、式はつぎのようになる。
+
+     (1+ (recursive-count-words region-end))
+
+`recursive-count-words'関数の全体はつぎのようになる。
+
+     (defun recursive-count-words (region-end)
+       "説明文..."
+
+     ;;; 1. 再帰条件
+       (if (and (< (point) region-end)
+                (re-search-forward "\\w+\\W*" region-end t))
+
+     ;;; 2. 真の場合の動作：再帰呼び出し
+           (1+ (recursive-count-words region-end))
+
+     ;;; 3. 偽の場合の動作
+         0))
+
+これがどのように動作するか説明しよう。
+
+リージョン内に単語がなければ、`if'式の偽の場合の動作が評価され、その結
+果、関数は0を返す。
+
+リージョン内に単語が1つある場合、ポイントの値は`region-end'の値よりも小
+さく、探索に成功する。この場合、`if'の判定条件は真を返し、真の場合の動
+作が評価される。数え上げる式が評価される。この式は再帰呼び出しが返す値
+に1を加えた（関数全体の値として返される）値を返す。
+
+同時に、次段式はリージョン内の最初の（この場合は唯一の）単語を越えてポ
+イントを移動する。つまり、`(recursive-count-words region-end)'が、再帰
+呼び出しの結果として2回目に評価されると、ポイントの値はリージョンの最後
+に等しいか大きい。したがって、そのとき、`recursive-count-words'は0を返
+す。0を1に加えるので、`recursive-count-words'のもとの評価値は1足す0、つ
+まり、1を返し、これは正しい値である。
+
+明らかに、リージョン内に2つの単語がある場合、`recursive-count-words'の
+始めの呼び出しは、リージョン内の残りの単語に対して呼び出した
+`recursive-count-words' が返す値に1を加えた値を返す。つまり、1足す1は2
+であり、これは正しい値である。
+
+同様に、リージョン内に3つの単語がある場合には、`recursive-count-words'
+の最初の呼び出しは、リージョン内の残りの2つの単語に対して呼び出した
+`recursive-count-words' が返す値に1を加えた値を返す。
+
+説明文を加えると、2つの関数はつぎのようになる。
+
+再帰関数：
+
+     (defun recursive-count-words (region-end)
+       "Number of words between point and REGION-END."
+
+     ;;; 1. 再帰条件
+       (if (and (< (point) region-end)
+                (re-search-forward "\\w+\\W*" region-end t))
+
+     ;;; 2. 真の場合の動作：再帰呼び出し
+           (1+ (recursive-count-words region-end))
+
+     ;;; 3. 偽の場合の動作
+         0))
+
+呼び出し側：
+
+     ;;; 再帰版
+     (defun count-words-region (beginning end)
+       "Print number of words in the region.
+
+     Words are defined as at least one word-constituent
+     character followed by at least one character that is
+     not a word-constituent.  The buffer's syntax table
+     determines which characters these are."
+       (interactive "r")
+       (message "Counting words in region ... ")
+       (save-excursion
+         (goto-char beginning)
+         (let ((count (recursive-count-words end)))
+           (cond ((zerop count)
+                  (message
+                   "The region does NOT have any words."))
+                 ((= 1 count)
+                  (message "The region has 1 word."))
+                 (t
+                  (message
+                   "The region has %d words." count))))))
+
+
+
+File: eintr-ja, Node: Counting Exercise, Prev: Counting Words, Up: Counting Words
+
+演習問題：句読点の数え上げ
+==========================
+
+`while'を使って、リージョン内の句読点、ピリオド、カンマ、セミコロン、コ
+ロン、感嘆符、疑問符を数える関数を書いてみよ。また、再帰を使って書いて
+みよ。
+
+
+
+File: eintr-ja, Node: Words in a defun, Next: Readying a Graph, Prev: Counting Words, Up: Top
+
+`defun'内の単語の数え上げ *(2004/08/10)*
+****************************************
+
+つぎの目標は、関数定義内の語数を数えることである。
+明らかに、`count-words-region'の変形を使えばできる。
+*Note Counting Words::。
+1つの定義内の単語を数えるだけならば、
+定義をコマンド`C-M-h'（`mark-defun'）でマークして、
+`count-words-region'を呼べばよい。
+
+しかし、より野心的でありたい。Emacsソース内の各定義ごとに単語やシンボル
+を数え、それぞれの数ごとにいくつの関数があるかを表すグラフを書きたい。
+40から49個の単語やシンボルを含む関数はいくつ、50から59個の単語やシンボ
+ルを含む関数はいくつなどを表示したいのである。筆者は、典型的な関数定義
+の長さに興味を持っており、この関数でそれがわかる。
+
+* Menu:
+
+* Divide and Conquer::
+* Words and Symbols::           What to count?
+* Syntax::                      What constitutes a word or symbol?
+* count-words-in-defun::        Very like `count-words'.
+* Several defuns::              Counting several defuns in a file.
+* Find a File::                 Do you want to look at a file?
+* lengths-list-file::           A list of the lengths of many definitions.
+* Several files::               Counting in definitions in different files.
+* Several files recursively::   Recursively counting in different files.
+* Prepare the data::            Prepare the data for display in a graph.
+
+
+
+File: eintr-ja, Node: Divide and Conquer, Next: Words and Symbols, Prev: Words in a defun, Up: Words in a defun
+
+分割と克服
+==========
+
+一言でいえば、目標はヒストグラムを作ることである。多数の小さな部分に分
+けて一度に1つずつ扱えば、恐れることはない。どのような手順を踏めばよいか
+考えよう。
+
+   * まず、1つの定義の中の単語を数える関数を書く。これには、単語に加え
+     てシンボルを扱う問題も含まれる。
+
+   * 第2に、1つのファイル内の各関数ごとの語数をリストにする関数を書く。
+     この関数は`count-words-in-defun'を使う。
+
+   * 第3に、複数のファイルで各関数ごとの語数をリストにする関数を書く。
+     これには、自動的にファイルを探し、それに切り替え、その中の各定義の
+     語数を数えることが必要である。
+
+   * 第4に、手順3で作った個数のリストをグラフ表示に適した形に変換する関
+     数を書く。
+
+   * 第5に、結果をグラフに表示する関数を書く。
+
+これはとても手応えのあることである。しかし、順を追って進めれば、困難で
+はない。
+
+
+
+File: eintr-ja, Node: Words and Symbols, Next: Syntax, Prev: Words in a defun, Up: Words in a defun
+
+何を数えるか？ *(2004/08/10)*
+=============================
+
+関数定義内の単語を数えることを考えた場合、最初の疑問は何を数えるのかと
+いうことである。Lispの関数定義に関して「単語」といえば、ほとんどの場合、
+「シンボル」のことである。たとえば、つぎの関数`multiply-by-seven'には、
+`defun'、`multiply-by-seven'、`number'、`*'、`7'の5つのシンボルがある。
+さらに、4つの単語、`Multiply'、`NUMBER'、`by'、`seven'を含んだ説明文字
+列がある。シンボル`number'は繰り返し使われているので、定義には全部で10
+個の単語とシンボルが含まれる。
+
+     (defun multiply-by-seven (number)
+       "Multiply NUMBER by seven."
+       (* 7 number))
+
+しかし、`multiply-by-seven'の定義に`C-M-h'（`mark-defun'）でマークして
+から`count-words-region'を呼ぶと、`count-words-region'は定義には10では
+なく11語があると報告する！　何かがおかしい！
+
+問題は2つあり、`count-words-region'は`*'を単語として数えないことと、
+単一のシンボル`multiply-by-seven'を3語として数えることである。
+ハイフンを単語を繋ぐ文字としてではなく、単語のあいだの空白として扱う。
+`multiply-by-seven'は、
+`multiply by seven'と書かれているかのように数えられる。
+
+このような混乱の原因は、`count-words-region'の定義のなかの
+ポイントを単語単位に進める正規表現の探索にある。
+`count-words-region'の正規表現はつぎのとおりである。
+
+     "\\w+\\W*"
+
+この正規表現は、単語の構成文字の1個以上の繰り返しに単語を構成しない文字
+が0個以上繰り返したものを続けたパターンである。つまり、「単語の構成文字」
+ということでシンタックスの問題になるのであり、その重要性から1つの節で扱
+おう。
+
+
+
+File: eintr-ja, Node: Syntax, Next: count-words-in-defun, Prev: Words and Symbols, Up: Words in a defun
+
+単語やシンボルを構成するものは何か？ *(2004/08/10)*
+===================================================
+
+Emacsは、それぞれの文字をそれぞれが属する"シンタックスカテゴリ（syntax
+categories）"に応じて扱う。たとえば、正規表現`\\w+'は、*単語構成*文字の
+1個以上の繰り返しを意味するパターンである。単語構成文字は、1つのシンタッ
+クスカテゴリである。他のシンタックスカテゴリには、ピリオドやカンマなど
+の句読点文字のクラスや、空白文字やタブ文字などの空白文字クラスがある
+（より詳しくは、*Note Syntax: (emacs)Syntaxや*Note Syntax Tables:
+(elisp)Syntax Tablesを参照）。
+
+シンタックステーブルは、どの文字がどのカテゴリに属するかを指定する。
+普通、ハイフンは「単語構成文字」ではない。
+かわりに、「シンボルの一部ではあるが単語の一部ではないクラス」に指定される。
+つまり、関数`count-words-region'は、ハイフンを単語のあいだの
+空白と同様に扱い、そのため`count-words-region'は
+`multiply-by-seven'を3語と数えるのである。
+
+Emacsに`multiply-by-seven'を1つのシンボルとして数えさせるには、2つの方
+法がある。シンタックステーブルを変更するか、正規表現を変更するかである。
+
+Emacsが各モードごとに保持するシンタックステーブルを変更して、ハイフンを
+単語構成文字として再定義することもできる。この方法でもわれわれの目的は
+達せられるが、ハイフンはシンボルの一部になるもっとも一般的な文字である
+が、典型的な単語構成文字ではない。このような文字は他にもある。
+
+かわりに、`count-words-region'の定義の中の正規表現をシンボルを含むよう
+に再定義することである。この方法は明確ではあるが、技巧を要する。
+
+最初の部分は簡単で、パターンは「単語やシンボルを構成する少なくとも1文字」
+である。つまり、つぎのようになる。
+
+     "\\(\\w\\|\\s_\\)+"
+
+`\\('は、`\\|'で区切られた`\\w'と代替の`\\s_'を含むグループ構成の開始部
+分である。`\\w'は任意の単語構成文字に一致し、`\\s_'は単語構成文字ではな
+いがシンボル名の一部に成りえる任意の文字に一致する。グループに続く`+'は、
+単語やシンボルを構成する文字が少なくとも1つあることを意味する。
+
+しかし、正規表現の第二の部分は、設計がより困難である。最初の部分に続け
+て、「単語やシンボルを構成しない文字が0個以上続く」と指定したいのである。
+まず、筆者は、つぎのような定義を考えた。
+
+     "\\(\\W\\|\\S_\\)*"
+
+大文字の`W'や`S'は、単語やシンボルを構成し*ない*文字に一致する。残念な
+がら、この式は、単語を構成しない任意の文字かシンボルを構成しない任意の
+文字に一致する。つまり、任意の文字に一致するのである！
+
+筆者が試したリージョンでは、単語やシンボルには空白文字（空白、タブ、改
+行）が続いていることに気づいた。そこで、単語やシンボルを構成する文字の
+1個以上の繰り返しパターンのあとに1個以上の空白文字が続くパターンを試し
+てみた。これも失敗であった。単語やシンボルはしばしば空白で区切られるが、
+実際のコードでは、シンボルのあとには括弧が、単語のあとには句読点が続く。
+結局、単語やシンボルを構成する文字に続いて空白文字以外の文字が0個以上続
+き、さらに、空白文字が0個以上続くパターンにした。
+
+全体の正規表現はつぎのとおりである。
+
+     "\\(\\w\\|\\s_\\)+[^ \t\n]*[ \t\n]*"
+
+
+
+File: eintr-ja, Node: count-words-in-defun, Next: lengths-list-file, Prev: Syntax, Up: Words in a defun
+
+関数`count-words-in-defun' *(2004/08/10)*
+=========================================
+
+関数`count-words-region'の書き方には、何通りかあることを説明した。
+`count-words-in-defun'を書くには、それらの1つを適用すればよい。
+
+`while'ループを使った版は、容易に理解できるので、これを適用することにす
+る。`count-words-in-defun'は、複雑なプログラムの一部となるので、対話的
+である必要はなく、メッセージを表示する必要もなく、単に語数を返せばよい。
+このため、定義は少々簡単になる。
+
+一方、`count-words-in-defun'は、関数定義を含んだバッファで利用される。
+つまり、関数定義内にポイントがある状態で呼ばれたかどうかを調べ、もしそ
+うなら、その定義の語数を返すようにするのが合理的であろう。こうすると定
+義に余分な複雑さを伴うが、関数に引数を渡さないですむ。
+
+以上から、関数の雛型はつぎのようになる。
+
+     (defun count-words-in-defun ()
+       "説明文..."
+       (初期設定...
+          (WHILEループ...)
+        語数を返す)
+
+いつものように、各項目を埋めていく。
+
+まずは、初期設定である。
+
+この関数は、関数定義を含むバッファで呼ばれると仮定している。ポイントは、
+関数定義の内側か外側にある。`count-words-in-defun'が動作するには、ポイ
+ントを定義の先頭に移動し、カウンタを0で始め、ポイントが定義の最後に達し
+たらループを終了する。
+
+関数`beginning-of-defun'は、行の先頭にある`('などの開き区切り記号を逆向
+きに探し、ポイントをそこへ移動する。あるいは、探索範囲内で止まる。実際、
+`beginning-of-defun'は、ポイントを囲んでいる関数定義の先頭か直前の関数
+定義の先頭にポイントを移動するか、バッファの先頭に移動する。ポイントを
+開始場所へ移動するには`beginning-of-defun'を使えばよい。
+
+`while'ループには、単語やシンボルを数えるカウンタが必要である。
+`let'式で、このためのローカル変数を作って、初期値0に束縛する。
+
+関数`end-of-defun'は、`beginning-of-defun'と同じように動作するが、
+関数定義の最後にポイントを移動する点が異なる。
+`end-of-defun'は、関数定義の最後に達したかどうかを調べる式に使える。
+
+`count-words-in-defun'の初期設定はつぎのようになる。まず、ポイントを関
+数定義の先頭に移動し、語数を保持するローカル変数を作り、最後に、
+`while'ループがループの終了を判定できるように関数定義の終わりの位置を記
+録する。
+
+コードはつぎのようになる。
+
+     (beginning-of-defun)
+     (let ((count 0)
+           (end (save-excursion (end-of-defun) (point))))
+
+コードは簡単である。少々複雑な部分は`end'に関する部分であろう。
+`save-excursion'式を使って、`end-of-defun'で一時的に定義の最後にポイン
+トを移動してからポイントの値を返すことで、定義の最後の位置を変数に束縛
+する。
+
+`count-words-in-defun'の初期設定後の2番目の部分は、
+`while'ループである。
+
+ループには、語単位やシンボル単位でポインタを進める式や、語数を数える式
+が必要である。`while'の判定条件は、ポイントを進められた場合には真を、ポ
+イントが定義の最後に達した場合には偽を返す必要がある。これ（*Note
+Syntax::）に必要な正規表現はすでにわかっているので、ループは簡単である。
+
+     (while (and (< (point) end)
+                 (re-search-forward
+                  "\\(\\w\\|\\s_\\)+[^ \t\n]*[ \t\n]*" end t)
+       (setq count (1+ count)))
+
+関数定義の3番目の部分では、単語やシンボルの個数を返す。この部分は、
+`let'式の本体内の最後の式で、非常に簡単な式、つまり、ローカル変数
+`count'であり、評価されると語数を返す。
+
+以上をまとめると、`count-words-in-defun'の定義はつぎのようになる。
+
+     (defun count-words-in-defun ()
+       "Return the number of words and symbols in a defun."
+       (beginning-of-defun)
+       (let ((count 0)
+             (end (save-excursion (end-of-defun) (point))))
+         (while
+             (and (< (point) end)
+                  (re-search-forward
+                   "\\(\\w\\|\\s_\\)+[^ \t\n]*[ \t\n]*"
+                   end t))
+           (setq count (1+ count)))
+         count))
+
+これをどのようにテストしようか？　
+関数は対話的ではないが、対話的に呼び出すための呼び出し関数を
+作るのは簡単である。
+`count-words-region'の再帰版のようなコードを使えばよい。
+
+     ;;; 対話的な版
+     (defun count-words-defun ()
+       "Number of words and symbols in a function definition."
+       (interactive)
+       (message
+        "Counting words and symbols in function definition ... ")
+       (let ((count (count-words-in-defun)))
+         (cond
+          ((zerop count)
+           (message
+            "The definition does NOT have any words or symbols."))
+          ((= 1 count)
+           (message
+            "The definition has 1 word or symbol."))
+          (t
+           (message
+            "The definition has %d words or symbols." count)))))
+
+`C-c ='をキーバインドとして再利用しよう。
+
+     (global-set-key "\C-c=" 'count-words-defun)
+
+これで、`count-words-defun'を試せる。`count-words-in-defun'と
+`count-words-defun'をインストールし、キーバインドを設定してから、つぎの
+関数定義にカーソルを置く。
+
+     (defun multiply-by-seven (number)
+       "Multiply NUMBER by seven."
+       (* 7 number))
+          => 10
+
+うまくいった！　定義には10個の単語やシンボルがある。
+
+つぎの問題は、1つのファイルの中にある複数の定義の中の単語やシンボルの個
+数を数えることである。
+
+
+ファイル内の複数の`defuns'の数え上げ *(2004/08/10)*
+===================================================
+
+`simple.el'のようなファイルには80以上もの関数定義が含まれる。われわれの
+最終目標は、複数のファイルについて統計を集めることであるが、第1段階とし
+ての中間目標は、1つのファイルについて統計を集めることである。
+
+この情報は、関数定義の長さを表す数を並べたものになる。これらの数は、リ
+ストに収めることができる。
+
+1つのファイルから得た情報を他の多くのファイルから得た情報に加える必要が
+あるので、この関数では、1つのファイル内の定義を数えた数をリストにして返
+す必要がある。この関数は、いかなるメッセージも表示する必要はなく、また、
+してはならない。
+
+語数を数えるコマンドには、語単位にポイントを進める式と、語数を数える式
+が含まれる。関数定義の長さを数える関数も同じように、定義単位にポイント
+を進める式と長さのリストを作る式で動作するように設計できる。
+
+問題をこのように文書にすることは、関数定義を書く基本である。ファイルの
+先頭から数え始めるので、最初のコマンドは`(goto-char (point-min))'になる。
+つぎに、`while'ループを始めるのであるが、ループの判定条件は、つぎの関数
+定義を探す正規表現の探索式である。探索に成功する限りポイントを先に進め、
+ループの本体を評価する。本体には、長さのリストを作る式が必要である。リ
+スト作成のコマンド`cons'を使ってリストを作る。これでほとんどできあがり
+である。
+
+コードの断片を示そう。
+
+     (goto-char (point-min))
+     (while (re-search-forward "^(defun" nil t)
+       (setq lengths-list
+             (cons (count-words-in-defun) lengths-list)))
+
+残っているのは、関数定義を収めたファイルを探す機構である。
+
+まえの例では、Infoファイルやバッファ`*scratch*'などの他のバッファに切り
+替えていた。
+
+ファイルを探すという動作は、まだ説明していない新しい動作である。
+
+
+
+File: eintr-ja, Node: Find a File, Next: lengths-list-file, Prev: count-words-in-defun, Up: Words in a defun
+
+ファイルを探す *(2004/08/10)*
+=============================
+
+Emacsでファイルを探すには、コマンド`C-x C-f'（`find-file'）を使う。この
+コマンドは、われわれの長さの問題にはほぼよいのではあるが、ぴったりでは
+ない。
+
+`find-file'のソースを見てみよう（関数のソースを探すにはコマンド
+`find-tag'か `C-h f' (`describe-function' を使う）。
+
+     (defun find-file (filename)
+       "Edit file FILENAME.
+     Switch to a buffer visiting file FILENAME,
+     creating one if none already exists."
+       (interactive "FFind file: ")
+       (switch-to-buffer (find-file-noselect filename)))
+
+定義には短いが完全な説明文があり、
+コマンドを対話的に使った場合にファイル名を
+問い合わせる`interactive'式もある。
+定義の本体には、2つの関数、`find-file-noselect'と
+`switch-to-buffer'がある。
+
+`C-h f'（コマンド`describe-function'）で表示される説明文によれば、関数
+`find-file-noselect'は、指定されたファイルをバッファに読み込み、そのバッ
+ファを返す。しかし、バッファを選択することはしない。
+（`find-file-noselect'を使った場合、）Emacsは指定したバッファに注意を向
+けないのである。これは`switch-to-buffer'が行うことであり、Emacsの注意を
+指定したバッファに向け、そのバッファをウィンドウに表示する。バッファの
+切り替えについてはすでに説明した（*Note Switching Buffers::）。
+
+われわれのヒストグラムの計画では、プログラムが各定義の長さを調べる個々
+のファイルを表示する必要はない。`switch-to-buffer'を使うかわりに、
+`set-buffer'を使って、プログラムの注意を別のバッファに向けるが、画面に
+は表示しない。したがって、`find-file'を呼んで操作するかわりに、独自の式
+を書く必要がある。
+
+これは簡単であり、`find-file-noselect'と`set-buffer'を使う。
+
+
+
+File: eintr-ja, Node: lengths-list-file, Next: Several files, Prev: count-words-in-defun, Up: Words in a defun
+
+`lengths-list-file'の詳細 *(2004/08/10)*
+========================================
+
+関数`lengths-list-file'の核は、defun単位にポイントを移動する機能と、各
+defun内の単語やシンボルを数える機能である。この核を、ファイルを探したり、
+ファイルの先頭にポイントを移動するなどのさまざまな処理を行う機能で囲む。
+関数定義はつぎのようになる。
+
+     (defun lengths-list-file (filename)
+       "Return list of definitions' lengths within FILE.
+     The returned list is a list of numbers.
+     Each number is the number of words or
+     symbols in one function definition."
+       (message "Working on `%s' ... " filename)
+       (save-excursion
+         (let ((buffer (find-file-noselect filename))
+               (lengths-list))
+           (set-buffer buffer)
+           (setq buffer-read-only t)
+           (widen)
+           (goto-char (point-min))
+           (while (re-search-forward "^(defun" nil t)
+             (setq lengths-list
+                   (cons (count-words-in-defun) lengths-list)))
+           (kill-buffer buffer)
+           lengths-list)))
+
+関数には1つの引数、処理すべきファイル名を渡す。4行の説明文があるが、
+`interactive'式はない。何も表示されないとコンピュータが壊れたと心配する
+人がいるので、本体の最初の行でメッセージを表示する。
+
+つぎの行には、`save-excursion'があり、関数が終了したときにEmacsの注意を
+カレントバッファに戻す。これは、もとのバッファにポイントが戻ると仮定し
+ている関数からこの関数を使う場合に便利である。
+
+`let'式の変数リストでは、Emacsが探したファイルを含んだバッファにローカ
+ル変数`buffer'を束縛する。同時に、Emacsはローカル変数として
+`lengths-list'を作る。
+
+続いて、Emacsはバッファに注意を向ける。
+
+続く行では、Emacsはバッファを読み出し専用にする。理想的にはこの行は必要
+ない。関数定義内の単語やシンボルを数える関数は、バッファを変更しない。
+さらに、バッファを変更したとしてもバッファを保存しない。この行は、最大
+限の注意を払ったものである。注意する理由は、この関数やこれが呼び出す関
+数はEmacsのソースを処理するので、それらが不注意に変更してしまうと、とて
+も都合が悪い。テストに失敗してEmacsのソースファイルを変更してしまうまで
+は、筆者もこの行の必要性を認識していなかった。
+
+つぎに続くのは、バッファがナロイングされている場合に備えたワイドニング
+である。この関数も普通は必要ない。バッファが既存でなければEmacsは新たに
+バッファを作成する。しかし、ファイルを訪問しているバッファが既存ならば、
+Emacsはそのバッファを返す。この場合には、バッファがナロイングされている
+可能性があるのでワイドニングする。完全に「ユーザーフレンドリ」を目指す
+ならば、ナロイングやポイントの位置を保存するべきであるが、ここではして
+いない。
+
+式`(goto-char (point-min))'は、ポイントをバッファの先頭へ移動する。
+
+つぎに続くのは、この関数の処理を行う`while'ループである。このループでは、
+Emacsは、各定義の長さを調べ、情報を収めた長さのリストを作る。
+
+処理を終えると、Emacsはバッファをキルする。これは、Emacsが使用するメモ
+リを節約するためである。筆者のEmacs第19版には、調べたいファイルが300以
+上あった。Emacs 21 では800以上にもなる．別の関数で、各ファイルに
+`lengths-list-file'を適用する。
+
+`let'式の最後の式は、変数`lengths-list'であり、関数全体の値として返され
+る値である。
+
+いつものようにこの関数をインストールすれば、試せる。つぎの式の直後にカー
+ソルを置いて`C-x C-e'（`eval-last-sexp'）とタイプする。
+
+     (lengths-list-file
+      "/usr/local/share/emacs/21.0.100/lisp/emacs-lisp/debug.el")
+
+
+（GNU Emacs 21.0.100 で使っている人は，ファイルのパス名を変更する必要が
+あろう。この式を変更するには，`*scratch*' バッファにコピーして編集する)
+
+(Also, to see the full length of the list, rather than a truncated
+version, you may have to evaluate the following: (また，省略されたもの
+ではなく，リストの全体を見るために，以下を評価しなければならないかもし
+れない)
+
+     (custom-set-variables '(eval-expression-print-length nil))
+
+(*Note Setting Variables with `defcustom': defcustom．それから
+`lengths-list-file' 式を評価する．)
+
+`debug.el' の長さのリストは数秒かかって，以下のように表示される．
+
+     (77 95 85 87 131 89 50 25 44 44 68 35 64 45 17 34 167 457)
+
+(著者の古いマシンで第19版での`debug.el'の長さのリストを調べたところ，7
+秒かかり，次のような結果を得た．)
+
+     (75 41 80 62 20 45 44 68 45 12 34 235)
+
+(新しいバージョンの `debug.el' は古いものよりも多くの関数を含む．そして，
+著者の新しいマシンは古いマシンよりもかなり速い．)
+
+ファイルの最後にある定義の長さがリストの先頭にあることに注意してほしい。
+
+
+
+File: eintr-ja, Node: Several files, Next: Several files recursively, Prev: lengths-list-file, Up: Words in a defun
+
+別のファイルの`defuns'内の単語の数え上げ *(2004/08/10)*
+=======================================================
+
+前節では、ファイル内の各定義の長さをリストにして返す関数を作成した。こ
+こでは、複数のファイルの各定義の長さのリストを返す関数を定義する。
+
+ファイルの並びのおのおのを処理することは繰り返し動作であるので、
+`while'ループか再帰を使える。
+
+* Menu:
+
+* lengths-list-many-files::     Return a list of the lengths of defuns.
+* append::                      Attach one list to another.
+
+
+
+File: eintr-ja, Node: lengths-list-many-files, Next: append, Prev: Several files, Up: Several files
+
+`defuns'の長さを決定する *(2004/08/10)*
+---------------------------------------
+
+`while'ループを使った設計は、決まりきっている。関数に渡す引数はファイル
+のリストである。すでに見てきたように（*Note Loop Example::）、リストに
+要素がある限りループの本体を評価し、リストが空になったらループを抜け出
+るように`while'ループを書くことができる。これが動作するためには、本体を
+評価するたびにリストを短くし、最終的にはリストが空になるような式がルー
+プの本体に含まれる必要がある。
+
+雛型はつぎのようになる。
+
+     (while リストが空かどうか調べる
+       本体...
+       リストにリストのCDRを設定)
+
+`while'ループは（判定条件を評価した結果である)`nil'を返し、本体の評価結
+果を返さない（ループの本体内の式は、副作用のために評価される）。しかし、
+長さのリストを設定する式は本体の中にあり、その値を関数全体の値としてほ
+しいのである。これには、`while'ループを`let'式で囲み、`let'式の最後の要
+素が長さのリストの値を含むようにする（*Note Incrementing Example::）。
+
+以上のことを考慮すると、関数はつぎのようになる。
+
+     ;;; `while'ループを使う
+     (defun lengths-list-many-files (list-of-files)
+       "Return list of lengths of defuns in LIST-OF-FILES."
+       (let (lengths-list)
+
+     ;;; 判定条件
+         (while list-of-files
+           (setq lengths-list
+                 (append
+                  lengths-list
+
+     ;;; 長さのリストを作る
+                  (lengths-list-file
+                   (expand-file-name (car list-of-files)))))
+
+     ;;; ファイルのリストを短くする
+           (setq list-of-files (cdr list-of-files)))
+
+     ;;; 長さのリストを最終的な値として返す
+         lengths-list))
+
+`expand-file-name' is a built-in function that converts a file name to
+the absolute, long, path name form of the directory in which the
+function is called.  `expand-file-name'は組み込み関数であり、ファイル名
+を関数が呼ばれたディレクトリにあるファイルとして，絶対パス名に変換する。
+
+もし `expand-file-name' が ディレクトリ
+`/usr/local/share/emacs/21.0.100/lisp/emacs-lisp/' を訪問している時に
+`debug.el' に対して実行されると，
+
+     debug.el
+
+は、つぎのようになる。
+
+     /usr/local/share/emacs/21.0.100/lisp/emacs-lisp/debug.el
+
+この関数定義の中で説明していないものは関数`append'であるが、次節で説明
+する。
+
+
+
+File: eintr-ja, Node: append, Prev: Several files, Up: Several files
+
+関数`append' *(2004/08/10)*
+---------------------------
+
+関数`append'は、リストを他のリストに繋げる。たとえば、
+
+     (append '(1 2 3 4) '(5 6 7 8))
+
+は、つぎのリストを作り出す。
+
+     (1 2 3 4 5 6 7 8)
+
+`lengths-list-file'を呼び出して得た2つのリストを、このように繋ぎたい。
+結果は、`cons'と対照的である。
+
+     (cons '(1 2 3 4) '(5 6 7 8))
+
+では、`cons'の第1引数が新たなリストの第1要素になる。
+
+     ((1 2 3 4) 5 6 7 8)
+
+
+
+File: eintr-ja, Node: Several files recursively, Next: Prepare the data, Prev: Several files, Up: Words in a defun
+
+別のファイルの再帰による単語の数え上げ *(2004/08/10)*
+=====================================================
+
+`while'ループのかわりに、
+ファイルのリストのおのおのを再帰的に処理してもできる。
+`lengths-list-many-files'の再帰版は、短くて簡単である。
+
+再帰的関数には、「再帰条件」、「次段式」、再帰呼び出しの部分がある。
+「再帰条件」は、関数が再度自身を呼び出すかどうかを決めるもので、
+`list-of-files'に要素があれば自身を呼び出す。「次段式」は
+`list-of-files'をそのCDRに設定し直し、最終的にはリストが空になるように
+する。再帰呼び出しでは、短くしたリストに対して自身を呼び出す。関数全体
+は、この説明よりも短い！
+
+     (defun recursive-lengths-list-many-files (list-of-files)
+       "Return list of lengths of each defun in LIST-OF-FILES."
+       (if list-of-files                     ; 再帰条件
+           (append
+            (lengths-list-file
+             (expand-file-name (car list-of-files)))
+            (recursive-lengths-list-many-files
+             (cdr list-of-files)))))
+
+関数は、`list-of-files'の最初の長さのリストを、`list-of-files'の残りに
+対して自身を呼び出した結果に繋ぎ、それを返す。
+
+各ファイルに個別に`lengths-list-file'を適用した結果を添えて、
+`recursive-lengths-list-many-files'の実行結果を示そう。
+
+`recursive-lengths-list-many-files'と`lengths-list-file'をインストール
+してから、つぎの式を評価する。ファイルのパス名は変更する必要があるだろ
+う。InfoファイルとEmacsのソースがデフォルトの場所にあれば、変更する必要
+はない。式を変更するには、これらをバッファ`*scratch*'にコピーして、そこ
+で変更して評価する。
+
+結果は`=>'のあとに記した（これらの値はEmacs第21.0.100版のファイルに対す
+るものである。Emacsの版が異なれば、結果も異なる）。
+
+     (cd "/usr/local/share/emacs/21.0.100/")
+
+     (lengths-list-file "./lisp/macros.el")
+          => (273 263 456 90)
+
+     (lengths-list-file "./lisp/mail/mailalias.el")
+          => (38 32 26 77 174 180 321 198 324)
+
+     (lengths-list-file "./lisp/makesum.el")
+          => (85 181)
+
+     (recursive-lengths-list-many-files
+      '("./lisp/macros.el"
+        "./lisp/mail/mailalias.el"
+        "./lisp/makesum.el"))
+            => (273 263 456 90 38 32 26 77 174 180 321 198 324 85 181)
+
+関数`recursive-lengths-list-many-files'は、望みの結果を出している。
+
+つぎの段階は、グラフ表示するためにリスト内のデータを準備することである。
+
+
+
+File: eintr-ja, Node: Prepare the data, Prev: Several files recursively, Up: Words in a defun
+
+グラフ表示用データの準備 *(2004/08/10)*
+=======================================
+
+関数`recursive-lengths-list-many-files'は、個数のリストを返す。各個数は、
+関数定義の長さである。このデータを、グラフ作成に適した数のリストに変換
+したいのである。新しいリストでは、単語やシンボルが10個未満の関数定義は
+いくつ、10から19個のものはいくつ、20から29個のものはいくつ、などとした
+い。
+
+つまり、関数`recursive-lengths-list-many-files'が作成した長さのリスト全
+体を処理して、長さの範囲ごとに数を数えて、これらの数から成るリストを作
+りたいのである。
+
+これまでの知識をもとにすれば、長さのリストの「CDRs」を辿りながら、各要
+素を調べ、どの長さの範囲に含まれるかを決めて、その範囲のカウンタを増や
+す関数を書くことは難しくないことがわかる。
+
+しかし、そのような関数を書き始めるまえに、長さのリストを最小数から最大
+数の順にソートした場合の利点を考えてみよう。まず、ソートしてあると、2つ
+の並んだ数は同じ範囲か隣り合う範囲にあるので、各範囲の数を数えるのが簡
+単になる。第二に、ソートされたリストを調べれば、最大数と最小数がわかる
+ので、最大の範囲と最小の範囲を決定できる。
+
+* Menu:
+
+* Sorting::                     Sorting lists.
+* Files List::                  Making a list of files.
+* Counting function definitions::
+
+
+
+File: eintr-ja, Node: Sorting, Next: Files List, Prev: Prepare the data, Up: Prepare the data
+
+リストのソート（整列） *(2004/08/10)*
+-------------------------------------
+
+Emacsにはリストをソートする関数`sort'がある。関数`sort'は2つの引数、ソー
+トすべきリストと、リストの2つの要素のうち最初のものが2番目より「小さい」
+かどうかを調べる述語を取る。
+
+すでに説明したように（*Note Wrong Type of Argument::）述語とは、ある性
+質が真か偽かを調べる関数である。関数`sort'は、述語にしたがって、リスト
+の順番を変える。つまり、`sort'は、非数値的なリストを非数値的な条件でソー
+トする場合にも使え、たとえば、リストをアルファベット順にもできる。
+
+数値のリストをソートするときには、関数`<'を使う。たとえば、
+
+     (sort '(4 8 21 17 33 7 21 7) '<)
+
+は、つぎのようになる。
+
+     (4 7 7 8 17 21 21 33)
+
+（この例では、`sort'に引数として渡すまえにシンボルを評価したくないので、
+どちらの引数もクオートした。）
+
+関数`recursive-lengths-list-many-files'が返したリストをソートするのは簡
+単である。関数 `<' を使う．
+
+     (sort
+      (recursive-lengths-list-many-files
+       '("../lisp/macros.el"
+         "../lisp/mailalias.el"
+         "../lisp/makesum.el"))
+      '<
+
+これは、つぎのようになる。
+
+     (85 86 116 122 154 176 179 265)
+
+（この例では、`sort'に渡すリストを生成するために式を評価する必要がある
+ので、`sort'の第1引数はクオートしない。）
+
+
+
+File: eintr-ja, Node: Files List, Next: Counting function definitions, Prev: Sorting, Up: Prepare the data
+
+ファイルのリストの作成 *(2004/08/10)*
+-------------------------------------
+
+関数`recursive-lengths-list-many-files'は、
+引数としてファイルのリストを必要とする。
+上の例では、リストを手で書いた。
+しかし、Emacs Lispのソースディレクトリは、こうするには大きすぎる。
+かわりに、リストを作るための関数を書くだろう．この関数では，
+`while' ループと再帰関数の両方を使うだろう．
+
+古いバージョンの Emacsではすべての `.el'ファイルが1つのディレクトリ下に
+置かれるので，このような関数を書く必要はない．その代わりに，関数
+`directory-files' を使うことができる．この関数はある1つのディレクトリに
+ある検索パターンに一致する名前のファイルを一覧する．
+
+しかし，最新のEmacsではEmacs Lisp ファイルは `lisp' 下だけでなくサブディ
+レクトリにも置かれている．この再配置は探しやすさのためである．例えば，
+メールに関連したファイルは `lisp' 下にある `mail' ディレクトリにある．
+しかし，同時に再配置でサブディレクトリも検索してファイルを一覧するよう
+な関数を書くことを強いられる．
+
+このために，`files-in-below-directory' という関数を作成する．この関数は，
+既存の関数である `directory-files-and-attributes' を実行し，結果を
+`car' や `nthcdr'，`substring' のようによく知っている関数で連結する．こ
+の `directory-files-and-attributes' はあるディレクトリのファイル名だけ
+でなく，サブディレクトリの名前や属性も出力する．
+
+目的を言い換えると，リスト `recursive-lengths-list-many-files' にファイ
+ル名を返すような関数を作ることになる．結果であるリストは以下のようにな
+る(ただし，要素はもっと多い)
+
+     ("../lisp/macros.el"
+      "../lisp/mail/rmail.el"
+      "../lisp/makesum.el")
+
+関数 `directory-files-and-attributes' はリストのリストを返す．主リスト
+内の各リストは13の要素から成る．最初の要素はファイル (GNU/Linux ではディ
+レクトリファイル，つまり，あるディレクトリの特別な属性を持つようなファ
+イルかもしれない)名を含む文字列である．2番目の特別な属性を持つよう要素
+は，ディレクトリであれば `t'，シンボリックリンクであれば文字列(文字列は
+リンク先の名前)，さもなければ `nil' である．
+
+例えば，`lisp/' にある最初の `.el' ファイルは`abbrev.el' である．その名
+前は`/usr/local/share/emacs/21.0.100/lisp/abbrev.el' であり，ディレクト
+リでもシンボリックリンクでもない．
+
+このファイルを `directory-files-and-attributes' で評価すると以下のよう
+な結果が表示される．
+
+     ("/usr/local/share/emacs/21.0.100/lisp/abbrev.el"
+     nil
+     1
+     1000
+     100
+     (15019 32380)
+     (14883 48041)
+     (15214 49336)
+     11583
+     "-rw-rw-r--"
+     t
+     341385
+     776)
+
+一方，`mail/' は `lisp/' ディレクトリ下にあるディレクトリである．この場
+合，リストの最初は以下のようになる．
+
+     ("/usr/local/share/emacs/21.0.100/lisp/mail"
+     t
+     ...
+     )
+
+(別の属性については `file-attributes' のドキュメントを見るように．関数
+`file-attributes' はファイル名をリストには含まないので，最初の要素は
+`directory-files-and-attributes' の2番目の要素になることは念頭に置くこ
+と．)
+
+我々が求める関数 `files-in-below-directory' はあるディレクトリ下を確認
+し，`.el' ファイルを一覧するものである．
+
+ここまでに述べた関数は `files-in-below-directory' をどのように構成する
+かのヒントになる．ディレクロチにファイルがあれば，リストに`.el' ファイ
+ルを追加すべきである．もし，ディレクトリがあれば，サブディレクトリに対
+してこの関数を要求して，サブディレクトリを加えて処理を繰り返すべきであ
+る．
+
+しかし，すべてのディレクトリには 自分自身を現す `.' ("ドット")と親ディ
+レクトリ(1個上のディレクトリ)を指す `..' ("ダブルドット") を含むことは
+覚えておくべきである．(`/' はルートディレクトリであり，`/' には親ディレ
+クトリがないため，`..' も自分自身を指す．) 明らかに，我々の関数
+`files-in-below-directory' にはこれらのディレクトリは不要だ．これらがあ
+ると，直接的，間接的にカレントディレクトリを探すように処理されてしまう
+からだ．
+
+結果として，我々の関数 `files-in-below-directory' はいくらかの処理をし
+なければならない．
+
+   * ファイル名が `.el' で終わるかどうかを確認する．そして，もし終わる
+     なら，リストに追加する．
+
+   * ファイル名がディレクトリ名であるかどうかを確認する．もしそうなら，
+
+        - `.' か `..' であるかどうかを確認する．もしそうなら無視する．
+
+        - そうでなければ，そのディレクトリに入り，処理を繰り返す．
+
+これらの処理を行う関数定義を書いていこう．あるディレクトリ内で，何の処
+理が必要かを確認して，あるファイルから別のファイルへと処理していくのに
+は `while' ループを使う．そして，各サブディレクトリで処理を繰り返すのに
+は再帰を使う．再帰のパターンは"accumulate" (*Note Recursive Pattern:
+*accumulate*: Accumulate.)  であり，連結には `append' を使う．
+
+
+
+関数は以下である．
+
+     (defun files-in-below-directory (directory)
+       "List the .el files in DIRECTORY and in its sub-directories."
+       ;; この関数は非対話的に使われるけれども
+       ;; 対話的に使えるとテストに便利である．
+       ;; ディレクトリは "/usr/local/share/emacs/21.0.100/lisp/"
+       ;; のような名前である．
+       (interactive "DDirectory name: ")
+       (let (el-files-list
+             (current-directory-list
+              (directory-files-and-attributes directory t)))
+         ;; カレントディレクトリで while
+         (while current-directory-list
+           (cond
+            ;; ファイル名が `.el' で終わるか確認する
+            ;; もしそうなら，リストに追加する．
+            ((equal ".el" (substring (car (car current-directory-list)) -3))
+             (setq el-files-list
+                   (cons (car (car current-directory-list)) el-files-list)))
+            ;; ファイル名がディレクトリであるか確認する
+            ((eq t (car (cdr (car current-directory-list))))
+             ;; 無視するか再帰するか決定する
+             (if
+                 (equal (or "." "..")
+                        (substring (car (car current-directory-list)) -1))
+                 ;; ファイル名がカレントディレクトリか
+                 ;; 親ディレクトリであれば何もしない
+                 ()
+               ;; そうでなければ，ディレクトリを下り，
+               ;; 処理を繰り返す
+               (setq el-files-list
+                     (append
+                      (files-in-below-directory
+                       (car (car current-directory-list)))
+                      el-files-list)))))
+           ;; リストの次へファイルへ移る．リストを短くすることで
+           ;; while ループは結局終わりがくる．
+           (setq current-directory-list (cdr current-directory-list)))
+         ;; ファイル名を返す
+         el-files-list))
+
+
+関数 `files-in-below-directory' と `directory-files' は1つの引数を取る．
+これはディレクトリ名である．
+
+したがって、筆者のシステムで、
+
+     (length
+      (files-in-below-directory "/usr/local/share/emacs/21.0.100/lisp/"))
+
+とすると、筆者の第21.0.100版のLispのソースディレクトリには754個の
+`.el'ファイルがあることがわかる。
+
+`files-in-below-directory' はアルファベットの逆順でリストを返す．アルファ
+ベット順にリストを並び換える式は以下のようになる．
+
+     (sort
+      (files-in-below-directory "/usr/local/share/emacs/21.0.100/lisp/")
+      'string-lessp)
+
+
+
+
+File: eintr-ja, Node: Counting function definitions, Prev: Files List, Up: Prepare the data
+
+関数定義の数え上げ *(2004/08/10)*
+---------------------------------
+
+われわれの中間目標は、単語やシンボルが10個未満の関数定義はいくつ、10か
+ら19個のものはいくつ、20から29個のものはいくつ、などなどを表すリストを
+生成することである。ソートした数のリストでは、この処理は簡単である。ま
+ず、10未満の要素数を数え、数え終わった数を飛び越えてから、20未満の要素
+数を数え、数え終わった数を飛び越えてから、30未満の要素数を数え、とすれ
+ばよい。10、20、30、40などの各数は、各範囲の最大の数より1大きい。これら
+の数のリストをリスト`top-of-ranges'としよう。
+
+このリストを自動的に生成することも可能であるが、書き下したほうが簡単で
+ある。つぎのようになる。
+
+     (defvar top-of-ranges
+      '(10  20  30  40  50
+        60  70  80  90 100
+       110 120 130 140 150
+       160 170 180 190 200
+       210 220 230 240 250
+       260 270 280 290 300)
+      "List specifying ranges for `defuns-per-range'.")
+
+範囲を変更するには、このリストを修正する。
+
+つぎは、各範囲にある定義の数のリストを作る関数を書くことである。明らか
+に、この関数は、引数として`sorted-lengths'とリスト`top-of-ranges'を取る
+必要がある。
+
+関数`defuns-per-range'は、2つのことを繰り返し行う必要がある。現在の最大
+値で指定される範囲内にある定義の数を数えることと、その範囲内の定義の個
+数を数え終えたらリスト`top-of-ranges'のつぎの値にシフトすることである。
+これらの各操作は繰り返しであるので、`while'ループを使ってできる。1つの
+ループで指定された範囲の定義の個数を数え、もう一方のループで順番にリス
+ト`top-of-ranges'のつぎの値を選ぶ。
+
+`sorted-lengths'の数個の要素を各範囲において数える。つまり、小さな歯車
+が大きな歯車の内側にあるように、リスト`sorted-lengths'を処理するループ
+は、リスト`top-of-ranges'を処理するループの内側になる。
+
+内側のループでは、各範囲内の定義の個数を数える。これは、すでに見てきた
+ような簡単な数え上げのループである（*Note Incrementing Loop::）。ループ
+の判定条件では、リスト`sorted-lengths'の値が範囲の最大値より小さいかど
+うかを調べる。そうならば、関数はカウンタを増やし、リスト
+`sorted-lengths'のつぎの値を調べる。
+
+内側のループはつぎのようになる。
+
+     (while 長さの要素が範囲の最大値より小さい
+       (setq number-within-range (1+ number-within-range))
+       (setq sorted-lengths (cdr sorted-lengths)))
+
+外側のループはリスト`top-of-ranges'の最小値から始め、順番につぎに大きい
+値に設定する。これはつぎのようなループで行う。
+
+     (while top-of-ranges
+       ループの本体...
+       (setq top-of-ranges (cdr top-of-ranges)))
+
+まとめると、2つのループはつぎのようになる。
+
+     (while top-of-ranges
+
+       ;; 現在の範囲内にある要素数を数える
+       (while 長さの要素が範囲の最大値より小さい
+         (setq number-within-range (1+ number-within-range))
+         (setq sorted-lengths (cdr sorted-lengths)))
+
+       ;; つぎの範囲へ移動
+       (setq top-of-ranges (cdr top-of-ranges)))
+
+さらに、外側のループでは、Emacsはその範囲内にあった定義の個数
+（`number-within-range'の値）をリストに記録する必要がある。これには
+`cons'を使う（*Note cons::）。
+
+関数`cons'で作れるのだが、最大の範囲に含まれる定義の個数が先頭になり、
+最小の範囲に含まれる定義の個数が最後になる。これは、`cons'が新たな要素
+をリストの先頭に置き、2つのループが長さのリストの最小のものから処理する
+ので、`defuns-per-range-list'が最大の数を先頭に置いて終わるからである。
+しかし、グラフを表示する際には、最小の値を最初に、最大の値を最後に書き
+たい。解決策は、`defuns-per-range-list'の順番を逆順にすることである。こ
+れには、リストの順番を逆順にする関数`nreverse'を使う。
+
+たとえば、
+
+     (nreverse '(1 2 3 4))
+
+は、つぎのようになる。
+
+     (4 3 2 1)
+
+関数`nreverse'は「破壊的」である。つまり、渡されたリストそのものを変更
+する。非破壊的な関数`car'や`cdr'とは対照的である。ここでは、もとの
+`defuns-per-range-list'は必要ないので、それが破壊されても関係ない（関数
+`reverse'はリストのコピーを逆順にするので、もとのリストはそのままであ
+る）。
+
+以上をまとめると、`defuns-per-range'はつぎのようになる。
+
+     (defun defuns-per-range (sorted-lengths top-of-ranges)
+       "SORTED-LENGTHS defuns in each TOP-OF-RANGES range."
+       (let ((top-of-range (car top-of-ranges))
+             (number-within-range 0)
+             defuns-per-range-list)
+
+         ;; 外側のループ
+         (while top-of-ranges
+
+           ;; 内側のループ
+           (while (and
+                   ;; 数値判定には数が必要
+                   (car sorted-lengths)
+                   (< (car sorted-lengths) top-of-range))
+
+             ;; 現在の範囲内にある要素数を数える
+             (setq number-within-range (1+ number-within-range))
+             (setq sorted-lengths (cdr sorted-lengths)))
+
+           ;; 内側のループだけを終わる
+
+           (setq defuns-per-range-list
+                 (cons number-within-range defuns-per-range-list))
+           (setq number-within-range 0)      ; カウンタを0にする
+
+           ;; つぎの範囲へ移動
+           (setq top-of-ranges (cdr top-of-ranges))
+           ;; つぎの範囲の最大値を設定する
+           (setq top-of-range (car top-of-ranges)))
+
+         ;; 外側のループを抜けて、最大の範囲よりも
+         ;;   大きな定義の個数を数える
+         (setq defuns-per-range-list
+               (cons
+                (length sorted-lengths)
+                defuns-per-range-list))
+
+         ;; 各範囲の定義の個数のリストを返す
+         ;;   最小から最大の順
+         (nreverse defuns-per-range-list)))
+
+関数は、1つの微妙な点を除けば、単純である。内側のループの判定条件はつぎ
+のようである。
+
+     (and (car sorted-lengths)
+          (< (car sorted-lengths) top-of-range))
+
+このかわりに、つぎにようにしてみる。
+
+     (< (car sorted-lengths) top-of-range)
+
+判定条件の目的は、リスト`sorted-lengths'の先頭要素が、範囲の最大値より
+小さいかどうかを調べることである。
+
+簡略した判定条件は、リスト`sorted-lengths'が`nil'でない限り、正しく動作
+する。しかし、`nil'であると式`(car sorted-lengths)'は`nil'を返す。関数
+`<'は、数を空リストである`nil'と比較できないので、Emacsはエラーを通知し、
+関数の動作を止めてしまう。
+
+リストの最後に達すると、リスト`sorted-lengths'はつねに`nil'になる。つま
+り、簡略した判定条件の関数`defuns-per-range'を使うと、必ず失敗する。
+
+`and'式を使って式`(car sorted-lengths)'を追加して、問題を解決する。
+式`(car sorted-lengths)'は、リストに要素がある限り`nil'以外の
+値を返すが、リストが空になると`nil'を返す。
+`and'式は、まず、式`(car sorted-lengths)'を評価し、
+これが`nil'ならば、`<'式を評価すること*なく*偽を返す。
+しかし、式`(car sorted-lengths)'が`nil'以外の値を返せば、
+`and'式は`<'式を評価し、その値を`and'式の値として返す。
+
+このようにして、エラーを防ぐ。
+*Note forward-paragraph::, for more information about `and'.
+
+関数`defuns-per-range'を試してみよう。まず、リスト`top-of-ranges'に値の
+（短かい）リストを束縛する式を評価し、続いて、リスト`sorted-lengths'を
+束縛する式を評価し、最後に関数`defuns-per-range'を評価する。
+
+     ;; （あとで使うものよりも短いリスト）
+     (setq top-of-ranges
+      '(110 120 130 140 150
+        160 170 180 190 200))
+
+     (setq sorted-lengths
+           '(85 86 110 116 122 129 154 176 179 200 265 300 300))
+
+     (defuns-per-range sorted-lengths top-of-ranges)
+
+これはつぎのようなリストを返す。
+
+     (2 2 2 0 0 1 0 2 0 0 4)
+
+たしかに、リスト`sorted-lengths'には、110より小さなものは2つあり、110と
+119のあいだのものは2つあり、120と129のあいだのものは2つある。200を超え
+る値のものは4つある。
+
+
+
+
+File: eintr-ja, Node: Readying a Graph, Next: Emacs Initialization, Prev: Words in a defun, Up: Top
+
+グラフの準備 *(2004/08/10)*
+***************************
+
+われわれの目標は、Emacs Lispのソースコードにあるさまざまな長さの関数定
+義の個数を表示したグラフを作ることである。
+
+実際問題として、グラフを作る場合には`gnuplot'などのプログラムを使うであ
+ろう（`gnuplot'はGNU Emacsとうまく組み合わせることができる）。しかし、
+ここでは、ゼロからグラフを描くプログラムを作り、その過程をとおして、す
+でに学んだことを復習し、より多くを学ぼう。
+
+本章では、単純なグラフを描く関数をまず書いてみる。この定義は"プロトタイ
+プ（prototype）"であり、素早く書いた関数であるが、グラフ作成という未踏
+領域の探検を可能にしてくれる。ドラゴンを発見するか単なる伝説であること
+を知るであろう。地形を把握できたら、自動的に軸のラベルを描くように関数
+を拡張する。
+
+* Menu:
+
+* Columns of a graph::
+* graph-body-print::            How to print the body of a graph.
+* recursive-graph-body-print::
+* Printed Axes::
+* Line Graph Exercise::
+
+
+
+File: eintr-ja, Node: Columns of a graph, Next: graph-body-print, Prev: Readying a Graph, Up: Readying a Graph
+
+グラフの列を表示
+================
+
+Emacsは柔軟で文字端末を含むいかなる種類の端末でも動作するように設計され
+ているので、「タイプライタ」文字の1つを使ってグラフを作る必要がある。ア
+スタリスクがよいであろう。グラフ表示関数を拡張すれば、ユーザーのオプショ
+ンで文字を選択できるようにもできる。
+
+この関数を`graph-body-print'としよう。唯一の引数として`numbers-list'を
+取る。ここでは、グラフにはラベルを付けずに、本体のみを表示することにす
+る。
+
+関数`graph-body-print'は、`numbers-list'の各要素ごとにアスタリスクから
+成る縦のコラムを挿入する。各コラムの高さは`numbers-list'の対応する要素
+の値で決まる。
+
+コラムの挿入は繰り返し動作なので、この関数は`while'ループや再帰を使って
+書ける。
+
+第1段階として、アスタリスクのコラムをどのように表示するかを考えよう。通
+常、Emacsでは、文字を画面の水平方向に、行単位で表示する。2つの方法で対
+処することができる。独自のコラム挿入関数を書くか、Emacsの既存のものを探
+すかである。
+
+Emacsに既存のものがあるかどうかを調べるには、コマンド`M-x apropos'を使
+う。このコマンドは、コマンド`C-h a'（command-apropos）に似ているが、後
+者はコマンドとなる関数のみを探す点が異なる。コマンド`M-x apropos'は、対
+話的でない関数も含めて、正規表現に一致するすべてのシンボルを表示する。
+
+探したいコマンドは、コラムを表示したり挿入するコマンドである。関数名に
+は、「print」や「insert」や「column」の単語が含まれるであろう。そこで、
+`M-x apropos RET print\|insert\|column RET'とタイプして結果を見てみよう。
+筆者のシステムでは、しばらくしてから、79個の関数や変数を表示した。この
+一覧を調べた結果、それらしい唯一の関数は`insert-rectangle'であった。
+
+たしかにこれがほしい関数であり、その説明文はつぎのとおりである。
+
+     insert-rectangle:
+     Insert text of RECTANGLE with upper left corner at point.
+     RECTANGLE's first line is inserted at point,
+     its second line is inserted at a point vertically under point, etc.
+     RECTANGLE should be a list of strings.
+
+予想どおりに動作するかどうか調べてみよう。
+
+`insert-rectangle'式の直後にカーソルを置いて`C-u C-x C-e'とタイプした結
+果をつぎに示す。この関数は、ポイントの直後から下向きに`"first"'と
+`"second"'と`"third"'を挿入した。また、関数は`nil'を返した。
+
+     (insert-rectangle '("first" "second" "third"))first
+                                                   second
+                                                   third
+     nil
+
+もちろん、この`insert-rectangle'式自身のテキストをバッファに挿入したい
+のではないが、われわれのプログラムからこの関数を呼び出す。関数
+`insert-rectangle'が文字列のコラムを挿入する場所にポイントを正しく移動
+しておく必要もある。
+
+Infoで読んでいる場合には、バッファ`*scratch*'などの別のバッファに切り替
+え、バッファの適当な場所へポイントを移動し、`M-:'とタイプして、ミニバッ
+ファの問い合わせに`insert-rectangle'式をタイプしてRETをタイプすれば、こ
+の動作を調べることができる。これにより、Emacsはミニバッファの式を評価す
+るが、ポイントの値としては、バッファ`*scratch*'のポイントの位置を使う
+（`M-:'は、`eval-expression'のキーバインドである）。
+
+ポイントは最後に挿入した行の直後に移動していることがわかる。つまり、こ
+の関数は、副作用としてポイントを移動する。この位置でコマンドを繰り返す
+と、直前の挿入位置の右に下向きに挿入される。これでは困る！　棒グラフを
+描くときには、コラムが互いに並んでいる必要がある。
+
+コラムを挿入する`while'ループの各繰り返しでは、ポイントを移動してコラム
+の最後ではなくコラムの先頭に置く必要があることがわかる。さらに、グラフ
+を描くとき、すべてのコラムが同じ高さではない。つまり、各コラムの先頭は、
+直前のものとは異なった高さにある。単純にいつも同じ行にポイントを位置決
+めすることはできず、正しい位置に移動する必要がある。たぶんこうできるだ
+ろう...。
+
+アスタリスクで表した棒グラフを描きたいのである。各コラムのアスタリスク
+の個数は、`numbers-list'の要素で決まる。`insert-rectangle'の各呼び出し
+では、正しい長さのアスタリスクのリストを作る必要がある。必要な個数のア
+スタリスクだけでこのリストが作られている場合、グラフを正しく表示するに
+は、基準行から正しい行数だけポイントを上に位置決めする必要がある。これ
+は、難しい。
+
+かわりに、つねに同じ長さのリストを`insert-rectangle'に渡すことができれば、
+新たにコラムを追加するたびに右へ移動する必要はあるが、
+ポイントは同じ行に置ける。
+このようにした場合、`insert-rectangle'に渡すリストの一部は
+アスタリスクではなく空白にする必要がある。
+たとえば、グラフの最大の高さが5で、コラムの高さが3だとすると、
+`insert-rectangle'にはつぎのような引数が必要になる。
+
+     (" " " " "*" "*" "*")
+
+コラムの高さがわかれば、このようなことは難しくない。コラムの高さを指定
+する方法は2つある。適当な高さをあらかじめ指定しておけば、その高さまでの
+グラフは正しく描ける。あるいは、数のリストを調べて、リストの最大値をグ
+ラフの最大の高さとする。後者の処理が難しければ、前者の処理がもっとも簡
+単である。Emacsには引数の最大値を調べる組み込み関数がある。その関数を使
+おう。関数は`max'であり、数である全引数の中の最大値を返す。たとえば、
+
+     (max  3 4 6 5 7 3)
+
+は7を返す（対応する関数`min'は、全引数の中の最小値を返す）。
+
+しかし、単純に`numbers-list'に対して`max'を呼べない。関数`max'は、引数
+として数のリストではなく数を要求する。したがって、つぎの式、
+
+     (max  '(3 4 6 5 7 3))
+
+は、つぎのようなエラーメッセージを出す。
+
+     Wrong type of argument:  number-or-marker-p, (3 4 6 5 7 3)
+
+引数のリストを関数に渡す関数が必要である。この関数は、第1引数（関数）を
+残りの引数に「適用（applies）」する。なお、最後の引数はリストでもよい。
+
+たとえば、
+
+     (apply 'max 3 4 7 3 '(4 8 5))
+
+は、8を返す。
+
+（本書のような書籍なしで、この関数をどのように学ぶのか筆者にはわからな
+い。関数名の一部を予想して`apropos'を使えば、`search-forward'や
+`insert-rectangle'などのこれ以外の関数を探すのは可能である。第1引数を残
+りに「適用（apply）」するという隠喩は明らかであるにも関わらず、初心者が
+`apropos'や他の補佐機能を使うときに、この用語を思い付くとは思えない。も
+ちろん、筆者がまちがっている可能性もあるが、いずれにしても、関数は、そ
+れを最初に発明した人が命名する。）
+
+`apply'の2番目以降の引数は省略できるので、リストの要素を渡して関数を呼
+び出すために`apply'を使える。つぎのようにしても「8」を返す。
+
+     (apply 'max '(4 8 5))
+
+`apply'をこの方法で使うことにする。関数
+`recursive-lengths-list-many-files'は、`max'を適用する数のリストを返す
+（ソートした数のリストに`max'を適用することもできる。リストがソートされ
+ているかいないかは関係ない）。
+
+したがって、グラフの最大の高さを調べる操作は、つぎようになる。
+
+     (setq max-graph-height (apply 'max numbers-list))
+
+グラフのコラムを表す文字列のリストの作り方に戻ろう。グラフの最大の高さ
+とコラムに現れるべきアスタリスクの個数を与えられて、関数はコマンド
+`insert-rectangle'で挿入すべき文字列のリストを返す。
+
+各コラムは、アスタリスクか空白文字である。関数はコラムの高さの値とコラ
+ム内のアスタリスクの個数を与えられるので、空白の個数は、コラムの高さか
+らアスタリスクの個数を引けば計算できる。空白の個数とアスタリスクの個数
+を与えられ、2つの`while'ループでリストを作る。
+
+     ;;; 第1版
+     (defun column-of-graph (max-graph-height actual-height)
+       "Return list of strings that is one column of a graph."
+       (let ((insert-list nil)
+             (number-of-top-blanks
+              (- max-graph-height actual-height)))
+
+         ;; アスタリスクを埋める
+         (while (> actual-height 0)
+           (setq insert-list (cons "*" insert-list))
+           (setq actual-height (1- actual-height)))
+
+         ;; 空白を埋める
+         (while (> number-of-top-blanks 0)
+           (setq insert-list (cons " " insert-list))
+           (setq number-of-top-blanks
+                 (1- number-of-top-blanks)))
+
+         ;; リスト全体を返す
+         insert-list))
+
+この関数をインストールして、つぎの式を評価すれば、目的のリストが返され
+ることがわかる。
+
+     (column-of-graph 5 3)
+
+は、つぎのリストを返す。
+
+     (" " " " "*" "*" "*")
+
+この`column-of-graph'には1つの大きな欠陥がある。コラムの空白や印として
+使うシンボルを、空白文字とアスタリスクに「書き込んである（hard-coded）」
+ことである。プロトタイプとしてはよいが、別のシンボルを使いたい人もいる
+だろう。たとえば、グラフ関数をテストするときには、空白のかわりにピリオ
+ドを使って、関数`insert-rectangle'を呼ぶたびにポイントが正しくなってい
+ることを確かめたい。あるいは、アスタリスクのかわりに`+'や別の記号を使い
+たいであろう。コラム幅を1文字より大きくしたい場合もあろう。プログラムは
+より柔軟であるべきである。これには、空白文字とアスタリスクのかわりに、
+2つの変数、`graph-blank'と`graph-symbol'を使い、これらの変数に別々に値
+を定義する。
+
+また、説明文も十分ではない。これらを考慮すると、つぎの第2版になる。
+
+     (defvar graph-symbol "*"
+       "String used as symbol in graph, usually an asterisk.")
+
+     (defvar graph-blank " "
+       "String used as blank in graph, usually a blank space.
+     graph-blank must be the same number of columns wide
+     as graph-symbol.")
+
+（`defvar'の説明は、
+*Note defvar::を参照。）
+
+     ;;; 第2版
+     (defun column-of-graph (max-graph-height actual-height)
+       "Return MAX-GRAPH-HEIGHT strings; ACTUAL-HEIGHT are graph-symbols.
+
+     The graph-symbols are contiguous entries at the end
+     of the list.
+     The list will be inserted as one column of a graph.
+     The strings are either graph-blank or graph-symbol."
+
+       (let ((insert-list nil)
+             (number-of-top-blanks
+              (- max-graph-height actual-height)))
+
+         ;; `graph-symbols'を埋め込む
+         (while (> actual-height 0)
+           (setq insert-list (cons graph-symbol insert-list))
+           (setq actual-height (1- actual-height)))
+
+         ;; `graph-blanks'を埋め込む
+         (while (> number-of-top-blanks 0)
+           (setq insert-list (cons graph-blank insert-list))
+           (setq number-of-top-blanks
+                 (1- number-of-top-blanks)))
+
+         ;; リスト全体を返す
+         insert-list))
+
+必要ならば、`column-of-graph'をもう一度書き直して、
+棒グラフにするか折線グラフにするを決めるオプションを
+与えられるようにもできる。
+これは難しくはない。
+折線グラフは、各バーの先頭より下が空白の棒グラフであると考えられる。
+折線グラフのコラムを作るには、まず、値より1小さい空白文字のリストを作り、
+`cons'を使って印のシンボルをリストに繋げ、
+`cons'を使ってリストの先頭に空白文字を埋め込む。
+
+このような関数の書き方は簡単であるが、われわれには必要ないのでやらない
+ことにする。しかし、そのようにするならば`column-of-graph'を書き直す。よ
+り重要なことは、別の部分には何の変更も必要ないことに注意してほしい。強
+調するが、やろうと思えば簡単にできる。
+
+では、グラフを描く最初の実際の関数を書いてみよう。これはグラフの本体を
+描くが、垂直軸や水平軸のラベルを描かないので、この関数を
+`graph-body-print'と呼ぶことにする。
+
+
+
+File: eintr-ja, Node: graph-body-print, Next: recursive-graph-body-print, Prev: Readying a Graph, Up: Readying a Graph
+
+関数`graph-body-print' *(2004/08/10)*
+=====================================
+
+前節までの準備があるので、関数`graph-body-print'は簡単である。この関数
+は、数のリストの各要素が各コラムのアスタリスクの個数を指定するものとし
+て、アスタリスクや空白文字から成るコラムを描く。これは繰り返し動作なの
+で、減少方式の`while'ループや再帰的関数で書ける。本節では、`while'ルー
+プを使った定義を書こう。
+
+関数`column-of-graph'は、引数としてグラフの高さが必要であるので、これを
+ローカル変数とする。
+
+この関数の`while'ループの雛型はつぎのようになる。
+
+     (defun graph-body-print (numbers-list)
+       "説明文..."
+       (let ((height  ...
+              ...))
+
+         (while numbers-list
+           コラムを挿入し、ポイントを再位置決めする
+           (setq numbers-list (cdr numbers-list)))))
+
+この雛型の項目を埋めていこう。
+
+グラフの高さを求めるには、式`(apply 'max numbers-list)'を使う。
+
+`while'ループは、`numbers-list'の要素を一度に1つずつ処理する。リストを
+短くするには式`(setq numbers-list (cdr numbers-list))'を使う。リストの
+CARは`column-of-graph'の引数である。
+
+`while'の各繰り返しでは、関数`insert-rectangle'で、`column-of-graph'が
+返したリストを挿入する。関数`insert-rectangle'は、挿入位置の右下にポイ
+ントを移動するので、挿入するときのポイントの値を保存し、挿入後にポイン
+トを戻し、つぎに`insert-rectangle'を呼び出すために水平方向に移動する。
+
+挿入するコラムが1文字幅ならば、
+再位置決めコマンドは単に`(forward-char 1)'でよい。
+しかし、コラムの幅が1文字を越えるかもしれない。
+つまり、再位置決めコマンドは`(forward-char symbol-width)'とすべきである。
+`symbol-width'は、`graph-blank'の長さであり、
+式`(length graph-blank)'で調べる。
+変数`symbol-width'をコラム幅にバインドする最適の場所は、
+`let'式の変数リストである。
+
+以上を考慮すると関数定義はつぎのようになる。
+
+     (defun graph-body-print (numbers-list)
+       "Print a bar graph of the NUMBERS-LIST.
+     The numbers-list consists of the Y-axis values."
+
+       (let ((height (apply 'max numbers-list))
+             (symbol-width (length graph-blank))
+             from-position)
+
+         (while numbers-list
+           (setq from-position (point))
+           (insert-rectangle
+            (column-of-graph height (car numbers-list)))
+           (goto-char from-position)
+           (forward-char symbol-width)
+           ;; コラムごとにグラフを描く
+           (sit-for 0)
+           (setq numbers-list (cdr numbers-list)))
+         ;; 水平軸のラベル用にポイントを置く
+         (forward-line height)
+         (insert "\n")
+     ))
+
+この関数定義で予期しなかった式は、
+`while'ループの中の式`(sit-for 0)'である。
+この式は、グラフ表示操作を見ているとおもしろくする。
+この式は、Emacsに「じっと（sit）している」ように、つまり、
+0時間のあいだ何もしないで、画面を再描画させる指示である。
+ここに書くことで、Emacsはコラムごとに画面を再描画する。
+これがないと、関数が終了するまでEmacsは画面を再描画しない。
+
+数の短いリストで`graph-body-print'を試そう。
+
+  1. `graph-symbol'、`graph-blank'、`column-of-graph'、をインストールす
+     る。これらは，*Note Columns of a graph::, にある．
+     `graph-body-print' も同様にインストールする．
+
+  2. つぎの式をコピーする。
+
+          (graph-body-print '(1 2 3 4 6 4 3 5 7 6 5 2 3))
+
+  3. バッファ`*scratch*'に切り替え、グラフを描き始める位置にカーソルを
+     置く。
+
+  4. `M-ESC'（`eval-expression'）とタイプする。
+
+  5. ミニバッファに`C-y'（`yank'）で`graph-body-print'式をヤンクする。
+
+  6. RETを押して`graph-body-print'式を評価する。
+
+Emacsはつぎのようなグラフを描く。
+
+                         *
+                     *   **
+                     *  ****
+                    *** ****
+                   ********* *
+                  ************
+                 *************
+
+
+

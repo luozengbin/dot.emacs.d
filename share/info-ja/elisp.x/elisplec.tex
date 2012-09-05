@@ -1,0 +1,3519 @@
+\def\lang{jp} % -*- texinfo -*- for Texinfo V.3.1 by TUSK
+\input texinfo
+
+@c hustler.tex
+@c Last modified Thu Jan 29 19:31:12 1998 on crx
+
+@comment
+@c   このファイルは、'93年6月～9月までの間 ASCII-NET junk.test ではすらあ氏 
+@c (pcs39334@@asciinet.or.jp)によって開かれていた「Emacs Lisp 講座」で使われて
+@c いたテキストをjaybird(pcs37358@@asciinet.or.jp)がTexinfo形式に変換したもの
+@c です。残念ながら当時は生徒として参加することはできませんでしたが、その後も
+@c Emacs Lisp を書いてて悩んだときは真っ先に参考にさせていただいています。
+@c   Emacs(Mule)とEmacs Lispという未知の世界への扉を開いてくださいましたはす
+@c らあ氏に深く感謝いたします。
+@c @end comment
+
+@c %**start of header
+@
+@setfilename hustler.
+@settitle Hustler's Tutorial to Emacs Lisp
+@c %**end of header
+@setchapternewpage odd
+
+@iftex
+@c @syncodeindex fn cp
+@c @syncodeindex vr cp
+@end iftex
+
+@titlepage
+@sp 10
+@title 優しい Emacs-Lisp 講座
+@subtitle メジャー・モードを作ろう
+@subtitle Emacs-Lisp without a Hustle
+
+@author pcs39334@@asciinet.or.jp
+@author yuuji@@ae.keio.ac.jp
+@author @copyright{} 1991-1995 by    HIROSE, Yuuji
+@end titlepage
+
+
+@node Top, Writing Major Modes, (dir), (dir)
+@comment  node-name,  next,  previous,  up
+
+@menu
+* Writing Major Modes::         メジャーモードを書こう
+* Construction of Emacs-Lisp::  Emacs-Lisp の構文
+* Functions You Must Know::     最低限の関数をおさえる
+* Completion Input::            補完入力とその周辺
+* Concept Index::               
+* Function Index::              
+* Variable Index::              
+
+ --- The Detailed Node Listing ---
+
+メジャーモードを書こう
+
+* What is Major Mode?::         
+* Requirements of a Major Mode::  メジャーモードの必須条件
+* Defining Major Mode Functions::  メジャーモード関数の定義
+* Exercise 1::                  章末問題 1
+* Summary 1::                   まとめ 1
+* By-talk 1::                   
+
+メジャーモードの必須条件
+
+* Setting Mode Names::          モード名の設定
+* Setting Keymaps::             キーマップの設定
+* Setting Keys::                キーの割当て
+* Declaring Local Maps::        ローカルマップ使用宣言
+
+メジャーモード関数の定義
+
+* Interactive Functions::       インタラクティブ関数
+* Binding Interactive Functions to Keys::  インタラクティブ関数をキーにバイ
+                                           ンドする
+* Defining Functions::          関数を実際に定義する
+
+Emacs-Lisp の構文
+
+* Variables::                   変数
+* Control Structure::           制御構造
+* Arithmetic::                  算術
+* Exercise 2::                  章末問題
+* By-talk 2::                   余談 2 関数・変数
+* By-talk 3::                   余談 3 デバッギング
+* By-talk 4::                   余談 4 プログラムの評価
+
+変数
+
+* Declaring Variables::         変数の宣言
+* Restricting Variables::       変数の束縛
+
+制御構造
+
+* if::                          
+* or::                          
+* and::                         
+* cond::                        
+* while::                       
+* catch trow::                  
+
+算術
+
+* Operators::                   演算子
+* Arithmetic Functions::        算術関数
+
+最低限の関数をおさえる
+
+* Cursor Motion::               カーソルの移動
+* Inserting and Deleting Strings::  文字列挿入/削除
+* By-talk 5::                   余談 5 雑関数
+* By-talk 6::                   余談 6 Emacs-Lisp のスコープ
+
+カーソル移動
+
+* Relative Motion::             相対移動
+* Absolute Motion::             絶対移動
+* Motion Boundary Check::       移動境界の検査
+* Absolute Motion Summary::     絶対移動関係のまとめ
+* Motion by Search::            検索移動
+* Search Functions Summary::    検索関数のまとめ
+* Saving point Position::       ポイント位置の保存
+
+相対移動
+
+* Character Motion::            char 単位移動
+* Word Motion::                 word 単位移動
+* Line Motion::                 line 移動
+
+絶対移動
+
+* point::                       ポイント
+* Motion by Point::             ポイント移動
+* Moving to a Line::            行移動
+* Moving to a Column::          桁移動
+
+検索移動
+
+* Lisp Escape Characters::      Lisp エスケープキャラクタ
+* String Search::               文字列検索
+* Word Search::                 単語検索
+* Regular Expression Search::   正規表現検索
+* Major Metacharacters::        代表的なメタキャラクタ
+* Skipping Characters::         文字(種)スキップ
+* Accessing Search Results::    検索結果へのアクセス
+
+検索関数のまとめ
+
+* Exercise 3-1::                練習問題 3-1
+
+文字列挿入/削除
+
+* Inserting Strings::           文字列挿入
+* Transforming Types::          文字列と他の型の変換
+* Type Transformation::         型変換
+* Deleting Strings::            文字列削除
+* Replacing Strings::           文字列置換
+* Buffer Editing Functions Summary::  バッファ編集関数のまとめ
+
+文字列挿入
+
+* insert-char::                 文字の挿入
+* self-insert-command::         
+
+文字列と他の型の変換
+
+* format::                      
+
+型変換
+
+* Getting Strings::             文字列の取込み
+* Numerical Transformation::    数値変換
+* Strings Transformation::      文字列変換
+* String Manipulation Functions::  文字列操作関数
+
+余談 6 Emacs-Lisp のスコープ
+
+* Exercise 3-2::                練習問題 3-2
+
+補完入力とその周辺
+
+* Normal Input Functions::      一般入力関数
+* Completion Input Functions::  補完入力関数
+* By-talk 7::                   余談 7 マクロ
+
+補完入力関数
+
+* List::                        リスト
+* List Structure::              リストの構造
+* List Manipulation Functions::  リスト処理関数
+* Association Lists::           連想リスト
+
+リスト処理関数
+
+* Creating lists::              リストの作成
+* Accessing list Elements::     リストの要素の参照
+* Adding Elements to list::     リストの要素の追加
+* Appending lists::             リストどうしの結合
+* List Related Predicates::     述語関数等
+
+余談 7 マクロ
+
+* Exercise 4-1::                余談練習小問題
+* completing-read::             
+* Variables Controlling Completion::  補完を制御する関数
+* try-completion::              
+* all-completion display-completion-list::  
+@end menu
+
+@c 
+@c 第一章 メジャーモードを書こう
+@c
+@node Writing Major Modes, Construction of Emacs-Lisp, Top, Top
+@comment  node-name,  next,  previous,  up
+@chapter メジャーモードを書こう
+@cindex メジャーモード を書こう[めしやもおとをかこう]
+@cindex  major mode, writing
+
+
+  多くの @code{Emacs(-Lisp)} 関係の教本の常識を無視して、いきなりここから
+始めます。これがもっとも早い道だと信じるからで、事実私もそうしてきました。
+
+
+@menu
+* What is Major Mode?::         
+* Requirements of a Major Mode::  メジャーモードの必須条件
+* Defining Major Mode Functions::  メジャーモード関数の定義
+* Exercise 1::                  章末問題 1
+* Summary 1::                   まとめ 1
+* By-talk 1::                   
+@end menu
+
+
+@node  What is Major Mode?, Requirements of a Major Mode, Writing Major Modes, Writing Major Modes
+@comment  node-name,  next,  previous,  up
+@section メジャーモードってなに
+@cindex メジャーモード ってなに[めしやもおとつてなに]
+@cindex major mode, what
+
+  多くの @code{Emacs-Lisp} プログラマがで最終的に目指す目標の一つが、「メ
+ジャーモードが書けるようになる」ことでしょう。メジャーモードとは、例えば 
+@code{c-mode} のように対象となるテキストの種別に適した、もっと言うと「専用
+の」編集モードの事を指します。
+
+  @code{GNU Emacs} では、編集ファイルのファイル名のパターンと、そのファイ
+ルを編集する時に用いるメジャーモードを決定するものとして、変数 
+@code{auto-mode-alist} を使用しています。これは今まで、いろいろなパッケー
+ジをインストールしたことのある人なら、設定したことがあるでしょうから、詳し
+い構造などについては述べません。
+@vindex auto-mode-alist
+
+
+@node  Requirements of a Major Mode, Defining Major Mode Functions, What is Major Mode?, Writing Major Modes
+@comment  node-name,  next,  previous,  up
+@section メジャーモードの必須条件
+@cindex メジャーモード 必須条件[めしやもおとひすうしおうけん]
+@cindex major mode, requirements
+
+  では、早速メジャーモードを書いてみましょう。その前に、メジャーモードの備
+えているべき最低限の条件について整理してみましょう。
+
+@itemize @bullet
+@item モード名を設定する。
+@item 使用するキーマップを設定する。
+@item 必要な変数を設定する。
+@end itemize
+
+@noindent
+たったこれだけなのです。
+
+@menu
+* Setting Mode Names::          モード名の設定
+* Setting Keymaps::             キーマップの設定
+* Setting Keys::                キーの割当て
+* Declaring Local Maps::        ローカルマップ使用宣言
+@end menu
+
+
+@node  Setting Mode Names, Setting Keymaps, Requirements of a Major Mode, Requirements of a Major Mode
+@comment  node-name,  next,  previous,  up
+@subsection モード名の設定
+@cindex モード名 設定[もおとめいせつてい]
+@cindex mode name, setting
+@cindex setting, mode names
+@vindex mode-name
+
+  モード名は、変数 @code{major-mode} にシンボルとして入れます。
+
+@lisp
+(setq major-mode 'my-mode)
+@end lisp
+
+  ついでに、モードラインのモード名フィールドも変えましょう。これは、変数 
+@code{mode-name} に文字列で設定します。
+
+@lisp
+(setq mode-name "MY mode")
+@end lisp
+
+  どちらも、今から書こうとするモードの名前を設定します。好きな名前で構いま
+せん。
+
+
+@node  Setting Keymaps, Setting Keys, Setting Mode Names, Requirements of a Major Mode
+@comment  node-name,  next,  previous,  up
+@subsection キーマップの設定
+@cindex キーマップ 設定[きいまつふせつてい]
+@cindex keymaps, setting
+@cindex setting, keymaps
+
+  「どのキーを押した時に、どの機能を呼び出すか」という対応表のことを 
+@code{Emacs} ではキーマップと言います。@kbd{C-n}, @kbd{C-p} など、どのモー
+ドでもほぼ共通で使えるキーバインドはグローバルマップに、モードに固有のキー
+バインドは、ローカルマップに設定します。通常グローバルマップは変数 
+@code{global-map} を@strong{常に}使用します。(@pxref{Binding Interactive
+Functions to Keys,setting global-map})
+@vindex global-map
+
+  メジャーモードが固有のキーバインドを使用する場合、独自のローカルマップを
+作成し、そのローカルマップを使用する宣言をしなければなりません。ローカルマッ
+プを作成するには次のようにします。この例では変数 @code{my-local-map} をロー
+カルマップとしています。
+
+@lisp
+(setq my-local-map (make-keymap))
+@end lisp
+@noindent
+これで、@code{my-local-map} というローカルマップが作成できました。あとは、
+このマップに必要なキーバインドを定義して行くだけです。
+@findex make-keymap
+
+
+@node  Setting Keys, Declaring Local Maps, Setting Keymaps, Requirements of a Major Mode
+@comment  node-name,  next,  previous,  up
+@subsection キーの割当て
+@cindex キー 割当て[きいわりあて]
+@cindex keys, setting
+@cindex setting, keys
+
+  ローカルマップにキーを割当てるには、関数 @code{define-key} を使用します。
+@code{define-key} は引数を三つ取り、順に、キーマップ、割当キー(文字列)、機
+能(シンボル)となっています。では @code{vi} のように @kbd{hjkl} に左下上右
+を割当ててみましょう。
+@findex define-key
+
+@lisp
+(define-key my-local-map "h" 'backward-char)
+(define-key my-local-map "j" 'previous-line)
+(define-key my-local-map "k" 'next-line)
+(define-key my-local-map "l" 'forward-char)
+@end lisp
+
+
+@node  Declaring Local Maps,  , Setting Keys, Requirements of a Major Mode
+@comment  node-name,  next,  previous,  up
+@subsection ローカルマップ使用宣言
+@cindex ローカルマップ 使用宣言[ろおかるまふしようせんけん]
+@cindex declaring, local maps
+@cindex local maps, declaring
+
+  では、今 @code{my-local-map} に割当てたバインド有効となるように、ローカ
+ルマップの使用宣言をします。
+@findex use-local-map
+
+@lisp
+(use-local-map  my-local-map)
+@end lisp
+@noindent
+これで、カレントバッファで @code{hjkl} が有効になります。
+
+
+@node  Defining Major Mode Functions, Exercise 1, Requirements of a Major Mode, Writing Major Modes
+@comment  node-name,  next,  previous,  up
+@section メジャーモード関数の定義
+@cindex メジャーモード関数 定義[めしやもおとかんすうていき]
+@cindex defining, major mode functions
+@cindex major mode, defining functions
+
+@menu
+* Interactive Functions::       インタラクティブ関数
+* Binding Interactive Functions to Keys::  インタラクティブ関数をキーにバイ
+                                           ンドする
+* Defining Functions::          関数を実際に定義する
+@end menu
+
+
+@node  Interactive Functions, Binding Interactive Functions to Keys, Defining Major Mode Functions, Defining Major Mode Functions
+@comment  node-name,  next,  previous,  up
+@subsection インタラクティブ関数
+@cindex インタラクティブ関数[いんたらくていふかんすう]
+@cindex interactive functions
+@findex Interactive Functions
+
+  メジャーモードを起動する関数を定義する前に インタラクティブ関数について
+知っておきましょう。@code{Emacs-Lisp} の関数には、インタラクティブ関数と、
+そうでない関数があります。@kbd{C-n} や @kbd{M-x gnus} のようにキーボード操
+作で直接呼び出すことができる関数をインタラクティブ関数と言います。それ以外
+の関数は、ユーザが直接呼び出すことはできず、様々な処理の下請関数としてだけ
+呼ばれます。@kbd{C-f} にバインドされている @code{forward-char} ももちろん
+インタラクティブ関数となっています。
+
+  メジャーモードの核となる関数は、当然インタラクティブ関数にしなければなり
+ませんから、関数定義は次のような形になります。
+
+@lisp
+(defun my-mode ()
+  (interactive)
+  モード名の設定
+  キーマップの設定
+)
+@end lisp
+
+@noindent
+今のところは、「関数定義の先頭におまじない @code{(interactive)} を入れる」
+と覚えておいて下さい。(@pxref{By-talk 2,defun})
+
+
+@node  Binding Interactive Functions to Keys, Defining Functions, Interactive Functions, Defining Major Mode Functions
+@comment  node-name,  next,  previous,  up
+@subsection インタラクティブ関数をキーにバインドする
+@cindex インタラクティブ関数 キーにバインド[いんたらくてふかんすうきい]
+@cindex interactive functions, binding to keys
+@cindex keys, binding to interactive functions
+@findex interactive
+
+  簡単なインタラクティブ関数を定義して、実際にキーに割当ててみましょう。バッ
+ファに @samp{Hello, world!} とだけ表示する関数は次のようになります。
+
+@lisp
+(defun hello-word ()
+  (interactive)
+  (insert "Hello, world!\n"))
+@end lisp
+
+@noindent
+すぐに試してみたいので、グローバルマップにキー割当してしまいましょう。
+
+@lisp
+(define-key global-map "\C-ch" 'hello-world)
+@end lisp
+
+@noindent
+これで、@kbd{C-ch} を押すとバッファに @samp{hello, world!} が挿入されます。
+
+
+@node  Defining Functions,  , Binding Interactive Functions to Keys, Defining Major Mode Functions
+@comment  node-name,  next,  previous,  up
+@subsection 関数を実際に定義する
+@cindex 関数 定義する[かんすうていきする]
+@cindex defining, functions
+@cindex functions, defining
+@findex Defining Functions
+
+  ここまでで、必要最低限の知識は全て揃いました。次のようなメジャーモードが
+作成できるはずです。
+
+@itemize @bullet
+@item @code{my-mode} という名前のメジャーモードである。
+@item @kbd{hjkl} でカーソル移動することができる。
+@item @kbd{C-ch} を押すと @samp{Hello, world!} が入力できる。
+@end itemize
+
+@noindent
+実際の関数定義は、次のようになります。
+
+
+@lisp
+(defun my-mode ()
+  (interactive)
+  (setq major-mode 'my-mode
+    mode-name "MY mode")
+  (setq my-local-map (make-keymap))
+  (define-key my-local-map "h" 'backward-char)
+  (define-key my-local-map "j" 'previous-line)
+  (define-key my-local-map "k" 'next-line)
+  (define-key my-local-map "l" 'forward-char)
+  (define-key my-local-map "\C-ch" 'hello-world)
+  (use-local-map my-local-map))
+
+(defun hello-world ()
+  (interactive)
+  (insert "Hello, world!\n"))
+@end lisp
+
+@findex make-keymap
+
+
+@node  Exercise 1, Summary 1, Defining Major Mode Functions, Writing Major Modes
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 章末問題 1
+@cindex 章末問題 1[しようまつもんたい1]
+@cindex Exercise 1
+
+@b{問 1-1}
+@quotation
+@kbd{a-z} どのキーを押しても、「僕るねえもんナリよ」が挿入される「るねきち
+モード」を作りなさい。
+@end quotation
+
+答の提出をもって、参加表明とみなします。よろしゅうに
+
+
+あっという間に宿題を提出した優秀な人へ追加問題。
+
+@b{問1-2}
+@quotation
+@kbd{a-z} を押すと、対応するアルファベットで、「僕luneえもんAなりよ」～
+「僕luneえもんZなりよ」と、文字列の入る @code{luneえもんモード} を作成せよ。
+@end quotation
+
+暇な人だけ解いて下さい。
+
+
+@node   Summary 1, By-talk 1, Exercise 1, Writing Major Modes
+@comment  node-name,  next,  previous,  up
+@unnumberedsec まとめ 1
+@cindex まとめ 1[まとめ1]
+
+  大事なことを書き忘れたかもしれない。面倒なので、これは junk風の書き方で
+許して。
+
+@itemize @bullet
+@item
+@code{Emacs-Lisp} プログラムは、@code{.el} という拡張子のファイルにする。
+@item
+ファイルの先頭に @code{;-*- Emacs-Lisp -*-} と入れる。
+@item
+@code{defun} した関数を評価するには、その関数にカーソルを合わせて @kbd{ESC
+C-x} する。すると即座に呼び出せる。
+@item
+括弧を一つだけ評価したい時には、閉じ括弧の右にカーソルをおいて @kbd{M-x
+eval-last-sexp}
+@end itemize
+
+@center{--- ここまで Emacs-Lisp mode ---}
+
+@itemize @bullet
+@item
+簡単な @code{Lisp} 式(S式と言う)をすぐに実行(評価と言う)するには 
+@code{*scratch*} バッファを利用する。
+@item
+@code{*scratch*} バッファで何かS式を書いたら閉じ括弧の右で @kbd{C-j} を押
+すとすぐに評価されて結果が @code{*scratch*} バッファに入る。
+@end itemize
+
+  これだけ知ってれば、あなたも今日から @code{Emacs-Lisp} プログラマ。では 
+good luck!
+
+
+@node  By-talk 1,  , Summary 1, Writing Major Modes
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 余談 1 「～関係の関数はないかな?」を探す。
+@cindex 余談 1 「～関係の関数はないかな?」を探す[よたん1]
+@cindex 関数 探す[かんすうさかす]
+@cindex functions, finding
+@findex Finding Functions
+@findex apropos
+
+  関数を探す時に使うと便利なのが、@code{apropos} です。@kbd{M-x apropos} 
+で出て来るプロンプトで、関数名の正規表現を入力します。何か文字列操作のため
+の関数を探したかったら、
+
+@example
+M-x apr
+Apropos: string
+@end example
+
+@noindent
+などと問い合わせると良いでしょう。正規表現での指定なので、@samp{string} で
+始まる関数を調べたかったら、@samp{^string}という検索していも可能です。
+
+ですから、今回の場合は、
+
+@example
+M-x apr
+Apropos: ^....-.......-....$
+@end example
+
+@noindent
+で、検索すれば良かったということになります。
+
+
+
+@c 
+@c 第二章 Emacs-Lisp の構文
+@c
+@node  Construction of Emacs-Lisp, Functions You Must Know, Writing Major Modes, Top
+@comment  node-name,  next,  previous,  up
+@chapter Emacs-Lisp の構文
+@cindex Emacs-Lisp の構文[いいまくすりすふのこうふん]
+@cindex Emacs-Lisp, construction
+
+
+  本章では、@code{Lisp} 言語とみた場合の変数の扱いや、制御構造の表現の仕方
+について簡単に触れます。
+
+@menu
+* Variables::                   変数
+* Control Structure::           制御構造
+* Arithmetic::                  算術
+* Exercise 2::                  章末問題
+* By-talk 2::                   余談 2 関数・変数
+* By-talk 3::                   余談 3 デバッギング
+* By-talk 4::                   余談 4 プログラムの評価
+@end menu
+
+
+@node  Variables, Control Structure, Construction of Emacs-Lisp, Construction of Emacs-Lisp
+@comment  node-name,  next,  previous,  up
+@section 変数
+@cindex 変数[へんすう]
+@cindex Variables
+@findex set
+@findex setq
+
+  @code{Lisp} では変数は一つのシンボルとして存在しています。シンボルへの値
+の代入は @code{set} によって行います。シンボル @code{foo} へ、値5を代入す
+るには、
+
+@lisp
+(set 'foo 5)
+@end lisp
+
+@noindent
+としますが、一般的にはこれと等価な、
+
+@lisp
+(setq foo 5)
+@end lisp
+
+@noindent
+という書式を用います。@code{setq} は値の代入なので、常に変数の値は更新され
+ます。
+
+@menu
+* Declaring Variables::         変数の宣言
+* Restricting Variables::       変数の束縛
+@end menu
+
+@node  Declaring Variables, Restricting Variables, Variables, Variables
+@comment  node-name,  next,  previous,  up
+@subsection 変数の宣言
+@cindex 変数 宣言[へんすうせんけん]
+@cindex Variables, declaring
+@findex defvar
+@findex Declaring Variables
+
+  @code{defvar} は @code{setq} とは異なり変数の宣言のみを行います。書式は
+
+@lisp
+(defvar   シンボル 初期値 ドキュメンテーション文字列)
+@end lisp
+
+@noindent
+となっています。もし第一引数のシンボルが既に存在していた場合はその値は変更
+しません。このため、@code{Emacs-Lisp} プログラムで使用するカスタマイズ可能
+な変数のデフォルト値の設定をするためによく使われます。
+
+@node  Restricting Variables,  , Declaring Variables, Variables
+@comment  node-name,  next,  previous,  up
+@subsection 変数の束縛
+@cindex 変数 束縛[へんすうそくはく]
+@cindex restricting variables
+@findex Restricting Variables
+
+  @code{Emacs} では多くの @code{Emacs-Lisp} プログラムが動作するため、シン
+ボル名の衝突は確実に回避しなければなりません。関数の内外にかかわらず単純に 
+@code{setq} や @code{defvar} されたシンボルはすべてグローバル変数になって
+しまうので他のプログラムの存在を考えると好ましくありません。そこで変数の有
+効範囲(スコープ)を制限するために @code{let} を用います。
+@findex let
+
+@lisp
+(let (変数リスト) 実行部...)
+@end lisp
+
+@noindent
+「変数リスト」の部分は「変数名」または「(変数名 初期値)」の任意の個数の並
+びです。変数名だけ指定するとその変数の値は @code{nil} にセットされます。次
+の例は変数 @code{case-fold-search} を @code{t} にセットしてインクリメンタ
+ルサーチを呼び出します。
+@vindex case-fold-search
+
+@lisp
+(let ((case-fold-search t))
+  (isearch-forward))
+@end lisp
+
+@noindent
+@code{case-fold-search} は検索の時に大文字小文字を区別しないというフラグで、
+グローバル変数となっています。@code{let} はグローバル変数の値を一時的に変
+更するためにも利用できます。
+
+しかしカスタマイズ変数などはグローバルに値を保持する必要があるので、グロー
+バル変数はやはり必要です。さらに、関数名はすべてグローバルシンボルとして扱
+われます。そこで、グローバルシンボルを使用する時には、「すべてのグローバル
+シンボルには作成パッケージ固有の接頭辞をつける」ことが強く勧められています。
+例えば @file{supercite} パッケージで用いるシンボルには全て @code{sc-} とい
+う接頭辞がついています。
+
+
+@node  Control Structure, Arithmetic, Variables, Construction of Emacs-Lisp
+@comment  node-name,  next,  previous,  up
+@section 制御構造
+@cindex 制御構造[せいきよこうそう]
+@cindex control structure
+
+@code{Emacs-Lisp} で主に用いる制御構造を説明します。
+
+@menu
+* if::                          
+* or::                          
+* and::                         
+* cond::                        
+* while::                       
+* catch trow::                  
+@end menu
+
+@node  if, or, Control Structure, Control Structure
+@comment  node-name,  next,  previous,  up
+@subsection if
+@findex if
+
+  @code{if} は第一引数を評価し、それが @code{nil} でない値(今後 
+@code{non-nil})を返した場合第二引数を評価しその値を返し、@code{nil} だった
+場合第三引数以降を (もしあれば)評価し、最後の値を返します。
+
+@lisp
+(if CONDITION T-body Else-body...)
+@end lisp
+
+もし、条件が @code{non-nil} の時に評価したい関数が複数ある場合は、 
+@code{progn} を用いて次のようにします。
+
+@lisp
+(if CONDITION (progn T-body...) Else-body...)
+@end lisp
+
+@noindent
+@code{progn} は任意個の引数を取り、最後の引数の値を @code{progn} の値とし
+て返します。
+@findex progn
+
+
+@node  or, and, if, Control Structure
+@comment  node-name,  next,  previous,  up
+@subsection or
+@findex or
+
+  @code{or} は与えられた引数全てを順に評価し、@code{non-nil} を返すものが
+あった場合、それを @code{or} の返す値とします。もしすべての引数を評価した
+ものが @code{nil} だった場合、@code{or} は @code{nil} を返します。
+
+  ある変数の値が @code{t} の時に動作が禁止される関数などは次のように表現し
+ます。
+
+@lisp
+(or foo-key-map (setq foo-key-map (make-key-map)))
+@end lisp
+
+@noindent
+また、@code{or} のもつ「または」という意味で、次のように使うこともできます。
+
+@lisp
+(if (or A B) 処理)
+@end lisp
+
+
+@node  and, cond, or, Control Structure
+@comment  node-name,  next,  previous,  up
+@subsection and
+@findex and
+
+  @code{and} は与えられた引数を順に評価し、@code{nil} を返すものが見つかっ
+たら直ちに @code{nil} を返します。最後の引数まで @code{non-nil} を返した場
+合、@code{and} は最後の引数の値を返します。
+
+
+@node  cond, while, and, Control Structure
+@comment  node-name,  next,  previous,  up
+@subsection cond
+@findex cond
+
+  @code{cond} は次の書式によります。
+
+@lisp
+(cond
+ (式1  式1がnon-nilの時に返す式...)
+ (式2  式2がnon-nilの時に返す式...)
+    :
+ (式n  式nがnon-nilの時に返す式...))
+@end lisp
+
+
+  次の例は、変数 @code{var-a}, 変数 @code{var-b}, 関数 @code{func-c} の値
+を順次調べて、どれかが @code{non-nil} の時に後続する関数群を評価します。も
+し、@code{var-a}, @code{var-b}, @code{func-c} のどれも @code{nil} を返す時
+は、最後の条件ブロックの式が @code{t} なので最後のブロックを評価します。
+
+@lisp
+(cond
+ (var-a     (message "A!"))
+ (var-b     (insert  "B!"))
+ ((func-c)  (insert  "C"))
+ (t     (message "NO!") (ding)))
+@end lisp
+
+@noindent
+なお、@code{cond} は途中の条件式が @code{non-nil} を返し後続するブロックを
+評価したら、残りの条件ブロックは評価せずに抜けてしまいます。 @code{cond} 
+の返す値は、(@code{non-nil} を返した)条件ブロックの最後の式が返す値です。
+
+
+@node  while, catch trow, cond, Control Structure
+@comment  node-name,  next,  previous,  up
+@subsection while
+@findex while
+
+  最初の条件式が @code{non-nil} である間、二番目以降の引数をくり返し評価し
+ます。
+
+@lisp
+(while 条件式 実行部...)
+@end lisp
+
+  これはループを形成する時に用いることができます。C の @code{for} または 
+@code{while} のような繰り返しを行う時は、通常 @code{let} と組み合わせて次
+のように用います。
+
+@lisp
+(let ((i ?a))
+  (while (<= i ?z)
+    (insert i)
+    (setq i (1+ i))))
+@end lisp
+
+@noindent
+上の例は、@kbd{a～z} をバッファ中に挿入します。この例から想像が付くように、 
+@code{Emacs-Lisp} では文字コードを @samp{?文字} で表現します。@code{?a} は 
+@code{a} の文字コードを示すので、97 と等価です。
+
+  @code{while} は常に @code{nil} を返します(最後は条件式が @code{nil} となっ
+て終了するから)。
+
+
+@node  catch trow,  , while, Control Structure
+@comment  node-name,  next,  previous,  up
+@subsection catch, throw
+@findex catch
+@findex throw
+
+  @code{catch} と @code{throw} は対にして使います。@code{catch} の書式を見
+ると、
+
+@lisp
+(catch タグ 実行部...)
+@end lisp
+
+@noindent
+となっていて、「実行部@dots{}」のいずれかで「タグ」が @code{throw} される
+と直ちに @code{catch} を抜けます。@code{throw} は
+
+@lisp
+(throw タグ 値)
+@end lisp
+
+@noindent
+のように使用し、この時の @code{catch} の返す値は第二引数の「値」となります。
+もし「実行部@dots{}」で「タグ」が @code{throw} されなかった時は「実行部
+@dots{}」の最後の値が @code{catch} の返す値となります。
+
+  この関数のペアは、終了のタイミングの予測できないループを表現する時に使う
+と便利です。例えば、バッファ末までに判定関数 @code{foo} を満足する行がある
+か調べる場合を考えます。@code{catch}, @code{throw} を使わずに書く場合は次
+のようになるでしょう。
+
+@lisp
+(let (found)        ;局所フラグ nil 初期値
+  (while (and (not found)(not eobp))
+    (if (foo) (setq found t)
+      (forward-line 1)))
+  (if found
+      見つかった場合の処理
+    見つからなかった場合の処理))
+@end lisp
+
+@noindent
+ループが回る毎にフラグ @code{found} が @code{t} でないことを調べているので、
+少々無駄な気がします。これを @code{catch}, @code{throw} を使って書き直すと、
+
+@lisp
+(if (catch 'found
+      (while (not eobp)
+    (if (foo) (throw 'found t)
+      (forward-line 1))))
+    見つかった場合の処理
+  見つからなかった場合の処理)
+@end lisp
+
+@noindent
+となります。もし @code{(foo)} が @code{non-nil} を返す行があった場合はルー
+プ内部で @code{'found} が @code{throw} されるので、@code{catch} 関数の値は 
+@code{'found} となり最も外側の @code{if} は見つかった場合の処理を評価しま
+す。逆に、 @code{foo} を満たす行が見つからなかった場合、内部の 
+@code{while} が @code{nil} を返して終了するため、外側の @code{if} も、見つ
+からなかった場合の処理を評価します。
+
+
+@node  Arithmetic, Exercise 2, Control Structure, Construction of Emacs-Lisp
+@comment  node-name,  next,  previous,  up
+@section 算術
+@cindex 算術[さんしゆつ]
+@cindex arithmetic
+
+@menu
+* Operators::                   演算子
+* Arithmetic Functions::        算術関数
+@end menu
+
+@node  Operators, Arithmetic Functions, Arithmetic, Arithmetic
+@comment  node-name,  next,  previous,  up
+@subsection 演算子
+@cindex 演算子[えんさんし]
+@cindex operators
+
+  @code{Emacs-Lisp} で使える演算子には以下のものがあります。
+
+@ftable @code
+@item %, *, +, -, /
+剰余, 乗算, 加算, 減算, 除算
+@item 1+, 1-
+1加算, 1減算
+@item <, <=, =, /=, >, >=
+比較演算子(/=は≠)
+@end ftable
+
+@code{Lisp} では @code{*}, @code{+}, @code{-} は複数のオペランドを取ること
+ができます。@code{-} は引数が一つの時はその符号を反転し、二つ以上の時は一
+つ目の引数から残りの引数全てを引きます。
+
+また次の述語関数も必要でしょう。
+
+@ftable @code
+@item numberp(integerp)
+数値なら @code{t} を返す
+@end ftable
+
+@noindent
+独自に定義した関数で受け取った引数が数値かどうか判定する時などに利用しま
+す。
+
+
+@node  Arithmetic Functions,  , Operators, Arithmetic
+@comment  node-name,  next,  previous,  up
+@subsection 算術関数
+@cindex 算術関数[さんしゆつかんすう]
+@cindex 関数 算術[かんすうさんしゆつ]
+@findex Arithmetic Functions
+
+  利用頻度が高いと思われるものだけ紹介します。
+
+@ftable @code
+@item max, min
+引数のうち(最大,最小)のものを返す
+@item random
+24bits長の擬似乱数を返す引数として@code{t} を与えると乱数の種を変えて値を
+返す
+@end ftable
+
+
+@node  Exercise 2, By-talk 2, Arithmetic, Construction of Emacs-Lisp
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 章末問題 2
+@cindex 章末問題 2[しようまつもんたい2]
+@cindex Exercise 2
+
+@b{問}
+
+@quotation
+前問「るねきちモード」の @kbd{a-z} のキーバインドのうち、どれか一つのキー
+を押すと「自爆」と言ってバッファを消去する機能を付け加えよ。
+
+ヒント: char-to-string, ding, message, erase-buffer
+@end quotation
+
+
+@node  By-talk 2, By-talk 3, Exercise 2, Construction of Emacs-Lisp
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 余談 2 関数・変数
+@cindex 余談 2 関数・変数[よたん2]
+@cindex 関数・変数[かんすうとへんすう]
+@cindex Functions and Variables
+
+基本的なことですが、変数は
+
+@lisp
+var
+@end lisp
+
+@noindent
+と、単体で参照し、関数は
+
+@lisp
+(func args...)
+@end lisp
+
+@noindent
+と括弧つきの形で参照します。
+
+  @code{defun} の形は次のようになっています。
+
+@lisp
+(defun 関数名 (引数リスト) 関数定義)
+@end lisp
+
+@noindent
+引数に何もとらない時は空リストにして
+
+@lisp
+(defun 関数名 () 関数定義)
+@end lisp
+
+@noindent
+とします。
+@findex defun
+
+  さて、@code{Emacs-Lisp} の場合関数は必ず値を返します。関数の値は、その関
+数中で最後に評価されたものの値となります。例えば次の関数の返り値は5となり
+ます。
+
+@lisp
+(defun foo () 5)
+@end lisp
+
+@noindent
+したがって次の例では、変数 @code{bar} に値5が返ることとなります。
+
+@lisp
+(setq bar (foo))
+@end lisp
+
+@noindent
+関数の返す値は、「最後に評価されたもの」であり「最後に書いてある式の値」で
+はないので注意して下さい。
+
+@lisp
+(defun baz (arg)
+  (if (< arg 0) (- arg) arg))
+@end lisp
+
+@noindent
+という例では、引数 @code{arg} が負の場合 @code{(- arg)} が、正の場合 
+@code{arg} が @code{baz} の返り値となります。
+
+
+@node  By-talk 3, By-talk 4, By-talk 2, Construction of Emacs-Lisp
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 余談 3 デバッギング
+@cindex 余談 3 デバッギング[よたん3]
+@cindex デバッギング[てはつきんく]
+@cindex debugging
+
+  変数の値を途中で表示させたい時には @code{message} 関数を使うと便利です。 
+@code{message} 関数は C の @code{printf} のようなフォーマットが使えます。
+例えば、途中で変数 @code{foo} の値を見たい時は
+@findex message
+
+@lisp
+(message "foo = %d" foo)
+@end lisp
+
+@noindent
+とします。もし、次の @code{message} などがすぐに出てしまい読み取れない時な
+どは、@code{sit-for} 関数を使ってn秒間止まらせると良いでしょう。
+@findex sit-for
+
+@lisp
+(message "foo = %d" foo)
+(sit-for 2)     ;2秒間停止
+    :
+(message "bar = %d" bar)
+@end lisp
+
+@node  By-talk 4,  , By-talk 3, Construction of Emacs-Lisp
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 余談 4 プログラムの評価
+@cindex 余談 4 プログラムの評価[よたん4]
+@cindex プログラムの評価[ふろくらむのひようか]
+@cindex evaluating programs
+
+  @code{defun} した関数を評価する時は、@kbd{ESC C-x} を使うのが良いでしょ
+う。この時関数を定義したらその場で @kbd{ESC C-x} をしてしまいましょう。す
+るとその間数名は以後どの場所でも、@kbd{ESC TAB} によって補完することが可能
+になります(変数名も同様)。
+@kindex ESC C-x
+@kindex ESC TAB
+
+@lisp
+(defun lune-random ()
+  なんちゃらかんちゃら)
+(defun lune-mode ()
+  (interactive)
+  (setq key lun
+@end lisp
+
+@noindent
+というところで、@kbd{ESC TAB} を押すと、@code{lune-random} が補完されます。
+
+  さて出来上がった関数を評価する時は主に二つの方法が考えられます。
+
+@enumerate
+@item
+@kbd{ESC ESC} で関数を評価するS式を入れる。
+@item
+@code{*scratch*} バッファに移ってS式を入れて @kbd{C-j} する。
+@end enumerate
+@kindex ESC ESC
+
+@noindent
+上の @code{lune-random} 関数を試したい時は、
+
+@enumerate
+@item
+ESC ESC
+    @code{Eval: (lune-random) RET}
+@item
+@code{*scratch*}バッファに移動
+    @code{(lune-random) C-j}
+@end enumerate
+@kindex C-j
+
+(2)の場合、@kbd{C-j} を押す直前のS式が評価されます。したがって、
+
+@example
+(setq random (lune-random))
+                         ~~
+@end example
+
+@noindent
+の、最後の括弧の上で @kbd{C-j} を押すと @code{(lune-random)} だけが評価さ
+れ @code{setq} されず、行末で @kbd{C-j} を押すと @code{setq} 全体が評価さ
+れます。
+
+
+@c 
+@c 第三章 最低限の関数をおさえる
+@c
+@node  Functions You Must Know, Completion Input, Construction of Emacs-Lisp, Top
+@comment  node-name,  next,  previous,  up
+@chapter 最低限の関数をおさえる
+@cindex  関数 最低限[かんすうさいていけん]
+@cindex functions, must know
+
+  どんなメジャーモードでも書けるようになるために、必要最低限の関数を一気に
+覚えてしまいましょう。ここでとり上げる必要最低限のコマンドは以下のものです。
+    
+@itemize @bullet
+@item
+カーソル移動(検索)
+@item
+文字列挿入/削除
+@end itemize
+
+@menu
+* Cursor Motion::               カーソルの移動
+* Inserting and Deleting Strings::  文字列挿入/削除
+* By-talk 5::                   余談 5 雑関数
+* By-talk 6::                   余談 6 Emacs-Lisp のスコープ
+@end menu
+
+@node  Cursor Motion, Inserting and Deleting Strings, Functions You Must Know, Functions You Must Know
+@comment  node-name,  next,  previous,  up
+@section カーソル移動
+@cindex  カーソル移動[かあそるいとう]
+@cindex  移動 カーソル[いとうかあそる]
+@cindex cursor motion
+@cindex motion, cursor
+
+  カーソルの移動コマンドには、相対移動、絶対移動、検索移動があります。いず
+れもキーに割当てられている機能なので、関数名を知っているものもあるでしょう。
+
+@menu
+* Relative Motion::             相対移動
+* Absolute Motion::             絶対移動
+* Motion Boundary Check::       移動境界の検査
+* Absolute Motion Summary::     絶対移動関係のまとめ
+* Motion by Search::            検索移動
+* Search Functions Summary::    検索関数のまとめ
+* Saving point Position::       ポイント位置の保存
+@end menu
+
+@node  Relative Motion, Absolute Motion, Cursor Motion, Cursor Motion
+@comment  node-name,  next,  previous,  up
+@subsection 相対移動
+@cindex     相対移動[そうたいいとう]
+@cindex     移動 相対[いとうそうたい]
+@cindex relative motion
+@cindex motion, relative
+
+  @code{Emacs-Lisp} プログラムではあまり用いることのない関数ですが、各関数
+と引数について説明します。
+
+@menu
+* Character Motion::            char 単位移動
+* Word Motion::                 word 単位移動
+* Line Motion::                 line 移動
+@end menu
+
+@node  Character Motion, Word Motion, Relative Motion, Relative Motion
+@comment  node-name,  next,  previous,  up
+@subsubsection char 単位移動
+@cindex char 単位移動[ちやあたんいいとう]
+@cindex 移動 char 単位[いとうちやあたんい]
+@cindex motion, by char
+@findex forward-char
+@findex backward-char
+
+  @code{forward-char}, @code{backward-char} どちらも引数を一つ取り、移動桁
+数を決定します。前に3つ進みたい時は、@code{(forward-char 3)} のように呼び
+出します。もちろんこれらの関数は、@kbd{C-f}, @kbd{C-b} にバインドされてい
+ます。
+
+
+@node  Word Motion, Line Motion, Character Motion, Relative Motion
+@comment  node-name,  next,  previous,  up
+@subsubsection word 単位移動
+@cindex word 単位移動[わあとたんいいとう]
+@cindex 移動 word 単位[いとうわあとたんい]
+@cindex motion, by word
+@findex forward-word
+@findex backward-word
+
+  @code{forward-word}, @code{backward-word} も移動単語数を指定する引数を一
+つ取ります。@kbd{M-f}, @kbd{M-b} にバインドされています。
+
+
+@node  Line Motion,  , Word Motion, Relative Motion
+@comment  node-name,  next,  previous,  up
+@subsubsection line 移動
+@cindex line 移動[らいんいとう]
+@cindex 移動 line[いとうらいん]
+@cindex motion, by line
+@findex next-line
+@findex previous-line
+@findex forward-line
+
+  行移動というと、@kbd{C-n}, @kbd{C-p} にバインドされている 
+@code{next-line}, @code{previous-line} を想像すると思いますが、これらの関
+数は @code{Emacs-Lisp} プログラム中で用いません。これらの関数には 
+@code{goal-column} の制御などの機能が含まれるため、プログラム中からはより
+単純で信頼性の高い @code{forward-line} を使用します。なお、 
+@code{backward-line} という関数はないので、上に移動するには負の引数を渡し
+ます。
+
+
+@node  Absolute Motion, Motion Boundary Check, Relative Motion, Cursor Motion
+@comment  node-name,  next,  previous,  up
+@subsection 絶対移動
+@cindex 絶対移動[せつたいいとう]
+@cindex 移動 絶対[いとうせつたい]
+@cindex motion, absolute
+
+@menu
+* point::                       ポイント
+* Motion by Point::             ポイント移動
+* Moving to a Line::            行移動
+* Moving to a Column::          桁移動
+@end menu
+
+@node  point, Motion by Point, Absolute Motion, Absolute Motion
+@comment  node-name,  next,  previous,  up
+@subsubsection ポイント
+@cindex  ポイント[ほいんと]
+@findex point
+@findex point-min
+@findex point-max
+
+  カーソルの絶対移動の基準となる「ポイント」について知っておく必要がありま
+す。@code{Emacs} ではカーソルの位置をバッファの先頭からのオフセットで管理
+しています。このオフセット値を返す関数が @code{(point)} です。これに関連し
+て、バッファの先頭は @code{(point-min)}、末尾は @code{(point-max)} で得る
+ことができます。
+
+
+@node  Motion by Point, Moving to a Line, point, Absolute Motion
+@comment  node-name,  next,  previous,  up
+@subsubsection ポイント移動
+@cindex ポイント移動[ほいんといとう]
+@cindex 移動 ポイント[いとうほいんと]
+@cindex motion, point
+@findex goto-char
+
+  指定するポイント位置に移動する関数が @code{goto-char} です。引数を一つ取
+り、移動先のポイントを受け取ります。バッファの先頭に移動するには次のように
+します。
+
+@lisp
+(goto-char (point-min))
+@end lisp
+
+  なお、バッファの先頭にジャンプする @kbd{M-<} の関数名を知っている人は
+「@code{(beginning-of-buffer)} でもいいんでしょ?」と思われるかもしれません
+が、これと @code{(end-of-buffer)} は特別な理由のない限り、 
+@code{Emacs-Lisp} プログラム中から利用してはいけません。これは、マーク位置
+を変更してしまうため、ユーザに思わぬ動作を起こさせる可能性があるからです。
+@findex beginning-of-buffer
+@findex end-of-buffer
+
+
+@node  Moving to a Line, Moving to a Column, Motion by Point, Absolute Motion
+@comment  node-name,  next,  previous,  up
+@subsubsection 行移動
+@cindex 行移動[きよういとう]
+@cindex 移動 行[いとうきよう]
+@cindex motion, to a line
+@findex goto-line
+@findex count-lines
+
+  n行目に移動する関数として、@code{goto-line} があります。行番号引数として
+渡します。なお、バッファの先頭は1行目と数えます。逆に、現在の行番号を得る
+には次のようにします。
+
+@lisp
+(count-lines (point-min) (point))
+@end lisp
+
+
+@node  Moving to a Column,  , Moving to a Line, Absolute Motion
+@comment  node-name,  next,  previous,  up
+@subsubsection 桁移動
+@cindex 桁移動[けたいとう]
+@cindex 移動 桁[いとうけた]
+@cindex motion, to a column
+@findex move-to-column
+@vindex current-column
+@findex beginning-of-line
+@findex end-of-line
+
+  n桁目に移動する関数は @code{move-to-column} で、0から始まる桁数を引数と
+して渡します。現在の桁数は @code{(current-column)} で得ることができます。
+
+  また、行頭/行末への移動関数は、@code{beginning-of-line},
+@code{end-of-line} です。この二つは比較的よく使われます。
+
+
+@node  Motion Boundary Check, Absolute Motion Summary, Absolute Motion, Cursor Motion
+@comment  node-name,  next,  previous,  up
+@subsection 移動境界の検査
+@cindex  移動 境界の検査[いとうきようかいのけんさ]
+@cindex motion, boundary check
+
+  相対移動絶対移動共に現在のポイント位置が移動できる終端まで来たかどうかの
+チェックをする必要がある場合があります。ポイント位置がバッファ中の特定の位
+置にあるかどうかを検査する関数には以下のものがあります。
+
+@ftable @code
+@item (bobp) / (eobp)
+バッファ先頭/末尾
+@item (bolp) / (eolp)
+行頭/行末
+@end ftable
+
+関数 @code{bobp/eobp} は現在のポイント位置がバッファ先頭/末尾なら真(t) を、
+そうでなければ偽(nil)を返します。バッファ末に達するまでなにかの処理を繰り
+返すというケースはしばしば必要になります。次のような形で書けるでしょう。
+
+@lisp
+(while (not (eobp)) ;(while 条件式 処理1...処理n)
+  処理
+  (forward-line 1))
+@end lisp
+
+
+@node  Absolute Motion Summary, Motion by Search, Motion Boundary Check, Cursor Motion
+@comment  node-name,  next,  previous,  up
+@subsection 絶対移動関係のまとめ
+@cindex 絶対移動[せつたいいとう]
+@cindex absolute motion
+
+ここまでに出てきた関数をまとめましょう。
+
+@example
+    ・ポイント値を返す関数  point, point-min, point-max
+    ・移動関数              forward-char, backward-char
+                            forward-word, backward-word
+                            forward-line
+                            goto-char, goto-line
+                            move-to-column
+                            beginning-of-line, end-of-line
+    ・位置に関する述語関数  bobp, eobp, bolp, eolp
+@end example
+
+
+@node  Motion by Search, Search Functions Summary, Absolute Motion Summary, Cursor Motion
+@comment  node-name,  next,  previous,  up
+@subsection 検索移動
+@cindex 検索移動[けんさくいとう]
+@cindex 移動 検索[いとうけんさく]
+@cindex motion, by search
+@cindex search and move
+
+  プログラム中でカーソル位置を決定するのに最も頻繁に使用するのが検索です。
+ここは必ず押さえましょう。
+
+  検索は大別して、
+
+@itemize @bullet
+@item
+増分検索(インクリメンタルサーチ)
+@item
+文字列検索
+@item
+単語検索
+@item
+正規表現検索
+@item
+文字(種)スキップ
+@end itemize
+
+@noindent
+に分けられます(分けます)。これらのうち、インクリメンタルサーチは対話的に用
+いることを前提としているため、@code{Emacs-Lisp} プログラム中からは滅多に利
+用することはないでしょう。これ以外のものの利用の仕方を説明します。
+
+@menu
+* Lisp Escape Characters::      Lisp エスケープキャラクタ
+* String Search::               文字列検索
+* Word Search::                 単語検索
+* Regular Expression Search::   正規表現検索
+* Major Metacharacters::        代表的なメタキャラクタ
+* Skipping Characters::         文字(種)スキップ
+* Accessing Search Results::    検索結果へのアクセス
+@end menu
+
+@node  Lisp Escape Characters, String Search, Motion by Search, Motion by Search
+@comment  node-name,  next,  previous,  up
+@subsubsection Lisp エスケープキャラクタ
+@cindex エスケープキャラクタ[えすけえふきやらくた]
+@cindex escape characters
+
+  検索関数には検索したいパターンを文字列として渡すわけですが、その文字列中
+に @code{\} を含む場合は注意が必要です。@code{\} は @code{Emacs-Lisp} で扱
+う文字列中で特別な意味を持つエスケープキャラクタとなっています。 C言語の文
+字列中で使う @code{\n} のような働きを持っています。主なシーケンスには次の
+ものがあります。
+
+@ftable @code
+@item \\
+\自身
+@item \C-英字
+コントロールコード(@code{\^英字} も可)
+@item \e
+ESC(1Bh)
+@item \"
+"
+@item \n
+改行文字(LF)
+@item \r
+復帰文字(CR)
+@item \a
+ベル(C-g)
+@item \b
+バックスペース(C-h)
+@item \f
+改頁文字(C-l)
+@item \t
+タブコード(C-i)
+@end ftable
+
+  Cを扱ったことのある人は「@code{\\} とかなら慣れてるから平気」と思われる
+かもしれません。しかし、正規表現の検索パターンを指定する場合には、正規表現
+での @code{\} エスケープと、@code{Lisp} の @code{\} エスケープが重なってし
+まうので非常に繁雑です。正規表現検索で、@code{\} 自身を探すにはパターン文
+字列として、@code{\\\\}を指定することになります。
+
+  このような注意点があることだけを念頭において検索関数の理解に進みましょう。
+
+
+@node  String Search, Word Search, Lisp Escape Characters, Motion by Search
+@comment  node-name,  next,  previous,  up
+@subsubsection 文字列検索
+@cindex 文字列 検索[もしれつけんさく]
+@cindex 検索, 文字列[けんさくもしれつ]
+@cindex search, strings
+@findex search-forward
+@findex search-backward
+
+  探したい文字列がはっきりとわかっている場合には普通の文字列検索である 
+@code{search-forward}, @code{search-backward} を利用します。これらの関数は
+引数を一つから四つ取ります(二つ目以降は省略可)。
+
+@lisp
+(search-forward 文字列 範囲 エラー処理 繰り返し回数)
+@end lisp
+
+各引数について説明します。
+
+@table @samp
+@item 1.文字列
+検索したい文字列.
+@item 2.範囲
+どこまで検索するかをポイント位置で指定する. バッファ末までの時は nil を指
+定する.
+@item 3.エラー処理
+見つからなかった場合の処理を指定.  エラーを発生して欲しい時は @code{nil} 
+を、単に @code{nil} を返して欲しい時は @code{t} を、検索範囲末まで移動して
+欲しい時は @code{nil}, @code{t} 以外を渡す.
+@item 4.繰り返し回数
+この引数で指定した回数だけ検索を繰り返す.
+@end table
+
+@noindent
+後述する正規表現検索も同数の引数を取りますが引数の意味として違うのは、第一
+引数だけです。もちろん正規表現検索関数の第一引数は正規表現のパターン文字列
+を指定します。
+
+  @code{search-forward/backward} を用いた典型的な処理形態は次のようになり
+ます。
+
+@lisp
+(if (search-forward "文字列" nil t)
+    (progn 見つかった場合の処理)
+  見つからなった場合の処理)
+@end lisp
+
+
+@node  Word Search, Regular Expression Search, String Search, Motion by Search
+@comment  node-name,  next,  previous,  up
+@subsubsection 単語検索
+@cindex  単語検索[たんこけんさく]
+@cindex  検索 単語[けんさくたんこ]
+@cindex search, word
+@findex word-search-forward
+@findex word-search-backward
+
+  @samp{TeX} を検索する時に @samp{LaTeX} にはマッチして欲しくない時のよう
+に、単語単位での検索に有効なのが @code{word-search-forward(backward)} です。
+引数は @code{search-forward} の第一引数を単語に置き換えたものです。
+
+@node  Regular Expression Search, Major Metacharacters, Word Search, Motion by Search
+@comment  node-name,  next,  previous,  up
+@subsubsection 正規表現検索
+@cindex 正規表現検索[せいきひようけんけんさく]
+@cindex 検索 正規表現[けんさくせいきひょうけん]
+@cindex search, regexp
+@findex re-search-forward
+@findex re-search-backward
+
+  @code{re-search-forward}, @code{re-search-backward} がおそらく最もよく用
+いる検索関数となるでしょう。第一引数に検索したい正規表現パターンを指定しま
+す。@code{Emacs-Lisp} で扱える正規表現全てについてはほかの解説書に譲ります。
+ここでは必要最低限のものに絞ってメタキャラクタの説明をします。
+
+
+@node  Major Metacharacters, Skipping Characters, Regular Expression Search, Motion by Search
+@comment  node-name,  next,  previous,  up
+@subsubsection 代表的なメタキャラクタ
+@cindex メタキャラクタ[めたきやらくた]
+@cindex Metachars
+
+@ftable @code
+@item .
+任意の一文字にマッチ
+@item *
+直前の正規表現の0回以上の繰り返し
+@item +
+直前の正規表現の1回以上の繰り返し
+@item ?
+直前の正規表現の0回か1回の繰り返し
+@item ^
+行頭にマッチ
+@item $
+行末にマッチ
+@item [文字リスト]
+「文字リスト」のうち一文字にマッチ
+@item [^文字リスト]
+「文字リスト」にないものにマッチ
+@item [X-Y]
+ASCIIコードが「X」のものから「Y」のものどれかにマッチ
+@item [-^A-Z]
+「-」か「^」か「A～Zのうちどれか」
+@end ftable
+
+@noindent
+これだけ覚えておけば、ほとんどの検索が可能です。なお、正規表現の検索と組み
+合わせた処理は極めて重要なので、別に節を設けて解説します。
+
+
+@node  Skipping Characters, Accessing Search Results, Major Metacharacters, Motion by Search
+@comment  node-name,  next,  previous,  up
+@subsubsection 文字(種)スキップ
+@cindex  文字(種)スキップ[もしすきふ]
+@cindex skipping characters
+@cindex characters, skipping
+@findex skip-chars-forward
+@findex skip-chars-backward
+
+  単語の先頭にポイントが位置する時に、単語末までポイントを移動したい、ある
+いはその逆のことをしたい時などに @code{skip-chars-forward},
+@code{skip-chars-backward} が利用できます。これらの関数は一つまたは二つの
+引数を取ります。
+
+@lisp
+(skip-chars-forward スキップ文字リスト スキップ境界)
+@end lisp
+
+@example
+        1.スキップ文字リスト    正規表現の[]の中味と同様に指定し
+                                ます。
+        2.スキップ境界          文字スキップを行う境界をポイント
+                                値で指定します。これを越えてポイ
+                                ントが進むことはありません。
+@end example
+
+  英単語の先頭にポイントがある時に、単語末までポイントを移動するには次のよ
+うにします。
+
+@lisp
+(skip-chars-forward "A-Za-z")
+@end lisp
+
+
+@node  Accessing Search Results,  , Skipping Characters, Motion by Search
+@comment  node-name,  next,  previous,  up
+@subsubsection 検索結果へのアクセス
+@cindex 検索 結果へのアクセス[けんさくけつかへのあくせす]
+@cindex search, accessing results
+
+  次の例で @samp{def} を検索した場合の検索後のポイント位置は
+
+@example
+abc def ghi
+    ~  ~
+@end example
+
+@noindent
+前方向検索の時は @samp{def} の次の位置、後ろ方向検索の時は @samp{d} の位置
+になります。これはインクリメンタルサーチなどを前後方向で行った場合のカーソ
+ル位置と同じなので、容易に想像がつくことでしょう。
+
+  しかし、検索がマッチした部分をアクセスする時に、検索後のポイント位置を当
+てにしていたのでは、検索方向によって場合分けしなければならないので通常はこ
+れを利用しません。検索のマッチ部分を取得する関数が @code{match-beginning},
+@code{match-end} です。上記の例の、マッチ部分の始まり(dの位置)と、終わり(f
+の次の位置)はそれぞれ、
+@findex match-beginning
+@findex match-end
+
+@lisp
+(match-beginning 0)
+(match-end 0)
+@end lisp
+
+@noindent
+で得ることができます。どちらも引数として数値である0を渡しています。実はこ
+の部分は、正規表現にグループを用いた場合のグループ番号を意味していて、 0 
+は「マッチした部分全体」という特殊な意味を持っています。例えば上記の例を次
+の正規表現で検索した場合を考えてみましょう。
+
+@lisp
+(re-search-forward
+  "\\(a.*\\) *\\(d.*\\) *\\(g.*\\)" nil t)
+@end lisp
+
+@noindent
+@code{Emacs} の正規表現のグルーピングは @code{\(グループ\)} で行いますが、 
+@code{Emacs-Lisp} で @code{\} を正規表現関数に渡すためには @code{\\} と表
+記しなければならないことに注意して下さい。さて、この正規表現の意味は、
+
+@example
+・`a'で始まる任意の文字列(これをグループ1とする)のあとに
+  `d'で始まる任意の文字列(これをグループ2とする)と
+  `g'で始まる任意の文字列(これをグループ3とする)が続く
+@end example
+
+@noindent
+となります。
+
+
+@node  Search Functions Summary, Saving point Position, Motion by Search, Cursor Motion
+@comment  node-name,  next,  previous,  up
+@subsection 検索関数のまとめ
+@cindex 検索 関数[けんさくけつか]
+@findex Search Functions
+
+@example
+・検索関数          search-forward, search-backward
+                    word-search-forward, word-search-backward
+                    re-search-forward, re-search-backward
+・文字スキップ      skip-chars-forward, skip-chars-backward
+・検索結果位置取得  match-beginning, match-end
+@end example
+
+@menu
+* Exercise 3-1::                練習問題 3-1
+@end menu
+
+
+@node  Exercise 3-1,  , Search Functions Summary, Search Functions Summary
+@comment  node-name,  next,  previous,  up
+@subsubsection 練習問題 3-1
+@cindex 練習問題 3-1[れんしゆうもんたい31]
+@cindex Exercise 3-1
+
+@b{問}
+@quotation
+  先のるねきちモードにおいて、@kbd{a} を押した時に既にバッファ中に存在す
+る「僕るねえもん @samp{A_n} なりよ」を数え、その数に応じて「僕るねえもん 
+@samp{A_(n+1)} なりよ」を挿入する用に書き換えよ。
+
+  すなわち、@kbd{b} を押した時にバッファ中に「僕るねえもん @samp{B} なり
+よ」がいた場合は「僕るねえもん @samp{B2} なりよ」を、@kbd{c} を押した時
+にバッファ中に「僕るねえもん @samp{C} なりよ」、「僕るねえもん @samp{C2} 
+なりよ」、…、「僕るねえもん @samp{C10} なりよ」がいた場合は「僕るねえも
+ん @samp{C11} なりよ」を挿入する。
+@end quotation
+
+@example
+ヒント:
+        point, re-search-*ward, \\(\\), buffer-substring
+        match-beginning, match-end, string-to-int
+
+    ・全てのマッチする文字列に対して処理
+
+        現在位置を保存
+        先頭へ
+        (while (re-search-forward パターン nil t)
+          処理)
+        処理
+        位置を復帰
+
+ポイント:
+        ・グローバル変数は避けましょう。
+        ・A1, A2, A5 なんて時はどうしましょうかね?
+          適当に仕様を決めて下さい(A3とかA6とか)。
+
+ただ、これによってアルゴリズムがかなり変わる↑
+@end example
+
+
+@node  Saving point Position,  , Search Functions Summary, Cursor Motion
+@comment  node-name,  next,  previous,  up
+@subsection ポイント位置の保存
+@cindex ポイント 位置の保存[ほいんといちのほそん]
+@cindex point, saving position
+@findex save-excursion
+
+  カーソル移動のための関数を書く場合を除き、@code{Emacs-Lisp} 中でポイント
+移動を行った場合には、ユーザのその後の編集の事を考慮し、ポイント位置を復帰
+しておく必要があります。そのための関数が @code{save-excursion} です。
+
+@lisp
+(save-excursion 実行部...)
+@end lisp
+
+@noindent
+のようにポイント移動を伴う部分を @code{save-excursion} の中に閉じこめるこ
+とにより、「実行部@dots{}」でいかなる場所にポイントを移動しようと、 
+@code{save-excursion} を抜けると同時に、ポイントは元の位置に復帰します。さ
+らに、マーク位置も保存されるので、「実行部@dots{}」でマーク位置にアクセス
+する関数を書いた場合も、ユーザのその後の編集操作に支障を来しません。
+
+  次の例は、ポイントのある行を @code{kill-ring} に入れつつ二重化します。
+
+@lisp
+(defun duplicate-line ()
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    (copy-region-as-kill (point)
+             (progn (end-of-line) (point)))
+    (forward-line 1)
+    (yank)))
+@end lisp
+
+@noindent
+関数中でポイントを移動していますが、実行が終わると関数起動時のポイント位置
+に復帰します。
+@vindex kill-ring
+
+
+@node  Inserting and Deleting Strings, By-talk 5, Cursor Motion, Functions You Must Know
+@comment  node-name,  next,  previous,  up
+@section 文字列挿入/削除
+@cindex 文字列 挿入/削除[もしれつそうにゆうさくしよ]
+@cindex strings, insert/delete
+
+
+@menu
+* Inserting Strings::           文字列挿入
+* Transforming Types::          文字列と他の型の変換
+* Type Transformation::         型変換
+* Deleting Strings::            文字列削除
+* Replacing Strings::           文字列置換
+* Buffer Editing Functions Summary::  バッファ編集関数のまとめ
+@end menu
+
+
+@node  Inserting Strings, Transforming Types, Inserting and Deleting Strings, Inserting and Deleting Strings
+@comment  node-name,  next,  previous,  up
+@subsection 文字列挿入
+@cindex 文字列 挿入[もしれつそうにゅう]
+@cindex 挿入 文字列[そうにゆうもしれつ]
+@cindex strings, insert
+@findex insert
+
+  既にメジャーモードの練習関数で、文字列を挿入する関数 @code{insert} は使
+用済みです。ほとんどの文字列操作は @code{insert} 関数で用が足りますが、次
+のものを知っておくと便利な場合が有ります。
+
+@menu
+* insert-char::                 文字の挿入
+* self-insert-command::         
+@end menu
+
+@node   insert-char, self-insert-command, Inserting Strings, Inserting Strings
+@comment  node-name,  next,  previous,  up
+@subsubsection insert-char
+@findex insert-char
+
+  同じ文字をたくさん入れたい時に使用できます。引数を二つ取り、最初の引数は
+文字コード、二つ目の引数は個数です。文字 @samp{a} を100個入れたい時は次の
+ようにします。
+
+@lisp
+(insert-char ?a 100)
+@end lisp
+
+
+@node  self-insert-command,  , insert-char, Inserting Strings
+@comment  node-name,  next,  previous,  up
+@subsubsection self-insert-command
+@findex self-insert-command
+
+  @kbd{A-Z}, @kbd{a-z}, @kbd{0-9}, など一般のキーに割当てられている関数が
+これです。@code{define-key} などでキーに結び付けられた関数中で、押したキー
+そのものを挿入したいときにこの関数を利用します。この関数も、繰り返し挿入回
+数を指定する引数を取るので通常は@code{(self-insert-command 1)} のように呼
+び出します。(@pxref{Setting Keys,define-code})
+
+  ちなみに、キーバインドされた関数から、その関数が起動されたキーを知るた
+めには、関数@code{(this-command-keys)}を参照します。次のような関数をいろい
+ろなキーに割当てて実行してみるとおもしろいでしょう。
+@findex this-command-keys
+
+@lisp
+(defun show-my-key ()
+  (interactive)
+  (insert (this-command-keys)))
+@end lisp
+
+
+@node  Transforming Types, Type Transformation, Inserting Strings, Inserting and Deleting Strings
+@comment  node-name,  next,  previous,  up
+@subsection 文字列と他の型の変換
+@cindex 文字列 他の型の変換[もしれつほかのかたのへんかん]
+@cindex 変換 文字列と他の型[へんかんもしれつとほかのかた]
+@cindex transforming, strings to other types
+@cindex strings, transforming to other types
+
+@menu
+* format::                      
+@end menu
+
+@node  format,  , Transforming Types, Transforming Types
+@comment  node-name,  next,  previous,  up
+@subsubsection format
+@findex format
+
+  バッファ中に挿入したいのは文字列だけとは限りません。なにかの計算によって
+選られた数値を文字列化して挿入したいことがあります。このような時に用いるの
+が @code{format} 関数で、Cの @code{printf} でのフォーマットとほぼ同じもの
+が利用できます。ここで @code{Emacs-Lisp} で扱うことのできる型には、以下の
+ものがあります。
+
+@table @samp
+@item シンボル
+'foo, 'bar
+@item 数値(整数)
+1, 2, 3, -50, 65537 (24bits)
+@item char型
+0 ～ 127
+@item 文字列
+"foo", "こんにちは"
+@end table
+
+@noindent
+これらの型のものが単体で用いられる場合、それを「アトム @code{atom} 」と言
+います。逆に様々な型のアトムが集合したものに、「リスト @code{list} 」と
+「配列 @code{array} 」があります。これらの概念については、一般の 
+@code{Lisp} の参考書などを見ると説明が載っています。それを理解していると複
+雑な処理が効率的に書けるようになることがあるかもしれませんが、とくに理解し
+ていなくてもメジャーモードの作成には支障ありません。余裕ができたら覚えましょ
+う。(@pxref{List,atom list array})
+
+
+  さて、関数 @code{format} には、すべての型の値を文字列に変換するためのキー
+ワードが三種類有ります。
+
+@table @code
+@item %s
+シンボル、または文字列
+@item %d,%o,%x
+数値(10,8,16進数表示)
+@item %c
+char型数値を文字コードとみなし文字を表示
+@end table
+
+@code{format} 関数は第一引数に上記の @samp{%} を含むフォーマット文字列を、
+第二引数以降に文字列中の @samp{%?} に対応する変数/定数を受け取ります。そし
+て、それらの引数を文字列化したもので元の @samp{%?} を置き換え、すべて置き
+換えることで出来上がった文字列を返します。
+
+  これを用いて各種の値を表示させてみます。
+
+@lisp
+(setq   foo 50
+    bar ?x
+    baz "hoge")
+(insert (format "%d, %o, %x  %s   %c  %s\n"
+         foo foo foo 'foo bar baz ))
+@end lisp
+
+@code{format} 関数の第一引数中、@samp{%?} が文字列に変換される様子は次のよ
+うになります。
+
+@example
+%d  →  "50"
+%o  →  "62"
+%x  →  "32"
+%s  →  "foo"
+%c  →  "x"
+%s  →  "hoge"
+@end example
+
+@noindent
+従って format 関数が返す文字列は
+
+@lisp
+``50, 62, 32  foo   x  hero''
+@end lisp
+
+@noindent
+となります。
+
+
+@node  Type Transformation, Deleting Strings, Transforming Types, Inserting and Deleting Strings
+@comment  node-name,  next,  previous,  up
+@subsection 型変換
+@cindex 型変換[かたへんかん]
+@cindex 変換 型[へんかんかた]
+@cindex transformation, type
+@cindex type transformation
+
+  バッファ中に存在する数値文字列を読み込みその値をもとになにかを計算し結果
+を返すという処理を想定してみましょう。必要な処理内容は以下のものとなります。
+
+@itemize @bullet
+@item
+バッファ中の文字列の取り込み    (バッファ→変数変換)
+@item
+文字列から数値への変換
+@item
+数値の計算
+@item
+数値から文字列への変換
+@end itemize
+
+ここでは、これらの処理に必要な関数をすべて覚えてしまいましょう。
+
+@menu
+* Getting Strings::             文字列の取込み
+* Numerical Transformation::    数値変換
+* Strings Transformation::      文字列変換
+* String Manipulation Functions::  文字列操作関数
+@end menu
+
+@node  Getting Strings, Numerical Transformation, Type Transformation, Type Transformation
+@comment  node-name,  next,  previous,  up
+@subsubsection 文字列の取り込み
+@cindex 文字列 取り込み[もしれつとりこみ]
+@cindex strings, getting
+@findex buffer-substring
+
+  バッファの内容を文字列として返す関数は @code{buffer-substring} です。こ
+の関数は非常によく使うので、いやでも覚えてしまうでしょう。
+
+@lisp
+(buffer-substring ポイント値1 ポイント値2)
+@end lisp
+
+@noindent
+第一引数と第二引数の間の内容を文字列として返します。通常この関数は、検索結
+果を保持している関数 @code{match-beginning}, @code{match-end} と共に用いら
+れます。(@pxref{Accessing Search Results, match-beginning})
+
+  例として
+
+@example
+Bytes: 67 Date : 10:23pm  6/28/93 Author:net66331 (luneえもん)
+@end example
+
+@noindent
+という行から時刻を抽出する関数を定義してみましょう。そのためには、このフォー
+マットで書かれている行を表現する正規表現を考える必要があります。簡単のため、
+ここでは「行頭が @code{Bytes:} で始まり、時刻文字列があり、(ハンドル)で終
+わる行」というものにします。これをそのまま正規表現にすると、
+
+@example
+^Bytes:.*[0-9 ][0-9]:[0-9][0-9][ap]m.*(.*)$
+         ~~~~~~~~~~~|~~~~~~~~~~|~~~~
+@end example
+
+@noindent
+となるでしょう。しかし今回の場合時刻を取り出したいので、この部分をグループ
+化して、
+
+@example
+^Bytes:.*\([0-9 ][0-9]\):\([0-9][0-9]\)\([ap]m\).*(.*)$
+@end example
+
+@noindent
+とします。検索が成功した場合、@code{(match-beginning 1)}と 
+@code{(match-end 1)} に @samp{時} の部分の先頭と末尾のポイント値が入るはず
+です(以下も同様)。これを Lisp 中に書くときは @code{\} を @code{\\} でエス
+ケープすることを忘れないようにしましょう。
+
+@lisp
+(defun access-time ()
+  (interactive)
+  (re-search-forward
+   "^Bytes:.*\\([0-9 ][0-9]\\):\\([0-9][0-9]\\)\\([ap]m\\).*(.*)$"
+   nil t)
+  (message
+   (concat
+    (if (string= (buffer-substring (match-beginning 3) (match-end 3))
+         "am")
+    "午前" "午後")
+    (buffer-substring (match-beginning 1) (match-end 1)) "時"
+    (buffer-substring (match-beginning 2) (match-end 2)) "分")))
+@end lisp
+
+@noindent
+関数 @code{string=} は文字列どうしが等しいかどうかを比較します。この例では、
+グルーピングした3番目の部分、つまり @code{am} か @code{pm} の部分が、 
+@code{am} だったら @samp{午前} を返し、そうでなかったら @samp{午後} を返し
+ています。さらに、グルーピングの1番目と2番目、つまり「時」と「分」の部分に
+それぞれ @samp{時} 、@samp{分} を添えています。そしてそれらを 
+@code{concat} で全て結合したものを @code{message} 関数に渡しています。
+@findex string=
+@findex concat
+
+  次の節に進む前に、もう少し分かり易く書き直しておきましょう。全く同じ動作
+をします。
+
+@lisp
+(defun access-time ()
+  (interactive)
+  (re-search-forward
+   "^Bytes:.*\\([0-9 ][0-9]\\):\\([0-9][0-9]\\)\\([ap]m\\).*(.*)$"
+   nil t)
+  (let((h  (buffer-substring (match-beginning 1) (match-end 1)))
+       (m  (buffer-substring (match-beginning 2) (match-end 2)))
+       (ap (buffer-substring (match-beginning 3) (match-end 3))))
+    (message
+     "%s%s時%s分" (if (string= ap "am") "午前" "午後") h m)))
+@end lisp
+
+
+@node  Numerical Transformation, Strings Transformation, Getting Strings, Type Transformation
+@comment  node-name,  next,  previous,  up
+@subsubsection 数値変換
+@cindex 数値変換[すうちへんかん]
+@cindex 変換 数値[へんかんすうち]
+@cindex numerical transformation
+@cindex transformation, numerical
+@findex string-to-int
+
+  数値を表わす文字列を実際の数値に変換するための関数は、 
+@code{string-to-int} です。
+
+@lisp
+(string-to-int "数値文字列")
+@end lisp
+
+@noindent
+もし、文字列が数値として意味のない文字列である場合は0を返します。では、早
+速この関数を使って先程の例を24時間制で表示するように書き換えてみましょう
+(展開が予想できましたね?)。先の例では、@code{h} と @code{m} に時刻を表わす
+数値文字列が入っているので、これを @code{string-to-int} で数値に変換し、も
+じ @samp{pm} だったら「時」に12を足しましょう。
+
+@lisp
+(defun access-time ()
+  (interactive)
+  (re-search-forward
+   "^Bytes:.*\\([0-9 ][0-9]\\):\\([0-9][0-9]\\)\\([ap]m\\).*(.*)$"
+   nil t)
+  (let*((h  (buffer-substring (match-beginning 1) (match-end 1)))
+        (m  (buffer-substring (match-beginning 2) (match-end 2)))
+    (ap (buffer-substring (match-beginning 3) (match-end 3)))
+    (hour (string-to-int h))
+    (min  (string-to-int m)))
+    (if (string= ap "pm") (setq hour (+ 12 hour)))
+    (message "%d時%d分" hour min)))
+@end lisp
+
+@noindent
+新しい形 @code{let*} が出てきました。@code{let} との違いは、変数の初期化に
+それ以前のローカル変数の値を利用できる点です。上の例では、変数 @code{hour} 
+の初期化に @samp{h} の値を利用しているので、@code{let*} を使う必要がありま
+す。
+@findex let*
+
+  余談となりますが、文字コードを返す関数として、@code{string-to-char} があ
+ります。これは、引数として与えた文字列の先頭の一文字の文字コードを返します。
+@findex string-to-char
+
+
+@node  Strings Transformation, String Manipulation Functions, Numerical Transformation, Type Transformation
+@comment  node-name,  next,  previous,  up
+@subsubsection 文字列変換
+@cindex 文字列 変換[もしれつへんかん]
+@cindex 変換 文字列[へんかんもしれつ]
+@cindex transformation, strings
+@cindex strings, transformation
+@findex int-to-string
+
+  今回の例では @code{%s} による(出力時の)文字列への変換を用いたので、数値
+→文字列(変数間)の型変換は用いませんでしたが、@code{string-to-int} の逆の
+仕事をする @code{int-to-string} という関数があります。必要に応じて利用する
+と良いでしょう。
+
+
+@node  String Manipulation Functions,  , Strings Transformation, Type Transformation
+@comment  node-name,  next,  previous,  up
+@subsubsection 文字列操作関数
+@cindex 関数 文字列操作[かんすうもしれつそうさ]
+@findex 文字列操作[もしれつそうさ]
+@findex Strings manipulation
+@cindex strings, manipulation functions
+
+  ついでに文字列に対する種々の操作関数を覚えておきましょう。 @kbd{M-x
+apropos} で @code{string} をキーに探せばいろいろ出てきますが、ここでは主な
+ものを取り上げます。
+
+@lisp
+(string-equal "文字列1" "文字列2")  ;string= と同じ
+(string< 文字列1 文字列2)
+(string> 文字列1 文字列2)           ;文字列の大小比較
+(string-match 正規表現 文字列)      ;第一引数の正規表現が第二引数の文
+                                    ;字列中の何文字目にマッチするか。
+                                    ;マッチしなければ nil
+(stringp 変数)                      ;変数の値が文字列かどうか
+(substring 文字列 開始 終了)        ;文字列の「開始」～「終了」の部分
+                                    ;文字列。第三引数を省略すると開始
+                                    ;位置から文字列末尾まで。位置を負
+                                    ;で与えると文字列の後ろから数える。
+@end lisp
+@findex string-equal
+@findex string<
+@findex string>
+@findex string-match
+@findex stringp
+@findex substring
+
+
+@node  Deleting Strings, Replacing Strings, Type Transformation, Inserting and Deleting Strings
+@comment  node-name,  next,  previous,  up
+@subsection 文字列削除
+@cindex 文字列 削除[もしれつさくしよ]
+@cindex 削除 文字列[さくしょもしれつ]
+@cindex strings, deleting
+
+  バッファの一部を削除する関数で @code{Emacs-Lisp} 中から主に用いるのは以
+下のものでしょう。
+
+@itemize @bullet
+@item
+delete-char, delete-backward-char
+@item
+delete-region
+@item
+erase-buffer
+@end itemize
+@findex delete-char
+@findex delete-backward-char
+@findex delete-region
+@findex erase-buffer
+
+@noindent
+@code{delete-char} と @code{delete-backward-char} は引数として削除する文字
+数を指定します。しかし複数文字を削除する時は通常 @code{delete-region} を用
+います。
+
+@lisp
+(delete-region 削除開始ポイント値 削除終了ポイント値)
+@end lisp
+
+@noindent
+手で編集する時の関数 @code{kill-region} は、@code{kill-ring} を変えてしま
+うので、@strong{@code{Emacs-Lisp} 中から利用してはいけません}
+@footnote{kill-ring を変えることが目的のプログラムはこの限りでない。}。
+@findex kill-region
+
+  なにかのパターンを検索して該当部分を削除するということが多いので、 
+@code{delete-region} も @code{match-beginning}, @code{match-end} と共に用
+いられることがほとんどです。
+
+  バッファ中に出現する特定のパターンを削除するというケースは非常に多くあり
+ます。たとえば、
+
+@example
+[Continued] 
+@end example
+
+というパターンを全て削除するコードは以下のようになります。
+
+@lisp
+(defun kill-more ()
+  (interactive)
+  (goto-char (point-min))
+  (while (re-search-forward
+    (delete-region (match-beginning 0) (match-end 0))))
+@end lisp
+
+このような、
+
+@lisp
+(while (検索関数 パターン nil t)
+  (delete-region (match-beginning ??) (match-end ??)))
+@end lisp
+
+@noindent
+という関数の組み合わせは特定のパターンを全て削除する時の定石として覚えてお
+きましょう。
+
+@node  Replacing Strings, Buffer Editing Functions Summary, Deleting Strings, Inserting and Deleting Strings
+@comment  node-name,  next,  previous,  up
+@subsection 文字列置換
+@cindex 文字列 置換[もしれつちかん]
+@cindex 置換 文字列[ちかんもしれつ]
+@cindex strings, replacement
+@cindex replacement, strings
+
+  単純な文字列の置換は、対話的に済ませることが多いのであまりプログラムでは
+必要とはなりません。やはり、正規表現検索と組み合わせる ことが多くなります。
+特定のパターンを一括置換する場合は次のように なります。次の例は、コントロー
+ルコードの @code{^L} を @samp{山記号} と @code{L} に置換します。
+
+@lisp
+(defun replace-C-l ()
+  (interactive)
+  (goto-char (point-min))
+  (while (search-forward "\C-l" nil t)
+    (replace-match "^L")))
+@end lisp
+
+@noindent
+この例の場合は、マッチした部分全体を置換していますがそのような時に使う関数
+が @code{replace-match} で、@code{sed} の @code{s/old/new/} の後半にあたり
+ます。
+@findex replace-match
+
+@lisp
+(replace-match  置換文字列
+        大小文字を保存するかのフラグ
+        \を特別扱いしないかのフラグ)
+@end lisp
+
+@noindent
+第二引数以降は省略可能です。また @code{\} を特別扱いしないフラグをセットし
+ない場合は「置換文字列」の部分に次の表記が利用できます。
+
+@ftable @code
+@item \&
+直前の検索でマッチした部分全体
+@item \n
+@code{\(\)} で指定したグループの内容(nは1-9)
+@item \\
+@code{\} 自身
+@end ftable
+
+@noindent
+既にお気付きでしょうが、前節の一括削除は @code{replace-match} を使うと
+
+@lisp
+(while (検索関数 パターン nil t)
+  (replace-match ""))
+@end lisp
+
+@noindent
+と簡単に書くことができます。
+
+
+@node  Buffer Editing Functions Summary,  , Replacing Strings, Inserting and Deleting Strings
+@comment  node-name,  next,  previous,  up
+@subsection バッファ編集関数のまとめ
+@cindex バッファ編集関数[はつふあへんしゆうかんすう]
+@cindex 関数 バッファ編集[かんすうはつふあへんしゆう]
+@findex Buffer Editing Functions
+
+@example
+・文字列挿入        insert, insert-char, self-insert-command
+                    this-command-keys(関連)
+・文字列の取り込み  buffer-substring
+・型変換            format, string-to-int, int-to-string
+                    string-to-char, char-to-string
+・文字列比較等      string=, string<, string>, string-match
+                    stringp, substring
+・削除              delete-char, delete-backward-char
+                    delete-region, erase-buffer
+・置換              replace-match
+@end example
+
+
+@node  By-talk 5, By-talk 6, Inserting and Deleting Strings, Functions You Must Know
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 余談 5 雑関数
+@cindex 余談 5 雑関数[よたん5]
+@cindex 関数 雑[かんすうさつ]
+@findex Misc Functions
+
+  既に多くの人が利用しているので、次の関数は既習としましょう。
+
+@table @code
+@item (sleep-for 秒数)
+「秒数」だけ休止する。
+@item (sit-for 秒数)
+「秒数」だけ休止する。@*
+ただし、既にキー入力が行われていた場合は先に進む。
+@item (ding)
+beep音を鳴らす。
+@end table
+@findex sleep-for
+@findex sit-for
+@findex ding
+
+
+@node  By-talk 6,  , By-talk 5, Functions You Must Know
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 余談 6 Emacs-Lisp のスコープ
+@cindex 余談 6 Emacs-Lisp のスコープ[よたん6]
+@cindex Emacs-Lisp スコープ[いいまくすりすふすこうふ]
+@cindex Emacs-Lisp, scope
+@cindex scope, of Emacs-lisp
+
+  @code{Emacs-Lisp} ではダイナミックスコープ(動的スコープ)を採用しています。
+これは、C言語などのスタティックスコープとは異なり、実行時に参照する変数の
+実体が決定するものです。具体例を見てみましょう。次のプログラムの実行結果を
+予想し、実際に確かめて見て下さい。
+
+@example
+/*---- C言語 ----*/
+char *s = "外側のs";
+sub()
+{
+    printf("sub: s = %s\n", s);
+}
+main()
+{
+    printf("main(外): s = %s\n", s);
+    {
+    char *s = "mainの中のs";
+    printf("main(中): s = %s\n", s);
+    sub();
+    }
+    sub();
+}
+@end example
+
+@lisp
+;;; -*- Emacs-Lisp -*-
+(defvar s "外側のs")
+(defun sub ()
+  (insert (format "sub: s = %s\n" s)))
+(defun main ()
+  (insert (format "main(外): s = %s\n" s))
+  (let ((s "mainの中のs"))
+    (insert (format "main(中): s = %s\n" s))
+    (sub))
+  (sub))
+@end lisp
+
+@noindent
+C言語では、あらゆるシンボルのスコープ(通用範囲)は、コンパイル時に決定され
+ます。先程のCのプログラムでは、次の図のような入れ子構造のスコープが形成さ
+れています。
+
+@example
+@group
++-----------------globalな箱----------------------+
+|    char *s = "外側のs";                         |
+|+---------------- subの箱 ----------------------+|
+||   sub()                                       ||
+||   {                                           ||
+||       printf("sub: s = %s\n", s);             ||
+||   }                                           ||
+|+-----------------------------------------------+|
+|+---------------- mainの箱 ---------------------+|
+||   main()                                      ||
+||   {                                           ||
+||      printf("main(外): s = %s\n", s);         ||
+||+----------- local-blockの箱 -----------------+||
+|||      {                                      |||
+|||          char *s = "mainの中のs";           |||
+|||          printf("main(中): s = %s\n", s);   |||
+|||          sub();                             |||
+|||      }                                      |||
+||+---------------------------------------------+||
+||       sub();                                  ||
+||   }                                           ||
+|+-----------------------------------------------+|
++-------------------------------------------------+
+@end group
+@end example
+
+  それぞれの箱の壁は、内側から外側しか見ることのできないマジックミラーになっ
+ていると考えると分かり易いかもしれません。なにかのシンボルが参照されている
+場合、もしその箱の内部でそのシンボルが宣言されていた場合(例えば 
+@code{local-block} の箱の中の@code{s})、そのシンボルが最優先で結合されます。
+逆に箱の内部でシンボルが宣言されていない場合 (例えば @code{sub}の箱の 
+@code{s})、コンパイラは箱をどんどん外側に見ていき、見つかった場合そのシン
+ボル(ここでは @code{global} な箱に存在する @code{s})と結合します。
+
+  つまり @code{sub()} では、変数 @code{s} は @code{global} な箱で宣言され
+ている @code{s} と結合され、これは @code{sub()} がいつ何時どこから呼ばれよ
+うと変わることはありません。常に @samp{外側のs} の格納されているアドレスを
+差しています。
+
+  スタティックスコープでは、シンボルとその実体との結合は、シンボルの参照が
+行われている箇所の、ソースプログラムでの位置によって決定されます。
+
+  ところが、ダイナミックスコープでは、変数とその実体との結合は実行時に行わ
+れます。先程の @code{Emacs-Lisp} プログラムの例を評価順に追って考える必要
+があります。
+
+@lisp
+(defvar s "外側のs")                            ;これはロード時に評価される
+→main
+  (insert (format "main(外): s = %s\n" s))      ;外側のsが有効
+  (let ((s "mainの中のs"))                      ;ここでローカルなsが発生
+    (insert (format "main(中): s = %s\n" s))    ;let中のsは"mainの中のs"
+    (sub)                                       ;letを抜けると同時に
+  )                                             ;ローカルなsは消滅
+  (sub)                                         ;外側のsが再び有効
+→main 終わり
+@end lisp
+
+極端な例として、次のものの評価を追ってみると良いでしょう。
+
+@lisp
+(defun hoge ()
+  (message "x = %d" x))
+(defun foo ()
+  (let ((x 1)) (hoge)))
+(defun bar ()
+  (let ((x 2)) (hoge)))
+(defun baz ()
+  (hoge))
+@end lisp
+
+@code{(foo)}, @code{(bar)}, @code{(baz)} と順に評価してみて下さい。
+
+  ダイナミックスコープの性質を利用すると、ある関数から下請関数を呼ぶする場
+合、引数の受け渡しを省略することができます。
+
+@lisp
+(defun natural-rand (n)
+  (let ((r (random t)))
+    (abs-r)
+    (% r n)))
+(defun abs-r ()
+  (if (< r 0) (setq r (- r))))
+@end lisp
+
+  しかし、このような利用法は関数の汎用性を損なうだけでなく、どの変数を参照
+しているのかが分かりにくく、可読性を落とすことになるので、特殊な処理でスピー
+ドを重視するようなもの以外では、利用しない方が良いでしょう。
+
+@menu
+* Exercise 3-2::                練習問題 3-2
+@end menu
+
+@node Exercise 3-2,  , By-talk 6, By-talk 6
+@comment  node-name,  next,  previous,  up
+@unnumberedsubsec 練習問題 3-2
+@cindex 練習問題 3-2[れんしゆうもんたい32]
+@cindex Exercise 3-2
+
+(1),(2)の好きな方を作成せよ。
+
+@b{選択問題(1)}
+@quotation
+  ASCII-NET のログを解析し、直前の書き込みとの時間的間隔が一番大
+きい書き込みを発見せよ。
+
+  つまり、以下のような書き込みがあった場合、
+@end quotation
+@example
+@group
+|Bytes: 3001 Date :  6:46am  7/12/93 Author:net92851 (ほんまたける)
+|   やっと出来ました。いまから学校か。結構辛い！
+|
+|Bytes: 36 Date : 12:14pm  7/12/93 Author:pcs39334 (はすらあ)
+|   おおついに!
+|
+|Bytes: 33 Date :  3:19pm  7/12/93 Author:net66331 (luneきち)
+|   バイトはどうなさったのでしょう
+
+      の場合、6:46am→12:14pm→3:19pm
+                   5h28m    3h05m
+    なので、二番目の書き込みが該当する。
+
+ヒント:
+        match-beginning, match-end, buffer-substring, string-to-int
+@end group
+@end example
+
+
+
+@b{選択問題(2)}
+@quotation
+先のるねきちモードのメッセージ「僕るねえもんXyyなりよ」はちょっと
+長いので、「るねXyyなりよ」に変更し、次の機能を付加せよ。
+
+「るねXyyなりよ」をたくさん表示させた状態で、
+@end quotation
+@enumerate
+@item
+@kbd{2},@kbd{4},@kbd{6},@kbd{8を押すと}、それぞれ 下/左/右/上 の 
+@code{[A-Z][0-9]*} (以後これを「るね番号」と呼ぶ)に移動。
+@item
+スペースキーを押すと、
+@enumerate
+@item
+行末かバッファ末なら @code{(self-insert-command)}
+@item
+るね番号 の上なら、
+@enumerate
+@item
+直前に押したキーが @kbd{26} なら、行末までのすべてのるね番号を「自爆」に
+置換する
+@item
+直前に押したキーが @kbd{24} なら、行頭までのすべてのるね番号を「自爆」に
+置換する
+@end enumerate
+@end enumerate
+それ以外なら @code{(call-interactively 'fill-paragraph)}
+@end enumerate
+@example
+ヒント:
+        cond, looking-at, (substring (recent-keys) 負の数),
+        string=
+        「delete-region & insert」または「replace-match」
+        (註: 関数 recent-keys は最近押されたキーを文字列として返す)
+
+  余裕があれば、
+
+(1')@kbd{2},@kbd{4},@kbd{6},@kbd{8} のキーは一回押しただけでは動かず、二
+回目以降から動く。@*
+   (つまり @code{(recent-keys)} の末尾二文字が同じ時に動く)
+
+      かなり暇なら、
+
+るね番号を縦に結んだ線がなんとなく揃うように @code{fill-column} を調整する。
+
+(b3)直前キーが @kbd{626} なら、一つ右のるね番号に移動してからその真上にある
+    (@kbd{8}で移動できる)るね番号全てを「自爆」に置換
+
+(b4)直前キーが @kbd{424} なら、一つ左のるね番号に移動してからその真上にある
+    (@kbd{8} で移動できる)るね番号全てを「自爆」に置換
+
+なお、以後これを「るねきちモードII」と呼ぶ。
+@end example
+
+
+
+@c 
+@c 第四章 補完入力とその周辺
+@c
+@node Completion Input, Concept Index, Functions You Must Know, Top
+@comment  node-name,  next,  previous,  up
+@chapter 補完入力とその周辺
+@cindex  補完入力[ほかんにゆうりよく]
+@cindex completion, input
+
+  @code{Emacs} の持っている機能のうち最も強力なものの一つが文字列やファイ
+ル名の補完入力で、入力支援のためのメジャーモードには必須の機能と言っても過
+言ではないでしょう。本章では、補完入力機能を実装するために必要な知識とその
+方法について説明します。
+
+@menu
+* Normal Input Functions::      一般入力関数
+* Completion Input Functions::  補完入力関数
+* By-talk 7::                   余談 7 マクロ
+@end menu
+
+@node Normal Input Functions, Completion Input Functions, Completion Input, Completion Input
+@comment  node-name,  next,  previous,  up
+@section 一般入力関数
+@cindex  関数 一般入力[かんすういつはんにゆうりよく]
+@cindex Input Functions
+@findex input, normal
+@findex read-string
+
+  補完入力関数の前に、通常の入力関数について説明します。文字列入力は、
+@code{read-string} という関数によって行います。
+
+@lisp
+(read-string プロンプト文字列 [初期入力])
+@end lisp
+
+@noindent
+第一引数の文字列をプロンプトとして出し、ミニバッファから文字列を読み込んで
+その結果を返します。この時に第二引数を与えると、それを読み込み時に既に入力
+されていた文字列であるかのようにミニバッファに挿入します。
+
+  日本語文字列やスペースを含む文字列を読み込む場合などは補完が有効に働かな
+いので、@code{read-string} 関数が役に立ちます。次の例は、天候を読み込み日
+付と共にバッファ中に挿入します。
+
+@lisp
+(defun insert-date-weather ()
+  (interactive)
+  (insert
+   (substring (current-time-string) 0 10)
+   "\t"
+   (read-string "Weather: ")
+   "\n"))
+@end lisp
+
+  もうひとつ、ファイル名を読み込む @code{read-file-name} を紹介します。第
+二引数以降は省略可能です。
+@findex read-file-name
+
+@lisp
+(read-file-name プロンプト文字列
+        [ディレクトリ [デフォルト名 [要マッチ]]])
+@end lisp
+
+@noindent
+「ディレクトリ」はファイル名を入力するデフォルトのディレクトリ名を指定しま
+すが、これを省略するとカレントバッファの属するディレクトリとなります。「デ
+フォルト名」を指定すると、ユーザ自身が何も入力せずにリターンキーを押した場
+合に、この値が @code{read-file-name} の結果として返されます。「要マッチ」
+に @code{t} を指定した場合は実際に存在するファイル名以外の入力を認めません。
+@code{t} でも @code{nil} でもない値を指定した場合は、補完入力の途中でリター
+ンキーを押した場合に本当にそのファイルでよいかどうかの確認をします。
+
+
+@node Completion Input Functions, By-talk 7, Normal Input Functions, Completion Input
+@comment  node-name,  next,  previous,  up
+@section 補完入力関数
+@cindex 関数 補完入力[かんすうほかんにゆうりよく]
+@cindex Input Functions
+@findex input, completion
+@findex completing-read
+
+  ミニバッファで補完入力を行う関数が @code{completing-read} です。
+
+@lisp
+(completing-read プロンプト 補完テーブル 選択(述語)関数
+         要マッチ 初期入力)
+@end lisp
+
+@noindent
+第一引数の「プロンプト」はミニバッファに出すプロンプト文字列、第四引数の
+「要マッチ」は @code{read-file-name} のものと同様補完候補と必ず一致すべき
+かどうかを指定するフラグ、第五引数はミニバッファに最初から入力されている文
+字列で、それぞれ特に説明の必要はないでしょう。
+
+  第二引数の「補完テーブル」はスペースキーやタブキーを押した時に補完される
+単語を格納した変数です。このテーブルの構造は連想リスト @code{(association
+list)}(通称 @code{alist})と呼ばれるもので、@code{Lisp} 言語では非常に良く
+使われます。@code{alist} に限らず「リスト」は、@code{Lisp} の機能を最大限
+に活かした @code{Emacs-Lisp} プログラムを書くためには必須の概念ですから、
+この機会に覚えておきましょう。
+
+@menu
+* List::                        リスト
+* List Structure::              リストの構造
+* List Manipulation Functions::  リスト処理関数
+* Association Lists::           連想リスト
+@end menu
+
+
+@node List, List Structure, Completion Input Functions, Completion Input Functions
+@comment  node-name,  next,  previous,  up
+@subsection リスト
+@cindex リスト[りすと]
+@cindex アトム[あとむ]
+@cindex シンボル[しんほる]
+@cindex atom
+@cindex symbol
+@cindex list
+
+  @code{Lisp} で扱う対象の最小単位は「アトム」といい、今までに出てきた関数
+や変数などの名前を表わす「シンボル」や、数値、文字列、@code{t}、@code{nil} 
+などは全てこれに属します。
+
+  「リスト」とは、「アトムまたはリスト、の集合体」です。@code{Lisp} ではア
+トム、リストを括弧で括って並べることで集合体を表現します。つまり、それぞれ
+のアトム @code{foo}, @code{t}, @code{"bar"} @code{5} を
+
+@lisp
+(foo t "bar" 5)
+@end lisp
+
+@noindent
+のように並べたものがリストとなります。ではこれを変数 @code{x} にセットして
+みましょう。
+
+@lisp
+(setq x (foo t "bar" 5))        ;×間違い
+@end lisp
+
+@noindent
+これでは期待通りになりません。@code{(foo ...)} という形は、「関数@code{foo
+の} 評価」という意味なので、@code{Lisp} インタプリタは関数 @code{foo} に幾
+つかの引数を渡した結果を @code{x} に代入しようとします(たいていは未定義エ
+ラーとなるでしょう)。リストの形で渡したい時は、次のように ' をつけてクォー
+トする必要があります。
+@findex '
+
+@lisp
+(setq x '(foo t "bar" 5))
+@end lisp
+
+  ' は、次のオブジェクトを評価しない、つまり「後続するものを変数や関数の参
+照だと思わずにそのまま渡してくれ」と @code{Lisp} インタプリタに指示する働
+きを持っています。
+
+  なお、本稿ではリストを表記する時は、関数評価との混乱を避けるため、' でクォー
+トして表わすことにします。
+
+
+@node List Structure, List Manipulation Functions, List, Completion Input Functions
+@comment  node-name,  next,  previous,  up
+@subsection リストの構造
+@cindex リスト 構造[りすとこうそう]
+@cindex list, structure
+@findex car
+@findex cdr
+@findex cons
+@findex list
+@findex append
+
+  @code{car}, @code{cdr}, @code{cons}, @code{list}, @code{append} などのリ
+スト処理関数を覚える時には、リストがどういう構造で格納されているかについて
+理解しておくと非常にスムーズに関数の働きが理解できます。(@pxref{Creating
+lists,list})(@pxref{Accessing list Elements, car cdr})(@pxref{Adding
+Elements to list, cons})(@pxref{Appending lists, append})
+
+  リスト中の各要素は「コンスセル」と呼ばれる記憶領域に格納されます。たとえ
+ば前述のリストの例 @code{'(foo t "bar" 5)} はみかけから分かるように四つの
+要素から成っていますが、これらの各要素はそれぞれコンスセルに格納されていま
+す。コンスセルは次のような構造をとっています。
+@cindex コンセル[こんせる]
+
+@example
+@group
+        +--------------+--------------+
+        |              |     次の     |
+        |     要素     | コンスセルの |
+        |              |   アドレス   |
+        +--------------+--------------+
+@end group
+@end example
+
+@noindent
+これにしたがって @code{'(foo t "bar" 5)} の格納されている様子を図にしてみ
+ましょう。記号Λは、それが最後のコンスセルであることを意味します。通常はΛ
+を表わす @code{Lisp} シンボルとしては @code{nil} が入っています。
+
+@example
+@group
+        +---------+---------+      +---------+---------+
+        |         |         |      |         |         |
+        |   foo   |    *----+----→|    t    |    *    |
+        |         |         |      |         |    |    |
+        +---------+---------+      +---------+----+----+
+        +---------+---------+  +-----------------/
+        |         |         |  |   +---------+---------+
+        |    5    |   Λ    |  |   |         |         |
+        |         |         |  +-→|  "bar"  |    *    |
+        +---------+---------+      |         |    |    |
+             ↑                    +---------+----+----+
+              ＼----------------------------------/
+@end group
+@end example
+
+@noindent
+@code{(setq x '(foo t "bar" 5))} はシンボル @code{x} にこれらのリスト(コン
+スセルの連結)の先頭のアドレスを代入します。
+
+@example
+@group
+        +--x--+
+        |  *  |
+        +-----+
+           ↓
+        +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+        | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+        +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+@end group
+@end example
+
+@noindent
+また、概念的に、@code{'(foo t "bar" 5)} の各要素を次のように把握してお
+くのも良いでしょう。
+
+@example
+@group
+        '(foo              t          "bar"           5)
+          ↓              ↓           ↓            ↓
+         fooと            tと         "bar"と         5と
+        '(t "bar" 5)      '("bar" 5)      '(5)            Λ
+          へのポインタ    へのポインタ   へのポインタ    のペア
+            のペア          のペア         のペア
+@end group
+@end example
+@cindex ポインタ[ほいんた]
+
+  次に、リストの要素にリストがある場合について考えてみましょう。 
+@code{nil} と、これまで例として用いた @code{'(foo t "bar" 5)} と 
+@code{hoge} からなるリストは次のように表現できます。
+
+@lisp
+'(nil (foo t "bar" 5) hoge)
+@end lisp
+
+@noindent
+リストの要素として、リストをそのままの形で書くだけで良いのです。
+
+  もう一つ、要素が一つもないリスト「空リスト」の存在も知っておく必要があり
+ます。空リストはリストの要素に何もないので、リストを括る括弧の中に何も書か
+ずに @code{'()} と表現します。空リストは常に @code{nil} を値として持ってい
+ます。@code{Emacs-Lisp} では空リストと @code{nil} は全く同じ意味を持ちます。
+
+  さて @code{(setq x '(foo t "bar" 5))} について理解しておくべき重要な
+事項は次のものです。
+
+@itemize @bullet
+@item
+@code{x} はコンスセルの鎖の先頭(ここでは @code{foo} )のアドレスを指す
+@item
+第二要素以降はポインタを辿って行くことで順次得られる
+@item
+あるリストの先頭のコンスセルへのポインタはリストそのものを指していることに
+ほかならない
+@c       \label{pointer2cons}
+@end itemize
+
+
+@node List Manipulation Functions, Association Lists, List Structure, Completion Input Functions
+@comment  node-name,  next,  previous,  up
+@subsection リスト処理関数
+@cindex リスト 処理関数[りすとしよりかんすう]
+@cindex 関数 リスト処理[かんすうりすとしより]
+@findex List Manipulation
+
+@menu
+* Creating lists::              リストの作成
+* Accessing list Elements::     リストの要素の参照
+* Adding Elements to list::     リストの要素の追加
+* Appending lists::             リストどうしの結合
+* List Related Predicates::     述語関数等
+@end menu
+
+@node Creating lists, Accessing list Elements, List Manipulation Functions, List Manipulation Functions
+@comment  node-name,  next,  previous,  up
+@subsubsection リスト作成
+@cindex リスト 作成[りすとさくせい]
+@cindex list, creating
+@findex list
+
+  これまでは、リストの内容そのものを @code{'} でクォートして並べましたが、
+各要素を列挙してそれらから構成されるリストを作成することができます。関数 
+@code{list} がそれです。引数は任意の個数だけ書けます。
+
+@lisp
+(list 'foo t "bar" baz)
+@end lisp
+
+@noindent
+のように書くことで、@samp{foo t "bar" [bazの値]} からなるリストを作成し、
+このリストへのポインタを返します。引数を全て評価したものを連結するので、
+@code{baz} は @samp{シンボル baz} ではなく @samp{baz の値} になることに注
+意して下さい。例えばこの場合、@code{(setq baz 5)} としていた場合、
+
+@lisp
+'(foo t "bar" 5)
+@end lisp
+
+@noindent
+というリストが生成されます。
+
+  リストの中にリストがある場合も、要素の部分に @code{list} 関数で内側のリ
+ストを書けば良く、前述の
+
+@lisp
+'(nil (foo t "bar" 5) hoge)
+@end lisp
+
+@noindent
+は
+@lisp
+(list nil (list 'foo t "bar" baz) 'hoge)
+@end lisp
+
+@noindent
+で作成することができます。
+
+
+@node Accessing list Elements, Adding Elements to list, Creating lists, List Manipulation Functions
+@comment  node-name,  next,  previous,  up
+@subsubsection リストの要素の参照
+@cindex リスト 要素の参照[りすとようそのさんしよう]
+@cindex list, accessing elements
+@findex car
+@findex cdr
+@findex nth
+
+  要素の連結した形であるリストから、要素そのものを取り出す時に利用する関数
+に @code{car}(かあ), @code{cdr}(くだー), @code{nth}(えぬす) があります。
+
+  リストは複数のコンスセルから成っていますが、@code{car} と @code{cdr} は引数
+として与えられたリストの先頭のコンスセルの、要素部分(@code{car部})とポ
+インタ部分(@code{cdr部})をそれぞれ返します。つまり、@code{'(foo t "bar" 5)}の
+先頭のコンスセル(@code{foo} が入っているもの)は
+@cindex コンスセル[こんすせる]
+@cindex ポインタ[ほいんた]
+
+@example
+@group
+        +--------------+--------------+
+        |              | tの入っている|
+        |     foo      | コンスセル   |
+        |              | へのポインタ |
+        +--------------+--------------+
+@end group
+@end example
+
+@noindent
+となっているので、@code{(car '(foo t "bar" 5))} は @code{foo} を返し、 
+@code{(cdr '(foo t "bar" 5))} は次のコンスセルへのポインタ、すなわち 
+@code{t} を先頭とするリスト @code{'(t "bar" 5)} を返します。 (@pxref{List
+Structure,pointer cons})
+@c (\ref{pointer2cons}参照)。
+
+  では、@code{'(foo t "bar" 5)} の @code{cdr} をどんどん辿って行くとどうなるで
+しょう。次の例では、変数 @code{x} に @code{cdr} の結果を入れて行きます。
+
+@lisp
+(setq x '(foo t "bar" 5));x は '(foo t "bar" 5) ---(A)
+(setq x (cdr x))         ;x は '(t "bar" 5)     ---(B)
+(setq x (cdr x))         ;x は '("bar" 5)       ---(C)
+(setq x (cdr x))         ;x は '(5)             ---(D)
+(setq x (cdr x))         ;x は 'nil             ---(E)
+@end lisp
+@c          \label{リスト:cdrをたどる}
+
+@noindent
+(A)～(E)の代入により変数 @code{x} の指し示すものは次のように変動します。
+
+@example
+@group
+      (A)            (B)            (C)            (D)      (E)  
+    +--x--+        +--x--+        +--x--+        +--x--+  +--x--+
+    |  *  |        |  *  |        |  *  |        |  *  |  |  *  |
+    +-----+        +-----+        +-----+        +-----+  +-----+
+       ↓             ↓             ↓             ↓       +→ nil
+    +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+    | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+    |     | (B) |  |     | (C) |  |     | (D) |  |     | (E) |
+    +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+@end group
+@end example
+
+  @code{car} と @code{cdr} を組み合わせると、リストの二番目三番目……の要
+素を取り出すことができます。
+
+@lisp
+(car (cdr '(foo t "bar" 5)))            ;t
+(car (cdr (cdr '(foo t "bar" 5))))      ;"bar"
+(car (cdr (cdr (cdr '(foo t "bar" 5)))))    ;5
+@end lisp
+
+@noindent
+しかしこの方法ではもっと後ろの要素を取り出すのが大変なので、そのような時は 
+@code{nth} を使います。@code{nth} は
+
+@lisp
+(nth n番目 リスト)      ;「n番目」は0から始まる
+@end lisp
+
+@noindent
+のように用いることで、リストの「n番目」の要素を返します。
+
+
+@node Adding Elements to list, Appending lists, Accessing list Elements, List Manipulation Functions
+@comment  node-name,  next,  previous,  up
+@subsubsection リストの要素の追加
+@cindex リスト 要素の追加[りすとようそのついか]
+@cindex list, adding elements
+@findex cons
+
+  @code{(setq x (cdr x))} のようにすることで、リストの先頭を順次切り捨てて
+行くことができます。これとは逆にリストに要素を追加する関数が、 @code{cons} 
+です。
+
+@lisp
+(cons 要素 リスト)
+@end lisp
+
+@noindent
+は、「リスト」に「要素」を追加したリストを返します。@code{list} 関数もリス
+トを生成して返しますが、@code{list} は引数全てを要素とするリストを新規に作
+成して返すのに対し、@code{cons} は既存のリストの先頭に新たな一つの要素を追
+加したリストを返します。それではリストの逆の手順をとりつつ @code{'(foo t
+"bar" 5)} を構築して行きましょう。(@pxref{Accessing list Elements,
+following cdr})
+@c \ref{リスト:cdrをたどる} 
+
+@lisp
+(setq x (cons 5 '()))       ;(setq x (cons 5 nil))と同じ (5)
+(setq x (cons "bar" x))     ;x は ("bar" 5)
+(setq x (cons t x))         ;x は (t "bar" 5)
+(setq x (cons 'foo x))      ;x は (foo "bar" 5)
+@end lisp
+
+@noindent
+最後の行を評価する前の @code{x} は次のようになっています。
+
+@example
+@group
+                       +--x--+
+                       |  *  |
+                       +-----+
+                         ↓
+                       +-----+-----+  +-----+-----+  +-----+-----+
+                       |  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+                       +-----+-----+  +-----+-----+  +-----+-----+
+@end group
+@end example
+
+@noindent
+@code{(cons 'foo x)} により、@code{cons} はまず、@code{'foo} を @code{car} 
+部とするコンスセルを新たに作成します。そして、その @code{cdr} 部にそれまで 
+@code{x} が指していたリストへのポインタを格納します。上の図は次のように変
+化します。
+
+@example
+@group
+                       +--x--+
+                       |  *  |
+                       +-----+
+                         ↓
+        +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+        | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+        +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+        \________________これ全体が(cons 'foo x)________________/
+@end group
+@end example
+
+@noindent
+そして最後に @code{(setq x (cons 'foo x))} により @code{x} が @code{(cons
+'foo x)} で生成されたリストを指し示すこととなります。
+
+@example
+@group
+        +--x--+
+        |  *  |
+        +-----+
+           ↓
+        +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+        | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+        +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+@end group
+@end example
+
+
+@node Appending lists, List Related Predicates, Adding Elements to list, List Manipulation Functions
+@comment  node-name,  next,  previous,  up
+@subsubsection リストどうしの結合
+@cindex リスト 結合[りすとけつこう]
+@cindex list, appending
+@findex append
+
+  たくさんの要素を一つのリストに組み上げる @code{list}、一つのリストに一つ
+の要素を追加する @code{cons} は既に覚えました。つまり、「要素だけ」と「リ
+スト対要素」のリスト合成関数は覚えたので、「リスト対リスト」の結合関数 
+@code{append} を覚えましょう。@code{append} は引数として与えられたリストを
+全て結合します。
+
+@lisp
+(append リスト1 リスト2 リスト3 ... リストn)
+@end lisp
+
+@noindent
+のようにした場合、「リスト1」から「リストn」のコンスセルを順次コピーしそれ
+らの全てをつなげます。つまり、「リスト1」の最後のコンスセルのコピーの
+@code{cdr部}(@code{nil}が入っている)に「リスト2」の最初のコンスセルのコピー
+へのポインタを格納し、「リスト2」の最後のコンスセルのコピーの@code{cdr部}
+に「リスト3」の最初のコンスセルへのポインタを格納し、@dots{}という手順を繰
+り返すことで、「リスト1」から「リストn」までのすべての要素(コンスセル)が一
+つの鎖に連結されます。そして @code{append} は連結されたリストを返します。
+
+  この @code{append} の動作が、@code{cons} のものとは少し違うことに気付い
+たでしょうか。@code{cons} では第二引数として与えられたリストを構成するコン
+スセルのいずれも変化していません。@code{cons} の第一引数の要素を@code{car
+部}とするコンスセルを生成し、その@code{cdr部} が第二引数のリストを指し示す
+ようにしただけにすぎません。これに対し @code{append} は第一引数から第 
+(n-1)引数までのリストのコンスセルをすべてコピーし直します。 @code{append} 
+によって返されたリストは、どの部分も新たな領域に確保されたものです。
+
+
+@node List Related Predicates,  , Appending lists, List Manipulation Functions
+@comment  node-name,  next,  previous,  up
+@subsubsection 述語関数等
+@cindex 述語関数[しゆつこかんすう]
+@cindex list related predicates
+@findex list related predicates
+@findex predicates, list related
+@findex listp
+@findex atom
+
+  ある対象物がリストなのか、あるいはアトムなのかを判定するための関数はそれ
+ぞれ @code{listp}, @code{atom} です。
+
+@lisp
+(listp 引数)
+(atom 引数)
+@end lisp
+
+@noindent
+は「引数」が リスト/アトム である場合に @code{t} を返し、そうでない場合に 
+@code{nil} を返します。
+
+  また、リストに要素がいくつ含まれるかを返す関数に @code{length} がありま
+す。@code{length} はリストの要素としてリストがあった場合はそれを一つと数え
+ます。つまり、
+
+@lisp
+'(a b c)
+'(1 '(a (b c) x) 4)
+@end lisp
+
+@noindent
+は、どちらも長さ3と数えます。@code{length} は、リストの他に、文字列や (こ
+こでは述べませんが)配列の長さを数える時にも利用できます。
+@findex length
+
+
+@node Association Lists,  , List Manipulation Functions, Completion Input Functions
+@comment  node-name,  next,  previous,  up
+@subsection 連想リスト
+@cindex リスト 連想[りすとれんそう]
+@cindex list, association
+
+@code{association list} は
+
+@lisp
+'(連想キー  値1  値2  ...  値n)
+@end lisp
+
+@noindent
+というリストが、一個以上集まってさらにリストになったもので、
+
+@lisp
+'((連想キー1  値1..値n) (連想キー2 ..) ...)
+@end lisp
+
+@noindent
+という形式をとっているもののことです。このリストを利用して検索キーが一つだ
+けの簡単なデータベースを作ることができます。たとえば、
+
+@example
+隆          波動拳、昇龍拳、竜巻旋風脚
+拳          昇龍拳、波動拳、竜巻旋風脚
+春麗        スピニングバードキック、百烈キック
+E.本田      スーパー頭付き、百烈張り手
+@end example
+
+
+@noindent
+という必殺技データベースを作りたい時に、
+
+@lisp
+(setq winning-shot-alist
+      '(("隆"   "波動拳" "昇龍拳" "竜巻旋風脚")
+        ("拳"   "昇龍拳" "波動拳" "竜巻旋風脚")
+        ("春麗" "スピニングバードキック" "百烈キック")
+        ("E.本田" "スーパー頭付き" "百烈張り手")))
+@end lisp
+
+@noindent
+などとして @code{alist} を作っておきます。この @code{alist} から連想キーを
+持っている @code{list} を取り出す関数が @code{assoc} で、
+@findex assoc
+@findex alist
+
+@lisp
+(assoc  連想キー  連想リスト)
+@end lisp
+
+@noindent
+とすることで、「連想リスト」の中から「連想キー」を持っているリスト一つを見
+つけだしそのリストを返します。もし該当するキーを持つリストが見つからなかっ
+た場合は @code{nil} を返します。今回の @code{winning-shot-alist} に対して、
+キーボードから読み込んだものをキーとして該当するものを探す場合は次のように
+します。
+
+@lisp
+(let ((key (read-string "誰のわざ? ")) list)
+  (setq list (assoc key winning-shot-alist))
+  (if list
+      (message "%sの必殺技は%sです。" key (cdr list))
+    (message "%sって誰?" key)))
+@end lisp
+
+@noindent
+@code{assoc} で得られるリストは、連想キーを含めたリストですから、値だけを
+取り出したい時は、その @code{cdr} 部を取る必要があります。
+
+
+@node By-talk 7,  , Completion Input Functions, Completion Input
+@comment  node-name,  next,  previous,  up
+@unnumberedsec 余談 7 マクロ
+@cindex 余談 7 マクロ[よたん7]
+@cindex マクロ[まくろ]
+@cindex macros
+@findex defmacro
+
+  検索後に、グルーピングしておいた文字列を取得するために、 
+@code{(buffer-substring (match-beginning 1) (match-end 1))} などとすること
+はほとんど定石と言ってよいでしょう。にもかかわらず、これを一気に行う関数が
+ありません(よね?)。そこで、@code{(buffer-substring (match-beginning n)
+(match-end n))} という機能の関数を定義したいのですが、この程度で関数にする
+のはちょっと抵抗を感ずるかもしれません。このような場合に、C言語の引数付き 
+@code{define} のような役割をする「マクロ」を利用すると良いでしょう。
+
+  Cのマクロ定義と違って @code{Lisp} のマクロの展開のされ方は少し特殊です。
+次のCのマクロの例
+
+@lisp
+#define inc(x)  ((x)++)
+@end lisp
+
+@noindent
+は、定義の引数以外は文字どおりに展開されます。しかし、@code{Lisp} のマクロ
+は事情が違います。@code{(setq i (1+ i))} のような動作を行うマクロ定義は次
+のようになります。
+
+@lisp
+(defmacro inc(x)
+  (list 'setq x (list '1+ x)))
+@end lisp
+
+@noindent
+このような定義を行った場合、@code{Lisp} プログラム中に @code{(inc i)} が出
+現した場合 @code{Lisp} インタプリタはマクロ定義の仮引数 @code{x} に 
+@code{i} を代入した上でマクロ定義を @code{Lisp} そのものとして評価します。
+つまり、上の定義のうち(クォートなしの) @code{x} を @code{i} とみなし 
+@code{(list 'setq x (list '1+ x))} を評価します(実際に @code{(setq x 'i)} 
+してからこの式を評価してみると良いでしょう)。そして、得られた結果が期待し
+たS式と同じになっているか確かめます。
+
+
+@menu
+* Exercise 4-1::                余談練習小問題
+* completing-read::             
+* Variables Controlling Completion::  補完を制御する関数
+* try-completion::              
+* all-completion display-completion-list::  
+@end menu
+
+@node Exercise 4-1, completing-read, By-talk 7, By-talk 7
+@comment  node-name,  next,  previous,  up
+@unnumberedsubsec 余談練習小問題
+@cindex 練習問題 4-1[れんしゆうもんたい41]
+@cindex Exercise 4-1
+
+@lisp
+    (buffer-substring (match-beginning 番号) (match-end 番号))
+@end lisp
+
+@noindent
+を表わすマクロを定義してみましょう。
+
+
+@node completing-read, Variables Controlling Completion, Exercise 4-1, By-talk 7
+@comment  node-name,  next,  previous,  up
+@subsection completing-read
+@findex completing-read
+
+  さて、これまで連想リストの説明をしてきたので、@code{completing-read} に
+渡す補完テーブルの説明に移ります。@code{completing-read} の引数を復習して
+おきましょう。
+
+@lisp
+(completing-read プロンプト 補完テーブル 選択(述語)関数
+         要マッチ 初期入力)
+@end lisp
+
+@noindent
+@code{completing-read} の第二引数に補完テーブルを @code{alist} の形で渡し
+ます。例えば曜日を読み込む時の補完テーブルは次のような形です。
+@vindex alist
+
+@lisp
+'(("Sun.") ("Mon.") ("Tue.") ("Wed.")
+  ("Thu.") ("Fri.") ("Sat."))
+@end lisp
+
+@noindent
+今まで説明した @code{alist} とは少し形が違い、それぞれの(内側の)リストが連
+想キーだけで構成されていて、それに対応する値が存在していません。補完入力を
+したいだけであれば、このような形で構いません。これを用いた曜日入力モジュー
+ルは次のようになります。
+
+@lisp
+(defvar day-alist '(("Sun.") ("Mon.") ("Tue.") ("Wed.")
+            ("Thu.") ("Fri.") ("Sat.")))
+(defun read-day-of-the-week ()
+  (interactive)
+  (completing-read "Day of the week?: "
+           day-alist nil t))
+@end lisp
+
+@noindent
+  @code{day-alist} に連想キーとして入っている文字列を補完候補として入力を
+促し、スペースやタブで補完しながら文字を読み込みます。この例では第四引数の
+「要マッチ」が @code{t} なので候補以外の文字列は入力することができません。
+
+  さて、ここでは第三引数の「選択関数」のところには @code{nil} を指定しまし
+たが、ここには補完テーブル中の要素のうち、特定の条件を満たすもの@code{(選
+択関数の返す値が t)}を候補にしたい場合に利用します。「選択関数」には 
+@code{alist} の各要素が@code{(リストのまま)}渡されます。次の例では、月の名
+前を読み込む時に、大の月だけを選んで補完候補とします。
+
+@lisp
+(defvar month-alist
+  '(("Jan." 31) ("Feb." 28) ("Mar." 31) ("Apr." 30)
+    ("May." 31) ("Jun." 30) ("Jul." 31) ("Aug." 31)
+    ("Sep." 30) ("Oct." 31) ("Nov." 30) ("Dec." 31)))
+(defun read-odd-month ()
+  (interactive)
+  (completing-read "Odd month: " month-alist
+           'check-odd-month t))
+(defun check-odd-month (list)
+  (eq 31 (car (cdr list))))
+@end lisp
+
+@noindent
+関数 @code{check-odd-month} には @code{month-alist} の各要素、すなわち 
+@code{'("Jan." 31)}, @code{'("Feb." 28)}, ..., @code{'}("Dec." 31) が渡さ
+れるので、これらの第二要素を @code{(car (cdr list))} によって取り出し、
+@samp{31} かどうかを判定した結果を返しています。
+
+
+@node Variables Controlling Completion, try-completion, completing-read, By-talk 7
+@comment  node-name,  next,  previous,  up
+@subsection 補完を制御する変数
+@cindex 補完 制御する変数[ほかんせいきよするへんすう]
+@cindex 変数 補完を制御する[へんすうほかんをせいきよする]
+@vindex Completion Controlling Variables
+@cindex completion, controlling variables
+@vindex completion-ignore-case
+
+  変数 @code{completion-ignore-case} を @code{t} にすると、補完文字列の大
+文字小文字を無視します。例えば、月名を読む時に小文字で入力したイニシャルを
+元に補完して欲しい時は、
+
+@lisp
+(let ((completion-ignore-case t))
+  :
+  (completing-read ...)...)
+@end lisp
+
+@noindent
+のように @code{completion-ignore-case} に局所的に @code{t} をセットして補
+完入力関数を呼びます。
+
+
+@node try-completion, all-completion display-completion-list, Variables Controlling Completion, By-talk 7
+@comment  node-name,  next,  previous,  up
+@subsection try-completion
+@cindex try-completion
+@findex try-completion
+@kindex M-TAB
+
+  前出の @code{completing-read} はミニバッファで補完候補を読むものでしたが、
+バッファ中にある文字列を元に補完したものを得たい場合などに用いるのが 
+@code{try-completion} です。@code{Emacs-lisp} の関数を随時補完してくれる 
+@kbd{M-TAB} がその代表的なものです。
+
+@lisp
+(try-completion 文字列 補完テーブル [選択関数])
+@end lisp
+
+  第一引数の「文字列」を「補完テーブル」中のすべての候補と比較し、マッチし
+たものがあった場合、マッチしたもの共通部分の先頭からの文字列を返します。も
+しマッチするものがなかった場合は @code{nil} を返し、「文字列」が「補完テー
+ブル」の中のただ一つの候補と完全一致した場合には、@code{t} を返します。少々
+分かりにくいので例を挙げて説明します。
+
+  例えば補完候補に @code{foo}, @code{bar}, @code{baz}, @code{bazz},
+@code{hoge}, @code{hore} があった場合、次のような補完結果が得られます。
+
+@example
+「文字列(第一引数)」    try-completion の結果
+        "f"                 "foo"
+        "b"                 "ba"
+        "ba"                "ba"
+        "bar"               t
+        "baz"               "baz"
+        "h"                 "ho"
+        "ho"                "ho"
+        "hog"               "hoge"
+        "x"                 nil
+@end example
+
+  これらの結果を考察すると @code{try-completion} の返り値を次のように判断
+すると良いことがわかります。
+
+@itemize @bullet
+@item 結果が t である
+ →補完の必要はなかった
+@item 結果が nil である
+ →一致するものがなかった。
+@item 第一引数とは違う文字列
+ →元の文字列を結果の文字列で置き換えるべき
+   (結果の文字列が唯一の補完結果かどうかは分からないもう一度結果の文字列を
+第一引数として渡して t が返れば唯一の補完結果である)
+@item 第一引数と同じ文字列
+ →複数候補があるはずなのでそれらを表示する必要がある
+@end itemize
+
+  これより @code{try-completion} を用いてバッファ中の文字列の随時補完をす
+る手順は次のようになります。
+
+@lisp
+(defun complete-something ()
+  (interactive)
+  (補完文字列の先頭を探す)                      ;;(*1)
+  (先頭からポイントまでの文字列を取得)
+  (setq 結果 (try-completion 文字列 テーブル))
+  (cond
+   ((eq 結果 t) (これ以上補完の必要ないと表示))
+   ((eq 結果 nil) (一致するものがないと表示))
+   ((string= 文字列 結果)
+    (先頭からポイントまでを切り取り、結果で置き換える))
+   (t (候補一覧を表示))))                       ;;(*2)
+@end lisp
+
+  (*1)は一般的に、文字列の要素となり得ないものを後方に探します。例えば改行
+文字や、空白文字は補完文字列とならないことがほとんどなので、
+@code{(skip-chars-backward "^ \t\n")} とすれば十分でしょう。
+
+  続いて(*2)のための関数を紹介します。
+
+
+@node all-completion display-completion-list,  , try-completion, By-talk 7
+@comment  node-name,  next,  previous,  up
+@subsection all-completions display-completion-list
+@findex all-completion
+@findex display-completion-list
+
+  関数 @code{all-completions} は @code{try-completion} と同じ引数を取り(第
+二引数まで)、一致する文字列候補の全てをリストにして返します。例えば先の例
+で、文字列 @samp{ba} で補完させる場合に一致する候補は、@samp{bar},
+@samp{baz}, @samp{bazz} ですから、これらをリストにした、@code{'("bar"
+"baz" "bazz")} が @code{all-completions} の結果となります。これをバッファ
+に表示したい時に利用するのが @code{display-completion-list} で、
+@code{all-completions} で得られた結果をカレントバッファに表示します。
+
+  実際にはカレントバッファに候補一覧を表示しては困るので、隣に新たなバッファ
+を開いて表示します。この方法に関しては、ウィンドウとバッファの取り扱いを覚
+えてから説明します。
+
+
+@c 索引の出力
+@node Concept Index, Function Index, Completion Input, Top
+@comment  node-name,  next,  previous,  up
+@unnumbered Concept Index
+
+@printindex cp
+
+@node  Function Index, Variable Index, Concept Index, Top
+@comment  node-name,  next,  previous,  up
+@unnumbered Function Index
+
+@printindex fn
+
+@node   Variable Index,  , Function Index, Top
+@comment  node-name,  next,  previous,  up
+@unnumbered  Variable Index
+
+@printindex vr
+
+@printindex ky
+
+@c 目次の出力
+@contents
+
+@bye
+
+@c Local Variables:
+@c fill-column: 74
+@c fill-prefix: nil
+@c End:
+
+Tag table:
+
+End tag table
+@c $Id$
+@c $Log$

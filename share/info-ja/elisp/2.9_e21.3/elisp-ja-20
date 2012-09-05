@@ -1,0 +1,1997 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Specifying Coding Systems, Next: Explicit Encoding, Prev: Default Coding Systems, Up: Coding Systems
+
+1つの操作向けにコーディングシステムを指定する
+---------------------------------------------
+
+変数`coding-system-for-read'と／や`coding-system-for-write'を束縛するこ
+とで、特定の1つの操作向けのコーディングシステムを指定できます。
+
+ -- Variable: coding-system-for-read
+     この変数が`nil'以外であると、ファイルを読むときや同期プロセスから
+     の入力に用いるコーディングシステムを指定する。
+
+     これは非同期プロセスやネットワークストリームにも適用されるが、異なっ
+     た方法で適用される。サブプロセスを開始したりネットワークストリーム
+     を開いたときの`coding-system-for-read'の値は、そのサブプロセスやネッ
+     トワークストリームの入力の復号化方法を指定する。変更されない限り、
+     そのサブプロセスやネットワークストリームに対して使われ続ける。
+
+     この変数の正しい使い方は、特定の入出力操作に対して`let'で束縛する
+     ことである。そのグローバルな値は通常は`nil'であり、グローバルにこ
+     れ以外の値を設定するべきではない。この変数の正しい使い方の例をつぎ
+     に示す。
+
+          ;; 文字コード変換せずにファイルから読む
+          ;; CRLFが行末を表すと仮定する
+          (let ((coding-system-for-write 'emacs-mule-dos))
+            (insert-file-contents filename))
+
+     その値が`nil'以外であると、`coding-system-for-read'は、
+     `file-coding-system-alist'、`process-coding-system-alist'、
+     `network-coding-system-alist'、を含めて入力に用いるコーディングシ
+     ステムの他のすべての指定方法に優先する。
+
+ -- Variable: coding-system-for-write
+     これは`coding-system-for-read'と同様に働くが、入力ではなく出力に適
+     用される点が異なる。ファイル、サブプロセス、ネットワーク接続へ書く
+     ことに影響する。
+
+     `call-process-region'と`start-process'のように、1つの操作で入力と
+     出力を行うときには、`coding-system-for-read'と
+     `coding-system-for-write'の両方が影響する。
+
+ -- Variable: inhibit-eol-conversion
+     この変数が`nil'以外であると、コーディングシステムでなにが指定され
+     ていようと行末変換を行わない。これは、Emacsの入出力とサブプロセス
+     のすべての基本関数、明示的な符号化／復号化関数（*Note Explicit
+     Encoding::）に適用される。
+
+
+
+File: elisp-ja, Node: Explicit Encoding, Next: Terminal I/O Encoding, Prev: Specifying Coding Systems, Up: Coding Systems
+
+明示的な符号化と復号化
+----------------------
+
+Emacsへ／からテキストを転送するすべての操作には、テキストを符号化したり
+復号化するコーディングシステムを使う能力があります。本節に述べる関数を
+用いてテキストを明示的に符号化したり復号化できます。
+
+符号化の結果と復号化する入力は、通常のEmacsのテキストではありません。そ
+れらは『生のバイト』、つまり、外部ファイルと同じ方法でテキストを表現す
+るバイト列です。バッファに生のバイトが収められている場合、
+`set-buffer-multibyte'（*Note Selecting a Representation::）を用いてバッ
+ファはユニバイト表現であると印を付けるのがもっとも自然ですが、これは必
+須ではありません。バッファの内容が単に一時的に生のバイトであるときには、
+バッファはマルチバイトのままにしておきます。バッファ内容を復号化すれば
+正しくなります。
+
+明示的に復号化するためにバッファに生のバイトを入れる普通の方法は、
+`insert-file-contents-literally'（*Note Reading from Files::）で
+ファイルから読むか、
+`find-file-noselect'でファイルを訪問するときに引数RAWFILEに
+`nil'以外を指定します。
+
+テキストの明示的な符号化で得た結果である生のバイトを使う普通の方法は、
+ファイルやプロセスへそれらをコピーします。
+たとえば、`write-region'（*Note Writing to Files::）でそれらを書くには、
+`coding-system-for-write'に`no-conversion'を束縛して
+`write-region'の符号化を抑制します。
+
+生のバイトには、正しいマルチバイト文字に余分なトレイリングコードが付い
+たように見える長すぎるバイト列が含まれる場合があります。ほとんどの目的
+には、バッファや文字列のそのような列をEmacsは1文字として扱い、その文字
+コードを調べるとマルチバイト文字の列に対応した値を得るはずです。余分な
+バイト列は無視されます。このふるまいは透明性がよくありませんが、生のバ
+イトはEmacsの限定された場面でのみ使われ、実用上の問題は回避できます。
+
+ -- Function: encode-coding-region START END CODING-SYSTEM
+     この関数は、コーディングシステムCODING-SYSTEMに従ってSTARTからEND
+     のテキストを符号化する。符号化結果はバッファ内のもとのテキストを置
+     き換える。符号化結果は『生のバイト』であるが、マルチバイトであった
+     バッファはマルチバイトのままである。
+
+ -- Function: encode-coding-string STRING CODING-SYSTEM
+     この関数は、コーディングシステムCODING-SYSTEMに従って文字列STRING
+     のテキストを符号化する。符号化したテキストを含む新たな文字列を返す。
+     符号化結果は『生のバイト』のユニバイト文字列である。
+
+ -- Function: decode-coding-region START END CODING-SYSTEM
+     この関数は、コーディングシステムCODING-SYSTEMに従ってSTARTからEND
+     のテキストを復号化する。復号化結果はバッファ内のもとのテキストを置
+     き換える。明示的な復号化が有用であるためには、復号化前のテキストは
+     『生のバイト』であること。
+
+ -- Function: decode-coding-string STRING CODING-SYSTEM
+     この関数は、コーディングシステムCODING-SYSTEMに従って文字列STRING
+     のテキストを復号化する。復号化したテキストを含む新たな文字列を返す。
+     明示的な復号化が有用であるためには、復号化前のSTRINGの内容は『生の
+     バイト』であること。
+
+
+
+File: elisp-ja, Node: Terminal I/O Encoding, Next: MS-DOS File Types, Prev: Explicit Encoding, Up: Coding Systems
+
+端末入出力の符号化
+------------------
+
+Emacsは、コーディングシステムを用いてキーボード入力を復号化したり、
+端末出力を符号化できます。
+Latin-1などの特定の符号を用いてテキストを送信したり表示する
+端末に対しては、これは有用です。
+Emacsは、端末に対する符号化や復号化では
+`last-coding-system-used'に設定しません。
+
+ -- Function: keyboard-coding-system
+     この関数は、キーボード入力の復号化に用いているコーディングシステム
+     を返す。コーディングシステムを使用していなければ`nil'を返す。
+
+ -- Function: set-keyboard-coding-system CODING-SYSTEM
+     この関数は、キーボード入力の復号化に使用するコーディングシステムと
+     してCODING-SYSTEMを指定する。CODING-SYSTEMが`nil'であると、キーボー
+     ド入力に復号化を用いないことを意味する。
+
+ -- Function: terminal-coding-system
+     この関数は、端末出力の符号化に用いているコーディングシステムを返す。
+     コーディングシステムを使用していなければ`nil'を返す。
+
+ -- Function: set-terminal-coding-system CODING-SYSTEM
+     この関数は、端末出力の符号化に使用するコーディングシステムとして
+     CODING-SYSTEMを指定する。CODING-SYSTEMが`nil'であると、端末出力に
+     符号化を用いないことを意味する。
+
+
+
+File: elisp-ja, Node: MS-DOS File Types, Prev: Terminal I/O Encoding, Up: Coding Systems
+
+MS-DOSのファイル型
+------------------
+
+MS-DOSやMS-Windows上のEmacsは、特定のファイル名をテキストファイルやバイ
+ナリファイルとして認識します。『バイナリファイル』とは、必ずしも文字を
+意味しないバイト値のファイルです。Emacsは、バイナリファイルに対しては行
+末変換や文字コード変換を行いません。一方、その名前から『テキストファイ
+ル』と印が付いた新規ファイルを作成すると、EmacsはDOSの行末変換を行いま
+す。
+
+ -- Variable: buffer-file-type
+     この変数は、各バッファで自動的にバッファローカルになり、バッファで
+     訪問したファイルのファイル型を記録する。バッファが
+     `buffer-file-coding-system'でコーディングシステムを指定しない場合、
+     バッファ内容を書き出すときに用いるコーディングシステムをこの変数を
+     用いて決定する。テキストに対しては`nil'、バイナリに対して`t'である
+     こと。これが`t'であると、コーディングシステムは`no-conversion'であ
+     る。さもなければ、`undecided-dos'を用いる。
+
+     通常、この変数はファイルを訪問すると設定される。いかなる変換も行わ
+     ずにファイルを訪問すると`nil'に設定される。
+
+ -- User Option: file-name-buffer-file-type-alist
+     この変数は、テキスト／バイナリファイルを認識するための連想リストを保持する。
+     各要素は(REGEXP . TYPE)の形である。
+     ここで、REGEXPはファイル名に対して一致をとり、
+     TYPEは、テキストファイルでは`nil'、
+     バイナリファイルでは`t'、あるいは、
+     どちらであるかを計算するために呼び出す関数である。
+     それが関数であると、1つの引数（ファイル名）で呼ばれ、
+     `t'か`nil'を返すこと。
+
+     MS-DOSやMS-Windowsで動作しているEmacsは、この連想リストを調べて、
+     ファイルを読む際に使用するコーディングシステムを決定する。テキスト
+     ファイルでは`undecided-dos'が使われる。バイナリファイルでは
+     `no-conversion'が使われる。
+
+     指定したファイルがこの連想リストの要素に一致しないと、
+     `default-buffer-file-type'がファイルの扱い方を指定する。
+
+ -- User Option: default-buffer-file-type
+     この変数は、`file-name-buffer-file-type-alist'が指定しない型のファ
+     イルの扱い方を指定する。
+
+     この変数が`nil'以外であると、そのようなファイルはバイナリとして扱
+     われ、コーディングシステム`no-conversion'を用いる。さもなければそ
+     れらに対して特別なことを行わずに、Emacsの通常のとおりにファイル内
+     容からコーディングシステムを決定する。
+
+
+
+File: elisp-ja, Node: Input Methods, Prev: Coding Systems, Up: Non-ASCII Characters
+
+入力方式
+========
+
+"入力方式"（input method）は、キーボードから非ASCII文字を入力する簡便な
+方法を提供します。プログラムが読み取るための非ASCII文字の符号変換を行う
+コーディングシステムと異なり、入力方式は人間向けのコマンドを提供します。
+（テキストを入力するための入力方式の使い方については、*Note 入力方式:
+(emacs)Input Methods.。）入力方式の定義方法については本書ではまだ明文化
+してありませんが、ここではそれらの使い方について述べます。
+
+各入力方式には名前があります。それは現在のところ文字列ですが、将来は入
+力方式名としてシンボルも使えるようになります。
+
+ -- Variable: current-input-method
+     この変数は、カレントバッファで現在活性な入力方式の名前を保持する。
+     （この変数に設定すると自動的にバッファローカルになる。）
+     `nil'であると、バッファでは入力方式が活性ではない。
+
+ -- Variable: default-input-method
+     この変数は、入力方式を選ぶコマンド向けのデフォルトの入力方式を保持する。
+     `current-input-method'と異なり、この変数は通常はグローバルである。
+
+ -- Function: set-input-method INPUT-METHOD
+     この関数は、カレントバッファにおいて入力方式INPUT-METHODを活性にす
+     る。`default-input-method'にもINPUT-METHODを設定する。
+     INPUT-METHODが`nil'であると、この関数はカレントバッファの入力方式
+     を不活性にする。
+
+ -- Function: read-input-method-name PROMPT &optional DEFAULT INHIBIT-NULL
+     この関数は、プロンプトPROMPTを用いてミニバッファで入力方式名を読む。
+     DEFAULTが`nil'以外であると、ユーザーが空の入力をするとデフォルトで
+     これを返す。しかし、INHIBIT-NULLが`nil'以外であると、空の入力はエ
+     ラーを通知する。
+
+     戻り値は文字列である。
+
+ -- Variable: input-method-alist
+     この変数は、使用可能なすべての入力方式を定義する。各要素は1つの入
+     力方式を定義し、つぎの形であること。
+
+          (INPUT-METHOD LANGUAGE-ENV ACTIVATE-FUNC
+           TITLE DESCRIPTION ARGS...)
+
+     ここで、INPUT-METHODは入力方式名であり文字列である。LANGUAGE-ENVも
+     別の文字列であり当該入力方式を推奨する言語環境の名前である。（これ
+     は説明文目的のためだけである。）
+
+     TITLEは、この入力方式が活性である場合にモード行に表示される文字列
+     である。DESCRIPTIONはこの入力方式と何向きであるかを説明する文字列
+     である。
+
+     ACTIVATE-FUNCは、この入力方式を活性にするために呼び出す関数である。
+     ARGSがあればACTIVATE-FUNCへの引数として渡される。つまり、
+     ACTIVATE-FUNCの引数はINPUT-METHODとARGSである。
+
+入力方式に対する基本的なインターフェイスは
+変数`input-method-function'を介して行います。
+*Note Reading One Event::。
+
+
+
+File: elisp-ja, Node: Searching and Matching, Next: Syntax Tables, Prev: Non-ASCII Characters, Up: Top
+
+探索と一致
+**********
+
+GNU Emacsにはバッファから指定したテキストを探す方法が2つあります。
+文字列そのものを正確に探索するのと正規表現の探索です。
+正規表現の探索のあとでは、
+正規表現全体やそのさまざまな部分に一致したテキストを表す
+"マッチデータ"（match data）を調べることができます。
+
+* Menu:
+
+* String Search::         Search for an exact match.
+* Regular Expressions::   Describing classes of strings.
+* Regexp Search::         Searching for a match for a regexp.
+* POSIX Regexps::         Searching POSIX-style for the longest match.
+* Search and Replace::	  Internals of `query-replace'.
+* Match Data::            Finding out which part of the text matched
+                            various parts of a regexp, after regexp search.
+* Searching and Case::    Case-independent or case-significant searching.
+* Standard Regexps::      Useful regexps for finding sentences, pages,...
+
+`skip-chars...'などの関数もある種の探索を行います。
+*Note Skipping Characters::。
+
+
+
+File: elisp-ja, Node: String Search, Next: Regular Expressions, Prev: Searching and Matching, Up: Searching and Matching
+
+文字列の探索
+============
+
+これらは、バッファ内のテキストを探索するための基本関数です。
+これらはプログラムで使うことを意図していますが、
+対話的に呼び出すこともできます。
+その場合、探索文字列を問い合わせてきますが、
+LIMITとNOERRORは`nil'に、REPEATは1に設定されます。
+
+これらの探索関数は、バッファがマルチバイトであると
+探索文字列をマルチバイトに変換します。
+バッファがユニバイトであると探索文字列をユニバイトに変換します。
+*Note Text Representations::。
+
+ -- コマンド: search-forward STRING &optional LIMIT NOERROR REPEAT
+     この関数は、ポイントから前方へ向けて文字列STRINGにちょうど一致する
+     ものを探す。それに成功すれば、ポイントをみつけた出現箇所の末尾に移
+     動し、ポイントの新たな値を返す。一致がみつからなければ、戻り値と副
+     作用はNOERRORに依存する（下記参照）。
+
+     つぎの例では、ポイントは始めは行頭にある。そして`(search-forward
+     fox")'は`fox'の最後の文字のうしろにポイントを移動する。
+
+          ---------- Buffer: foo ----------
+          -!-The quick brown fox jumped over the lazy dog.
+          ---------- Buffer: foo ----------
+
+          (search-forward "fox")
+               => 20
+
+          ---------- Buffer: foo ----------
+          The quick brown fox-!- jumped over the lazy dog.
+          ---------- Buffer: foo ----------
+
+     引数LIMITは探索の上限を指定する。（カレントバッファ内の位置である
+     こと。）その位置を越える箇所での一致は受け入れない。LIMITを省略し
+     たり`nil'であると、デフォルトは、バッファの参照可能部分の末尾であ
+     る。
+
+     探索に失敗した場合の動作は、NOERRORの値に依存する。NOERRORが`nil'
+     であると、エラー`search-failed'を通知する。NOERRORが`t'であると、
+     `search-forward'は`nil'を返しなにもしない。NOERRORが`nil'でも`t'で
+     もないと、`search-forward'はポイントを上限位置へ移動して`nil'を返
+     す。（この場合にもポイントの新たな値を返すほうが一貫性があるが、値
+     `nil'に依存しているプログラムがある。）
+
+     REPEATを指定してあると（正の数であること）、その回数だけ探索を繰り
+     返す（一致箇所の末尾を新たな探索の開始位置とする）。連続してこれら
+     の探索に成功すると関数は成功し、ポイントを移動してその新たな値を返
+     す。さもなければ探索は失敗である。
+
+ -- コマンド: search-backward STRING &optional LIMIT NOERROR REPEAT
+     この関数は、ポイントから後方へ向けてSTRINGを探索する。
+     `search-forward'と同様であるが、後方へ向けて探索し一致箇所の先頭に
+     ポイントを置く点が異なる。
+
+ -- コマンド: word-search-forward STRING &optional LIMIT NOERROR REPEAT
+     この関数は、ポイントから前方へ向けてSTRINGに一致する『単語』を探索
+     する。一致をみつけると、一致箇所の末尾にポイントを設定しポイントの
+     新たな値を返す。
+
+     単語の一致では、STRINGを単語の列とみなし、それらを区切る句読点は無
+     視する。バッファ内の同じ単語の列を探す。バッファ内の各単語は別々に
+     なっている必要があるが（単語`ball'を探索すると単語`balls'には一致
+     しない）、句読点や空白の詳細は無視される（`ball boy'を探索すると
+     `ball.  Boy!'に一致する）。
+
+     つぎの例では、ポイントは始めはバッファの先頭にある。探索するとポイ
+     ントは`y'と`!'のあいだに移動する。
+
+          ---------- Buffer: foo ----------
+          -!-He said "Please!  Find
+          the ball boy!"
+          ---------- Buffer: foo ----------
+
+          (word-search-forward "Please find the ball, boy.")
+               => 35
+
+          ---------- Buffer: foo ----------
+          He said "Please!  Find
+          the ball boy-!-!"
+          ---------- Buffer: foo ----------
+
+     LIMITが`nil'以外（カレントバッファ内の位置）であると、それは探索の
+     上限を指定する。みつかった一致箇所はその位置を越えてはならない。
+
+     NOERRORが`nil'であると、探索に失敗するとエラー
+     `word-search-failed'を通知する。NOERRORが`t'であると、エラーを通知
+     するかわりに`nil'を返す。NOERRORが`nil'でも`t'でもないと、ポイント
+     をLIMIT（あるいはバッファの末尾）へ移動して`nil'を返す。
+
+     REPEATが`nil'以外であると、その回数だけ探索を繰り返す。ポイントは
+     最後の一致箇所の末尾へ置かれる。
+
+ -- コマンド: word-search-backward STRING &optional LIMIT NOERROR REPEAT
+     この関数はポイントから後方へ向けてSTRINGに一致する単語を探索する。
+     この関数は`word-search-forward'と同様であるが、後方へ向けて探索し
+     一致箇所の先頭にポイントを置く点が異なる。
+
+
+
+File: elisp-ja, Node: Regular Expressions, Next: Regexp Search, Prev: String Search, Up: Searching and Matching
+
+正規表現
+========
+
+"正規表現"（regular expression、略して"regexp"）は、文字列の（無限の可
+能性もある）集合を表すパターンです。正規表現への一致を探すことは、非常
+に強力な操作です。本節では、正規表現の書き方を説明します。続く節では、
+それらを探索する方法を説明します。
+
+* Menu:
+
+* Syntax of Regexps::       Rules for writing regular expressions.
+* Regexp Example::          Illustrates regular expression syntax.
+
+
+
+File: elisp-ja, Node: Syntax of Regexps, Prev: Regular Expressions, Up: Regular Expressions
+
+正規表現の構文
+--------------
+
+正規表現では、数個の文字が特別な構成であり、残りは"普通"です。普通の文
+字は、その文字だけに一致する単純な正規表現です。特別な文字は、`.'、`*'、
+`+'、`?'、`['、`]'、`^'、`$'、`\'であり、将来新たな文字が定義されること
+はありません。正規表現に現れるこれら以外の文字は、まえに`\'がない限り普
+通の文字です。
+
+たとえば、`f'は特別な文字ではないので普通の文字です。ですから、`f'は文
+字列`f'だけに一致する正規表現です。（これは文字列`ff'には一致しない。）
+同様に、`o'は`o'だけに一致する正規表現です。
+
+任意の2つの正規表現AとBを連結できます。その結果は、Aが文字列の始めの部
+分に一致し、かつ、Bがその文字列の残りに一致するときにその文字列に一致す
+る正規表現になります。
+
+簡単な例として、正規表現 `f'と`o'を連結して正規表現`fo'を得られます。こ
+れは文字列`fo'だけに一致します。これは明らかですね。より強力なことをす
+るには、特別な文字の1つを使う必要があります。それらの一覧を以下に示しま
+す。
+
+`.' （ピリオド）
+     特別な文字であり、改行以外の任意の1文字に一致する。連結を使って
+     `a.b'のような正規表現を作れる。これは、`a'で始まり`b'で終る任意の
+     3文字の文字列に一致する。
+
+`*'
+     単独では構成要素ではない。直前の正規表現を可能な限り反復することを
+     意味する後置演算子である。すなわち、`o*'は（`o'が存在しない場合も
+     含めて）任意個の`o'に一致する。
+
+     `*'はつねに先行する*最小*の正規表現に適用される。したがって、
+     `fo*'は`fo'を繰り返すのではなく、`o'を繰り返す。この正規表現は`f'、
+     `fo'、`foo'などに一致する。
+
+     `*'を用いた構成の一致を処理するときには、ただちに得られる限りの反
+     復回数に展開される。そうしてから、残りのパターンを処理する。一致に
+     失敗するとバックトラック（後戻り）が発生して、`*'を用いた構成の反
+     復回数を減らしてパターンの残りの部分が一致できるようにする。たとえ
+     ば、文字列`caaar'に対して`ca*ar'を一致させることを考えてみる。始め
+     に、`a*'を3つの`a'すべてに一致させようとする。しかし、残りのパター
+     ンが`ar'なのに`r'しか残っていないため、この試みは失敗する。そこで、
+     つぎは`a*'を`a'2つだけに一致させる。こうすると、残りの正規表現も正
+     しく一致する。
+
+     入れ子にした反復演算子がバックトラックのループを指定する場合、それ
+     はとても遅くなる。たとえば、正規表現`\(x+y*\)*a'を
+     `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxz'の列に一致させると最終的に失
+     敗するまで何時間も費してしまう。遅さの原因は、Emacsは35個の`x'をグ
+     ループに分ける各方法をすべて試してからでないとそれらが一致しないこ
+     とを結論できないからである。読者の正規表現が素早く動作することを保
+     証するために、入れ子になった繰り返しを注意深く調べること。
+
+`+'
+     `*'に似た後置演算子だが、直前の正規表現に1回以上一致する必要がある。
+     たとえば、`ca+r'は、文字列`car'や`caaaar'には一致するが、文字列
+     `cr'には一致ない。一方、`ca*r'の場合は、上記の3つすべてに一致する。
+
+`?'
+     `*'に似た後置演算子だが、直前の正規表現に1回だけ一致するか、あるい
+     は、1回も一致しない。たとえば、`ca?r'は、`car'や`cr'に一致するが、
+     他のものには一致しない。
+
+`[ ... ]'
+     `['で始まり`]'で終る"文字選択"を表す。もっとも単純な場合は、この2
+     つの中括弧のあいだにある文字の1つ1つがこの文字選択に一致する。
+
+     したがって、`[ad]'は、`a'1文字か`d'1文字のどちらにも一致する。
+     `[ad]*'は、`a'と`d'だけから成る
+     （空の文字列を含む）任意の文字列に一致する。
+     このことから、`c[ad]*r'は、
+     `cr'、`car'、`cdr'、`caddaar'などに一致することがわかる。
+
+     文字選択には、文字範囲の指定を含めることもでき、始めの文字と終りの
+     文字のあいだに`-'を書く。つまり、`[a-z]'はすべてのASCII小英文字に
+     一致する。範囲指定と個々の文字を自由に織り混ぜてよく、`[a-z$%.]'の
+     ように書ける。これは、任意のASCII小英文字、`$'、`%'、ピリオドに一
+     致する。
+
+     正規表現`[\200-\377]'ですべての非ASCII文字につねに一致するとは限ら
+     ない。ユニバイト（*Note Text Representations::）のバッファや文字列
+     を探索するときにはうまく働くが、マルチバイトのバッファや文字列では
+     多くの非ASCII文字のコードは8進数0377より大きいために働かない。しか
+     し、正規表現`[^\000-\177]'は、ASCII文字のみを除外しているため、マ
+     ルチバイト表現でもユニバイト表現でもすべての非ASCII文字に一致する。
+
+     範囲指定の始めと終りは同じ文字集合（*Note Character Sets::）に属し
+     ている必要がある。したがって、`[a-\x8e0]'は正しくない。`a'はASCII
+     文字集合に属し、文字0x8e0（グレーブアクセント付き`a'）はEmacsの
+     Latin-1の文字集合に属しているからである。
+
+     正規表現の普通の特別な文字は、文字選択の内側では特別ではないことに注意。
+     文字選択の内側では、まったく別の文字の集まり、
+     `]'、`-'、`^'が特別である。
+
+     文字選択に`]'を含めるには、`]'を最初の文字として指定する必要がある。
+     たとえば、`[]a]'は、`]'や`a'に一致する。`-'を含めるには、`-'を文字
+     選択の最初の文字か最後の文字として書くか、範囲指定のあとに置く。し
+     たがって、`[]-]'は、`]'と`-'の両方に一致する。
+
+     文字選択に`^'を含めるには、`^'を文字選択の2番目以降に置く。
+
+`[^ ... ]'
+     `[^'は"文字選択の補集合"の始まりを意味し、指定した文字を除く任意の
+     文字に一致する。すなわち、`[^a-z0-9A-Z]'は、英文字と数字文字を*除
+     く*すべての文字に一致する。
+
+     `^'は文字選択の先頭になければ文字選択では特別な意味を持たない。
+     `^'に続く文字は先頭にあるものとして扱われる（いいかえれば、ここで
+     は`-'や`]'は特別な意味を持たない）。
+
+     文字選択の補集合は、一致しない文字として改行を指定しない限り、改行
+     にも一致する。この点は、`grep'のようなプログラムでの正規表現の扱い
+     方と対照的である。
+
+`^'
+     空の文字列に一致する特別な文字であり、一致を取る対象のテキストの行
+     頭のみに一致する。それ以外では、一致に失敗する。したがって、
+     `^foo'は、行頭にある`foo'に一致する。
+
+     バッファのかわりに文字列と一致を取るときには、
+     `^'は文字列の先頭や改行文字`\n'のうしろに一致する。
+
+`$'
+     `^'と同様だが行末のみに一致する。したがって、`x+$'は、行末にある1
+     文字以上の`x'から成る文字列に一致する。
+
+     バッファのかわりに文字列と一致を取るときには、
+     `$'は文字列の末尾や改行文字`\n'のまえに一致する。
+
+`\'
+     2つの機能がある。（`\'を含む）特別な文字をクォートする（意味を抑え
+     る）ことと、特別な構成を導入することである。
+
+     `\'は特別な文字をクォートするので、`\$'は文字`$'だけに一致する正規
+     表現、`\['は文字`['だけに一致する正規表現、といった具合になる。
+
+     `\'にはLisp文字列の入力構文（*Note String Type::）でも特別な意味が
+     あり、`\'でクォートする必要があることに注意してほしい。たとえば、
+     文字`\'に一致する正規表現は`\\'である。文字群`\\'を含むLisp文字列
+     を書くには、各`\'をクォートするために`\'が必要である。したがって、
+     `\'に一致する正規表現の入力構文は`"\\\\"'である。
+
+*注意：*` '従来との互換性のために、特別な文字がそれらの特別な意味をなし
+えない文脈で使われた場合には、普通の文字として扱われる。たとえば、
+`*foo'では、`*'の対象となる正規表現が直前にないため、`*'は普通の文字と
+して扱われる。このようなふるまいに依存することはよいことではない。特別
+な文字は書く位置に関係なくクォートするべきである。
+
+多くの場合、任意の文字を伴う`\'はその文字だけに一致します。しかし、いく
+つか例外があって、`\'で始まる2文字列が特別な意味を持つ場合があります。
+（2文字目にくる文字は、単独で使った場合にはつねに普通の文字として扱われ
+る。）以下に`\'の構成を示します。
+
+`\|'
+     選択肢を指定する。
+     `\|'をあいだに伴った2つの正規表現AとBは、
+     AかBのいずれかに一致する文字列に一致する正規表現となる。
+
+     したがって、`foo\|bar'は、`foo'や`bar'に一致するが、それ以外の文字
+     列には一致しない。
+
+     `\|'は、周囲にある適用しうる正規表現の中でも最大のものに適用される。
+     `\|'によるグループ化を制限するのは、これを囲む`\( ... \)'によるグ
+     ループ化だけである。
+
+     何度`\|'を使っても処理できるだけの十分なバックトラック能力がある。
+
+`\( ... \)'
+     以下の3つの目的を果たすグループ化のための構成。
+
+       1. 他の操作に使うために一連の選択肢`\|'を括る。
+          したがって、`\(foo\|bar\)x'は、
+          `foox'か`barx'のいずれかに一致する。
+
+       2. 後置演算子、`*'、`+'、`?'を適用できるように、複雑な正規表現を
+          括る。したがって、`ba\(na\)*'は、`bananana'のように、（0個以
+          上の）任意個の文字列`na'に一致する。
+
+       3. あとで参照できるように、一致した部分文字列を記録する。
+
+     最後の使い方は、括弧によるグループ化という考え方から派生したもので
+     はない。同一の`\( ... \)'構成に与えた2つめの別の機能である。実用上、
+     これら2つの意味が混同されることはないからである。この機能をつぎに
+     説明する。
+
+`\DIGIT'
+     D番目に現れた`\( ... \)'に一致したテキストと同じテキストに一致する。
+
+     いいかえれば、一致を処理するときには、`\( ... \)'構成の末尾に達す
+     ると、この構成に一致したテキストの始めと終りを記録する。そして、正
+     規表現のそれよりうしろでは、『D番目に現れた`\( ... \)'に一致したテ
+     キスト』という意味でそれがなんであろうと`\'に続けて数字Dを使える。
+
+     1つの正規表現内に現れる最初の9個の`\( ... \)'に一致する文字列には、
+     正規表現中で開き括弧が現れた順に、1から9までの番号を割り振る。その
+     ため、`\1'から`\9'で、対応する`\( ... \)'に一致したテキストを参照
+     できる。
+
+     たとえば、`\(.*\)\1'は、改行を含まない文字列で、かつ、前半と後半が
+     同一である文字列に一致する。`\(.*\)'は前半部分に一致し、それはどの
+     ようなものでもかまわない。一方、それに続く`\1'は、前半部分とまった
+     く同じテキストに一致しなければならない。
+
+`\w'
+     任意の単語構成文字に一致する。
+     エディタの構文テーブルによってこの文字が決まる。
+     *Note Syntax Tables::。
+
+`\W'
+     単語構成文字以外の文字に一致する。
+
+`\sCODE'
+     構文コードがCODEである文字だけに一致する。
+     ここで、CODEは構文コードを表す文字である。
+     つまり、`w'は単語構成要素を、
+     `-'は白文字を、`('は開き括弧を表すといった具合である。
+     白文字の構文を表すには、`-'か空白のいずれかを使う。
+     構文コードとそれらを表す文字の一覧については、
+     *Note Syntax Class Table::。
+
+`\SCODE'
+     構文がCODEでない任意の文字に一致する。
+
+つぎの正規表現は空の文字列に一致します。つまりこれらは文字を使用しませ
+んが、これらが一致するかどうか文脈に依存します。
+
+`\`'
+     空の文字列に一致するが、一致対象であるバッファや文字列の先頭に限る。
+
+`\''
+     空の文字列に一致するが、一致対象であるバッファや文字列の末尾に限る。
+
+`\='
+     空の文字列に一致するが、ポイント位置に限る。（文字列に対する一致で
+     はこの構文は定義されない。）
+
+`\b'
+     空の文字列に一致するが、単語の先頭や末尾に限る。
+     したがって、`\bfoo\b'は、単語として独立して現れる`foo'に一致する。
+     `\bballs?\b'は、単語として独立して現れる
+     `ball'や`balls'に一致する。
+
+     `\b'は、バッファの先頭や末尾にあるテキストとは無関係に、バッファの
+     先頭や末尾にも一致する。
+
+`\B'
+     空の文字列に一致するが、単語の先頭や末尾*以外*に限る。
+
+`\<'
+     空の文字列に一致するが、単語の先頭に限る。
+     `\<'はバッファの先頭にも一致するが、単語構成文字が続く場合に限る。
+
+`\>'
+     空の文字列に一致するが、単語の末尾に限る。`\>'はバッファの末尾にも
+     一致するが、単語構成文字で終了している場合に限る。
+
+任意の文字列が正しい正規表現ではありません。たとえば、（`[]]'のような少
+数の例外を除けば）角括弧が対応していない文字列は正しくありませんし、1つ
+の`\'で終る文字列も正しくありません。不正な正規表現を探索関数に渡すと、
+エラー`invalid-regexp'が通知されます。
+
+ -- Function: regexp-quote STRING
+     この関数は、STRINGだけに正確に一致する正規表現の文字列を返す。これ
+     により、正規表現を必要とする関数を呼び出すときにこの文字列だけに正
+     確に一致できる。
+
+          (regexp-quote "^The cat$")
+               => "\\^The cat\\$"
+
+     `regexp-quote'の用途の1つは、正規表現で記述された文脈に正確に一致
+     する文字列を組み合わせることである。たとえば、つぎは、白文字で囲ま
+     れたSTRINGの値で表される文字列を探索する。
+
+          (re-search-forward
+           (concat "\\s-" (regexp-quote string) "\\s-"))
+
+ -- Function: regexp-opt STRINGS &optional PAREN
+     この関数は、文字列STRINGSのいずれかに一致する効率よい正規表現を返
+     す。これは、たとえばフォントロック（font-lock）モードなどで、可能
+     な限り高速な一致や探索を行う必要がある場合に有用である。
+
+     省略可能な引数PARENが`nil'以外であると、返される正規表現はつねに少
+     なくとも1つの括弧によるグループ構文で囲まれる。
+
+     つぎの`regexp-opt'の簡略版定義は、実際の値に等価な（ただしそれほど
+     効率よくない）正規表現を生成する。
+
+          (defun regexp-opt (strings paren)
+            (let ((open-paren (if paren "\\(" ""))
+                  (close-paren (if paren "\\)" "")))
+              (concat open-paren
+                      (mapconcat 'regexp-quote strings "\\|")
+                      close-paren)))
+
+ -- Function: regexp-opt-depth REGEXP
+     この関数は、var{regexp}内のグループ化構文（括弧で括った式）の総個
+     数を返す。
+
+
+
+File: elisp-ja, Node: Regexp Example, Prev: Syntax of Regexps, Up: Regular Expressions
+
+複雑な正規表現の例
+------------------
+
+ここでは、任意個数の白文字を伴った文末を認識するためにEmacsで使われてい
+る複雑な正規表現について述べます。それは変数`sentence-end'の値です。
+
+まず、タブ文字と空白を区別するためにLisp構文の文字列として
+正規表現を示します。
+文字列定数はダブルクォートで始まり終ります。
+`\"'は文字列の一部としてのダブルクォート、
+`\\'は文字列の一部としてのバックスラッシュ、
+`\t'はタブ、`\n'は改行を表します。
+
+     "[.?!][]\"')}]*\\($\\| $\\|\t\\|  \\)[ \t\n]*"
+
+対照的に、変数`sentence-end'を評価するとつぎのようになっているはずです。
+
+     sentence-end
+          => "[.?!][]\"')}]*\\($\\| $\\|  \\|  \\)[
+     ]*"
+
+この出力では、タブと改行はそれ自身として現れています。
+
+この正規表現には、連続してつぎのような4つの部分が含まれています。
+
+`[.?!]'
+     パターンの最初の部分は、3つの文字、ピリオド、疑問符、感嘆符のいず
+     れかに一致する文字選択である。一致部分はこれらの3つの文字の1つで始
+     まる必要がある。
+
+`[]\"')}]*'
+     パターンの2番目の部分は、ピリオド、疑問符、感嘆符のいずれかに続く、
+     任意の閉じ括弧やクォーテーションマークの0個以上の繰り返しに一致す
+     る。`\"'は、文字列内のダブルクォートを表すLisp構文である。最後の
+     `*'は、直前の正規表現（この場合は文字選択）を0回以上繰り返すことを
+     表す。
+
+`\\($\\| $\\|\t\\|  \\)'
+     パターンの3番目の部分は、文末に続く白文字、つまり、（空白を伴うか
+     もしれない）行末、1つのタブ、2つの空白のいずれかに一致する。2つの
+     バックスラッシュは、括弧や縦棒を正規表現の構文にする。括弧はグルー
+     プを区切り、縦棒は選択肢を区切る。ドル記号は行末に一致するために用
+     いている。
+
+`[ \t\n]*'
+     パターンの最後の部分は、文末に最低限必要な白文字より余計な白文字に
+     一致する。
+
+
+
+File: elisp-ja, Node: Regexp Search, Next: POSIX Regexps, Prev: Regular Expressions, Up: Searching and Matching
+
+正規表現の探索
+==============
+
+GNU Emacsでは、正規表現に一致するつぎの部分をインクリメンタルにもそうで
+なくも探せます。インクリメンタルサーチコマンドについては、*Note 正規表
+現探索: (emacs)Regexp Searchを参照してください。ここでは、プログラムで
+有用な探索関数のみについて述べます。基本的なものは`re-search-forward'で
+す。
+
+これらの探索関数は、バッファがマルチバイトであれば
+正規表現をマルチバイトに変換します。
+バッファがユニバイトであれば、正規表現をユニバイトに変換します。
+*Note Text Representations::。
+
+ -- コマンド: re-search-forward REGEXP &optional LIMIT NOERROR REPEAT
+     この関数は、カレントバッファにおいて前方へ向けて正規表現REGEXPに一
+     致するテキストの文字列を探索する。関数はREGEXPに一致しないテキスト
+     はすべて飛び越え、みつけた一致箇所の末尾へポイントを置く。ポイント
+     の新たな値を返す。
+
+     LIMITが`nil'以外（カレントバッファ内の位置であること）であると、探
+     索の上限を表す。その位置を越える箇所での一致は受け入れない。
+
+     REPEATを指定してあると（正の数であること）、その回数だけ探索を繰り
+     返す（一致箇所の末尾を新たな探索の開始位置とする）。連続してこれら
+     の探索に成功すると関数は成功し、ポイントを移動してその新たな値を返
+     す。さもなければ探索は失敗である。
+
+     関数が失敗した場合の動作は、NOERRORの値に依存する。NOERRORが`nil'
+     であると、エラー`search-failed'を通知する。NOERRORが`t'であると、
+     `re-search-forward'はなにもせずに`nil'を返す。NOERRORが`nil'でも
+     `t'でもないと、`re-search-forward'はポイントをLIMIT（あるいはバッ
+     ファの末尾）へ移動して`nil'を返す。
+
+     つぎの例では、ポイントは始めは`T'のまえにある。探索を呼び出すと、
+     ポイントは当該行の末尾（`hat'の`t'と改行のあいだ）へ移動する。
+
+          ---------- Buffer: foo ----------
+          I read "-!-The cat in the hat
+          comes back" twice.
+          ---------- Buffer: foo ----------
+
+          (re-search-forward "[a-z]+" nil t 5)
+               => 27
+
+          ---------- Buffer: foo ----------
+          I read "The cat in the hat-!-
+          comes back" twice.
+          ---------- Buffer: foo ----------
+
+ -- コマンド: re-search-backward REGEXP &optional LIMIT NOERROR REPEAT
+     この関数は、カレントバッファにおいて後方へ向けて正規表現REGEXPに一
+     致するテキストの文字列を探索し、みつけた一致箇所の先頭へポイントを
+     置く。
+
+     この関数は`re-search-forward'に類似したものであるが、単純な鏡像で
+     はない。`re-search-forward'は、一致箇所の先頭が開始位置に可能な限
+     り近い一致箇所を探す。`re-search-backward'が完全な鏡像であれば、一
+     致箇所の末尾が可能な限り近い一致箇所を探す。しかし、実際には、一致
+     箇所の先頭が可能な限り近い一致箇所を探す。これは、正規表現との一致
+     をとる処理は、指定開始位置において先頭から末尾へ向けてつねに行われ
+     るからである。
+
+     `re-search-forward'の完全な鏡像には、正規表現の一致を末尾から先頭
+     へ向けて行う特別な機能が必要である。それを実装する手間をかけるほど
+     の価値はない。
+
+ -- Function: string-match REGEXP STRING &optional START
+     この関数は、文字列STRINGにおいて正規表現REGEXPに一致した
+     最初の箇所の添字を返す。
+     あるいは、一致がなければ`nil'を返す。
+     STARTが`nil'以外であると、
+     STRINGの指定した添字から探索を始める。
+
+     たとえばつぎのとおりである。
+
+          (string-match
+           "quick" "The quick brown fox jumped quickly.")
+               => 4
+          (string-match
+           "quick" "The quick brown fox jumped quickly." 8)
+               => 27
+
+     文字列の最初の文字の添字は0であり、2番目の文字の添字は1であるといっ
+     た具合になる。
+
+     この関数から戻ったあとでは、
+     一致箇所を越えた最初の文字の添字は`(match-end 0)'で得られる。
+     *Note Match Data::。
+
+          (string-match
+           "quick" "The quick brown fox jumped quickly." 8)
+               => 27
+
+          (match-end 0)
+               => 32
+
+ -- Function: looking-at REGEXP
+     この関数は、カレントバッファ内のポイントの直後のテキストが正規表現
+     REGEXPに一致するかどうかを調べる。ここで『直後』とは、開始位置は固
+     定されていて、ポイントのうしろの最初の文字で始まる場合にのみ探索は
+     成功する。結果は、一致すれば`t'であり、さもなければ`nil'である。
+
+     この関数はポイントを移動しないが、マッチデータを更新する。
+     `match-beginning'や`match-end'を使ってマッチデータを参照できる。
+
+     つぎの例では、ポイントは`T'の直前にある。ポイントがこれ以外の場所
+     にあると結果は`nil'になる。
+
+          ---------- Buffer: foo ----------
+          I read "-!-The cat in the hat
+          comes back" twice.
+          ---------- Buffer: foo ----------
+
+          (looking-at "The cat in the hat$")
+               => t
+
+
+
+File: elisp-ja, Node: POSIX Regexps, Next: Search and Replace, Prev: Regexp Search, Up: Searching and Matching
+
+POSIXの正規表現探索
+===================
+
+普通の正規表現関数は、`\|'や反復構文を扱うために必要なときにはバックト
+ラックしますが、これを行い続けるのは*なんらか*の一致をみつけるまでです。
+みつけてしまえば、それらは成功してみつけた最初の一致を報告します。
+
+本節では、正規表現の一致に関するPOSIX規格で規定された完全なバックトラッ
+クを行う代替の探索関数について述べます。それらはすべての可能性を試し尽
+くしすべての一致箇所を探し終えるまでバックトラックを継続してます。その
+ため、POSIXで要求されるとおりの最長の一致を報告できるのです。これは動作
+がとても遅いですから、最長一致が本当に必要な場合に限ってこれらの関数を
+使ってください。
+
+ -- Function: posix-search-forward REGEXP &optional LIMIT NOERROR REPEAT
+     これは`re-search-forward'と同様であるが、正規表現の一致に関する
+     POSIX規格で規定された完全なバックトラックを行う。
+
+ -- Function: posix-search-backward REGEXP &optional LIMIT NOERROR REPEAT
+     これは`re-search-backward'と同様であるが、正規表現の一致に関する
+     POSIX規格で規定された完全なバックトラックを行う。
+
+ -- Function: posix-looking-at REGEXP
+     これは`looking-at'と同様であるが、正規表現の一致に関するPOSIX規格
+     で規定された完全なバックトラックを行う。
+
+ -- Function: posix-string-match REGEXP STRING &optional START
+     これは`string-match'と同様であるが、正規表現の一致に関するPOSIX規
+     格で規定された完全なバックトラックを行う。
+
+
+
+
+File: elisp-ja, Node: Search and Replace, Next: Match Data, Prev: POSIX Regexps, Up: Searching and Matching
+
+探索と置換
+==========
+
+ -- Function: perform-replace FROM-STRING REPLACEMENTS QUERY-FLAG REGEXP-FLAG DELIMITED-FLAG &optional REPEAT-COUNT MAP
+     この関数は、`query-replace'と関連するコマンドの中身である。
+     FROM-STRINGの出現を探しだし、それらの一部やすべてを置き換える。
+     QUERY-FLAGが`nil'であると、すべての出現を置換する。さもなければ、
+     1つ1つユーザーにどうするかを問い合わせる。
+
+     REGEXP-FLAGが`nil'以外であると、FROM-STRINGを正規表現として扱う。
+     さもなければ、その字面とおりに一致する。DELIMITED-FLAGが`nil'以外
+     であると、単語区切りで囲まれたもののみを対象にする。
+
+     引数REPLACEMENTSは、出現を置き換えるものを指定する。それが文字列で
+     あれば、その文字列を使う。文字列のリストでもよく、要素を巡回して使
+     う。
+
+     REPEAT-COUNTが`nil'以外であれば、整数であること。これは、
+     REPLACEMENTSのリスト内の各文字列をつぎに進めるまえに何回使用するか
+     を指定する。
+
+     通常、キーマップ`query-replace-map'で、
+     可能なユーザーの応答を定義する。
+     引数MAPが`nil'以外であれば、
+     `query-replace-map'のかわりに使うキーマップである。
+
+ -- Variable: query-replace-map
+     この変数は、`y-or-n-p'や`map-y-or-n-p'に加えて、`query-replace'や
+     関連する関数に対する正しいユーザー応答を定義する特別なキーマップを
+     保持する。2つの意味で普通のものではない。
+
+        * 『キーバインディング』はコマンドではなく、このキーマップを用
+          いる関数にのみ意味がある単なるシンボルである。
+
+        * プレフィックスキーは扱えない。各キーバインディングは単一イベ
+          ントのキー列である必要がある。これは、関数では入力を得るため
+          に`read-key-sequence'を使わずに、『自前』でイベントを読み取り
+          探索するからである。
+
+`query-replace-map'向けの意味のある『バインディング』をつぎに示します。
+`query-replace'と関連するものだけに意味のあるものもあります。
+
+`act'
+     当該動作を行う、いいかえれば『yes』。
+
+`skip'
+     この問いに対する動作は行わない、いいかえれば『no』。
+
+`exit'
+     この問いには『no』で答え、残りの応答も『no』と仮定して一連の問いを
+     止める。
+
+`act-and-exit'
+     この問いには『yes』で答え、残りの応答は『no』と仮定して一連の問い
+     を止める。
+
+`act-and-show'
+     この問いには『yes』で答えるが、結果を表示する。つぎの問いへは進ま
+     ない。
+
+`automatic'
+     この問いと以降の一連の問いに『yes』で答え、これ以降ユーザーに問い
+     合わせない。
+
+`backup'
+     問いに答えたまえの箇所へ戻る。
+
+`edit'
+     この問いに対処するために、通常の動作のかわりに再帰編集に入る。
+
+`delete-and-edit'
+     対象のテキストを削除してから、それを置き換えるために再帰編集に入る。
+
+`recenter'
+     ウィンドウの中央に位置決めして再表示してから、同じ問いを問い直す。
+
+`quit'
+     ただちに中断する。
+     `y-or-n-p'と関連する関数でのみ、この応答を用いる。
+
+`help'
+     ヘルプを表示してから、再度問い直す。
+
+
+
+File: elisp-ja, Node: Match Data, Next: Searching and Case, Prev: Search and Replace, Up: Searching and Matching
+
+マッチデータ
+============
+
+Emacsは、正規表現の探索中に捜し出したテキスト断片の開始／終了位置を記録
+しています。つまり、たとえば、rmailメッセージ内で日付のような複雑なパター
+ンを探索してから、パターンの制御をもとに一致した一部分を取り出せるので
+す。
+
+マッチデータは、通常、もっとも最近に行った探索のみを記述するので、あと
+で使用したい探索とそのマッチデータを使うあいだに、不注意に別の探索を行
+わないように注意してください。あいだで探索を行う必要がある場合には、そ
+の周りでマッチデータを保存／復元してそれらが上書きされないようにします。
+
+* Menu:
+
+* Replacing Match::	  Replacing a substring that was matched.
+* Simple Match Data::     Accessing single items of match data,
+			    such as where a particular subexpression started.
+* Entire Match Data::     Accessing the entire match data at once, as a list.
+* Saving Match Data::     Saving and restoring the match data.
+
+
+
+File: elisp-ja, Node: Replacing Match, Next: Simple Match Data, Prev: Match Data, Up: Match Data
+
+一致したテキストの置換
+----------------------
+
+この関数は、最後の探索で一致したテキストをREPLACEMENTで置換します。
+
+ -- Function: replace-match REPLACEMENT &optional FIXEDCASE LITERAL STRING SUBEXP
+     この関数は、最後の探索で一致したバッファ内（あるいは文字列STRING）
+     のテキストを置換する。当該テキストをREPLACEMENTで置き換える。
+
+     バッファで最後に探索を行った場合には、STRINGに`nil'を指定すること。
+     そうすると、`replace-match'はバッファを編集することで置換を行い、
+     置換したテキストの末尾にポイントを置き`t'を返す。
+
+     文字列で探索した場合には、STRINGに同じ文字列を渡すこと。そうすると、
+     `replace-match'は新たな文字列を構築することで置換を行い、新たな文
+     字列を返す。
+
+     FIXEDCASEが`nil'以外であると、
+     置換テキストの大文字小文字は変更しない。
+     さもなければ、置換テキストの大文字小文字は、
+     対象テキストの大文字小文字に応じて変換される。
+     元テキストがすべて大文字であると、置換テキストも大文字に変換される。
+     元テキストの最初の単語が大文字で始まっていると、
+     置換テキストの最初の単語も大文字で始める。
+     元テキストが1単語のみであり、しかも、その単語が大文字1文字であると、
+     `replace-match'はすべてが大文字ではなく大文字で始まるとみなす。
+
+     `case-replace'が`nil'であると、
+     FIXED-CASEの値に関わらず、大文字小文字変換を行わない。
+     *Note Searching and Case::。
+
+     LITERALが`nil'以外であると、必要に応じて大文字小文字変換は行うもの
+     のREPLACEMENTをそのまま挿入する。それが`nil'（デフォルト）であると、
+     文字`\'を特別に扱う。REPLACEMENTに`\'が現れるときには、つぎの列の
+     いずれかであること。
+
+     `\&'
+          `\&'は置換対象のテキスト全体を表す。
+
+     `\N'
+          Nを数字文字とすると`\N'は、もとの正規表現内のN番目の部分式に
+          一致したテキストを表す。部分式とは、`\(...\)'で囲んでグループ
+          化した式である。
+
+     `\\'
+          `\\'は置換テキスト内で1つの`\'を表す。
+
+     SUBEXPが`nil'以外であると、
+     一致箇所全体ではなく正規表現のSUBEXP番目の部分式に
+     一致した箇所のみを置換することを指示する。
+     たとえば、`foo \(ba*r\)'に一致させたあとで、
+     SUBEXPに1を指定して`replace-match'を呼び出すと、
+     `\(ba*r\)'に一致したテキストのみを置換することを意味する。
+
+
+
+File: elisp-ja, Node: Simple Match Data, Next: Entire Match Data, Prev: Replacing Match, Up: Match Data
+
+マッチデータの簡単な参照
+------------------------
+
+本節では、最後の探索や一致操作においてなにに一致したのかを調べるための
+マッチデータの使い方を説明します。
+
+一致したテキスト全体や正規表現の括弧で括った特定の部分式に一致した
+テキストを調べることができます。
+以下の関数の引数COUNTでどれかを指定します。
+COUNTがゼロであれば、一致全体を調べることになります。
+COUNTが正であれば、望みの部分式を指定します。
+
+正規表現の部分式は、エスケープした括弧`\(...\)'でグループ化した式である
+ことに注意してください。COUNT番目の部分式は、正規表現全体の先頭から
+`\('の出現を数えてみつけます。最初の部分式は1、つぎは2、といった具合で
+す。部分式は正規表現だけにあります。単純な文字列探索のあとでは、利用可
+能な情報は一致全体に関するものだけです。
+
+探索に失敗すると、マッチデータを変更することもしないこともあります。過
+去には探索に失敗しても変更しなかったのですが、将来そうなります。
+
+ -- Function: match-string COUNT &optional IN-STRING
+     この関数は、最後の探索や一致操作で一致したテキストを文字列として返
+     す。COUNTがゼロであるとテキスト全体を返す。COUNTが正であれば、
+     COUNT番目の括弧で囲んだ部分式に対応する部分のみを返す。COUNTが範囲
+     を越えていたり、当該部分式に一致するものがない場合には、値は`nil'
+     である。
+
+     最後の探索や一致操作を`string-match'で文字列に対して行った場合には、
+     引数IN-STRINGとして同じ文字列を渡すこと。バッファの探索や一致のあ
+     とでは、IN-STRINGを省略するか`nil'を渡すこと。ただし、
+     `match-string'を呼び出すときのカレントバッファが探索を行ったときの
+     バッファであること。
+
+ -- Function: match-string-no-properties COUNT
+     この関数は`match-string'と同様であるが、結果にはテキスト属性を含ま
+     ない。
+
+ -- Function: match-beginning COUNT
+     この関数は、最後の正規表現探索やその部分式に一致したテキストの開始
+     位置を返す。
+
+     COUNTがゼロであると、値は一致全体の開始位置である。さもなければ、
+     COUNTは正規表現内の部分式を指定し、関数の値は当該部分式に一致した
+     部分の開始位置である。
+
+     一致に利用されなかった選択肢`\|'内の部分式に対しては、値は`nil'で
+     ある。
+
+ -- Function: match-end COUNT
+     この関数は`match-beginning'と同様であるが、一致箇所の開始位置では
+     なく終了位置を返す点が異なる。
+
+コメントでテキスト内の位置を示しながらマッチデータの利用例を示します。
+
+     (string-match "\\(qu\\)\\(ick\\)"
+                   "The quick fox jumped quickly.")
+                   ;0123456789
+          => 4
+
+     (match-string 0 "The quick fox jumped quickly.")
+          => "quick"
+     (match-string 1 "The quick fox jumped quickly.")
+          => "qu"
+     (match-string 2 "The quick fox jumped quickly.")
+          => "ick"
+
+     (match-beginning 1)       ; 一致箇所`qu'の先頭は
+          => 4                 ;   添字4
+
+     (match-beginning 2)       ; 一致箇所`ick'の先頭は
+          => 6                 ;   添字6
+
+     (match-end 1)             ; 一致箇所`qu'の末尾は
+          => 6                 ;   添字6
+
+     (match-end 2)             ; 一致箇所`ick'の末尾は
+          => 9                 ;   添字9
+
+別の例も示します。ポイントは始めは行頭にあります。探索によって、ポイン
+トは空白と単語`in'のあいだに移動します。一致箇所全体の先頭はバッファの
+9番目の文字（`T'）であり、最初の部分式の一致箇所の先頭は13番目の文字
+（`c'）です。
+
+     (list
+       (re-search-forward "The \\(cat \\)")
+       (match-beginning 0)
+       (match-beginning 1))
+         => (9 9 13)
+
+     ---------- Buffer: foo ----------
+     I read "The cat -!-in the hat comes back" twice.
+             ^   ^
+             9  13
+     ---------- Buffer: foo ----------
+
+（この例では、返される添字はバッファ内位置であり、バッファの最初の文字
+を1と数える。）
+
+
+
+File: elisp-ja, Node: Entire Match Data, Next: Saving Match Data, Prev: Simple Match Data, Up: Match Data
+
+マッチデータ全体を参照する
+--------------------------
+
+関数`match-data'と`set-match-data'は、マッチデータ全体を一度に読んだり
+書いたりします。
+
+ -- Function: match-data
+     この関数は、最後の探索で一致したテキストに関するすべての情報を収め
+     た新たに構築したリストを返す。要素0が式全体に一致した部分の先頭位
+     置であり、要素1が式全体に一致した部分の終了位置である。つぎの2つの
+     要素は最初の部分式に一致した部分の先頭／終了位置、といった具合であ
+     る。一般に、要素番号2N は`(match-beginning N)'に対応し、要素番号
+     2N + 1 は`(match-end N)'に対応する。
+
+     バッファで行った一致ではすべての要素はマーカか`nil'であり、
+     `string-match'により文字列で行った一致ではすべての要素は整数か
+     `nil'である。
+
+     探索関数の呼び出しとその探索結果としてのマッチデータを参照するため
+     の`match-data'の呼び出しのあいだには、別の探索があってはならない。
+
+          (match-data)
+               =>  (#<marker at 9 in foo>
+                    #<marker at 17 in foo>
+                    #<marker at 13 in foo>
+                    #<marker at 17 in foo>)
+
+ -- Function: set-match-data MATCH-LIST
+     この関数は、MATCH-LISTの要素からマッチデータを設定する。
+     MATCH-LISTは、以前に`match-data'の呼び出しで得たリストであること。
+
+     MATCH-LISTが存在しないバッファを指していても、エラーにはならない。
+     無意味な情報をマッチデータに設定するが、害にはならない。
+
+     `store-match-data'はほぼ廃れている`set-match-data'の別名である。
+
+
+
+File: elisp-ja, Node: Saving Match Data, Prev: Entire Match Data, Up: Match Data
+
+マッチデータの保存と復元
+------------------------
+
+探索を行う可能性がある関数を呼び出す場合、あとで使うためにそれ以前の探
+索によるマッチデータを保存したいときには、当該関数の呼び出しの周りでマッ
+チデータを保存し復元する必要があります。つぎの例は、マッチデータを保存
+し損なった場合に生じる問題点を示しています。
+
+     (re-search-forward "The \\(cat \\)")
+          => 48
+     (foo)                   ; `foo'はさらに
+                             ;   探索する
+     (match-end 0)
+          => 61              ; 予期しない結果。48でない！
+
+マッチデータの保存と復元は`save-match-data'で行えます。
+
+ -- Macro: save-match-data BODY...
+     このマクロは、周りのマッチデータを保存し復元して、
+     BODYを実行する。
+
+スペシャルフォーム`save-match-data'の効果をまねるために`match-data'とと
+もに`set-match-data'を使うこともできます。つぎのようにします。
+
+     (let ((data (match-data)))
+       (unwind-protect
+           ...   ; もとのマッチデータを変更しても大丈夫
+         (set-match-data data)))
+
+プロセスフィルタ関数（*Note Filter Functions::）やプロセスの番兵
+（*Note Sentinels::）を実行するときには、Emacsは自動的にマッチデータを
+保存し復元します。
+
+
+
+
+File: elisp-ja, Node: Searching and Case, Next: Standard Regexps, Prev: Match Data, Up: Searching and Matching
+
+探索と大文字小文字
+==================
+
+デフォルトでは、Emacsの探索は探索対象テキストの大文字小文字を区別しませ
+ん。`FOO'を探す指定を行うと、`Foo'や`foo'にも一致するとみなします。これ
+は、正規表現にも適用されます。したがって、`[aB]'は、`a'や`A'や`b'や`B'
+に一致します。
+
+この機能を望まないときには、変数`case-fold-search'に`nil'を設定します。
+すると、すべての文字は大文字小文字を保ってそのとおりに一致します。これ
+はバッファローカルな変数ですから、変数を変更してもカレントバッファだけ
+に影響します。（*Note Intro to Buffer-Local::。）あるいは、
+`default-case-fold-search'の値を変更します。これは、`case-fold-search'
+を書き変えていないバッファ向けのデフォルト値です。
+
+ユーザーレベルのインクリメンタルサーチ機能では、大文字小文字の区別は異
+なった扱い方をします。小英文字を与えるとその大文字にも一致しますが、大
+英文字を与えると大文字のみに一致します。しかし、これはLispコードで使用
+している探索関数にはまったく関係ありません。
+
+ -- User Option: case-replace
+     この変数は、置換関数が大文字小文字を保存するかどうかを決定する。変
+     数が`nil'であると、置換テキストをそのまま使うことを意味する。
+     `nil'以外の値であると、置換対象のテキストに応じて置換テキストの大
+     文字小文字を変換することを意味する。
+
+     この変数が実際に効果を発揮するのは関数`replace-match'においてである。
+     *Note Replacing Match::。
+
+ -- User Option: case-fold-search
+     このバッファローカルな変数は、大文字小文字を区別して探索するかどう
+     かを決定する。変数が`nil'であると大文字小文字を区別する。さもなけ
+     れば大文字小文字を区別しない。
+
+ -- Variable: default-case-fold-search
+     この変数の値は、`case-fold-search'を書き変えていないバッファ向けの
+     デフォルト値である。これは`(default-value 'case-fold-search)'と同
+     じである。
+
+
+
+File: elisp-ja, Node: Standard Regexps, Prev: Searching and Case, Up: Searching and Matching
+
+編集に用いられる標準的な正規表現
+================================
+
+本節では、編集上の特定目的に用いられる正規表現を保持している変数につい
+て述べます。
+
+ -- Variable: page-delimiter
+     これは、ページを区切る行頭を記述した正規表現である。デフォルト値は、
+     `"^\014"'（つまり、`"^^L"'すなわち`"^\C-l"'）である。これはページ
+     送り文字で始まる行に一致する。
+
+つぎの2つの正規表現は、つねに行の先頭から一致が
+始まると仮定しては*いけません*。
+一致の開始位置を固定する`^'を使うべきではありません。
+ほとんどの場合、段落コマンドは行の先頭でのみ一致を検査しますから、
+`^'は不必要であることを意味します。
+幅0以外の左端余白があると、段落コマンドは左端余白のうしろからの一致を
+受け入れます。
+そのような場合、`^'は誤りです。
+しかし、左端余白をけっして使わないモードならば、
+`^'は無害です。
+
+ -- Variable: paragraph-separate
+     これは、段落を区切る行の始まりを認識するための正規表現である。
+     （これを変更したら、`paragraph-start'も変更すること。）
+     デフォルト値は`"[ \t\f]*$"'であり、
+     （左端余白に続く）空白やタブやページ送りだけから成る行に一致する。
+
+ -- Variable: paragraph-start
+     これは、段落を始める行や区切る行の始まりを認識するための正規表現である。
+     デフォルト値は`"[ \t\n\f]"'であり、
+     （左端余白に続く）空白やタブやページ送りだけから成る行に一致する。
+
+ -- Variable: sentence-end
+     これは、文末を記述する正規表現である。（これに関わらず、段落の区切
+     りも文末である。）デフォルト値はつぎのとおりである。
+
+          "[.?!][]\"')}]*\\($\\| $\\|\t\\| \\)[ \t\n]*"
+
+     これは、ピリオド、疑問符、感嘆符のいずれかのあとに閉じ括弧文字が続
+     き（なくてもよい）、タブや空白や改行が続くことを意味する。
+
+     この正規表現の詳しい説明は、*Note Regexp Example::を参照。
+
+
+File: elisp-ja, Node: Syntax Tables, Next: Abbrevs, Prev: Searching and Matching, Up: Top
+
+構文テーブル
+************
+
+"構文テーブル"（syntax table）は、各文字の構文的なテキスト上の機能を指
+定します。この情報は、"構文解析関数"や複雑な移動を行うコマンドなどが単
+語やシンボルなどの構文要素がどこで始まりどこで終るかを調べるために使い
+ます。現在の構文テーブルが、本章の関数に加えて、単語単位の移動関数
+（*Note Word Motion::）、リスト単位の移動関数（*Note List Motion::）の
+意味を制御します。
+
+* Menu:
+
+* Basics: Syntax Basics.     Basic concepts of syntax tables.
+* Desc: Syntax Descriptors.  How characters are classified.
+* Syntax Table Functions::   How to create, examine and alter syntax tables.
+* Syntax Properties::        Overriding syntax with text properties.
+* Motion and Syntax::	     Moving over characters with certain syntaxes.
+* Parsing Expressions::      Parsing balanced expressions
+                                using the syntax table.
+* Standard Syntax Tables::   Syntax tables used by various major modes.
+* Syntax Table Internals::   How syntax table information is stored.
+* Categories::               Another way of classifying character syntax.
+
+
+
+File: elisp-ja, Node: Syntax Basics, Next: Syntax Descriptors, Prev: Syntax Tables, Up: Syntax Tables
+
+構文テーブルの概念
+==================
+
+"構文テーブル"（syntax table）は、バッファ内の各文字の構文上の用途に関
+する情報をEmacsに与えます。この情報は、"構文解析関数"や複雑な移動を行う
+コマンドなどが単語やシンボルなどの構文要素がどこで始まりどこで終るかを
+調べるために使います。現在の構文テーブルが、本章の関数に加えて、単語単
+位の移動関数（*Note Word Motion::）、リスト単位の移動関数（*Note List
+Motion::）の意味を制御します。
+
+構文テーブルは文字テーブル（*Note Char-Tables::）です。Cで添字付けられ
+る要素は、コードがCである文字について記述します。要素の値は、当該文字の
+構文上の機能を符号化したリストです。
+
+構文テーブルは、テキスト内を動き回るためにのみ使われ、EmacsのLispリーダ
+はこれを使いません。Emacs LispがLisp式を読むときには、組み込みの構文規
+則を使います。（入力構文を再定義する方法を与えるLispシステムもあるが、
+単純であるようにEacs Lispではこの機能を省くことにした。）
+
+各バッファには独自のメジャーモードがあり、各メジャーモードはさまざまな
+文字の構文クラスを独自に扱います。たとえば、lispモードでは文字`;'はコメ
+ントを始めますが、Cモードでは文を終らせます。このような多様性を扱うため
+に、Emacsは各バッファごとにローカルな構文テーブルを選びます。典型的には、
+各メジャーモードに独自の構文テーブルがあり、そのモードを使っているバッ
+ファに当該構文テーブルをインストールします。この構文テーブルを変更する
+と、同じモードのバッファだけでなく将来そのモードになったバッファでも構
+文を変更してしまいます。類似したモードでは1つの構文テーブルを共有するこ
+とがあります。構文テーブルの設定方法の例については、*Note Example
+Major Modes::。
+
+構文テーブルでは、標準の構文テーブルから文字のデータを継承し、一方でそ
+の他の文字に独自の指定を行えます。構文クラスの『継承』とは、『標準の構
+文テーブルから当該文字の構文を引き継ぐ』ことです。ある文字に対して標準
+の構文を変更すると、それを継承するすべての構文テーブルに影響します。
+
+ -- Function: syntax-table-p OBJECT
+     この関数は、OBJECTが構文テーブルならば`t'を返す。
+
+
+
+File: elisp-ja, Node: Syntax Descriptors, Next: Syntax Table Functions, Prev: Syntax Basics, Up: Syntax Tables
+
+構文記述子
+==========
+
+本節では、文字の構文を指定する構文クラスと構文フラグ、それらを"構文記述
+子"（syntax descriptor）としてどのように表現するかについて述べます。構
+文記述子はLisp文字列であり、望みの構文を指定するために
+`modify-syntax-entry'に渡します。
+
+構文テーブルは、各文字の構文クラスを指定します。ある構文テーブルでの文
+字のクラスと他の構文テーブルでの当該文字のクラスとのあいだにはなんの関
+係も必要ありません。
+
+各クラスはニーモニック文字（指定子）で区別します。ニーモニック文字は、
+クラスを指定する必要があるときにクラス名として働きます。通常、指定子の
+文字は当該クラスによく現れるものです。しかしながら、指定子としての意味
+は不変で、その文字の現在の構文とは独立です。
+
+構文記述子は、構文クラス、（括弧のクラスの場合にのみ使われる）釣り合う
+文字、フラグを指定するLisp文字列です。最初の文字は、構文クラスを指定す
+る文字（指定子）です。2番目の文字はその文字に釣り合う文字ですが、使用し
+ない場合には空白です。そのあとに望みのフラグが続きます。釣り合う文字や
+フラグが必要なければ、文字1つだけで十分です。
+
+たとえば、Cモードにおける文字`*'の構文記述子は
+`. 23'（句読点、釣り合う文字なし、
+コメント開始の2番目の文字、コメント終了の最初の文字）であり、
+`/'は`. 14'（句読点、釣り合う文字なし、
+コメント開始の最初の文字、コメント終了の2番目の文字）です。
+
+* Menu:
+
+* Syntax Class Table::      Table of syntax classes.
+* Syntax Flags::            Additional flags each character can have.
+
+
+
+File: elisp-ja, Node: Syntax Class Table, Next: Syntax Flags, Prev: Syntax Descriptors, Up: Syntax Descriptors
+
+構文クラス一覧
+--------------
+
+以下の一覧は、構文クラス、そのクラスを表す文字（指定子）、そのクラスの
+意味、その使用例です。
+
+ -- 構文クラス: 白文字（whitespace CHARACTER）
+     "白文字"（` 'か`-'で指定）は、シンボルや単語を互いに区切る。典型的
+     には、白文字には他の構文上の意味はなく、複数個の白文字は1つの白文
+     字と構文的には等価である。ほとんどすべてのメジャーモードでは、空白、
+     タブ、改行、ページ送りは白文字である。
+
+ -- 構文クラス: 単語構成文字（word CONSTITUENT）
+     "単語構成文字"（`w'で指定）は普通の英単語の一部分であり、典型的に
+     は、プログラムの変数やコマンド名に使われる。すべての大英文字、小英
+     文字、数字文字は、典型的には単語構成文字である。
+
+ -- 構文クラス: シンボル構成文字（symbol CONSTITUENT）
+     "シンボル構成文字"（`_'で指定）は、単語構成文字に加えて、変数やコ
+     マンド名に使われる追加の文字である。たとえば、英単語の一部分ではな
+     いがシンボル名に使える特定の文字を指定するために、Lispモードではシ
+     ンボル構成文字クラスを使う。このような文字は`$&*+-_<>'である。標準
+     のCでは、単語構成文字でなくてシンボルに使える唯一の文字は下線
+     （`_'）である。
+
+ -- 構文クラス: 句読点文字（punctuation CHARACTER）
+     "句読点文字"（`.'で指定）は、英文の句読点として使われたり、プログ
+     ラム言語でシンボルを区切るために使われる文字である。emacs-lispモー
+     ドを含むほとんどのプログラム言語向けモードでは、シンボル構成文字で
+     も単語構成文字でもない少数の文字には別の用途があるため、このクラス
+     の文字はない。
+
+ -- 構文クラス: 開き括弧文字（open PARENTHESIS CHARACTER）
+ -- 構文クラス: 閉じ括弧文字（close PARENTHESIS CHARACTER）
+     開き／閉じ"括弧文字"は、文や式を囲む相異なる対として使われる文字である。
+     そのようなグループ化は、開き括弧文字で始まり閉じ括弧文字で終る。
+     各開き括弧文字は特定の閉じ括弧文字に対応し、その逆もいえる。
+     Emacsは、通常、閉じ括弧文字を挿入すると
+     対応する開き括弧文字を短時間指し示す。
+     *Note Blinking::。
+
+     開き括弧文字クラスは`('で指定し、閉じ括弧文字クラスは`)'で指定する。
+
+     英文向けのテキスト（text）モードとCモードでは、括弧の対は、`()'、
+     `[]'、`{}'である。Emacs Lispでは、リストとベクトルの区切り（`()'と
+     `[]'）は、括弧文字としてクラス分けされる。
+
+ -- 構文クラス: 文字列クォート（string QUOTE）
+     "文字列クォート文字"（`"'で指定）は、LispやCを含む多くの言語で文字
+     列定数を区切るために使われる。同じ文字列クォート文字が文字列の最初
+     と最後に現れる。
+
+     Emacsの構文解析機能では、文字列を1つの字句とみなす。文字列内の文字
+     の普通の構文的な意味は抑制される。
+
+     lisp向けのモードには文字列クォート文字が2つ、ダブルクォート（`"'）
+     と縦棒（`|'）がある。`|'はEmacs Lispでは使わないがCommon Lispで使
+     う。Cにも2つの文字列クォート文字、文字列用のダブルクォートと文字定
+     数用のシングルクォート（`''）がある。
+
+     英文はプログラム言語ではないので、英文には文字列クォート文字はない。
+     英文でも引用符は用いるが、その内側の文字の普通の構文的な属性を抑制
+     したくないのである。
+
+ -- 構文クラス: エスケープ（escape）
+     "エスケープ文字"（`\'で指定）は、Cの文字列や文字定数で使われるよう
+     なエスケープシーケンスを開始する。CとLispでは、文字`\'はこのクラス
+     に属する。（Cではこの文字は文字列の内側だけで使われるが、Cモードで
+     つねにこのように扱っても問題ないことがわかった。）
+
+     `words-include-escapes'が`nil'以外であると、
+     このクラスの文字は単語の一部分と解釈される。
+     *Note Word Motion::。
+
+ -- 構文クラス: 文字クォート（character QUOTE）
+     "文字クォート文字"（`/'で指定）は、後続の1文字をクォートし、通常の
+     構文上の意味を抑制する。直後の1文字のみに影響するという点で、エス
+     ケープ文字と異なる。
+
+     `words-include-escapes'が`nil'以外であると、
+     このクラスの文字は単語の一部分と解釈される。
+     *Note Word Motion::。
+
+     このクラスは、TeXモードのバックスラッシュに使われる。
+
+ -- 構文クラス: 対になった区切り（paired DELIMITER）
+     "対になった区切り文字"（`$'）は文字列クォート文字と同様であるが、
+     区切り文字のあいだにある文字の構文上の属性を抑制しない点が異なる。
+     現在、対になった区切りはTeXモードのみで使い、数学モードに出入りす
+     る`$'である。
+
+ -- 構文クラス: 式前置子（expression PREFIX）
+     "式前置演算子"（`''）は、式のまえに現れると式の一部であるとみなさ
+     れる構文上の演算子に使われる。lisp向けのモードでは、（クォートする）
+     アポストロフ`''、（マクロで使う）コンマ`,'、（ある種のデータの入力
+     構文に使われる）`#'の文字がそうである。
+
+ -- 構文クラス: コメント開始（comment STARTER）
+ -- 構文クラス: コメント終了（comment ENDER）
+     "コメント開始"文字と"コメント終了"文字は、さまざまな言語でコメント
+     を区切るために用いられる。これらのクラスは、それぞれ、`<'と`>'で指
+     定する。
+
+     英文にはコメント文字はない。Lispでは、セミコロン（`;'）でコメント
+     が始まり、改行かページ送りで終る。
+
+ -- 構文クラス: 継承（inherit）
+     この構文クラスは特定の構文を指定しない。標準の構文テーブルで当該文
+     字の構文を探す指定である。この構文クラスは`@'で指定する。
+
+ -- 構文クラス: 汎用コメント区切り（generic COMMENT DELIMITER）
+     "汎用コメント区切り"文字は、特別な種類のコメントを始めて終える文字
+     である。*任意の*汎用コメント区切り文字は*任意の*汎用コメント区切り
+     文字に対応するが、普通のコメント開始文字／コメント終了文字には対応
+     しない。汎用コメント区切り文字同士のみで対応する。
+
+     この構文クラスは、主にテキスト属性`syntax-table' （*Note Syntax
+     Properties::）で使うことを意図したものである。任意の範囲の文字がコ
+     メントを形成すると印を付けるには、その範囲の先頭と末尾の文字にそれ
+     らが汎用コメント区切りであることを識別する属性`syntax-table'を与え
+     る。
+
+ -- 構文クラス: 汎用文字列区切り（generic STRING DELIMITER）
+     "汎用文字列区切り"文字は、文字列を始めて終える。このクラスは文字列
+     クォートクラスと異なり、汎用文字列区切りは他の汎用文字列区切りに対
+     応し、普通の文字列クォート文字には対応しない。
+
+     この構文クラスは、主にテキスト属性`syntax-table' （*Note Syntax
+     Properties::）で使うことを意図したものである。任意の範囲の文字が文
+     字列定数を形成すると印を付けるには、その範囲の先頭と末尾の文字にそ
+     れらが汎用文字列区切りであることを識別する属性`syntax-table'を与え
+     る。
+
+
+
+File: elisp-ja, Node: Syntax Flags, Prev: Syntax Class Table, Up: Syntax Descriptors
+
+構文フラグ
+----------
+
+構文テーブルの各文字には、構文クラスに加えて、フラグも指定できます。文
+字`1'、`2'、`3'、`4'、`b'、`p'で表現される6つの可能なフラグがあります。
+
+`p'を除くすべてのフラグは、複数の文字から成るコメント区切りの記述に使い
+ます。数字フラグは、当該文字のクラスで表される構文上の属性に*加えて*、
+コメント列の一部分でもあることを示します。フラグはクラスや他のフラグと
+は独立であり、Cモードの`*'のような文字のためにあります。Cモードの`*'は、
+句読点文字である*とともに*、コメント開始列の2番目の文字`/*'*でも*あり、
+コメント終了列の最初の文字`*/'*でも*あります。
+
+文字Cに対して可能なフラグとそれらの意味を以下に示します。
+
+   * `1'は、Cが2文字のコメント開始列を始めることを意味する。
+
+   * `2'は、Cがそのような列の2番目の文字であることを意味する。
+
+   * `3'は、Cが2文字のコメント終了列を始めることを意味する。
+
+   * `4'は、Cがそのような列の2番目の文字であることを意味する。
+
+   * `b'は、コメント区切りとしてのCがもう1つの『b』形式のコメントに属す
+     ることを意味する。
+
+     Emacsでは、任意の1つの構文テーブルで2つの形式のコメントを同時に扱
+     える。これはC++のためである。コメント構文の各形式には、独自の開始
+     列と独自の終了列がある。各コメントはどちらか1つの形式である必要が
+     ある。したがって、『b』形式のコメント開始列で始まるものは、『b』形
+     式のコメント終了列で終る必要がある。
+
+     2つのコメント開始列は同じ文字で始まる必要があり、2文字目のみが異な
+     る。『b』形式のコメント開始列の2番目の文字にフラグ`b'を付ける。
+
+     （1文字か2文字の）コメント終了列は、その最初の文字にフラグ`b'が付
+     いていると『b』形式に適用する。さもなければ『a』形式に適用する。
+
+     C++向けの適切なコメント構文の設定はつぎのとおりである。
+
+     `/'
+          `124b'
+     `*'
+          `23'
+     newline
+          `>b'
+
+     これは4つのコメント区切り列を定義する。
+
+     `/*'
+          2文字目の`*'にはフラグ`b'がないので、これは『a』形式のコメン
+          ト開始列である。
+
+     `//'
+          2文字目の`/'にはフラグ`b'があるので、これは『b』形式のコメン
+          ト開始列である。
+
+     `*/'
+          2文字目の`*'にはフラグ`b'がないので、これは『a』形式のコメン
+          ト終了列である。
+
+     newline
+          改行にはフラグ`b'があるので、これは『b』形式のコメント終了列
+          である。
+
+   * `p'は、Lisp構文向けの追加の『前置文字』を示す。これらの文字は式の
+     あいだに現れるときには白文字として扱う。式の内側に現れると、それら
+     の通常の構文コードに従って扱われる。
+
+     関数`backward-prefix-chars'は後方へ向けて移動するときには、
+     構文クラスが式前置子（`''）である文字に加えて
+     これらの文字も飛び越す。
+     *Note Motion and Syntax::。
+
+
+
+File: elisp-ja, Node: Syntax Table Functions, Next: Syntax Properties, Prev: Syntax Descriptors, Up: Syntax Tables
+
+構文テーブル向け関数
+====================
+
+本節では、構文テーブルを作成／参照／変更するための関数について述べます。
+
+ -- Function: make-syntax-table
+     この関数は、新たな構文テーブルを作成する。英文字やコントロール文字
+     の構文は標準の構文テーブルから継承する。他の文字の構文は標準の構文
+     テーブルからコピーする。
+
+     ほとんどのメジャーモードの構文テーブルはこのように作成する。
+
+ -- Function: copy-syntax-table &optional TABLE
+     この関数は、構文テーブルTABLEのコピーを作成しそれを返す。
+     TABLEを指定しないと（あるいは`nil'）、
+     現在の構文テーブルのコピーを返す。
+     TABLEが構文テーブルでないとエラーを通知する。
+
+ -- コマンド: modify-syntax-entry CHAR SYNTAX-DESCRIPTOR &optional TABLE
+     この関数は、文字CHARの構文指定を
+     構文記述子SYNTAX-DESCRIPTORとする。
+     構文テーブルTABLEにおいてのみ構文を変更し、
+     他の構文テーブルは変更しない。
+     TABLEのデフォルトはカレントバッファの構文テーブルである。
+     SYNTAX-DESCRIPTORで望みの構文を指定する。
+     これは、クラス指定子で始まり、
+     必要に応じて釣り合う文字とフラグを含む文字列である。
+     *Note Syntax Descriptors::。
+
+     この関数はつねに`nil'を返す。当該構文テーブルにおけるこの文字に対
+     する古い構文情報は破棄される。
+
+     構文記述子の最初の文字が12個の構文クラス指定子の1つでないとエラーを通知する。
+     CHARが文字でなくてもエラーを通知する。
+
+     【例】
+
+          ;; 空白文字をクラス白文字にする
+          (modify-syntax-entry ?\  " ")
+               => nil
+
+          ;; `$'を開き括弧文字にする
+          ;;   対応する閉じる文字は`^'である
+          (modify-syntax-entry ?$ "(^")
+               => nil
+
+          ;; `^'を閉じ括弧文字にする
+          ;;   対応する開く文字は{$}である
+          (modify-syntax-entry ?^ ")$")
+               => nil
+
+          ;; `/'を句読点文字にする
+          ;;   コメント開始列の最初の文字、および、
+          ;;   コメント終了列の2番目の文字にもする
+          ;;   これはCモードで用いられる
+          (modify-syntax-entry ?/ ". 14")
+               => nil
+
+ -- Function: char-syntax CHARACTER
+     この関数は、文字CHARACTERの構文クラスを指定子で表したもので返す。
+     これは構文クラス*のみ*を返し、釣り合う文字や構文フラグは返さない。
+
+     CHARが文字でないとエラーを通知する。
+
+     つぎの例はCモードにあてはまる。最初の例は、空白の構文クラスが（空
+     白で表現される）白文字であることを示す。2番目の例は、`/'の構文が句
+     読点であることを示す。これは、この文字がコメント開始／終了の一部分
+     でもあることは示さない。3番目の例は、開き括弧は開き括弧クラスであ
+     ることを示す。これは、この文字に釣り合う文字が`)'であることは示さ
+     ない。
+
+          (string (char-syntax ?\ ))
+               => " "
+
+          (string (char-syntax ?/))
+               => "."
+
+          (string (char-syntax ?\())
+               => "("
+
+     ここでは、`char-syntax'が返す文字を見やすくするために`string'を用
+     いた。
+
+ -- Function: set-syntax-table TABLE
+     この関数は、TABLEをカレントバッファの構文テーブルにする。
+     TABLEを返す。
+
+ -- Function: syntax-table
+     この関数は、現在の構文テーブル、つまり、カレントバッファの構文テー
+     ブルを返す。
+
+
+
+File: elisp-ja, Node: Syntax Properties, Next: Motion and Syntax, Prev: Syntax Table Functions, Up: Syntax Tables
+
+構文属性
+========
+
+言語の構文を指定するに十分なほど構文テーブルに柔軟性がないときには、
+バッファ内の特定の文字の出現に対して構文テーブルに優先する
+テキスト属性`syntax-table'を指定できます。
+*Note Text Properties::。
+
+テキスト属性`syntax-table'の正しい値はつぎのとおりです。
+
+SYNTAX-TABLE
+     属性値が構文テーブルであると、文字のこの出現に対する構文を判定する
+     ためにカレントバッファの構文テーブルのかわりにこのテーブルを用いる。
+
+`(SYNTAX-CODE . MATCHING-CHAR)'
+     この形のコンスセルは、文字のこの出現の構文を指定する。
+
+`nil'
+     属性が`nil'であると、通常どおり、現在の構文テーブルから文字の構文
+     を判定する。
+
+ -- Variable: parse-sexp-lookup-properties
+     これが`nil'以外であると、構文を解析する関数は、テキスト属性による
+     構文指定に注意を払う。さもなければ、現在の構文テーブルのみを用いる。
+
+
+
+File: elisp-ja, Node: Motion and Syntax, Next: Parsing Expressions, Prev: Syntax Properties, Up: Syntax Tables
+
+移動と構文
+==========
+
+本節では、特定の構文クラスを持つ文字を越えて移動するための関数について
+述べます。
+
+ -- Function: skip-syntax-forward SYNTAXES &optional LIMIT
+     この関数は、SYNTAXESで指定される構文クラスを持つ文字を越えてポイン
+     トを前方へ向けて移動する。バッファの末尾、（指定されていれば）
+     LIMITの位置、飛び越さない文字のいずれかに出会うと停止する。戻り値
+     は移動距離であり非負整数である。
+
+ -- Function: skip-syntax-backward SYNTAXES &optional LIMIT
+     この関数は、SYNTAXESで指定される構文クラスである文字を越えてポイン
+     トを後方へ向けて移動する。バッファの先頭、（指定されていれば）
+     LIMITの位置、飛び越さない文字のいずれかに出会うと停止する。
+
+     戻り値は移動距離である。それはゼロか負の整数である。
+
+ -- Function: backward-prefix-chars
+     この関数は、式前置子構文の文字を飛び越えてポイントを後方へ向けて移
+     動する。式前置子クラスやフラグ`p'を持つ文字を飛び越す。
+
+
+
+File: elisp-ja, Node: Parsing Expressions, Next: Standard Syntax Tables, Prev: Motion and Syntax, Up: Syntax Tables
+
+釣り合った式の解析
+==================
+
+ここでは、括弧が対になっている"S式"（sexp）とも呼ばれる
+釣り合った式を解析したり走査する関数について述べます。
+構文テーブルで文字の解釈を制御することで、
+LispモードではLispの式に対して、CモードではCの式に対して
+これらの関数を用いることができます。
+釣り合った式を飛び越えて移動するための便利な上位レベルの関数については、
+*Note List Motion::。
+
+ -- Function: parse-partial-sexp START LIMIT &optional TARGET-DEPTH STOP-BEFORE STATE STOP-COMMENT
+     この関数は、カレントバッファのSTARTから始まるS式を解析するが、
+     LIMITを越えては走査しない。位置LIMITで止まるか、以下に述べる条件が
+     満たされると解析を停止し、当該箇所にポイントを置く。ポイントを置い
+     た箇所での解析状況を表す値を返す。
+
+     STATEが`nil'であると、位置STARTは、関数定義の先頭のような括弧の構
+     造のトップレベルであると仮定する。あるいは、構造の途中から解析を再
+     開したい場合もある。それには、解析の初期状態を引数STATEに指定する
+     必要がある。
+
+     3番目の引数TARGET-DEPTHが`nil'以外であると、括弧の深さが
+     TARGET-DEPTHに等しくなると解析を停止する。深さは0、あるいは、
+     STATEで指定された値から始まる。
+
+     4番目の引数STOP-BEFOREが`nil'以外であると、S式を始める文字に出会う
+     と解析を停止する。STOP-COMMENTが`nil'以外であると、コメントの始ま
+     りに出会うと解析を停止する。STOP-COMMENTがシンボル`syntax-table'で
+     あると、コメントや文字列の始まり、コメントや文字列の終りのいずれか
+     に出会ったあとで解析を停止する。
+
+     5番目の引数STATEは9要素のリストであり、以下に述べるようにこの関数
+     の値と同じ形である。（9番目の最後の要素は省いてもよい。）
+     `parse-partial-sexp'の呼び出しの戻り値を、別の
+     `parse-partial-sexp'の呼び出しの解析状態の初期値に使ってよい。
+
+     結果は、解析の最終状態を記述した9要素のリストである。
+
+       0. 0から数えた括弧の深さ。
+
+       1. ポイントを停止した箇所を含むもっとも内側の括弧式の開始位置。
+          なければ`nil'。
+
+       2. 閉じている最後の完全な部分式の開始位置。なければ`nil'。
+
+       3. 文字列の内側であると`nil'以外である。より正確には、これは文字
+          列を終える文字である。あるいは、汎用文字列区切り文字で終える
+          ときには`t'である。
+
+       4. （どちらかの形式の）コメントの内側であると`t'である。
+
+       5. ポイントがクォート文字の直後であると`t'である。
+
+       6. この解析中に出会った最小の括弧の深さ。
+
+       7. どの形式のコメントが活性であるかを表す。『a』形式であると
+          `nil'、『b』形式であると`t'、汎用コメント区切り文字で終るコメ
+          ントの場合には`syntax-table'である。
+
+       8. 文字列やコメントの開始位置。コメントの内側であるときにはこれ
+          はコメントの開始位置であり、文字列の内側であるときにはこれは
+          文字列の開始位置である。文字列やコメントの外側では、この要素
+          は`nil'である。
+
+     引数STATEでは、要素0、3、4、5、7は重要である。
+
+     この関数は、入れ子にあった括弧を持つ言語向けに字下げを計算するため
+     にしばしば用いられる。
+
+ -- Function: scan-lists FROM COUNT DEPTH
+     この関数は、位置FROMから前方へ向けてCOUNT個の
+     釣り合った括弧のグループを走査する。
+     走査を停止した位置を返す。
+     COUNTが負であると、後方へ向けて走査する。
+
+     DEPTHが0以外であると、括弧の深さをその値から数え始める。停止箇所の
+     候補位置は、括弧の深さが0になる箇所である。`scan-lists'は、そのよ
+     うな箇所をCOUNT回数えてから停止する。したがって、DEPTHに正の値を指
+     定すると、括弧のレベルをDEPTHレベルだけ抜けることを意味する。
+
+     `parse-sexp-ignore-comments'が`nil'以外であると、コメントを無視し
+     て走査する。
+
+     走査がバッファ（あるいはその参照可能部分）の先頭や末尾に達し、深さ
+     が0でないと、エラーを通知する。深さは0であるが指定個数だけ数えてな
+     い場合には、`nil'を返す。
+
+ -- Function: scan-sexps FROM COUNT
+     この関数は、位置FROMから前方へ向けてCOUNT個のS式を走査する。
+     走査を終えた位置を返す。
+     COUNTが負であると、後方へ向けて移動する。
+
+     `parse-sexp-ignore-comments'が`nil'以外であると、コメントを無視し
+     て走査する。
+
+     走査が括弧によるグループの途中でバッファ（あるいはその参照可能部分）
+     の先頭や末尾に達すると、エラーを通知する。指定個数だけ数えるまえに
+     括弧によるグループのあいだで先頭や末尾に達した場合は`nil'を返す。
+
+ -- Variable: parse-sexp-ignore-comments
+     値が`nil'以外であると、本節の関数や`forward-sexp'は、コメントを白
+     文字として扱う。
+
+     Emacsの古い版では、コメントの終了が`*/'のような形であり、かつ、コ
+     メントの終了と思える場合にのみ、この機能は動作した。改行でコメント
+     を終える言語では、改行すべてがコメントの終りではないために、この変
+     数を`nil'にする必要があった。このような制限事項はすでにない。
+
+`forward-comment'を使うと、1つのコメントや複数のコメントを飛び越えて前
+後に移動できます。
+
+ -- Function: forward-comment COUNT
+     この関数は、ポイントを前方へ向けて（COUNTが負ならば後方へ向けて）
+     COUNT個のコメントを飛び越えて移動する。
+     コメントか白文字以外のものに出会うと停止し、当該箇所にポイントを置く。
+     COUNT個だけ数えたあとにももちろん停止する。
+
+ポイントに続くすべてのコメントと白文字を飛び越えるには、
+`(forward-comment (buffer-size))'を使います。バッファ内のコメントの個数
+は`(buffer-size)'を越えるはずがないので、引数に使うには`(buffer-size)'
+はよいものです。
+
+
+

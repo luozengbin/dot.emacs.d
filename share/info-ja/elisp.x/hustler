@@ -1,0 +1,3408 @@
+-*- coding: utf-8 -*-
+This is hustler, produced by makeinfo version 4.13 from elisplec.tex.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-lesson: (hustler).      やさしい Emacs Lisp 講座
+END-INFO-DIR-ENTRY
+
+
+File: hustler.,  Node: Top,  Next: Writing Major Modes,  Prev: (dir),  Up: (dir)
+
+* Menu:
+
+* Writing Major Modes::         メジャーモードを書こう
+* Construction of Emacs-Lisp::  Emacs-Lisp の構文
+* Functions You Must Know::     最低限の関数をおさえる
+* Completion Input::            補完入力とその周辺
+* Concept Index::
+* Function Index::
+* Variable Index::
+
+ --- The Detailed Node Listing ---
+
+メジャーモードを書こう
+
+* What is Major Mode?::
+* Requirements of a Major Mode::  メジャーモードの必須条件
+* Defining Major Mode Functions::  メジャーモード関数の定義
+* Exercise 1::                  章末問題 1
+* Summary 1::                   まとめ 1
+* By-talk 1::
+
+メジャーモードの必須条件
+
+* Setting Mode Names::          モード名の設定
+* Setting Keymaps::             キーマップの設定
+* Setting Keys::                キーの割当て
+* Declaring Local Maps::        ローカルマップ使用宣言
+
+メジャーモード関数の定義
+
+* Interactive Functions::       インタラクティブ関数
+* Binding Interactive Functions to Keys::  インタラクティブ関数をキーにバイ
+                                           ンドする
+* Defining Functions::          関数を実際に定義する
+
+Emacs-Lisp の構文
+
+* Variables::                   変数
+* Control Structure::           制御構造
+* Arithmetic::                  算術
+* Exercise 2::                  章末問題
+* By-talk 2::                   余談 2 関数・変数
+* By-talk 3::                   余談 3 デバッギング
+* By-talk 4::                   余談 4 プログラムの評価
+
+変数
+
+* Declaring Variables::         変数の宣言
+* Restricting Variables::       変数の束縛
+
+制御構造
+
+* if::
+* or::
+* and::
+* cond::
+* while::
+* catch trow::
+
+算術
+
+* Operators::                   演算子
+* Arithmetic Functions::        算術関数
+
+最低限の関数をおさえる
+
+* Cursor Motion::               カーソルの移動
+* Inserting and Deleting Strings::  文字列挿入/削除
+* By-talk 5::                   余談 5 雑関数
+* By-talk 6::                   余談 6 Emacs-Lisp のスコープ
+
+カーソル移動
+
+* Relative Motion::             相対移動
+* Absolute Motion::             絶対移動
+* Motion Boundary Check::       移動境界の検査
+* Absolute Motion Summary::     絶対移動関係のまとめ
+* Motion by Search::            検索移動
+* Search Functions Summary::    検索関数のまとめ
+* Saving point Position::       ポイント位置の保存
+
+相対移動
+
+* Character Motion::            char 単位移動
+* Word Motion::                 word 単位移動
+* Line Motion::                 line 移動
+
+絶対移動
+
+* point::                       ポイント
+* Motion by Point::             ポイント移動
+* Moving to a Line::            行移動
+* Moving to a Column::          桁移動
+
+検索移動
+
+* Lisp Escape Characters::      Lisp エスケープキャラクタ
+* String Search::               文字列検索
+* Word Search::                 単語検索
+* Regular Expression Search::   正規表現検索
+* Major Metacharacters::        代表的なメタキャラクタ
+* Skipping Characters::         文字(種)スキップ
+* Accessing Search Results::    検索結果へのアクセス
+
+検索関数のまとめ
+
+* Exercise 3-1::                練習問題 3-1
+
+文字列挿入/削除
+
+* Inserting Strings::           文字列挿入
+* Transforming Types::          文字列と他の型の変換
+* Type Transformation::         型変換
+* Deleting Strings::            文字列削除
+* Replacing Strings::           文字列置換
+* Buffer Editing Functions Summary::  バッファ編集関数のまとめ
+
+文字列挿入
+
+* insert-char::                 文字の挿入
+* self-insert-command::
+
+文字列と他の型の変換
+
+* format::
+
+型変換
+
+* Getting Strings::             文字列の取込み
+* Numerical Transformation::    数値変換
+* Strings Transformation::      文字列変換
+* String Manipulation Functions::  文字列操作関数
+
+余談 6 Emacs-Lisp のスコープ
+
+* Exercise 3-2::                練習問題 3-2
+
+補完入力とその周辺
+
+* Normal Input Functions::      一般入力関数
+* Completion Input Functions::  補完入力関数
+* By-talk 7::                   余談 7 マクロ
+
+補完入力関数
+
+* List::                        リスト
+* List Structure::              リストの構造
+* List Manipulation Functions::  リスト処理関数
+* Association Lists::           連想リスト
+
+リスト処理関数
+
+* Creating lists::              リストの作成
+* Accessing list Elements::     リストの要素の参照
+* Adding Elements to list::     リストの要素の追加
+* Appending lists::             リストどうしの結合
+* List Related Predicates::     述語関数等
+
+余談 7 マクロ
+
+* Exercise 4-1::                余談練習小問題
+* completing-read::
+* Variables Controlling Completion::  補完を制御する関数
+* try-completion::
+* all-completion display-completion-list::
+
+
+File: hustler,  Node: Writing Major Modes,  Next: Construction of Emacs-Lisp,  Prev: Top,  Up: Top
+
+1 メジャーモードを書こう
+***********************************
+
+多くの `Emacs(-Lisp)' 関係の教本の常識を無視して、いきなりここから
+始めます。これがもっとも早い道だと信じるからで、事実私もそうしてきました。
+
+* Menu:
+
+* What is Major Mode?::
+* Requirements of a Major Mode::  メジャーモードの必須条件
+* Defining Major Mode Functions::  メジャーモード関数の定義
+* Exercise 1::                  章末問題 1
+* Summary 1::                   まとめ 1
+* By-talk 1::
+
+
+File: hustler,  Node: What is Major Mode?,  Next: Requirements of a Major Mode,  Prev: Writing Major Modes,  Up: Writing Major Modes
+
+1.1 メジャーモードってなに
+=====================================
+
+多くの `Emacs-Lisp' プログラマがで最終的に目指す目標の一つが、「メ
+ジャーモードが書けるようになる」ことでしょう。メジャーモードとは、例えば
+`c-mode' のように対象となるテキストの種別に適した、もっと言うと「専用
+の」編集モードの事を指します。
+
+   `GNU Emacs' では、編集ファイルのファイル名のパターンと、そのファイ
+ルを編集する時に用いるメジャーモードを決定するものとして、変数
+`auto-mode-alist' を使用しています。これは今まで、いろいろなパッケー
+ジをインストールしたことのある人なら、設定したことがあるでしょうから、詳し
+い構造などについては述べません。 
+
+
+File: hustler,  Node: Requirements of a Major Mode,  Next: Defining Major Mode Functions,  Prev: What is Major Mode?,  Up: Writing Major Modes
+
+1.2 メジャーモードの必須条件
+========================================
+
+では、早速メジャーモードを書いてみましょう。その前に、メジャーモードの備
+えているべき最低限の条件について整理してみましょう。
+
+   * モード名を設定する。
+
+   * 使用するキーマップを設定する。
+
+   * 必要な変数を設定する。
+
+たったこれだけなのです。
+
+* Menu:
+
+* Setting Mode Names::          モード名の設定
+* Setting Keymaps::             キーマップの設定
+* Setting Keys::                キーの割当て
+* Declaring Local Maps::        ローカルマップ使用宣言
+
+
+File: hustler,  Node: Setting Mode Names,  Next: Setting Keymaps,  Prev: Requirements of a Major Mode,  Up: Requirements of a Major Mode
+
+1.2.1 モード名の設定
+---------------------------
+
+モード名は、変数 `major-mode' にシンボルとして入れます。
+
+     (setq major-mode 'my-mode)
+
+ついでに、モードラインのモード名フィールドも変えましょう。これは、変数
+`mode-name' に文字列で設定します。
+
+     (setq mode-name "MY mode")
+
+どちらも、今から書こうとするモードの名前を設定します。好きな名前で構いま
+せん。
+
+
+File: hustler,  Node: Setting Keymaps,  Next: Setting Keys,  Prev: Setting Mode Names,  Up: Requirements of a Major Mode
+
+1.2.2 キーマップの設定
+------------------------------
+
+「どのキーを押した時に、どの機能を呼び出すか」という対応表のことを
+`Emacs' ではキーマップと言います。`C-n', `C-p' など、どのモー
+ドでもほぼ共通で使えるキーバインドはグローバルマップに、モードに固有のキー
+バインドは、ローカルマップに設定します。通常グローバルマップは変数
+`global-map' を*常に*使用します。(*note setting global-map: Binding
+Interactive Functions to Keys.)  
+
+メジャーモードが固有のキーバインドを使用する場合、独自のローカルマップを
+作成し、そのローカルマップを使用する宣言をしなければなりません。ローカルマッ
+プを作成するには次のようにします。この例では変数 `my-local-map' をロー
+カルマップとしています。
+
+     (setq my-local-map (make-keymap))
+   これで、`my-local-map' というローカルマップが作成できました。あとは、
+このマップに必要なキーバインドを定義して行くだけです。 
+
+
+File: hustler,  Node: Setting Keys,  Next: Declaring Local Maps,  Prev: Setting Keymaps,  Up: Requirements of a Major Mode
+
+1.2.3 キーの割当て
+------------------------
+
+ローカルマップにキーを割当てるには、関数 `define-key' を使用します。
+`define-key' は引数を三つ取り、順に、キーマップ、割当キー(文字列)、機
+能(シンボル)となっています。では `vi' のように `hjkl' に左下上右
+を割当ててみましょう。 
+
+     (define-key my-local-map "h" 'backward-char)
+     (define-key my-local-map "j" 'previous-line)
+     (define-key my-local-map "k" 'next-line)
+     (define-key my-local-map "l" 'forward-char)
+
+
+File: hustler,  Node: Declaring Local Maps,  Prev: Setting Keys,  Up: Requirements of a Major Mode
+
+1.2.4 ローカルマップ使用宣言
+---------------------------------------
+
+では、今 `my-local-map' に割当てたバインド有効となるように、ローカ
+ルマップの使用宣言をします。 
+
+     (use-local-map  my-local-map)
+   これで、カレントバッファで `hjkl' が有効になります。
+
+
+File: hustler,  Node: Defining Major Mode Functions,  Next: Exercise 1,  Prev: Requirements of a Major Mode,  Up: Writing Major Modes
+
+1.3 メジャーモード関数の定義
+========================================
+
+* Menu:
+
+* Interactive Functions::       インタラクティブ関数
+* Binding Interactive Functions to Keys::  インタラクティブ関数をキーにバイ
+                                           ンドする
+* Defining Functions::          関数を実際に定義する
+
+
+File: hustler,  Node: Interactive Functions,  Next: Binding Interactive Functions to Keys,  Prev: Defining Major Mode Functions,  Up: Defining Major Mode Functions
+
+1.3.1 インタラクティブ関数
+------------------------------------
+
+メジャーモードを起動する関数を定義する前に インタラクティブ関数について
+知っておきましょう。`Emacs-Lisp' の関数には、インタラクティブ関数と、
+そうでない関数があります。`C-n' や `M-x gnus' のようにキーボード操
+作で直接呼び出すことができる関数をインタラクティブ関数と言います。それ以外
+の関数は、ユーザが直接呼び出すことはできず、様々な処理の下請関数としてだけ
+呼ばれます。`C-f' にバインドされている `forward-char' ももちろん
+インタラクティブ関数となっています。
+
+メジャーモードの核となる関数は、当然インタラクティブ関数にしなければなり
+ませんから、関数定義は次のような形になります。
+
+     (defun my-mode ()
+       (interactive)
+       モード名の設定
+       キーマップの設定
+     )
+
+今のところは、「関数定義の先頭におまじない `(interactive)' を入れる」
+と覚えておいて下さい。(*note defun: By-talk 2.)
+
+
+File: hustler,  Node: Binding Interactive Functions to Keys,  Next: Defining Functions,  Prev: Interactive Functions,  Up: Defining Major Mode Functions
+
+1.3.2 インタラクティブ関数をキーにバインドする
+------------------------------------------------------------------
+
+簡単なインタラクティブ関数を定義して、実際にキーに割当ててみましょう。バッ
+ファに `Hello, world!' とだけ表示する関数は次のようになります。
+
+     (defun hello-word ()
+       (interactive)
+       (insert "Hello, world!\n"))
+
+すぐに試してみたいので、グローバルマップにキー割当してしまいましょう。
+
+     (define-key global-map "\C-ch" 'hello-world)
+
+これで、`C-ch' を押すとバッファに `hello, world!' が挿入されます。
+
+
+File: hustler,  Node: Defining Functions,  Prev: Binding Interactive Functions to Keys,  Up: Defining Major Mode Functions
+
+1.3.3 関数を実際に定義する
+------------------------------------
+
+ここまでで、必要最低限の知識は全て揃いました。次のようなメジャーモードが
+作成できるはずです。
+
+   * `my-mode' という名前のメジャーモードである。
+
+   * `hjkl' でカーソル移動することができる。
+
+   * `C-ch' を押すと `Hello, world!' が入力できる。
+
+実際の関数定義は、次のようになります。
+
+     (defun my-mode ()
+       (interactive)
+       (setq major-mode 'my-mode
+         mode-name "MY mode")
+       (setq my-local-map (make-keymap))
+       (define-key my-local-map "h" 'backward-char)
+       (define-key my-local-map "j" 'previous-line)
+       (define-key my-local-map "k" 'next-line)
+       (define-key my-local-map "l" 'forward-char)
+       (define-key my-local-map "\C-ch" 'hello-world)
+       (use-local-map my-local-map))
+
+     (defun hello-world ()
+       (interactive)
+       (insert "Hello, world!\n"))
+
+
+File: hustler,  Node: Exercise 1,  Next: Summary 1,  Prev: Defining Major Mode Functions,  Up: Writing Major Modes
+
+章末問題 1
+==============
+
+問 1-1
+
+     `a-z'
+     どのキーを押しても、「僕るねえもんナリよ」が挿入される「るねきち
+     モード」を作りなさい。
+
+   答の提出をもって、参加表明とみなします。よろしゅうに
+
+   あっという間に宿題を提出した優秀な人へ追加問題。
+
+   問1-2
+
+     `a-z' を押すと、対応するアルファベットで、「僕luneえもんAなりよ」〜
+     「僕luneえもんZなりよ」と、文字列の入る `luneえもんモード'
+     を作成せよ。
+
+   暇な人だけ解いて下さい。
+
+
+File: hustler,  Node: Summary 1,  Next: By-talk 1,  Prev: Exercise 1,  Up: Writing Major Modes
+
+まとめ 1
+===========
+
+大事なことを書き忘れたかもしれない。面倒なので、これは junk風の書き方で
+許して。
+
+   * `Emacs-Lisp' プログラムは、`.el' という拡張子のファイルにする。
+
+   * ファイルの先頭に `;-*- Emacs-Lisp -*-' と入れる。
+
+   * `defun' した関数を評価するには、その関数にカーソルを合わせて `ESC
+     C-x' する。すると即座に呼び出せる。
+
+   * 括弧を一つだけ評価したい時には、閉じ括弧の右にカーソルをおいて `M-x
+     eval-last-sexp'
+
+                    -- ここまで Emacs-Lisp mode --
+
+   * 簡単な `Lisp' 式(S式と言う)をすぐに実行(評価と言う)するには
+     `*scratch*' バッファを利用する。
+
+   * `*scratch*' バッファで何かS式を書いたら閉じ括弧の右で `C-j' を押
+     すとすぐに評価されて結果が `*scratch*' バッファに入る。
+
+   これだけ知ってれば、あなたも今日から `Emacs-Lisp' プログラマ。では
+good luck!
+
+
+File: hustler,  Node: By-talk 1,  Prev: Summary 1,  Up: Writing Major Modes
+
+余談 1 「〜関係の関数はないかな?」を探す。
+=============================================================
+
+関数を探す時に使うと便利なのが、`apropos' です。`M-x apropos'
+で出て来るプロンプトで、関数名の正規表現を入力します。何か文字列操作のため
+の関数を探したかったら、
+
+     M-x apr
+     Apropos: string
+
+などと問い合わせると良いでしょう。正規表現での指定なので、`string' で
+始まる関数を調べたかったら、`^string'という検索していも可能です。
+
+   ですから、今回の場合は、
+
+     M-x apr
+     Apropos: ^....-.......-....$
+
+で、検索すれば良かったということになります。
+
+
+File: hustler,  Node: Construction of Emacs-Lisp,  Next: Functions You Must Know,  Prev: Writing Major Modes,  Up: Top
+
+2 Emacs-Lisp の構文
+**********************
+
+本章では、`Lisp' 言語とみた場合の変数の扱いや、制御構造の表現の仕方
+について簡単に触れます。
+
+* Menu:
+
+* Variables::                   変数
+* Control Structure::           制御構造
+* Arithmetic::                  算術
+* Exercise 2::                  章末問題
+* By-talk 2::                   余談 2 関数・変数
+* By-talk 3::                   余談 3 デバッギング
+* By-talk 4::                   余談 4 プログラムの評価
+
+
+File: hustler,  Node: Variables,  Next: Control Structure,  Prev: Construction of Emacs-Lisp,  Up: Construction of Emacs-Lisp
+
+2.1 変数
+==========
+
+`Lisp' では変数は一つのシンボルとして存在しています。シンボルへの値
+の代入は `set' によって行います。シンボル `foo' へ、値5を代入す るには、
+
+     (set 'foo 5)
+
+としますが、一般的にはこれと等価な、
+
+     (setq foo 5)
+
+という書式を用います。`setq' は値の代入なので、常に変数の値は更新され
+ます。
+
+* Menu:
+
+* Declaring Variables::         変数の宣言
+* Restricting Variables::       変数の束縛
+
+
+File: hustler,  Node: Declaring Variables,  Next: Restricting Variables,  Prev: Variables,  Up: Variables
+
+2.1.1 変数の宣言
+---------------------
+
+`defvar' は `setq' とは異なり変数の宣言のみを行います。書式は
+
+     (defvar   シンボル 初期値 ドキュメンテーション文字列)
+
+となっています。もし第一引数のシンボルが既に存在していた場合はその値は変更
+しません。このため、`Emacs-Lisp' プログラムで使用するカスタマイズ可能
+な変数のデフォルト値の設定をするためによく使われます。
+
+
+File: hustler,  Node: Restricting Variables,  Prev: Declaring Variables,  Up: Variables
+
+2.1.2 変数の束縛
+---------------------
+
+`Emacs' では多くの `Emacs-Lisp' プログラムが動作するため、シン
+ボル名の衝突は確実に回避しなければなりません。関数の内外にかかわらず単純に
+`setq' や `defvar' されたシンボルはすべてグローバル変数になって
+しまうので他のプログラムの存在を考えると好ましくありません。そこで変数の有
+効範囲(スコープ)を制限するために `let' を用います。 
+
+     (let (変数リスト) 実行部...)
+
+「変数リスト」の部分は「変数名」または「(変数名
+初期値)」の任意の個数の並 びです。変数名だけ指定するとその変数の値は
+`nil' にセットされます。次 の例は変数 `case-fold-search' を `t'
+にセットしてインクリメンタ ルサーチを呼び出します。 
+
+     (let ((case-fold-search t))
+       (isearch-forward))
+
+`case-fold-search' は検索の時に大文字小文字を区別しないというフラグで、
+グローバル変数となっています。`let' はグローバル変数の値を一時的に変
+更するためにも利用できます。
+
+しかしカスタマイズ変数などはグローバルに値を保持する必要があるので、グロー
+バル変数はやはり必要です。さらに、関数名はすべてグローバルシンボルとして扱
+われます。そこで、グローバルシンボルを使用する時には、「すべてのグローバル
+シンボルには作成パッケージ固有の接頭辞をつける」ことが強く勧められています。
+例えば `supercite' パッケージで用いるシンボルには全て `sc-' とい
+う接頭辞がついています。
+
+
+File: hustler,  Node: Control Structure,  Next: Arithmetic,  Prev: Variables,  Up: Construction of Emacs-Lisp
+
+2.2 制御構造
+================
+
+`Emacs-Lisp' で主に用いる制御構造を説明します。
+
+* Menu:
+
+* if::
+* or::
+* and::
+* cond::
+* while::
+* catch trow::
+
+
+File: hustler,  Node: if,  Next: or,  Prev: Control Structure,  Up: Control Structure
+
+2.2.1 if
+--------
+
+`if' は第一引数を評価し、それが `nil' でない値(今後
+`non-nil')を返した場合第二引数を評価しその値を返し、`nil' だった
+場合第三引数以降を (もしあれば)評価し、最後の値を返します。
+
+     (if CONDITION T-body Else-body...)
+
+   もし、条件が `non-nil' の時に評価したい関数が複数ある場合は、
+`progn' を用いて次のようにします。
+
+     (if CONDITION (progn T-body...) Else-body...)
+
+`progn' は任意個の引数を取り、最後の引数の値を `progn' の値とし
+て返します。 
+
+
+File: hustler,  Node: or,  Next: and,  Prev: if,  Up: Control Structure
+
+2.2.2 or
+--------
+
+`or' は与えられた引数全てを順に評価し、`non-nil' を返すものが
+あった場合、それを `or' の返す値とします。もしすべての引数を評価した
+ものが `nil' だった場合、`or' は `nil' を返します。
+
+   ある変数の値が `t' の時に動作が禁止される関数などは次のように表現し
+ます。
+
+     (or foo-key-map (setq foo-key-map (make-key-map)))
+
+また、`or' のもつ「または」という意味で、次のように使うこともできます。
+
+     (if (or A B) 処理)
+
+
+File: hustler,  Node: and,  Next: cond,  Prev: or,  Up: Control Structure
+
+2.2.3 and
+---------
+
+`and' は与えられた引数を順に評価し、`nil' を返すものが見つかっ
+たら直ちに `nil' を返します。最後の引数まで `non-nil' を返した場
+合、`and' は最後の引数の値を返します。
+
+
+File: hustler,  Node: cond,  Next: while,  Prev: and,  Up: Control Structure
+
+2.2.4 cond
+----------
+
+`cond' は次の書式によります。
+
+     (cond
+      (式1  式1がnon-nilの時に返す式...)
+      (式2  式2がnon-nilの時に返す式...)
+         :
+      (式n  式nがnon-nilの時に返す式...))
+
+   次の例は、変数 `var-a', 変数 `var-b', 関数 `func-c' の値
+を順次調べて、どれかが `non-nil' の時に後続する関数群を評価します。も
+し、`var-a', `var-b', `func-c' のどれも `nil' を返す時
+は、最後の条件ブロックの式が `t' なので最後のブロックを評価します。
+
+     (cond
+      (var-a     (message "A!"))
+      (var-b     (insert  "B!"))
+      ((func-c)  (insert  "C"))
+      (t     (message "NO!") (ding)))
+
+なお、`cond' は途中の条件式が `non-nil' を返し後続するブロックを
+評価したら、残りの条件ブロックは評価せずに抜けてしまいます。 `cond'
+の返す値は、(`non-nil' を返した)条件ブロックの最後の式が返す値です。
+
+
+File: hustler,  Node: while,  Next: catch trow,  Prev: cond,  Up: Control Structure
+
+2.2.5 while
+-----------
+
+最初の条件式が `non-nil' である間、二番目以降の引数をくり返し評価し
+ます。
+
+     (while 条件式 実行部...)
+
+   これはループを形成する時に用いることができます。C の `for' または
+`while' のような繰り返しを行う時は、通常 `let' と組み合わせて次
+のように用います。
+
+     (let ((i ?a))
+       (while (<= i ?z)
+         (insert i)
+         (setq i (1+ i))))
+
+上の例は、`a〜z' をバッファ中に挿入します。この例から想像が付くように、
+`Emacs-Lisp' では文字コードを `?文字' で表現します。`?a' は `a'
+の文字コードを示すので、97 と等価です。
+
+   `while' は常に `nil' を返します(最後は条件式が `nil' となっ
+て終了するから)。
+
+
+File: hustler,  Node: catch trow,  Prev: while,  Up: Control Structure
+
+2.2.6 catch, throw
+------------------
+
+`catch' と `throw' は対にして使います。`catch' の書式を見 ると、
+
+     (catch タグ 実行部...)
+
+となっていて、「実行部...」のいずれかで「タグ」が `throw' される
+と直ちに `catch' を抜けます。`throw' は
+
+     (throw タグ 値)
+
+のように使用し、この時の `catch' の返す値は第二引数の「値」となります。
+もし「実行部...」で「タグ」が `throw' されなかった時は「実行部
+...」の最後の値が `catch' の返す値となります。
+
+この関数のペアは、終了のタイミングの予測できないループを表現する時に使う
+と便利です。例えば、バッファ末までに判定関数 `foo' を満足する行がある
+か調べる場合を考えます。`catch', `throw' を使わずに書く場合は次
+のようになるでしょう。
+
+     (let (found)        ;局所フラグ nil 初期値
+       (while (and (not found)(not eobp))
+         (if (foo) (setq found t)
+           (forward-line 1)))
+       (if found
+           見つかった場合の処理
+         見つからなかった場合の処理))
+
+ループが回る毎にフラグ `found' が `t' でないことを調べているので、
+少々無駄な気がします。これを `catch', `throw' を使って書き直すと、
+
+     (if (catch 'found
+           (while (not eobp)
+         (if (foo) (throw 'found t)
+           (forward-line 1))))
+         見つかった場合の処理
+       見つからなかった場合の処理)
+
+となります。もし `(foo)' が `non-nil' を返す行があった場合はルー
+プ内部で `'found' が `throw' されるので、`catch' 関数の値は `'found'
+となり最も外側の `if' は見つかった場合の処理を評価しま す。逆に、 `foo'
+を満たす行が見つからなかった場合、内部の `while' が `nil'
+を返して終了するため、外側の `if' も、見つ
+からなかった場合の処理を評価します。
+
+
+File: hustler,  Node: Arithmetic,  Next: Exercise 2,  Prev: Control Structure,  Up: Construction of Emacs-Lisp
+
+2.3 算術
+==========
+
+* Menu:
+
+* Operators::                   演算子
+* Arithmetic Functions::        算術関数
+
+
+File: hustler,  Node: Operators,  Next: Arithmetic Functions,  Prev: Arithmetic,  Up: Arithmetic
+
+2.3.1 演算子
+---------------
+
+`Emacs-Lisp' で使える演算子には以下のものがあります。
+
+`%, *, +, -, /'
+     剰余, 乗算, 加算, 減算, 除算
+
+`1+, 1-'
+     1加算, 1減算
+
+`<, <=, =, /=, >, >='
+     比較演算子(/=は≠)
+
+   `Lisp' では `*', `+', `-' は複数のオペランドを取ること
+ができます。`-' は引数が一つの時はその符号を反転し、二つ以上の時は一
+つ目の引数から残りの引数全てを引きます。
+
+   また次の述語関数も必要でしょう。
+
+`numberp(integerp)'
+     数値なら `t' を返す
+
+独自に定義した関数で受け取った引数が数値かどうか判定する時などに利用しま
+す。
+
+
+File: hustler,  Node: Arithmetic Functions,  Prev: Operators,  Up: Arithmetic
+
+2.3.2 算術関数
+------------------
+
+利用頻度が高いと思われるものだけ紹介します。
+
+`max, min'
+     引数のうち(最大,最小)のものを返す
+
+`random'
+     24bits長の擬似乱数を返す引数として`t'
+     を与えると乱数の種を変えて値を 返す
+
+
+File: hustler,  Node: Exercise 2,  Next: By-talk 2,  Prev: Arithmetic,  Up: Construction of Emacs-Lisp
+
+章末問題 2
+==============
+
+問
+
+     前問「るねきちモード」の `a-z'
+     のキーバインドのうち、どれか一つのキー
+     を押すと「自爆」と言ってバッファを消去する機能を付け加えよ。
+
+     ヒント: char-to-string, ding, message, erase-buffer
+
+
+File: hustler,  Node: By-talk 2,  Next: By-talk 3,  Prev: Exercise 2,  Up: Construction of Emacs-Lisp
+
+余談 2 関数・変数
+========================
+
+基本的なことですが、変数は
+
+     var
+
+と、単体で参照し、関数は
+
+     (func args...)
+
+と括弧つきの形で参照します。
+
+   `defun' の形は次のようになっています。
+
+     (defun 関数名 (引数リスト) 関数定義)
+
+引数に何もとらない時は空リストにして
+
+     (defun 関数名 () 関数定義)
+
+とします。 
+
+   さて、`Emacs-Lisp' の場合関数は必ず値を返します。関数の値は、その関
+数中で最後に評価されたものの値となります。例えば次の関数の返り値は5となり
+ます。
+
+     (defun foo () 5)
+
+したがって次の例では、変数 `bar' に値5が返ることとなります。
+
+     (setq bar (foo))
+
+関数の返す値は、「最後に評価されたもの」であり「最後に書いてある式の値」で
+はないので注意して下さい。
+
+     (defun baz (arg)
+       (if (< arg 0) (- arg) arg))
+
+という例では、引数 `arg' が負の場合 `(- arg)' が、正の場合 `arg' が
+`baz' の返り値となります。
+
+
+File: hustler,  Node: By-talk 3,  Next: By-talk 4,  Prev: By-talk 2,  Up: Construction of Emacs-Lisp
+
+余談 3 デバッギング
+===========================
+
+変数の値を途中で表示させたい時には `message' 関数を使うと便利です。
+`message' 関数は C の `printf' のようなフォーマットが使えます。
+例えば、途中で変数 `foo' の値を見たい時は 
+
+     (message "foo = %d" foo)
+
+とします。もし、次の `message' などがすぐに出てしまい読み取れない時な
+どは、`sit-for' 関数を使ってn秒間止まらせると良いでしょう。 
+
+     (message "foo = %d" foo)
+     (sit-for 2)     ;2秒間停止
+         :
+     (message "bar = %d" bar)
+
+
+File: hustler,  Node: By-talk 4,  Prev: By-talk 3,  Up: Construction of Emacs-Lisp
+
+余談 4 プログラムの評価
+=================================
+
+`defun' した関数を評価する時は、`ESC C-x' を使うのが良いでしょ
+う。この時関数を定義したらその場で `ESC C-x' をしてしまいましょう。す
+るとその間数名は以後どの場所でも、`ESC TAB' によって補完することが可能
+になります(変数名も同様)。 
+
+     (defun lune-random ()
+       なんちゃらかんちゃら)
+     (defun lune-mode ()
+       (interactive)
+       (setq key lun
+
+というところで、`ESC TAB' を押すと、`lune-random' が補完されます。
+
+   さて出来上がった関数を評価する時は主に二つの方法が考えられます。
+
+  1. `ESC ESC' で関数を評価するS式を入れる。
+
+  2. `*scratch*' バッファに移ってS式を入れて `C-j' する。
+        
+上の `lune-random' 関数を試したい時は、
+
+  1. ESC ESC     `Eval: (lune-random) RET'
+
+  2. `*scratch*'バッファに移動     `(lune-random) C-j'
+        
+   (2)の場合、`C-j' を押す直前のS式が評価されます。したがって、
+
+     (setq random (lune-random))
+                              ~~
+
+の、最後の括弧の上で `C-j' を押すと `(lune-random)' だけが評価さ れ
+`setq' されず、行末で `C-j' を押すと `setq' 全体が評価さ れます。
+
+
+File: hustler,  Node: Functions You Must Know,  Next: Completion Input,  Prev: Construction of Emacs-Lisp,  Up: Top
+
+3 最低限の関数をおさえる
+***********************************
+
+どんなメジャーモードでも書けるようになるために、必要最低限の関数を一気に
+覚えてしまいましょう。ここでとり上げる必要最低限のコマンドは以下のものです。
+
+   * カーソル移動(検索)
+
+   * 文字列挿入/削除
+
+* Menu:
+
+* Cursor Motion::               カーソルの移動
+* Inserting and Deleting Strings::  文字列挿入/削除
+* By-talk 5::                   余談 5 雑関数
+* By-talk 6::                   余談 6 Emacs-Lisp のスコープ
+
+
+File: hustler,  Node: Cursor Motion,  Next: Inserting and Deleting Strings,  Prev: Functions You Must Know,  Up: Functions You Must Know
+
+3.1 カーソル移動
+======================
+
+カーソルの移動コマンドには、相対移動、絶対移動、検索移動があります。いず
+れもキーに割当てられている機能なので、関数名を知っているものもあるでしょう。
+
+* Menu:
+
+* Relative Motion::             相対移動
+* Absolute Motion::             絶対移動
+* Motion Boundary Check::       移動境界の検査
+* Absolute Motion Summary::     絶対移動関係のまとめ
+* Motion by Search::            検索移動
+* Search Functions Summary::    検索関数のまとめ
+* Saving point Position::       ポイント位置の保存
+
+
+File: hustler,  Node: Relative Motion,  Next: Absolute Motion,  Prev: Cursor Motion,  Up: Cursor Motion
+
+3.1.1 相対移動
+------------------
+
+`Emacs-Lisp' プログラムではあまり用いることのない関数ですが、各関数
+と引数について説明します。
+
+* Menu:
+
+* Character Motion::            char 単位移動
+* Word Motion::                 word 単位移動
+* Line Motion::                 line 移動
+
+
+File: hustler,  Node: Character Motion,  Next: Word Motion,  Prev: Relative Motion,  Up: Relative Motion
+
+3.1.1.1 char 単位移動
+.........................
+
+`forward-char', `backward-char' どちらも引数を一つ取り、移動桁
+数を決定します。前に3つ進みたい時は、`(forward-char 3)' のように呼び
+出します。もちろんこれらの関数は、`C-f', `C-b' にバインドされてい ます。
+
+
+File: hustler,  Node: Word Motion,  Next: Line Motion,  Prev: Character Motion,  Up: Relative Motion
+
+3.1.1.2 word 単位移動
+.........................
+
+`forward-word', `backward-word' も移動単語数を指定する引数を一
+つ取ります。`M-f', `M-b' にバインドされています。
+
+
+File: hustler,  Node: Line Motion,  Prev: Word Motion,  Up: Relative Motion
+
+3.1.1.3 line 移動
+...................
+
+行移動というと、`C-n', `C-p' にバインドされている `next-line',
+`previous-line' を想像すると思いますが、これらの関 数は `Emacs-Lisp'
+プログラム中で用いません。これらの関数には `goal-column'
+の制御などの機能が含まれるため、プログラム中からはより
+単純で信頼性の高い `forward-line' を使用します。なお、 `backward-line'
+という関数はないので、上に移動するには負の引数を渡し ます。
+
+
+File: hustler,  Node: Absolute Motion,  Next: Motion Boundary Check,  Prev: Relative Motion,  Up: Cursor Motion
+
+3.1.2 絶対移動
+------------------
+
+* Menu:
+
+* point::                       ポイント
+* Motion by Point::             ポイント移動
+* Moving to a Line::            行移動
+* Moving to a Column::          桁移動
+
+
+File: hustler,  Node: point,  Next: Motion by Point,  Prev: Absolute Motion,  Up: Absolute Motion
+
+3.1.2.1 ポイント
+....................
+
+カーソルの絶対移動の基準となる「ポイント」について知っておく必要がありま
+す。`Emacs' ではカーソルの位置をバッファの先頭からのオフセットで管理
+しています。このオフセット値を返す関数が `(point)' です。これに関連し
+て、バッファの先頭は `(point-min)'、末尾は `(point-max)' で得る
+ことができます。
+
+
+File: hustler,  Node: Motion by Point,  Next: Moving to a Line,  Prev: point,  Up: Absolute Motion
+
+3.1.2.2 ポイント移動
+..........................
+
+指定するポイント位置に移動する関数が `goto-char' です。引数を一つ取
+り、移動先のポイントを受け取ります。バッファの先頭に移動するには次のように
+します。
+
+     (goto-char (point-min))
+
+   なお、バッファの先頭にジャンプする `M-<' の関数名を知っている人は
+「`(beginning-of-buffer)' でもいいんでしょ?」と思われるかもしれません
+が、これと `(end-of-buffer)' は特別な理由のない限り、 `Emacs-Lisp'
+プログラム中から利用してはいけません。これは、マーク位置
+を変更してしまうため、ユーザに思わぬ動作を起こさせる可能性があるからです。 
+
+
+File: hustler,  Node: Moving to a Line,  Next: Moving to a Column,  Prev: Motion by Point,  Up: Absolute Motion
+
+3.1.2.3 行移動
+.................
+
+n行目に移動する関数として、`goto-line' があります。行番号引数として
+渡します。なお、バッファの先頭は1行目と数えます。逆に、現在の行番号を得る
+には次のようにします。
+
+     (count-lines (point-min) (point))
+
+
+File: hustler,  Node: Moving to a Column,  Prev: Moving to a Line,  Up: Absolute Motion
+
+3.1.2.4 桁移動
+.................
+
+n桁目に移動する関数は `move-to-column' で、0から始まる桁数を引数と
+して渡します。現在の桁数は `(current-column)' で得ることができます。
+
+   また、行頭/行末への移動関数は、`beginning-of-line', `end-of-line'
+です。この二つは比較的よく使われます。
+
+
+File: hustler,  Node: Motion Boundary Check,  Next: Absolute Motion Summary,  Prev: Absolute Motion,  Up: Cursor Motion
+
+3.1.3 移動境界の検査
+---------------------------
+
+相対移動絶対移動共に現在のポイント位置が移動できる終端まで来たかどうかの
+チェックをする必要がある場合があります。ポイント位置がバッファ中の特定の位
+置にあるかどうかを検査する関数には以下のものがあります。
+
+`(bobp) / (eobp)'
+     バッファ先頭/末尾
+
+`(bolp) / (eolp)'
+     行頭/行末
+
+   関数 `bobp/eobp' は現在のポイント位置がバッファ先頭/末尾なら真(t)
+を、
+そうでなければ偽(nil)を返します。バッファ末に達するまでなにかの処理を繰り
+返すというケースはしばしば必要になります。次のような形で書けるでしょう。
+
+     (while (not (eobp)) ;(while 条件式 処理1...処理n)
+       処理
+       (forward-line 1))
+
+
+File: hustler,  Node: Absolute Motion Summary,  Next: Motion by Search,  Prev: Motion Boundary Check,  Up: Cursor Motion
+
+3.1.4 絶対移動関係のまとめ
+------------------------------------
+
+ここまでに出てきた関数をまとめましょう。
+
+         ・ポイント値を返す関数  point, point-min, point-max
+         ・移動関数              forward-char, backward-char
+                                 forward-word, backward-word
+                                 forward-line
+                                 goto-char, goto-line
+                                 move-to-column
+                                 beginning-of-line, end-of-line
+         ・位置に関する述語関数  bobp, eobp, bolp, eolp
+
+
+File: hustler,  Node: Motion by Search,  Next: Search Functions Summary,  Prev: Absolute Motion Summary,  Up: Cursor Motion
+
+3.1.5 検索移動
+------------------
+
+プログラム中でカーソル位置を決定するのに最も頻繁に使用するのが検索です。
+ここは必ず押さえましょう。
+
+   検索は大別して、
+
+   * 増分検索(インクリメンタルサーチ)
+
+   * 文字列検索
+
+   * 単語検索
+
+   * 正規表現検索
+
+   * 文字(種)スキップ
+
+に分けられます(分けます)。これらのうち、インクリメンタルサーチは対話的に用
+いることを前提としているため、`Emacs-Lisp' プログラム中からは滅多に利
+用することはないでしょう。これ以外のものの利用の仕方を説明します。
+
+* Menu:
+
+* Lisp Escape Characters::      Lisp エスケープキャラクタ
+* String Search::               文字列検索
+* Word Search::                 単語検索
+* Regular Expression Search::   正規表現検索
+* Major Metacharacters::        代表的なメタキャラクタ
+* Skipping Characters::         文字(種)スキップ
+* Accessing Search Results::    検索結果へのアクセス
+
+
+File: hustler,  Node: Lisp Escape Characters,  Next: String Search,  Prev: Motion by Search,  Up: Motion by Search
+
+3.1.5.1 Lisp エスケープキャラクタ
+...........................................
+
+検索関数には検索したいパターンを文字列として渡すわけですが、その文字列中
+に `\' を含む場合は注意が必要です。`\' は `Emacs-Lisp' で扱
+う文字列中で特別な意味を持つエスケープキャラクタとなっています。
+C言語の文 字列中で使う `\n'
+のような働きを持っています。主なシーケンスには次の ものがあります。
+
+`\\'
+     \自身
+
+`\C-英字'
+     コントロールコード(`\^英字' も可)
+
+`\e'
+     ESC(1Bh)
+
+`\"'
+     "
+
+`\n'
+     改行文字(LF)
+
+`\r'
+     復帰文字(CR)
+
+`\a'
+     ベル(C-g)
+
+`\b'
+     バックスペース(C-h)
+
+`\f'
+     改頁文字(C-l)
+
+`\t'
+     タブコード(C-i)
+
+   Cを扱ったことのある人は「`\\' とかなら慣れてるから平気」と思われる
+かもしれません。しかし、正規表現の検索パターンを指定する場合には、正規表現
+での `\' エスケープと、`Lisp' の `\' エスケープが重なってし
+まうので非常に繁雑です。正規表現検索で、`\' 自身を探すにはパターン文
+字列として、`\\\\'を指定することになります。
+
+このような注意点があることだけを念頭において検索関数の理解に進みましょう。
+
+
+File: hustler,  Node: String Search,  Next: Word Search,  Prev: Lisp Escape Characters,  Up: Motion by Search
+
+3.1.5.2 文字列検索
+.......................
+
+探したい文字列がはっきりとわかっている場合には普通の文字列検索である
+`search-forward', `search-backward' を利用します。これらの関数は
+引数を一つから四つ取ります(二つ目以降は省略可)。
+
+     (search-forward 文字列 範囲 エラー処理 繰り返し回数)
+
+   各引数について説明します。
+
+`1.文字列'
+     検索したい文字列.
+
+`2.範囲'
+     どこまで検索するかをポイント位置で指定する. バッファ末までの時は
+     nil を指 定する.
+
+`3.エラー処理'
+     見つからなかった場合の処理を指定.  エラーを発生して欲しい時は `nil'
+     を、単に `nil' を返して欲しい時は `t' を、検索範囲末まで移動して
+     欲しい時は `nil', `t' 以外を渡す.
+
+`4.繰り返し回数'
+     この引数で指定した回数だけ検索を繰り返す.
+
+後述する正規表現検索も同数の引数を取りますが引数の意味として違うのは、第一
+引数だけです。もちろん正規表現検索関数の第一引数は正規表現のパターン文字列
+を指定します。
+
+   `search-forward/backward' を用いた典型的な処理形態は次のようになり
+ます。
+
+     (if (search-forward "文字列" nil t)
+         (progn 見つかった場合の処理)
+       見つからなった場合の処理)
+
+
+File: hustler,  Node: Word Search,  Next: Regular Expression Search,  Prev: String Search,  Up: Motion by Search
+
+3.1.5.3 単語検索
+....................
+
+`TeX' を検索する時に `LaTeX' にはマッチして欲しくない時のよう
+に、単語単位での検索に有効なのが `word-search-forward(backward)' です。
+引数は `search-forward' の第一引数を単語に置き換えたものです。
+
+
+File: hustler,  Node: Regular Expression Search,  Next: Major Metacharacters,  Prev: Word Search,  Up: Motion by Search
+
+3.1.5.4 正規表現検索
+..........................
+
+`re-search-forward', `re-search-backward' がおそらく最もよく用
+いる検索関数となるでしょう。第一引数に検索したい正規表現パターンを指定しま
+す。`Emacs-Lisp' で扱える正規表現全てについてはほかの解説書に譲ります。
+ここでは必要最低限のものに絞ってメタキャラクタの説明をします。
+
+
+File: hustler,  Node: Major Metacharacters,  Next: Skipping Characters,  Prev: Regular Expression Search,  Up: Motion by Search
+
+3.1.5.5 代表的なメタキャラクタ
+.........................................
+
+`.'
+     任意の一文字にマッチ
+
+`*'
+     直前の正規表現の0回以上の繰り返し
+
+`+'
+     直前の正規表現の1回以上の繰り返し
+
+`?'
+     直前の正規表現の0回か1回の繰り返し
+
+`^'
+     行頭にマッチ
+
+`$'
+     行末にマッチ
+
+`[文字リスト]'
+     「文字リスト」のうち一文字にマッチ
+
+`[^文字リスト]'
+     「文字リスト」にないものにマッチ
+
+`[X-Y]'
+     ASCIIコードが「X」のものから「Y」のものどれかにマッチ
+
+`[-^A-Z]'
+     「-」か「^」か「A〜Zのうちどれか」
+
+これだけ覚えておけば、ほとんどの検索が可能です。なお、正規表現の検索と組み
+合わせた処理は極めて重要なので、別に節を設けて解説します。
+
+
+File: hustler,  Node: Skipping Characters,  Next: Accessing Search Results,  Prev: Major Metacharacters,  Up: Motion by Search
+
+3.1.5.6 文字(種)スキップ
+...............................
+
+単語の先頭にポイントが位置する時に、単語末までポイントを移動したい、ある
+いはその逆のことをしたい時などに `skip-chars-forward',
+`skip-chars-backward' が利用できます。これらの関数は一つまたは二つの
+引数を取ります。
+
+     (skip-chars-forward スキップ文字リスト スキップ境界)
+
+             1.スキップ文字リスト    正規表現の[]の中味と同様に指定し
+                                     ます。
+             2.スキップ境界          文字スキップを行う境界をポイント
+                                     値で指定します。これを越えてポイ
+                                     ントが進むことはありません。
+
+英単語の先頭にポイントがある時に、単語末までポイントを移動するには次のよ
+うにします。
+
+     (skip-chars-forward "A-Za-z")
+
+
+File: hustler,  Node: Accessing Search Results,  Prev: Skipping Characters,  Up: Motion by Search
+
+3.1.5.7 検索結果へのアクセス
+......................................
+
+次の例で `def' を検索した場合の検索後のポイント位置は
+
+     abc def ghi
+         ~  ~
+
+前方向検索の時は `def' の次の位置、後ろ方向検索の時は `d' の位置
+になります。これはインクリメンタルサーチなどを前後方向で行った場合のカーソ
+ル位置と同じなので、容易に想像がつくことでしょう。
+
+しかし、検索がマッチした部分をアクセスする時に、検索後のポイント位置を当
+てにしていたのでは、検索方向によって場合分けしなければならないので通常はこ
+れを利用しません。検索のマッチ部分を取得する関数が `match-beginning',
+`match-end' です。上記の例の、マッチ部分の始まり(dの位置)と、終わり(f
+の次の位置)はそれぞれ、 
+
+     (match-beginning 0)
+     (match-end 0)
+
+で得ることができます。どちらも引数として数値である0を渡しています。実はこ
+の部分は、正規表現にグループを用いた場合のグループ番号を意味していて、 0
+は「マッチした部分全体」という特殊な意味を持っています。例えば上記の例を次
+の正規表現で検索した場合を考えてみましょう。
+
+     (re-search-forward
+       "\\(a.*\\) *\\(d.*\\) *\\(g.*\\)" nil t)
+
+`Emacs' の正規表現のグルーピングは `\(グループ\)' で行いますが、
+`Emacs-Lisp' で `\' を正規表現関数に渡すためには `\\' と表
+記しなければならないことに注意して下さい。さて、この正規表現の意味は、
+
+     ・`a'で始まる任意の文字列(これをグループ1とする)のあとに
+       `d'で始まる任意の文字列(これをグループ2とする)と
+       `g'で始まる任意の文字列(これをグループ3とする)が続く
+
+となります。
+
+
+File: hustler,  Node: Search Functions Summary,  Next: Saving point Position,  Prev: Motion by Search,  Up: Cursor Motion
+
+3.1.6 検索関数のまとめ
+------------------------------
+
+     ・検索関数          search-forward, search-backward
+                         word-search-forward, word-search-backward
+                         re-search-forward, re-search-backward
+     ・文字スキップ      skip-chars-forward, skip-chars-backward
+     ・検索結果位置取得  match-beginning, match-end
+
+* Menu:
+
+* Exercise 3-1::                練習問題 3-1
+
+
+File: hustler,  Node: Exercise 3-1,  Prev: Search Functions Summary,  Up: Search Functions Summary
+
+3.1.6.1 練習問題 3-1
+........................
+
+問
+
+       先のるねきちモードにおいて、`a'
+     を押した時に既にバッファ中に存在す る「僕るねえもん `A_n'
+     なりよ」を数え、その数に応じて「僕るねえもん `A_(n+1)'
+     なりよ」を挿入する用に書き換えよ。
+
+     すなわち、`b' を押した時にバッファ中に「僕るねえもん `B' なり
+     よ」がいた場合は「僕るねえもん `B2' なりよ」を、`c' を押した時
+     にバッファ中に「僕るねえもん `C' なりよ」、「僕るねえもん `C2'
+     なりよ」、…、「僕るねえもん `C10' なりよ」がいた場合は「僕るねえも
+     ん `C11' なりよ」を挿入する。
+
+     ヒント:
+             point, re-search-*ward, \\(\\), buffer-substring
+             match-beginning, match-end, string-to-int
+
+         ・全てのマッチする文字列に対して処理
+
+             現在位置を保存
+             先頭へ
+             (while (re-search-forward パターン nil t)
+               処理)
+             処理
+             位置を復帰
+
+     ポイント:
+             ・グローバル変数は避けましょう。
+             ・A1, A2, A5 なんて時はどうしましょうかね?
+               適当に仕様を決めて下さい(A3とかA6とか)。
+
+     ただ、これによってアルゴリズムがかなり変わる↑
+
+
+File: hustler,  Node: Saving point Position,  Prev: Search Functions Summary,  Up: Cursor Motion
+
+3.1.7 ポイント位置の保存
+---------------------------------
+
+カーソル移動のための関数を書く場合を除き、`Emacs-Lisp' 中でポイント
+移動を行った場合には、ユーザのその後の編集の事を考慮し、ポイント位置を復帰
+しておく必要があります。そのための関数が `save-excursion' です。
+
+     (save-excursion 実行部...)
+
+のようにポイント移動を伴う部分を `save-excursion' の中に閉じこめるこ
+とにより、「実行部...」でいかなる場所にポイントを移動しようと、
+`save-excursion' を抜けると同時に、ポイントは元の位置に復帰します。さ
+らに、マーク位置も保存されるので、「実行部...」でマーク位置にアクセス
+する関数を書いた場合も、ユーザのその後の編集操作に支障を来しません。
+
+   次の例は、ポイントのある行を `kill-ring' に入れつつ二重化します。
+
+     (defun duplicate-line ()
+       (interactive)
+       (save-excursion
+         (beginning-of-line)
+         (copy-region-as-kill (point)
+                  (progn (end-of-line) (point)))
+         (forward-line 1)
+         (yank)))
+
+関数中でポイントを移動していますが、実行が終わると関数起動時のポイント位置
+に復帰します。 
+
+
+File: hustler,  Node: Inserting and Deleting Strings,  Next: By-talk 5,  Prev: Cursor Motion,  Up: Functions You Must Know
+
+3.2 文字列挿入/削除
+==========================
+
+* Menu:
+
+* Inserting Strings::           文字列挿入
+* Transforming Types::          文字列と他の型の変換
+* Type Transformation::         型変換
+* Deleting Strings::            文字列削除
+* Replacing Strings::           文字列置換
+* Buffer Editing Functions Summary::  バッファ編集関数のまとめ
+
+
+File: hustler,  Node: Inserting Strings,  Next: Transforming Types,  Prev: Inserting and Deleting Strings,  Up: Inserting and Deleting Strings
+
+3.2.1 文字列挿入
+---------------------
+
+既にメジャーモードの練習関数で、文字列を挿入する関数 `insert' は使
+用済みです。ほとんどの文字列操作は `insert' 関数で用が足りますが、次
+のものを知っておくと便利な場合が有ります。
+
+* Menu:
+
+* insert-char::                 文字の挿入
+* self-insert-command::
+
+
+File: hustler,  Node: insert-char,  Next: self-insert-command,  Prev: Inserting Strings,  Up: Inserting Strings
+
+3.2.1.1 insert-char
+...................
+
+同じ文字をたくさん入れたい時に使用できます。引数を二つ取り、最初の引数は
+文字コード、二つ目の引数は個数です。文字 `a' を100個入れたい時は次の
+ようにします。
+
+     (insert-char ?a 100)
+
+
+File: hustler,  Node: self-insert-command,  Prev: insert-char,  Up: Inserting Strings
+
+3.2.1.2 self-insert-command
+...........................
+
+`A-Z', `a-z', `0-9', など一般のキーに割当てられている関数が
+これです。`define-key' などでキーに結び付けられた関数中で、押したキー
+そのものを挿入したいときにこの関数を利用します。この関数も、繰り返し挿入回
+数を指定する引数を取るので通常は`(self-insert-command 1)' のように呼
+び出します。(*note define-code: Setting Keys.)
+
+ちなみに、キーバインドされた関数から、その関数が起動されたキーを知るた
+めには、関数`(this-command-keys)'を参照します。次のような関数をいろい
+ろなキーに割当てて実行してみるとおもしろいでしょう。 
+
+     (defun show-my-key ()
+       (interactive)
+       (insert (this-command-keys)))
+
+
+File: hustler,  Node: Transforming Types,  Next: Type Transformation,  Prev: Inserting Strings,  Up: Inserting and Deleting Strings
+
+3.2.2 文字列と他の型の変換
+------------------------------------
+
+* Menu:
+
+* format::
+
+
+File: hustler,  Node: format,  Prev: Transforming Types,  Up: Transforming Types
+
+3.2.2.1 format
+..............
+
+バッファ中に挿入したいのは文字列だけとは限りません。なにかの計算によって
+選られた数値を文字列化して挿入したいことがあります。このような時に用いるの
+が `format' 関数で、Cの `printf' でのフォーマットとほぼ同じもの
+が利用できます。ここで `Emacs-Lisp' で扱うことのできる型には、以下の
+ものがあります。
+
+`シンボル'
+     'foo, 'bar
+
+`数値(整数)'
+     1, 2, 3, -50, 65537 (24bits)
+
+`char型'
+     0 〜 127
+
+`文字列'
+     "foo", "こんにちは"
+
+これらの型のものが単体で用いられる場合、それを「アトム `atom' 」と言
+います。逆に様々な型のアトムが集合したものに、「リスト `list' 」と
+「配列 `array' 」があります。これらの概念については、一般の `Lisp'
+の参考書などを見ると説明が載っています。それを理解していると複
+雑な処理が効率的に書けるようになることがあるかもしれませんが、とくに理解し
+ていなくてもメジャーモードの作成には支障ありません。余裕ができたら覚えましょ
+う。(*note atom list array: List.)
+
+   さて、関数 `format' には、すべての型の値を文字列に変換するためのキー
+ワードが三種類有ります。
+
+`%s'
+     シンボル、または文字列
+
+`%d,%o,%x'
+     数値(10,8,16進数表示)
+
+`%c'
+     char型数値を文字コードとみなし文字を表示
+
+   `format' 関数は第一引数に上記の `%' を含むフォーマット文字列を、
+第二引数以降に文字列中の `%?' に対応する変数/定数を受け取ります。そし
+て、それらの引数を文字列化したもので元の `%?' を置き換え、すべて置き
+換えることで出来上がった文字列を返します。
+
+   これを用いて各種の値を表示させてみます。
+
+     (setq   foo 50
+         bar ?x
+         baz "hoge")
+     (insert (format "%d, %o, %x  %s   %c  %s\n"
+              foo foo foo 'foo bar baz ))
+
+   `format' 関数の第一引数中、`%?' が文字列に変換される様子は次のよ
+うになります。
+
+     %d  →  "50"
+     %o  →  "62"
+     %x  →  "32"
+     %s  →  "foo"
+     %c  →  "x"
+     %s  →  "hoge"
+
+従って format 関数が返す文字列は
+
+     ``50, 62, 32  foo   x  hero''
+
+となります。
+
+
+File: hustler,  Node: Type Transformation,  Next: Deleting Strings,  Prev: Transforming Types,  Up: Inserting and Deleting Strings
+
+3.2.3 型変換
+---------------
+
+バッファ中に存在する数値文字列を読み込みその値をもとになにかを計算し結果
+を返すという処理を想定してみましょう。必要な処理内容は以下のものとなります。
+
+   * バッファ中の文字列の取り込み    (バッファ→変数変換)
+
+   * 文字列から数値への変換
+
+   * 数値の計算
+
+   * 数値から文字列への変換
+
+   ここでは、これらの処理に必要な関数をすべて覚えてしまいましょう。
+
+* Menu:
+
+* Getting Strings::             文字列の取込み
+* Numerical Transformation::    数値変換
+* Strings Transformation::      文字列変換
+* String Manipulation Functions::  文字列操作関数
+
+
+File: hustler,  Node: Getting Strings,  Next: Numerical Transformation,  Prev: Type Transformation,  Up: Type Transformation
+
+3.2.3.1 文字列の取り込み
+................................
+
+バッファの内容を文字列として返す関数は `buffer-substring' です。こ
+の関数は非常によく使うので、いやでも覚えてしまうでしょう。
+
+     (buffer-substring ポイント値1 ポイント値2)
+
+第一引数と第二引数の間の内容を文字列として返します。通常この関数は、検索結
+果を保持している関数 `match-beginning', `match-end' と共に用いら
+れます。(*note match-beginning: Accessing Search Results.)
+
+   例として
+
+     Bytes: 67 Date : 10:23pm  6/28/93 Author:net66331 (luneえもん)
+
+という行から時刻を抽出する関数を定義してみましょう。そのためには、このフォー
+マットで書かれている行を表現する正規表現を考える必要があります。簡単のため、
+ここでは「行頭が `Bytes:' で始まり、時刻文字列があり、(ハンドル)で終
+わる行」というものにします。これをそのまま正規表現にすると、
+
+     ^Bytes:.*[0-9 ][0-9]:[0-9][0-9][ap]m.*(.*)$
+              ~~~~~~~~~~~|~~~~~~~~~~|~~~~
+
+となるでしょう。しかし今回の場合時刻を取り出したいので、この部分をグループ
+化して、
+
+     ^Bytes:.*\([0-9 ][0-9]\):\([0-9][0-9]\)\([ap]m\).*(.*)$
+
+とします。検索が成功した場合、`(match-beginning 1)'と `(match-end 1)'
+に `時' の部分の先頭と末尾のポイント値が入るはず
+です(以下も同様)。これを Lisp 中に書くときは `\' を `\\' でエス
+ケープすることを忘れないようにしましょう。
+
+     (defun access-time ()
+       (interactive)
+       (re-search-forward
+        "^Bytes:.*\\([0-9 ][0-9]\\):\\([0-9][0-9]\\)\\([ap]m\\).*(.*)$"
+        nil t)
+       (message
+        (concat
+         (if (string= (buffer-substring (match-beginning 3) (match-end 3))
+              "am")
+         "午前" "午後")
+         (buffer-substring (match-beginning 1) (match-end 1)) "時"
+         (buffer-substring (match-beginning 2) (match-end 2)) "分")))
+
+関数 `string=' は文字列どうしが等しいかどうかを比較します。この例では、
+グルーピングした3番目の部分、つまり `am' か `pm' の部分が、 `am'
+だったら `午前' を返し、そうでなかったら `午後' を返し
+ています。さらに、グルーピングの1番目と2番目、つまり「時」と「分」の部分に
+それぞれ `時' 、`分' を添えています。そしてそれらを `concat'
+で全て結合したものを `message' 関数に渡しています。 
+
+次の節に進む前に、もう少し分かり易く書き直しておきましょう。全く同じ動作
+をします。
+
+     (defun access-time ()
+       (interactive)
+       (re-search-forward
+        "^Bytes:.*\\([0-9 ][0-9]\\):\\([0-9][0-9]\\)\\([ap]m\\).*(.*)$"
+        nil t)
+       (let((h  (buffer-substring (match-beginning 1) (match-end 1)))
+            (m  (buffer-substring (match-beginning 2) (match-end 2)))
+            (ap (buffer-substring (match-beginning 3) (match-end 3))))
+         (message
+          "%s%s時%s分" (if (string= ap "am") "午前" "午後") h m)))
+
+
+File: hustler,  Node: Numerical Transformation,  Next: Strings Transformation,  Prev: Getting Strings,  Up: Type Transformation
+
+3.2.3.2 数値変換
+....................
+
+数値を表わす文字列を実際の数値に変換するための関数は、 `string-to-int'
+です。
+
+     (string-to-int "数値文字列")
+
+もし、文字列が数値として意味のない文字列である場合は0を返します。では、早
+速この関数を使って先程の例を24時間制で表示するように書き換えてみましょう
+(展開が予想できましたね?)。先の例では、`h' と `m' に時刻を表わす
+数値文字列が入っているので、これを `string-to-int' で数値に変換し、も
+じ `pm' だったら「時」に12を足しましょう。
+
+     (defun access-time ()
+       (interactive)
+       (re-search-forward
+        "^Bytes:.*\\([0-9 ][0-9]\\):\\([0-9][0-9]\\)\\([ap]m\\).*(.*)$"
+        nil t)
+       (let*((h  (buffer-substring (match-beginning 1) (match-end 1)))
+             (m  (buffer-substring (match-beginning 2) (match-end 2)))
+         (ap (buffer-substring (match-beginning 3) (match-end 3)))
+         (hour (string-to-int h))
+         (min  (string-to-int m)))
+         (if (string= ap "pm") (setq hour (+ 12 hour)))
+         (message "%d時%d分" hour min)))
+
+新しい形 `let*' が出てきました。`let' との違いは、変数の初期化に
+それ以前のローカル変数の値を利用できる点です。上の例では、変数 `hour'
+の初期化に `h' の値を利用しているので、`let*' を使う必要がありま す。 
+
+   余談となりますが、文字コードを返す関数として、`string-to-char' があ
+ります。これは、引数として与えた文字列の先頭の一文字の文字コードを返します。 
+
+
+File: hustler,  Node: Strings Transformation,  Next: String Manipulation Functions,  Prev: Numerical Transformation,  Up: Type Transformation
+
+3.2.3.3 文字列変換
+.......................
+
+今回の例では `%s' による(出力時の)文字列への変換を用いたので、数値
+→文字列(変数間)の型変換は用いませんでしたが、`string-to-int' の逆の
+仕事をする `int-to-string' という関数があります。必要に応じて利用する
+と良いでしょう。
+
+
+File: hustler,  Node: String Manipulation Functions,  Prev: Strings Transformation,  Up: Type Transformation
+
+3.2.3.4 文字列操作関数
+.............................
+
+ついでに文字列に対する種々の操作関数を覚えておきましょう。 `M-x
+apropos' で `string' をキーに探せばいろいろ出てきますが、ここでは主な
+ものを取り上げます。
+
+     (string-equal "文字列1" "文字列2")  ;string= と同じ
+     (string< 文字列1 文字列2)
+     (string> 文字列1 文字列2)           ;文字列の大小比較
+     (string-match 正規表現 文字列)      ;第一引数の正規表現が第二引数の文
+                                         ;字列中の何文字目にマッチするか。
+                                         ;マッチしなければ nil
+     (stringp 変数)                      ;変数の値が文字列かどうか
+     (substring 文字列 開始 終了)        ;文字列の「開始」〜「終了」の部分
+                                         ;文字列。第三引数を省略すると開始
+                                         ;位置から文字列末尾まで。位置を負
+                                         ;で与えると文字列の後ろから数える。
+   
+
+File: hustler,  Node: Deleting Strings,  Next: Replacing Strings,  Prev: Type Transformation,  Up: Inserting and Deleting Strings
+
+3.2.4 文字列削除
+---------------------
+
+バッファの一部を削除する関数で `Emacs-Lisp' 中から主に用いるのは以
+下のものでしょう。
+
+   * delete-char, delete-backward-char
+
+   * delete-region
+
+   * erase-buffer
+   
+`delete-char' と `delete-backward-char' は引数として削除する文字
+数を指定します。しかし複数文字を削除する時は通常 `delete-region' を用
+います。
+
+     (delete-region 削除開始ポイント値 削除終了ポイント値)
+
+手で編集する時の関数 `kill-region' は、`kill-ring' を変えてしま
+うので、*`Emacs-Lisp' 中から利用してはいけません* (1)。 
+
+   なにかのパターンを検索して該当部分を削除するということが多いので、
+`delete-region' も `match-beginning', `match-end' と共に用
+いられることがほとんどです。
+
+バッファ中に出現する特定のパターンを削除するというケースは非常に多くあり
+ます。たとえば、
+
+     [Continued]
+
+   というパターンを全て削除するコードは以下のようになります。
+
+     (defun kill-more ()
+       (interactive)
+       (goto-char (point-min))
+       (while (re-search-forward
+         (delete-region (match-beginning 0) (match-end 0))))
+
+   このような、
+
+     (while (検索関数 パターン nil t)
+       (delete-region (match-beginning ??) (match-end ??)))
+
+という関数の組み合わせは特定のパターンを全て削除する時の定石として覚えてお
+きましょう。
+
+   ---------- Footnotes ----------
+
+   (1) kill-ring を変えることが目的のプログラムはこの限りでない。
+
+
+File: hustler,  Node: Replacing Strings,  Next: Buffer Editing Functions Summary,  Prev: Deleting Strings,  Up: Inserting and Deleting Strings
+
+3.2.5 文字列置換
+---------------------
+
+単純な文字列の置換は、対話的に済ませることが多いのであまりプログラムでは
+必要とはなりません。やはり、正規表現検索と組み合わせる
+ことが多くなります。 特定のパターンを一括置換する場合は次のように
+なります。次の例は、コントロー ルコードの `^L' を `山記号' と `L'
+に置換します。
+
+     (defun replace-C-l ()
+       (interactive)
+       (goto-char (point-min))
+       (while (search-forward "\C-l" nil t)
+         (replace-match "^L")))
+
+この例の場合は、マッチした部分全体を置換していますがそのような時に使う関数
+が `replace-match' で、`sed' の `s/old/new/' の後半にあたり ます。 
+
+     (replace-match  置換文字列
+             大小文字を保存するかのフラグ
+             \を特別扱いしないかのフラグ)
+
+第二引数以降は省略可能です。また `\' を特別扱いしないフラグをセットし
+ない場合は「置換文字列」の部分に次の表記が利用できます。
+
+`\&'
+     直前の検索でマッチした部分全体
+
+`\n'
+     `\(\)' で指定したグループの内容(nは1-9)
+
+`\\'
+     `\' 自身
+
+既にお気付きでしょうが、前節の一括削除は `replace-match' を使うと
+
+     (while (検索関数 パターン nil t)
+       (replace-match ""))
+
+と簡単に書くことができます。
+
+
+File: hustler,  Node: Buffer Editing Functions Summary,  Prev: Replacing Strings,  Up: Inserting and Deleting Strings
+
+3.2.6 バッファ編集関数のまとめ
+------------------------------------------
+
+     ・文字列挿入        insert, insert-char, self-insert-command
+                         this-command-keys(関連)
+     ・文字列の取り込み  buffer-substring
+     ・型変換            format, string-to-int, int-to-string
+                         string-to-char, char-to-string
+     ・文字列比較等      string=, string<, string>, string-match
+                         stringp, substring
+     ・削除              delete-char, delete-backward-char
+                         delete-region, erase-buffer
+     ・置換              replace-match
+
+
+File: hustler,  Node: By-talk 5,  Next: By-talk 6,  Prev: Inserting and Deleting Strings,  Up: Functions You Must Know
+
+余談 5 雑関数
+==================
+
+既に多くの人が利用しているので、次の関数は既習としましょう。
+
+`(sleep-for 秒数)'
+     「秒数」だけ休止する。
+
+`(sit-for 秒数)'
+     「秒数」だけ休止する。
+     ただし、既にキー入力が行われていた場合は先に進む。
+
+`(ding)'
+     beep音を鳴らす。
+   
+
+File: hustler,  Node: By-talk 6,  Prev: By-talk 5,  Up: Functions You Must Know
+
+余談 6 Emacs-Lisp のスコープ
+===================================
+
+`Emacs-Lisp' ではダイナミックスコープ(動的スコープ)を採用しています。
+これは、C言語などのスタティックスコープとは異なり、実行時に参照する変数の
+実体が決定するものです。具体例を見てみましょう。次のプログラムの実行結果を
+予想し、実際に確かめて見て下さい。
+
+     /*---- C言語 ----*/
+     char *s = "外側のs";
+     sub()
+     {
+         printf("sub: s = %s\n", s);
+     }
+     main()
+     {
+         printf("main(外): s = %s\n", s);
+         {
+         char *s = "mainの中のs";
+         printf("main(中): s = %s\n", s);
+         sub();
+         }
+         sub();
+     }
+
+     ;;; -*- Emacs-Lisp -*-
+     (defvar s "外側のs")
+     (defun sub ()
+       (insert (format "sub: s = %s\n" s)))
+     (defun main ()
+       (insert (format "main(外): s = %s\n" s))
+       (let ((s "mainの中のs"))
+         (insert (format "main(中): s = %s\n" s))
+         (sub))
+       (sub))
+
+C言語では、あらゆるシンボルのスコープ(通用範囲)は、コンパイル時に決定され
+ます。先程のCのプログラムでは、次の図のような入れ子構造のスコープが形成さ
+れています。
+
+     +-----------------globalな箱----------------------+
+     |    char *s = "外側のs";                         |
+     |+---------------- subの箱 ----------------------+|
+     ||   sub()                                       ||
+     ||   {                                           ||
+     ||       printf("sub: s = %s\n", s);             ||
+     ||   }                                           ||
+     |+-----------------------------------------------+|
+     |+---------------- mainの箱 ---------------------+|
+     ||   main()                                      ||
+     ||   {                                           ||
+     ||      printf("main(外): s = %s\n", s);         ||
+     ||+----------- local-blockの箱 -----------------+||
+     |||      {                                      |||
+     |||          char *s = "mainの中のs";           |||
+     |||          printf("main(中): s = %s\n", s);   |||
+     |||          sub();                             |||
+     |||      }                                      |||
+     ||+---------------------------------------------+||
+     ||       sub();                                  ||
+     ||   }                                           ||
+     |+-----------------------------------------------+|
+     +-------------------------------------------------+
+
+それぞれの箱の壁は、内側から外側しか見ることのできないマジックミラーになっ
+ていると考えると分かり易いかもしれません。なにかのシンボルが参照されている
+場合、もしその箱の内部でそのシンボルが宣言されていた場合(例えば
+`local-block' の箱の中の`s')、そのシンボルが最優先で結合されます。
+逆に箱の内部でシンボルが宣言されていない場合 (例えば `sub'の箱の
+`s')、コンパイラは箱をどんどん外側に見ていき、見つかった場合そのシン
+ボル(ここでは `global' な箱に存在する `s')と結合します。
+
+   つまり `sub()' では、変数 `s' は `global' な箱で宣言され ている `s'
+と結合され、これは `sub()' がいつ何時どこから呼ばれよ
+うと変わることはありません。常に `外側のs' の格納されているアドレスを
+差しています。
+
+スタティックスコープでは、シンボルとその実体との結合は、シンボルの参照が
+行われている箇所の、ソースプログラムでの位置によって決定されます。
+
+ところが、ダイナミックスコープでは、変数とその実体との結合は実行時に行わ
+れます。先程の `Emacs-Lisp' プログラムの例を評価順に追って考える必要
+があります。
+
+     (defvar s "外側のs")                            ;これはロード時に評価される
+     →main
+       (insert (format "main(外): s = %s\n" s))      ;外側のsが有効
+       (let ((s "mainの中のs"))                      ;ここでローカルなsが発生
+         (insert (format "main(中): s = %s\n" s))    ;let中のsは"mainの中のs"
+         (sub)                                       ;letを抜けると同時に
+       )                                             ;ローカルなsは消滅
+       (sub)                                         ;外側のsが再び有効
+     →main 終わり
+
+   極端な例として、次のものの評価を追ってみると良いでしょう。
+
+     (defun hoge ()
+       (message "x = %d" x))
+     (defun foo ()
+       (let ((x 1)) (hoge)))
+     (defun bar ()
+       (let ((x 2)) (hoge)))
+     (defun baz ()
+       (hoge))
+
+   `(foo)', `(bar)', `(baz)' と順に評価してみて下さい。
+
+ダイナミックスコープの性質を利用すると、ある関数から下請関数を呼ぶする場
+合、引数の受け渡しを省略することができます。
+
+     (defun natural-rand (n)
+       (let ((r (random t)))
+         (abs-r)
+         (% r n)))
+     (defun abs-r ()
+       (if (< r 0) (setq r (- r))))
+
+しかし、このような利用法は関数の汎用性を損なうだけでなく、どの変数を参照
+しているのかが分かりにくく、可読性を落とすことになるので、特殊な処理でスピー
+ドを重視するようなもの以外では、利用しない方が良いでしょう。
+
+* Menu:
+
+* Exercise 3-2::                練習問題 3-2
+
+
+File: hustler,  Node: Exercise 3-2,  Prev: By-talk 6,  Up: By-talk 6
+
+練習問題 3-2
+----------------
+
+(1),(2)の好きな方を作成せよ。
+
+   選択問題(1)
+
+       ASCII-NET のログを解析し、直前の書き込みとの時間的間隔が一番大
+     きい書き込みを発見せよ。
+
+     つまり、以下のような書き込みがあった場合、
+
+     |Bytes: 3001 Date :  6:46am  7/12/93 Author:net92851 (ほんまたける)
+     |   やっと出来ました。いまから学校か。結構辛い！
+     |
+     |Bytes: 36 Date : 12:14pm  7/12/93 Author:pcs39334 (はすらあ)
+     |   おおついに!
+     |
+     |Bytes: 33 Date :  3:19pm  7/12/93 Author:net66331 (luneきち)
+     |   バイトはどうなさったのでしょう
+
+           の場合、6:46am→12:14pm→3:19pm
+                        5h28m    3h05m
+         なので、二番目の書き込みが該当する。
+
+     ヒント:
+             match-beginning, match-end, buffer-substring, string-to-int
+
+   選択問題(2)
+
+     先のるねきちモードのメッセージ「僕るねえもんXyyなりよ」はちょっと
+     長いので、「るねXyyなりよ」に変更し、次の機能を付加せよ。
+
+     「るねXyyなりよ」をたくさん表示させた状態で、
+
+  1. `2',`4',`6',`8を押すと'、それぞれ 下/左/右/上 の `[A-Z][0-9]*'
+     (以後これを「るね番号」と呼ぶ)に移動。
+
+  2. スペースキーを押すと、
+       1. 行末かバッファ末なら `(self-insert-command)'
+
+       2. るね番号 の上なら、
+            1. 直前に押したキーが `26'
+               なら、行末までのすべてのるね番号を「自爆」に 置換する
+
+            2. 直前に押したキーが `24'
+               なら、行頭までのすべてのるね番号を「自爆」に 置換する
+          それ以外なら `(call-interactively 'fill-paragraph)'
+
+     ヒント:
+             cond, looking-at, (substring (recent-keys) 負の数),
+             string=
+             「delete-region & insert」または「replace-match」
+             (註: 関数 recent-keys は最近押されたキーを文字列として返す)
+
+       余裕があれば、
+
+     (1')2,4,6,8 のキーは一回押しただけでは動かず、二
+     回目以降から動く。
+
+     (つまり `(recent-keys)' の末尾二文字が同じ時に動く)
+
+           かなり暇なら、
+
+     るね番号を縦に結んだ線がなんとなく揃うように `fill-column' を調整する。
+
+     (b3)直前キーが 626 なら、一つ右のるね番号に移動してからその真上にある
+         (8で移動できる)るね番号全てを「自爆」に置換
+
+     (b4)直前キーが 424 なら、一つ左のるね番号に移動してからその真上にある
+         (8 で移動できる)るね番号全てを「自爆」に置換
+
+     なお、以後これを「るねきちモードII」と呼ぶ。
+
+
+File: hustler,  Node: Completion Input,  Next: Concept Index,  Prev: Functions You Must Know,  Up: Top
+
+4 補完入力とその周辺
+*****************************
+
+`Emacs' の持っている機能のうち最も強力なものの一つが文字列やファイ
+ル名の補完入力で、入力支援のためのメジャーモードには必須の機能と言っても過
+言ではないでしょう。本章では、補完入力機能を実装するために必要な知識とその
+方法について説明します。
+
+* Menu:
+
+* Normal Input Functions::      一般入力関数
+* Completion Input Functions::  補完入力関数
+* By-talk 7::                   余談 7 マクロ
+
+
+File: hustler,  Node: Normal Input Functions,  Next: Completion Input Functions,  Prev: Completion Input,  Up: Completion Input
+
+4.1 一般入力関数
+======================
+
+補完入力関数の前に、通常の入力関数について説明します。文字列入力は、
+`read-string' という関数によって行います。
+
+     (read-string プロンプト文字列 [初期入力])
+
+第一引数の文字列をプロンプトとして出し、ミニバッファから文字列を読み込んで
+その結果を返します。この時に第二引数を与えると、それを読み込み時に既に入力
+されていた文字列であるかのようにミニバッファに挿入します。
+
+日本語文字列やスペースを含む文字列を読み込む場合などは補完が有効に働かな
+いので、`read-string' 関数が役に立ちます。次の例は、天候を読み込み日
+付と共にバッファ中に挿入します。
+
+     (defun insert-date-weather ()
+       (interactive)
+       (insert
+        (substring (current-time-string) 0 10)
+        "\t"
+        (read-string "Weather: ")
+        "\n"))
+
+   もうひとつ、ファイル名を読み込む `read-file-name' を紹介します。第
+二引数以降は省略可能です。 
+
+     (read-file-name プロンプト文字列
+             [ディレクトリ [デフォルト名 [要マッチ]]])
+
+「ディレクトリ」はファイル名を入力するデフォルトのディレクトリ名を指定しま
+すが、これを省略するとカレントバッファの属するディレクトリとなります。「デ
+フォルト名」を指定すると、ユーザ自身が何も入力せずにリターンキーを押した場
+合に、この値が `read-file-name' の結果として返されます。「要マッチ」 に
+`t' を指定した場合は実際に存在するファイル名以外の入力を認めません。
+`t' でも `nil' でもない値を指定した場合は、補完入力の途中でリター
+ンキーを押した場合に本当にそのファイルでよいかどうかの確認をします。
+
+
+File: hustler,  Node: Completion Input Functions,  Next: By-talk 7,  Prev: Normal Input Functions,  Up: Completion Input
+
+4.2 補完入力関数
+======================
+
+ミニバッファで補完入力を行う関数が `completing-read' です。
+
+     (completing-read プロンプト 補完テーブル 選択(述語)関数
+              要マッチ 初期入力)
+
+第一引数の「プロンプト」はミニバッファに出すプロンプト文字列、第四引数の
+「要マッチ」は `read-file-name' のものと同様補完候補と必ず一致すべき
+かどうかを指定するフラグ、第五引数はミニバッファに最初から入力されている文
+字列で、それぞれ特に説明の必要はないでしょう。
+
+第二引数の「補完テーブル」はスペースキーやタブキーを押した時に補完される
+単語を格納した変数です。このテーブルの構造は連想リスト `(association
+list)'(通称 `alist')と呼ばれるもので、`Lisp' 言語では非常に良く
+使われます。`alist' に限らず「リスト」は、`Lisp' の機能を最大限
+に活かした `Emacs-Lisp' プログラムを書くためには必須の概念ですから、
+この機会に覚えておきましょう。
+
+* Menu:
+
+* List::                        リスト
+* List Structure::              リストの構造
+* List Manipulation Functions::  リスト処理関数
+* Association Lists::           連想リスト
+
+
+File: hustler,  Node: List,  Next: List Structure,  Prev: Completion Input Functions,  Up: Completion Input Functions
+
+4.2.1 リスト
+---------------
+
+`Lisp' で扱う対象の最小単位は「アトム」といい、今までに出てきた関数
+や変数などの名前を表わす「シンボル」や、数値、文字列、`t'、`nil'
+などは全てこれに属します。
+
+   「リスト」とは、「アトムまたはリスト、の集合体」です。`Lisp' ではア
+トム、リストを括弧で括って並べることで集合体を表現します。つまり、それぞれ
+のアトム `foo', `t', `"bar"' `5' を
+
+     (foo t "bar" 5)
+
+のように並べたものがリストとなります。ではこれを変数 `x' にセットして
+みましょう。
+
+     (setq x (foo t "bar" 5))        ;×間違い
+
+これでは期待通りになりません。`(foo ...)' という形は、「関数`foo の'
+評価」という意味なので、`Lisp' インタプリタは関数 `foo' に幾
+つかの引数を渡した結果を `x' に代入しようとします(たいていは未定義エ
+ラーとなるでしょう)。リストの形で渡したい時は、次のように '
+をつけてクォー トする必要があります。 
+
+     (setq x '(foo t "bar" 5))
+
+   '
+は、次のオブジェクトを評価しない、つまり「後続するものを変数や関数の参
+照だと思わずにそのまま渡してくれ」と `Lisp' インタプリタに指示する働
+きを持っています。
+
+   なお、本稿ではリストを表記する時は、関数評価との混乱を避けるため、'
+でクォー トして表わすことにします。
+
+
+File: hustler,  Node: List Structure,  Next: List Manipulation Functions,  Prev: List,  Up: Completion Input Functions
+
+4.2.2 リストの構造
+------------------------
+
+`car', `cdr', `cons', `list', `append' などのリ
+スト処理関数を覚える時には、リストがどういう構造で格納されているかについて
+理解しておくと非常にスムーズに関数の働きが理解できます。(*note list:
+Creating lists.)(*note car cdr: Accessing list Elements.)(*note cons:
+Adding Elements to list.)(*note append: Appending lists.)
+
+リスト中の各要素は「コンスセル」と呼ばれる記憶領域に格納されます。たとえ
+ば前述のリストの例 `'(foo t "bar" 5)' はみかけから分かるように四つの
+要素から成っていますが、これらの各要素はそれぞれコンスセルに格納されていま
+す。コンスセルは次のような構造をとっています。 
+
+             +--------------+--------------+
+             |              |     次の     |
+             |     要素     | コンスセルの |
+             |              |   アドレス   |
+             +--------------+--------------+
+
+これにしたがって `'(foo t "bar" 5)' の格納されている様子を図にしてみ
+ましょう。記号Λは、それが最後のコンスセルであることを意味します。通常はΛ
+を表わす `Lisp' シンボルとしては `nil' が入っています。
+
+             +---------+---------+      +---------+---------+
+             |         |         |      |         |         |
+             |   foo   |    *----+----→|    t    |    *    |
+             |         |         |      |         |    |    |
+             +---------+---------+      +---------+----+----+
+             +---------+---------+  +-----------------/
+             |         |         |  |   +---------+---------+
+             |    5    |   Λ    |  |   |         |         |
+             |         |         |  +-→|  "bar"  |    *    |
+             +---------+---------+      |         |    |    |
+                  ↑                    +---------+----+----+
+                   ＼----------------------------------/
+
+`(setq x '(foo t "bar" 5))' はシンボル `x' にこれらのリスト(コン
+スセルの連結)の先頭のアドレスを代入します。
+
+             +--x--+
+             |  *  |
+             +-----+
+                ↓
+             +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+             | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+             +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+
+また、概念的に、`'(foo t "bar" 5)' の各要素を次のように把握してお
+くのも良いでしょう。
+
+             '(foo              t          "bar"           5)
+               ↓              ↓           ↓            ↓
+              fooと            tと         "bar"と         5と
+             '(t "bar" 5)      '("bar" 5)      '(5)            Λ
+               へのポインタ    へのポインタ   へのポインタ    のペア
+                 のペア          のペア         のペア
+
+   次に、リストの要素にリストがある場合について考えてみましょう。 `nil'
+と、これまで例として用いた `'(foo t "bar" 5)' と `hoge'
+からなるリストは次のように表現できます。
+
+     '(nil (foo t "bar" 5) hoge)
+
+リストの要素として、リストをそのままの形で書くだけで良いのです。
+
+もう一つ、要素が一つもないリスト「空リスト」の存在も知っておく必要があり
+ます。空リストはリストの要素に何もないので、リストを括る括弧の中に何も書か
+ずに `'()' と表現します。空リストは常に `nil' を値として持ってい
+ます。`Emacs-Lisp' では空リストと `nil' は全く同じ意味を持ちます。
+
+   さて `(setq x '(foo t "bar" 5))' について理解しておくべき重要な
+事項は次のものです。
+
+   * `x' はコンスセルの鎖の先頭(ここでは `foo' )のアドレスを指す
+
+   * 第二要素以降はポインタを辿って行くことで順次得られる
+
+   *
+     あるリストの先頭のコンスセルへのポインタはリストそのものを指していることに
+     ほかならない
+
+
+File: hustler,  Node: List Manipulation Functions,  Next: Association Lists,  Prev: List Structure,  Up: Completion Input Functions
+
+4.2.3 リスト処理関数
+---------------------------
+
+* Menu:
+
+* Creating lists::              リストの作成
+* Accessing list Elements::     リストの要素の参照
+* Adding Elements to list::     リストの要素の追加
+* Appending lists::             リストどうしの結合
+* List Related Predicates::     述語関数等
+
+
+File: hustler,  Node: Creating lists,  Next: Accessing list Elements,  Prev: List Manipulation Functions,  Up: List Manipulation Functions
+
+4.2.3.1 リスト作成
+.......................
+
+これまでは、リストの内容そのものを `'' でクォートして並べましたが、
+各要素を列挙してそれらから構成されるリストを作成することができます。関数
+`list' がそれです。引数は任意の個数だけ書けます。
+
+     (list 'foo t "bar" baz)
+
+のように書くことで、`foo t "bar" [bazの値]' からなるリストを作成し、
+このリストへのポインタを返します。引数を全て評価したものを連結するので、
+`baz' は `シンボル baz' ではなく `baz の値' になることに注
+意して下さい。例えばこの場合、`(setq baz 5)' としていた場合、
+
+     '(foo t "bar" 5)
+
+というリストが生成されます。
+
+   リストの中にリストがある場合も、要素の部分に `list' 関数で内側のリ
+ストを書けば良く、前述の
+
+     '(nil (foo t "bar" 5) hoge)
+
+は
+     (list nil (list 'foo t "bar" baz) 'hoge)
+
+で作成することができます。
+
+
+File: hustler,  Node: Accessing list Elements,  Next: Adding Elements to list,  Prev: Creating lists,  Up: List Manipulation Functions
+
+4.2.3.2 リストの要素の参照
+...................................
+
+要素の連結した形であるリストから、要素そのものを取り出す時に利用する関数
+に `car'(かあ), `cdr'(くだー), `nth'(えぬす) があります。
+
+   リストは複数のコンスセルから成っていますが、`car' と `cdr' は引数
+として与えられたリストの先頭のコンスセルの、要素部分(`car部')とポ
+インタ部分(`cdr部')をそれぞれ返します。つまり、`'(foo t "bar" 5)'の
+先頭のコンスセル(`foo' が入っているもの)は 
+
+             +--------------+--------------+
+             |              | tの入っている|
+             |     foo      | コンスセル   |
+             |              | へのポインタ |
+             +--------------+--------------+
+
+となっているので、`(car '(foo t "bar" 5))' は `foo' を返し、 `(cdr
+'(foo t "bar" 5))' は次のコンスセルへのポインタ、すなわち `t'
+を先頭とするリスト `'(t "bar" 5)' を返します。 (*note pointer cons:
+List Structure.)
+
+   では、`'(foo t "bar" 5)' の `cdr' をどんどん辿って行くとどうなるで
+しょう。次の例では、変数 `x' に `cdr' の結果を入れて行きます。
+
+     (setq x '(foo t "bar" 5));x は '(foo t "bar" 5) ---(A)
+     (setq x (cdr x))         ;x は '(t "bar" 5)     ---(B)
+     (setq x (cdr x))         ;x は '("bar" 5)       ---(C)
+     (setq x (cdr x))         ;x は '(5)             ---(D)
+     (setq x (cdr x))         ;x は 'nil             ---(E)
+
+(A)〜(E)の代入により変数 `x' の指し示すものは次のように変動します。
+
+           (A)            (B)            (C)            (D)      (E)
+         +--x--+        +--x--+        +--x--+        +--x--+  +--x--+
+         |  *  |        |  *  |        |  *  |        |  *  |  |  *  |
+         +-----+        +-----+        +-----+        +-----+  +-----+
+            ↓             ↓             ↓             ↓       +→ nil
+         +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+         | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+         |     | (B) |  |     | (C) |  |     | (D) |  |     | (E) |
+         +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+
+   `car' と `cdr' を組み合わせると、リストの二番目三番目……の要
+素を取り出すことができます。
+
+     (car (cdr '(foo t "bar" 5)))            ;t
+     (car (cdr (cdr '(foo t "bar" 5))))      ;"bar"
+     (car (cdr (cdr (cdr '(foo t "bar" 5)))))    ;5
+
+しかしこの方法ではもっと後ろの要素を取り出すのが大変なので、そのような時は
+`nth' を使います。`nth' は
+
+     (nth n番目 リスト)      ;「n番目」は0から始まる
+
+のように用いることで、リストの「n番目」の要素を返します。
+
+
+File: hustler,  Node: Adding Elements to list,  Next: Appending lists,  Prev: Accessing list Elements,  Up: List Manipulation Functions
+
+4.2.3.3 リストの要素の追加
+...................................
+
+`(setq x (cdr x))' のようにすることで、リストの先頭を順次切り捨てて
+行くことができます。これとは逆にリストに要素を追加する関数が、 `cons'
+です。
+
+     (cons 要素 リスト)
+
+は、「リスト」に「要素」を追加したリストを返します。`list' 関数もリス
+トを生成して返しますが、`list' は引数全てを要素とするリストを新規に作
+成して返すのに対し、`cons' は既存のリストの先頭に新たな一つの要素を追
+加したリストを返します。それではリストの逆の手順をとりつつ `'(foo t
+"bar" 5)' を構築して行きましょう。(*note following cdr: Accessing list
+Elements.)
+
+     (setq x (cons 5 '()))       ;(setq x (cons 5 nil))と同じ (5)
+     (setq x (cons "bar" x))     ;x は ("bar" 5)
+     (setq x (cons t x))         ;x は (t "bar" 5)
+     (setq x (cons 'foo x))      ;x は (foo "bar" 5)
+
+最後の行を評価する前の `x' は次のようになっています。
+
+                            +--x--+
+                            |  *  |
+                            +-----+
+                              ↓
+                            +-----+-----+  +-----+-----+  +-----+-----+
+                            |  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+                            +-----+-----+  +-----+-----+  +-----+-----+
+
+`(cons 'foo x)' により、`cons' はまず、`'foo' を `car'
+部とするコンスセルを新たに作成します。そして、その `cdr' 部にそれまで
+`x' が指していたリストへのポインタを格納します。上の図は次のように変
+化します。
+
+                            +--x--+
+                            |  *  |
+                            +-----+
+                              ↓
+             +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+             | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+             +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+             \________________これ全体が(cons 'foo x)________________/
+
+そして最後に `(setq x (cons 'foo x))' により `x' が `(cons 'foo x)'
+で生成されたリストを指し示すこととなります。
+
+             +--x--+
+             |  *  |
+             +-----+
+                ↓
+             +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+             | foo |  *--+→|  t  |  *--+→|"bar"|  *--+→|  5  | Λ  |
+             +-----+-----+  +-----+-----+  +-----+-----+  +-----+-----+
+
+
+File: hustler,  Node: Appending lists,  Next: List Related Predicates,  Prev: Adding Elements to list,  Up: List Manipulation Functions
+
+4.2.3.4 リストどうしの結合
+...................................
+
+たくさんの要素を一つのリストに組み上げる `list'、一つのリストに一つ
+の要素を追加する `cons' は既に覚えました。つまり、「要素だけ」と「リ
+スト対要素」のリスト合成関数は覚えたので、「リスト対リスト」の結合関数
+`append' を覚えましょう。`append' は引数として与えられたリストを
+全て結合します。
+
+     (append リスト1 リスト2 リスト3 ... リストn)
+
+のようにした場合、「リスト1」から「リストn」のコンスセルを順次コピーしそれ
+らの全てをつなげます。つまり、「リスト1」の最後のコンスセルのコピーの
+`cdr部'(`nil'が入っている)に「リスト2」の最初のコンスセルのコピー
+へのポインタを格納し、「リスト2」の最後のコンスセルのコピーの`cdr部'
+に「リスト3」の最初のコンスセルへのポインタを格納し、...という手順を繰
+り返すことで、「リスト1」から「リストn」までのすべての要素(コンスセル)が一
+つの鎖に連結されます。そして `append' は連結されたリストを返します。
+
+   この `append' の動作が、`cons' のものとは少し違うことに気付い
+たでしょうか。`cons' では第二引数として与えられたリストを構成するコン
+スセルのいずれも変化していません。`cons' の第一引数の要素を`car
+部'とするコンスセルを生成し、その`cdr部' が第二引数のリストを指し示す
+ようにしただけにすぎません。これに対し `append' は第一引数から第
+(n-1)引数までのリストのコンスセルをすべてコピーし直します。 `append'
+によって返されたリストは、どの部分も新たな領域に確保されたものです。
+
+
+File: hustler,  Node: List Related Predicates,  Prev: Appending lists,  Up: List Manipulation Functions
+
+4.2.3.5 述語関数等
+.......................
+
+ある対象物がリストなのか、あるいはアトムなのかを判定するための関数はそれ
+ぞれ `listp', `atom' です。
+
+     (listp 引数)
+     (atom 引数)
+
+は「引数」が リスト/アトム である場合に `t' を返し、そうでない場合に
+`nil' を返します。
+
+   また、リストに要素がいくつ含まれるかを返す関数に `length' がありま
+す。`length' はリストの要素としてリストがあった場合はそれを一つと数え
+ます。つまり、
+
+     '(a b c)
+     '(1 '(a (b c) x) 4)
+
+は、どちらも長さ3と数えます。`length' は、リストの他に、文字列や (こ
+こでは述べませんが)配列の長さを数える時にも利用できます。 
+
+
+File: hustler,  Node: Association Lists,  Prev: List Manipulation Functions,  Up: Completion Input Functions
+
+4.2.4 連想リスト
+---------------------
+
+`association list' は
+
+     '(連想キー  値1  値2  ...  値n)
+
+というリストが、一個以上集まってさらにリストになったもので、
+
+     '((連想キー1  値1..値n) (連想キー2 ..) ...)
+
+という形式をとっているもののことです。このリストを利用して検索キーが一つだ
+けの簡単なデータベースを作ることができます。たとえば、
+
+     隆          波動拳、昇龍拳、竜巻旋風脚
+     拳          昇龍拳、波動拳、竜巻旋風脚
+     春麗        スピニングバードキック、百烈キック
+     E.本田      スーパー頭付き、百烈張り手
+
+という必殺技データベースを作りたい時に、
+
+     (setq winning-shot-alist
+           '(("隆"   "波動拳" "昇龍拳" "竜巻旋風脚")
+             ("拳"   "昇龍拳" "波動拳" "竜巻旋風脚")
+             ("春麗" "スピニングバードキック" "百烈キック")
+             ("E.本田" "スーパー頭付き" "百烈張り手")))
+
+などとして `alist' を作っておきます。この `alist' から連想キーを
+持っている `list' を取り出す関数が `assoc' で、 
+
+     (assoc  連想キー  連想リスト)
+
+とすることで、「連想リスト」の中から「連想キー」を持っているリスト一つを見
+つけだしそのリストを返します。もし該当するキーを持つリストが見つからなかっ
+た場合は `nil' を返します。今回の `winning-shot-alist' に対して、
+キーボードから読み込んだものをキーとして該当するものを探す場合は次のように
+します。
+
+     (let ((key (read-string "誰のわざ? ")) list)
+       (setq list (assoc key winning-shot-alist))
+       (if list
+           (message "%sの必殺技は%sです。" key (cdr list))
+         (message "%sって誰?" key)))
+
+`assoc' で得られるリストは、連想キーを含めたリストですから、値だけを
+取り出したい時は、その `cdr' 部を取る必要があります。
+
+
+File: hustler,  Node: By-talk 7,  Prev: Completion Input Functions,  Up: Completion Input
+
+余談 7 マクロ
+==================
+
+検索後に、グルーピングしておいた文字列を取得するために、
+`(buffer-substring (match-beginning 1) (match-end 1))' などとすること
+はほとんど定石と言ってよいでしょう。にもかかわらず、これを一気に行う関数が
+ありません(よね?)。そこで、`(buffer-substring (match-beginning n)
+(match-end n))'
+という機能の関数を定義したいのですが、この程度で関数にする
+のはちょっと抵抗を感ずるかもしれません。このような場合に、C言語の引数付き
+`define' のような役割をする「マクロ」を利用すると良いでしょう。
+
+   Cのマクロ定義と違って `Lisp' のマクロの展開のされ方は少し特殊です。
+次のCのマクロの例
+
+     #define inc(x)  ((x)++)
+
+は、定義の引数以外は文字どおりに展開されます。しかし、`Lisp' のマクロ
+は事情が違います。`(setq i (1+ i))' のような動作を行うマクロ定義は次
+のようになります。
+
+     (defmacro inc(x)
+       (list 'setq x (list '1+ x)))
+
+このような定義を行った場合、`Lisp' プログラム中に `(inc i)' が出
+現した場合 `Lisp' インタプリタはマクロ定義の仮引数 `x' に `i'
+を代入した上でマクロ定義を `Lisp' そのものとして評価します。
+つまり、上の定義のうち(クォートなしの) `x' を `i' とみなし `(list 'setq
+x (list '1+ x))' を評価します(実際に `(setq x 'i)'
+してからこの式を評価してみると良いでしょう)。そして、得られた結果が期待し
+たS式と同じになっているか確かめます。
+
+* Menu:
+
+* Exercise 4-1::                余談練習小問題
+* completing-read::
+* Variables Controlling Completion::  補完を制御する関数
+* try-completion::
+* all-completion display-completion-list::
+
+
+File: hustler,  Node: Exercise 4-1,  Next: completing-read,  Prev: By-talk 7,  Up: By-talk 7
+
+余談練習小問題
+---------------------
+
+         (buffer-substring (match-beginning 番号) (match-end 番号))
+
+を表わすマクロを定義してみましょう。
+
+
+File: hustler,  Node: completing-read,  Next: Variables Controlling Completion,  Prev: Exercise 4-1,  Up: By-talk 7
+
+4.2.5 completing-read
+---------------------
+
+さて、これまで連想リストの説明をしてきたので、`completing-read' に
+渡す補完テーブルの説明に移ります。`completing-read' の引数を復習して
+おきましょう。
+
+     (completing-read プロンプト 補完テーブル 選択(述語)関数
+              要マッチ 初期入力)
+
+`completing-read' の第二引数に補完テーブルを `alist' の形で渡し
+ます。例えば曜日を読み込む時の補完テーブルは次のような形です。 
+
+     '(("Sun.") ("Mon.") ("Tue.") ("Wed.")
+       ("Thu.") ("Fri.") ("Sat."))
+
+今まで説明した `alist' とは少し形が違い、それぞれの(内側の)リストが連
+想キーだけで構成されていて、それに対応する値が存在していません。補完入力を
+したいだけであれば、このような形で構いません。これを用いた曜日入力モジュー
+ルは次のようになります。
+
+     (defvar day-alist '(("Sun.") ("Mon.") ("Tue.") ("Wed.")
+                 ("Thu.") ("Fri.") ("Sat.")))
+     (defun read-day-of-the-week ()
+       (interactive)
+       (completing-read "Day of the week?: "
+                day-alist nil t))
+
+`day-alist' に連想キーとして入っている文字列を補完候補として入力を
+促し、スペースやタブで補完しながら文字を読み込みます。この例では第四引数の
+「要マッチ」が `t' なので候補以外の文字列は入力することができません。
+
+   さて、ここでは第三引数の「選択関数」のところには `nil' を指定しまし
+たが、ここには補完テーブル中の要素のうち、特定の条件を満たすもの`(選
+択関数の返す値が t)'を候補にしたい場合に利用します。「選択関数」には
+`alist' の各要素が`(リストのまま)'渡されます。次の例では、月の名
+前を読み込む時に、大の月だけを選んで補完候補とします。
+
+     (defvar month-alist
+       '(("Jan." 31) ("Feb." 28) ("Mar." 31) ("Apr." 30)
+         ("May." 31) ("Jun." 30) ("Jul." 31) ("Aug." 31)
+         ("Sep." 30) ("Oct." 31) ("Nov." 30) ("Dec." 31)))
+     (defun read-odd-month ()
+       (interactive)
+       (completing-read "Odd month: " month-alist
+                'check-odd-month t))
+     (defun check-odd-month (list)
+       (eq 31 (car (cdr list))))
+
+関数 `check-odd-month' には `month-alist' の各要素、すなわち `'("Jan."
+31)', `'("Feb." 28)', ..., `''("Dec." 31) が渡さ
+れるので、これらの第二要素を `(car (cdr list))' によって取り出し、 `31'
+かどうかを判定した結果を返しています。
+
+
+File: hustler,  Node: Variables Controlling Completion,  Next: try-completion,  Prev: completing-read,  Up: By-talk 7
+
+4.2.6 補完を制御する変数
+---------------------------------
+
+変数 `completion-ignore-case' を `t' にすると、補完文字列の大
+文字小文字を無視します。例えば、月名を読む時に小文字で入力したイニシャルを
+元に補完して欲しい時は、
+
+     (let ((completion-ignore-case t))
+       :
+       (completing-read ...)...)
+
+のように `completion-ignore-case' に局所的に `t' をセットして補
+完入力関数を呼びます。
+
+
+File: hustler,  Node: try-completion,  Next: all-completion display-completion-list,  Prev: Variables Controlling Completion,  Up: By-talk 7
+
+4.2.7 try-completion
+--------------------
+
+前出の `completing-read' はミニバッファで補完候補を読むものでしたが、
+バッファ中にある文字列を元に補完したものを得たい場合などに用いるのが
+`try-completion' です。`Emacs-lisp' の関数を随時補完してくれる `M-TAB'
+がその代表的なものです。
+
+     (try-completion 文字列 補完テーブル [選択関数])
+
+第一引数の「文字列」を「補完テーブル」中のすべての候補と比較し、マッチし
+たものがあった場合、マッチしたもの共通部分の先頭からの文字列を返します。も
+しマッチするものがなかった場合は `nil' を返し、「文字列」が「補完テー
+ブル」の中のただ一つの候補と完全一致した場合には、`t' を返します。少々
+分かりにくいので例を挙げて説明します。
+
+   例えば補完候補に `foo', `bar', `baz', `bazz', `hoge', `hore'
+があった場合、次のような補完結果が得られます。
+
+     「文字列(第一引数)」    try-completion の結果
+             "f"                 "foo"
+             "b"                 "ba"
+             "ba"                "ba"
+             "bar"               t
+             "baz"               "baz"
+             "h"                 "ho"
+             "ho"                "ho"
+             "hog"               "hoge"
+             "x"                 nil
+
+   これらの結果を考察すると `try-completion' の返り値を次のように判断
+すると良いことがわかります。
+
+   * 結果が t である  →補完の必要はなかった
+
+   * 結果が nil である  →一致するものがなかった。
+
+   * 第一引数とは違う文字列  →元の文字列を結果の文字列で置き換えるべき
+     (結果の文字列が唯一の補完結果かどうかは分からないもう一度結果の文字列を
+     第一引数として渡して t が返れば唯一の補完結果である)
+
+   * 第一引数と同じ文字列
+     →複数候補があるはずなのでそれらを表示する必要がある
+
+   これより `try-completion' を用いてバッファ中の文字列の随時補完をす
+る手順は次のようになります。
+
+     (defun complete-something ()
+       (interactive)
+       (補完文字列の先頭を探す)                      ;;(*1)
+       (先頭からポイントまでの文字列を取得)
+       (setq 結果 (try-completion 文字列 テーブル))
+       (cond
+        ((eq 結果 t) (これ以上補完の必要ないと表示))
+        ((eq 結果 nil) (一致するものがないと表示))
+        ((string= 文字列 結果)
+         (先頭からポイントまでを切り取り、結果で置き換える))
+        (t (候補一覧を表示))))                       ;;(*2)
+
+(*1)は一般的に、文字列の要素となり得ないものを後方に探します。例えば改行
+文字や、空白文字は補完文字列とならないことがほとんどなので、
+`(skip-chars-backward "^ \t\n")' とすれば十分でしょう。
+
+   続いて(*2)のための関数を紹介します。
+
+
+File: hustler,  Node: all-completion display-completion-list,  Prev: try-completion,  Up: By-talk 7
+
+4.2.8 all-completions display-completion-list
+---------------------------------------------
+
+関数 `all-completions' は `try-completion' と同じ引数を取り(第
+二引数まで)、一致する文字列候補の全てをリストにして返します。例えば先の例
+で、文字列 `ba' で補完させる場合に一致する候補は、`bar', `baz', `bazz'
+ですから、これらをリストにした、`'("bar" "baz" "bazz")' が
+`all-completions' の結果となります。これをバッファ
+に表示したい時に利用するのが `display-completion-list' で、
+`all-completions' で得られた結果をカレントバッファに表示します。
+
+実際にはカレントバッファに候補一覧を表示しては困るので、隣に新たなバッファ
+を開いて表示します。この方法に関しては、ウィンドウとバッファの取り扱いを覚
+えてから説明します。
+
+
+File: hustler,  Node: Concept Index,  Next: Function Index,  Prev: Completion Input,  Up: Top
+
+Concept Index
+*************
+
+ [index ]
+* Menu:
+
+* absolute motion:                       Absolute Motion Summary.
+                                                               (line  6)
+* arithmetic:                            Arithmetic.           (line  6)
+* atom:                                  List.                 (line  6)
+* char 単位移動[ちやあたんいいとう]:     Character Motion.     (line  6)
+* characters, skipping:                  Skipping Characters.  (line  6)
+* completion, controlling variables:     Variables Controlling Completion.
+                                                               (line  6)
+* completion, input:                     Completion Input.     (line  6)
+* control structure:                     Control Structure.    (line  6)
+* cursor motion:                         Cursor Motion.        (line  6)
+* debugging:                             By-talk 3.            (line  6)
+* declaring, local maps:                 Declaring Local Maps. (line  6)
+* defining, functions:                   Defining Functions.   (line  6)
+* defining, major mode functions:        Defining Major Mode Functions.
+                                                               (line  6)
+* Emacs-Lisp の構文[いいまくすりすふのこうふん]: Construction of Emacs-Lisp.
+                                                               (line  6)
+* Emacs-Lisp スコープ[いいまくすりすふすこうふ]: By-talk 6.    (line  6)
+* Emacs-Lisp, construction:              Construction of Emacs-Lisp.
+                                                               (line  6)
+* Emacs-Lisp, scope:                     By-talk 6.            (line  6)
+* escape characters:                     Lisp Escape Characters.
+                                                               (line  6)
+* evaluating programs:                   By-talk 4.            (line  6)
+* Exercise 1:                            Exercise 1.           (line  6)
+* Exercise 2:                            Exercise 2.           (line  6)
+* Exercise 3-1:                          Exercise 3-1.         (line  6)
+* Exercise 3-2:                          Exercise 3-2.         (line  6)
+* Exercise 4-1:                          Exercise 4-1.         (line  6)
+* Functions and Variables:               By-talk 2.            (line  6)
+* functions, defining:                   Defining Functions.   (line  6)
+* functions, finding:                    By-talk 1.            (line  6)
+* functions, must know:                  Functions You Must Know.
+                                                               (line  6)
+* Input Functions <1>:                   Completion Input Functions.
+                                                               (line  6)
+* Input Functions:                       Normal Input Functions.
+                                                               (line  6)
+* interactive functions:                 Interactive Functions.
+                                                               (line  6)
+* interactive functions, binding to keys: Binding Interactive Functions to Keys.
+                                                               (line  6)
+* keymaps, setting:                      Setting Keymaps.      (line  6)
+* keys, binding to interactive functions: Binding Interactive Functions to Keys.
+                                                               (line  6)
+* keys, setting:                         Setting Keys.         (line  6)
+* line 移動[らいんいとう]:               Line Motion.          (line  6)
+* list:                                  List.                 (line  6)
+* list related predicates:               List Related Predicates.
+                                                               (line  6)
+* list, accessing elements:              Accessing list Elements.
+                                                               (line  6)
+* list, adding elements:                 Adding Elements to list.
+                                                               (line  6)
+* list, appending:                       Appending lists.      (line  6)
+* list, association:                     Association Lists.    (line  6)
+* list, creating:                        Creating lists.       (line  6)
+* list, structure:                       List Structure.       (line  6)
+* local maps, declaring:                 Declaring Local Maps. (line  6)
+* macros:                                By-talk 7.            (line  6)
+* major mode, defining functions:        Defining Major Mode Functions.
+                                                               (line  6)
+* major mode, requirements:              Requirements of a Major Mode.
+                                                               (line  6)
+* major mode, what:                      What is Major Mode?.  (line  6)
+* major mode, writing:                   Writing Major Modes.  (line  6)
+* Metachars:                             Major Metacharacters. (line  6)
+* mode name, setting:                    Setting Mode Names.   (line  6)
+* motion, absolute:                      Absolute Motion.      (line  6)
+* motion, boundary check:                Motion Boundary Check.
+                                                               (line  6)
+* motion, by char:                       Character Motion.     (line  6)
+* motion, by line:                       Line Motion.          (line  6)
+* motion, by search:                     Motion by Search.     (line  6)
+* motion, by word:                       Word Motion.          (line  6)
+* motion, cursor:                        Cursor Motion.        (line  6)
+* motion, point:                         Motion by Point.      (line  6)
+* motion, relative:                      Relative Motion.      (line  6)
+* motion, to a column:                   Moving to a Column.   (line  6)
+* motion, to a line:                     Moving to a Line.     (line  6)
+* numerical transformation:              Numerical Transformation.
+                                                               (line  6)
+* operators:                             Operators.            (line  6)
+* point, saving position:                Saving point Position.
+                                                               (line  6)
+* relative motion:                       Relative Motion.      (line  6)
+* replacement, strings:                  Replacing Strings.    (line  6)
+* restricting variables:                 Restricting Variables.
+                                                               (line  6)
+* scope, of Emacs-lisp:                  By-talk 6.            (line  6)
+* search and move:                       Motion by Search.     (line  6)
+* search, accessing results:             Accessing Search Results.
+                                                               (line  6)
+* search, regexp:                        Regular Expression Search.
+                                                               (line  6)
+* search, strings:                       String Search.        (line  6)
+* search, word:                          Word Search.          (line  6)
+* setting, keymaps:                      Setting Keymaps.      (line  6)
+* setting, keys:                         Setting Keys.         (line  6)
+* setting, mode names:                   Setting Mode Names.   (line  6)
+* skipping characters:                   Skipping Characters.  (line  6)
+* strings, deleting:                     Deleting Strings.     (line  6)
+* strings, getting:                      Getting Strings.      (line  6)
+* strings, insert:                       Inserting Strings.    (line  6)
+* strings, insert/delete:                Inserting and Deleting Strings.
+                                                               (line  6)
+* strings, manipulation functions:       String Manipulation Functions.
+                                                               (line  6)
+* strings, replacement:                  Replacing Strings.    (line  6)
+* strings, transformation:               Strings Transformation.
+                                                               (line  6)
+* strings, transforming to other types:  Transforming Types.   (line  6)
+* symbol:                                List.                 (line  6)
+* transformation, numerical:             Numerical Transformation.
+                                                               (line  6)
+* transformation, strings:               Strings Transformation.
+                                                               (line  6)
+* transformation, type:                  Type Transformation.  (line  6)
+* transforming, strings to other types:  Transforming Types.   (line  6)
+* try-completion:                        try-completion.       (line  6)
+* type transformation:                   Type Transformation.  (line  6)
+* Variables:                             Variables.            (line  6)
+* Variables, declaring:                  Declaring Variables.  (line  6)
+* word 単位移動[わあとたんいいとう]:     Word Motion.          (line  6)
+* まとめ 1[まとめ1]:                     Summary 1.            (line  6)
+* アトム[あとむ]:                        List.                 (line  6)
+* インタラクティブ関数 キーにバインド[いんたらくてふかんすうきい]: Binding Interactive Functions to Keys.
+                                                               (line  6)
+* インタラクティブ関数[いんたらくていふかんすう]: Interactive Functions.
+                                                               (line  6)
+* エスケープキャラクタ[えすけえふきやらくた]: Lisp Escape Characters.
+                                                               (line  6)
+* カーソル移動[かあそるいとう]:          Cursor Motion.        (line  6)
+* キー 割当て[きいわりあて]:             Setting Keys.         (line  6)
+* キーマップ 設定[きいまつふせつてい]:   Setting Keymaps.      (line  6)
+* コンスセル[こんすせる]:                Accessing list Elements.
+                                                               (line 12)
+* コンセル[こんせる]:                    List Structure.       (line 15)
+* シンボル[しんほる]:                    List.                 (line  6)
+* デバッギング[てはつきんく]:            By-talk 3.            (line  6)
+* バッファ編集関数[はつふあへんしゆうかんすう]: Buffer Editing Functions Summary.
+                                                               (line  6)
+* プログラムの評価[ふろくらむのひようか]: By-talk 4.           (line  6)
+* ポインタ[ほいんた] <1>:                Accessing list Elements.
+                                                               (line 12)
+* ポインタ[ほいんた]:                    List Structure.       (line 60)
+* ポイント 位置の保存[ほいんといちのほそん]: Saving point Position.
+                                                               (line  6)
+* ポイント[ほいんと]:                    point.                (line  6)
+* ポイント移動[ほいんといとう]:          Motion by Point.      (line  6)
+* マクロ[まくろ]:                        By-talk 7.            (line  6)
+* メジャーモード ってなに[めしやもおとつてなに]: What is Major Mode?.
+                                                               (line  6)
+* メジャーモード を書こう[めしやもおとをかこう]: Writing Major Modes.
+                                                               (line  6)
+* メジャーモード 必須条件[めしやもおとひすうしおうけん]: Requirements of a Major Mode.
+                                                               (line  6)
+* メジャーモード関数 定義[めしやもおとかんすうていき]: Defining Major Mode Functions.
+                                                               (line  6)
+* メタキャラクタ[めたきやらくた]:        Major Metacharacters. (line  6)
+* モード名 設定[もおとめいせつてい]:     Setting Mode Names.   (line  6)
+* リスト 作成[りすとさくせい]:           Creating lists.       (line  6)
+* リスト 処理関数[りすとしよりかんすう]: List Manipulation Functions.
+                                                               (line  6)
+* リスト 構造[りすとこうそう]:           List Structure.       (line  6)
+* リスト 結合[りすとけつこう]:           Appending lists.      (line  6)
+* リスト 要素の参照[りすとようそのさんしよう]: Accessing list Elements.
+                                                               (line  6)
+* リスト 要素の追加[りすとようそのついか]: Adding Elements to list.
+                                                               (line  6)
+* リスト 連想[りすとれんそう]:           Association Lists.    (line  6)
+* リスト[りすと]:                        List.                 (line  6)
+* ローカルマップ 使用宣言[ろおかるまふしようせんけん]: Declaring Local Maps.
+                                                               (line  6)
+* 余談 1 「〜関係の関数はないかな?」を探す[よたん1]: By-talk 1.
+                                                               (line  6)
+* 余談 2 関数・変数[よたん2]:            By-talk 2.            (line  6)
+* 余談 3 デバッギング[よたん3]:          By-talk 3.            (line  6)
+* 余談 4 プログラムの評価[よたん4]:      By-talk 4.            (line  6)
+* 余談 5 雑関数[よたん5]:                By-talk 5.            (line  6)
+* 余談 6 Emacs-Lisp のスコープ[よたん6]: By-talk 6.            (line  6)
+* 余談 7 マクロ[よたん7]:                By-talk 7.            (line  6)
+* 制御構造[せいきよこうそう]:            Control Structure.    (line  6)
+* 削除 文字列[さくしょもしれつ]:         Deleting Strings.     (line  6)
+* 単語検索[たんこけんさく]:              Word Search.          (line  6)
+* 型変換[かたへんかん]:                  Type Transformation.  (line  6)
+* 変換 型[へんかんかた]:                 Type Transformation.  (line  6)
+* 変換 数値[へんかんすうち]:             Numerical Transformation.
+                                                               (line  6)
+* 変換 文字列[へんかんもしれつ]:         Strings Transformation.
+                                                               (line  6)
+* 変換 文字列と他の型[へんかんもしれつとほかのかた]: Transforming Types.
+                                                               (line  6)
+* 変数 宣言[へんすうせんけん]:           Declaring Variables.  (line  6)
+* 変数 束縛[へんすうそくはく]:           Restricting Variables.
+                                                               (line  6)
+* 変数 補完を制御する[へんすうほかんをせいきよする]: Variables Controlling Completion.
+                                                               (line  6)
+* 変数[へんすう]:                        Variables.            (line  6)
+* 挿入 文字列[そうにゆうもしれつ]:       Inserting Strings.    (line  6)
+* 数値変換[すうちへんかん]:              Numerical Transformation.
+                                                               (line  6)
+* 文字(種)スキップ[もしすきふ]:          Skipping Characters.  (line  6)
+* 文字列 他の型の変換[もしれつほかのかたのへんかん]: Transforming Types.
+                                                               (line  6)
+* 文字列 削除[もしれつさくしよ]:         Deleting Strings.     (line  6)
+* 文字列 取り込み[もしれつとりこみ]:     Getting Strings.      (line  6)
+* 文字列 変換[もしれつへんかん]:         Strings Transformation.
+                                                               (line  6)
+* 文字列 挿入/削除[もしれつそうにゆうさくしよ]: Inserting and Deleting Strings.
+                                                               (line  6)
+* 文字列 挿入[もしれつそうにゅう]:       Inserting Strings.    (line  6)
+* 文字列 検索[もしれつけんさく]:         String Search.        (line  6)
+* 文字列 置換[もしれつちかん]:           Replacing Strings.    (line  6)
+* 桁移動[けたいとう]:                    Moving to a Column.   (line  6)
+* 検索 単語[けんさくたんこ]:             Word Search.          (line  6)
+* 検索 正規表現[けんさくせいきひょうけん]: Regular Expression Search.
+                                                               (line  6)
+* 検索 結果へのアクセス[けんさくけつかへのあくせす]: Accessing Search Results.
+                                                               (line  6)
+* 検索 関数[けんさくけつか]:             Search Functions Summary.
+                                                               (line  6)
+* 検索, 文字列[けんさくもしれつ]:        String Search.        (line  6)
+* 検索移動[けんさくいとう]:              Motion by Search.     (line  6)
+* 正規表現検索[せいきひようけんけんさく]: Regular Expression Search.
+                                                               (line  6)
+* 演算子[えんさんし]:                    Operators.            (line  6)
+* 相対移動[そうたいいとう]:              Relative Motion.      (line  6)
+* 移動 char 単位[いとうちやあたんい]:    Character Motion.     (line  6)
+* 移動 line[いとうらいん]:               Line Motion.          (line  6)
+* 移動 word 単位[いとうわあとたんい]:    Word Motion.          (line  6)
+* 移動 カーソル[いとうかあそる]:         Cursor Motion.        (line  6)
+* 移動 ポイント[いとうほいんと]:         Motion by Point.      (line  6)
+* 移動 境界の検査[いとうきようかいのけんさ]: Motion Boundary Check.
+                                                               (line  6)
+* 移動 桁[いとうけた]:                   Moving to a Column.   (line  6)
+* 移動 検索[いとうけんさく]:             Motion by Search.     (line  6)
+* 移動 相対[いとうそうたい]:             Relative Motion.      (line  6)
+* 移動 絶対[いとうせつたい]:             Absolute Motion.      (line  6)
+* 移動 行[いとうきよう]:                 Moving to a Line.     (line  6)
+* 章末問題 1[しようまつもんたい1]:       Exercise 1.           (line  6)
+* 章末問題 2[しようまつもんたい2]:       Exercise 2.           (line  6)
+* 算術[さんしゆつ]:                      Arithmetic.           (line  6)
+* 算術関数[さんしゆつかんすう]:          Arithmetic Functions. (line  6)
+* 絶対移動[せつたいいとう] <1>:          Absolute Motion Summary.
+                                                               (line  6)
+* 絶対移動[せつたいいとう]:              Absolute Motion.      (line  6)
+* 練習問題 3-1[れんしゆうもんたい31]:    Exercise 3-1.         (line  6)
+* 練習問題 3-2[れんしゆうもんたい32]:    Exercise 3-2.         (line  6)
+* 練習問題 4-1[れんしゆうもんたい41]:    Exercise 4-1.         (line  6)
+* 置換 文字列[ちかんもしれつ]:           Replacing Strings.    (line  6)
+* 行移動[きよういとう]:                  Moving to a Line.     (line  6)
+* 補完 制御する変数[ほかんせいきよするへんすう]: Variables Controlling Completion.
+                                                               (line  6)
+* 補完入力[ほかんにゆうりよく]:          Completion Input.     (line  6)
+* 述語関数[しゆつこかんすう]:            List Related Predicates.
+                                                               (line  6)
+* 関数 バッファ編集[かんすうはつふあへんしゆう]: Buffer Editing Functions Summary.
+                                                               (line  6)
+* 関数 リスト処理[かんすうりすとしより]: List Manipulation Functions.
+                                                               (line  6)
+* 関数 一般入力[かんすういつはんにゆうりよく]: Normal Input Functions.
+                                                               (line  6)
+* 関数 定義する[かんすうていきする]:     Defining Functions.   (line  6)
+* 関数 探す[かんすうさかす]:             By-talk 1.            (line  6)
+* 関数 文字列操作[かんすうもしれつそうさ]: String Manipulation Functions.
+                                                               (line  6)
+* 関数 最低限[かんすうさいていけん]:     Functions You Must Know.
+                                                               (line  6)
+* 関数 算術[かんすうさんしゆつ]:         Arithmetic Functions. (line  6)
+* 関数 補完入力[かんすうほかんにゆうりよく]: Completion Input Functions.
+                                                               (line  6)
+* 関数 雑[かんすうさつ]:                 By-talk 5.            (line  6)
+* 関数・変数[かんすうとへんすう]:        By-talk 2.            (line  6)
+
+
+File: hustler,  Node: Function Index,  Next: Variable Index,  Prev: Concept Index,  Up: Top
+
+Function Index
+**************
+
+ [index ]
+* Menu:
+
+* $:                                     Major Metacharacters. (line 21)
+* %, *, +, -, /:                         Operators.            (line  8)
+* ':                                     List.                 (line 25)
+* (bobp) / (eobp):                       Motion Boundary Check.
+                                                               (line 10)
+* (bolp) / (eolp):                       Motion Boundary Check.
+                                                               (line 13)
+* *:                                     Major Metacharacters. (line  9)
+* +:                                     Major Metacharacters. (line 12)
+* .:                                     Major Metacharacters. (line  6)
+* 1+, 1-:                                Operators.            (line 11)
+* <, <=, =, /=, >, >=:                   Operators.            (line 14)
+* ?:                                     Major Metacharacters. (line 15)
+* [-^A-Z]:                               Major Metacharacters. (line 33)
+* [^文字リスト]:                         Major Metacharacters. (line 27)
+* [X-Y]:                                 Major Metacharacters. (line 30)
+* [文字リスト]:                          Major Metacharacters. (line 24)
+* \":                                    Lisp Escape Characters.
+                                                               (line 21)
+* \&:                                    Replacing Strings.    (line 28)
+* \\ <1>:                                Replacing Strings.    (line 34)
+* \\:                                    Lisp Escape Characters.
+                                                               (line 12)
+* \a:                                    Lisp Escape Characters.
+                                                               (line 30)
+* \b:                                    Lisp Escape Characters.
+                                                               (line 33)
+* \C-英字:                               Lisp Escape Characters.
+                                                               (line 15)
+* \e:                                    Lisp Escape Characters.
+                                                               (line 18)
+* \f:                                    Lisp Escape Characters.
+                                                               (line 36)
+* \n <1>:                                Replacing Strings.    (line 31)
+* \n:                                    Lisp Escape Characters.
+                                                               (line 24)
+* \r:                                    Lisp Escape Characters.
+                                                               (line 27)
+* \t:                                    Lisp Escape Characters.
+                                                               (line 39)
+* ^:                                     Major Metacharacters. (line 18)
+* alist:                                 Association Lists.    (line 31)
+* all-completion:                        all-completion display-completion-list.
+                                                               (line  6)
+* and:                                   and.                  (line  6)
+* append <1>:                            Appending lists.      (line  6)
+* append:                                List Structure.       (line  6)
+* apropos:                               By-talk 1.            (line  6)
+* Arithmetic Functions:                  Arithmetic Functions. (line  6)
+* assoc:                                 Association Lists.    (line 31)
+* atom:                                  List Related Predicates.
+                                                               (line  6)
+* backward-char:                         Character Motion.     (line  6)
+* backward-word:                         Word Motion.          (line  6)
+* beginning-of-buffer:                   Motion by Point.      (line 16)
+* beginning-of-line:                     Moving to a Column.   (line  6)
+* Buffer Editing Functions:              Buffer Editing Functions Summary.
+                                                               (line  6)
+* buffer-substring:                      Getting Strings.      (line  6)
+* car <1>:                               Accessing list Elements.
+                                                               (line  6)
+* car:                                   List Structure.       (line  6)
+* catch:                                 catch trow.           (line  6)
+* cdr <1>:                               Accessing list Elements.
+                                                               (line  6)
+* cdr:                                   List Structure.       (line  6)
+* completing-read <1>:                   completing-read.      (line  6)
+* completing-read:                       Completion Input Functions.
+                                                               (line  6)
+* concat:                                Getting Strings.      (line 55)
+* cond:                                  cond.                 (line  6)
+* cons <1>:                              Adding Elements to list.
+                                                               (line  6)
+* cons:                                  List Structure.       (line  6)
+* count-lines:                           Moving to a Line.     (line  6)
+* Declaring Variables:                   Declaring Variables.  (line  6)
+* define-key:                            Setting Keys.         (line  9)
+* Defining Functions:                    Defining Functions.   (line  6)
+* defmacro:                              By-talk 7.            (line  6)
+* defun:                                 By-talk 2.            (line 24)
+* defvar:                                Declaring Variables.  (line  6)
+* delete-backward-char:                  Deleting Strings.     (line 14)
+* delete-char:                           Deleting Strings.     (line 14)
+* delete-region:                         Deleting Strings.     (line 14)
+* ding:                                  By-talk 5.            (line 17)
+* display-completion-list:               all-completion display-completion-list.
+                                                               (line  6)
+* end-of-buffer:                         Motion by Point.      (line 16)
+* end-of-line:                           Moving to a Column.   (line  6)
+* erase-buffer:                          Deleting Strings.     (line 14)
+* Finding Functions:                     By-talk 1.            (line  6)
+* format:                                format.               (line  6)
+* forward-char:                          Character Motion.     (line  6)
+* forward-line:                          Line Motion.          (line  6)
+* forward-word:                          Word Motion.          (line  6)
+* goto-char:                             Motion by Point.      (line  6)
+* goto-line:                             Moving to a Line.     (line  6)
+* if:                                    if.                   (line  6)
+* input, completion:                     Completion Input Functions.
+                                                               (line  6)
+* input, normal:                         Normal Input Functions.
+                                                               (line  6)
+* insert:                                Inserting Strings.    (line  6)
+* insert-char:                           insert-char.          (line  6)
+* int-to-string:                         Strings Transformation.
+                                                               (line  6)
+* interactive:                           Binding Interactive Functions to Keys.
+                                                               (line  6)
+* Interactive Functions:                 Interactive Functions.
+                                                               (line  6)
+* kill-region:                           Deleting Strings.     (line 22)
+* length:                                List Related Predicates.
+                                                               (line 23)
+* let:                                   Restricting Variables.
+                                                               (line 10)
+* let*:                                  Numerical Transformation.
+                                                               (line 32)
+* list <1>:                              Creating lists.       (line  6)
+* list:                                  List Structure.       (line  6)
+* List Manipulation:                     List Manipulation Functions.
+                                                               (line  6)
+* list related predicates:               List Related Predicates.
+                                                               (line  6)
+* listp:                                 List Related Predicates.
+                                                               (line  6)
+* make-keymap <1>:                       Defining Functions.   (line 33)
+* make-keymap:                           Setting Keymaps.      (line 20)
+* match-beginning:                       Accessing Search Results.
+                                                               (line 19)
+* match-end:                             Accessing Search Results.
+                                                               (line 19)
+* max, min:                              Arithmetic Functions. (line  8)
+* message:                               By-talk 3.            (line  8)
+* Misc Functions:                        By-talk 5.            (line  6)
+* move-to-column:                        Moving to a Column.   (line  6)
+* next-line:                             Line Motion.          (line  6)
+* nth:                                   Accessing list Elements.
+                                                               (line  6)
+* numberp(integerp):                     Operators.            (line 23)
+* or:                                    or.                   (line  6)
+* point:                                 point.                (line  6)
+* point-max:                             point.                (line  6)
+* point-min:                             point.                (line  6)
+* predicates, list related:              List Related Predicates.
+                                                               (line  6)
+* previous-line:                         Line Motion.          (line  6)
+* progn:                                 if.                   (line 18)
+* random:                                Arithmetic Functions. (line 11)
+* re-search-backward:                    Regular Expression Search.
+                                                               (line  6)
+* re-search-forward:                     Regular Expression Search.
+                                                               (line  6)
+* read-file-name:                        Normal Input Functions.
+                                                               (line 28)
+* read-string:                           Normal Input Functions.
+                                                               (line  6)
+* replace-match:                         Replacing Strings.    (line 19)
+* Restricting Variables:                 Restricting Variables.
+                                                               (line  6)
+* save-excursion:                        Saving point Position.
+                                                               (line  6)
+* Search Functions:                      Search Functions Summary.
+                                                               (line  6)
+* search-backward:                       String Search.        (line  6)
+* search-forward:                        String Search.        (line  6)
+* self-insert-command:                   self-insert-command.  (line  6)
+* set:                                   Variables.            (line  6)
+* setq:                                  Variables.            (line  6)
+* sit-for <1>:                           By-talk 5.            (line 17)
+* sit-for:                               By-talk 3.            (line 13)
+* skip-chars-backward:                   Skipping Characters.  (line  6)
+* skip-chars-forward:                    Skipping Characters.  (line  6)
+* sleep-for:                             By-talk 5.            (line 17)
+* string-equal:                          String Manipulation Functions.
+                                                               (line 21)
+* string-match:                          String Manipulation Functions.
+                                                               (line 21)
+* string-to-char:                        Numerical Transformation.
+                                                               (line 35)
+* string-to-int:                         Numerical Transformation.
+                                                               (line  6)
+* string<:                               String Manipulation Functions.
+                                                               (line 21)
+* string=:                               Getting Strings.      (line 55)
+* string>:                               String Manipulation Functions.
+                                                               (line 21)
+* stringp:                               String Manipulation Functions.
+                                                               (line 21)
+* Strings manipulation:                  String Manipulation Functions.
+                                                               (line  6)
+* substring:                             String Manipulation Functions.
+                                                               (line 21)
+* this-command-keys:                     self-insert-command.  (line 14)
+* throw:                                 catch trow.           (line  6)
+* try-completion:                        try-completion.       (line  6)
+* use-local-map:                         Declaring Local Maps. (line  7)
+* while:                                 while.                (line  6)
+* word-search-backward:                  Word Search.          (line  6)
+* word-search-forward:                   Word Search.          (line  6)
+* 文字列操作[もしれつそうさ]:            String Manipulation Functions.
+                                                               (line  6)
+
+
+File: hustler,  Node: Variable Index,  Prev: Function Index,  Up: Top
+
+Variable Index
+**************
+
+ [index ]
+* Menu:
+
+* alist:                                 completing-read.      (line 14)
+* auto-mode-alist:                       What is Major Mode?.  (line 15)
+* case-fold-search:                      Restricting Variables.
+                                                               (line 17)
+* Completion Controlling Variables:      Variables Controlling Completion.
+                                                               (line  6)
+* completion-ignore-case:                Variables Controlling Completion.
+                                                               (line  6)
+* current-column:                        Moving to a Column.   (line  6)
+* global-map:                            Setting Keymaps.      (line 11)
+* kill-ring:                             Saving point Position.
+                                                               (line 30)
+* mode-name:                             Setting Mode Names.   (line  6)
+
+ [index ]
+* Menu:
+
+* C-j:                                   By-talk 4.            (line 30)
+* ESC C-x:                               By-talk 4.            (line  9)
+* ESC ESC:                               By-talk 4.            (line 24)
+* ESC TAB:                               By-talk 4.            (line  9)
+* M-TAB:                                 try-completion.       (line  6)
+
+
+
+Tag Table:
+Node: Top0
+Node: Writing Major Modes5249
+Node: What is Major Mode?5912
+Node: Requirements of a Major Mode6923
+Node: Setting Mode Names7747
+Node: Setting Keymaps8363
+Node: Setting Keys9640
+Node: Declaring Local Maps10332
+Node: Defining Major Mode Functions10767
+Node: Interactive Functions11272
+Node: Binding Interactive Functions to Keys12626
+Node: Defining Functions13448
+Node: Exercise 114571
+Node: Summary 115308
+Node: By-talk 116468
+Node: Construction of Emacs-Lisp17291
+Node: Variables17958
+Node: Declaring Variables18623
+Node: Restricting Variables19236
+Node: Control Structure21095
+Node: if21376
+Node: or22074
+Node: and22726
+Node: cond23057
+Node: while24146
+Node: catch trow25062
+Node: Arithmetic27186
+Node: Operators27421
+Node: Arithmetic Functions28237
+Node: Exercise 228617
+Node: By-talk 229029
+Node: By-talk 330258
+Node: By-talk 430985
+Node: Functions You Must Know32436
+Node: Cursor Motion33158
+Node: Relative Motion33950
+Node: Character Motion34387
+Node: Word Motion34823
+Node: Line Motion35128
+Node: Absolute Motion35758
+Node: point36103
+Node: Motion by Point36662
+Node: Moving to a Line37544
+Node: Moving to a Column37977
+Node: Motion Boundary Check38433
+Node: Absolute Motion Summary39429
+Node: Motion by Search40170
+Node: Lisp Escape Characters41383
+Node: String Search42882
+Node: Word Search44450
+Node: Regular Expression Search44872
+Node: Major Metacharacters45432
+Node: Skipping Characters46441
+Node: Accessing Search Results47574
+Node: Search Functions Summary49650
+Node: Exercise 3-150224
+Node: Saving point Position51786
+Node: Inserting and Deleting Strings53246
+Node: Inserting Strings53762
+Node: insert-char54294
+Node: self-insert-command54709
+Node: Transforming Types55656
+Node: format55888
+Node: Type Transformation58438
+Node: Getting Strings59330
+Node: Numerical Transformation62699
+Node: Strings Transformation64532
+Node: String Manipulation Functions65039
+Node: Deleting Strings66328
+Ref: Deleting Strings-Footnote-168061
+Node: Replacing Strings68152
+Node: Buffer Editing Functions Summary69787
+Node: By-talk 570566
+Node: By-talk 671062
+Node: Exercise 3-276868
+Node: Completion Input79863
+Node: Normal Input Functions80552
+Node: Completion Input Functions82687
+Node: List84172
+Node: List Structure85862
+Node: List Manipulation Functions90261
+Node: Creating lists90743
+Node: Accessing list Elements91940
+Node: Adding Elements to list94990
+Node: Appending lists97768
+Node: List Related Predicates99852
+Node: Association Lists100763
+Node: By-talk 7102992
+Node: Exercise 4-1105016
+Node: completing-read105287
+Node: Variables Controlling Completion108124
+Node: try-completion108739
+Node: all-completion display-completion-list112088
+Node: Concept Index113127
+Node: Function Index134812
+Node: Variable Index149389
+
+End Tag Table

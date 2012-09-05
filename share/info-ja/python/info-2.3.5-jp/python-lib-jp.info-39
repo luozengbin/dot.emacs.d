@@ -1,0 +1,1136 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: ContentHandler オブジェクト,  Next: DTDHandler オブジェクト,  Prev: xmlsaxhandler,  Up: xmlsaxhandler
+
+ContentHandler オブジェクト
+---------------------------
+
+`ContentHandler' はアプリケーション側でサブクラス化して利用する
+ことが前提になっています。パーサは入力ドキュメントのイベントにより、そ
+れぞれに対応する以下のメソッドを呼び出します。
+
+`setDocumentLocator(locator)'
+     アプリケーションにドキュメント・イベントの発生位置を通知するためにパー
+     サから呼び出されます。
+
+     SAX パーサによるロケータの提供は強く推奨されています(必須ではありま
+     せん)。もし提供する場合は、DocumentHandler インターフェースのどのメ
+     ソッドよりも先にこのメソッドが呼び出されるようにしなければなりません。
+
+     アプリケーションはパーサがエラーを通知しない場合でもロケータによって、
+     すべてのドキュメント関連イベントの終了位置を知ることが可能になります。
+     典型的な利用方法としては、アプリケーション側でこの情報を使い独自のエ
+     ラーを発生させること(文字コンテンツがアプリケーション側で決めた規則
+     に沿っていない場合等)があげられます。しかしロケータが返す情報は検索
+     エンジンなどで利用するものとしてはおそらく不充分でしょう。
+
+     ロケータが正しい情報を返すのは、インターフェースからイベントの呼出し
+     が実行されている間だけです。それ以外のときは使用すべきでありません。
+
+`startDocument()'
+     ドキュメントの開始通知を受け取ります。
+
+     SAX パーサはこのインターフェースやDTDHandler のどのメソッド
+     (`setDocumentLocator()'を除く)よりも先にこのメソッドを一度だ
+     け呼び出します。
+
+
+`endDocument()'
+     ドキュメントの終了通知を受け取ります。
+
+     SAX
+     パーサはこのメソッドを一度だけ、パース過程の最後に呼び出します。
+     パーサは(回復不能なエラーで)パース処理を中断するか、あるいは入力の
+     最後に到達するまでこのメソッドを呼び出しません。
+
+`startPrefixMapping(prefix, uri)'
+     プリフィックスと URI の名前空間の関連付けを開始します。
+
+     このイベントから返る情報は通常の名前空間処理では使われません。SAX
+     XML リーダは `feature_namespaces' 機能が有効になっている場合(デ
+     フォルト)、要素と属性名のプリフィックスを自動的に置換するようになっ
+     ています。
+
+     しかしアプリケーション側でプリフィックスを文字データや属性値の中で扱
+     う必要が生じることもあります。この場合プリフィックスの自動展開は保証
+     されないため、必要に応じ `startPrefixMapping()' や
+     `endPrefixMapping()' イベントからアプリケーションに提供される
+     情報を用いてプリフィックスの展開をおこないます。
+
+     `startPrefixMapping()' と `endPrefixMapping()' イベン
+     トは相互に正しい入れ子関係になることが保証されていないので注意が必要
+     です。すべての `startPrefixMapping()' は対応する `startElement()'
+     の前に発生し、`endPrefixMapping()' イ ベントは対応する
+     `endElement()' の後で発生しますが、その順序 は保証されていません。
+
+`endPrefixMapping(prefix)'
+     プリフィックスと URI の名前空間の関連付けを終了します。
+
+     詳しくは `startPrefixMapping()' を参照してください。このイベ
+     ントは常に対応する `endElement()' の後で発生しますが、複数の
+     `endPrefixMapping()' イベントの順序は特に保証されません。
+
+`startElement(name, attrs)'
+     非名前空間モードで要素の開始を通知します。
+
+     NAME パラーメータには要素型の raw XML 1.0名を文字列として、 ATTRS
+     パラメータには要素の属性を保持する `Attributes' インターフェース
+     オブジェクトをそれぞれ指定します。ATTRS として渡されたオブジェ
+     クトはパーサで再利用することも可能ですが、属性のコピーを保持するた
+     めにこれを参照し続けるのは確実な方法ではありません。属性のコピーを保
+     持したいときは ATTRS オブジェクトの `copy()' メソッドを
+     用いてください。
+
+`endElement(name)'
+     非名前空間モードで要素の終了を通知します。
+
+     NAME パラメータには `startElement()' イベント同様の要素
+     型名を指定します。
+
+`startElementNS(name, qname, attrs)'
+     名前空間モードで要素の開始を通知します。
+
+     NAME パラーメータには要素型を `(URI, LOCALNAME)'
+     のタプルとして、QNAME パラメータにはソース・
+     ドキュメントで用いられている raw XML 1.0名、ATTRS には要素の属
+     性を保持する `AttributesNS' インターフェース
+     のインスタンスをそれぞれ指定します。要
+     素に関連付けられた名前空間がないときは、NAME コンポーネントの URI
+     が `None' になります。ATTRS として渡されたオブジェ
+     クトはパーサで再利用することも可能ですが、属性のコピーを保持するた
+     めにこれを参照し続けるのは確実な方法ではありません。属性のコピーを保
+     持したいときは ATTRS オブジェクトの `copy()' メソッドを
+     用いてください。
+
+     `feature_namespace_prefixes' 機能が有効になっていなければ、パー
+     サで QNAME を `None' にセットすることも可能です。
+
+`endElementNS(name, qname)'
+     非名前空間モードで要素の終了を通知します。
+
+     NAME パラメータには `startElementNS()' イベント同様の要素
+     型を指定します。QNAME パラメータも同じです。
+
+`characters(content)'
+     文字データの通知を受け取ります。
+
+     パーサは文字データのチャンクごとにこのメソッドを呼び出して通知します。
+     SAX
+     パーサは一連の文字データを単一のチャンクとして返す場合と複数のチャ
+     ンクに分けて返す場合がありますが、ロケータの情報が正しく保たれるよう
+     に、一つのイベントの文字データは常に同じ外部エンティティのものでなけ
+     ればなりません。
+
+     CONTENT はユニコード文字列、バイト文字列のどちらでもかまいませ
+     んが、`expat' リーダ・モジュールは常にユニコード文字列を生成す
+     るようになっています。
+
+     _Note:_ Python XML SIG が提供していた初期 SAX 1
+     では、このメソッドにもっ と JAVA
+     風のインターフェースが用いられています。しかし Python で採用
+     されている大半のパーサでは古いインターフェースを有効に使うことができ
+     ないため、よりシンプルなものに変更されました。古いコードを新しいイン
+     ターフェースに変更するには、古い OFFSET と LENGTH パラメー
+     タでスライスせずに、CONTENT を指定するようにしてください。
+
+`ignorableWhitespace(whitespace)'
+     要素コンテンツに含まれる無視可能な空白文字の通知を受け取ります。
+
+     妥当性検査をおこなうパーサは無視可能な空白文字(W3C XML 1.0 勧告のセ
+     クション 2.10 参照)のチャンクごとに、このメソッドを使って通知しなけ
+     ればなりません。妥当性検査をしないパーサもコンテンツモデルの利用とパー
+     スが可能な場合、このメソッドを利用することが可能です。
+
+     SAX
+     パーサは一連の空白文字を単一のチャンクとして返す場合と複数のチャ
+     ンクに分けて返す場合がありますが、ロケータの情報が正しく保たれるよう
+     に、一つのイベントの文字データは常に同じ外部エンティティのものでなけ
+     ればなりません。
+
+`processingInstruction(target, data)'
+     処理命令の通知を受け取ります。
+
+     パーサは処理命令が見つかるたびにこのメソッドを呼び出します。処理命令
+     はメインのドキュメント要素の前や後にも発生することがあるので注意して
+     ください。
+
+     SAX パーサがこのメソッドを使って XML 宣言(XML 1.0 のセクション
+     2.8)や テキスト宣言(XML 1.0 のセクション
+     4.3.1)の通知をすることはありません。
+
+`skippedEntity(name)'
+     スキップしたエンティティの通知を受け取ります。
+
+     パーサはエンティティをスキップするたびにこのメソッドを呼び出します。
+     妥当性検査をしないプロセッサは(外部 DTD
+     サブセットで宣言されているな
+     どの理由で)宣言が見当たらないエンティティをスキップします。すべての
+     プロセッサは `feature_external_ges' および `feature_external_pes'
+     属性の値によっては外部エンティティをスキッ プすることがあります。
+
+
+File: python-lib-jp.info,  Node: DTDHandler オブジェクト,  Next: EntityResolver オブジェクト,  Prev: ContentHandler オブジェクト,  Up: xmlsaxhandler
+
+DTDHandler オブジェクト
+-----------------------
+
+`DTDHandler' インスタンスは以下のメソッドを提供します。
+
+`notationDecl(name, publicId, systemId)'
+     表記法宣言イベントの通知を捕捉します。
+
+`unparsedEntityDecl(name, publicId, systemId, ndata)'
+     未構文解析エンティティ宣言イベントの通知を受け取ります Handle an
+     unparsed entity declaration event.
+
+
+File: python-lib-jp.info,  Node: EntityResolver オブジェクト,  Next: ErrorHandler オブジェクト,  Prev: DTDHandler オブジェクト,  Up: xmlsaxhandler
+
+EntityResolver オブジェクト
+---------------------------
+
+`resolveEntity(publicId, systemId)'
+     エンティティのシステム識別子を解決し、文字列として読み込んだシステム
+     識別子あるいは InputSource オブジェクトのいずれかを返します。デフォ
+     ルトの実装では SYSTEMID を返します。
+
+
+File: python-lib-jp.info,  Node: ErrorHandler オブジェクト,  Prev: EntityResolver オブジェクト,  Up: xmlsaxhandler
+
+ErrorHandler オブジェクト
+-------------------------
+
+このインターフェースのオブジェクトは `XMLReader' からのエラーや
+警告の情報を受け取るために使われます。このインターフェースを実装したオ
+ブジェクトを作成し `XMLReader' に登録すると、パーサは警告やエラー
+の通知のためにそのオブジェクトのメソッドを呼び出すようになります。エラー
+には警告、回復可能エラー、回復不能エラーの3段階があります。すべてのメ
+ソッドは `SAXParseException' だけをパラメータとして受け取り
+ます。受け取った例外オブジェクトを raise することで、エラーや警告は例
+外に変換されることもあります。
+
+`error(exception)'
+     パーサが回復可能なエラーを検知すると呼び出されます。このメソッドが例
+     外を raise しないとパースは継続されますが、アプリケーション側では
+     エラー以降のドキュメント情報を期待していないこともあります。パー
+     サが処理を継続した場合、入力ドキュメント内のほかのエラーを見つけるこ
+     とができます。
+
+`fatalError(exception)'
+     パーサが回復不能なエラーを検知すると呼び出されます。このメソッドが
+     return した後、すぐにパースを停止することが求められています。
+
+`warning(exception)'
+     パーサが軽微な警告情報をアプリケーションに通知するために呼び出されま
+     す。このメソッドが return
+     した後もパースを継続し、ドキュメント情報を
+     アプリケーションに送り続けるよう求められています。このメソッドで例外
+     を発生させた場合、パースは中断されてしまいます。
+
+
+File: python-lib-jp.info,  Node: xmlsaxsaxutils,  Next: xmlsaxxmlreader,  Prev: xmlsaxhandler,  Up: 構造化マークアップツール
+
+SAX ユーティリティ
+==================
+
+SAX とともに使う有用な関数とクラスです。
+
+_Added in Python version 2.0_
+
+モジュール `xml.sax.saxutils' には SAX アプリケーションの作成に
+役立つ多くの関数やクラスも含まれており、直接利用したり、基底クラスとし
+て使うことができます。
+
+`escape(data[, entities])'
+     文字列データ内の `&'、`<'、`>' をエス ケープします。
+
+     オプションの ENTITIES パラメータに辞書を渡すことで、そのほ
+     かの文字をエスケープさせることも可能です。辞書のキーと値はすべて文字列
+     で、キーに指定された文字は対応する値に置換されます。
+
+`unescape(data[, entities])'
+     エスケープされた文字列 `&amp;'、`&lt;'、 `&gt;'
+     を元の文字に戻します。
+
+     オプションの ENTITIES パラメータに辞書を渡すことで、そのほ
+     かの文字をエスケープさせることも可能です。辞書のキーと値はすべて文字列
+     で、キーに指定された文字は対応する値に置換されます。 _Added in
+     Python version 2.3_
+
+`quoteattr(data[, entities])'
+     `escape()' に似ていますが、DATA は属性値の作成に使わ
+     れます。戻り値はクォート済みの DATA で、置換する文字の追加も可
+     能です。`quoteattr()' はクォートすべき文字を DATA の
+     文脈から判断し、クォートすべき文字を残さないように文字列をエンコード
+     します。
+
+     DATA の中にシングル・クォート、ダブル・クォートがあれば、両方
+     ともエンコードし、全体をダブルクォートで囲みます。戻り値の文字列はその
+     ままで属性値として利用できます。:
+
+          >>> print "<element attr=%s>" % quoteattr("ab ' cd \" ef")
+          <element attr="ab ' cd &quot; ef">
+
+     この関数は参照具象構文を使って、 HTML や SGML
+     の属性値を生成するのに 便利です。 _Added in Python version 2.2_
+
+`XMLGenerator([out[, encoding]])'
+     このクラスは `ContentHandler' インターフェースの実装で、SAX イ
+     ベントを XML ドキュメントに書き戻します。つまり、 `XMLGenerator'
+     をコンテント・ハンドラとして用いると、パースし
+     たオリジナル・ドキュメントの複製が作れるのです。OUT に指定する
+     のはファイル風のオブジェクトで、デフォルトは SYS.STDOUT です。
+     ENCODING は出力ストリームのエンコーディングで、デフォルトは
+     `'iso-8859-1'' です。
+
+`XMLFilterBase(base)'
+     このクラスは `XMLReader' とクライアント・アプリケーションのイ
+     ベント・ハンドラとの間に位置するものとして設計されています。デフォル
+     トでは何もせず、ただリクエストをリーダに、イベントをハンドラに、それ
+     ぞれ加工せず渡すだけです。しかし、サブクラスでメソッドをオーバーライ
+     ドすると、イベント・ストリームやリクエストを加工してから渡すように変
+     更可能です。
+
+`prepare_input_source(source[, base])'
+     この関数は引き数に入力ソース、オプションとして URL を取り、読み取り
+     可能な解決済み `InputSource' オブジェクトを返します。入力ソー
+     スは文字列、ファイル風オブジェクト、`InputSource' のいずれでも
+     良く、この関数を使うことで、パーサは様々な SOURCE パラメータを
+     `parse()' に渡すことが可能になります。
+
+
+File: python-lib-jp.info,  Node: xmlsaxxmlreader,  Next: xmllib,  Prev: xmlsaxsaxutils,  Up: 構造化マークアップツール
+
+XML パーサのインターフェース
+============================
+
+SAX 準拠の XML パーサが実装すべきインターフェースです。
+
+_Added in Python version 2.0_
+
+各 SAX パーサは Python モジュールとして `XMLReader' インターフェー
+スを実装しており、関数 `create_parser()' を提供しています。こ
+の関数は新たなパーサ・オブジェクトを生成する際、
+`xml.sax.make_parser()' から引き数なしで呼び出されます。
+
+`XMLReader()'
+     SAX パーサが継承可能な基底クラスです。
+
+`IncrementalParser()'
+     入力ソースをパースする際、すべてを一気に処理しないで、途中でドキュメ
+     ントのチャンクを取得したいことがあります。SAX
+     リーダは通常、ファイル
+     全体を一気に読み込まずチャンク単位で処理するのですが、全体の処理が終
+     わるまで `parse()' は return しません。つまり、 IncrementalParser
+     インターフェースは `parse()' にこのような排
+     他的挙動を望まないときに使われます。
+
+     パーサのインスタンスが作成されると、feed
+     メソッドを通じてすぐに、デー
+     タを受け入れられるようになります。close
+     メソッドの呼出しでパースが終
+     わると、パーサは新しいデータを受け入れられるように、reset
+     メソッドを 呼び出されなければなりません。
+
+     これらのメソッドをパース処理の途中で呼び出すことはできません。つまり、
+     パースが実行された後で、パーサから return
+     する前に呼び出す必要がある のです。
+
+     なお、SAX 2.0 ドライバを書く人のために、XMLReader
+     インターフェースの parse メソッドがデフォルトで、IncrementalParser
+     の feed、close、 reset メソッドを使って実装されています。
+
+
+`Locator()'
+     SAX イベントとドキュメントの位置を関連付けるインターフェースです。
+     locator オブジェクトは DocumentHandler メソッドを呼び出している間
+     だけ正しい情報を返し、それ以外とのときに呼び出すと、予測できない結果
+     が返ります。情報を取得できない場合、メソッドは `None' を返すこ
+     ともあります。
+
+
+`InputSource([systemId])'
+     `XMLReader' がエンティティを読み込むために必要な情報をカプセ
+     ル化します。
+
+     このクラスには公開識別子、システム識別子、(場合によっては文字エンコー
+     ディング情報を含む)バイト・ストリーム、そしてエンティティの文字スト
+     リームなどの情報が含まれます。
+
+     アプリケーションは `XMLReader.parse()' メソッドに渡す引き数、
+     または EntityResolver.resolveEntity
+     の戻り値としてこのオブジェトを作 成します。
+
+     `InputSource' はアプリケーション側に属します。 `XMLReader'
+     はアプリケーションから渡された `InputSource'
+     オブジェクトの変更を許していませんが、コピーを作り、それを変更するこ
+     とは可能です。
+
+`AttributesImpl(attrs)'
+     `Attributes' interface (~*Note Attributes インターフェース::
+     参照)の実装です。辞書風のオブジェクトで、 `startElement()'
+     内で要素の属性表示をおこないます。多くの辞書
+     風オブジェクト操作に加え、ほかにもインターフェースに記述されているメ
+     ソッドを、多数サポートしています。このクラスのオブジェクトはリーダ
+     によってインスタンスを作成しなければなりません。また、ATTRS は
+     属性名と属性値を含む辞書風オブジェクトでなければなりません。
+
+`AttributesNSImpl(attrs, qnames)'
+     `AttributesImpl' を名前空間認識型に改良したクラスで、
+     `startElementNS()' に渡されます。`AttributesImpl' の派
+     生クラスですが、NAMESPACEURI と LOCALNAME、この2つのタプ
+     ルを解釈します。さらに、元のドキュメントに出てくる修飾名を返す多くの
+     メソッドを提供します。このクラスは `AttributesNS' interface (
+     section~*Note xmllib:: 参照) の実装です。
+
+* Menu:
+
+* XMLReader オブジェクト::
+* IncrementalParser オブジェクト::
+* Locator オブジェクト::
+* InputSource オブジェクト::
+* Attributes インターフェース::
+* AttributesNS インターフェース::
+
+
+File: python-lib-jp.info,  Node: XMLReader オブジェクト,  Next: IncrementalParser オブジェクト,  Prev: xmlsaxxmlreader,  Up: xmlsaxxmlreader
+
+XMLReader オブジェクト
+----------------------
+
+`XMLReader' は次のメソッドをサポートします。:
+
+`parse(source)'
+     入力ソースを処理し、SAX イベントを発生させます。SOURCE オブジェ
+     クトにはシステム識別子(入力ソースを特定する文字列 - 一般にファイル
+     名やURL)、ファイル風オブジェクト、または `InputSource' オブジェ
+     クトを指定できます。`parse()' から return された段階で、入力
+     データの処理は完了、パーサ・オブジェクトは破棄ないしリセットされます。
+     なお、現在の実装はバイト・ストリームのみをサポートしており、文字スト
+     リームの処理は将来の課題になっています。
+
+`getContentHandler()'
+     現在の `ContentHandler' を返します。
+
+`setContentHandler(handler)'
+     現在の `ContentHandler' をセットします。`ContentHandler'
+     がセットされていない場合、コンテント・イベントは破棄されます。
+
+`getDTDHandler()'
+     現在の `DTDHandler' を返します。
+
+`setDTDHandler(handler)'
+     現在の `DTDHandler' をセットします。`DTDHandler' がセッ
+     トされていない場合、DTD イベントは破棄されます。
+
+`getEntityResolver()'
+     現在の `EntityResolver' を返します。
+
+`setEntityResolver(handler)'
+     現在の `EntityResolver' をセットします。`EntityResolver'
+     がセットされていない場合、外部エンティティとして解決されるべきものが、
+     システム識別子として解釈されてしまうため、該当するものがなければ結果
+     的にエラーとなります。
+
+`getErrorHandler()'
+     現在の `ErrorHandler' を返します。
+
+`setErrorHandler(handler)'
+     現在のエラー・ハンドラをセットします。`ErrorHandler' がセット
+     されていない場合、エラーは例外を発生し、警告が表示されます。
+
+`setLocale(locale)'
+     アプリケーションにエラーや警告のロカール設定を許可します。
+
+     SAX
+     パーサにとって、エラーや警告の地域化は必須ではありません。しかし、
+     パーサは要求されたロカールをサポートしていない場合、SAX
+     例外を発生さ
+     せなければなりません。アプリケーションはパースの途中でロカールを変更
+     することもできます。
+
+`getFeature(featurename)'
+     機能 FEATURENAME の現在の設定を返します。その機能が認識できな
+     いときは、`SAXNotRecognizedException' を発生させます。広く
+     使われている機能名の一覧はモジュール `xml.sax.handler' に書か
+     れています。
+
+`setFeature(featurename, value)'
+     機能名 FEATURENAME に値 VALUE をセットします。その機能が
+     認識できないときは、`SAXNotRecognizedException' を発生させ
+     ます。また、パーサが指定された機能や設定をサポートしていないとき
+     は、SAXNOTSUPPORTEDEXCEPTION を発生させます。
+
+`getProperty(propertyname)'
+     属性名 PROPERTYNAME の現在の値を返します。その属性が認識でき
+     ないときは、 `SAXNotRecognizedException' を発生させます。
+     広く使われている属性名の一覧はモジュール `xml.sax.handler' に
+     書かれています。
+
+`setProperty(propertyname, value)'
+     属性名 PROPERTYNAME に値 VALUE をセットします。その機能
+     が認識できないときは、`SAXNotRecognizedException' を発生さ
+     せます。また、パーサが指定された機能や設定をサポートしていないときは、
+     SAXNOTSUPPORTEDEXCEPTION is raised を発生させます。
+
+
+File: python-lib-jp.info,  Node: IncrementalParser オブジェクト,  Next: Locator オブジェクト,  Prev: XMLReader オブジェクト,  Up: xmlsaxxmlreader
+
+IncrementalParser オブジェクト
+------------------------------
+
+`IncrementalParser' のインスタンスは次の追加メソッドを提供します。:
+
+`feed(data)'
+     DATA のチャンクを処理します。
+
+`close()'
+     ドキュメントの終わりを決定します。終わりに達した時点でドキュメントが
+     整形式であるかどうかを判別、ハンドラを起動後、パース時に使用した資源
+     を解放します。
+
+`reset()'
+     このメソッドは close が呼び出された後、次のドキュメントをパース可能
+     にするため、パーサのリセットするのに呼び出されます。close 後、reset
+     を呼び出さずに parse や feed を呼び出した場合の戻り値は未定義です。
+
+
+File: python-lib-jp.info,  Node: Locator オブジェクト,  Next: InputSource オブジェクト,  Prev: IncrementalParser オブジェクト,  Up: xmlsaxxmlreader
+
+Locator オブジェクト
+--------------------
+
+`Locator' のインスタンスは次のメソッドを提供します。:
+
+`getColumnNumber()'
+     現在のイベントが終了する列番号を返します。
+
+`getLineNumber()'
+     現在のイベントが終了する行番号を返します。
+
+`getPublicId()'
+
+現在の文書イベントの公開識別子を返します。
+
+`getSystemId()'
+     現在のイベントのシステム識別子を返します。
+
+
+File: python-lib-jp.info,  Node: InputSource オブジェクト,  Next: Attributes インターフェース,  Prev: Locator オブジェクト,  Up: xmlsaxxmlreader
+
+InputSource オブジェクト
+------------------------
+
+`setPublicId(id)'
+     この `InputSource' の公開識別子をセットします。
+
+`getPublicId()'
+     この `InputSource' の公開識別子を返します。
+
+`setSystemId(id)'
+     この `InputSource' のシステム識別子をセットします。
+
+`getSystemId()'
+     この `InputSource' のシステム識別子を返します。
+
+`setEncoding(encoding)'
+     この `InputSource' の文字エンコーディングをセットします。
+
+     指定するエンコーディングは XML エンコーディング宣言として定義された
+     文字列でなければなりません(セクション 4.3.3 の XML 勧告を参照)。
+
+     `InputSource' のエンコーディング属性は、`InputSource' が
+     たとえ文字ストリームを含んでいたとしても、無視されます。
+
+`getEncoding()'
+     この `InputSource' の文字エンコーディングを取得します。
+
+`setByteStream(bytefile)'
+     この入力ソースのバイトストリーム(Python
+     のファイル風オブジェクトです
+     が、バイト列と文字の相互変換はサポートしません)を設定します。
+
+     なお、文字ストリームが指定されてもSAX
+     パーサは無視し、バイト・ストリー ムを使って指定された URI
+     に接続しようとします。
+
+     アプリケーション側でバイト・ストリームの文字エンコーディングを知って
+     いる場合は、setEncoding メソッドを使って指定する必要があります。
+
+`getByteStream()'
+     この入力ソースのバイトストリームを取得します。
+
+     getEncoding
+     メソッドは、このバイト・ストリームの文字エンコーディング
+     を返します。認識できないときは None を返します。
+
+`setCharacterStream(charfile)'
+     この入力ソースの文字ストリームをセットします(ストリームは Python
+     1.6 の Unicode-wrapped
+     なファイル風オブジェクトで、ユニコード文字列への
+     変換をサポートしていなければなりません)。
+
+     なお、文字ストリームが指定されても SAX パーサは無視、システム識別子
+     とみなし、バイト・ストリームを使って URI に接続しようとします。
+
+`getCharacterStream()'
+     この入力ソースの文字ストリームを取得します。
+
+
+File: python-lib-jp.info,  Node: Attributes インターフェース,  Next: AttributesNS インターフェース,  Prev: InputSource オブジェクト,  Up: xmlsaxxmlreader
+
+The `Attributes' インターフェース
+---------------------------------
+
+`Attributes' オブジェクトは `copy()'、`get()'、
+`has_key()'、`items()'、 `keys()'、 `values()'
+などを含む、マッピング・プロトコルの一部を実装したも
+のです。さらに次のメソッドも提供されています。:
+
+`getLength()'
+     属性の数を返す。
+
+`getNames()'
+     属性の名前を返す。
+
+`getType(name)'
+     属性名 NAME のタイプを返す。通常は `'CDATA''。
+
+`getValue(name)'
+     属性 NAME の値を返す。
+
+
+File: python-lib-jp.info,  Node: AttributesNS インターフェース,  Prev: Attributes インターフェース,  Up: xmlsaxxmlreader
+
+`AttributesNS' インターフェース
+-------------------------------
+
+このインターフェースは `Attributes' interface (セクション~*Note
+Attributes インターフェース::参照) のサブタイプです。 Attributes
+インターフェー スがサポートしているすべてのメソッドは `AttributesNS'
+オブジェク トでも利用可能です。
+
+そのほか、次のメソッドがサポートされています。:
+
+`getValueByQName(name)'
+     修飾名の値を返す。
+
+`getNameByQName(name)'
+     修飾名 NAME に対応する `(NAMESPACE, LOCALNAME)' のペアを返す。
+
+`getQNameByName(name)'
+     `(NAMESPACE, LOCALNAME)' のペアに対応する修飾名を返す。
+
+`getQNames()'
+     すべての属性の修飾名を返す。
+
+
+File: python-lib-jp.info,  Node: xmllib,  Prev: xmlsaxxmlreader,  Up: 構造化マークアップツール
+
+XML ドキュメントのパーサ
+========================
+
+XML ドキュメントのパーサ。
+
+_This is deprecated in Python 2.0.  代わりに `xml.sax'
+を使ってください。新しい XML パッケージは XML 1.0
+をフルにサポートしています。_
+
+_Changed in Python version 1.5.2_
+
+このモジュールには XML (Extensible Markup Language) 形式で記述されたテ
+キストファイルのパースに必要な基本機能を提供する `XMLParser' ク
+ラスが定義されています。
+
+`XMLParser()'
+     `XMLParser' XMLParser
+     クラスのインスタンス生成は引数を指定せずにおこ ないます。 (1)
+
+このクラスは次のインターフェース・メソッドとインスタンス変数を提供して
+います。
+
+`attributes'
+     要素名のマッピングへのマッピング・オブジェクトで、デフォルトは空の辞書
+     です。このデフォルト変数はすべての `XMLParser' インスタンスで
+     共有されるため、継承せずにオーバーライドする必要があります。なお、要素
+     名のマッピングの方は、その要素に妥当な属性名とそのデフォルトの属性値を
+     マッピングしており、デフォルト値がない場合は `None' になります。
+
+`elements'
+     要素名からタプルへのマッピングです。タプルには要素の開始タグと終了タグ
+     をそれぞれ処理する関数、または `unknown_starttag()' や
+     `unknown_endtag()' 呼出された場合に使用する `None' が含ま
+     れます。デフォルトは空の辞書になっています。このデフォルト変数はすべての
+     `XMLParser' インスタンスで共有されるため、継承せずにオーバーライ
+     ドする必要があります。
+
+
+`entitydefs'
+     エンティティ名からその値へのマッピングです。デフォルトで `'lt''、
+     `'gt''、 `'amp''、 `'quot''、 and `'apos'' の定義 がされています。
+
+
+`reset()'
+     インスタンスをリセットします。同時に未処理のデータはすべて失われます。
+     このメソッドはインスタンス生成時、暗黙裡に呼び出されます。
+
+`setnomoretags()'
+     タグの処理を中止します。このメソッドの呼び出し以降、すべての入力はリテラ
+     ル(CDATA)として扱われます。
+
+`setliteral()'
+     リテラルモード(CDATA
+     mode)に入ります。このモードは最後に処理した開始タ
+     グに対応する終了タグが見つかった時点で自動的に終了します。
+
+`feed(data)'
+     テキストをパーサに送ります。完全なタグで構成された部分までを処理し、不
+     完全なタグは次のデータが来るか `close()' が呼び出されるまでバッ
+     ファリングされます。
+
+`close()'
+     現在バッファリング中のデータの前に end-of-file
+     ファイルが来たものと強
+     制的にみなします。このメソッドは派生クラスにおいて、入力終了時におこな
+     う追加処理のために再定義されることもありますが、再定義したメソッドの中
+     で必ずこの `close()' を呼び出さなければなりません。
+
+`translate_references(data)'
+     DATA の中にある実体参照と文字参照をすべて変換し、変換後
+     の文字列を返します。
+
+`getnamespace()'
+     現在有効な名前空間の短縮名から名前空間 URI
+     へのマッピングを返します。
+
+`handle_xml(encoding, standalone)'
+     このメソッドは `<?xml ...?>' タグを処理します。引数はタグ中のエン
+     コーディングの値とスタンドアロン宣言です。エンコーディングとスタンドア
+     ロン属性はともにオプションです。デフォルトはそれぞれ `None' と文
+     字列 `'no'' になります。
+
+`handle_doctype(tag, pubid, syslit, data)'
+     このメソッド は `<!DOCTYPE...>' 宣言を
+     処理します。引数にはルート要素のタグ名、公式公開識別子
+     (指定されていない場合は `None')、システム識別 子、および内部 DTD
+     サブセットを処理せずそのまま文字列で指定します(指定
+     されていない場合は `None')。
+
+`handle_starttag(tag, method, attributes)'
+     このメソッドはインスタンス変数 `elements' にハンドラが定義され
+     ている開始タグを処理します。TAG はタグ名で、METHOD は開始
+     タグの意味解析サポートに使われる関数(メソッド)です。ATTRIBUTES は
+     `<>' タグ内に記述されている属性名がキー、属性値を値として持つ
+     辞書になります。文字およびエンティティの参照は解釈されます。たとえば、
+     開始タグ `<A HREF="http://www.cwi.nl/">' に対するこのメドッドの呼
+     出しは `handle_starttag('A', self.elements['A'][0], {'HREF':
+     'http://www.cwi.nl/'})' となります。基本的な実装は単純で、引数に
+     ATTRIBUTES を使い、METHOD を呼び出すだけのものです。
+
+`handle_endtag(tag, method)'
+     このメソッドはインスタンス変数 `elements' にハンドラが定義され
+     ている終了タグを処理します。TAG はタグ名で、METHOD は終了
+     タグの意味解析サポートに使われる関数(メソッド)です。たとえば、終了タグ
+     `</A>' に対するこのメドッドの呼出しは `handle_endtag('A',
+     self.elements['A'][1])' となります。基本的な実装は単純で、METHOD
+     を呼び出すだけのものです。
+
+`handle_data(data)'
+     これは任意のデータを処理するメソッドです。派生クラスでオーバライドして
+     使います。基底クラスの実装では何もおこないません。
+
+`handle_charref(ref)'
+     このメソッドは `&#REF;' 形式の文字参照を処理します。 REF
+     は10進数または頭に`x'を付けた16進数のどちらでもか
+     まいません。基本実装おいて REF の値として許される範囲は0から255
+     までに限定されています。この値が ASCII に変換された後、その文字列を
+     引数にしてメソッド `handle_data()' が呼び出されます。REF
+     の値が許容範囲外のときは、エラーハンドリングのために
+     `unknown_charref(REF)' が呼び出されます。ASCII 範囲外の
+     文字をサポートするには、サブクラスでこのメソッドをオーバーライドする必
+     要があります。
+
+`handle_comment(comment)'
+     コメントを検出すると、このメソッドが呼び出されます。引数 COMMENT
+     は、デリミタ `<!--' から `-->' の間にある文字列であり、
+     デリミタ自体は含まれません。たとえばコメント `<!--text-->'
+     を処理する 場合、引数は `'text''
+     でこのメソッドが呼び出されます。このメソッドは
+     デフォルトでは何もしません。
+
+`handle_cdata(data)'
+     CDATA 要素を検出すると、このメソッドが呼び出されます。引数 DATA
+     は、デリミタ `<![CDATA[' と `]]>' の間にある文字列であり、デリ
+     ミタ自体は含まれません。たとえばエンティティ `<![CDATA[text]]>'
+     を処理する 場合、引数は `'text''
+     でこのメソッドが呼び出されます。このメソッドは
+     デフォルトでは何もしないため、オーバーライドして使用します。
+
+`handle_proc(name, data)'
+     処理命令 (PI) を検出すると、このメソッドが呼び出されます。引数
+     NAME は処理命令のターゲット、DATA は、処理命令ターゲットと
+     終了デリミタの間にある文字列であり、デリミタ自体は含まれません。たとえ
+     ば命令 `<?XML text?>' を処理する場合、引数は `'XML'' と `'text''
+     の2つでこのメソッドが呼び出されます。このメソッドはデフォ
+     ルトでは何もしません。なおドキュメントの冒頭に現れる `<?xml ..?>'
+     は `handle_xml()' で処理されます。
+
+`handle_special(data)'
+     宣言を検出すると、このメソッドが呼び出されます。引数 DATA は、デ
+     リミタ `<!' と `>' の間にある文字列であり、デリミタ自体は含
+     まれません。たとえば エンティティ宣言 `<!ENTITY text>'
+     を処理する場合、引数は `'ENTITY text'' でこの
+     メソッドが呼び出されます。このメソッドはデフォルトでは何もしないため、
+     オーバーライドして使用します。なおドキュメントの冒頭に現れる
+     `<!DOCTYPE ...>' は別途処理しなければなりません。
+
+`syntax_error(message)'
+     シンタックスエラーが発生すると、このメソッドが呼び出されます。引数
+     MESSAGE はエラー内容を知らせるテキストです。このメソッドはデフォ
+     ルトで `RuntimeError' 例外を発生させます。メソッドをオーバラ
+     イドして、return
+     するように変えることも可能です。なお、このメソッドが
+     呼び出されるのは回復可能なエラーの場合だけです。回復不能なエラー発生し
+     たときは、`syntax_error()' を呼び出すことなく `RuntimeError'
+     が発生します。
+
+`unknown_starttag(tag, attributes)'
+     未知の開始タグを検出すると、このメドッドが呼び出されます。派生クラスで
+     オーバライドして使います。基底クラスの実装では何もおこないません。
+
+`unknown_endtag(tag)'
+     未知の終了タグを検出すると、このメドッドが呼び出されます。派生クラスで
+     オーバライドして使います。基底クラスの実装では何もおこないません。
+
+`unknown_charref(ref)'
+     解決できない文字参照を検出すると、このメドッドが呼び出されます。派
+     生クラスでオーバライドして使います。基底クラスの実装では何もおこないま
+     せん。
+
+`unknown_entityref(ref)'
+     解決できない実体参照を検出すると、このメドッドが呼び出されます。派生ク
+     ラスでオーバライドして使います。基底クラスの実装では
+     `syntax_error()' でエラーを通知するようになっています。
+
+See also:
+     `Extensible Markup Language (XML) 1.0'{World Wide Web Consortium
+     (W3C) が送出した XML  の仕様書で、XML
+     のシンタックスと処理に必要な内容が定義され
+     ています。仕様書の翻訳など、そのほかの文献は
+     <http://www.w3.org/XML/> で参照できます。}
+
+     `Python and XML Processing'{Python XML トピックガイドは Python で
+     XML を扱 うための情報と XML 関連情報源へのリンクを数多く提供してい
+     ます。}
+
+     `SIG for XML Processing in Python'{Python XML Special Interest
+     Group は  Python で XML を扱うための開発に多大な貢献をしています。}
+
+* Menu:
+
+* XML 名前空間::
+
+---------- Footnotes ----------
+
+(1) 実際には、パーサに非標準的な形式のドキュメントを許容す
+るための、いくつかのキーワード引数を指定できるようになっており、その
+内容は次の通りです。これらのデフォルト値はすべて `0' (false) で
+すが、最後のキーワード引数だけは `1' (true)になっています。
+ACCEPT_UNQUOTED_ATTRIBUTES (特定の属性がクォートされていなくても
+受け入れるようにする)、 ACCEPT_MISSING_ENDTAG_NAME (`</>'
+のようなタグ名なしの終了タグを許容する)、MAP_CASE (タグや属性
+名が大文字で書かれていても、小文字で解釈する)、 ACCEPT_UTF8 (UTF-8
+文字列の入力を許容する。これは XML
+標準規格で必須とされている内容ですが、 Python は今のところ UTF-8
+を適切に処理できないため、デフォルトでは無 効になっています。)、
+TRANSLATE_ATTRIBUTE_REFERENCES (属性値と
+して使われている文字列や実体参照はそれ以上解釈しない。)
+
+
+File: python-lib-jp.info,  Node: XML 名前空間,  Prev: xmllib,  Up: xmllib
+
+XML 名前空間
+------------
+
+このモジュールは XML 名前空間勧告に定義された名前空間をサポートします。
+
+XML 名前空間に定義されたタグ名と属性名は、名前空間(名前空間を定義した
+URL)の後ににスペース置き、それに続くタグ名または属性名として扱われます。
+たとえば、タグが `<html xmlns='http://www.w3.org/TR/REC-html40'>'
+の場合、タグ名は `'http://www.w3.org/TR/REC-html40 html'' として
+処理され、この要素の中にタグ `<html:a href='http://frob.com'>' が
+現れた場合、タグ名は `'http://www.w3.org/TR/REC-html40 a'' で、属
+性名は `'http://www.w3.org/TR/REC-html40 href'' となります。
+
+古い XML 名前空間勧告ドラフトに基いたものも処理可能ですが、警告が発せ
+られます。
+
+See also:
+     `Namespaces in XML'{  この W3 コンソーシアム 勧告には、XML
+     名前空間の正確なシンタ
+     クスと処理に必要な内容について述べられています。}
+
+
+File: python-lib-jp.info,  Node: マルチメディアサービス,  Next: 暗号関連のサービス,  Prev: 構造化マークアップツール,  Up: Top
+
+マルチメディアサービス
+**********************
+
+この章で記述されているモジュールは、主にマルチメディアアプリケーションに
+役立つさまざまなアルゴリズムまたはインターフェイスを実装しています。
+これらのモジュールはインストール時の自由裁量に応じて利用できます。
+
+以下に概要を示します。
+
+* Menu:
+
+* audioop::
+* imageop::
+* aifc::
+* sunau::
+* wave::
+* chunk::
+* colorsys::
+* rgbimg::
+* imghdr::
+* sndhdr::
+* ossaudiodev::
+
+
+File: python-lib-jp.info,  Node: audioop,  Next: imageop,  Prev: マルチメディアサービス,  Up: マルチメディアサービス
+
+生のオーディオデータの操作
+==========================
+
+生のオーディオデータの操作
+
+`audioop'モジュールにはサウンドデータに対する便利な操作が定義されています。
+
+このモジュールは、Python文字列で保存された、8、16、32ビットサイズの符合付き整数型からなるサウンドデータを処理します。
+
+このデータは`al'と`sunaudiodev'モジュールで使用されるのと同じフォーマットです。
+
+特に断わらない限り数値項目は整数です。
+
+このモジュールはu-LAWとIntel/DVI ADPCMエンコードをサポートしています。
+
+複雑な操作のうちいくつかは16ビットのサンプルに対してのみ働きますが、それ以外は常にサンプルサイズ（バイト数）を操作のパラメータとして渡します。
+
+このモジュールは以下の変数と関数を定義しています：
+
+`error'
+     この例外はサウンドサンプルの未知のバイト数など、全てのエラーに対して発生します。
+
+`add(fragment1, fragment2, width)'
+     パラメータとして渡された2つのサンプルの和のデータを返します。
+
+     WIDTHはサンプルサイズのバイト数で、`1'、`2'、`4'のうちのどれかです。
+     2つのデータは同じサンプルサイズでなければなりません。
+
+`adpcm2lin(adpcmfragment, width, state)'
+     Intel/DVI
+     ADPCMフォーマットのデータをlinearフォーマットにデコードします。
+     ADPCMフォーマットについての詳細は`lin2adpcm()'の説明を参照して下さい。
+     WIDTHで指定したサイズで`(SAMPLE, NEWSTATE)'のタプルを返します。
+
+`adpcm32lin(adpcmfragment, width, state)'
+     3ビットの新しいADPCMフォーマットのデータをデコードします。
+     詳しくは`lin2adpcm3()'を参照して下さい。
+
+`avg(fragment, width)'
+     データ内の全サンプルの平均値を返します。
+
+`avgpp(fragment, width)'
+     データ内の全サンプルの最大振幅の平均値を返します。
+     フィルタリングされていないなら、このルーチンが役立つかどうか疑問です。
+
+`bias(fragment, width, bias)'
+     もとのデータのサンプル一つ一つにバイアスを加えたデータを返します。
+
+`cross(fragment, width)'
+     引数として渡されたデータ内のゼロ-クロスポイントの数を返します。
+
+`findfactor(fragment, reference)'
+     `rms(add(FRAGMENT, mul(REFERENCE,
+     -F)))'が最小となるようなFを返します。つまり、REFERENCEに掛けるとFRAGMENTにできるだけ一致するような値を返します。
+     FRAGMENTとREFERENCEは両方とも2バイトのサンプルでなければなりません。
+
+     このルーチンの実行に要する時間は`len(FRAGMENT)'に比例します。
+
+`findfit(fragment, reference)'
+     REFERENCEがFRAGMENT（より長いデータ）の一部に一致するか確かめます。
+     これは（概念的には）FRAGMENTから断片を切り出して、`findfactor()'を使って一番ふさわしいものを計算し、結果を最小にすることで実現しています。
+     FRAGMENTとREFERENCEは両方とも2バイトのサンプルでなければなりません。
+     `(OFFSET,
+     FACTOR)'のタプルを返します。OFFSETは最適な一致箇所が始まるFRAGMENTのオフセット値（整数）で、FACTORは`findfactor()'で返される数値（浮動小数点数）です。
+
+`findmax(fragment, length)'
+     FRAGMENTを長さLENGTHのサンプル（バイトではありません！）にスライスして、最大レベルをもつサンプルを探します。つまり、`rms(fragment[i*2:(i+length)*2])'が最大となるようなIを返します。
+     データは2バイトのサンプルでなければなりません。
+
+     このルーチンの実行に要する時間は`len(FRAGMENT)'に比例します。
+
+`getsample(fragment, width, index)'
+     データからINDEXのサンプルの値を返します。
+
+`lin2lin(fragment, width, newwidth)'
+     サンプルサイズを1、2、4バイトフォーマットの間で変換します。
+
+`lin2adpcm(fragment, width, state)'
+     サンプルを4ビットのIntel/DVI ADPCMフォーマットにエンコードします。
+     ADPCMフォーマットは、（さまざまな）あるステップで区切られたサンプルと次のサンプルとの差である4ビットの数値を利用したコード化スキームです。
+     Intel/DVI
+     ADPCMアルゴリズムは国際MIDI協会に採用されているので、標準に
+     なると言っていいでしょう。
+
+     STATEはエンコードの情報を含んだタプルです。 `(ADPCMFRAG,
+     NEWSTATE)'のタプルを返します。NEWSTATEは次に`lin2adpcm()'を呼び出す時に渡さなければなりません。
+     最初の呼び出しではSTATEとして`None'を渡します。
+     ADPCMFRAGはADPCMでコード化された、バイト当たり2つの4ビット値です。
+
+`lin2adpcm3(fragment, width, state)'
+     これはサンプル当たり3ビットのみを使う新しいADPCMフォーマットです。
+     これはIntel/DVI
+     ADPCMフォーマットと互換性がなく、出力は提供されていません（作者の怠慢によるものです）。
+     使うとがっかりします。
+
+`lin2ulaw(fragment, width)'
+     オーディオデータのサンプルをu-LAWフォーマットにエンコードし、Python文字列として返します。
+     u-LAWはオーディオエンコードフォーマットで、8ビットのみのサンプルで約14ビットのダイナミックレンジが得られます。
+     他でも使われていますが、Sunのオーディオハードウェアで使われています。
+
+`minmax(fragment, width)'
+     サウンドデータ内の全サンプルの最小値と最大値からなるタプルを返します。
+
+`max(fragment, width)'
+     データ内の全サンプルの_絶対値_の最大値を返します。
+
+`maxpp(fragment, width)'
+     サウンドデータの最大振幅の最大値を返します。
+
+`mul(fragment, width, factor)'
+     元のデータ内の全サンプルに浮動小数点数FACTORを掛けたデータを返します。
+     オーバーフローした分は無視します。
+
+`ratecv(fragment, width, nchannels, inrate, outrate, state[, weightA[, weightB]])'
+     入力したデータのフレームレートを変換します。
+
+     STATEは変換の情報を含むタプルです。 `(NEWFRAGMENT,
+     NEWSTATE)'を返します。
+     NEWSTATEは次に`ratecv()'を呼び出す時に渡さなければなりません。
+
+     最初の呼び出しではSTATEとして`None'を渡します。
+
+     引数WEIGHTAとWEIGHTBはシンプルなデジタルフィルターのためのパラメータで、デフォルトではそれぞれ`1'、`0'です。
+
+`reverse(fragment, width)'
+     データ内のサンプルの順序を逆転したデータを返します。
+
+`rms(fragment, width)'
+     データの標準偏差を返します。つまり、
+          \catcode`_=8
+          \sqrt{\frac{\sum{{S_{i}}^{2}}}{n}}
+
+     これはオーディオ信号の大きさを示します。
+
+`tomono(fragment, width, lfactor, rfactor)'
+     ステレオデータをモノラルデータに変換します。
+     2つのチャンネルを足してモノラルの信号にする前に、左チャンネルはLFACTOR倍、右チャンネルはRFACTOR倍されます。
+
+`tostereo(fragment, width, lfactor, rfactor)'
+     モノラルのデータからステレオのデータを作ります。
+     左チャンネルのサンプルはモノラルのサンプルをLFACTOR倍、右チャンネルはRFACTOR倍して、ステレオデータのサンプルを算出します。
+
+`ulaw2lin(fragment, width)'
+     u-LAWフォーマットのサウンドデータをlinearフォーマットのサウンドデータにエンコードします。
+     u-LAWフォーマットは常に8ビットのサンプルを使うので、WIDTHは出力データのサンプルサイズを示します。
+
+`mul()'や`max()'はモノラルとステレオの区別をつけずに、全サンプルを等しく扱います。
+これが問題なら、初めにステレオデータを2つのモノラルデータに分割して、あとで結合するといいでしょう。
+どうしたらいいか、例を挙げます。
+
+     def mul_stereo(sample, width, lfactor, rfactor):
+         lsample = audioop.tomono(sample, width, 1, 0)
+         rsample = audioop.tomono(sample, width, 0, 1)
+         lsample = audioop.mul(lsample, width, lfactor)
+         rsample = audioop.mul(rsample, width, rfactor)
+         lsample = audioop.tostereo(lsample, width, 1, 0)
+         rsample = audioop.tostereo(rsample, width, 0, 1)
+         return audioop.add(lsample, rsample, width)
+
+もしネットワークパケットを構築してADPCMフォーマットを使って、プロトコールの説明なしにしたいなら（つまりパケットの損失を我慢できるなら）、データだけでなくstateも送信するべきです。
+注意してほしいのは、（コーダーによって返される）最後のstateでなく、INITIALのstate（`lin2adpcm()'に渡す引数）をコーダーに渡すことです。
+もしバイナリでstateを保存するのに`struct.struct()'を使いたいなら、最初の要素（最初の値）を16ビットで、2番目の要素（前のサンプルとの差）を8ビットでコード化します。
+
+ここのADPCMコーダーは他のADPCMコーダーに対しては試していません。
+それぞれの標準のものとの間で操作できない場合は、私が仕様を誤解していることも十分あり得ます。
+
+`find*()'ルーチンは、一見、滑稽に見えるかもしれません。
+これらは最初、エコーを取り消すためのものでした。
+これを合理的に速く実行するには、出力サンプルのレベルの一番大きい部分を取り出し、その場所の入力サンプル内での位置をみつけ、入力サンプルから出力サンプル全体を減算します：
+
+     def echocancel(outputdata, inputdata):
+         pos = audioop.findmax(outputdata, 800)    # 1/10秒
+         out_test = outputdata[pos*2:]
+         in_test = inputdata[pos*2:]
+         ipos, factor = audioop.findfit(in_test, out_test)
+         # Optional (for better cancellation):
+         # factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],
+         #              out_test)
+         prefill = '\0'*(pos+ipos)*2
+         postfill = '\0'*(len(inputdata)-len(prefill)-len(outputdata))
+         outputdata = prefill + audioop.mul(outputdata,2,-factor) + postfill
+         return audioop.add(inputdata, outputdata, 2)
+
+
+File: python-lib-jp.info,  Node: imageop,  Next: aifc,  Prev: audioop,  Up: マルチメディアサービス
+
+生の画像データを操作する
+========================
+
+生の画像データを操作する。
+
+`imageop'モジュールは画像に関する便利な演算がふくまれています。Python文字列に保存されている8または32ビットのピクセルから構成される画像を操作します。これは`gl.lrectwrite()'と`imgfile'モジュールが使用しているものと同じフォーマットです。
+
+モジュールは次の変数と関数を定義しています:
+
+`error'
+     この例外はピクセル当りの未知のビット数などのすべてのエラーで発生させられます。
+
+`crop(image, psize, width, height, x0, y0, x1, y1)'
+     IMAGEの選択された部分を返します。IMAGEはWIDTH×HEIGHTの大きさで、PSIZEバイトのピクセルから構成されなければなりません。X0、Y0、X1およびY1は`gl.lrectread()'パラメータと同様です。すなわち、境界は新画像に含まれます。新しい境界は画像の内部である必要はありません。旧画像の外側になるピクセルは値をゼロに設定されます。X0がX1より大きければ、新画像は鏡像反転されます。y軸についても同じことが適用されます。
+
+`scale(image, psize, width, height, newwidth, newheight)'
+     IMAGEを大きさNEWWIDTH×NEWHEIGHTに伸縮させて返します。補間は行われません。ばかばかしいほど単純なピクセルの複製と間引きを行い伸縮させます。そのため、コンピュータで作った画像やディザ処理された画像は伸縮した後見た目が良くありません。
+
+`tovideo(image, psize, width, height)'
+     垂直ローパスフィルタ処理を画像全体に行います。それぞれの目標ピクセルを垂直に並んだ二つの元ピクセルから計算することで行います。このルーチンの主な用途としては、画像がインターレース走査のビデオ装置に表示された場合に極端なちらつきを抑えるために用います。そのため、この名前があります。
+
+`grey2mono(image, width, height, threshold)'
+     全ピクセルを二値化することによって、深さ8ビットのグレースケール画像を深さ1ビットの画像へ変換します。処理後の画像は隙間なく詰め込まれ、おそらく`mono2grey()'の引数としてしか使い道がないでしょう。
+
+`dither2mono(image, width, height)'
+     (ばかばかしいほど単純な)ディザ処理アルゴリズムを用いて、8ビットグレースケール画像を1ビットのモノクロ画像に変換します。
+
+`mono2grey(image, width, height, p0, p1)'
+     1ビットモノクロが象画像を8ビットのグレースケールまたはカラー画像に変換します。入力で値ゼロの全てのピクセルは出力では値P0を取り、値0の入力ピクセルは出力では値P1を取ります。白黒のモノクロ画像をグレースケールへ変換するためには、値`0'と`255'をそれぞれ渡してください。
+
+`grey2grey4(image, width, height)'
+     ディザ処理を行わずに、8ビットグレースケール画像を4ビットグレースケール画像へ変換します。
+
+`grey2grey2(image, width, height)'
+     ディザ処理を行わずに、8ビットグレースケール画像を2ビットグレースケール画像に変換します。
+
+`dither2grey2(image, width, height)'
+     ディザ処理を行い、8ビットグレースケール画像を2ビットグレースケール画像へ変換します。`dither2mono()'については、ディザ処理アルゴリズムは現在とても単純です。
+
+`grey42grey(image, width, height)'
+     4ビットグレースケール画像を8ビットグレースケール画像へ変換します。
+
+`grey22grey(image, width, height)'
+     2ビットグレースケール画像を8ビットグレースケール画像へ変換します。
+

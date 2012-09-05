@@ -1,0 +1,2124 @@
+Info file: eintr-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-lisp-intro.texi.patched'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELisp-Intro-ja: (eintr-ja).       Emacs-Lisp入門ガイド
+END-INFO-DIR-ENTRY
+
+
+これはプログラマではない人のための `Emacs Lisp プログラミング' 解説書で
+ある．
+
+Edition 2.04, 2001 Dec 17
+
+Copyright (C) 1990, '91, '92, '93, '94, '95, '97, 2001 Free Software
+Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Section being the Preface, with the Front-Cover Texts being
+no Front-Cover Texts, and with the Back-Cover Texts being no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File: eintr-ja, Node: dolist dotimes, Next: Looping exercise, Prev: while, Up: PrePreface
+
+`dolist' と `dotimes' *(2004/08/08)*
+====================================
+
+`while' に加えて，`dolist' と `dotimes' もループを実現できます．時々，
+`while' ループと等価なものをより素早く書くことができる．これらは両方と
+も Lisp マクロである．(*Note Macros: (elisp)Macros. )
+
+`dolist' は CDR でリストを辿っていく `while' ループのように機能する．
+`dolist' は自動的にループが実行されるたびにリストのCDR を取ることで，リ
+ストを短くし，そのリストの CAR を最初の引数に割り当てる．
+
+`dotimes' は規定の回数だけループする．
+
+* Menu:
+
+* dolist::
+* dotimes::
+
+
+
+File: eintr-ja, Node: dolist, Next: dotimes, Prev: Dec Example altogether, Up: print-elements-of-list
+
+`dolist' マクロ
+...............
+
+例えば，リストを"1番目" "2番目" "3番目" が "3番目" "2番目" "1番目" にな
+るように反転したいとする．
+
+実際には，以下のように関数 `reverse' を使うだろう．
+
+     (setq animals '(gazelle giraffe lion tiger))
+
+     (reverse animals)
+
+以下に `while' ループを使ってリストを反転させる例を示す．
+
+     (setq animals '(gazelle giraffe lion tiger))
+
+     (defun reverse-list-with-while (list)
+       "Using while, reverse the order of LIST."
+       (let (value)  ; make sure list starts empty
+         (while list
+           (setq value (cons (car list) value))
+           (setq list (cdr list)))
+         value))
+
+     (reverse-list-with-while animals)
+
+そして，`dolist' マクロを使うと下記のようになる．
+
+     (setq animals '(gazelle giraffe lion tiger))
+
+     (defun reverse-list-with-dolist (list)
+       "Using dolist, reverse the order of LIST."
+       (let (value)  ; make sure list starts empty
+         (dolist (element list value)
+           (setq value (cons element value)))))
+
+     (reverse-list-with-dolist animals)
+
+Info では各式の閉じ括弧の後にカーソルを起き，`C-x C-e' を入力する．この
+例では，以下のような結果がエコー領域に表示される．
+
+     (tiger lion giraffe gazelle)
+
+@noindent
+
+この例では，存在している関数 `reverse' を使うのが明らかに最もいい．
+`while' ループはちょうど最初の例のようなものである(*Note A `while'
+Loop and a List: Loop Example.)．`while' は最初にリストが要素を持つかど
+うかを確認する．もしあれば，リストの最初の要素を既存のリスト(最初の実行
+では `nil')に追加することで新しいリストを作成する．2番目の要素は最初の
+要素の前に追加される．そして，3番目の要素は2番目の要素の前に追加され，
+リストは反転される．
+
+`while' を使った式では `(setq list (cdr list))' でリスト
+を短くし，結果として `while' ループは停止する．さらに，
+ループの繰り返しのたびに新しく短いリストを作ることで `cons' 式に
+新しい要素を渡していく．
+
+`dolist' 式は `while' 式とほとんど同じである．異なっているのは `while'
+式を使って書くところを `dolist' マクロを使っていることだ．
+
+`while'ループのように `dolist' はループする．違いはループするたびに自動
+的に -- 自分でリストの CDR を取ることで-- リストを短くしていくことだ．
+そして，短くなったリストの CAR が自動的に最初の引数となる．
+
+この例では各短リストの CAR はシンボル `element' を使って参照できる．リ
+スト自体は `list' で参照し，結果は `value' に保存される．`dolist' 式の
+残りは本体である．
+
+`dolist' はリストを短くし，その CAR を `element' に設定
+してから，本体を評価する．そして，ループを繰り返す．結果は
+`value' で返される．
+
+
+
+File: eintr-ja, Node: dotimes, Prev: dolist, Up: print-elements-of-list
+
+`dotimes' マクロ
+................
+
+`dotimes' マクロは `dolist' と似ている．異なるのは，
+`dotimes' が規定回数だけループする．
+
+`dotimes' の最初の引数は0，1，2のような数字であり，ループが進むにつれて
+増えていく．そして，3番目の引数の値が返される．また，2番目の引数にはマ
+クロを何回繰り返すかを設定する必要がある．
+
+例えば，以下のコードでは NUMBER を0から始まる数字を代入するが，3 は含め
+ず，3つの数から成るリストを構成する．(最初の数は0である．2番目は1，3番
+目は2となる．最初の数を0から始めるので全部で3つの数となる)．
+
+     (let (value)      ; otherwise a value is a void variable
+       (dotimes (number 3 value)
+         (setq value (cons number value))))
+
+     => (2 1 0)
+
+`dotimes' は `value' を返す．だから，`dotimes' を
+NUMBER 回繰り返し，リストかアトムにして結果を返すように使う．
+
+以下に三角形状に小石を積み上げていった時の数を計算するために
+`dotimes' を使った `defun' の例を示す．
+
+     (defun triangle-using-dotimes (number-of-rows)
+       "Using dotimes, add up the number of pebbles in a triangle."
+     (let ((total 0))  ; otherwise a total is a void variable
+       (dotimes (number number-of-rows total)
+         (setq total (+ total (1+ number))))))
+
+     (triangle-using-dotimes 4)
+
+
+
+File: eintr-ja, Node: Recursion, Next: Looping exercise, Prev: while, Up: PrePreface
+
+再　帰 *(2004/08/10)*
+=====================
+
+再帰関数では Lisp インタープリタに自分自身を少し異なる引数で実行するよ
+うなコードを含む．実行されるコードは名前が同じであるので同じである．し
+かし，例え同じ名前であっても，同じスレッドで実行されるわけではない．専
+門的に言うと異なる"インスタンス"である．
+
+結局，プログラムが正確に書かれていれば，"わずかに異なる引数"が最初の引
+数とは十分に異なっていれば，結果として最後のインスタンスが停止すること
+になる．
+
+* Menu:
+
+* Building Robots::             Same model, different serial number ...
+* Recursive Definition Parts::  Walk until you stop ...
+* Recursion with list::         Using a list as the test whether to recurse.
+* Recursive triangle function::
+* Recursion with cond::
+* Recursive Patterns::          Often used templates.
+* No Deferment::                Don't store up work ...
+* No deferment solution::
+
+
+
+File: eintr-ja, Node: Building Robots, Next: Recursive Definition Parts, Prev: print-elements-of-list, Up: while
+
+ロボットの構築: 隠喩の拡張 *(2004/08/08)*
+-----------------------------------------
+
+実行されているプログラムを仕事を行うロボットとして考えることは時に役に
+立つ．仕事をする時，再帰関数は助けてもらうために2台目のロボットを呼ぶ．
+2台目のロボットはすべての点で1台目と同じである．2台目のロボットは1台目
+のロボットを助け，1台目とは異なった引数を受け取る．
+
+再帰関数では，2台目のロボットが3台目を呼ぶかもしれない．そして，3台目が
+4台目を呼ぶかもしれない．それぞれは異なった存在であるが，すべて複製なの
+だ．
+
+それぞれのロボットはわざうかに異なる指示(引数はあるロボットと次のロボッ
+トでは異なる)を受けている．最後のロボットはいつやめるべきかを知っていな
+ければならない．
+
+このプログラムがロボットであるという隠喩を拡張しよう．
+
+関数定義はロボットの設計図である．関数定義をインストールする，つまり，
+スペシャルフォーム `defun' を評価すると，ロボットを製造するための必要な
+機器を設置したことになる．工場では組み立てラインを立ち上げる必要がある．
+同じ名前を持つロボットは同じ設計図で製造される．だから，言ってみれば同
+じ"モデル"であるが"製造番号"は異なるロボットがあるようなものだ．
+
+しばしば再帰関数は"自分自身を呼び出す"と述べている．この意味は，再帰関
+数の指示で Lisp インタープリタに引数は異なるが，同じ名前を持ち，同じ仕
+事を行う関数を実行させることである．
+
+重要なのは，あるインスタンスと次のものとでは引数が異なるという点である．
+もしそうでなければ，同じ作業を延々と繰り返すことになり，プロセスが停止
+しない．
+
+
+
+File: eintr-ja, Node: Recursive Definition Parts, Next: No Deferment, Prev: print-elements-of-list, Up: while
+
+The Parts of a Recursive Definition
+-----------------------------------
+
+再帰関数の定義 *(2004/08/09)*
+-----------------------------
+
+典型的な再帰的関数には、3つの部分から成る条件式が含まれる。
+
+  1. 関数を再度呼び出すかどうかを決定する判定条件。これを"再帰条件
+     （do-again-test）"と呼ぶ。
+
+  2. 関数名。名前が呼ばれると，関数の新しいインスタンス(新しいロボット)が
+     呼ばれ，何をすべきかを伝えられる．
+
+  3. 関数が呼ばれるたびに違う値を返すような式であり，ここでは"次段式"
+     を呼び出す．結果として，新しい関数のインスタンスに渡る引数は前のイ
+     ンスタンスの引数とは異なる．これにより，条件式，"再帰条件"を引き起
+     こし，繰り返しを規定数繰り返して偽になっているかを確認する．
+
+再帰的関数は、他の種類の関数よりもとても簡単である。もちろん、これを使
+い始めたばかりの人には、理解できないほど不可思議に単純に見える。自転車
+に乗るのと同じように、再帰的関数定義を読むには、最初は難しくてもしだい
+に簡単に思えるようになるコツが必要である。
+
+一般的な再帰にはいくつかのパターンがある．以下にとても単純な例を示す．
+
+     (defun 再帰関数名 (引数リスト)
+       "説明文..."
+       (if 再帰条件
+         本体...
+         (再帰関数名
+              次段式)))
+
+再帰関数を評価するたびに，新しいインスタンスが作成され，何をするべきか
+が伝えられる．引数が何をすべきかをインスタンスに伝える．
+
+引数には次段式の値が束縛される．それぞれのインスタンスは次段式の異なる
+値で実行される．
+
+次段式の値は再帰条件で使われる．
+
+次段式の返す値は関数の新しいインスタンスへ渡され，続けるか停止するかを
+判断するために評価(あるいは演算)される．関数をそれ以上繰り返さない場合
+には、再帰条件が偽になるように次段式を作る。
+
+再帰条件が偽になると繰り返しを停止するので、再帰条件を"停止条件（stop
+condition）"と呼ぶこともある。
+
+
+
+File: eintr-ja, Node: Recursion with list, Next: No Deferment, Prev: Recursive Definition Parts, Up: while
+
+リストについての再帰 *(2004/08/09)*
+-----------------------------------
+
+動物のリストの各要素を表示する`while'ループの例を再帰的に書くことができ
+る。変数`animals'にリストを設定する式も含めて、そのコードを示す。
+
+Emacs 20 かそれ以前のものを使っているのであれば，この例を`*scratch*' バッ
+ファにコピーして各式をそこで評価しなければなりません．結果がバッファに
+表示されるように、`C-u C-x C-e'を使って式`(print-elements-recursively
+animals)'を評価すること。さもないと、Lispインタープリタは結果をエコー領
+域の1行に押し込めて表示する。
+
+また、関数`print-elements-recursively'の注釈のまえの最後の閉じ括弧の直
+後にカーソルを置くこと。さもないと、Lispインタープリタは注釈を評価しよ
+うとする。
+
+Emacs 21以降を使っているのであれば，Info 上で直接評価できる．
+
+     (setq animals '(gazelle giraffe lion tiger))
+
+     (defun print-elements-recursively (list)
+       "Print each element of LIST on a line of its own.
+     Uses recursion."
+       (if list                              ; 再帰条件
+           (progn
+             (print (car list))              ; 本体
+             (print-elements-recursively     ; 再帰呼び出し
+              (cdr list)))))                 ; 次段式
+
+     (print-elements-recursively animals)
+
+関数`print-elements-recursively'は、まず、リストの先頭要素、つまり、リ
+ストのCARを表示する。続いて、リストが空でなければ、関数は自分自身を呼び
+出すが、その引数には、リスト全体ではなく、リストの2番目以降の要素、つま
+り、リストのCDRを渡す。
+
+これを評価すると、受け取った引数（もとのリストの2番目以降の要素）の先頭
+要素を表示する。続いて、`if'式を評価し、真ならば、リストのCDR、つまり、
+（2回目なので）もとのリストのCDRのCDRを引数として自身を呼び出す。
+
+関数が自身を呼び出すごとに、もとのリストを短くしたものを引数に渡す。最
+終的に、空リストで自身を呼び出す。関数`print'は空リストを`nil'と表示す
+る。つぎに、条件式では`list'の値を調べる。`list'の値は`nil'なので、
+`if'式の判定条件は偽になり、真の場合の動作は評価されない。そして、関数
+全体としては`nil'を返す。そのため、この関数を評価すると`nil'が2つ表示さ
+れるのである。
+
+バッファ`*scratch*'で`(print-elements-recursively animals)'を評価すると
+つぎのようになる。
+
+     giraffe
+
+     gazelle
+
+     lion
+
+     tiger
+     nil
+
+
+
+File: eintr-ja, Node: Recursive triangle function, Next: No Deferment, Prev: Recursive Definition Parts, Up: while
+
+カウンタの代用としての再帰 *(2004/08/09)*
+-----------------------------------------
+
+前節で説明した関数`triangle'を再帰で書くこともできる。つぎのようになる。
+
+     (defun triangle-recursively (number)
+       "Return the sum of the numbers 1 through NUMBER inclusive.
+     Uses recursion."
+       (if (= number 1)                    ; 再帰条件
+           1                               ; 真の場合の動作
+         (+ number                         ; 偽の場合の動作
+            (triangle-recursively          ; 再帰呼び出し
+             (1- number)))))               ; 次段式
+
+     (triangle-recursively 7)
+
+これを評価して関数をインストールすれば、`(triangle-recursively 7)'を評
+価して試すことができる（注釈のまえの関数定義の最後の括弧の直後にカーソ
+ルを置くこと）。関数は28を返す．
+
+この関数の動作を理解するために、引数として、1、2、3、4をこの関数に渡す
+とどうなるかを考えよう。
+
+* Menu:
+
+* Recursive Example arg of 1 or 2::
+* Recursive Example arg of 3 or 4::
+
+
+
+File: eintr-ja, Node: Recursive Example arg of 1 or 2, Next: Recursive Example arg of 3 or 4, Prev: Recursive Definition Parts, Up: Recursive Definition Parts
+
+引数が1か2の時 *(2004/08/09)*
+.............................
+
+まず、引数が1の場合はどうなるだろうか？
+
+関数には、説明文字列に続けて`if'式がある。これは`number'の値が1に等しい
+かどうかを調べる。等しければ、Emacsは`if'式の真の場合の動作を評価し、関
+数の値として数1を返す（1行の三角形には1個の小石がある）。
+
+では、引数の値が2の場合を考えよう。この場合は、Emacsは`if'式の偽の場合
+の動作を評価する。
+
+偽の場合の動作は、加算、`triangle-recursively'の再帰呼び出し、減算動作
+から成り、つぎのとおりである。
+
+     (+ number (triangle-recursively (1- number)))
+
+Emacsがこの式を評価するとき、もっとも内側の式が最初に評価され、つぎに、
+それ以外の部分が評価される。詳しくはつぎのような手順になる。
+
+手順1　もっとも内側の式を評価する。
+
+     もっとも内側の式は`(1- number)'であり、Emacsは`number'の値を2から
+     1へ減らす。
+
+手順2　関数`triangle-recursively'を評価する。
+
+     関数の中にそれ自身があるかどうかは関係ない。Emacsは手順1の結果を引
+     数として使って、関数`triangle-recursively'を呼び出す。
+
+     この場合、Emacsは引数1で`triangle-recursively'を評価する。つまり、
+     `triangle-recursively'を評価すると1が返される。
+
+手順3　`number'の値を評価する。
+
+     変数`number'は、`+'で始まるリストの2番目の要素であり、その値は2で
+     ある。
+
+手順4　`+'式の評価。
+
+     `+'式は2つの引数、`number'の評価結果（手順3）と、
+     `triangle-recursively'の評価結果（手順2）を受け取る。
+
+     加算の結果は、2足す1で、数3が返される。これは正しい値である。2行の
+     三角形には3個の小石がある。
+
+
+
+File: eintr-ja, Node: Recursive Example arg of 3 or 4, Next: Recursive Example arg of 3, Prev: Recursive Definition Parts, Up: Recursive Definition Parts
+
+引数が3か4の時 *(2004/08/09)*
+.............................
+
+
+
+File: eintr-ja, Node: Recursive Example arg of 3, Prev: Recursive Example arg of 3 or 4, Up: Recursive Definition Parts
+
+引数が3の場合 *(2004/08/09)*
+............................
+
+引数3で`triangle-recursively'が呼ばれた場合を考えよう。
+
+手順1　再帰条件の評価。
+
+     最初に`if'式が評価される。これは再帰条件であり偽を返すから、`if'式
+     の偽の場合の動作が評価される（この例では、再帰条件が偽の場合に自身
+     を呼び出すのであり、真の場合には呼ばない）。
+
+手順2　偽の場合の動作のもっとも内側の式を評価する。
+
+     偽の場合の動作のもっとも内側の式が評価され、3から2に減る。これは次
+     段式である。
+
+手順3　関数`triangle-recursively'を評価する。
+
+     関数`triangle-recursively'に数2が渡される。
+
+     Emacsが、引数2で`triangle-recursively'を評価するとどうなるかはすで
+     に知っている。上で述べたような動作順序のあとで、値3が返される。こ
+     こでもそのようになる。
+
+手順4　加算の評価。
+
+     3が加算の引数として渡され、関数呼び出しの結果の数3に加算される。
+
+関数全体として返す値は、6になる。
+
+これで、引数3で`triangle-recursively'を呼ぶとどうなるかがわかった。引数
+4で呼んだ場合にどうなるかも明らかであろう。
+
+     再帰呼び出しにおいて、
+
+          (triangle-recursively (1- 4))
+
+     の評価結果は、つぎの式の評価結果であり、
+
+          (triangle-recursively 3)
+
+     これは6であり、この値が3行目で4に加えられる。
+
+関数全体として返す値は10である。
+
+Each time `triangle-recursively' is evaluated, it evaluates a version
+of itself--a different instance of itself--with a smaller argument,
+until the argument is small enough so that it does not evaluate
+itself.  `triangle-recursively'を評価するたびに、引数が小さくなりすぎて
+評価できなくなるまで，自分自身を(自分自身の異なるインスタンスを)より小
+さな引数で，評価する．
+
+この再帰関数に特有な設計には操作が引き伸ばされる必要がある．
+
+`(triangle-recursively 7)' が答えを計算するまえに，
+`(triangle-recursively 6)' を呼ばないといけない．
+`(triangle-recursively 6)' の前には `(triangle-recursively
+5)' をといったように呼ばないといけない．つまり，
+`(triangle-recursively 7)' は `(triangle-recursively 6)' が
+計算するまで待たないといけない．`(triangle-recursively 6)' は
+`(triangle-recursively 5)' が完了するまで待つ．
+
+もし`triangle-recursively' のインスタンスのそれぞれが異なるロボットだと
+すると，最初のロボットは2番目が仕事を完了するまで待たないといけないし，
+2番目は3番目を待たないといけない．
+
+この猶予に関しては *Note Recursion without Deferments: No Deferment に
+て検討することになる．
+
+
+
+File: eintr-ja, Node: Recursion with cond, Next: No Deferment, Prev: Recursive Definition Parts, Up: while
+
+`cond'を用いた再帰の例 *(2004/08/09)*
+-------------------------------------
+
+`triangle-recursively'の上の版は、スペシャルフォーム`if'を用いて書いた。
+別の`cond'と呼ばれるスペシャルフォームを使っても書ける。スペシャルフォー
+ム`cond'の名前は、単語`conditional'の略である。
+
+スペシャルフォーム`cond'は、Emacs Lispのソースでは、
+`if'ほど多用されないが、ここで説明するに十分なほど使われる。
+
+`cond'式の雛型はつぎのとおりである。
+
+     (cond
+      本体...)
+
+本体は、一連のリストである。
+
+より詳しく書くと、雛型はつぎのとおりである。
+
+     (cond
+      (FIRST-TRUE-OR-FALSE-TEST 最初の帰結動作)
+       (2番目の判定条件 2番目の帰結動作)
+       (3番目の判定条件 3番目の帰結動作)
+       ...)
+
+Lispインタープリタが`cond'式を評価するとき、`cond'の本体の一連の式の最
+初の式の最初の要素（CAR、つまり、判定条件）を評価する。
+
+判定条件が`nil'を返すと、式の残り、つまり、帰結動作は飛び越され、つぎの
+式の判定条件を評価する。判定条件が`nil'以外の値を返す式がみつかると、そ
+の式の帰結動作を評価する。帰結動作は、複数個の式でよい。帰結動作が複数
+個の式の場合、それらの式は順番に評価され、最後のものの値が返される。式
+に動作がない場合には、判定条件の値が返される。
+
+真となる判定条件がない場合には、`cond'式は`nil'を返す。
+
+`cond'を用いて書くと、関数`triangle'はつぎのようになる。
+
+     (defun triangle-using-cond (number)
+       (cond ((<= number 0) 0)
+             ((= number 1) 1)
+             ((> number 1)
+              (+ number (triangle-using-cond (1- number))))))
+
+この例では、`cond'は、数が0より小さいか等しい場合には0を返し、数が1の場
+合には1を返し、数が1より大きい場合には、`(+ number
+(triangle-using-cond (1- number)))'を評価する。
+
+
+
+File: eintr-ja, Node: Recursive Patterns, Next: No Deferment, Prev: Recursive Definition Parts, Up: while
+
+再帰関数の典型例 *(2004/08/09)*
+-------------------------------
+
+ここでは3つの一般的な再帰の例を紹介する．これらはリストを必要とする．再
+帰自体にはリストは必要ではないが，Lisp はリストを処理するように設計され
+ている．だから，リストは再帰でも重要になる．
+
+* Menu:
+
+* Every::
+* Accumulate::
+* Keep::
+
+
+
+File: eintr-ja, Node: Every, Prev: Recursive Example arg of 3, Up: Recursive Definition Parts
+
+再帰のパターン: *every* *(2004/08/10)*
+......................................
+
+再帰のパターン `every' では，ある操作がリストにあるすべての要素で実行さ
+れる．
+
+基本的なパターンは
+
+   * もしリストが空なら，`nil'を返す．
+   * そうでなければ，リストの先頭  (リストの CAR) で実行
+   -          リストの残り (CDR)で再帰を行う
+        -     そして，任意で，実行した結果を `cons' を使って要素を連結
+          する
+
+例をあげる．
+
+     (defun square-each (numbers-list)
+       "Square each of a NUMBERS LIST, recursively."
+       (if (not numbers-list)                ; 再帰条件
+           nil
+         (cons
+          (* (car numbers-list) (car numbers-list))
+          (square-each (cdr numbers-list))))) ; 次段式
+
+     (square-each '(1 2 3))
+         => (1 4 9)
+
+`numbers-list' が空であれば，何もしない．しかし，内容があれば，再帰的に
+呼ぶことで，最初の数の2乗を持つようなリストを作成する．
+
+(この例はパターンのままである．もし，数のリストが空であれば `nil' を返
+す．実際には，数のリストが空で無い時にのみ実行するような条件式を書くだ
+ろう．)
+
+関数 `print-elements-recursively' (*Note Recursion with a List:
+Recursion with list.) はパターン`every' の別の例である．ただし，`cons'
+を使って，個々の出力を行っていることが異なっている．
+
+`print-elements-recursively' は以下である．
+
+     (setq animals '(gazelle giraffe lion tiger))
+
+     (defun print-elements-recursively (list)
+       "Print each element of LIST on a line of its own.
+     Uses recursion."
+       (if list                              ; 再帰条件
+           (progn
+             (print (car list))              ; 本体
+             (print-elements-recursively     ; 再帰呼び出し
+              (cdr list)))))                 ; 次段式
+
+     (print-elements-recursively animals)
+
+`print-elements-recursively' の概略は以下のようになる．
+
+   * リストが空であれば，何もしない
+   * しかし，リストに少なくとも1個要素があれば
+   -          リストの先頭 (リストの CAR) に処理する
+        -     そして，リストの残り (CDR) に再帰呼び出しを行う
+
+
+
+File: eintr-ja, Node: Accumulate, Prev: Recursive Example arg of 3, Up: Recursive Definition Parts
+
+再帰のパターン: *accumulate* *(2004/08/10)*
+...........................................
+
+他の再帰パターンは `accumulate' パターンと呼ばれる．再帰パターン
+`accumulate' では，リストのすべての要素で実行され，他の要素で実行された
+結果に積み重ねていく．
+
+これは `cons' が使われないで，他の連結方法を使うことを除けば，
+`cons' を使って "すべての" パターンを連結するのに非常に似ている．
+
+概略は以下のようになる．
+
+   * リストが空であれば，0か他の定数を返す
+   * そうでなければ，リストの先頭 (リストの CAR) に処理する
+   -          そして，`+' か他の連結関数を使って，
+              処理された要素を連結する
+        -     リストの残り (CDR) に再帰呼び出しを行う
+
+例をあげよう
+
+     (defun add-elements (numbers-list)
+       "Add the elements of NUMBERS-LIST together."
+       (if (not numbers-list)
+           0
+         (+ (car numbers-list) (add-elements (cdr numbers-list)))))
+
+     (add-elements '(1 2 3 4))
+         => 10
+
+*Note Making a List of Files: Files List にある例もこのパターンである．
+
+
+
+File: eintr-ja, Node: Keep, Prev: Recursive Example arg of 3, Up: Recursive Definition Parts
+
+再帰のパターン: *keep* *(2004/08/10)*
+.....................................
+
+3番目の再帰パターンは `keep' パターンと呼ばれる．再帰パターン`keep' で
+は，各リストが確認され，基準に合う要素の結果だけが結果として得られる．
+
+これもまた，"every"パターンととてもよく似ている．異なるのは，基準に合わ
+ないと無視される点だ．
+
+このパターンは3つの部分を持つ．
+
+   * もしリストが空であれば，`nil' を返す．
+   * もしそうでなければ，リストの先頭 (リストの CAR) を確認し，
+     基準に合えば
+   -          要素を処理し，`cons' を使って連結する
+        -     リストの残り (CDR) を再帰呼び出しで処理する．
+   * そうでなく，リストの先頭 (リストの CAR) が基準に合わなければ
+   -          その要素を無視する．
+        -     そして，リストの残り (CDR) を再帰呼び出しで処理する．
+
+これは `cond' を使った例である．
+
+     (defun keep-three-letter-words (word-list)
+       "Keep three letter words in WORD-LIST."
+       (cond
+        ;; 最初に，再帰条件: 停止条件
+        ((not word-list) nil)
+
+        ;; 2番目に，再帰条件: 実行すべき時
+        ((eq 3 (length (symbol-name (car word-list))))
+         ;; combine acted-on element with recursive call on shorter list
+         (cons (car word-list) (keep-three-letter-words (cdr word-list))))
+
+        ;; 3番目に 再帰条件: 無視すべき要素の時
+        ;;   次段式で短くなったリストで再帰呼び出し
+        (t  (keep-three-letter-words (cdr word-list)))))
+
+     (keep-three-letter-words '(one two three four five six))
+         => (one two six)
+
+停止すべき時の確認として `nil' を使う必要がないのはもちろんのことである．
+そして，もちろん，これらのパターンを組み合わせることもできる．
+
+
+
+File: eintr-ja, Node: No Deferment, Next: No deferment solution, Prev: Recursive Definition Parts, Up: while
+
+待機なしでの再帰 *(2004/08/10)*
+-------------------------------
+
+関数 `triangle-recursively' を実行した時に何が起こるのかをまた考えてみ
+よう．見てみると，途中の計算はすべての計算が実行されるまで，延期される
+のが分かるだろう．
+
+以下は関数定義である．
+
+     (defun triangle-recursively (number)
+       "Return the sum of the numbers 1 through NUMBER inclusive.
+     Uses recursion."
+       (if (= number 1)                    ; 再帰条件
+           1                               ; 真の場合の動作
+         (+ number                         ; 偽の場合の動作
+            (triangle-recursively          ; 再帰呼び出し
+             (1- number)))))               ; 次段式
+
+この関数を引数 7 で実行した時には何が起こるだろうか？
+
+関数 `triangle-recursively' の最初のインスタンスは数 7 に2番目の
+`triangle-recursively' のインスタンス (引数は6)による結果を追加する．つ
+まり，最初の計算は
+
+     (+ 7 (triangle-recursively 6)
+
+となる．
+
+`triangle-recursively' の最初のインスタンス (小さなロボットとして考えた
+いかもしれない) は仕事を完了できない．`(triangle-recursively 6)' の計算
+のために，2番目のインスタンス(つまり，2台目のロボット)に計算処理をまか
+せなければいけない．2番目のものは最初の1つ目とは完全に異なる．専門的に
+は"異なったインスタンス化"である．別の言い方をすると，異なるロボットで
+ある．このロボットは最初のものと同じモデルであり，再帰的に数を計算する．
+しかし，異なった製造番号を持っている．
+
+そして，`(triangle-recursively 6)' は何を返すのだろうか？この関数は，数
+6に引数 5 で `triangle-recursively' を評価した値を追加する．ロボットの
+隠喩を使えば，他のロボットに助けを頼むのだ．
+
+今，全体は以下のようになる．
+
+     (+ 7 6 (triangle-recursively 5)
+
+さて，次に何が起こるだろうか？
+
+     (+ 7 6 5 (triangle-recursively 4)
+
+最後の時を除くと，`triangle-recursively' が呼ばれるたびに，プログラムの
+他のインスタンス(他のロボット)を作り，計算をしてくれるように頼む．
+
+結果として，全体では以下のような式ができ，実行される
+
+     (+ 7 6 5 4 3 2 1)
+
+この関数では，最初の計算は2番目が実行されるまで待ち，2番目は3番目が実行
+されるまで待ちといった設計になっている．各関数が処理を待っているため，
+コンピュータは何が待っているかを記憶しておかなければならない．このこと
+は，例のように数段階の処理であれば問題にはならない．しかし，多くの段階
+からなるようなプログラムでは問題になる可能性がある．
+
+
+
+File: eintr-ja, Node: No deferment solution, Prev: No Deferment, Up: while
+
+待機なしの解決 *(2004/08/09)*
+-----------------------------
+
+待機させるような処理の問題を解決するには処理を待機させないように書くこ
+とである (1) (*Note No deferment solution-Footnotes::)．このためには，
+異なったパターンで書く必要がある．多くの場合，"初期化" 関数と "援助"
+(ヘルパー)関数という2つの関数を書く必要がある．
+
+"初期化"関数は仕事を開始させ，"援助"関数が実際の処理を行う．
+
+以下に数を加算する2つの関数定義をあげる．これらはとても単純だが，理解し
+にくい．
+
+     (defun triangle-initialization (number)
+       "Return the sum of the numbers 1 through NUMBER inclusive.
+     This is the `initialization' component of a two function
+     duo that uses recursion."
+       (triangle-recursive-helper 0 0 number))
+
+     (defun triangle-recursive-helper (sum counter number)
+       "Return SUM, using COUNTER, through NUMBER inclusive.
+     This is the `helper' component of a two function duo
+     that uses recursion."
+       (if (> counter number)
+           sum
+         (triangle-recursive-helper (+ sum counter)  ; sum
+                                    (1+ counter)     ; counter
+                                    number)))        ; number
+
+両方の関数を評価することでインストールし，以下の2の列で
+`triangle-initialization' を呼んでみよ．
+
+     (triangle-initialization 2)
+         => 3
+
+"初期化"関数は"援助"関数の最初のインスタンスを 0，0，ある数(3角形の列の
+数)という3つの引数で呼ぶ．
+
+"援助" 関数に渡される最初の2つの引数は初期値である．これらの値は
+`triangle-recursive-helper' が新しいインスタンスを呼ぶたびに変更される
+(2) (*Note No deferment solution-Footnotes::)
+
+1列しかない3角形の時，何が起こるか見てみよう(この3角形には1個しか小石が
+ない)
+
+`triangle-initialization' は引数を `0 0 1' で援助関数を
+呼ぶ．援助関数では `(> counter number)' という条件式を実行する．
+
+     (> 0 1)
+
+そして，結果が偽であると分かり，`if' 文の中にある偽の時に実行される処理
+を実行する．
+
+         (triangle-recursive-helper
+          (+ sum counter)  ; plus と counter を足す => sum
+          (1+ counter)     ; counter に1を足す => counter
+          number)          ; number はそのままにする
+
+以下のように計算するだろう．
+
+     (triangle-recursive-helper (+ 0 0)  ; sum
+                                (1+ 0)   ; counter
+                                1)       ; number
+以下になる
+
+     (triangle-recursive-helper 0 1 1)
+
+また，`(> counter number)' が偽であり，そして，また Lisp インター
+プリタは新しい引数で新しいインスタンスを作成し，
+`triangle-recursive-helper' を評価するだろう．
+
+この新しいインスタンスは以下のようになるだろう
+
+         (triangle-recursive-helper
+          (+ sum counter)  ; plus と counter を足す => sum
+          (1+ counter)     ; counter に1を足す => counter
+          number)          ; number はそのままにする
+
+以下になる
+
+     (triangle-recursive-helper 1 2 1)
+
+この場合，`(> counter number)' が真になる! だから，このインスタンスは期
+待通り，合計値である 1 を返す．
+
+今度は `triangle-initialization' に引数 2を渡して，2列の3角形にいくつの
+小石があるか試してみよう．
+
+この場合，`(triangle-recursive-helper 0 0 2)' を呼び出す．
+
+各段階で，各インスタンスは以下のようになるだろう．
+
+                               sum counter number
+     (triangle-recursive-helper 0    1       2)
+
+     (triangle-recursive-helper 1    2       2)
+
+     (triangle-recursive-helper 3    3       2)
+
+最後のインスタンスが呼ばれると，`(> counter number)' は真になるから，最
+後のインスタンスは `sum' の値である 3 を返すだろう．
+
+このパターンはコンピュータのリソースを多く使うような関数を書く時に役立
+つ．
+
+
+
+File: eintr-ja  Node: No deferment solution-Footnotes, Up: No deferment solution
+
+(1) "末尾再帰" ("tail recursive") とはそのようなプロセスを指す．
+これは固定スペースて使う．
+
+(2) 専門用語では少し混乱する．`triangle-recursive-helper' は再帰を
+繰り返す処理である．`sum'，`counter'，`number' という3つ
+の値を記憶する必要があるため，この処理は繰り返し呼ばれる．手順としては
+自分自身を呼んでいる"ため再帰である．一方で，
+`triangle-recursively' によるプロセスと手順は再帰的に呼ばれる．こ
+の"再帰"という単語は2つの文で違う意味になっている
+
+
+File: eintr-ja, Node: Looping exercise, Next: forward-sentence, Prev: while, Up: PrePreface
+
+ループの演習問題
+================
+
+   * `triangle'に似た関数で、各行には行の番号の2乗の値があるような関数を
+     書いてみよ。
+     `while'を使うこと。
+
+   * `triangle'に似た関数で、加算のかわりに乗算を使う関数を書いてみよ。
+
+   * これらの2つの関数を再帰的に書き直してみよ。これらの関数を`cond'を
+     使うように直してみよ。
+
+   * 段落内の各`@dfn'に対するインデックスをその段落の始めに作るような
+     Texinfoモード用の関数を書いてみよ（Texinfoファイルでは、`@dfn'は定
+     義に印を付ける。詳しくは、以下を参照のこと．
+     *Note Indicating Definitions: (texinfo)Indicating.)
+
+
+
+File: eintr-ja, Node: Regexp Search, Next: Counting Words, Prev: PrePreface, Up: Top
+
+正規表現の探索 *(2004/08/10)*
+*****************************
+
+正規表現の探索は、GNU Emacsでは非常に多用されている。2つの関数
+`forward-sentence'と`forward-paragraph'は、これらの探索のよい例である。
+これらの関数で，移動すべき場所を捜す場合に，正規表現を使っている．この
+正規表現 "regular expression" はしばしば"regexp" と書かれる．
+
+正規表現の探索については、*Note Regular Expression Search:
+(emacs)Regexp Searchや*Note Regular Expressions: (elisp)Regular
+Expressionsに記述されている。本章を執筆するにあたり、読者はこれらに関し
+て少なくともある程度の知識を持っていると仮定した。主要な点は、正規表現
+により、文字列の字面どおりの探索に加えて、パターンの探索もできることで
+ある。たとえば、`forward-sentence'のコードは、文末を表す可能性のある文
+字のパターンを探索し、そこへポイントを移動する。
+
+関数`forward-sentence'のコードを説明するまえに、
+文末を表すパターンとはどんなものであるかを考えることも価値がある。
+このパターンについては次節で説明する。
+続いて、正規表現の探索関数`re-search-forward'を説明する。
+さらに、関数`forward-sentence'を説明する。
+そして、本章の最後の節では、関数`forward-paragraph'を説明する。
+`forward-paragraph'は複雑な関数であり、新たな機能もいくつか紹介する。
+
+* Menu:
+
+* sentence-end::                The regular expression for `sentence-end'.
+* re-search-forward::           Very similar to `search-forward'.
+* forward-sentence::            A straightforward example of regexp search.
+* forward-paragraph::           A somewhat complex example.
+* etags::                       How to create your own `TAGS' table.
+* Regexp Review::
+* re-search Exercises::
+
+
+
+File: eintr-ja, Node: sentence-end, Next: forward-sentence, Prev: Looping exercise, Up: PrePreface
+
+`sentence-end'のための正規表現 *(2004/08/10)*
+=============================================
+
+シンボル`sentence-end'は、文末を表すパターンに束縛される。この正規表現
+はどんなものであるべきか？
+
+明らかに、文は、ピリオドや疑問符や感嘆符で終わる。もちろん、これら3つの
+文字のうちの1つで終わる節のみを文末と考えるべきである。つまり、パターン
+にはつぎの文字集合が含まれるべきである。
+
+     [.?!]
+
+しかし、ピリオドや疑問符や感嘆符は文の途中に使われることもあるので、
+`forward-sentence'が単純にこれら3つの文字に移動してほしくはない。たとえ
+ば、ピリオドは省略形のあとにも使われる。つまり、別の情報が必要なのであ
+る。
+
+慣習としては、文のうしろには2つの空白を置くが、文の途中のピリオドや疑問
+符や感嘆符のうしろには空白を1つだけ置く。つまり、ピリオドや疑問符や感嘆
+符のあとに空白が2つあれば、文末を表すと考えられる。しかし、ファイルでは、
+2つの空白のかわりに、タブだったり行末だったりもする。つまり、正規表現は、
+これらの3つの場合を含む必要がある。
+
+これらは、つぎのように表せる。
+
+     \\($\\| \\|  \\)
+            ^   ^^
+           TAB  SPC
+
+ここで、`$'は行末を表し、また、式の中にタブがあるのか空白が2つあるのか
+わかるようにしてある。どちらも式の中には実際の文字を入れる。
+
+括弧と縦棒のまえには2つのバックスラッシュ`\\'が必要である。Emacsでは、
+最初のバックスラッシュはそれに続くバックスラッシュをクオートし、2番目の
+バックスラッシュは、それに続く括弧や縦棒が特別な文字であることを表す。
+
+また、つぎのように、文には複数個の復帰が続いてもよい。
+
+     [
+     ]*
+
+タブや空白のように、正規表現に復帰を入れるにはそのまま入れる。アスタリ
+スクは、RETが0回以上繰り返されることを表す。
+
+文末は、ピリオドや疑問符や感嘆符のあとに適切な空白が続くだけはない。空
+白のまえが、閉じ引用符や閉じ括弧の類でもよい。もちろん、空白のまえにこ
+れらが複数個あってもよい。これらはつぎのような正規表現を必要とする。
+
+     []\"')}]*
+
+この式で、最初の`]'は正規表現の最初の文字である。2番目の文字は`"'であり、
+そのまえには`\'があるがEmacsに`"'が特別な文字では*ない*ことを指示する。
+残りの3つの文字は`''と`)'と`}'である。
+
+これらすべてで、文末に一致する正規表現のパターンが何であるかを表す。そ
+して、もちろん、`sentence-end'を評価するとつぎのような値になっているこ
+とがわかる。
+
+     sentence-end
+          => "[.?!][]\"')}]*\\($\\|     \\|  \\)[
+     ]*"
+
+
+
+
+File: eintr-ja, Node: re-search-forward, Next: forward-sentence, Prev: Looping exercise, Up: PrePreface
+
+関数`re-search-forward' *(2004/08/10)*
+======================================
+
+関数`re-search-forward'は、関数`search-forward'にとてもよく似ている
+（*Note search-forward::）。
+
+`re-search-forward'は正規表現を探索する。探索に成功すると、みつかった文
+字列の最後の文字の直後にポイントを置く。逆向きの探索の場合には、みつかっ
+た文字列の最初の文字の直前にポイントを置く。真値として`t'を返すように
+`re-search-forward'に指示できる（したがって、ポイントの移動は「副作用」
+である）。
+
+`search-forward'のように、関数`re-search-forward'は4つの引数を取る。
+
+  1. 第1引数は、関数が探索する正規表現である。正規表現は引用符のあいだ
+     の文字列である。
+
+  2. 省略できる第2引数は、関数が探索する範囲を制限する。限界はバッファ
+     の位置で指定する。
+
+  3. 省略できる第3引数は、失敗した場合の関数の動作を指定する。第3引数に
+     `nil'を指定すると、探索に失敗した場合、関数はエラーを通知（し、メッ
+     セージを表示）する。それ以外の値を指定すると、探索に失敗した場合は
+     `nil'を返し、探索に成功すると`t'を返す。
+
+  4. 省略できる第4引数は、繰り返し回数である。負の繰り返し回数は、
+     `re-search-forward'に逆向き探索を指示する。
+
+`re-search-forward'の雛型はつぎのとおりである。
+
+     (re-search-forward "正規表現"
+                     探索範囲
+                     探索失敗時の動作
+                     繰り返し回数)
+
+第2引数、第3引数、第4引数は省略できる。しかし、最後の2つの引数のいずれ
+か、あるいは、両者に値を渡したい場合には、そのまえにある引数すべてに値
+を渡す必要がある。さもないと、Lispインタープリタはどの引数に値を渡すの
+かを誤解することになる。
+
+関数`forward-sentence'では、正規表現は変数`sentence-end'の値であり、つ
+ぎのとおりである。
+
+     "[.?!][]\"')}]*\\($\\|  \\|  \\)[
+     ]*"
+
+探索の範囲は、（文は段落を越えることはないので）段落の末尾までである。
+探索に失敗すると、関数は`nil'を返す。繰り返し回数は、関数
+`forward-sentence'の引数で与える。
+
+
+
+File: eintr-ja, Node: forward-sentence, Next: etags, Prev: Looping exercise, Up: PrePreface
+
+`forward-sentence' *(2004/08/10)*
+=================================
+
+カーソルを文単位で先へ進めるコマンドは、Emacs Lispにおいて正規表現の探
+索の使い方を示す直接的な例である。もちろん、関数は単なる例よりは長くて
+複雑である。これは、関数が前向きと同時に逆向き探索にも対応しており、文
+単位で複数回進めることもできるからである。この関数は、通常、`M-e'のキー
+コマンドにバインドされている。
+
+* Menu:
+
+* Complete forward-sentence::
+* fwd-sentence while loops::    Two `while' loops.
+* fwd-sentence re-search::      A regular expression search.
+
+
+
+File: eintr-ja, Node: Complete forward-sentence, Next: fwd-sentence while loops, Prev: forward-sentence, Up: forward-sentence
+
+`forward-sentence' の完全な定義
+-------------------------------
+
+`forward-sentence'のコードをつぎに示す。
+
+     (defun forward-sentence (&optional arg)
+       "Move forward to next sentence-end.  With argument, repeat.
+     With negative argument, move backward repeatedly to sentence-beginning.
+     Sentence ends are identified by the value of sentence-end
+     treated as a regular expression.  Also, every paragraph boundary
+     terminates sentences as well."
+       (interactive "p")
+       (or arg (setq arg 1))
+       (while (< arg 0)
+         (let ((par-beg
+                (save-excursion (start-of-paragraph-text) (point))))
+           (if (re-search-backward
+                (concat sentence-end "[^ \t\n]") par-beg t)
+               (goto-char (1- (match-end 0)))
+             (goto-char par-beg)))
+         (setq arg (1+ arg)))
+       (while (> arg 0)
+         (let ((par-end
+                (save-excursion (end-of-paragraph-text) (point))))
+           (if (re-search-forward sentence-end par-end t)
+               (skip-chars-backward " \t\n")
+             (goto-char par-end)))
+         (setq arg (1- arg))))
+
+一見すると関数は長いが、骨格を見てからその筋肉を見るのが最良であろう。
+骨格を見るには、もっとも左のコラムから始まる式を見ればよい。
+
+     (defun forward-sentence (&optional arg)
+       "説明文..."
+       (interactive "p")
+       (or arg (setq arg 1))
+       (while (< arg 0)
+         WHILEループの本体
+       (while (> arg 0)
+         WHILEループの本体
+
+だいぶ簡単に見える。
+関数定義は、説明文、`interactive'式、`or'式、
+`while'ループから成る。
+
+これらの各部分を順番に見てみよう。
+
+説明文は、十分でわかりやすい。
+
+関数には、`interactive "p"'の宣言がある。
+これは、もしあれば処理した前置引数を引数として関数に渡すことを意味する
+（これは数である）。
+関数に（省略できる）引数が渡されないと、引数`arg'には1が束縛される。
+`forward-sentence'が非対話的に引数なしで呼ばれた場合には、
+`arg'には`nil'が束縛される。
+
+`or'式で前置引数を処理する。
+これは、`arg'に値が束縛されていればそのままにするが、
+`arg'に`nil'が束縛されているときには`arg'の値を1にする。
+
+
+
+File: eintr-ja, Node: fwd-sentence while loops, Next: fwd-para between paragraphs, Prev: forward-sentence, Up: forward-sentence
+
+`while' ループ
+--------------
+
+`or'式に続けて2つの`while'ループがある。最初の`while'には、
+`forward-sentence'の前置引数が負の数のときに真となる判定条件がある。こ
+れは、逆向き探索用である。このループの本体は2番目の`while'節の本体に似
+ているが、同一ではない。この`while'ループを飛ばして、2番目の`while'に注
+目しよう。
+
+2番目の`while'ループは、ポイントを先へ進めるためのものである。その骨格
+はつぎのように読める。
+
+     (while (> arg 0)            ; 判定条件
+       (let 変数リスト
+         (if (判定条件)
+             真の場合の動作
+           偽の場合の動作
+       (setq arg (1- arg))))     ; `while' ループのカウンタを減らす
+
+`while'ループは減少方式である（*Note Decrementing Loop::）。これは、カ
+ウンタ（変数`arg'）が0より大きい限り真を返す判定条件と、ループを1回廻る
+ごとにカウンタの値を1減らす減少式を持つ。
+
+コマンドのもっとも一般的な用法であるが、`forward-sentence'に前置引数を
+与えないと`arg'の値は1なので、この`while'ループは1回だけ廻る。
+
+`while'ループの本体は、`let'式から成り、ローカル変数を作って束縛し、本
+体は`if'式である。
+
+`while'ループの本体はつぎのとおりである。
+
+     (let ((par-end
+            (save-excursion (end-of-paragraph-text) (point))))
+       (if (re-search-forward sentence-end par-end t)
+           (skip-chars-backward " \t\n")
+         (goto-char par-end)))
+
+`let'式は、ローカル変数`par-end'を作って束縛する。あとでわかるように、
+このローカル変数は、正規表現の探索の範囲を制限するためのものである。段
+落の中で正しい文末を探せなかった場合には、段落の末尾で止まる。
+
+まず、どのようにして`par-end'に段落の末尾が束縛されるかを説明する。
+`let'は、`par-end'の値に、Lispインタープリタがつぎの式を評価した値を設
+定する。
+
+     (save-excursion (end-of-paragraph-text) (point))
+
+この式では、`(end-of-paragraph-text)'でポイントを段落の末尾に移動し、
+`(point)'でポイントの値を返す。
+そして、`save-excursion'がポイントをもとの位置に戻す。
+したがって、`let'は、`save-excursion'が返した値を`par-end'に
+束縛するが、これは段落の末尾の位置である
+（関数`(end-of-paragraph-text)'は、これから説明する
+`forward-paragraph'を使う）。
+
+Emacsは、続いて、`let'の本体を評価する。それはつぎのような`if'式である。
+
+     (if (re-search-forward sentence-end par-end t) ; 判定条件
+         (skip-chars-backward " \t\n")              ; 真の場合の動作
+       (goto-char par-end)))                        ; 偽の場合の動作
+
+`if'は、第1引数が真かどうかを調べ、
+そうならば、真の場合の動作を評価し、さもなければ、
+Emacs Lispインタープリタは偽の場合の動作を評価する。
+`if'式の判定条件は、正規表現の探索である。
+
+関数`forward-sentence'のこのような実際の動作は奇妙に思えるかもしれない
+が、これはLispでこの種の操作を行う一般的な方法である。
+
+
+
+File: eintr-ja, Node: fwd-sentence re-search, Next: fwd-para let, Prev: fwd-sentence while loops, Up: fwd-sentence while loops
+
+正規表現の探索 *(2004/08/10)*
+.............................
+
+関数`re-search-forward'は文末を探す、つまり、正規表現`sentence-end'で定
+義されたパターンを探す。パターンがみつかれば、つまり、文末がみつかれば、
+関数`re-search-forward'はつぎの2つのことを行う。
+
+  1. 関数`re-search-forward'は、副作用を及ぼす。つまり、みつけた文字列
+     の直後にポイントを移動する。
+
+  2. 関数`re-search-forward'は真値を返す。この値を`if'が受け取り、探索
+     が成功したことを知る。
+
+ポイントを移動するという副作用は、関数`if'に探索成功の値が返されるまえ
+に完了する。
+
+関数`if'が、`re-search-forward'の呼び出しに成功し真値を受け取ると、
+`if'は真の場合の動作、式`(skip-chars-backward " \t\n")'を評価する。この
+式は、目に見える文字がみつかるまで逆向きに空白やタブや復帰を飛ばして目
+に見える文字の直後にポイントを移動する。ポイントは文末のパターンの直後
+にあったので、この操作により、ポイントは文末の目に見える文字、普通はピ
+リオドの直後にポイントを置く。
+
+一方、関数`re-search-forward'が文末のパターンの検索に失敗すると、関数は
+偽を返す。すると`if'は第3引数、つまり、`(goto-char par-end)'を評価し、
+段落の末尾にポイントを移動する。
+
+正規表現の探索はとても便利であり、`if'式の判定条件でも使っている
+`re-search-forward'はパターンの例題として簡便である。読者もこのパターン
+をしばしば利用するであろう。
+
+
+
+File: eintr-ja, Node: forward-paragraph, Next: etags, Prev: forward-sentence, Up: PrePreface
+
+`forward-paragraph'：関数の宝庫 *(2004/08/10)*
+==============================================
+
+関数`forward-paragraph'は、段落の末尾にポイントを進める。普通は`M-}'に
+バインドされており、`let*'や`match-beginning'や`looking-at'のそれ自体で
+重要な関数を利用している。
+
+詰め込み接頭辞（fill prefix）で始まる行から成る段落を処理するため、
+`forward-paragraph'の関数定義は、`forward-sentence'の関数定義に比べてと
+ても長い。
+
+詰め込み接頭辞は、各行の先頭で繰り返すことができる文字の文字列から成る。
+たとえば、Lispコードでは、段落ほどもある注釈の各行は`;;; 'で
+始める約束になっている。
+テキストモードでは4つの空白を詰め込み接頭辞とするのが一般的であり、
+字下げした段落になる
+（詰め込み接頭辞について詳しくは、
+*Note Fill Prefix: (emacs)Fill Prefix）。
+
+詰め込み接頭辞があると、関数`forward-paragraph'は、もっとも左のコラムか
+ら始まる行から成る段落の末尾を探すだけでなく、詰め込み接頭辞で始まる行
+を含む段落の末尾も探す必要がある。
+
+さらに、段落を区切る空行の場合には、詰め込み接頭辞を無視するほうが実用
+的である。これも複雑さが増す理由である。
+
+* Menu:
+
+* forward-paragraph in brief::  Key parts of the function definition.
+* fwd-para let::                The `let*' expression.
+* fwd-para while::              The forward motion `while' loop.
+* fwd-para between paragraphs::  Movement between paragraphs.
+* fwd-para within paragraph::   Movement within paragraphs.
+* fwd-para no fill prefix::     When there is no fill prefix.
+* fwd-para with fill prefix::   When there is a fill prefix.
+* fwd-para summary::            Summary of `forward-paragraph' code.
+
+
+
+File: eintr-ja, Node: forward-paragraph in brief, Next: fwd-para between paragraphs, Prev: fwd-sentence while loops, Up: forward-sentence
+
+短縮した `forward-paragraph' の関数定義
+---------------------------------------
+
+関数`forward-paragraph'の全体を示すかわりに、その一部だけを示す。前準備
+もなしに読むと、気力をくじかれる！
+
+関数の概略はつぎのとおりである。
+
+     (defun forward-paragraph (&optional arg)
+       "説明文..."
+       (interactive "p")
+       (or arg (setq arg 1))
+       (let*
+           変数リスト
+         (while (< arg 0)        ; 戻すコード
+           ...
+           (setq arg (1+ arg)))
+         (while (> arg 0)        ; 進めるコード
+           ...
+           (setq arg (1- arg)))))
+
+関数の始めの部分は決まりきっていて、省略できる1個の引数から成る関数の引
+数リストである。これに説明文が続く。
+
+宣言`interactive'の小文字の`p'は、もしあれば処理した前置引数を関数に渡
+すことを意味する。これは数であり、何個の段落だけ先へ進むかを表す繰り返
+し回数である。つぎの`or'式は、関数に引数が渡されなかった場合の共通処理
+で、対話的にではなく他のコードから関数が呼び出された場合にこうなる
+（*Note forward-sentence::）。この関数の馴染みのある部分はこれで終わり
+である。
+
+
+
+
+File: eintr-ja, Node: fwd-para let, Next: fwd-para while, Prev: fwd-sentence re-search, Up: fwd-sentence while loops
+
+`let*'式 *(2004/08/10)*
+.......................
+
+関数`forward-paragraph'のつぎの行は`let*'式で始まる。これはこれまでに見
+てきた式とは種類が異なる。シンボルは`let*'であり、`let'ではない。
+
+スペシャルフォーム`let*'は`let'に似ているが、Emacsは1つずつ順に各変数を
+設定し、変数リストのうしろの変数では、Emacsがすでに設定した変数リストの
+まえの部分の変数の値を利用してもよいところが異なる。
+
+この関数の`let*'式では、Emacsは2つの変数、
+`fill-prefix-regexp'と`paragraph-separate'を束縛する。
+`paragraph-separate'に束縛される値は、
+`fill-prefix-regexp'に束縛された値に依存する。
+
+それぞれを順番に見てみよう。シンボル`fill-prefix-regexp'には、つぎのリ
+ストを評価した値が設定される。
+
+     (and fill-prefix
+          (not (equal fill-prefix ""))
+          (not paragraph-ignore-fill-prefix)
+          (regexp-quote fill-prefix))
+
+この式の先頭要素はスペシャルフォーム `and' である。
+
+すでに前で学んだ (*Note The `kill-new' function: kill-new function.) よ
+うにスペシャルフォーム`and'は、引数の1つが値`nil'を返すまで各引数を評価
+する。`nil'を返した場合には、`and'式も`nil'を返す。しかし、値`nil'を返
+す引数がなければ、最後の引数を評価した値を返す（そのような値は`nil'以外
+なので、Lispでは真と解釈される）。いいかえれば、`and'式は、すべての引数
+が真であるときに限り真値を返す
+
+ここでは、つぎの4つの式を評価して真値（つまり、非`nil'）が得られれば、
+変数`fill-prefix-regexp'には非`nil'の値が束縛される。さもなければ、
+`fill-prefix-regexp'は`nil'に束縛される。
+
+`fill-prefix'
+     この変数を評価すると、もしあれば、詰め込み接頭辞の値が返される。詰
+     め込み接頭辞がなければ、この変数は`nil'を返す。
+
+`(not (equal fill-prefix "")'
+     この式は、既存の詰め込み接頭辞が空文字列、つまり、文字をまったく含
+     まない文字列かどうかを調べる。空文字列は、意味のある詰め込み接頭辞
+     ではない。
+
+`(not paragraph-ignore-fill-prefix)'
+     この式は、変数`paragraph-ignore-fill-prefix'に
+     `t'などの真値を設定してオンになっていると`nil'を返す。
+
+`(regexp-quote fill-prefix)'
+     これはスペシャルフォーム`and'の最後の引数である。`and'のすべての引
+     数が真ならば、この式を評価した結果の値を`and'式が返し、変数
+     `fill-prefix-regexp'に束縛される。
+
+この`and'式が正しく評価されると、`fill-prefix-regexp'には、関数
+`regexp-quote'で修正した`fill-prefix'の値が束縛される。`regexp-quote'は、
+文字列を読み取り、その文字列のみに一致しそれ以外には一致しない正規表現
+を返す。つまり、`fill-prefix-regexp'には、詰め込み接頭辞があれば、詰め
+込み接頭辞だけに一致するものが設定される。さもなければ、この変数には
+`nil'が設定される。
+
+`let*'式の2番目のローカル変数は`paragraph-separate'である。これにはつぎ
+の式を評価した値が束縛される。
+
+     (if fill-prefix-regexp
+         (concat paragraph-separate
+                 "\\|^" fill-prefix-regexp "[ \t]*$")
+       paragraph-separate)))
+
+この式は、`let'ではなく`let*'を使った理由を示している。`if'の判定条件は、
+変数`fill-prefix-regexp'が`nil'であるかそれ以外の値であるかに依存してい
+る。
+
+`fill-prefix-regexp'に値がなければ、Emacsは`if'式の偽の場合の動作を評価
+して、ローカル変数に`paragraph-separate'を束縛する
+（`paragraph-separate'は、段落の区切りに一致する正規表現である）。
+
+一方、`fill-prefix-regexp'に値があれば、Emacsは`if'式の真の場合の動作を
+評価して、`paragraph-separate'には、パターンとして`fill-prefix-regexp'
+を含む正規表現を束縛する。
+
+特に、`paragraph-separate'には、段落を区切るもとの正規表現に、
+`fill-prefix-regexp'に空行が続くという代替パターンを連結したものを
+設定する。
+`^'は`fill-prefix-regexp'が行の先頭から始まることを指定し、
+`"[ \t]*$"'は行末に空白が続いてもよいことを指定する。
+`\\|'は、この部分が`paragraph-separate'に対する
+代替の正規表現であることを指定する。
+
+では`let*'の本体に移ろう。`let*'の本体の始めの部分は、関数に負の引数を
+与えた場合の処理であり、逆向きに戻す。本節では、割愛する。
+
+
+
+File: eintr-ja, Node: fwd-para while, Prev: fwd-para let, Up: fwd-sentence while loops
+
+先へ進める`while'ループ *(2004/08/10)*
+......................................
+
+`let*'の本体の2番目の部分は、先へ進める処理を行う。これは、`arg'の値が
+0より大きい限り繰り返す`while'ループである。関数のもっとも一般的な使い
+方では引数の値は1であり、`while'ループの本体がちょうど1回だけ評価され、
+カーソルを1段落分進める。
+
+この部分では3つの状況を処理する。ポイントが段落のあいだにある場合、ポイ
+ントが段落の中にあり詰め込み接頭辞がある場合、ポイントが段落の中にあり
+詰め込み接頭辞がない場合である。
+
+`while'ループはつぎのとおりである。
+
+     (while (> arg 0)
+       (beginning-of-line)
+
+       ;; 段落のあいだ
+       (while (prog1 (and (not (eobp))
+                          (looking-at paragraph-separate))
+                (forward-line 1)))
+
+       ;; 段落の中で、詰め込み接頭辞あり
+       (if fill-prefix-regexp
+           ;; 詰め込み接頭辞がある; 段落の始まりのかわりに使う
+           (while (and (not (eobp))
+                       (not (looking-at paragraph-separate))
+                       (looking-at fill-prefix-regexp))
+             (forward-line 1))
+
+         ;; 段落の中で、詰め込み接頭辞なし
+         (if (re-search-forward paragraph-start nil t)
+             (goto-char (match-beginning 0))
+           (goto-char (point-max))))
+
+       (setq arg (1- arg)))
+
+減少式として式`(setq (1- arg))'を使っているので、減少カウンタの`while'
+ループであることはすぐにわかる。
+
+ループの本体は3つの式から成る。
+
+     ;; 段落のあいだ
+     (beginning-of-line)
+     (while
+         WHILEの本体)
+
+     ;; 段落の中で、詰め込み接頭辞あり
+     (if 判定条件
+         真の場合の動作
+
+     ;; 段落の中で、詰め込み接頭辞なし
+       偽の場合の動作
+
+Emacs Lispインタープリタが`while'ループの本体を評価するとき、最初に行う
+ことは、式`(beginning-of-line)'を評価してポイントを行の先頭に移動するこ
+とである。続いて、内側の`while'ループがくる。この`while'ループは、段落
+のあいだに空行があれば、そこからカーソルを移動するためのものである。最
+後に，`if'式で、ポイントを段落の末尾に実際に移動する。
+
+
+
+File: eintr-ja, Node: fwd-para between paragraphs, Next: fwd-para within paragraph, Prev: fwd-sentence while loops, Up: forward-sentence
+
+Between paragraphs
+------------------
+
+段落のあいだ
+------------
+
+まず、内側の`while'ループを説明しよう。このループは、ポイントが段落のあ
+いだにある場合を扱う。3つの新たな関数、`prog1'、`eobp'、`looking-at'を
+使っている。
+
+   * `prog1' is similar to the `progn' special form,
+     `prog1'はスペシャルフォーム`progn'に似ているが、
+     引数を順番に評価し終えたあとに、第1引数の値を式全体の値として返す点が異なる
+     （`progn'は、式の値としては最後の引数の値を返す）。
+     `prog1'の2番目以降の引数は、副作用のためだけに評価される。
+
+   * `eobp'は`End Of Buffer（バッファの終わり）P'の略であり、ポイントが
+     バッファの最後にあるときに真を返す関数である。
+
+   * `looking-at'は、ポイントに続くテキストが`looking-at'の引数に渡した
+     正規表現に一致する場合に真を返す関数である。
+
+説明している`while'ループはつぎのとおりである。
+
+     (while (prog1 (and (not (eobp))
+                        (looking-at paragraph-separate))
+                   (forward-line 1)))
+
+この`while'ループには本体がない！　ループの判定条件はつぎの式である。
+
+     (prog1 (and (not (eobp))
+                 (looking-at paragraph-separate))
+            (forward-line 1))
+
+`prog1'の第1引数は`and'式である。この中では、ポイントがバッファの最後に
+あるかどうか、段落を区切る正規表現に一致するものがポイントに続いている
+かどうか、を検査する。
+
+カーソルがバッファの最後になくて、カーソルに続く文字の列が段落を区切る
+ものであれば、`and'式は真になる。`and'式を評価したあと、Lispインタープ
+リタは`prog1'の第2引数、`forward-line'を評価する。これは、ポイントを1行
+分先へ進める。しかし、`prog1'が返す値は第1引数の値であるため、ポイント
+がバッファの最後になくて、かつ、段落のあいだにあるかぎり、`while'ループ
+は繰り返される。最終的にポイントが段落に達すると`and'式は偽になる。しか
+し、いずれにしてもコマンド`forward-line'は実行されることに注意してほし
+い。つまり、段落と段落のあいだでポイントを移動したときには、段落の第2行
+目の先頭にポイントが移動するのである。
+
+
+
+File: eintr-ja, Node: fwd-para within paragraph, Next: fwd-para no fill prefix, Prev: fwd-para between paragraphs, Up: forward-sentence
+
+段落の中
+--------
+
+外側の`while'ループのつぎの式は`if'式である。変数`fill-prefix-regexp'が
+`nil'以外の値を持っている場合には、Lispインタープリタは`if'の真の場合の
+動作を評価し、`fill-prefix-regexp'の値が`nil'の場合、つまり、詰め込み接
+頭辞がない場合には偽の場合の動作を評価する。
+
+
+
+File: eintr-ja, Node: fwd-para no fill prefix, Next: fwd-para with fill prefix, Prev: fwd-para within paragraph, Up: forward-sentence
+
+詰め込み接頭辞なし
+------------------
+
+詰め込み接頭辞がない場合のコードを見るほうが簡単である。このコードは、
+さらに内側に`if'式を含み、つぎのようになっている。
+
+     (if (re-search-forward paragraph-start nil t)
+         (goto-char (match-beginning 0))
+       (goto-char (point-max)))
+
+この式は、ほとんどの人がコマンド`forward-paragraph'の主要な目的であると
+考えることを行う。つぎの段落の先頭をみつけるための正規表現の探索を行い、
+みつかればポイントをそこへ移動する。段落の始まりがみつからなければ、バッ
+ファの参照可能なリージョンの最後にポイントを移動する。
+
+この部分で馴染みがないのは`match-beginning'の使い方であろう。これもわれ
+われにとっては新しいものである。関数`match-beginning'は、直前の正規表現
+の探索で一致したテキストの先頭位置を与える数を返す。
+
+関数`match-beginning'を使うのは、探索の性質のためである。普通の探索であ
+れ正規表現の探索であれ、探索に成功するとポイントは探し出したテキストの
+終わりに移動する。この場合では、探索に成功すると、ポイントは
+`paragraph-start'に一致したテキストの終わりに移動するが、これは、今の段
+落の末尾ではなく、つぎの段落の始まりである。
+
+しかし、つぎの段落の始まりにではなく、今の段落の末尾にポイントを置きた
+いのである。段落のあいだには何行かの空行がありえるので、2つの位置は異な
+るであろう。
+
+引数に0を指定すると、`match-beginning'は、直前の正規表現の探索で一致し
+たテキストの始まりの位置を返す。この例では、直前の正規表現の探索は、
+`paragraph-start'を探したものであり、`match-beginning'は、パターンの終
+わりではなく始まりの位置を返す。始まりの位置は、段落の末尾である。
+
+（引数に正の数を指定すると、関数`match-beginning'は、直前の正規表現の中
+の括弧表現にポイントを置く。これは便利な機能である。）
+
+
+
+File: eintr-ja, Node: fwd-para with fill prefix, Next: fwd-para summary, Prev: fwd-para no fill prefix, Up: forward-sentence
+
+詰め込み接頭辞あり
+------------------
+
+説明したばかりの内側の`if'式は、詰め込み接頭辞の有無を調べる`if'式の偽
+の場合の動作である。詰め込み接頭辞がある場合には、この`if'式の真の場合
+の動作が評価される。それはつぎのとおりである。
+
+     (while (and (not (eobp))
+                 (not (looking-at paragraph-separate))
+                 (looking-at fill-prefix-regexp))
+       (forward-line 1))
+
+この式は、つぎの3つの条件が真である限り、ポイントを1行進める。
+
+  1. ポイントはバッファの最後にいない。
+
+  2. ポイントに続くテキストは段落の区切りではない。
+
+  3. 詰め込み接頭辞の正規表現に一致するパターンがポイントに続けてある。
+
+このまえにある関数`forward-paragraph'で行の先頭にポイントが移動している
+ことを思い出さないと、最後の条件に惑わされるかもしれない。つまり、テキ
+ストに詰め込み接頭辞がある場合、関数`looking-at'はそれをみつけるのであ
+る。
+
+
+
+File: eintr-ja, Node: fwd-para summary, Prev: fwd-para with fill prefix, Up: forward-sentence
+
+まとめ
+------
+
+まとめると、関数`forward-paragraph'がポイントを進めるときには、つぎのこ
+とを行う。
+
+   * ポイントを行の先頭に移動する。
+
+   * 段落のあいだの行を飛ばす。
+
+   * 詰め込み接頭辞の有無を調べ、もしあれば、
+
+
+        --- 段落を区切る行ではない限り、1行ずつ進める。
+
+   * 詰め込み接頭辞がなければ、
+
+
+        --- つぎの段落の始まりを探す。
+
+        --- 段落の始まりのパターンの始めに移動する。これは、まえの段落の
+          末尾であろう。
+
+        --- あるいは、バッファの参照可能なリージョンの最後に移動する。
+
+復習のために、ここで説明したコードをわかりやすいように整形して以下に記
+す。
+
+     (interactive "p")
+     (or arg (setq arg 1))
+     (let* (
+            (fill-prefix-regexp
+             (and fill-prefix (not (equal fill-prefix ""))
+                  (not paragraph-ignore-fill-prefix)
+                  (regexp-quote fill-prefix)))
+
+            (paragraph-separate
+             (if fill-prefix-regexp
+                 (concat paragraph-separate
+                         "\\|^"
+                         fill-prefix-regexp
+                         "[ \t]*$")
+               paragraph-separate)))
+
+       ポインタをまえへ戻すコード（省略） ...
+
+       (while (> arg 0)                ; 進めるコード
+         (beginning-of-line)
+
+         (while (prog1 (and (not (eobp))
+                            (looking-at paragraph-separate))
+                  (forward-line 1)))
+
+         (if fill-prefix-regexp
+             (while (and (not (eobp))  ; 真の場合の動作
+                         (not (looking-at paragraph-separate))
+                         (looking-at fill-prefix-regexp))
+               (forward-line 1))
+                                       ; 内側のifの偽の場合の動作
+           (if (re-search-forward paragraph-start nil t)
+               (goto-char (match-beginning 0))
+             (goto-char (point-max))))
+
+         (setq arg (1- arg)))))        ; 減少式
+
+関数の`forward-paragraph'の完全な定義には、以上の進めるコードに加えて戻
+るコードも含まれる。
+
+GNU Emacsで読んでいて、関数全体を見たい場合には、`M-.'（`find-tag'）と
+タイプし、問い合わせに対して関数名を与える。関数`find-tag'がタグテーブ
+ルの名前を問い合わせてきたら、読者のサイトのディレクトリ`emacs/src'のタ
+グファイルの名前を与える。ディレクトリ`emacs/src'は、
+`/usr/local/lib/emacs/19.23/src/TAGS'のようなパス名であろう（ディレクト
+リ`emacs/src'の正確なパスは、Emacsをどのようにインストールしたかに依存
+する。わからない場合には、`C-h i'とタイプしてInfoに入り、`C-x C-f'とタ
+イプしてディレクトリ`emacs/info'のパスを調べる。タグファイルは
+`emacs/src'のパスに対応する場合が多いが、infoファイルをまったく別の場所
+に置く場合もある）。
+
+ディレクトリにタグファイルがなくても、読者専用の`TAGS'ファイルを作成で
+きる。
+*Note Create Your Own `TAGS' File: etags.
+
+
+
+File: eintr-ja, Node: etags, Next: re-search Exercises, Prev: forward-sentence, Up: PrePreface
+
+専用タグファイルの作成方法 *(2004/08/10)*
+=========================================
+
+コマンド `M-.' (`find-tag') で関数や変数，ノードなどの定義箇所などへ移
+動できる．この関数がどこへいく移動するかはタグテーブルで決定される．
+
+しばしばタグテーブルを自分で作り，インストールする必要がある．これらは
+自動的には作成されない．タグテーブルは `TAGS' ファイルと呼ばれる．名前
+は大文字で書かれる．
+
+タグファイルを作成するには、Emacsのディストリビューションに含まれるプロ
+グラム`etags'を使う。普通、Emacsを作るときに`etags'もコンパイルされてイ
+ンストールされる（`etags'はEmacs Lispの関数でもEmacsの一部でもない。Cの
+プログラムである）。
+
+タグファイルを作るには、タグファイルを作りたいディレクトリにまず移動する。
+Emacsの中では、コマンド`M-x cd'で行うか、
+そのディレクトリのファイルを訪問するか、
+`C-x d'（`dired'）でディレクトリを表示する。
+続いて、`etags *.el' というコマンドを `TAGS' ファイルを
+作成するためにコンパイルコマンドで実行する．
+
+     M-x compile RET etags *.el RET
+
+@noindent
+
+筆者のディレクトリ`~/emacs'には、137個の`.el'ファイルがあり、そのうちの
+12個をロードしている。そのディレクトリにある Emacs Lisp ファイルのため
+に `TAGS' ファイルを作成できる．
+
+とタイプすれば、タグファイル`TAGS'が作られる。プログラム`etags'では、普
+通のシェルの「ワイルドカード」を使える。たとえば、2つのディレクトリから
+1つのタグファイル`TAGS'を作るには、2番目のディレクトリを`../elisp/'とす
+ると、つぎのようなコマンドを入力する。
+
+     M-x compile RET etags *.el ../elisp/*.el RET
+
+
+     M-x compile RET etags --help RET
+
+とタイプすれば、`etags'が受け付けるオプションの一覧やサポートされている
+言語の一覧が表示される。
+
+プログラム`etags'は、Emacs Lisp，Common Lisp，Scheme，C，C++，Ada，
+Fortran，Pascal，Java，、LaTeX，Pascal，Perl，Python，Texinfo，
+makefiles，ほとんどのアセンブラといった20以上の言語を扱える。このプログ
+ラムには言語を指定するスイッチはない。ファイル名とその内容から入力ファ
+イルの言語を認識する。
+
+また、自分でコードを書いているときにすでに書いてある関数を参照するとき
+にも、`etags'はとても助けになる。新たに関数を書き加えるごとに`etags'を
+走らせれば、それらはタグファイル`TAGS'の一部になる。
+
+検索したいもののために，適切な `TAGS' がすでにあると知っているが，どこ
+にあるか分からない場合には，探すためにプログラム `locate' を利用できる．
+
+`M-x locate RET TAGS RET' と入力すると，Emacs はすべての
+`TAGS' のフルパスを一覧表示する．著者のシステムで，このコマンドを
+実行すると，34個の `TAGS' ファイルが一覧表示される．一方で最近イ
+ンストールした別のシステムでは `TAGS' は1個も見つからない．
+
+必要なタグテーブルを作成したら，そのファイルを特定するためにコマンド
+`M-x visit-tags-table' を利用できる．もしそうでなければ，自分でタグテー
+ブルを作成してから，`M-x visit-tags-table' を使う必要がある．
+
+
+Building Tags in the Emacs sources
+..................................
+
+GNU Emacs のソースには コマンド `etags' を使って Emacs のすべてのソース
+のタグテーブルを作成し，集め，まとめることのできる`Makefile' が付属して
+いる．これにより，Emacs のソース内にある `src/' ディレクトリに含まれて
+いるすべてのファイルに関する情報を 1つの`TAGS'にまとめることができる．
+
+この `TAGS' ファイルを作成するためには，Emacs ソースディレクトリのトッ
+プに移動し，コマンド `make tags' でコンパイルコマンドを実行する．
+
+     M-x compile RET make tags RET
+
+(コマンド `make tags' はGNU Emacs ソースやいくつかの他のソースでも動作
+する)
+
+されらに詳しい情報は *Note Tag Tables: (emacs)Tags を参照ください．
+
+
+
+File: eintr-ja, Node: Regexp Review, Next: re-search Exercises, Prev: etags, Up: PrePreface
+
+復　習 *(2004/08/10)*
+=====================
+
+説明した関数のうち、いくつかを簡素にまとめておく。
+
+`while'
+     第1引数が真である限り、式の本体を繰り返し評価する。そして、`nil'を
+     返す。（式は、その副作用のためだけに評価される。）
+
+     たとえば、
+
+          (let ((foo 2))
+            (while (> foo 0)
+              (insert (format "foo is %d.\n" foo))
+              (setq foo (1- foo))))
+
+               =>      foo is 2.
+                       foo is 1.
+                       nil
+     （関数`insert'は、ポイント位置に引数を挿入する。
+     関数`format'は、`message'が引数を書式付けするように、
+     引数を書式付けした文字列を返す。
+     `\n'は改行になる。）
+
+`re-search-forward'
+     パターンを探索し、みつかればその直後にポイントを移動する。
+
+     `search-forward'のように4つの引数を取る。
+
+       1. 探索するパターンを指定する正規表現。
+
+       2. 探索範囲を制限する。省略できる。
+
+       3. 探索に失敗した場合に`nil'を返すかエラーメッセージを返すかを指
+          定する。省略できる。
+
+       4. 探索を何回行うかを指定する。負の場合には、逆向きの探索をする。
+          省略できる。
+
+`let*'
+     変数に値を局所的に束縛し、残りの引数を評価し、最後のものの値を返す。
+     ローカル変数を束縛するとき、すでに束縛したローカル変数の値を使える。
+
+     たとえば、
+
+          (let* ((foo 7)
+                (bar (* 3 foo)))
+            (message "`bar' is %d." bar))
+               => `bar' is 21.
+
+`match-beginning'
+     直前の正規表現の探索でみつかったテキストの始まりの位置を返す。
+
+`looking-at'
+     正規表現である引数に一致するテキストがポイントに続いてあれば真`t'
+     を返す。
+
+`eobp'
+     ポイントがバッファの参照可能な部分の最後に位置している場合に`t'を
+     返す。バッファの参照可能な部分の最後は、ナロイングしていなければバッ
+     ファの最後であり、ナロイングしていればその部分の最後である。
+
+`prog1'
+     各引数を順番に評価し、*最初のもの*の値を返す。
+
+     たとえば、
+
+          (prog1 1 2 3 4)
+               => 1
+
+
+
+File: eintr-ja, Node: re-search Exercises, Prev: etags, Up: PrePreface
+
+`re-search-forward'の演習問題
+=============================
+
+   * 連続した2つ以上の空行に一致する正規表現を探査する関数を書いてみよ。
+
+   * 「the the」のような重複した単語を探す関数を書いてみよ。
+     まったく同じものが2つ並んだ文字列に一致する正規表現の書き方に関する情報は、
+     *Note Syntax of Regular Expressions: (emacs)Regexps。
+     何通りかの正規表現を考えられるであろうが、
+     好ましいものもあれば、そうでないものもあろう。
+     筆者が使っている関数を、いくつかの正規表現とともに付録に記しておく。
+     *Note the-the::。
+
+
+
+File: eintr-ja, Node: Counting Words, Next: Words in a defun, Prev: PrePreface, Up: Top
+
+数え上げ：繰り返しと正規表現 *(2004/08/10)*
+*******************************************
+
+繰り返しと正規表現の探索は、Emacs Lispを書くときによく使う強力な道具で
+ある。本章では、`while'ループと再帰を用いた単語を数えるコマンドの作成を
+とおして、正規表現の探索の使用例を示す。
+
+* Menu:
+
+* Why Count Words::
+* count-words-region::          Use a regexp, but find a problem.
+* recursive-count-words::       Start with case of no words in region.
+* Counting Exercise::
+
+
+
+File: eintr-ja, Node: Why Count Words, Next: Counting Exercise, Prev: Counting Words, Up: Counting Words
+
+数の数え上げ
+============
+
+Emacsの標準ディストリビューションには、リージョン内の行数を数える関数が
+含まれている。しかし、単語を数える関数はない。
+
+ある種の文書の作成過程では、単語数を知る必要がある。たとえば、エッセイ
+は800語までとか、小説を執筆するときには1日に1000語は書くことにするとか
+である。Emacsに単語を数えるコマンドがないのは筆者には奇妙に思える。たぶ
+ん、単語数を数える必要のないコードやドキュメントを書くのにEmacsを使って
+いるのであろう。あるいは、オペレーティングシステムの単語を数えるコマン
+ド`wc'を使っているのであろう。あるいは、出版社の慣習にしたがって、文書
+の文字数を5で割って単語数を計算しているのであろう。
+
+
+
+File: eintr-ja, Node: count-words-region, Next: Counting Exercise, Prev: Counting Words, Up: Counting Words
+
+関数`count-words-region' *(2004/08/10)*
+=======================================
+
+単語を数えるコマンドは、行、段落、リージョン、あるいは、バッファのなか
+の単語を数える。どの範囲で数えるべきであろう？　バッファ全体で単語数を
+数えるようにコマンドを設計することもできるが、Emacsの習慣では柔軟性を重
+んじる。バッファ全体ではなく、ある部分の単語数を数えたい場合もある。し
+たがって、リージョンの中の単語数を数えるようにコマンドを設計するほうが
+合理的であろう。コマンド`count-words-region'さえあれば、必要ならば、
+`C-x h'（`mark-whole-buffer'）でバッファ全体をリージョンとして単語を数
+えられる。
+
+明らかに、単語を数えるのは繰り返し動作である。リージョンの先頭から始め
+て、最初の語を数え、2番目の語を数え、3番目の語を数えというように、リー
+ジョンの最後に達するまで繰り返す。つまり、単語の数え上げは、再帰や
+`while'ループに完璧に適しているのである。
+
+* Menu:
+
+* Design count-words-region::   The definition using a `while' loop.
+* Whitespace Bug::              The Whitespace Bug in `count-words-region'.
+
+
+
+File: eintr-ja, Node: Design count-words-region, Prev: Counting Words, Up: Counting Words
+
+`count-words-region' を設計
+---------------------------
+
+まず、`while'ループで単語を数えるコマンドを実装してから、再帰でも書いて
+みる。コマンドは、当然、対話的にする。
+
+対話的関数の雛型はつぎのとおりである。
+
+     (defun 関数名 (引数リスト)
+       "説明文..."
+       (INTERACTIVE-EXPRESSION...)
+       本体...)
+
+これらの項目を埋めればよいのである。
+
+関数名は、十分説明的で既存の名前`count-lines-region'に
+似ているべきである。
+こうすると、名前を覚えやすい。
+`count-words-region'がよいであろう。
+
+関数はリージョン内の単語を数える。つまり、引数リストには、リージョンの
+先頭の位置と最後の位置に束縛されるシンボルが含まれる必要がある。これら
+の2つの位置を、それぞれ、`beginning'、`end'と呼ぶことにする。`apropos'
+などのコマンドは説明文の最初の1行しか表示しないので、説明文の最初の1行
+は1つの文であるべきである。関数の引数リストにリージョンの先頭と最後を渡
+す必要があるので、`interactive'式は`(interactive "r")'となる。これらは、
+決まりきっていることである。
+
+関数の本体は、3つの仕事を遂行するように書く必要がある。まず、`while'ルー
+プが単語を数えられるように条件を設定し、つぎに、`while'ループを実行し、
+最後に、ユーザーにメッセージを送る。
+
+ユーザーが`count-words-region'を呼ぶときには、リージョンの先頭か最後の
+どちらかにポイントがある。しかし、数え上げの処理はリージョンの先頭から
+始める必要がある。つまり、ポイントが先頭になければ移動する必要がある。
+`(goto-char beginning)'を実行すればよい。もちろん、関数が終了したらポイ
+ントを予想できるような位置に戻したい。このためには、本体を
+`save-excursion'式で囲む必要がある。
+
+関数本体の中心部分は、1単語分ポイントを進めて数を数える`while'ループか
+ら成る。`while'ループの判定条件は、ポイントを移動できる限りは真となり、
+ポイントがリージョンの最後に達したら偽となるべきである。
+
+単語単位にポイントを移動する式として`(forward-word 1)'を使うこともでき
+るが、正規表現の検索を使えばEmacsが「単語」と認識するものを容易に理解で
+きる。
+
+正規表現の探索では、探しあてたパターンの最後の文字の直後にポイントを置
+く。つまり、単語を正しく連続して探索できるとポイントは単語単位に進むの
+である。
+
+実際問題として、正規表現の探索では、単語自体だけでなく、単語と単語のあ
+いだの空白や句読点も飛び越してほしい。単語と単語のあいだの空白を飛び越
+せないような正規表現では、1つの単語を飛び越すこともない。つまり、正規表
+現には、単語自体だけでなく、単語に続く空白や句読点も含める必要がある
+（単語がバッファの最後で終わっている場合には、空白や句読点が続くことは
+ないので、これらに対応する正規表現の部分はなくてもよいようになっている
+必要がある）。
+
+したがって、望みの正規表現は、単語を構成する1個以上の文字のあとに単語を
+構成しない文字が0個以上続くようなパターンである。このような正規表現はつ
+ぎのとおりである。
+
+     \w+\W*
+
+どの文字が単語を構成し、どの文字が単語を構成しないかは、バッファのシン
+タックステーブル（構文表）で決まる（シンタックスに関して詳しくは、
+*Note Syntax::。あるいは、*Note Syntax: (emacs)Syntax, や*Note Syntax
+Tables: (elisp)Syntax Tablesを参照）。
+
+探索式はつぎのようになる。
+
+     (re-search-forward "\\w+\\W*")
+
+（`w'と`W'のまえに、2つの連続したバックスラッシュがあることに注意してほ
+しい。単一のバックスラッシュは、Emacs Lispインタープリタに対して特別な
+意味を持つ。直後の文字を通常とは異なる意味で解釈することを指示する。た
+とえば、2つの文字`\n'は、バックスラッシュに続く`n'ではなく、
+`newline'（改行）を意味する。2つの連続したバックスラッシュは、普通の
+「特別な意味のない」バックスラッシュである。）
+
+単語が何個あったかを数えるカウンタが必要である。この変数は、まず0に設定
+し、Emacsが`while'ループを廻るごとに増やす。増加式は簡単である。
+
+     (setq count (1+ count))
+
+最後に、リージョン内の単語数をユーザーに伝える必要がある。関数
+`message'は、この種の情報をユーザーに与えるためのものである。リージョン
+の単語数に関わらず、正しいメッセージである必要がある。「there are 1
+words in the region」とは表示したくない。単数と複数の矛盾は文法的に誤り
+である。この問題は、リージョン内の単語数に依存して異なるメッセージを与
+える条件式を使えば解決できる。3つの可能性がある。リージョンには、0個の
+単語があるか、1個の単語があるか、2個以上の単語があるかである。つまり、
+スペシャルフォーム`cond'が適している。
+
+以上により、つぎのような関数定義を得る。
+
+     ;;; 第1版。バグあり！
+     (defun count-words-region (beginning end)
+       "Print number of words in the region.
+     Words are defined as at least one word-constituent
+     character followed by at least one character that
+     is not a word-constituent.  The buffer's syntax
+     table determines which characters these are."
+       (interactive "r")
+       (message "Counting words in region ... ")
+
+     ;;; 1. 適切な条件を設定する
+       (save-excursion
+         (goto-char beginning)
+         (let ((count 0))
+
+     ;;; 2.  while ループ
+           (while (< (point) end)
+             (re-search-forward "\\w+\\W*")
+             (setq count (1+ count)))
+
+     ;;; 3. ユーザーにメッセージを与える
+           (cond ((zerop count)
+                  (message
+                   "The region does NOT have any words."))
+                 ((= 1 count)
+                  (message
+                   "The region has 1 word."))
+                 (t
+                  (message
+                   "The region has %d words." count))))))
+
+関数はこのとおりに動作するが、正しくない場合もある。
+
+
+

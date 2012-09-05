@@ -1,0 +1,819 @@
+This is python-tut-jp.info, produced by makeinfo version 4.5 from
+python-tut-jp.texi.
+
+12 October 2005
+
+
+File: python-tut-jp.info,  Node: 表現エラー,  Prev: 浮動小数点演算、その問題と制限,  Up: 浮動小数点演算、その問題と制限
+
+表現エラー
+==========
+
+この章では、"0.1" の例について詳細に説明し、このようなケースに
+対してどのようにすれば正確な分析を自分で行えるかを示します。 ここでは、
+2 進法表現の浮動小数点数についての基礎的な知識があるものとして
+話を進めます。
+
+"表現エラー" は、いくつかの (実際にはほとんどの) 10 進の小数が 2 進法
+(基数 2 ) の分数として表現できないことに関係しています。 これは Python
+(あるいは Perl、 C、 C++、Japa、Fortran 、および その他多く)
+が期待通りの正確な 10 進数を表示できない主要な理由です:
+
+     >>> 0.1
+     0.10000000000000001
+
+なぜこうなるのでしょうか？ 1/10 は 2 進法の分数で厳密に表現することが
+できません。今日 (2000年11月) のマシンは、ほとんどすべて IEEE-754
+浮動小数点演算を使用しており、ほとんどすべてのプラットフォームでは
+Python の浮動小数点を IEEE-754 における "倍精度 (double precision)"
+に対応付けます。754 の double には 53 ビットの精度を持つ数が入るので、
+計算機に入力を行おうとすると、可能な限り 0.1 を最も近い値の分数に変換
+し、J/2**N の形式にしようと努力します。 J はちょうど 53
+ビットの精度の整数です。
+
+      1 / 10 ~= J / (2**N)
+
+を書き直すと、
+
+     J ~= 2**N / 10
+
+となります。
+
+J は厳密に 53 ビットの精度を持っている (`>= 2**52' だが `< 2**53' )
+ことを思い出すと、 N として最適な値は 56 になります:
+
+     >>> 2L**52
+     4503599627370496L
+     >>> 2L**53
+     9007199254740992L
+     >>> 2L**56/10
+     7205759403792793L
+
+すなわち、56 は J をちょうど 53 ビットの精度のままに保つ N
+の唯一の値です。J の取りえる値はその商を丸めた ものです:
+
+     >>> q, r = divmod(2L**56, 10)
+     >>> r
+     6L
+
+残りは 10 の半分以上なので、最良の近似は丸め値を一つ増やした (round up)
+ものになります:
+
+     >>> q+1
+     7205759403792794L
+
+従って、754 倍精度における 1/10 の取りえる最良の近似は 2**56 以上
+の値、もしくは
+
+     7205759403792794 / 72057594037927936
+
+となります。丸め値を 1 増やしたので、この値は実際には 1/10 より少し小
+さいことに注意してください; 丸め値を 1 増やさない場合、商は 1/10
+よりもわずかに小さくなります。しかし、どちらにしろ _厳密に_ 1/10
+ではありません！
+
+つまり、計算機は 1/10 を "理解する" ことは決してありません:
+計算機が理解できるのは、上記のような厳密な分数であり、 754
+の倍精度浮動小数点数で得られるもっともよい近似は:
+
+     >>> .1 * 2L**56
+     7205759403792794.0
+
+となります。
+
+この分数に 10**30 を掛ければ、 有効数字 30 桁の十進数の
+(切り詰められた) 値を見ることができます:
+
+     >>> 7205759403792794L * 10L**30 / 2L**56
+     100000000000000005551115123125L
+
+これは、計算機に記憶されている正確な数値が、10 進数値
+0.100000000000000005551115123125 とほぼ等しいことを意味します。
+有効数字 17 桁に丸めることで、Python が表示する0.10000000000000001 に
+なります (そう、得られるかぎり最良の入力あるいは出力値の変換を C
+ライブラリで行うような、 754 に適合するプラットフォームにおいてです --
+読者の計算機ではそうではないかもしれません！)
+
+
+File: python-tut-jp.info,  Node: 歴史とライセンス,  Next: 日本語訳について,  Prev: 浮動小数点演算、その問題と制限,  Up: Top
+
+歴史とライセンス
+****************
+
+* Menu:
+
+* History of the software::
+* Terms and conditions for accessing or otherwise using Python::
+
+
+File: python-tut-jp.info,  Node: History of the software,  Next: Terms and conditions for accessing or otherwise using Python,  Prev: 歴史とライセンス,  Up: 歴史とライセンス
+
+History of the software
+=======================
+
+Python was created in the early 1990s by Guido van Rossum at Stichting
+Mathematisch Centrum (CWI, see <http://www.cwi.nl/>) in the Netherlands
+as a successor of a language called ABC.  Guido remains Python's
+principal author, although it includes many contributions from others.
+
+In 1995, Guido continued his work on Python at the Corporation for
+National Research Initiatives (CNRI, see
+<http://www.cnri.reston.va.us/>) in Reston, Virginia where he released
+several versions of the software.
+
+In May 2000, Guido and the Python core development team moved to
+BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
+year, the PythonLabs team moved to Digital Creations (now Zope
+Corporation; see <http://www.zope.com/>).  In 2001, the Python Software
+Foundation (PSF, see <http://www.python.org/psf/>) was formed, a
+non-profit organization created specifically to own Python-related
+Intellectual Property.  Zope Corporation is a sponsoring member of the
+PSF.
+
+All Python releases are Open Source (see <http://www.opensource.org/>
+for the Open Source Definition).  Historically, most, but not all,
+Python releases have also been GPL-compatible; the table below
+summarizes the various releases.
+
+Release        Derived from   Year           Owner          GPL
+                                                            compatible?
+------         ------         ------         ------         ------
+0.9.0 thru     n/a            1991-1995      CWI            yes
+1.2                                                         
+1.3 thru       1.2            1995-1999      CNRI           yes
+1.5.2                                                       
+1.6            1.5.2          2000           CNRI           no
+2.0            1.6            2000           BeOpen.com     no
+1.6.1          1.6            2001           CNRI           no
+2.1            2.0+1.6.1      2001           PSF            no
+2.0.1          2.0+1.6.1      2001           PSF            yes
+2.1.1          2.1+2.0.1      2001           PSF            yes
+2.2            2.1.1          2001           PSF            yes
+2.1.2          2.1.1          2002           PSF            yes
+2.1.3          2.1.2          2002           PSF            yes
+2.2.1          2.2            2002           PSF            yes
+2.2.2          2.2.1          2002           PSF            yes
+2.2.3          2.2.2          2002-2003      PSF            yes
+2.3            2.2.2          2002-2003      PSF            yes
+2.3.1          2.3            2002-2003      PSF            yes
+2.3.3          2.3.2          2004           PSF            yes
+2.3.4          2.3.3          2004           PSF            yes
+2.3.5          2.3.4          2005           PSF            yes
+
+_Note:_ GPL-compatible doesn't mean that we're distributing Python
+under the GPL.  All Python licenses, unlike the GPL, let you distribute
+a modified version without making your changes open source. The
+GPL-compatible licenses make it possible to combine Python with other
+software that is released under the GPL; the others don't.
+
+Thanks to the many outside volunteers who have worked under Guido's
+direction to make these releases possible.
+
+
+File: python-tut-jp.info,  Node: Terms and conditions for accessing or otherwise using Python,  Prev: History of the software,  Up: 歴史とライセンス
+
+Terms and conditions for accessing or otherwise using Python
+============================================================
+
+               *PSF LICENSE AGREEMENT FOR PYTHON 2.3.5*
+  1. This LICENSE AGREEMENT is between the Python Software Foundation
+     ("PSF"), and the Individual or Organization ("Licensee") accessing
+     and otherwise using Python 2.3.5 software in source or binary form
+     and its associated documentation.
+
+  2. Subject to the terms and conditions of this License Agreement, PSF
+     hereby grants Licensee a nonexclusive, royalty-free, world-wide
+     license to reproduce, analyze, test, perform and/or display
+     publicly, prepare derivative works, distribute, and otherwise use
+     Python 2.3.5 alone or in any derivative version, provided,
+     however, that PSF's License Agreement and PSF's notice of
+     copyright, i.e., "Copyright (C) 2001-2003 Python Software
+     Foundation; All Rights Reserved" are retained in Python 2.3.5
+     alone or in any derivative version prepared by Licensee.
+
+  3. In the event Licensee prepares a derivative work that is based on
+     or incorporates Python 2.3.5 or any part thereof, and wants to
+     make the derivative work available to others as provided herein,
+     then Licensee hereby agrees to include in any such work a brief
+     summary of the changes made to Python 2.3.5.
+
+  4. PSF is making Python 2.3.5 available to Licensee on an "AS IS"
+     basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND
+     DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 2.3.5
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+     2.3.5 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING
+     PYTHON 2.3.5, OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE
+     POSSIBILITY THEREOF.
+
+  6. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  7. Nothing in this License Agreement shall be deemed to create any
+     relationship of agency, partnership, or joint venture between PSF
+     and Licensee.  This License Agreement does not grant permission to
+     use PSF trademarks or trade name in a trademark sense to endorse
+     or promote products or services of Licensee, or any third party.
+
+  8. By copying, installing or otherwise using Python 2.3.5, Licensee
+     agrees to be bound by the terms and conditions of this License
+     Agreement.
+
+             *BEOPEN.COM LICENSE AGREEMENT FOR PYTHON 2.0*
+         *BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1*
+  1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
+     office at 160 Saratoga Avenue, Santa Clara, CA 95051, and the
+     Individual or Organization ("Licensee") accessing and otherwise
+     using this software in source or binary form and its associated
+     documentation ("the Software").
+
+  2. Subject to the terms and conditions of this BeOpen Python License
+     Agreement, BeOpen hereby grants Licensee a non-exclusive,
+     royalty-free, world-wide license to reproduce, analyze, test,
+     perform and/or display publicly, prepare derivative works,
+     distribute, and otherwise use the Software alone or in any
+     derivative version, provided, however, that the BeOpen Python
+     License is retained in the Software, alone or in any derivative
+     version prepared by Licensee.
+
+  3. BeOpen is making the Software available to Licensee on an "AS IS"
+     basis.  BEOPEN MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, BEOPEN MAKES NO
+     AND DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  4. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
+     SOFTWARE FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE,
+     OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY
+     THEREOF.
+
+  5. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  6. This License Agreement shall be governed by and interpreted in all
+     respects by the law of the State of California, excluding conflict
+     of law provisions.  Nothing in this License Agreement shall be
+     deemed to create any relationship of agency, partnership, or joint
+     venture between BeOpen and Licensee.  This License Agreement does
+     not grant permission to use BeOpen trademarks or trade names in a
+     trademark sense to endorse or promote products or services of
+     Licensee, or any third party.  As an exception, the "BeOpen
+     Python" logos available at http://www.pythonlabs.com/logos.html
+     may be used according to the permissions granted on that web page.
+
+  7. By copying, installing or otherwise using the software, Licensee
+     agrees to be bound by the terms and conditions of this License
+     Agreement.
+
+               *CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1*
+  1. This LICENSE AGREEMENT is between the Corporation for National
+     Research Initiatives, having an office at 1895 Preston White Drive,
+     Reston, VA 20191 ("CNRI"), and the Individual or Organization
+     ("Licensee") accessing and otherwise using Python 1.6.1 software in
+     source or binary form and its associated documentation.
+
+  2. Subject to the terms and conditions of this License Agreement, CNRI
+     hereby grants Licensee a nonexclusive, royalty-free, world-wide
+     license to reproduce, analyze, test, perform and/or display
+     publicly, prepare derivative works, distribute, and otherwise use
+     Python 1.6.1 alone or in any derivative version, provided,
+     however, that CNRI's License Agreement and CNRI's notice of
+     copyright, i.e., "Copyright (C) 1995-2001 Corporation for National
+     Research Initiatives; All Rights Reserved" are retained in Python
+     1.6.1 alone or in any derivative version prepared by Licensee.
+     Alternately, in lieu of CNRI's License Agreement, Licensee may
+     substitute the following text (omitting the quotes): "Python 1.6.1
+     is made available subject to the terms and conditions in CNRI's
+     License Agreement.  This Agreement together with Python 1.6.1 may
+     be located on the Internet using the following unique, persistent
+     identifier (known as a handle): 1895.22/1013.  This Agreement may
+     also be obtained from a proxy server on the Internet using the
+     following URL: <http://hdl.handle.net/1895.22/1013>."
+
+  3. In the event Licensee prepares a derivative work that is based on
+     or incorporates Python 1.6.1 or any part thereof, and wants to make
+     the derivative work available to others as provided herein, then
+     Licensee hereby agrees to include in any such work a brief summary
+     of the changes made to Python 1.6.1.
+
+  4. CNRI is making Python 1.6.1 available to Licensee on an "AS IS"
+     basis.  CNRI MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, CNRI MAKES NO AND
+     DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 1.6.1
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  5. CNRI SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+     1.6.1 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING
+     PYTHON 1.6.1, OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE
+     POSSIBILITY THEREOF.
+
+  6. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  7. This License Agreement shall be governed by the federal
+     intellectual property law of the United States, including without
+     limitation the federal copyright law, and, to the extent such U.S.
+     federal law does not apply, by the law of the Commonwealth of
+     Virginia, excluding Virginia's conflict of law provisions.
+     Notwithstanding the foregoing, with regard to derivative works
+     based on Python 1.6.1 that incorporate non-separable material that
+     was previously distributed under the GNU General Public License
+     (GPL), the law of the Commonwealth of Virginia shall govern this
+     License Agreement only as to issues arising under or with respect
+     to Paragraphs 4, 5, and 7 of this License Agreement.  Nothing in
+     this License Agreement shall be deemed to create any relationship
+     of agency, partnership, or joint venture between CNRI and
+     Licensee.  This License Agreement does not grant permission to use
+     CNRI trademarks or trade name in a trademark sense to endorse or
+     promote products or services of Licensee, or any third party.
+
+  8. By clicking on the "ACCEPT" button where indicated, or by copying,
+     installing or otherwise using Python 1.6.1, Licensee agrees to be
+     bound by the terms and conditions of this License Agreement.
+
+                                ACCEPT
+          *CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2*
+ Copyright
+(C) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam, The
+Netherlands.  All rights reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the name of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE FOR
+ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+File: python-tut-jp.info,  Node: 日本語訳について,  Next: 用語集,  Prev: 歴史とライセンス,  Up: Top
+
+日本語訳について
+****************
+
+* Menu:
+
+* このドキュメントについて::
+* 翻訳者一覧 敬称略::
+
+
+File: python-tut-jp.info,  Node: このドキュメントについて,  Next: 翻訳者一覧 敬称略,  Prev: 日本語訳について,  Up: 日本語訳について
+
+このドキュメントについて
+========================
+
+この文書は、Pythonドキュメント翻訳プロジェクトによる Python Tutorial
+の日本語訳版です。日本語訳に対する質問や提案などが
+ありましたら、Pythonドキュメント翻訳プロジェクトのメーリングリスト
+
+<http://www.python.jp/mailman/listinfo/python-doc-jp>
+
+または、プロジェクトのバグ管理ページ
+
+<http://sourceforge.jp/tracker/?atid=116&group_id=11&func=browse>
+
+までご報告ください。
+
+
+File: python-tut-jp.info,  Node: 翻訳者一覧 敬称略,  Prev: このドキュメントについて,  Up: 日本語訳について
+
+翻訳者一覧 (敬称略)
+===================
+
+1.3 和訳: SUZUKI Hisao <suzuki at acm.org> (August 27, 1995)\ 1.4 和訳:
+SUZUKI Hisao <suzuki at acm.org> (April 20, 1997)\ 1.5.1 和訳: SUZUKI
+Hisao <suzuki at acm.org> (August 23, 1998)\ 2.1 和訳: SUZUKI Hisao
+<suzuki at acm.org> (June 10, 2001)\ 2.2.3 差分和訳: sakito <sakito at
+s2.xrea.com> (August 10, 2003)\ 2.2.3 敬体訳: ymasuda <y.masuda at
+acm.org> (September 5, 2003) \ 2.3 差分和訳: sakito <sakito at
+s2.xrea.com> (August 30, 2003)\ 2.3 敬体訳: ymasuda <y.masuda at
+acm.org> (November 30, 2003)\ 2.3.3 差分訳: ymasuda <y.masuda at
+acm.org> (Devember 25, 2003)\ 2.3.5 差分訳: ymasuda <y.masuda at
+acm.org> (April 20, 2005)
+
+
+File: python-tut-jp.info,  Node: 用語集,  Next: Module Index,  Prev: 日本語訳について,  Up: Top
+
+用語集
+******
+
+``>`>'>''
+     典型的な対話シェルのプロンプトです。インタプリタ上ですぐ実行できる
+     ようなプログラムコード例の中によく書かれています。
+
+``.`.'.''
+     典型的な対話シェルのプロンプトです。インデントされたコードブロック
+     内のコードの入力を促す際に出力されます。
+
+`__future__'
+     互換性のない新たな機能を現在のインタプリタで有効にするために
+     プログラマが利用できる擬似モジュールです。例えば、式 `11/4'
+     は現状では `2' になります。この式を実行しているモジュールで
+
+          from __future__ import division
+
+     を行って _真の除算操作 (true division)_ を有効にすると、 式 `11/4'
+     は `2.75' になります。実際に `__future__' モジュールを import
+     してその変数を評価すれば、新たな機能が初めて追加されたのが
+     いつで、いつデフォルトの機能になる予定かわかります:
+
+          >>> import __future__
+          >>> __future__.division
+          _Feature((2, 2, 0, 'alpha', 2), (3, 0, 0, 'alpha', 0), 8192)
+
+`__slots__'
+     新形式のクラス内で、インスタンス属性の記憶に必要な領域を
+     あらかじめ定義しておき、それとひきかえにインスタンス辞書を
+     排除してメモリの節約を行うための宣言です。これはよく使われる
+     テクニックですが、正しく動作させるのには少々手際を要するので、
+     例えばメモリが死活問題となるようなアプリケーション内に
+     インスタンスが大量に存在するといった稀なケースを除き、
+     使わないのがベストです。
+
+`BDFL'
+     慈悲ぶかき独裁者 (Benevolent Dictator For Life) の略です。 Python
+     の作者、 Guido van Rossum のことです。
+
+`EAFP'
+     「認可をとるより許しを請う方が容易 (easier to ask for forgiveness
+     than permission、マーフィーの法則)」 の略です。 Python
+     で広く使われているコーディングスタイルでは、通常は有効な
+     キーや属性が存在するものと仮定し、その仮定が誤っていた場合に例外を
+     捕捉します。この簡潔で手早く書けるコーディングスタイルには、 `try'
+     文および {}`except' 文がたくさん
+     あるのが特徴です。このテクニックは、C
+     のような言語でよく使われている {}_LBYL_
+     スタイルと対照的なものです。
+
+`GIL'
+     _グローバルインタプリタロック (global interpreter lock)_
+     を参照してください。
+
+`IDLE'
+     Python の組み込み開発環境 (Integrated DeveLopment Environment)
+     です。IDLE は Python の標準的な配布物についてくる基本的な機能の
+     エディタとインタプリタ環境です。初心者に向いている点として、 IDLE
+     はよく洗練され、複数プラットフォームで動作する GUI
+     アプリケーションを実装したい人むけの明解なコード例にもなっています。
+
+`LBYL'
+     「ころばぬ先の杖」 (look before you leap) の略です。
+     このコーディングスタイルでは、呼び出しや検索を行う前に、明示的に
+     前提条件 (pre-condition) 判定を行います。 _EAFP_
+     アプローチと対照的で、`if' 文がたくさん使われる のが特徴的です。
+
+`Python3000'
+     テレパシーインタフェースを持ち、後方互換性をもたなくてもよいとされて
+     いる、架空の Python リリースのことです。
+
+`Python の悟り (Zen of Python)'
+     Python を理解し利用する上での導きとなる、Python の設計原則と哲学を
+     リストにしたものです。対話プロンプトで "`import this'" とすると、
+     リストを読めます。
+
+`イテレータ (iterator)'
+     一連のデータ列 (stream) を表現するオブジェクトです。 イテレータの
+     `next()' メソッドを繰り返し呼び出すと、
+     データ列中の要素を一つづつ返します。後続のデータがなくなると、
+     データの代わりに `StopIteration' 例外を送出します。
+     現時点では、イテレータオブジェクトが全てのオブジェクトを出し尽くすと、
+     それ以降は `next()' を何度呼んでも `StopIteration'
+     を送出します。イテレータは、イテレータオブジェクト自体を返す
+     `__iter__()' メソッドを実装しなければならなくなっており、
+     そのため全てのイテレータは他の反復可能オブジェクトを受理できる
+     ほとんどの場所で反復可能で利用できます。
+     著しい例外は複数の反復を行うようなコードです。(`list' のような)
+     コンテナオブジェクトでは、`iter()' 関数にオブジェクトを
+     渡したり、{}`for' ループ内で使うたびに、新たな未使用の
+     イテレータを生成します。
+     このイテレータをさらに別の場所でイテレータとして使おうとすると、
+     二段階目のイテレータは使用済みの同じイテレータオブジェクトを返す
+     ため、空のコンテナのように見えます。
+
+`インタプリタ形式の (interpreted)'
+     Python
+     はインタプリタ形式の言語であり、コンパイラ言語の対極に位置します。
+     ここでのインタプリタ言語とは、ソースコードのファイルを、
+     まず実行可能形式にしてから実行させるといった操作なしに、直接
+     実行できることを意味します。インタプリタ形式の言語は通常、
+     コンパイラ形式の言語よりも開発／デバッグのサイクルを持ちます。
+     {}_対話的 (interactive)_ も参照してください。
+
+`型強制 (coercion)'
+     データをある型から別の型に変換することです。例えば、 {}`int(3.15)'
+     は浮動小数点数を整数に型強制し、{}`3' にします.
+     ほとんどの数学的演算には、引数を共通の型に型強制するような規則があります。
+     例えば、加算 `3+4.5' は、整数 `3' を `4.5' に加算する前に
+     浮動小数点数に型強制し、その結果は浮動小数点数 {}`7.5' となります。
+
+`旧形式クラス (classic class)'
+     `object' を継承していないクラス全てを指します。 _新形式クラス
+     (new-style class)_ も参照してください。
+
+`グローバルインタプリタロック (global interpreter lock)'
+     Python の実行スレッド間で使われているロックで、一度に一つのスレッド
+     だけが動作するよう保証しています。このロックによって、同時に同じ
+     メモリにアクセスする二つのプロセスは存在しないと保証されているので、
+     Python
+     を単純な構造にできるのです。インタプリタ全体にロックをかけると、
+     多重プロセサ計算機における並列性の恩恵と引き換えにインタプリタ
+     の多重スレッド化を簡単に行えます。かつて "スレッド自由な
+     (free-threaded)" インタプリタを作ろうと
+     努力したことがありましたが、広く使われている単一プロセサ
+     の場合にはパフォーマンスが低下するという事態に悩まされました。
+
+`ジェネレータ (generator)'
+     イテレータを返す関数です。{}`return' の代わりに `yield'
+     が使われている他は、通常の関数と同じに見えます。ジェネレータ関数は
+     一つまたはそれ以上の {}`for' ループや `while' ループ
+     を含んでおり、ループの呼び出し側に要素を返す (`yield') ように
+     なっています。ジェネレータが返すイテレータを使って関数を実行すると、
+     関数は {}`yield' キーワードで (値を返して) 一旦停止し、 `next()'
+     を呼んで次の要素を要求するたびに実行を再開します。
+
+`辞書 (dictionary)'
+     任意のキーを値に対応付ける連想配列です。`dict' の使い方は `list'
+     に似ていますが、ゼロから始まる整数ではなく、 `__hash__()'
+     関数を実装している全てのオブジェクトを キーにできます。Perl
+     ではハッシュ (hash) と呼ばれています。
+
+`新形式クラス (new-style class)'
+     `object' から継承したクラス全てを指します。これには `list' や
+     `dict' のような全ての組み込み型が含まれます。 {}`__slots__'
+     、デスクリプタ、プロパティ、
+     `__getattribute__()'、クラスメソッド、静的メソッドといった、
+     Python の新しい精緻な機能を使えるのは新形式のクラスだけです。
+
+`整数除算 (integer division)'
+     剰余を考慮しない数学的除算です。例えば、式 `11/4' は現状では `2'
+     になりますが、浮動小数点数の除算では `2.75' を返します。
+     {}_切り捨て除算 (floor division)_ とも呼ばれます。
+     二つの整数間で除算を行うと、結果は (端数切捨て関数が適用されて)
+     常に整数になります。 しかし、被演算子の一方が ({}`float' のような)
+     別の数値型の 場合、演算の結果は共通の型に型強制されます (_型強制
+     (coercion)_ 参照)。例えば、浮動小数点数で整数を除算すると
+     結果は浮動小数点になり、場合によっては端数部分を伴います。 `//'
+     演算子を `/' の代わりに使うと、整数除算を
+     強制できます。___future___ も参照してください。
+
+`対話的 (interactive)'
+     Python には対話的インタプリタがあり、何かを試してその結果を直接
+     見られます。`python' を引数なしで起動 (場合によっては
+     コンピュータのメインメニューから選んで起動) してください。
+     対話的インタプリタは新しいアイデアを試したり、モジュールや
+     パッケージの中を調べてみたりする (`help(x)' を思い出してください)
+     ための強力な方法です。
+
+`デスクリプタ (descriptor)'
+     メソッド {}`__get__()'、 `__set__()'、あるいは `__delete__()'
+     が定義されている _新形式_ のオブジェクトです。
+     あるクラス属性がデスクリプタである場合、その属性を検索すると、
+     そのデスクリプタ固有に束縛されている動作を呼び出します。通常、 A.B
+     と書くと、A のクラス辞書内でオブジェクト B を検索しますが、{}B
+     がデスクリプタの場合には、デスクリプタで
+     定義されたメソッドを呼び出します。 デスクリプタの理解は、 Python
+     を深く理解する上で鍵となります。
+     というのは、デスクリプタこそが、関数、メソッド、プロパティ、
+     クラスメソッド、静的メソッド、そしてスーパクラスの参照といった
+     多くの機能の基盤だからです。
+
+`名前空間 (namespace)'
+     変数を記憶している場所です。名前空間は辞書を用いて実装しています。
+     名前空間には、ローカル、グローバル、組み込み名前空間、そして
+     (メソッド内の) オブジェクトのネストされた名前空間があります。
+     例えば、関数 `__builtin__.open()' および `os.open()'
+     は名前空間で区別します。名前空間はまた、ある関数をどのモジュールが
+     実装しているかをはっきりさせることで、可読性やメンテナンス性を
+     与えます。例えば、`random.seed()' 、あるいは {}`itertools.izip()'
+     と書くことで、これらの関数がそれぞれ `random' モジュールや
+     `itertools' モジュールで実装されていることがはっきりします。
+
+`ネストされたスコープ (nested scope)'
+     ある文が何らかの定義に囲われているとき、定義の外で使われている変数を
+     その文から参照できる機能です。例えば、ある関数が別の関数の中で定義
+     されている場合、内側の関数は外側の関数中の変数を参照できます。
+     ネストされたスコープは変数の参照だけができ、変数の代入はできないので
+     注意してください。変数の代入は、常に最も内側のスコープにある変数に
+     対する書き込みになります。
+     対照的に、ローカル変数を使うと、常に最も内側のスコープで値を読み書き
+     します。同様に、グローバル変数を使うと、グローバル名前空間の値を
+     読み書きします。
+
+`バイトコード (byte code)'
+     インタプリタ中の Python プログラムを表す内部表現です。
+     バイトコードはまた、 `.pyc' や `.pyo' ファイルに
+     キャッシュされ、同じファイルを二度目に実行した際により高速に
+     実行できるようにします
+     (ソースコードはバイトコードにコンパイルされて
+     保存されます)。このバイトコードは、各々のバイトコードに
+     対応するサブルーチンを呼び出すような "仮想計算機 (virtual machine)"
+     で動作する "中間言語 (intermediate language)" といえます。
+
+`配列 (sequence)'
+     _反復可能なオブジェクト (iterable)_ _反復可能なオブジェクト
+     (iterable)_ は、 特殊なメソッド `__getitem__()' および
+     {}`__len__()' を
+     介して整数インデクスを使った効率的な要素アクセスをサポートします。
+     組み込み配列型には、`list'、`str'、 `tuple'、 および `unicode'
+     があります。 `dict' は `__getitem__()' と {}`__len__()'
+     もサポートしますが、検索の際に任意の _変更不能 (immutable)_ な
+     キーを使うため、配列というよりもむしろマップ (mapping) とみなされて
+     いるので注意してください。
+
+`反復可能オブジェクト (iterable)'
+     コンテナオブジェクトで、コンテナ内のメンバを一つづつ返せる
+     ようになっているものです。反復可能オブジェクトの例には、
+     (`list'、{}`str'、および `tuple' といった)
+     全ての配列型や、{}`dict' や `file' といった 非配列型、あるいは
+     `__iter__()' や `__getitem__()'
+     メソッドを実装したクラスのインスタンスが含まれます。
+     反復可能オブジェクトは `for' ループ内やその他多くの
+     配列が必要となる状況 (`zip()'、 `map()', ...)
+     で利用できまnす。反復可能オブジェクトを組み込み関数 {}`iter()'
+     の引数として渡すと、オブジェクトに対する
+     イテレータを返します。このイテレータは一連の値を引き渡す際に便利
+     です。反復可能オブジェクトを使う際には、通常`iter()'
+     を呼んだり、イテレータオブジェクトを自分で扱う必要はありません。
+     `for' 文ではこの操作を自動的に行い、無名の変数を作成して、
+     ループの間イテレータを記憶します。 {}_イテレータ (iterator)_、
+     _配列 (sequence)_、および _ジェネレータ (generator)_
+     も参照してください。
+
+`変更可能なオブジェクト (mutable)'
+     変更可能なオブジェクトは、`id()' を変えることなく値を変更
+     できます。 _変更不能 (immutable)_ も参照してください。
+
+`変更不能なオブジェクト (immutable)'
+     固定の値を持ったオブジェクトです。変更不能なオブジェクトには、
+     数値、文字列、およびタプル (そしてその他) があります。これらの
+     オブジェクトは値を変えられません。別の値を記憶させる際には、
+     新たなオブジェクトを作成しなければなりません。変更不能なオブジェクト
+     は、固定値のハッシュ値が必要となる状況で重要な役割を果たします。
+     辞書におけるキーがその例です。
+
+`マップ (mapping)'
+     特殊メソッド `__getitem__()' を使って、任意のキーに対する検索を
+     サポートする (`dict' のような) コンテナオブジェクトです。
+
+`メタクラス (metaclass)'
+     何らかのクラスを生成するクラスです。クラス定義を行うと、クラス名、
+     クラス辞書、そして基底クラスからなるリストが生成されます。
+     メタクラスはこれらの三つを引数として取り、メタクラスを生成する
+     働きをします。ほとんどのオブジェクト指向プログラム言語には、
+     メタクラスに対するデフォルトの実装があります。Python
+     の特徴的な点は、
+     自作のメタクラスを作成できることです。ほとんどのユーザにとって、
+     このツールはまったく必要のないものですが、必要さえあれば、メタクラスは
+     強力でエレガントな問題解決手段になります。メタクラスは、属性への
+     アクセスをログに記録したり、システムをスレッド安全にしたり、
+     オブジェクトの生成の追跡したり、単集合を実装したり、そしてその他
+     多くのタスクで使われてきています。
+
+`リストの内包表記 (list comprehension)'
+     配列内の全ての要素、あるいはサブセットを処理してその結果からなる
+     リストを返させるための、コンパクトなやりかたです。 `result =
+     ["0x%02x" % x for x in range(256) if x % 2 == 0]' とすると、 0
+     から 255 までの偶数を 16進数表記 (0x..) した
+     文字列からなるリストを生成します。 `if' 節はオプションです。`if'
+     節がない場合、 上のケースでは {}`range(256)'
+     の全ての要素が処理されます。
+
+
+
+File: python-tut-jp.info,  Node: Module Index,  Next: Class-Exception-Object Index,  Prev: 用語集,  Up: Top
+
+Module Index
+************
+
+* Menu:
+
+* __builtin__:                           dir 関数.
+* compileall:                            コンパイル された Python ファイル.
+* pickle:                                pickle モジュール.
+* readline:                              キー割り当て.
+* rlcompleter:                           キー割り当て.
+* string:                                ファンシーな出力の書式化.
+* sys:                                   標準モジュール.
+
+
+File: python-tut-jp.info,  Node: Class-Exception-Object Index,  Next: Function-Method-Variable Index,  Prev: Module Index,  Up: Top
+
+Class, Exception, and Object Index
+**********************************
+
+* Menu:
+
+* file:                                  ファイルを読み書きする.
+* method:                                インスタンスオブジェクト.
+
+
+File: python-tut-jp.info,  Node: Function-Method-Variable Index,  Next: Miscellaneous Index,  Prev: Class-Exception-Object Index,  Up: Top
+
+Function, Method, and Variable Index
+************************************
+
+* Menu:
+
+* append:                                リスト型についてもう少し.
+* count:                                 リスト型についてもう少し.
+* extend:                                リスト型についてもう少し.
+* index:                                 リスト型についてもう少し.
+* insert:                                リスト型についてもう少し.
+* open:                                  ファイルを読み書きする.
+* pop:                                   リスト型についてもう少し.
+* remove:                                リスト型についてもう少し.
+* reverse:                               リスト型についてもう少し.
+* sort:                                  リスト型についてもう少し.
+* unicode:                               Unicode 文字列.
+
+
+File: python-tut-jp.info,  Node: Miscellaneous Index,  Prev: Function-Method-Variable Index,  Up: Top
+
+Miscellaneous Index
+*******************
+
+* Menu:
+
+* ...:                                   用語集.
+* >>>:                                   用語集.
+* __future__:                            用語集.
+* __slots__:                             用語集.
+* baitokoodoバイトコード:                用語集.
+* BDFL:                                  用語集.
+* byte code:                             用語集.
+* classic class:                         用語集.
+* coercion:                              用語集.
+* descriptor:                            用語集.
+* deskuriputaデスクリプタ:               用語集.
+* dictionary:                            用語集.
+* docstrings <1>:                        関数を定義する.
+* docstrings:                            ドキュメンテーション文字列.
+* documentation strings <1>:             ドキュメンテーション文字列.
+* documentation strings:                 関数を定義する.
+* EAFP:                                  用語集.
+* for:                                   for 文.
+* generator:                             用語集.
+* GIL:                                   用語集.
+* global interpreter lock:               用語集.
+* guroobaruintaapuritaarokkuグローバルインタプリタロック: 用語集.
+* hairetsu配列:                          用語集.
+* hanpukukanou反復可能:                  用語集.
+* hennkoufunou変更不能:                  用語集.
+* hennkoukanou変更可能:                  用語集.
+* IDLE:                                  用語集.
+* immutable:                             用語集.
+* intapuritakeisikinoインタプリタ形式の: 用語集.
+* integer division:                      用語集.
+* interactive:                           用語集.
+* interpreted:                           用語集.
+* iterable:                              用語集.
+* iterator:                              用語集.
+* itereetaイテレータ:                    用語集.
+* jenereetaジェネレータ:                 用語集.
+* jisho辞書:                             用語集.
+* katakyousei型強制:                     用語集.
+* kyuukeisikikurasu旧形式クラス:         用語集.
+* LBYL:                                  用語集.
+* list comprehension:                    用語集.
+* listnonaihouhyoukiリストの内包表記:    用語集.
+* mapping:                               用語集.
+* mapマップ:                             用語集.
+* metaclass:                             用語集.
+* metakurasuメタクラス:                  用語集.
+* module search path:                    モジュール検索パス.
+* mojiretsu文字列, dokyumenteesyonドキュメンテーション <1>: 関数を定義する.
+* mojiretsu文字列, dokyumenteesyonドキュメンテーション: ドキュメンテーション文字列.
+* mojuuruモジュール kensaku検索 pasuパス: モジュール検索パス.
+* mutable:                               用語集.
+* namaekuukan名前空間:                   用語集.
+* namespace:                             用語集.
+* nested scope:                          用語集.
+* nesutosaretasukoopuネストされたスコープ: 用語集.
+* new-style class:                       用語集.
+* Python3000:                            用語集.
+* pythonnosatoriPythonの悟り:            用語集.
+* seisuujosan整数除算:                   用語集.
+* sequence:                              用語集.
+* sinnkeisikikurasu新形式クラス:         用語集.
+* strings, documentation <1>:            関数を定義する.
+* strings, documentation:                ドキュメンテーション文字列.
+* taiwateki対話的:                       用語集.
+* Zen of Python:                         用語集.
+
+

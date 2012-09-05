@@ -1,0 +1,1941 @@
+Info file: emacs-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Emacs-ja: (emacs-ja).	            Emacs21.3日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+
+
+
+
+File: emacs-ja, Node: GTK resources, Prev: LessTif Resources, Up: X Resources
+
+GTK resources
+=============
+
+  If the Emacs installed at your site was built to use the GTK widget
+set, then the menu bar, scroll bar and the dialogs can be customized
+with the standard GTK `~/.gtkrc-2.0' file or with the Emacs specific
+`~/.emacs.d/gtkrc' file; note that these files are only for
+customizing specific GTK widget features.  To customize Emacs font,
+background, faces etc., use the normal X resources, see *Note
+Resources::.
+
+  Some GTK themes override these mechanisms, which means that using
+these mechanisms will not work to customize them.  We recommend that
+you use `~/.emacs.d/gtkrc' for customizations, since
+`~/.gtkrc-2.0' seems to be ignored when running GConf with GNOME.
+
+  In these files you first defines a style and then how to apply that
+style to widgets (*Note GTK widget names::).  Here is an example of
+how to change the font for Emacs menus:
+
+     # This is a comment.
+     style "menufont"
+     {
+       font_name = "helvetica bold 14"  # This is a Pango font name
+     }
+
+     widget "*emacs-menuitem*" style "menufont"
+
+
+  Here is a more elaborate example, showing how to change the parts of
+the scroll bar:
+
+     style "scroll"
+     {
+       fg[NORMAL] = "red"     # The arrow color.
+       bg[NORMAL] = "yellow"  # The thumb and background around the arrow.
+       bg[ACTIVE] = "blue"    # The trough color.
+       bg[PRELIGHT] = "white" # The thumb color when the mouse is over it.
+     }
+
+     widget "*verticalScrollBar*" style "scroll"
+
+  There are some things you can set without using any style or widget name,
+which affect GTK as a whole.  Most of these are poorly documented, but can
+be found in the `Properties' section of the documentation page for
+`GtkSetting', in the GTK document references below.
+
+One property of interest is `gtk-font-name' which sets the default
+font for GTK; you must use Pango font names (*Note GTK styles::).  A
+`~/.gtkrc-2.0' file that just sets a default font looks like this:
+
+     gtk-font-name = "courier 12"
+
+
+  If GTK at your site is installed under PREFIX,
+the resource file syntax is fully described in the GTK API
+document
+`PREFIX/share/gtk-doc/html/gtk/gtk-resource-files.html'.
+PREFIX is usually `/usr' or `/usr/local'.
+You can find the same document online at
+`http://developer.gnome.org/doc/API/2.0/gtk/gtk-Resource-Files.html'.
+
+
+* Menu:
+
+* GTK widget names::      How widgets in GTK are named in general.
+* GTK names in Emacs::    GTK widget names in Emacs.
+* GTK styles::            What can be customized in a GTK widget.
+
+
+
+
+File: emacs-ja, Node: GTK widget names, Next: GTK names in Emacs, Prev: GTK resources, Up: GTK resources
+
+GTK widget names
+----------------
+
+  Widgets are specified by widget class or by widget name.  The widget
+class is the type of the widget, for example `GtkMenuBar'.  The widget
+name is the name given to a specific widget within a program.  A
+widget always have a class but it is not mandatory to give a name to a
+widget.  Absolute names are sequences of widget names or widget
+classes, corresponding to hierarchies of widgets embedded within other
+widgets.  For example, if a `GtkWindow' contains a `GtkVBox' which in
+turn contains a `GtkMenuBar', the absolute class name is
+`GtkWindow.GtkVBox.GtkMenuBar'.
+
+If the widgets are named "top", "box" and "menubar", the absolute
+widget name is `top.box.menubar',
+
+  When assigning a style to a widget, you can use the absolute class
+name or the absolute widget name.
+There are two commands:  `widget_class' will assign a style to
+widgets, matching only against the absolute class name.
+The command `widget' will match the absolute widget name,
+but if there is no name for a widget in the hierarchy, the class is matched.
+These commands require the absolute name and the style name to be
+within  double quotes.  These commands are written at the top level in a
+`~/.gtkrc-2.0' file, like this:
+
+     style "menufont"
+     {
+       font_name = "helvetica bold 14"
+     }
+
+     widget "top.box.menubar" style "menufont"
+     widget_class "GtkWindow.GtkVBox.GtkMenuBar" style "menufont"
+
+
+  Matching of absolute names is done with shell "glob" syntax, that is
+`*' matches zero or more characters and `?' matches one character.  So
+the following would assign `base_style' to all widgets:
+
+     widget "*" style "base_style"
+
+  Given the absolute class name `GtkWindow.GtkVBox.GtkMenuBar' and the
+corresponding absolute widget name `top.box.menubar', the following
+all assign `my_style' to the menu bar:
+
+     widget_class "GtkWindow.GtkVBox.GtkMenuBar" style "my_style"
+     widget_class "GtkWindow.*.GtkMenuBar" style "my_style"
+     widget_class "*GtkMenuBar" style "my_style"
+     widget "top.box.menubar" style "my_style"
+     widget "*box*menubar" style "my_style"
+     widget "*menubar" style "my_style"
+     widget "*menu*" style "my_style"
+
+
+
+File: emacs-ja, Node: GTK names in Emacs, Next: GTK styles, Prev: GTK widget names, Up: GTK resources
+
+GTK names in Emacs
+------------------
+
+  In Emacs the top level widget for a frame is a `GtkWindow' that
+contains a `GtkVBox'.  The `GtkVBox' contains the `GtkMenuBar' and a
+`GtkFixed' widget.  The vertical scroll bars, `GtkVScrollbar', are
+contained in the `GtkFixed' widget.  The text you write in Emacs is
+drawn in the `GtkFixed' widget.
+
+  Dialogs in Emacs are `GtkDialog' widgets.  The file dialog is a
+`GtkFileSelection' widget.
+
+To set a style for the menu bar using the absolute class name, use:
+
+     widget_class "GtkWindow.GtkVBox.GtkMenuBar" style "my_style"
+
+For the scroll bar, the absolute class name is:
+
+     widget_class
+       "GtkWindow.GtkVBox.GtkFixed.GtkVScrollbar"
+          style "my_style"
+
+The names for the emacs widgets, and their classes, are:
+
+`emacs-filedialog'             `GtkFileSelection'
+`emacs-dialog'                 `GtkDialog'
+`Emacs'                        `GtkWindow'
+`pane'                         `GtkVHbox'
+`emacs'                        `GtkFixed'
+`verticalScrollBar'            `GtkVScrollbar'
+`emacs-toolbar'                `GtkToolbar'
+`menubar'                      `GtkMenuBar'
+`emacs-menuitem'               anything in menus
+
+Thus, for Emacs you can write the two examples above as:
+
+     widget "Emacs.pane.menubar" style "my_style"
+     widget "Emacs.pane.emacs.verticalScrollBar" style "my_style"
+
+  GTK absolute names are quite strange when it comes to menus and
+dialogs.  The names do not start with `Emacs', as they are
+free-standing windows and not contained (in the GTK sense) by the
+Emacs GtkWindow.  To customize the dialogs and menus, use wildcards
+like this:
+
+     widget "*emacs-dialog*" style "my_dialog_style"
+     widget "*emacs-filedialog* style "my_file_style"
+     widget "*emacs-menuitem* style "my_menu_style"
+
+  An alternative is to put customization into `~/.emacs.d/gtkrc'.
+This file is only read by Emacs, so anything in `~/.emacs.d/gtkrc'
+affects Emacs but leaves other applications unaffected.  For example,
+the drop down menu in the file dialog can not be customized by any
+absolute widget name, only by an absolute class name.  This is so
+because the widgets in the drop down menu does not have names and the
+menu is not contained in the Emacs GtkWindow.  To have all menus in
+Emacs look the same, use this in `~/.emacs.d/gtkrc':
+
+     widget_class "*Menu*" style "my_menu_style"
+
+
+
+File: emacs-ja, Node: GTK styles, Prev: GTK names in Emacs, Up: GTK resources
+
+GTK styles
+----------
+
+  In a GTK style you specify the appearance widgets shall have.  You
+can specify foreground and background color, background pixmap and
+font.  The edit widget (where you edit the text) in Emacs is a GTK
+widget, but trying to specify a style for the edit widget will have no
+effect.  This is so that Emacs compiled for GTK is compatible with
+Emacs compiled for other X toolkits.  The settings for foreground,
+background and font for the edit widget is taken from the X resources;
+*Note Resources::.  Here is an example of two style declarations,
+default" and "ruler":
+
+
+     pixmap_path "/usr/share/pixmaps:/usr/include/X11/pixmaps"
+
+     style "default"
+     {
+       font_name = "helvetica 12"
+
+       bg[NORMAL] = { 0.83, 0.80, 0.73 }
+       bg[SELECTED] = { 0.0, 0.55, 0.55 }
+       bg[INSENSITIVE] = { 0.77, 0.77, 0.66 }
+       bg[ACTIVE] = { 0.0, 0.55, 0.55 }
+       bg[PRELIGHT] = { 0.0, 0.55, 0.55 }
+
+       fg[NORMAL] = "black"
+       fg[SELECTED] = { 0.9, 0.9, 0.9 }
+       fg[ACTIVE] = "black"
+       fg[PRELIGHT] = { 0.9, 0.9, 0.9 }
+
+       base[INSENSITIVE] = "#777766"
+       text[INSENSITIVE] = { 0.60, 0.65, 0.57 }
+
+       bg_pixmap[NORMAL] = "background.xpm"
+       bg_pixmap[INSENSITIVE] = "background.xpm"
+       bg_pixmap[ACTIVE] = "background.xpm"
+       bg_pixmap[PRELIGHT] = "<none>"
+
+     }
+
+     style "ruler" = "default"
+     {
+       font_name = "helvetica 8"
+     }
+
+
+  The style "ruler" inherits from "default".  This way you can build
+on existing styles.  The syntax for fonts and colors is described
+below.
+
+  As this example shows, it is possible to specify several values for
+foreground and background depending on which state the widget has.
+The possible states are
+`NORMAL'
+     This is the default state for widgets.
+`ACTIVE'
+     This is the state for a widget that is ready to do something.  It
+     is also for the trough of a scroll bar, i.e.  `bg[ACTIVE] =
+     red"' sets the scroll bar trough to red.  Buttons that have been
+     pressed but not released yet ("armed") are in this state.
+`PRELIGHT'
+     This is the state when widgets that can be manipulated have the
+     mouse pointer over them.  For example when the mouse is over the
+     thumb in the scroll bar or over a menu item.  When the mouse is
+     over a button that is not pressed, the button is in this state.
+`SELECTED'
+     This is the state when some data has been selected by the user.
+     It can be selected text or items selected in a list.  There is no
+     place in Emacs where this setting has any effect.
+`INSENSITIVE'
+     This is the state for widgets that are visible, but they can not be
+     manipulated like they normally can.  For example, buttons that can't be
+     pressed and menu items that can't be selected.
+     Text for menu items that are not available can be set to yellow with
+     `fg[INSENSITIVE] = "yellow"'.
+
+Here are the things that can go in a style declaration:
+
+`bg[STATE] = COLOR'
+     This is the background color widgets use.  This background is not
+     used for editable text, use `base' for that.
+
+`base[STATE] = COLOR'
+     This is the background color for editable text.  In Emacs, this
+     color is used for the background of the text fields in the file
+     dialog.
+
+`bg_pixmap[STATE] = "PIXMAP"'
+     You can specify a pixmap to be used instead of the background
+     color.  PIXMAP is a file name.  GTK can use a number of file
+     formats, including XPM, XBM, GIF, JPEG and PNG.  If you want a
+     widget to use the same pixmap as its parent, use `<parent>'.  If
+     you don't want any pixmap use `<none>'.  Using `<none>' can be
+     useful if your style inherits a style that does specify a pixmap.
+
+       GTK looks for the pixmap in directories specified in
+     `pixmap_path'.  It is not possible to refer to a file by its
+     absolute path name.  `pixmap_path' is a colon-separated list of
+     directories within double quotes, specified at the top level in a
+     `gtkrc' file (i.e. not inside a style definition; see example
+     above):
+
+          pixmap_path "/usr/share/pixmaps:/usr/include/X11/pixmaps"
+
+`fg[STATE] = COLOR'
+     This is the foreground color widgets use.  This is the color of
+     text in menus and buttons.  It is also the color for the arrows
+     in the scroll bar.  For editable text, use `text'.
+
+`text[STATE] = COLOR'
+     This is the color for editable text.  In Emacs, this color is
+     used for the text fields in the file dialog.
+
+`font_name = "FONT"'
+     This is the font a widget shall use.  FONT is a Pango font name,
+     for example "Sans Italic 10", "Helvetica Bold 12", "Courier 14",
+     Times 18".  See below for exact syntax.  The names are case
+     insensitive.
+
+  Colors are specified in three ways, a name, a hexadecimal form or an
+RGB triplet.
+
+A color name is written within double quotes, for example `"red"'.
+
+A hexadecimal form is written within double quotes.  There are four forms,
+`#rrrrggggbbbb', `#rrrgggbbb',
+`#rrggbb', or `#rgb'.  In each of these r, g and b are hex digits.
+
+An RGB triplet looks like `{ r, g, b }', where r, g and b are either
+integers in the range 0-65535 or floats in the range 0.0-1.0.
+
+  Pango font names have the form "FAMILY-LIST STYLE-OPTIONS SIZE".
+FAMILY-LIST is a comma separated list of font families optionally
+terminated by a comma.  This way you can specify several families and
+the first one found will be used.  FAMILY corresponds to the second
+part in an X font name, for example in
+
+     -adobe-times-medium-r-normal--12-120-75-75-p-64-iso10646-1
+
+the family name is "times".
+
+STYLE-OPTIONS is a whitespace separated list of words where each word
+is a style, variant, weight, or stretch.  The default value for all of
+these is `normal'.
+
+A `style' corresponds to the fourth part of an X font name.  In X font
+names it is the character "r", "i" or "o"; in Pango font names the
+corresponding values are `normal', `italic', or `oblique'.
+
+A `variant' is either `normal' or `small-caps'.  Small caps is a font
+with the lower case characters replaced by smaller variants of the
+capital characters.
+
+Weight describes the "boldness" of a font.  It corresponds to the third
+part of an X font name.  It is one of `ultra-light', `light',
+`normal', `bold', `ultra-bold', or `heavy'.
+
+Stretch gives the width of the font relative to other designs within a
+family.  It corresponds to the fifth part of an X font name.  It is one of
+`ultra-condensed', `extra-condensed', `condensed',
+`semi-condensed', `normal', `semi-expanded',
+`expanded', `extra-expanded', or `ultra-expanded'.
+
+SIZE is a decimal number that describes the font size in points.
+
+
+
+
+
+File: emacs-ja, Node: Antinews, Next: Mac OS, Prev: X Resources, Up: Top
+
+Emacs 21.3 Antinews *(2004/01/12)*
+**********************************
+
+時代に逆行する皆さんへ、Emacsヴァージョン21.3へのダウングレード情報をお
+届けします。さまざまな機能が省かれたことによる単純さをお楽しみください。
+
+   * Emacsの入力方法は『Leim』として別配布になります．使うためには，
+     Leimの圧縮ファイルをEmacsをコンパイルする前に同じディレクトリに解
+     凍しておかなければなりません．
+
+   * ファイルでの位置や行数はモードラインの最後に表示されます．
+
+   * バージョン管理で管理されているファイルで `C-x C-q' (普通はバッファ
+     を読み込み専用か書き込み可能かを切り替える)と入力すると，check in
+     かcheck outかを実行します．ファイルをcheck outすると書き込み可能に
+     なり，check in すると読み込み専用になります(すくなくともRCSでは)．
+
+     こららの操作をしたいなら`C-x v v'を使うことができます(この関数は変
+     化していません)．もじバッファの読み込み専用かどうかを，バージョン
+     管理のコマンドを実行せずに変更したければ `M-x toggle-read-only' を
+     利用できます．
+
+   * Filesetsはサポートされていません．
+
+   * For simplicity, windows always have fringes.  We wouldn't want to
+     in-fringe anyone's windows.  Likewise, horizontal scrolling
+     always works the same automatic way.
+
+   * ルートとしてログインしていれば，すべてのファイルは書き込み可能なバッ
+     ファになります．これは，ルートなのですべてのファイルは書き込み可能
+     であるということを反映したものです．
+
+   * ユニコードのサポートとLatin-Nの統一は削除されました．Xでのコピーア
+     ンドペーストは「符号拡張」をサポートしていません．だから扱うことの
+     できない文字があるのです．
+
+   * インクリメンタル検索での`C-w'はいつも単語全体を検索語に追加します．
+     より正確に言うと，これは次の単語の終わりまでを追加します．
+
+   * ヤンクはキルされたテキストのすべてのプロパティを保存します．変数
+     `yank-excluded-properties' は意味を持たなくなりました．
+
+   * Occur mode, Info mode, と Comint-derived modes は色付けを独自の方
+     法で管理しています．`M-x font-lock-mode' は何の意味もありません．
+     Info モードで色付けを制御するためには，変数 `Info-fontify' を使い
+     ます．
+
+   * In Dired's `!' command, `*' and `?' now cause substitution of the
+     file names wherever they appear--not only when they are
+     surrounded by whitespace.
+
+   * ミニバッファでの補完コマンドはいつもミニバッファの最後で入力したか
+     のように，ミニバッファの文字全体を補完します．たとえ，カーソルがど
+     こにあろうが変わりはありません．
+
+   * An unquoted `$' in a file name is now an error, if the following
+     name is not recognized as an environment variable.  Thus, the
+     file name `foo$bar' would probably be an error.  Meanwhile, the
+     `setenv' command does not expand `$' at all.
+
+   * ポイントから離れた場所をマークするコマンド(トしても特別なことは何
+     もしません．ほとんどの場合，これらのコマンドを複数回入力することは，
+     一度使うことと同じです．`M-h' は数引数を使いません．
+
+   * `C-SPC C-SPC' は特別な意味を持たなくなりました．`C-u C-x C-x' も同
+     様です．
+
+   * horizontal-bar カーソルがなくなりました
+
+   * `minibuffer-prompt' と `mode-line-inactive' のフェイスは存在しませ
+     ん．それらを制御する機能もありません．
+
+   * `keyboard-coding-system' のデフォルト値はいつも `nil' です．Emacs
+     は個々の locale(国など)設定を参照しません．もし他の値に設定したけ
+     れば，自分で設定しなければなりません．
+
+   * SGML モードは XML を扱いしません．そして，インデントもサポートしま
+     せん．
+
+   * The `C-h' subcommands have been rearranged--especially those that
+     display specific files.  Type `C-h C-h' to see a list of these
+     commands; that will show you what is different.
+
+   * Emacsは`~/.abbrev_defs'を自動的に読み込みません．もしファイルから
+     略称定義を読み込ませたければ，明示的に設定しなければなりません．
+
+   * コマンド引数である `--fullwidth'，`--fullheight' と
+     `--fullscreen' はサポートされません．
+
+   * `--geometry' オプションは初期フレームだけに適用されます．
+
+   * メニューから多くのコマンドは削除あるいは整理されました．
+
+   * `etags' で正規表現を使ったカスタマイズは削除されました．
+
+   * CUA, ido, table, tramp, reveal, ruler-mode, と ibuffer は削除され
+     ました．spreadsheet, SES, と algebraic calculator, Calcも同様です
+     (Calcは別に配布しています)．
+
+   * kmacro packageは削除されました．キーボードマクロを開始するために，
+     `C-x (' を入力し，終わりには`C-x )'を入力し，最後に実行するために
+     `C-x e' を入力しなければなりません．
+
+   * コンピュータのメモリやディスクスペースの減少に合わせるために，多く
+     の機能やファイルがEmacs 21.3で削除されました．
+
+
+
+File: emacs-ja, Node: Mac OS, Next: MS-DOS, Prev: Antinews, Up: Top
+
+Emacs and the Mac OS
+********************
+
+  Emacs built on Mac OS X supports most of its major features:
+multiple frames, colors, scroll bars, menu bars, use of the mouse,
+fontsets, international characters, input methods, coding systems,
+asynchronous and synchronous subprocesses, unexec (`dump-emacs'), and
+networking (`open-network-stream').  Support for various image file
+formats has not been implemented yet.
+
+  The following features of Emacs are not yet supported on the Mac OS
+8 or 9: unexec (`dump-emacs'), asynchronous subprocesses
+(`start-process'), and networking (`open-network-stream').  As a
+result, packages such as Gnus, GUD, and Comint do not work.  However,
+synchronous subprocesses (`call-process') are supported.  Since
+external programs to handle commands such as `print-buffer' and `diff'
+are not available on Mac OS 8 or 9, they are not supported.
+
+  Most of the features that are supported work in the same way as on
+other platforms and are therefore documented in the rest of this
+manual.  This section describes the peculiarities of using Emacs under
+the Mac OS.
+
+* Menu:
+
+* Input: Mac Input.                Keyboard input on the Mac.
+* Intl: Mac International.         International character sets on the Mac.
+* Env: Mac Environment Variables.  Setting environment variables for Emacs.
+* Directories: Mac Directories.    Volumes and directories on the Mac.
+* Font: Mac Font Specs.            Specifying fonts on the Mac.
+* Functions: Mac Functions.        Mac-specific Lisp functions.
+
+
+
+File: emacs-ja, Node: Mac Input, Next: Mac International, Prev: Mac OS, Up: Mac OS
+
+Keyboard Input on the Mac
+=========================
+
+  On the Mac, Emacs can use either the option key or the command key
+as the META key.  If the value of the variable
+`mac-command-key-is-meta' is non-`nil' (its default value), Emacs uses
+the command key as the META key.  Otherwise it uses the option key as
+the META key.
+
+  Most people should want to use the command key as the META key, so
+that dead-key processing with the option key will still work.  This is
+useful for entering non-ASCII Latin characters directly from the Mac
+keyboard, for example.
+
+  Emacs recognizes the setting in the Keyboard control panel and
+supports international and alternative keyboard layouts (e.g.,
+Dvorak).  Selecting one of the layouts from the keyboard layout
+pull-down menu will affect how the keys typed on the keyboard are
+interpreted.
+
+  The Mac OS intercepts and handles certain key combinations (e.g.,
+command-SPC for switching input languages).  These will not be passed
+to Emacs.
+
+  The Mac keyboard ordinarily generates characters in the Mac Roman
+encoding.  To use it for entering ISO Latin-1 characters directly, set
+the value of the variable `mac-keyboard-text-encoding' to
+`kTextEncodingISOLatin1'.  Note that not all Mac Roman characters that
+can be entered at the keyboard can be converted to ISO Latin-1
+characters.
+
+  To enter ISO Latin-2 characters directly from the Mac keyboard, set
+the value of `mac-keyboard-text-encoding' to
+`kTextEncodingISOLatin2'.  Then let Emacs know that the keyboard
+generates Latin-2 codes, by typing `C-x RET k iso-latin-2
+RET'.  To make this setting permanent, put this in your
+`.emacs' init file:
+
+     (set-keyboard-coding-system 'iso-latin-2)
+
+
+
+File: emacs-ja, Node: Mac International, Next: Mac Environment Variables, Prev: Mac Input, Up: Mac OS
+
+International Character Set Support on the Mac
+==============================================
+
+  The Mac uses a non-standard encoding for the upper 128 single-byte
+characters.  It also deviates from the ISO 2022 standard by using
+character codes in the range 128-159.  The coding system `mac-roman'
+is used to represent this Mac encoding.  It is used for editing files
+stored in this native encoding, and for displaying file names in Dired
+mode.
+
+  Any native (non-symbol) Mac font can be used to correctly display
+characters in the `mac-roman' coding system.
+
+  The fontset `fontset-mac' is created automatically when Emacs is run
+on the Mac.  It displays characters in the `mac-roman' coding system
+using 12-point Monaco.
+
+  To insert characters directly in the `mac-roman' coding system,
+type `C-x RET k mac-roman RET', customize the option
+`keyboard-coding-system', or put this in your init file:
+
+     (set-keyboard-coding-system 'mac-roman)
+
+This is useful for editing documents in native Mac encoding.
+
+  You can use input methods provided either by LEIM (*Note Input
+Methods::) or the Mac OS to enter international characters.
+
+  To use the former, see the International Character Set Support
+section of the manual (*Note International::).
+
+  To use input methods provided by the Mac OS, set the keyboard coding
+system accordingly using the `C-x RET k' command
+(`set-keyboard-coding-system').  For example, for Traditional Chinese,
+use `chinese-big5' as keyboard coding system; for Japanese, use
+`sjis', etc.  Then select the desired input method in the keyboard
+layout pull-down menu.
+
+  The Mac clipboard and the Emacs kill ring (*Note Killing::) are
+connected as follows: the most recent kill is copied to the clipboard
+when Emacs is suspended and the contents of the clipboard is inserted
+into the kill ring when Emacs resumes.  The result is that you can
+yank a piece of text and paste it into another Mac application, or cut
+or copy one in another Mac application and yank it into a Emacs
+buffer.
+
+  The encoding of text selections must be specified using the commands
+`C-x RET x' (`set-selection-coding-system') or `C-x
+RET X' (`set-next-selection-coding-system') (e.g., for
+Traditional Chinese, use `chinese-big5-mac' and for Japanese,
+`sjis-mac').  *Note Specify Coding::, for more details.
+
+
+
+
+File: emacs-ja, Node: Mac Environment Variables, Next: Mac Directories, Prev: Mac International, Up: Mac OS
+
+Environment Variables and Command Line Arguments.
+=================================================
+
+  On Mac OS X, when Emacs is run in a terminal, it inherits the values
+of environment variables from the shell from which it is invoked.
+However, when it is run from the Finder as a GUI application, it
+inherits no environment variable values.
+
+  On Mac OS 8 or 9, environment variables and command line arguments
+for Emacs can be set by modifying the `STR#' resources 128 and 129,
+respectively.  A common environment variable that one may want to set
+is `HOME'.
+
+  The way to set an environment variable is by adding a string of the
+form
+
+     ENV_VAR=VALUE
+
+to resource `STR#' number 128 using `ResEdit'. To set up the program
+to use unibyte characters exclusively, for example, add the string
+
+     EMACS_UNIBYTE=1
+
+
+
+
+File: emacs-ja, Node: Mac Directories, Next: Mac Font Specs, Prev: Mac Environment Variables, Up: Mac OS
+
+Volumes and Directories on the Mac
+==================================
+
+  The directory structure in the Mac OS is seen by Emacs as
+
+     /VOLUMENAME/FILENAME
+
+So when Emacs requests a file name, doing file name completion on `/'
+will display all volumes on the system.  You can use `..'  to go up a
+directory level.
+
+  On Mac OS 8 or 9, to access files and folders on the desktop, look
+in the folder `Desktop Folder' in your boot volume (this folder is
+usually invisible in the Mac `Finder').
+
+  On Mac OS 8 or 9, Emacs creates the Mac folder `:Preferences:Emacs:'
+in the `System Folder' and uses it as the temporary directory.  Emacs
+maps the directory name `/tmp/' to that.  Therefore it is best to
+avoid naming a volume `tmp'.  If everything works correctly, the
+program should leave no files in it when it exits.  You should be able
+to set the environment variable `TMPDIR' to use another directory but
+this folder will still be created.
+
+
+
+
+File: emacs-ja, Node: Mac Font Specs, Next: Mac Functions, Prev: Mac Directories, Up: Mac OS
+
+Specifying Fonts on the Mac
+===========================
+
+  It is rare that you need to specify a font name in Emacs; usually
+you specify face attributes instead.  But when you do need to specify
+a font name in Emacs on the Mac, use a standard X font name:
+
+     -MAKER-FAMILY-WEIGHT-SLANT-WIDTHTYPE-STYLE...
+     ...-PIXELS-HEIGHT-HORIZ-VERT-SPACING-WIDTH-CHARSET
+
+*Note Font X::.  Wildcards are supported as they are on X.
+
+  Native Apple fonts in Mac Roman encoding has maker name `apple' and
+charset `mac-roman'.  For example 12-point Monaco can be specified by
+the name `-apple-monaco-*-12-*-mac-roman'.
+
+  Native Apple Traditional Chinese, Simplified Chinese, Japanese, and
+Korean fonts have charsets `big5-0', `gb2312.1980-0',
+`jisx0208.1983-sjis', and `ksc5601.1989-0', respectively.
+
+  Single-byte fonts converted from GNU fonts in BDF format, which are
+not in the Mac Roman encoding, have foundry, family, and character
+sets encoded in the names of their font suitcases.  E.g., the font
+suitcase `ETL-Fixed-ISO8859-1' contains fonts which can be referred to
+by the name `-ETL-fixed-*-iso8859-1'.
+
+
+
+
+File: emacs-ja, Node: Mac Functions, Prev: Mac Font Specs, Up: Mac OS
+
+Mac-Specific Lisp Functions
+===========================
+
+  The function `do-applescript' takes a string argument, executes it
+as an AppleScript command, and returns the result as a string.
+
+  The function `mac-file-name-to-posix' takes a Mac file name and
+returns the GNU or Unix equivalent.  The function
+`posix-file-name-to-mac' performs the opposite conversion.  They
+are useful for constructing AppleScript commands to be passed to
+`do-applescript'.
+
+
+
+File: emacs-ja, Node: MS-DOS, Next: Manifesto, Prev: Mac OS, Up: Top
+
+EmacsとMS-DOS *(2005/09/19)*
+****************************
+
+ここでは、（『MS-DOG』とも呼ばれる）MS-DOS『オペレーティングシステム』
+で稼働するEmacsの癖について簡単にふれます。MS-DOS用に作成したEmacsのバ
+イナリは、Windows 3.x、Windows NT、Windows 9X/ME, Windows 2000、OS-2上
+でDOSアプリケーションとしても動作します。MS-DOS用に作成したEmacsを使っ
+ている限り、本章の情報はこれらすべてのシステムにあてはまります。
+
+Windows NT/MEやWindows 9X/MEに専用のEmacsを作ることも可能です。その場合
+には、本章のほとんどは関係ありません。長いファイル名、複数のフレーム、
+スクロールバー、マウスメニュー、サブプロセスの利用を含めて、本書の他の
+部分で説明した動作に近い動作をします。しかし、テキストファイルとバイナ
+リファイルに関する節は適用できます。また、本章の最後の2つの節は、
+Windows 版だけに適用できます。
+
+* Menu:
+
+* Input: MS-DOS Input.         Keyboard and mouse usage on MS-DOS.
+* Display: MS-DOS Display.     Fonts, frames and display size on MS-DOS.
+* Files: MS-DOS File Names.    File name conventions on MS-DOS.
+* Text and Binary::            Text files on MS-DOS use CRLF to separate lines.
+* Printing: MS-DOS Printing.   How to specify the printer on MS-DOS.
+* I18N: MS-DOS and MULE.       Support for internationalization on MS-DOS.
+* Processes: MS-DOS Processes. Running subprocesses on MS-DOS.
+* Windows Processes::          Running subprocesses on Windows.
+* Windows System Menu::        Controlling what the ALT key does.
+
+
+
+File: emacs-ja, Node: MS-DOS Input, Next: MS-DOS Printing, Prev: MS-DOS, Up: MS-DOS
+
+MS-DOSのキーボードとマウス *(2005/05/08)*
+=========================================
+
+PCのキーボードの左側のALTキーは、METAキーに割り当てられます。SUPERキー
+とHYPERキーのエミュレーションには、選択肢が2つあります。変数
+`dos-hyper-key'と`dos-super-key'を1にすれば、右側のCTRLキーを選びます。
+変数`dos-hyper-key'と`dos-super-key'を2にすれば、右側のALTキーを選びま
+す。`dos-super-key'と`dos-hyper-key'のいずれも1でなければ、デフォルトで
+右側のALTキーもMETAに割り当てられます。しかし、MS-DOSの国際化キーボード
+用プログラム`KEYB.COM'をインストールしてある場合は、右側のALTをMETAには
+割り当て*ません*。  というのは、米国配列のキーボードでない場合、右側の
+ALTは`~'や`@'として使われるからです。この場合には、左側のALTのみをMETA
+として使えます。
+
+変数`dos-keypad-mode'は、
+数字キーパッド上のキーが返すキーコードを制御する変数です。
+ファイル`_emacs'につぎの行を入れておけば、
+ENTERキーが`C-j'として働くように定義できます。
+
+     ;; Make the ENTER key from the numeric keypad act as C-j.
+     ;; 数字キーパッドのEnterキーをC-jとして動作させる。
+     (define-key function-key-map [kp-enter] [?\C-j])
+
+（ほとんどのワークステーションでの呼称から）EmacsでDELと呼ばれるキーは、
+PCではBS（バックスペース）です。このため、PC特有の端末初期化においては、
+BSキーはDELとして動作するようにしています。同じ理由から、DELキーは C-d
+として動作するようにしてあります。
+
+MS-DOS用のEmacsでは、`C-BREAK'を`C-g'のような中断文字として認識します。
+これは、Emacsが入力を読もうとしないと`C-g'が打鍵されたことを検出できな
+いからです。そのため、動作中のコマンドを止めるために`C-g'を使えません
+（*Note Quitting::）。対照的に、`C-BREAK'は（他のシステムでの`C-g'のよ
+うに）打鍵するとすぐに検出*される*ので、動作中のコマンドを停止したり緊
+急脱出したりするために使えます（*Note Emergency Escape::）。
+
+MS-DOS用Emacsは、（デフォルトの端末だけで）マウスを使えます。メニューや
+メニューバー（*Note Menu Bar::）の利用を含めて、マウスコマンドはドキュ
+メントどおりに動作します。MS-DOS用Emacsではスクロールバーは使えません。
+PCのマウスには、通常、2つのボタンしかありません。これらは`Mouse-1'と
+`Mouse-2'として動作しますが、2つのボタンを同時に押せば`Mouse-3'として動
+作します。もしマウスに3ボタンがあれば，Emacs は起動時に認識し，3つのボ
+タンに X と同様の機能を割り当てます．
+
+メニューバーやポップアップメニューで表示されるヘルプはそれぞれのメニュー
+上にマウスポインタを置くとエコー領域に表示されます．マウスを置くと，強
+調表示されるテキスト (*Note Mouse References::) もサポートされています．
+
+いくつかのマウスドライバはマウスのボタン数を正しく報告しません．例えば，
+あるホイールマウスは3つのボタンを持っているのですが，Emacs には2つしか
+ないと伝えられます．ホイールを押せば，中ボタンとして機能するのですが，
+それが伝わらないのです．こういった場合には，コマンド `M-x
+msdos-set-mouse-buttons' を使って Emacs にいくつのマウスボタンがあるか
+伝えることができます．この設定を永続的に有効にさせるためには初期化ファ
+イル `_emacs' に以下を追加します．
+
+     ;; 2ボタンマウスとして扱う
+     (msdos-set-mouse-buttons 2)
+
+MS-DOS用EmacsがWindows上で動作している場合には、クリップボードの操作を
+利用できます。キルリングにテキストを置いたり、キルリングからテキストを
+ヤンクしたりするコマンドでは、Xウィンドウシステムの場合と同様に、まず
+Windowsのクリップボードを調べます（*Note Mouse Commands::）。Windows上
+のMS-DOS用Emacsは、一次セレクションとカットバッファのみを利用し、二次セ
+レクションはつねに空です。
+
+Windowsで実装されているクリップボードの参照方法のため、クリップボードに
+置けるテキストの長さは、Emacsが利用できるDOSの空きメモリ量に制限されま
+す。通常、620Kバイトまでのテキストをクリップボードに置けますが、この上
+限はシステムの設定に依存し、他のプログラムのサブプロセスとしてEmacsを実
+行しているときには少なくなります。削除したテキストがクリップボードに入
+りきらなければ、Emacsはその旨のメッセージを出力して、テキストをクリップ
+ボードへ置きません。
+
+Windowsのクリップボードにはナル文字を入れられません。キルしたテキストに
+ナル文字が含まれる場合には、Emacsはそのようなテキストをクリップボードへ
+置きません。さらに、エコー領域には、その旨、メッセージを表示します。
+
+変数`dos-display-scancodes'の値が`nil'以外のときには、キーを打つたびに、
+Emacsは各キーのASCII（コードの）値とキーボードスキャンコードを出力しま
+す。この機能は、デバッグ用のコマンド`view-lossage'を補佐します。
+
+
+
+File: emacs-ja, Node: MS-DOS Display, Next: MS-DOS Printing, Prev: MS-DOS Input, Up: MS-DOS
+
+MS-DOSの画面 *(2005/05/08)*
+===========================
+
+MS-DOSの画面では、ボールド体（太字体）やイタリック体（斜体）などのフォ
+ントの変種を使えませんが、個々に前景色と背景色を指定できるフェイスを複
+数個使えます。したがって、関連するフェイスに異なる表示色を定義すれば、
+（`font-lock'、エンリッチ（enriched）モードなどの）フォントを用いる
+Emacsのパッケージの全機能を利用できます。コマンド`list-colors-display'
+（*Note Frame Parameters::）とコマンド`list-faces-display'（*Note
+Faces::）を使えば、利用可能なフェイスと表示色、それらの見え方を知ること
+ができます。
+
+本章の*Note MS-DOS and MULE::では、DOSの画面に組み込まれたフォントでは
+表せない字形や文字をEmacsがどのように表示するかを説明します。
+
+Emacs が起動すると，カーソル形状を四角に変えます．これは，ボックスカー
+ソルがデフォルトである他のシステムと同じです．このデフォルト形状は
+`default-frame-alist' のパラメータ `cursor-type' を変更することで縦線に
+変更することができます (*Note Creating Frames::)．MS-DOS 端末は縦棒カー
+ソルをサポートしませんので，カーソルは水平であり，フレームパラメータで
+設定されていれば，パラメータ `WIDTH' が高さを決定します．このため，
+`bar' と`hbar' カーソルは MS-DOS では同じ効果になります．延長として，バー
+カーソルは幅だけでなく，カーソルの開始位置も設定できます．
+
+      '(cursor-type bar WIDTH . START)
+
+加えて，WIDTH がマイナスであれば，カーソルバーは文字の頂上から始まりま
+す．
+
+MS-DOS 端末では1度に1つのフレームだけを表示できます．Emacs のフレーム機
+能はMS-DOS 上ではテキスト端末と同じように動作します(*Note Frames::)．
+Emacs をMS-Windows の DOSから起動すると，見えているフレームを画面全体よ
+り小さくはできますが，それでも、一度に1つのフレームしか表示できません。
+
+コマンド`mode4350'は43行表示と50行表示を切り替えますが、ハードウェアに
+依存します。コマンド`mode25'は、デフォルトの80x25の画面サイズに切り替え
+ます。
+
+デフォルトでは、Emacsは80桁で、25行、28行、35行、40行、43行、50行の画面
+サイズしか知りません。しかし、ビデオアダプタに別の画面サイズに切り替え
+る特別なビデオモードがあれば、Emacsでもそれらを利用できます。Emacsにフ
+レームサイズをN行M桁に切り替える指示をすると、`screen-dimensions-NxM'と
+いう変数があるかどうか調べます。変数があれば、その値（整数である必要が
+ある）を切り替え先のビデオモードとして使います。（Emacsは、
+`screen-dimensions-NxM'の値をレジスタ`AL'に入れ、BIOSの関数`Set Video
+Mode'を呼び出し、ビデオモードを切り替えます。）たとえば、ビデオモードを
+85にすると66x80の画面に切り替わるアダプタがあるとします。`_emacs'につぎ
+の行を加えれば、Emacsでこの画面サイズを使えるようになります。
+
+     (setq screen-dimensions-66x80 85)
+
+MS-DOS用Emacsでは、フレームサイズは利用可能な特定のサイズにしか設定でき
+ませんから、フレームサイズの変更要求すべてに答えられるわけではありませ
+ん。使えないサイズが要求されると、Emacsは指定されたサイズのつぎに大きい
+サイズを選びます。たとえば、36x80のフレームを要求すると、かわりに、
+40x80になります。
+
+変数`screen-dimensions-NxM'は、
+指定サイズに正確に一致するときだけ使われます。
+利用可能なつぎに大きなサイズの候補を探すときには無視します。
+上述の例では、VGAで38x80を使えて、
+変数`screen-dimensions-38x80'に適切な値を定義したとしても、
+36x80のフレームを要求した場合には、40x80の画面になってしまいます。
+このような場合に38x80のサイズにしたければ、
+変数`screen-dimensions-36x80'にも
+`screen-dimensions-38x80'と同じビデオモードの値を入れます。
+
+MS-DOSでは、フレームサイズを変更すると、他のすべてのフレームのサイズも
+変更してしまいます。
+
+
+
+File: emacs-ja, Node: MS-DOS File Names, Next: MS-DOS Printing, Prev: MS-DOS Input, Up: MS-DOS
+
+MS-DOSにおけるファイル名 *(2005/05/08)*
+=======================================
+
+他のシステムではファイル名の構成要素の区切りにはスラッシュを使いますが、
+MS-DOSでは、普通、バックスラッシュ`\'を使います。MS-DOS用Emacsでは、ス
+ラッシュもバックスラッシュも使えて、さらに、ファイル名に含まれるドライ
+ブ名も理解します。
+
+MS-DOSでは、ファイル名に大文字小文字の区別はなく8文字に制限されますが、
+ピリオドとさらに3文字を付加できます。Emacsは他のシステム向けのファイル
+名を扱ううえで、これらの制限を熟知しています。たとえば、ドット`.'で始ま
+るファイル名は、MS-DOSでは正しくないので、Emacsはそれを透過的に下線`_'
+に変換します。したがって、デフォルトの初期化ファイル（*Note Init
+File::）は、MS-DOSでは`_emacs'と呼ばれます。ピリオドの前後の文字数制限
+を越えた部分は、通常、MS-DOSが無視します。したがって、ファイル
+`LongFileName.EvenLongerExtension'を訪れると、実際には`longfile.eve'を
+訪れることになりますが、モード行にはもとの長い名前が表示されます。これ
+以外には、MS-DOSにおいて正しいファイル名を指定するのは、ユーザーの責任
+です。上述した透過的な変換は、Emacsに組み込まれたファイル名にのみに作用
+します。
+
+MS-DOSでの上述のファイル名の制限のために、
+もとのファイル名の文字をいくつか捨てずに
+バックアップファイル（*Note Backup Names::）の名前を構成することは不可能です。
+たとえば、バックアップを1つしか使っていなくても、
+`docs.txt'のバックアップファイルの名前は
+`docs.tx~'となります。
+
+Windows 9x，Windows ME，Windows 2000上のDOSアプリケーションとしてEmacs
+を実行する場合には、長いファイル名の使用を有効にできます。そうすると、
+Emacsは、ファイル名を切り詰めたり小文字に変換したりせずに、指定したとお
+りのファイル名をそのまま使います。長いファイル名の使用を有効にするには、
+Emacsを起動するまえに、環境変数`LFN'に`y'と設定します。残念ながら、
+Windows NTではDOSプログラムから長いファイル名を使えませんので、MS-DOS用
+Emacsからは短い8+3の別名しか見えません。
+
+  MS-DOS has no notion of home directory, so Emacs on MS-DOS pretends
+that the directory where it is installed is the value of `HOME'
+environment variable.  That is, if your Emacs binary, `emacs.exe', is
+in the directory `c:/utils/emacs/bin', then Emacs acts as if `HOME'
+were set to `c:/utils/emacs'.  In particular, that is where Emacs
+looks for the init file `_emacs'.  With this in mind, you can use `~'
+in file names as an alias for the home directory, as you would on GNU
+or Unix.  You can also set `HOME' variable in the environment before
+starting Emacs; its value will then override the above default
+behavior.  MS-DOSにはホームディレクトリという概念がないので、MS-DOS用
+Emacsでは、Emacsをインストールしてあるディレクトリを環境変数`HOME'の値
+であるということにします。つまり、Emacsのバイナリ`emacs.exe'がディレク
+トリ`c:/utils/emacs/bin'に置いてあるとすれば、Emacsは、環境変数`HOME'が
+`c:/utils/emacs'と設定されているかのようにふるまいます。特に、ここが初
+期化ファイル`_emacs'を探す場所となります。このことを心に留めておけば、
+GNU や UNIXでのように、ホームディレクトリの別名としてファイル名に`~'を
+使えます。Emacsを起動するまえに環境変数`HOME'を設定することもでき、その
+場合には、上述のデフォルトのふるまいに優先します。
+
+DJGPPのエミュレーションライブラリの機能では入出力装置はディレクトリ
+`/dev'に置かれていると仮定するので、MS-DOS用Emacsはディレクトリ名
+`/dev'を特別扱いします。いかなるディスク上でも`/dev'というディレクトリ
+名を使わないように忠告しておきます。
+
+
+
+File: emacs-ja, Node: Text and Binary, Next: MS-DOS Printing, Prev: MS-DOS Input, Up: MS-DOS
+
+テキストファイルとバイナリファイル *(2005/05/08)*
+=================================================
+
+GNU Emacsでは、テキスト行の区切りとして改行文字を使います。これは、GNU
+や UNIXでの習慣です．
+
+MS-DOSとMS-Windowsでは、テキスト行の区切りとして、通常、復帰・行送りの
+2文字列を使います。（行送りは改行と同じ文字です。）したがって、Emacs に
+おいて典型的なファイルを便利に編集するには、これらの行末（end-of-line、
+EOL）文字列を変換する必要があります。Emacsは通常つぎのようにします。ファ
+イルを読み込むときには復帰・行送りを改行に変換し、ファイルを書き出すと
+きには改行を復帰・行送りに変換します。国際文字コードの変換を扱う機構で
+もこの変換を行います（*Note Coding Systems::）。
+
+ほとんどのファイルにおけるこの特別な書式変換のために、Emacsが報告する文
+字位置（*Note Position Info::）は、オペレーティングシステム上でのファイ
+ルサイズ情報と食い違います。
+
+さらに、Emacsは、ファイルの内容から行区切りとして復帰・行送りでなく改行
+を用いていると判断すると、ファイルの読み書きにおいて変換を行いません。
+したがって、特に努力しなくても、GNUとUNIXシステムからのファイルを
+MS-DOS上で読んだり編集でき、それらのファイルの行末は編集した後もUNIX流
+の行末のままです。
+
+モード行にはカレントバッファで行末変換を行ったかどうか表示されます。
+MS-DOS の行末をバッファで使っている時には，モードラインの先頭付近の文字
+コードの後にバックスラッシュ `\' が表示されます (*Note Mode Line::)．行
+末変換が実行されなければ，バックスラッシュの代わりに `(Unix)' が表示さ
+れ，通常の復帰・行送りではないことを知らせます．
+
+ファイルを開き，行末のスタイルが DOS か Unix であるかを指定するには，文
+字コードを指定します (*Note Specify Coding::)．例えば，`C-x RET c unix
+RET C-x C-f foobar.txt' とすると，ファイル `foobar.txt' を行末の指定無
+しで開きます．もし，いくつかの行が復帰・行送りであれば，Emacs はその行
+の終わりに `^M' を表示します．同様に，`C-x RET f' を使って，Emacs に行
+末を指定して保存させることができます．例えば，Unix の行末でバッファを保
+存したい時には，`C-x RET f unix RET C-x C-s' とします．もし，DOS の行末
+を持つファイルを開いているのであれば，Unixの行末に変換されて，保存され
+ます．このコマンドは `dos2unix' のように効率的に Unix の行末に変換しま
+す．
+
+NFSやSambaを用いてGNUやUNIXシステムを使ったコンピュータ上のファイルシス
+テムを参照するとき、これらのファイルシステム上のどのファイルに対しては、
+新規作成時でなくても、Emacsは行末変換を行うべきではありません。こうする
+ためには、該当するファイルシステムを"無変換"のファイルシステムと指定す
+るために、関数`add-untranslated-filesystem'を呼びます。この関数は、ファ
+イルシステム名である引数を1つとりますが、これにはドライブ名やディレクト
+リ名を含めることもできます。たとえば、
+
+     (add-untranslated-filesystem "Z:")
+
+は、ドライブZを無変換のファイルシステムとして指定しますし、
+
+     (add-untranslated-filesystem "Z:\\foo")
+
+は、ドライブZ上のディレクトリ`\foo'を無変換のファイルシステムとして指定
+します。
+
+個人の`_emacs'ファイルや
+サイトの全ユーザーに便利なように`site-start.el'の中で、
+`add-untranslated-filesystem'を使うことが多いでしょう。
+
+`add-untranslated-filesystem'の効果を取り消すには、関数
+`remote-untranslated-filesystem'を使います。この関数は、まえに
+`add-untranslated-filesystem'に使ったのと同じ文字列を引数としてとります。
+
+あるファイルシステムを無変換として指定すると文字コードだけでなく行末にも影響しま
+せん．特に，Emacs は 新しいファイルを作る時には Unix の行末で作成します．
+*Note Coding Systems::．
+
+内容がテキストではないある種のファイルは，変換すべきではありません．し
+たがって，MS-DOS 用 Emacs はある種のファイルを"バイナリファイル" として
+区別します．(この区別はMS-DOSのものではなく、Emacsがもたらすものです)．
+バイナリファイルには実行プログラム，圧縮されたファイルなどがあります．
+Emacs はあるファイルをバイナリとして認識するかどうかをファイル名を元に
+決定します．変数`file-name-buffer-file-type-alist' はバイナリファイルで
+あるファイル名を決定します．もしファイル名がバイナリファイル名の1つに一
+致すれば (その連想リストが特定のタイプ `(PATTERN . t)' であると)，
+Emacs はそのファイルを文字コード `no-conversion' (*Note Coding
+Systems::) を使って読み書きし，行末変換だけでなく*すべての*文字コード変
+換を無効にします．`file-name-buffer-file-type-alist' は `CONFIG.SYS' の
+ようにDOS の復帰・行送りを持つテキストファイルも含みます．Emacs はその
+ファイルをいつも DOS の行末で書き込みます．
+
+もし無変換のあるファイルが `file-name-buffer-file-type-alist' の1つに一
+致すれば，行末変換は `file-name-buffer-file-type-alist' で決定されます．
+
+
+
+File: emacs-ja, Node: MS-DOS Printing, Next: MS-DOS Processes, Prev: MS-DOS Input, Up: MS-DOS
+
+印刷とMS-DOS
+============
+
+`lpr-buffer'（*Note Hardcopy::）や`ps-print-buffer'（*Note
+Postscript::）のような印刷コマンドは、UNIX流のプログラム`lpr'がない場合
+には、プリンタポートに直接出力を送ればMS-DOSやMS-Windowsでも動作します。
+このふるまいは、UNIX上の`lpr'での印刷（*Note Hardcopy::、*Note
+Postscript Variables::）を制御する変数と同じ変数で制御されますが、
+MS-DOSやMS-Windows上でのこれらの変数のデフォルト値は、UNIX上での値と同
+じではありません。
+
+DOS流の通常の印刷のように、ローカルのプリンタを使いたい場合には、Lisp変
+数`lpr-command'に`""'（デフォルト値）を設定し、`printer-name'にはプリン
+タポートの名前を設定します。たとえば、ローカルのプリンタポートならば
+（デフォルト値の）`"PRN"'や`"LPT2"'、シリアルプリンタならば`"COM1"'です。
+`printer-name'にはファイル名も設定できます。その場合には、『印刷』結果
+は、そのファイルに追加書きされます。`printer-name'に`"NUL"'を設定すると、
+印刷結果は（システムの空デバイスに送られて）黙って捨てられます。
+
+MS-Windowsでは、Windowsのネットワークソフトウェアをインストールしてあれ
+ば、`printer-name'に、他のマシンとの共用プリンタのUNC共用名（たとえば
+`"//joes_pc/hp4si"'）を設定すれば、そのプリンタを利用することもできます。
+（スラッシュでもバックスラッシュでもかまいません。）共用プリンタの名前
+を調べるには、DOSコマンドプロンプトで`net view'を実行してサーバー一覧を
+取得してから、`net view SERVER-NAME'を実行してサーバーが共有するプリン
+タ（とディレクトリ）の名前を調べます。
+
+`printer-name'にファイル名を設定するときには、絶対ファイル名を使うのが
+最良です。Emacsは、カレントバッファのデフォルトディレクトリに応じて作業
+ディレクトリを変更します。`printer-name'のファイル名が相対的であると、
+印刷を行ったバッファのディレクトリごとに、そのような名前のファイルがで
+きてしまいます。
+
+コマンド`print-buffer'や`print-region'は、
+各印刷ページに見出しを付けるために、
+`pr'プログラムを呼び出したり、
+`lpr'プログラムに対して特別なフラグを使います。
+MS-DOSやMS-Windowsには、通常、これらのコマンドはありませんから、
+デフォルトでは、変数`lpr-headers-switches'は、
+ページ見出しを付ける要求を無視するように設定してあります。
+したがって、`print-buffer'や`print-region'は、
+それぞれ、`lpr-buffer'や`lpr-region'と同じ出力になります。
+（たとえばGNU Textutilsなどの）適当な`pr'プログラムがあるならば、
+`lpr-headers-switches'に`nil'を設定します。
+すると、Emacsはページ見出しを付けるために`pr'を呼び出し、
+`printer-name'の指定に従って出力結果を印刷します。
+
+`lpr'と同じ動作をする`lpr'がある場合には、変数`lpr-command'に`"lpr"'と
+設定できます。すると、他のシステムと同様に、Emacsは`lpr'を使って印刷し
+ます。（プログラム名が`lpr'でない場合には、`lpr-command'にはプログラム
+を探す場所を設定する。）`lpr-command'が`""'以外の場合には、変数
+`lpr-switches'には標準的な意味があります。変数`printer-name'の値が文字
+列である場合には、UNIXの場合と同様に、`lpr'のオプション`-P'の値として使
+われます。
+
+同様の一連の変数、`ps-lpr-command'、`ps-lpr-switches'、
+`ps-printer-name'（*Note Postscript Variables::）は、PostScriptファイル
+の印刷方法を定義します。これらの変数は、上に述べた非PostScript印刷用の
+対応する変数と同じように使われます。つまり、`ps-printer-name'の値は、非
+PostScript印刷での`printer-name'の使い方と同様に、PostScript出力の送り
+先の装置（やファイル）の名前として使われます。（つまり、別々の2つのポー
+トに2台のプリンタを接続してあり、その一方がPostScriptプリンタの場合、異
+なる2組の変数群を使える。）
+
+変数`ps-lpr-command'のデフォルト値は`""'であり、
+PostScript出力を`ps-printer-name'で指定するプリンタポートへ
+送ることを意味します。
+しかし、`ps-lpr-command'には、PostScriptファイルを受理する
+プログラムの名前を設定してもかまいません。
+つまり、非PostScriptプリンタがある場合、
+この変数に（Ghostscriptなどの）PostScriptインタープリタプログラムの
+名前を設定できます。
+インタープリタプログラムに渡す必要があるオプションは、
+`ps-lpr-switches'を用いて指定します。
+（`ps-printer-name'の値が文字列の場合、その値は、
+オプション`-P'の値として、オプション列に付加される。
+これは、`lpr'を使う場合にだけ有用であろう。
+というのは、インタープリタを使う場合、典型的には、
+`ps-printer-name'には文字列以外を設定して無視させる。）
+
+たとえば、ポート`LPT2'に接続したEpsonプリンタに印刷するために
+Ghostscriptを使うには、つぎの内容を個人のファイル`_emacs'に入れます。
+
+     (setq ps-printer-name t)  ; Ghostscriptは -P を理解しない
+     (setq ps-lpr-command "c:/gs/gs386")
+     (setq ps-lpr-switches '("-q" "-dNOPAUSE"
+			"-sDEVICE=epson"
+			"-r240x72"
+			"-sOutputFile=LPT2"
+			"-Ic:/gs"))
+
+（この例では、ディレクトリ`"c:/gs"'にGhostscriptをインストールしてある
+と仮定。）
+
+MS-DOSとMS-Windowsでは、後方互換のために、
+`dos-printer'（や`dos-ps-printer'）の値を設定してあると、
+`printer-name'（や`ps-printer-name'）の値を上書きします。
+
+
+
+
+File: emacs-ja, Node: MS-DOS and MULE, Next: MS-DOS Processes, Prev: MS-DOS Printing, Up: MS-DOS
+
+MS-DOSでの国際化対応 *(2005/09/18)*
+===================================
+
+MS-DOS上のEmacsは、GNU や UNIX や他のプラットフォーム上と同じ国際化文字
+集合を扱えます（*Note International::）。これには、異なる文字集合のあい
+だの変換を行うコーディングシステムも含みます。しかしながら、
+MS-DOS/MS-Windowsと他のシステムとの非互換性に起因するDOSに固有な特色が
+あり、理解しておく必要があります。本節では、これらの特色について述べま
+す。
+
+`M-x dos-codepage-setup'
+     Emacs画面とコーディングシステムをカレントDOSコードページに適したも
+     のに設定する。
+
+`M-x codepage-setup'
+     特定のDOSコードページ用のコーディングシステムを作成する。
+
+MS-DOSは、一度には256文字から成る単一の文字集合を扱えるように設計されて
+いますが、さまざまな文字集合から選択できます。代替文字集合は、"DOSコー
+ドページ"と呼ばれます。各コードページは、128個の全ASCII文字を含みますが、
+残りの128文字（コード128〜255）は、コードページごとに異なります。各DOS
+コードページは、850や862などの3桁の数字で識別します。
+
+同時に複数のフォントを使えるXに比べると、MS-DOSでは普通1つのセッション
+では複数のコードページを使えません。MS-DOSはシステムブート時に単一のコー
+ドページをロードするように設計されています。コードページを変更するため
+にMS-DOSをリブートする必要があります (1) (*Note MS-DOS and
+MULE-Footnotes::)。MS-Windowsなどの他のシステムでDOSプログラムを実行す
+る場合にも、同様の制約が課せられます。
+
+MS-DOS上でオプション`--unibyte' （*Note Initial Options::）を指定して
+Emacsを起動すると、Emacsは、いかなる変換も非ASCII文字には行いません。非
+ASCII文字はそのまま読み書きし、画面には8ビットコードをそのまま送ります。
+つまり、MS-DOS上のユニバイトEmacsは、なんであれカレントコードページを使
+いますが、それ以外の文字を表現することはできません。
+
+MS-DOS上でのマルチバイト操作には、Emacsは、選択されているDOSコードペー
+ジで表示できる文字群を知っておく必要があります。そのため、起動後、選択
+しているコードページ番号をシステムに問い合わせ、変数`dos-codepage'にそ
+の番号を保存します。実際に使っているコードページとは異なっていても、カ
+レントコードページのデフォルト値437を返すシステムもあります。（典型的に
+は、ディスプレイ装置に組み込まれたコードページを使用すると発生する。）
+個人の初期化ファイルで変数`dos-codepage'を設定すれば、Emacsが使うコード
+ページ（番号）を別のものに指定できる。
+
+マルチバイトEmacsは、特定のDOSコードページだけを扱えます。これらには、
+日本語用コードページ932のような極東の文字を表示できものや、単一のISO
+8859文字集合を符号化できるものが含まれます。
+
+極東用コードページは、それらの国々用のMULE文字集合の1つを直接表示できま
+すから、Emacsは、コードページで扱える適切な端末コーディングシステムを設
+定するだけです。本節の残りで述べる特別な機能は、ISO 8859文字集合を符号
+化するコードページに関することです。
+
+ISO文字集合の1つに対応したコードページに対しては、Emacsはコードページ番
+号に基づいた文字集合名を知っています。Emacsは、カレントコードページを用
+いたファイルの読み書きを扱うコーディングシステムを自動的に作成し、デフォ
+ルトでこのコーディングシステムを使います。コードページ番号をNNNとすると、
+このようなコーディングシステムの名前は`cpNNN'です。 (2) (*Note MS-DOS
+and MULE-Footnotes::)
+
+すべての`cpNNN'コーディングシステムは、モード行の表示に（『DOS』の）文
+字`D'を使います。端末コーディングシステムとファイル入出力用のデフォルト
+のコーディングシステムは、起動時に、正しく`cpNNN'コーディングシステムに
+設定されますから、MS-DOSでは、モード行は普通`-DD\-'で始まります。*Note
+Mode Line::。極東用DOS端末は、`cpNNN'コーディングシステムを使用せず、そ
+のため、初期のモード行はEmacsのデフォルトのようになります。
+
+コードページ番号は、使用する文字群を指定しますから、Emacsは、その文字群
+用の言語環境を選択するために`set-language-environment'を自動的に実行し
+ます（*Note Language Environments::）。
+
+バッファ内に異なるISO 8859文字集合に属する文字、すなわち、選択している
+DOSコードページで扱えない文字が含まれる場合、Emacsはその文字をASCII文字
+の列で表示します。たとえば、カレントコードページに文字``o' （アクサング
+レーブ付きの小文字の`o'）の字形がないときには、中括弧で囲って1文字であ
+ることを表して、`{`o}'と表示します。（このようにすると、ギリシャ文字や
+ヘブライ文字などの非Latin文字のなかには、とても見難くなるのもがあるが、
+その言語を知っている人には少なくとも読める。）1文字でも画面上は数桁を占
+めますが、実際には単一の文字であり、Emacsのすべてのコマンドも1文字とし
+て扱います。
+
+DOSコードページ内のすべての文字がISO 8859文字に対応するわけではなく、箱
+を描くための文字や他の図形用文字もあります。Emacsではこれらの文字を
+`eight-bit-control' や `eight-bit-graphic' と呼ばれる2つの特別な文字に
+割り当てられます．そして，それらをIME字形として表示します．しかし，これ
+らの文字は他のシステムでは違ったように表示されるかもしれないということ
+に注意すべきです．したがって，異なるOSにコピーされるような場合や他の
+DOSマシンであっても異なる文字コードを使っているような場合には，テキスト
+でそれらの文字の使用を避けるべきです．
+
+Emacsは、ISO 8859以外の他の多く文字集合を扱えますが、
+それらをMS-DOS上では表示できません。
+そのようなマルチバイト文字がバッファ内にあると、
+MS-DOS上のEmacsは、変数`dos-unsupported-character-glyph'の
+指定どおりに表示します。
+デフォルトでは、その字形は、白抜きの三角形です。
+コマンド`C-u C-x ='を使って、そのような文字の
+実際の文字コードと文字集合を表示してください。
+*Note Position Info::。
+
+デフォルトでは、Emacsはカレントコードページを扱えるコーディングシステム
+を定義します。（他国のDOSマシンで書いたファイルを訪問するなどの）他のコー
+ドページ用のコーディングシステムを定義するには、コマンド`M-x
+codepage-setup'を使います。これは、3桁のコードページ番号を問い合わせて
+きますが、補完を使えます。そして、指定したコードページ用のコーディング
+システムを作成します。これで、新たなコーディングシステムを使ってファイ
+ルを読み書きできますが、このコーディングシステムを使うには、ファイルコ
+マンドで明示する必要があります（*Note Specify Coding::）。
+
+これらのコーディングシステムは、DOSコードページで符号化したファイルを他
+のオペレーティングシステム上のEmacsで訪問する場合にも利用できます。
+
+MS-Windows は独自のコードページを持ちます．これはDOSのコードページとは
+異なるものです．例えば，DOSコードページの850はWindowsコードページの
+1252と同じ文字を提供します．DOSコードページの855はWindowsコードページの
+1251と同じ文字を提供するなど．MS-Windows版のEmacsは`-nw'を付けて起動す
+ると，表示に現在のコードページを使用します．
+
+
+File: emacs-ja  Node: MS-DOS and MULE-Footnotes, Up: MS-DOS and MULE
+
+(1) 通常、1つの特定のコードページはディスプレイメモリに組み込んであり、
+他のコードページは、`CONFIG.SYS'などのシステム設定ファイルを変更し
+てリブートするとインストールできる。サードパーティのソフトウェアでは再
+起動をせずにコードページを変更できるものもありますが，ここでは，通常の
+MS-DOSについて書いています
+
+(2) ISO 8859用のEmacsの標準コーディングシステムは、この目的には正しくな
+い。というのは、典型的なDOSコードページは、標準のISO文字集合に一致しな
+い。たとえば、文字`c,'（セディーユ付きの`c'）は、標準の
+Latin-1文字集合ではコード231であるが、対応するDOSコードページ850ではこ
+の文字はコード135である。
+
+
+
+File: emacs-ja, Node: MS-DOS Processes, Next: Windows Processes, Prev: MS-DOS Printing, Up: MS-DOS
+
+サブプロセス（MS-DOS） *(2005/09/19)*
+=====================================
+
+MS-DOSはシングルプロセスの『オペレーティングシステム』なので、非同期な
+サブプロセスは利用できません。特に、シェル（shell）モードやその派生モー
+ドは動きません。shellモードやGUDなどの非同期のサブプロセスを用いた
+Emacsの機能のほとんどは、MS-DOSでは動きません。疑うならば試してみてくだ
+さい。動作不能なコマンドは、「非同期サブプロセスを使えない」旨のエラー
+メッセージを出力します。
+
+MS-DOS用Emacsでも、`M-x compile'によるコンパイル、`M-x grep'によるファ
+イルの探索、`M-x diff'によるファイルの比較は動作しますが、これらは下位
+プロセスを同期して走らせます。つまり、下位プロセスが終了するまではいっ
+さい編集はできません。
+
+`ispell'を同期して走らせることでスペルチェックも動作します．他のプラッ
+トフォームで非同期で動作させるよりも遅くなります．
+
+MS-DOSモードでは動作しないshellモードの代わりに，`M-x eshell'を利用でき
+ます．これにより，完全にEmacs Lispで書かれた Posix 風の Eshell パッケー
+ジを利用できます．
+
+対照的に、Windows専用にコンパイルしたEmacsでは、
+非同期プロセスを使えます。
+*Note Windows Processes::。
+
+`lpr-buffer'（*Note Hardcopy::）や
+`ps-print-buffer'（*Note Postscript::）のような印刷コマンドは、
+MS-DOSではプリンタポートの1つに出力を送ることで動作します。
+*Note MS-DOS Printing::。
+
+MS-DOSで同期的にサブプロセスを動かす場合には、
+プログラムが確実に終了し、しかも、キーボードからまったく入力しないことを
+確認してください。
+MS-DOSにはプロセスを終了させる一般的な方法がないので、
+プログラムがみずから終了できない場合には、
+それを終了させることができなくなります。
+このような場合、
+`C-c'や`C-BREAK'を押すと助かる場合もあります。
+
+MS-DOSでは、他のマシンのファイルを参照することはできません。MS-DOSにネッ
+トワーク機能が組み込まれていなければ、メイルの送信、Webの閲覧、リモート
+ログインなどのネットワーク向けのコマンドも使えません。
+
+MS-DOSでのdiredは、
+他のシステムではシステムの`ls'コマンドを使う場面で
+パッケージ`ls-lisp'を使います。
+したがって、MS-DOSのdiredでは
+変数`dired-listing-switches'に設定できるオプションは限られます。
+使えるオプションは、
+`-A'、`-a'、`-c'、`-i'、`-r'、`-S'、
+`-s'、`-t'、`-u'です。
+
+
+
+File: emacs-ja, Node: Windows Processes, Next: Windows System Menu, Prev: MS-DOS Processes, Up: MS-DOS
+
+サブプロセス（Windows 9X/ME ，Windows NT/2K） *(2005/09/19)*
+============================================================
+
+（DOS版と対比して）Windows専用にコンパイルしたEmacsでは、非同期のサブプ
+ロセスを完全に使えます。Windows版では、Windows 9X ，Windows NT/2Kで32ビッ
+トのWindowsアプリケーションを実行している限りは、同期であれ非同期であれ
+サブプロセスはうまく動作します。しかし、サブプロセスでDOSアプリケーショ
+ンを実行すると、アプリケーションの実行に問題を生じたり実行できなかった
+りします。さらに、2つのDOSアプリケーションを同時に2つのサブプロセスで実
+行すると、システムをリブートしなければならなくなります。
+
+Windows 95の標準のコマンドインタープリタ（および、ほとんどのコマンド行
+ユーティリティ）はDOSアプリケーションなので、この種のシステムを使う場合
+には上記の問題は重要になります。しかし、これに関してわれわれにできるこ
+とは何もなく、Microsoftだけが修正できるのです。
+
+DOSアプリケーションのサブプロセスを1つだけ実行するならば、『行儀がよく』
+て、しかも、画面を直接操作するなどの非標準的な動作をしない限りは、サブ
+プロセスは予想どおりに動作するはずです。CPUモニタ（監視）アプリケーショ
+ンを使うと、DOSアプリケーションが停止しているときでさえも、マシンは
+100%ビジーになりますが、これはCPUモニタがプロセッサの負荷を調べる方法に
+起因します。
+
+別のサブプロセスでDOSアプリケーションを実行する場合には、まえもってDOS
+アプリケーションを終了しておく必要があります。Emacsは、DOSのサブプロセ
+スに割り込んだり停止させることができません。このようなサブプロセスを終
+了する唯一の方法は、そのプログラムに終了を指示するコマンドを与えること
+です。
+
+別々のサブプロセスにおいて2つのDOSアプリケーションを同時に実行しようと
+すると、一方あるいは両方が非同期であるとしても、2番目に起動したものは最
+初のものが終了するまで休止してしまいます。
+
+最初のサブプロセスを操作できて終了を指示できるならば、2番目のサブプロセ
+スは正常に実行を継続するはずです。しかし、2番目が同期サブプロセスであれ
+ば、最初のサブプロセスが終了するまではEmacs自体が固まってしまいます。ユー
+ザー入力なしに終了できない場合には、Windows 9Xを使っている限りリブート
+以外の選択はありません。Windows NT/2Kであれば、プロセスを調べるアプリケー
+ションを使って、適当なntvdmを終了させます（するとDOSの2つのサブプロセス
+も終了します）。
+
+このような状況でWindows 9Xをリブートすることが必要になったときには、
+`Start'メニューの中の`Shutdown'コマンドを使ってはいけません。たいていの
+場合、システムが固まってしまいます。かわりに、`CTL-ALT-DEL'を打鍵して
+`Shutdown'を選びます。処理に数分かかる場合もありますが、多くの場合、機
+能してくれます。
+
+
+
+File: emacs-ja, Node: Windows System Menu, Prev: Windows Processes, Up: MS-DOS
+
+Windowsのシステムメニューの利用 *(2005/05/08)*
+==============================================
+
+Windows専用にコンパイルしたEmacsでは、ALTキーを押してWindowsのメニュー
+を立ち上げる機能を切ってあります。これは、EmacsではALTはMETAの働きをす
+るからです。Emacsを利用しているときには、ユーザーはしばしばいったん
+METAキーを押してから何もせずに放します。この動作でWindowsのメニューが立
+ち上がってしまうと、以降のコマンドの意味が変ってしまいます。多くのユー
+ザーにはこれでは邪魔でしょう。
+
+`w32-pass-alt-to-system'に`nil'以外の値を設定すれば、
+ALTキーを押したときの処理はWindowsのデフォルトに戻ります。
+
+
+
+File: emacs-ja, Node: Manifesto, Prev: MS-DOS, Up: Top
+
+GNU宣言
+*******
+
+     GNU宣言（GNU Manifesto）（以下参照）は、GNUプロジェクトの初期の頃
+     に、Richard Stallmanが参加とサポートを求めるために書いたものである。
+     当初2〜3年間は、開発について説明するために参考として用いつつ更新し
+     ていたが、現在では、人々がよく目にするので変更しないでおくことが最
+     善であると考えている。
+
+     その時以来、我々は、いくつかの表現をわかりやすくしたつもりだがよく
+     誤解を招く点があることがわかった。そこで、そのような点を明確にする
+     べく、1993年に脚注として追記した。
+
+     現在配布可能なGNUソフトウェアに関する最新情報は、GNU's
+     Bulletin（[訳注]日本語版であれば「GNUダイジェスト」）の最新号をご
+     覧いただきたい。ここに引用するには情報量が多すぎるので。
+
+
+GNUとは何か？ GnuはUnixではない（Gnu's Not Unix）！
+===================================================
+
+GNUとはGnu's Not Unixの略であり、誰もがフリーに使えるよう (1) (*Note
+Manifesto-Footnotes::)、私が今作成しているUnixと完全互換のソフトウェア・
+システムの名称である。何人ものプログラマが私を手伝ってくれている。時間
+やお金、プログラム、機器の寄付を大いに必要としている。
+
+既に我々のもとには、エディタ・コマンド記述用のLispを備えているEmacsとい
+うテキスト・エディタや、ソース・レベル・デバッガ、yacc互換の構文解析部
+生成ツール、リンカ、その他約35個のユーティリティがある。シェル（コマン
+ド・インタープリタ）はほぼ完成している。移植性の良い新しい最適化Cコンパ
+イラは自分自身をコンパイルできるようになり、今年中にはリリースできるだ
+ろう。初期段階のカーネルはあるが、Unixをエミュレートするためにはもっと
+多くの機能が必要である。カーネルとコンパイラが完成すれば、プログラム開
+発にふさわしいGNUシステムを配布できるだろう。テキスト処理にはTeXを採用
+するつもりだが、nroff関連の作業も進行中である。また、フリーで移植性の良
+いX Window Systemも採用する。そのあとは、移植性の良いCommon Lispや、
+Empireゲーム、スプレッドシート、その他数多くのものを、オンライン・ドキュ
+メントと共に追加していく。最終的には、Unixシステムに標準で付いている有
+用なツール全てに加えて、さらにはそれ以上のものを提供したいと考えている。
+
+GNUは、Unixのプログラムを実行できるようにするつもりだが、Unixとは同一の
+ものにはならない。他のオペレーティング・システムでの我々の経験を基に、
+より使いやすくなるよう、全面的に改良していくからである。特に、長いファ
+イル名の使用やファイルのバージョン番号、耐クラッシュ性に優れたファイル・
+システム、ファイル名の補完機能（[訳注]ファイル名を途中まで指定しただけ
+でそのあとはシステムが完全なファイル名を追加してくれる機能）、端末に依
+存しない表示のサポート、おそらく最終的には、いくつかのLispプログラムと
+通常のUnixプログラムが1つの画面を共有できるようなLispベースのウィンドウ・
+システムを作る予定である。システム・プログラミング言語としては、C言語と
+Lispの両方が使用可能になるだろう。通信用には、UUCP、MIT Chaosnet、
+Internetの各プロトコルをサポートしようと考えている。
+
+GNUでは、最初は68000/16000（[訳注]モトローラ68000とナショナル・セミコン
+ダクタの16000）クラスの仮想記憶を備えたマシンを対象とする。というのは、
+GNUを最も実行しやすいマシンだからである。もっと能力の小さなマシン上で
+GNUを動作させるための努力は、そのマシン上で使いたい人の手に委ねることに
+する。
+
+とんでもない誤解を避けるために、このプロジェクトの名称としての「GNU」の
+場合は、「G」を発音していただきたい。（[訳注]もともと普通名詞のGnuはヌー
+という動物であり、その発音を採用するとGNU projectはヌー・プロジェクトに
+なりnew projectと間違われる可能性もある。）
+
+
+なぜGNUを作成しなければならないのか？
+=====================================
+
+もし私の好きなプログラムを他の人も好きであれば、私はその人とプログラム
+を分かち合わなくてはならない、という黄金律（[訳注]自分の欲することは他
+の人にも為すという考え方）を考案した。ソフトウェア販売会社は、ユーザ1人
+1人に他人と共有しない契約をさせることによって、ユーザを分離し支配しよう
+としている。そのような方法で他のユーザとの連帯意識を壊すことは私は嫌で
+ある。機密保持契約やソフトウェア・ライセンス契約へのサインは良心からで
+きない。何年もの間、私はそういった傾向やその他の冷遇に抵抗するために、
+AIラボ内で活動してきたが、最後にはその傾向や冷遇は度を越していった。私
+に対してAIラボが行なった事は私の意志に反するので、そこに留まることがで
+きなくなった。
+
+信念を曲げることなくコンピュータを使い続けるために、フリーでないソフト
+ウェアがなくてもうまくやっていけるようなフリー・ソフトウェアのしっかり
+した団体を組織することを決意した。私がGNUを配布することをMITが合法的に
+阻止するのを拒否するために、私はAIラボを辞職した。
+
+
+なぜGNUはUnix互換なのか？
+=========================
+
+Unixは私の理想とするシステムではないが、それほど悪いシステムでもない。
+Unixの基本的な機能は良いものなので、それらを生かしつつ、Unixに欠けてい
+るものを補っていけるだろうと考えている。また、Unix互換のシステムであれ
+ば、GNUを採用する他の多くの人々にとっても有用であろう。
+
+
+GNUをどうやって配布するか？
+===========================
+
+GNUはパブリック・ドメインには置かない。それにより、誰もがGNUを修正して
+再配布でき、配布者が再配布することを禁止されることもない。つまり、独占
+的な修正はできないのである。私は、あらゆるバージョンのGNU （[訳注]誰で
+もソース・コードをアクセスできるという意味で）が確実にフリーであり続け
+て欲しいのである。
+
+
+なぜ他の多くのプログラマが協力してくれるのか？
+==============================================
+
+私は、他の数多くのプログラマがGNUに熱狂し、そして協力したがっていること
+を知った。
+
+多くのプログラマが、システム・ソフトウェアの営利化に不満を抱いている。
+その営利化とは、プログラマに金儲けをさせる代わりに、他の一般のプログラ
+マを仲間ではなく競争相手として見るよう仕向けるからである。プログラマ間
+の友情を示す基本的な行為は、プログラムの共有である。現在の典型的な市場
+の取り決めは、プログラマが他のプログラマを友人として接することを根本的
+に禁じてしまっている。ソフトウェアの購入者は、友情をとるか、法律に従う
+かを選択しなくてはならない。当然、友情のほうが大切であると考える人のほ
+うが多いだろう。しかし、法律に従うべきであると考える人のなかには、この
+ようなことが簡単に選択できない人が多い。そういう人は人の誠意を信じない
+人間になっており、プログラミングは単なる金儲けの一手段でしかないと考え
+ているからである。
+
+独占的なプログラムではなくGNUに関する作業を行ない、GNUを使っていれば、
+誰に対しても排斥的ではなくなり法を守ることもできる。さらに、GNUは共有と
+いう点において、激励するための一例となり、人々が我々に参加すべく結集す
+るための旗印となる。これにより、もし我々がフリーでないソフトウェアを使っ
+ていては得られないある種の和の感情を抱くことができる。私が対話したプロ
+グラマのうちの約半数が、これはお金には換えられない大切な幸福であると言っ
+ている。
+
+
+あなたはどのようにしたら貢献できるか？
+======================================
+
+私は、コンピュータ・メーカにはマシンとお金の寄付を求めている。個人に対
+してはプログラムと労働の寄付を求めている。
+
+マシンの寄付を受けた場合は、その見返りの1つとして、GNUが近いうちにその
+マシン上で動作するようになるだろう。マシンは完成していてシステムが使え
+る状態であり、住宅区域で使用可能で、特殊な冷却や電力を必要としないもの
+でなくてはならない。
+
+私は非常に多くのプログラマがGNUのためにパートタイムで作業する熱意がある
+ことを知った。ほとんどのプロジェクトでは、そういったパートタイムでの分
+散した作業をまとめていくことは非常に困難だろう。しかし、Unixを置き換え
+るというこの特定の作業に関しては、そのような問題はない。完全なUnixシス
+テムには数百ものユーティリティ・プログラムがあり、その1つ1つには別個に
+ドキュメントが付いている。たいていのインタフェース仕様は、Unixとの互換
+性の観点から決定されている。プログラマ各人が単一のUnixユーティリティと
+互換の代替品を作成できれば、そのようなユーティリティをひとまとめにして
+も正しく動作するはずである。マーフィーの例で言えば、いくつか予期せぬ問
+題が生じたとしても、これらの構成要素をまとめることは可能な作業であろう。
+（カーネル作業には、より緊密なコミュニケーションが必要なので、少人数で
+密接なグループでの作業となる。）
+
+お金の寄付を受けた場合は、フルタイムかパートタイムで2〜3人を雇えるだろ
+う。給料はプログラマの標準収入ほど高くはないが、お金を稼ぐことと同じよ
+うに共同体精神を築くことは重要だと考えている人を私は捜している。私は、
+この給料とは、プログラマが別の方法で生計を立てなくても、GNU作業に全力投
+球できるようにするための一手段としてとらえている。
+
+
+なぜ全てのコンピュータ・ユーザが恩恵をうけるのか？
+==================================================
+
+いったんGNUが作成されれば、誰もが良質のシステム・ソフトウェアを無料で入
+手できるようになる。 (2) (*Note Manifesto-Footnotes::)
+
+これは、Unixライセンスの価格を誰もが節約できることだけではなく多くのこ
+とを意味する。つまり、非常に無駄となるシステム・プログラミングの重複を
+避けることができる。代わりに、その労力は現在の技術水準の進歩に向けるこ
+とができる。
+
+完全なシステム・ソースは誰に対しても配布可能になる。そのため、システム
+に変更を施さなくてはならないユーザは、自分でいつでも自由にそれを行なっ
+たり、あるいは、自分の代わりにそれを行なってくれるプログラマや企業を雇
+うことができるようになる。ユーザはもはや、ソース・コードを所有するプロ
+グラマや企業のなすがままになることはなく、変更を施すことに関しては独立
+した存在でいられる。
+
+大学側は、学生にシステム・コードを学習し、改良するよう奨めることにより、
+はるかに良い教育環境の提供が可能になる。ハーバード大学のコンピュータ研
+究所では、ソース・コードを公開して見れないようなプログラムは一切、シス
+テムにインストールしないという方針が習慣であり、特定のプログラムをイン
+ストールすることを実際に拒否することを支持した。このことに私は非常に勇
+気づけられた。
+
+最後に、システム・ソフトウェアを誰が所有しているのかを、それを使ってやっ
+ていいことといけないことを考慮することのオーバーヘッドが解消されるだろ
+う。
+
+人々にプログラムの使用料を支払わせる契約（複製のライセンスを含む）は常
+に、人がいくら（つまり、どのプログラムに）支払わなくてはならないかを理
+解するのに欠くことのできない厄介な機構を通じて、社会は多大なコストを被っ
+ている。そして、警察国家でもなければ、そのような機構に全ての人を従わせ
+ることはできない。例えば、多大なコストをかけて空気を製造しなくてはなら
+ない宇宙ステーションのことを考えてみよう。空気1リットルごとの息継ぎに課
+金すれば公平かもしれないが、たとえ皆が空気料金を支払う余裕があったとし
+ても、そのために一日中メータ付きの空気マスクを付けるとなれば耐え難いこ
+とである。まして、マスクを外したかどうかをTVカメラが至る所で見張ってい
+るなどというのは、全くとんでもないことである。それよりは、料金を頭割り
+にした税金で空気工場を維持して、マスクを外すほうがましである。
+
+プログラムの一部または全てを複写することは、プログラマにとって呼吸する
+のと同じくらい自然なことであり生産的なものである。だから、プログラムは
+フリーであるべきである。
+
+
+GNUの目標への異議と、簡単にできる反証
+=====================================
+
+     『プログラムがフリーであれば誰もそれを使わないだろう。なぜならば、
+     無料ということは、サポートを当てにできないからである。』
+
+     『サポートを提供するために料金をプログラムに課す必要がある。』
+
+人々が、サービスのない無料のGNUよりも、サービス付きの有料のGNUのほうに
+支払うというのであれば、GNUを無料で入手した人々に対して、サービスだけを
+提供する企業は利益を得て当然である。 (3) (*Note Manifesto-Footnotes::)
+
+本当のプログラミング作業を行なうサポートと、単なる支援とは区別すべきで
+ある。前者は、ソフトウェア業者からのサポートを当てにできない種類のもの
+である。もしあなたの問題が多くの人々の問題になっていなかった場合には、
+ソフトウェア業者は邪魔しないでほしいと言うだろう。
+
+あなたのビジネスがサポートに頼らざるをえない場合は、必要なソース・コー
+ドとツールを全て自分で抱えるしかない。そうすれば、あなたの問題点を直し
+てもらうための人を雇うことができる。人に翻弄されることはない。Unixを使
+う場合、ソース・コードが高価なので、ほとんどのビジネスではこのようなこ
+とはできない。GNUを使えば、これは簡単に実現する。有能な人材がいなかった
+としても可能であり、しかも、問題点を修正できないのは配布規定のせいでは
+断じてない。GNUは、世界中の全ての問題ではなく、その一部のみを取り除いて
+いる。
+
+一方、コンピュータについて何も知らないユーザには支援が必要である。自分
+で容易に処理できる範疇であっても、その方法を知らない場合に支援が必要な
+のである。
+
+そのようなサービスは、単なる指導や修理サービスだけを行なっている企業が
+請け負うことができるだろう。ユーザがお金を支払ってもサービス付きの製品
+を購入するほうが良いと考えているのであれば、無料の製品に対するサービス
+にも喜んでお金を払うだろう。サービス会社は、品質と価格の面で競争するこ
+とになり、ユーザは特定のサービス会社にこだわる必要がなくなる。一方、サー
+ビスを必要としない我々等などであれば、サービスへの対価を支払わなくても、
+プログラムを使うことができる。
+
+     『広告なしでは多くの人々に知らせることは無理であり、その費用だけで
+     もプログラムに料金を課すべきである。』
+
+     『誰もが無料で入手できるようなプログラムを宣伝しても仕方がない。』
+
+GNU等の情報を、多くのコンピュータ・ユーザに知らせられるような無料または
+きわめて安価な広告媒体がいろいろとある。しかし、宣伝すれば、より多くの
+マイクロコンピュータ・ユーザに知らせられるというのも事実かもしれない。
+本当にそうであれば、GNUを無料で複写したり配布するサービスを宣伝するビジ
+ネスは、その広告費用にかかった以上の成功をおさめるはずである。この方法
+は、宣伝によって利益を得るユーザだけが広告料を払うものである。
+
+他方では、多くの人々が友人からGNUを入手するので、上記のような企業が成功
+しないというのであれば、その宣伝がGNUを広める上で、本当に必要なものでは
+ないということである。なぜ自由市場擁護者は、このことを自由市場に決めさ
+せたくないのだろうか？ (4) (*Note Manifesto-Footnotes::)
+
+     『私の会社は、競争の頂点に立つために独占的なオペレーティング・シス
+     テムが必要である。』
+
+GNUにより、オペレーティング・システム・ソフトウェアは競争の世界から取り
+除かれることになるだろう。このオペレーティング・システム・ソフトウェア
+の分野では、あなたは競争の頂点に立つことはできないし、競争相手もそうな
+ることはできない。この分野では、あなたとその競争相手は互いに利益を受け、
+競い合うのは他の分野でということになる。あなたのビジネスがオペレーティ
+ング・システムの販売であった場合には、GNUは好ましくなく、あなたにとって
+厳しい状況になるだろう。あるいは他の種類のビジネスならば、オペレーティ
+ング・システムの販売といった高価なビジネスにあなたが強要されないよう、
+GNUがあなたを救うことができる。
+
+私は、多くのメーカやユーザからの寄付に支えられてGNUが発展し、そのような
+人々の個々のコストが軽減されていくのをこの目で見たいと思う。 (5)
+(*Note Manifesto-Footnotes::)
+
+     『プログラマは自分の創造性に対して報酬を受けるに値しないのではない
+     か？』
+
+何事にも報酬があるとしたら、それは社会的貢献である。創造性は社会的貢献
+となりうるが、それは社会がその成果を自由に使用できる場合に限られる。も
+しプログラマが、革新的なプログラムを作成したことで報酬を得るとしたら、
+そのようなプログラムの利用を制限した場合にも同じ理由で罰に値する。
+
+     『プログラマは、自分の創造性に対して報酬を要求してはいけないのでは
+     ないか？』
+
+仕事に対して支払いを求めたり、自分の収入を最大に増やすよう求めることは、
+破壊的な手段を使わない限り、何ら悪いことではない。しかし、今日のソフト
+ウェア分野で習慣となっている手段は、破壊的行為に基づいている。
+
+プログラムの使用を制限してプログラムのユーザからお金をとることは、その
+制限のせいで、使用できるプログラムの種類や方法が減ってしまうので、破壊
+的行為となる。これは、人類がプログラムから得られる富の量を減らしてしま
+う。故意に制限すると決定したときには、意図的な破壊という有害な結果をも
+たらすだろう。
+
+善良な市民がそのような破壊的手段を用いないのは、そうしないことこそが裕
+福であると思っているからである。もし誰もが破壊的手段を用いたとしたら、
+我々は互いの破壊行為によってさらに貧しくなっていくばかりであろう。これ
+がカント哲学の倫理、または黄金律である。皆が情報を隠し持った結果として
+生じる結末を私は好まないので、そうすることは悪いことであると考えざるを
+得ない。明確に言えば、自分の創造性が報われたいという欲望は、その創造性
+の全部または一部を、一般の世の中から奪う言い訳にはならない。
+
+     『プログラマは飢えてしまわないだろうか？』
+
+プログラマに強要できる者はいないということは言える。我々の大半は、街に
+立ってしかめ面をしてもどうにもお金を稼ぐことはできない。しかし、結果的
+には、我々がしかめ面をしながらひもじい思いをしつつ街に立って一生を過ご
+すことになったとしても、それを厳しく非難されはしない。我々には他にする
+ことがあるからである。
+
+しかし、これは、質問者の暗黙の仮定、つまり、ソフトウェアの所有権がなけ
+れば、プログラマは一銭たりとも収入を得ることはできないという仮定を受け
+入れているので間違った答えである。おそらく、一か八かということなのだろ
+う。
+
+プログラマが飢えてしまわない本当の理由は、単に今ほどの額ではないだけで
+あって、プログラミングに対しては支払われる可能性が依然としてあるからで
+ある。
+
+複写を制限することだけが、ソフトウェアにおけるビジネスの唯一の基礎では
+ない。それが最も多くのお金をもたらすので、一番の共通基盤になっているだ
+けである。もし顧客のほうから複写の制限を禁じたり拒絶すれば、ソフトウェ
+ア・ビジネスの組織の土台は、今ではあまり多くは使用されていないような別
+の種類ものへと変わるだろう。
+
+おそらく、新しい基盤のもとではプログラミングは現在と同じくらいの利益に
+しかならないだろう。しかし、それだからといって変化に反対する理由にはな
+らない。販売員が今と同じ給料を得ることが不公平だというのではない。プロ
+グラマも同様に今と同じ給料を得たとしても、不公平にはならないだろう。
+（実際、プログラマは給料以上のことを行なうだろうから。）
+
+     『人々には自分の創造性がどのように使用されるのかを制御する権利があ
+     るのではないか？』
+
+『自分のアイデアの使用を制御すること』は実は、他人の人生を制御し、一般
+にその人の人生をもっと困難にするために用いられる性質のものである。
+
+（弁護士のように）知的所有権の問題を勉強した人によれば、知的所有物には
+本来の権利もないと言っている。政府が認めている推定上の知的所有権の類は、
+特定の目的のための特定の法律によって作り出されたものである。
+
+例えば、特許制度は、発明家がその発明の細部を公開するよう促進するために
+制定された。その目的は、発明家を保護するというよりは、社会を保護するこ
+とにあった。当時、17年という特許の保護期間は、技術水準の進歩に比べて短
+いものであった。特許は製造業者の間だけの問題なので、ライセンス契約のコ
+ストや手間が製品作りの準備に比べれば少ないような人々にとっての特許とは、
+さほどの損害にはならない場合が多い。特許製品を使用するたいていの個人を
+妨害してはいない。
+
+著作権という概念は、著者がノンフィクション作品の中に他の著者から長々と
+頻繁に真似ていた古代には存在しなかった。この習慣は役に立っていたし、現
+在でも多くの著者の作品に部分的に生き続けている習慣である。著作権制度は、
+著述業を明白に促進するために作られた。その制度が作られた分野として本が
+あるが、これは印刷するだけで安く複製できるのでほとんど損害を与えること
+はなく、何よりも本を読む個人を妨害することはなかった。
+
+全ての知的所有権は、社会が認めるライセンスにすぎない。というのは、良き
+につけ悪しきにつけ、知的所有権を認めることにより社会全体が利益を得ると
+考えられたからである。しかし、どのような特殊な状況においても、我々には
+問直さなければならないことがある。「我々はそのようなライセンスを認める
+ことで本当により裕福になるのか？」、「我々はどのような種類の行為を人に
+許可しているというだろうか？」と。
+
+今日のプログラム事情は、100年前の書物のときとは全く異なっている。例えば、
+プログラムを複写するときの最も簡単な方法は、隣の人からさらに隣の人へと
+順にまわしていくという事実や、プログラムにはソース・コードとオブジェク
+ト・コードがあってそれぞれ別のものであるという事実、プログラムは読んだ
+り楽しむものではなく使用されるものであるという事実が混ぜ合わされて、著
+作権を押し通す人が、物質的にも精神的にも社会全体に害を及ぼしている状況
+を作り出しているのである。つまり、法的に著作権の強要が可能かどうかにか
+かわらず、人はそのようなことをすべきではないということである。
+
+     『競争が物事をより良くしていく。』
+
+競争の典型はレースである。勝者には報酬が与えられるので、誰もがもっと速
+く走ろうと努力する。資本主義が本当にこの方法で機能すればよいが、資本主
+義の擁護者は、この方法で常に機能することを前提としている点が間違ってい
+る。例えば、なぜ報酬が与えられるのかを走者が忘れてしまい、手段を選ばず
+勝つことのみに執着したとすれば、他の走者を攻撃するといった他の作戦をと
+るかもしれない。走者達が真っ先に殴り合いをしてしまえば、皆のゴールイン
+が遅れてしまうだろう。
+
+ソフトウェアの占有と秘密は、真っ先に殴り合う走者と道義的には同じである。
+悲しいことに、我々の唯一の審判でさえ、殴り合いに反対していないように見
+える。ただ走者を（『10ヤード走るごとに1発殴ってもよい』というふうにして）
+規制するだけである。審判は本来、そのような走者達の中に分け入って、暴力
+を働こうとした走者を罰してしかるべきである。
+
+     『金銭的な刺激がなくなっては誰もプログラミングなどしないのではない
+     か？』
+
+実際には、多くの人々が金銭的刺激が皆無であってもプログラムを書いている
+だろう。プログラミングには、一部の人にとってはたまらないほどの魅力があ
+り、そういう人こそプログラミングに最も向いている。音楽で生計を立てる望
+みがないからといって、プロの音楽家がいなくなることはない。
+
+しかし、この疑問は実際、よく提起されるのだが、現実に即してはいない。プ
+ログラマへの支払いは少なくなっても、無くなることはない。したがって、正
+しい質問は、『金銭的な魅力が減っても人はプログラムを書くか？』となる。
+私の経験がそれを語っている。
+
+10年以上もの間、世界中の多くの最優秀プログラマが、よそでならもっと収入
+を得られたはずにも関わらず、AIラボで働いてきた。彼らは、金銭ではない報
+酬、例えば、名声や感謝といったものを得てきた。そして、創造は楽しくもあ
+り、それ自体が自分への報償であった。
+
+やがて、彼らの大半は、多くの給料をもらいながら引き続き興味ある同じ仕事
+ができる機会を与えられて去っていった。
+
+この事実は、人は金持ちになること以外の理由でもプログラムを書くというこ
+とを示している。しかし、より多くのお金を得る機会があれば、人はそれを期
+待し求めもするだろう。給料が少ない組織は、多いところと競争すれば劣勢に
+はなるが、給料の多い組織が息詰まっても、少ないほうまで悪くなるわけでは
+ない。
+
+     『我々は絶望的になってプログラマを必要としているのではないか。我々
+     の隣人を助けるのをやめるようプログラマが我々に要求すれば、我々はそ
+     れに従わざるを得ない。』
+
+あなたは、そういった要求に従うほど決して絶望的ではない。忘れないでいた
+だきたい。そのような要求に従わなければ数百万ドルの価値となるが、従えば
+1セントもの賛辞には値しないのである！
+
+     『プログラマは何とかして生計を立てなくてはならない。』
+
+短い目で見ればこれは当てはまる。だが、プログラマが、プログラムの使用権
+を売らずに生計を立てていける方法はいくらでもある。この方法は、他に生計
+を立てる手立てがないからではなく、プログラマやビジネスマンに多額のお金
+をもたらすので、今では慣習的となっている。他の方法を見つけようと思えば
+簡単に見つかる。その例をいくつか示しておく。
+
+新しいコンピュータを導入している製造業者は、新しいハードウェアにオペレー
+ティング・システムを移植する作業に対して支払うだろう。
+
+プログラミングに関する教育や指導、保守といったサービスをビジネスとする
+場合にもプログラマを雇うことができるだろう。
+
+新しいアイデアを持った人は、プログラムをフリーウェアとして配布し、それ
+に満足したユーザに寄付を求めたり、簡単な指導サービスをビジネスにするこ
+とができるだろう。私は、この方法を既に実践して成功した人々を知っている。
+
+似たような要求があるユーザ同士は、ユーザ・グループを組織し、会費を払う。
+グループでは、ソフトウェア業者と契約して、メンバーが使いたいプログラム
+を作成してもらう。
+
+あらゆる種類の開発が、以下に示す「ソフトウェア税」で積み立てることがで
+きる。
+
+     コンピュータを買う人は誰でも、ソフトウェア税として、その価格のxパー
+     セントを支払うようにする。政府は、これを、ソフトウェア開発のために
+     NSF （[訳注]米国科学財団、National Science Foundation）のような機
+     関に与える。
+
+     ただし、コンピュータの購入者がソフトウェア開発に寄付する場合には、
+     相当額の税金控除となる。自分で選んだプロジェクトへ寄付することがで
+     きる。ほとんどは、プロジェクトの成果を利用したいような所を選ぶだろ
+     う。本来支払うべき税金の合計を上限として、寄付金の額に応じて控除す
+     ることができる。
+
+     全体の税率は、課税額に応じて重み付けをし、納税者の投票によって決定
+     可能とする。
+
+     その結果、
+
+        * コンピュータを使用するコミュニティはソフトウェア開発を支援す
+          る。
+        * そのコミュニティは、どの程度のサポートが必要なのかを決定する。
+        * 自分達の負担したものがどのプロジェクトに費されるかに関心のあ
+          るユーザは、自分で（[訳注]立ち上げて欲しい）プロジェクトを選
+          ぶことができる。
+
+長い目で見た場合には、プログラムをフリーにすることは、欠乏の無い世界へ
+の第一歩であり、そこでは誰も生計を立てるためだけにあくせく働く必要はな
+いだろう。人々は、週に10時間の課せられた仕事、例えば、法律の制定や、家
+族との相談、ロボットの修理、小惑星の試掘といった必要な仕事をこなしたあ
+とは、プログラミングといった楽しめる活動に自由に専念することになるだろ
+う。もはやプログラミングで生計を立てる必要はなくなる。
+
+我々は既に、社会全体が実質的生産のためにしなければならない作業量を大幅
+に減らしてきたが、そのうちのほんのわずかが労働者の娯楽に変わっただけで
+ある。というのは、生産活動に伴い多くの非生産活動が必要とされるからであ
+る。その主な原因は、官僚主義と競争に対する差の無い骨折りである。フリー・
+ソフトウェアは、ソフトウェア生産の分野でこれらの乱費流出を大幅に減らす
+だろう。生産における技術的利得が我々にとっての労働の軽減になるよう、我々
+はこれを行なっていかなければならないのである。
+
+

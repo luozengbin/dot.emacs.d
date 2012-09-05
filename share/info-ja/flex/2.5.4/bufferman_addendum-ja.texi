@@ -1,0 +1,93 @@
+@c Copyright (C) 1999 Kazuhisa Ichikawa
+@c This is part of the Flex manual, as published by ASCII
+@ignore
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission notice
+identical to this one except for the removal of this paragraph (this
+paragraph not being relevant to the printed manual).
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Free Software Foundation.
+@end ignore
+
+@c @node Buffer Manipulation (Flex 2.5), Example of Multiple Buffers, Buffer Manipulation, Multiple Input Buffers
+@subsection バッファを操作する関数（Flex 2.5の補足情報）
+
+Flex 2.5では、
+以下のバッファ操作関数もサポートされています。
+
+@itemize
+@table @code
+@findex @code{yy_new_buffer()}@r{、詳細}
+@item YY_BUFFER_STATE yy_new_buffer(FILE *file, int size)
+@code{yy_create_buffer}の別名です。
+
+@findex @code{yy_flush_buffer()}@r{、詳細}
+@item void yy_flush_buffer(YY_BUFFER_STATE buffer)
+引数で指定されたバッファの内容を破棄し、
+バッファの先頭２バイトに@code{YY_END_OF_BUFFER_CHAR}（@samp{\0}）をセットします。
+
+@findex @code{YY_FLUSH_BUFFER}@r{、詳細}
+@item YY_FLUSH_BUFFER
+引数にカレント・バッファを指定して@code{yy_flush_buffer()}を呼び出すよう定義されたマクロです。
+@end table
+@end itemize
+
+さらに、
+Flex 2.5では、
+メモリ上の文字列を操作するための入力バッファを作成する関数が提供されています。
+いずれも、
+新しく作成された入力バッファに対応する@code{YY_BUFFER_STATE}型のハンドルを戻り値とします。
+入力バッファを使い終わったら、
+このハンドルを引数に指定して@code{yy_delete_buffer()}を呼び出す必要があります。
+
+@itemize
+@table @code
+@findex @code{yy_scan_string()}@r{、詳細}
+@item YY_BUFFER_STATE yy_scan_string(const char *@var{str})
+NULL文字で終端する文字列をスキャンするための入力バッファを作成します。
+実際には、
+引数@var{str}に指定された文字列の長さを調べて、
+次に説明する@code{yy_scan_bytes()}を呼び出し、
+その戻り値を返します。
+
+@findex @code{yy_scan_bytes()}@r{、詳細}
+@item YY_BUFFER_STATE yy_scan_bytes(const char *@var{bytes}, int @var{len})
+@var{bytes}から始まる@var{len}バイトのメモリ領域をスキャンするためのバッファを作成します。
+実際には、
+次に説明する@code{yy_scan_buffer()}を呼び出し、
+その戻り値を返します。
+
+@code{yy_scan_buffer()}の第１引数には、
+@var{bytes}ではなく、
+この関数の内部で獲得された@code{@var{len} + 2}バイトの領域へのポインタが渡される点に注意してください。
+@code{yy_scan_buffer()}が呼び出される前に、
+@var{bytes}から始まる@var{len}バイトのデータが、
+新たに獲得した領域にコピーされ、
+さらに、
+末尾の2バイトに@code{YY_END_OF_BUFFER_CHAR}（@samp{\0}）がセットされます。
+
+@findex @code{yy_scan_buffer()}@r{、詳細}
+@item YY_BUFFER_STATE yy_scan_buffer(char *@var{base}, yy_size_t @var{size})
+@var{base}から始まる@var{size}バイトのメモリ領域をスキャンするためのバッファを作成します。
+メモリ領域の末尾2バイトは、
+@code{YY_END_OF_BUFFER_CHAR}（@samp{\0}）でなければなりません。
+この末尾2バイトは、
+スキャン処理の対象になりません。
+
+引数で指定されたメモリ領域の末尾2バイトが@code{YY_END_OF_BUFFER_CHAR}でない場合は、
+@code{yy_scan_buffer()}はバッファを作成せず、
+NULLポインタを返します。
+@end table
+@end itemize

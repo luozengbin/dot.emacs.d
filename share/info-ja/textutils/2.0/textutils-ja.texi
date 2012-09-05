@@ -1,0 +1,4162 @@
+\input texinfo
+
+@c %**start of header
+@setfilename textutils-ja.info
+@settitle GNU text utilities
+@c %**end of header
+
+@c @documentlanguage ja
+
+@include textutils-v.texi
+
+@c Define new indices.
+@defcodeindex op
+
+@c Put everything in one index (arbitrarily chosen to be the concept index).
+@syncodeindex fn cp
+@syncodeindex ky cp
+@syncodeindex op cp
+@syncodeindex pg cp
+@syncodeindex vr cp
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* Text utilities(ja): (textutils-ja).           GNU text utilities.
+* cat(ja): (textutils-ja)cat invocation.        Concatenate and write files.
+* cksum(ja): (textutils-ja)cksum invocation.    Print @sc{posix} CRC checksum.
+* comm(ja): (textutils-ja)comm invocation.      Compare sorted files by line.
+* csplit(ja): (textutils-ja)csplit invocation.  Split by context.
+* cut(ja): (textutils-ja)cut invocation.        Print selected parts of lines.
+* expand(ja): (textutils-ja)expand invocation.  Convert tabs to spaces.
+* fmt(ja): (textutils-ja)fmt invocation.        Reformat paragraph text.
+* fold(ja): (textutils-ja)fold invocation.      Wrap long input lines.
+* head(ja): (textutils-ja)head invocation.      Output the first part of files.
+* join(ja): (textutils-ja)join invocation.      Join lines on a common field.
+* md5sum(ja): (textutils-ja)md5sum invocation.  Print or check message-digests.
+* nl(ja): (textutils-ja)nl invocation.          Number lines and write files.
+* od(ja): (textutils-ja)od invocation.          Dump files in octal, etc.
+* paste(ja): (textutils-ja)paste invocation.    Merge lines of files.
+* pr(ja): (textutils-ja)pr invocation.          Paginate or columnate files.
+* ptx(ja): (textutils-ja)ptx invocation.        Produce permuted indexes.
+* sort(ja): (textutils-ja)sort invocation.      Sort text files.
+* split(ja): (textutils-ja)split invocation.    Split into fixed-size pieces.
+* sum(ja): (textutils-ja)sum invocation.        Print traditional checksum.
+* tac(ja): (textutils-ja)tac invocation.        Reverse files.
+* tail(ja): (textutils-ja)tail invocation.      Output the last part of files.
+* tsort(ja): (textutils-ja)tsort invocation.    Topological sort.
+* tr(ja): (textutils-ja)tr invocation.          Translate characters.
+* unexpand(ja): (textutils-ja)unexpand invocation.  Convert spaces to tabs.
+* uniq(ja): (textutils-ja)uniq invocation.      Uniquify files.
+* wc(ja): (textutils-ja)wc invocation.          Byte, word, and line counts.
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@ifinfo
+This file documents the GNU text utilities.
+
+Copyright (C) 1994, 95, 96 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@titlepage
+@title GNU @code{textutils}
+@subtitle A set of text utilities
+@subtitle for version @value{VERSION}, @value{UPDATED}
+@author David MacKenzie et al.
+@c 翻訳：西尾 太
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1994, 95, 96 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+
+
+@c If your makeinfo doesn't grok this @ifnottex directive, then either
+@c get a newer version of makeinfo or do s/ifnottex/ifinfo/ here and on
+@c the matching @end directive below.
+@c @ifnottex
+@ifnottex
+@node Top
+@top GNU text utilities
+
+@cindex text utilities
+@cindex utilities for text handling
+
+このマニュアルは，GNUテキストユーティリティのバージョン@value{VERSION}の，
+ドキュメントです．
+
+@menu
+* Introduction::                       Caveats, overview, and authors.
+* Common options::                     Common options.
+* Output of entire files::             cat tac nl od
+* Formatting file contents::           fmt pr fold
+* Output of parts of files::           head tail split csplit
+* Summarizing files::                  wc sum cksum md5sum
+* Operating on sorted files::          sort uniq comm ptx tsort
+* Operating on fields within a line::  cut paste join
+* Operating on characters::            tr expand unexpand
+* Opening the software toolbox::       The software tools philosophy.
+* Index::                              General index.
+
+@detailmenu
+ --- 詳細なノードリスト ---
+
+ファイル全体の出力
+
+* cat invocation::              Concatenate and write files.
+* tac invocation::              Concatenate and write files in reverse.
+* nl invocation::               Number lines and write files.
+* od invocation::               Write files in octal or other formats.
+
+ファイル内容の書式化
+
+* fmt invocation::              Reformat paragraph text.
+* pr invocation::               Paginate or columnate files for printing.
+* fold invocation::             Wrap input lines to fit in specified width.
+
+ファイルの一部を出力
+
+* head invocation::             Output the first part of files.
+* tail invocation::             Output the last part of files.
+* split invocation::            Split a file into fixed-size pieces.
+* csplit invocation::           Split a file into context-determined pieces.
+
+ファイルの要約
+
+* wc invocation::               Print byte, word, and line counts.
+* sum invocation::              Print checksum and block counts.
+* cksum invocation::            Print CRC checksum and byte counts.
+* md5sum invocation::           Print or check message-digests.
+
+ソートされたファイルの処理
+
+* sort invocation::             Sort text files.
+* uniq invocation::             Uniquify files.
+* comm invocation::             Compare two sorted files line by line.
+* ptx invocation::              Produce a permuted index of file contents.
+* tsort invocation::            Topological sort.
+
+@code{ptx}: Produce permuted indexes
+
+* General options in ptx::      Options which affect general program behavior.
+* Charset selection in ptx::    Underlying character set considerations.
+* Input processing in ptx::     Input fields, contexts, and keyword selection.
+* Output formatting in ptx::    Types of output format, and sizing the fields.
+* Compatibility in ptx::        The GNU extensions to @code{ptx}
+
+行のフィールド上の処理
+
+* cut invocation::              Print selected parts of lines.
+* paste invocation::            Merge lines of files.
+* join invocation::             Join lines on a common field.
+
+文字上の処理
+
+* tr invocation::               Translate, squeeze, and/or delete characters.
+* expand invocation::           Convert tabs to spaces.
+* unexpand invocation::         Convert spaces to tabs.
+
+@code{tr}: 文字の変換，圧縮そして/または，削除
+
+* Character sets::              Specifying sets of characters.
+* Translating::                 Changing one characters to another.
+* Squeezing::                   Squeezing repeats and deleting.
+* Warnings in tr::              Warning messages.
+
+ソフトウェアツールボックスを開く
+
+* Toolbox introduction::        Toolbox introduction
+* I/O redirection::             I/O redirection
+* The who command::             The @code{who} command
+* The cut command::             The @code{cut} command
+* The sort command::            The @code{sort} command
+* The uniq command::            The @code{uniq} command
+* Putting the tools together::  Putting the tools together
+
+@end detailmenu
+@end menu
+
+@end ifnottex
+
+@node Introduction
+@chapter はじめに
+
+@cindex introduction
+
+このマニュアルは不完全です．初心者に適した方法で，基本的な概念を説明しよ
+うとしていません．それゆえ，興味があればこのマニュアルの改善に係わってく
+ださい．GNUコミュニティ全体が利益を得るでしょう．
+
+@cindex POSIX.2
+GNUテキストユーティリティーは，ほとんど@sc{posix.2}標準と互換性がありま
+す．
+
+@c This paragraph appears in all of fileutils.texi, textutils.texi, and
+@c sh-utils.texi too -- so be sure to keep them consistent.
+@cindex bugs, reporting
+
+バグを@email{bug-textutils@@gnu.org}に報告してください．バージョンナン
+バー，マシンアーキテクチャ，入力ファイルと，バグの再現に必要なあらゆる情
+報含めることを忘れないでください．入力と，期待したものと，得たものと，間
+違っている理由です．diffは歓迎しますが，これは推測が難しいときもあるので，
+問題の記述も含めてください．@xref{Bugs, , , gcc, GNU CC}.
+
+このマニュアルは配布物のUNIX man page に基づいていて，それは，元々David
+MacKenzieによって書かれ，Jim Meyeringによって更新されました．元となる 
+@code{fmt} man pageは，Ross Patersonによって書かれました．Fran@,{c}ois
+Pinardは，Texinfoフォーマットへの最初の変換を行いました．Karl Berryは索
+引の追加と，いくつかの再編成と，結果の編集を行いました．Richard Stallman 
+は，全体的なプロセスに，彼のいつもの貴重な洞察を寄稿しました．
+
+@node Common options
+@chapter 共通のオプション
+
+@cindex common options
+
+特定のオプションは，これらすべてのプログラムで利用可能です．それぞれのプ
+ログラムのために，同一の記述を書くのではなく，それらはここで記述されます．
+(実際，すべてのGNUプログラムが，これらのオプションを受け入れる(あるいは
+受け入れるべき)です．)
+
+これらのプログラムには，任意の文字列を引数として持つものもあります．その
+場合，@samp{--help}と@samp{--version}は，1つあり，正確に1つのコマンドラ
+イン引数の場合のみ，オプションとして受け入れられます．
+
+@table @samp
+
+@item --help
+@opindex --help
+@cindex help, online
+すべての利用可能なオプションをリストアップした，使用法のメッセージを出力
+し，正しく終了します．
+
+@item --version
+@opindex --version
+@cindex version number, finding
+バージョンナンバーを出力して，正しく終了します．
+
+@end table
+
+
+@node Output of entire files
+@chapter ファイル全体の出力
+
+@cindex output of entire files
+@cindex entire files, output of
+
+これらのコマンドは，いくつかの方法で，できる限りファイルを変換しながら，
+ファイル全体を読み込み，そして書き出します．
+
+@menu
+* cat invocation::              Concatenate and write files.
+* tac invocation::              Concatenate and write files in reverse.
+* nl invocation::               Number lines and write files.
+* od invocation::               Write files in octal or other formats.
+@end menu
+
+@node cat invocation
+@section @code{cat}: ファイルを連結し書き込む
+
+@pindex cat
+@cindex concatenate and write files
+@cindex copying files
+
+@code{cat}は，それぞれの@var{file}(@samp{-}は標準入力を意味します)か，与
+えられない場合は標準入力を，標準出力へコピーします．概要です．
+
+@example
+cat [@var{option}] [@var{file}]@dots{}
+@end example
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -A
+@itemx --show-all
+@opindex -A
+@opindex --show-all
+@samp{-vET} と同じです．
+
+@item -B
+@itemx --binary
+@opindex -B
+@opindex --binary
+@cindex binary and text I/O in cat
+MS-DOSとMS-Windowsのみで，ファイルをバイナリモードで読み書きします．デフォ
+ルトで，MS-DOS/MS-Windowsでの@code{cat}は，標準出力がファイルやパイプに
+リダイレクトされているときのみ，バイナリモードを使用します．このオプショ
+ンは優先されます．バイナリファイルのI/Oでは，@code{cat}はファイルのコピー
+プログラムとして使用されることが多いので，それらの書式(DOSテキストとバイ
+ナリに対するUnixテキスト)を保つために使われます．(以下の)オプションには，
+ときとして元ファイルの内容が重要でないので，@code{cat}にテキストモードで
+読み書きさせるものもあります(例えば，行が@code{cat}で番号付けされるとき
+や行の終りに印を付けるとき)．これは，これらのオプションがDOS/Windowsユー
+ザーが期待したように働くためのものです．例えば，DOS形式のテキストファイ
+ルは，テキストモードで読まれない場合，@samp{-b}で空の行として扱われない，
+CR-LF というペアの文字を行末に持ちます．
+
+@item -b
+@itemx --number-nonblank
+@opindex -b
+@opindex --number-nonblank
+空白でない全ての出力行に，1で始まる番号を付けます．MS-DOSとMS-Windowsで
+は，このオプションで，@code{cat}はテキストモードでファイルを読み書きしま
+す．
+
+@item -e
+@opindex -e
+@samp{-vE} と同じです．
+
+@item -E
+@itemx --show-ends
+@opindex -E
+@opindex --show-ends
+それぞれの行末の後に@samp{$}を表示します．MS-DOSとMS-Windowsでは，このオ
+プションで，@code{cat}はテキストモードでファイルを読み書きします．
+
+@item -n
+@itemx --number
+@opindex -n
+@opindex --number
+全ての出力行に，1で始まる番号を付けます．MS-DOSとMS-Windowsでは，この
+オプションで，@code{cat}はテキストモードでファイルを読み書きします．
+
+@item -s
+@itemx --squeeze-blank
+@opindex -s
+@opindex --squeeze-blank
+@cindex squeezing blank lines
+複数の隣接した空白行を，1行のブランク行に置換します．MS-DOSとMS-Windows
+では，このオプションで，@code{cat}はテキストモードでファイルを読み書きし
+ます．
+
+@item -t
+@opindex -t
+@samp{-vT}と同じです．
+
+@item -T
+@itemx --show-tabs
+@opindex -T
+@opindex --show-tabs
+TAB文字を @samp{^I}として表示します．
+
+@item -u
+@opindex -u
+無視されます．Unix互換性のためです．
+
+@item -v
+@itemx --show-nonprinting
+@opindex -v
+@opindex --show-nonprinting
+LFDとTAB以外のコントロール文字を，@samp{^}表記法を使って表示し，
+@samp{M-}を使ったハイビットセットを持っている文字に優先します．MS-DOSと
+MS-Windowsでは，このオプションで，@code{cat}はDOSバイナリモードでファイ
+ルと標準入力を読むので，それぞれの行末のCR文字は表示されます．
+
+@end table
+
+@node tac invocation
+@section @code{tac}: 逆順にファイルを連結し書き込む
+
+@pindex tac
+@cindex reversing files
+
+@code{tac}は，それぞれの@var{file}(@samp{-} は，標準入力を意味します)か，
+与えられない場合は標準入力を，それぞれに分けられたレコード(デフォルトは
+行)を，逆順に標準出力へコピーします．概要です．
+
+@example
+tac [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@dfn{レコード}は，文字列のインスタンス(デフォルトは改行)で分けられていま
+す．デフォルトで，このセパレータ文字列はファイルに続くレコードの終りに付
+加されます．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -b
+@itemx --before
+@opindex -b
+@opindex --before
+セパレータを，ファイルの前の，レコードの最初に付加します．
+
+@item -r
+@itemx --regex
+@opindex -r
+@opindex --regex
+セパレータ文字列を正規表現として扱います．MS-DOS/MS-Windowsで@code{tac} 
+ユーザは，@code{tac}はファイルをバイナリモードで読むので，テキストファイ
+ルのそれぞれの行は，UnixスタイルのLFの代わりにCR/LFのペアで終ることに注
+意してください．
+
+@item -s @var{separator}
+@itemx --separator=@var{separator}
+@opindex -s
+@opindex --separator
+@var{separator}を，改行の代わりに，セパレータ文字列として用います．
+
+@end table
+
+
+@node nl invocation
+@section @code{nl}: 行に番号を付けファイルに書き込む
+
+@pindex nl
+@cindex numbering lines
+@cindex line numbering
+
+@code{nl}は，それぞれの@var{file}(@samp{-} は標準入力を意味します)か，与
+えられない場合は標準入力を，行のいくつか，または全てに行番号を加えて，標
+準出力へ書き出します．概要です．
+
+@example
+nl [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@cindex logical pages, numbering on
+@code{nl}は，入力を(論理)ページに分解します．デフォルトで，それぞれの論
+理ページのトップで，行番号は1にリセットされます．@code{nl}は，全ての入力
+ファイルを単一のドキュメントとして扱います．行番号や論理ページをファイル
+間でリセットしません．
+
+@cindex headers, numbering
+@cindex body, numbering
+@cindex footers, numbering
+論理ページは，3つのセクションから成立ちます．ヘッダとボディとフッタです．
+あらゆるセクションは，空にすることもできます．それぞれは，異なるスタイル
+で番号を付けられます．
+
+論理ページのセクションの最初は，以下のデリミタ文字列の1つを，入力ファイ
+ルに単一行で含めることで示されます．
+
+@table @samp
+@item \:\:\:
+ヘッダの始まり．
+
+@item \:\:
+ボディの始まり
+
+@item \:
+フッタの始まり．
+
+@end table
+
+これらの文字列を構成する2つの文字は，@samp{\}と@samp{:}からの変更はオプ
+ション(以下を参照)で可能ですが，パターンと文字列の長さは変更できません．
+
+セクションデリミタは，出力では空行に置換されます．入力ファイルの，最初の
+セクションのデリミタ文字列より前のあらゆるテキストは，ボディセクションの
+一部と考えられるので，@code{nl}は，セクションデリミタが無いファイルを，1
+つのボディセクションとして扱います．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -b @var{style}
+@itemx --body-numbering=@var{style}
+@opindex -b
+@opindex --body-numbering
+それぞれの論理ページのボディセクションの行に対し，番号付けのスタイルを選
+択します．行が番号付けされないとき，現在の行番号は増加しませんが，行番号
+を分ける文字列は行に前置されます．スタイルは以下のとおりです．
+
+@table @samp
+@item a
+全ての行に番号を付けます．
+
+@item t
+(デフォルトでボディに対し)空でない行だけ，番号を付けます．
+
+@item n
+(デフォルトでヘッダやフッタに対し)番号を付けません．
+
+@item p@var{regexp}
+@var{regexp}に一致したものを含む行だけ番号を付けます．
+
+@end table
+
+@item -d @var{cd}
+@itemx --section-delimiter=@var{cd}
+@opindex -d
+@opindex --section-delimiter
+@cindex section delimiters of pages
+セクションデリミタ文字を@var{cd}にセットします．デフォルトは@samp{\:}で
+す．@var{c}のみ与えられた場合，2番目の@samp{:}はそのままです．(シェルが
+拡張する@samp{\}や他のメタ文字を，引用符やバックスラッシュの追加で保護す
+ることを，忘れないでください．)
+
+@item -f @var{style}
+@itemx --footer-numbering=@var{style}
+@opindex -f
+@opindex --footer-numbering
+@samp{--body-numbering}に似ています．
+
+@item -h @var{style}
+@itemx --header-numbering=@var{style}
+@opindex -h
+@opindex --header-numbering
+@samp{--body-numbering}に似ています．
+
+@item -i @var{number}
+@itemx --page-increment=@var{number}
+@opindex -i
+@opindex --page-increment
+行番号を@var{number}づつ(デフォルトは1)増加します．
+
+@item -l @var{number}
+@itemx --join-blank-lines=@var{number}
+@opindex -l
+@opindex --join-blank-lines
+@cindex empty lines, numbering
+@cindex blank lines, numbering
+@var{number}(デフォルトは1)連続した空行を，番号付けに対し1つの論理行だと
+考え，最後のもののみに番号付けします．@var{number}より少ない行の連続した
+空行があるところでは番号付けをしません．空行は，スペースやタグを含め，文
+字を含まないものです．
+
+@item -n @var{format}
+@itemx --number-format=@var{format}
+@opindex -n
+@opindex --number-format
+行の番号付けの書式を選択します(デフォルトは@code{rn}です)．
+
+@table @samp
+@item ln
+@opindex ln @r{format for @code{nl}}
+左寄せで，先頭の0を置きません．
+
+@item rn
+@opindex rn @r{format for @code{nl}}
+右寄せで，先頭の0を置きません．
+
+@item rz
+@opindex rz @r{format for @code{nl}}
+右寄せで，先頭の0を置きます．
+@end table
+
+@item -p
+@itemx --no-renumber
+@opindex -p
+@opindex --no-renumber
+論理ページの最初で，行番号をリセットしません．
+
+@item -s @var{string}
+@itemx --number-separator=@var{string}
+@opindex -s
+@opindex --number-separator
+出力で，@var{string}を使って(デフォルトはTAB文字)テキスト行と行番号を
+分けます．
+
+@item -v @var{number}
+@itemx --starting-line-number=@var{number}
+@opindex -v
+@opindex --starting-line-number
+それぞれの論理ページの行番号の初期値を，@var{number}(デフォルトは1)にセッ
+トします．
+
+@item -w @var{number}
+@itemx --number-width=@var{number}
+@opindex -w
+@opindex --number-width
+行番号に，@var{number}文字使います(デフォルトは6)．
+
+@end table
+
+
+@node od invocation
+@section @code{od}: 8進やその他の書式でファイルを書き出す
+
+@pindex od
+@cindex octal dump of files
+@cindex hex dump of files
+@cindex ASCII dump of files
+@cindex file contents, dumping unambiguously
+
+@code{od}は，それぞれの@var{file}(@samp{-}は標準入力を意味します)か，与
+えられない場合は標準入力の，明瞭な表現を書き込みます．概要です．
+
+@example
+od [@var{option}]@dots{} [@var{file}]@dots{}
+od -C [@var{file}] [[+]@var{offset} [[+]@var{label}]]
+@end example
+
+それぞれの出力行は，入力オフセットと，それに続くファイルデータのグループ
+から成り立ちます．デフォルトで，@code{od}は8進数でオフセットを出力し，そ
+れぞれのファイルのデータグループは，1つの8進数で出力された，入力の2バイ
+トです．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -A @var{radix}
+@itemx --address-radix=@var{radix}
+@opindex -A
+@opindex --address-radix
+@cindex radix for file offsets
+@cindex file offset radix
+出力するファイルオフセットの基数を選択します．@var{radix}は，以下の1つが
+使えます．
+
+@table @samp
+@item d
+10進数．
+
+@item o
+8進数．
+
+@item x
+16進数．
+
+@item n
+なし(出力オフセットを出力しません)．
+@end table
+
+デフォルトは8進数です．
+
+@item -j @var{bytes}
+@itemx --skip-bytes=@var{bytes}
+@opindex -j
+@opindex --skip-bytes
+書式化と書き出しの前に，入力バイトの@var{bytes}スキップします．
+@var{bytes}が@samp{0x}や@samp{0X}で始まる場合，16進数と解釈されます．そ
+れ以外で，@samp{0}で始まる場合は8進数．それ以外では10進数です．@samp{b}
+の追加は@var{bytes}を512倍し，@samp{k}は1024倍，そして@samp{m}は1048576
+倍です．
+
+@item -N @var{bytes}
+@itemx --read-bytes=@var{bytes}
+@opindex -N
+@opindex --read-bytes
+入力の@var{bytes}バイトを最大で出力します．@code{bytes}に対する接頭辞と
+接尾子は，@samp{-j}に対するものと同じように解釈されます．
+
+@item -s [@var{n}]
+@itemx --strings[=@var{n}]
+@opindex -s
+@opindex --strings
+@cindex string constants, outputting
+通常の出力の代わりに，@dfn{文字列定数}のみを出力します．少なくとも
+@var{n}(デフォルトは3)個の連続した@sc{ascii}グラフィック文字で，それには
+null(ゼロ)バイトが続きます．
+
+@item -t @var{type}
+@itemx --format=@var{type}
+@opindex -t
+@opindex --format
+ファイルデータの出力書式を選択します．@var{type}は，以下の形式を示す文字
+の1つ以上の文字列です．単一の@var{type}文字列に，1つ以上の形式を示す文字
+を含めたり，1回以上このオプションを使用した場合，@code{od}は，それぞれの
+指定したデータ形式を用いて，それぞれの出力行のコピーを，指定した順番で書
+き出します．
+
+あらゆる形式指定の終りに``z''を加えることで，形式指定で生成された出力行
+に，印刷可能な文字に存在する@sc{ascii}文字の表示を加えます．
+
+@table @samp
+@item a
+指名された文字，
+@item c
+@sc{ascii}文字，またはバックスラッシュエスケープ，
+@item d
+符号付き10進数，
+@item f
+浮動小数点，
+@item o
+8進数，
+@item u
+符号無し10進数，
+@item x
+16進数．
+@end table
+
+形式@code{a}は，スペースに対し@samp{sp}，改行に対し@samp{nl}，そして
+null(ゼロ)バイトに対し@samp{nul} のようなものを出力します．形式@code{c}
+は，それぞれ@samp{ }，@samp{\n}，そして@code{\0}を出力します．
+
+@cindex type size
+@samp{a}と@samp{c}以外の形式に対し，それぞれの数字の解釈に使用するバイト
+数を，以下の10進数の整数を伴う形式を示す文字で与えられたデータ形式で指定
+することができます．また，以下の文字の1つを伴う以下の形式を示す文字で，C
+コンパイラ組込みのデータ形式を指定することもできます．整数(@samp{d}，
+@samp{o}，@samp{u}，@samp{x})に対しては以下のようになります．
+
+@table @samp
+@item C
+char,
+@item S
+short,
+@item I
+int,
+@item L
+long.
+@end table
+
+浮動小数点(@code{f})に対しては以下のようになります．
+
+@table @asis
+@item F
+float,
+@item D
+double,
+@item L
+long double.
+@end table
+
+@item -v
+@itemx --output-duplicates
+@opindex -v
+@opindex --output-duplicates
+同一の連続した行を出力します．デフォルトで，2行以上連続した出力行が同一
+のとき，@code{od}は，最初の行のみ出力し，それ以下の行には，省略を示すた
+めアスタリスクを置くだけです．
+
+@item -w[@var{n}]
+@itemx --width[=@var{n}]
+@opindex -w
+@opindex --width
+出力行毎に，@code{n}入力バイトをダンプします．それは，出力形式で指定した
+ものに関連するサイズの公倍数の倍数にする必要があります．@var{n}が偶数の
+場合，デフォルトは32です．オプションが全く指定されていない場合，デフォル
+トは16です．
+@end table
+
+次のいくつかのオプションは，古いpre-@sc{posix}書式の指定オプションを，対
+応する@sc{posix}書式のスペックにマップします．GNU @code{od}は，古い形式
+と新しい形式のオプションのあらゆる組合せを受け入れます．書式指定オプショ
+ンは蓄積されます．
+
+@table @samp
+
+@item -a
+@opindex -a
+指名された文字として出力します．@samp{-ta}と同じです．
+
+@item -b
+@opindex -b
+8進数のバイトとして出力します．@samp{-toC}と同じです．
+
+@item -c
+@opindex -c
+@sc{ascii}文字，またはバックスラッシュエスケープとして出力します．
+@samp{-tc}と同じです．
+
+@item -d
+@opindex -d
+符号無しの10進数のshortとして出力します．@samp{-tu2}と同じです．
+
+@item -f
+@opindex -f
+浮動小数点として出力します．@samp{-tfF}と同じです．
+
+@item -h
+@opindex -h
+16進数のshortとして出力します．@samp{-tx2}と同じです．
+
+@item -i
+@opindex -i
+10進数のshortとして出力します．@samp{-td2}と同じです．
+
+@item -l
+@opindex -l
+10進数のlongとして出力します．@samp{-td4}と同じです．
+
+@item -o
+@opindex -o
+8進数のshortとして出力します．@samp{-to2}と同じです．
+
+@item -x
+@opindex -x
+16進数のshortとして出力します．@samp{-tx2}と同じです．
+
+@item -C
+@itemx --traditional
+@opindex --traditional
+古い@code{od}が受け入れる，pre-@sc{posix}のオプション引数が無いものと認
+識します．以下の構文です．
+
+@example
+od --traditional [@var{file}] [[+]@var{offset}[.][b] [[+]@var{label}[.][b]]]
+@end example
+
+@noindent
+これは，最大1ファイルと，オプション引数で指定しているオフセットと疑似ス
+タートアドレス，@var{label}を指定するために使用されるはずです．デフォル
+トで，@var{offset}は，書式化と書き出しの前にスキップする入力バイトの量が，
+8進数で指定されていると解釈されます．オプションで10進数の点を後置すると，
+@var{offset}の解釈は強制的に10進数とします．10進数が指定されておらず，オ
+フセットが@samp{0x}や@samp{0X}で始まる場合，それは16進数として解釈されま
+す．@samp{b}の後置がある場合，スキップされるバイト数は@var{offset}の512 
+倍になります．@var{label}引数は，@var{offset}のように解釈されますが，そ
+れは初期の疑似アドレスを指定します．疑似アドレスは，通常のアドレスに続く
+カッコ内に表示されます．
+@end table
+
+
+@node Formatting file contents
+@chapter ファイルの内容の書式化
+
+@cindex formatting file contents
+
+これらのコマンドは，ファイルの内容を再書式化します．
+
+@menu
+* fmt invocation::              Reformat paragraph text.
+* pr invocation::               Paginate or columnate files for printing.
+* fold invocation::             Wrap input lines to fit in specified width.
+@end menu
+
+
+@node fmt invocation
+@section @code{fmt}: 段落のテキストを再書式化する．
+
+@pindex fmt
+@cindex reformatting paragraph text
+@cindex paragraphs, reformatting
+@cindex text, reformatting
+
+@code{fmt}は，与えられた(最大)文字数(デフォルトは75)の出力行を生成するた
+め，行を補充し繋げます．概要です．
+
+@example
+fmt [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@code{fmt}は，指定された@var{file}引数(または，与えられない場合は標準入
+力)からファイルを読み込み，標準出力に書き出します．
+
+デフォルトで，空白行，単語間のスペース，そして字下げは出力で維持されます．
+異なる字下げのある連続した入力行は連結されません．タブは入力で展開され，
+出力に差し込まれます．
+
+@cindex line-breaking
+@cindex sentences and line-breaking
+@cindex Knuth, Donald E.
+@cindex Plass, Michael F.
+@code{fmt}は，文の終りの改行しようとし，文の最初の単語の後や，文の最後の
+単語の前での改行を避けようとします．@dfn{文の切れ目}は段落の終り，または，
+あらゆる@samp{.?!}で終る単語に，2つのスペースか行の終りが続くものと定義
+されていて，あらゆるカッコや引用符の内部は無視されます．@TeX{}のように，
+@code{fmt}は，行の分割を選択する前に``段落''全体を読み込みます．アルゴリ
+ズムは``Breaking Paragraphs Into Lines(段落を行に区切る)''の変種です
+(Donald E. Knuth and Michael F. Plass, @cite{Software---Practice and
+Experience}, 11 (1981), 1119--1184)．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -c
+@itemx --crown-margin
+@opindex -c
+@opindex --crown-margin
+@cindex crown margin
+@dfn{Crown margin}モード: 段落の最初の2行の字下げを保存し，それに続くそ
+れぞれの行の左の余白を，2行目の余白に揃えます．
+
+@item -t
+@itemx --tagged-paragraph
+@opindex -t
+@opindex --tagged-paragraph
+@cindex tagged paragraphs
+@dfn{Tagged paragraph}モード: crown marginモードに似ていますが，段落の最
+初の行の字下が2行目の字下げと同じ場合，最初の行は1行の段落として扱われま
+す．
+
+@item -s
+@itemx --split-only
+@opindex -s
+@opindex --split-only
+行の分割のみです．短い行を長い形式に連結しません．これはコードのサンプル
+行と，その他の``書式化された''テキストを，醜く結合されることを妨げます．
+
+@item -u
+@itemx --uniform-spacing
+@opindex -u
+@opindex --uniform-spacing
+スペースを統一します．単語の間のスペースを1つのスペースに，そして文の間
+のスペースを2つのスペースに減らします．
+
+@item -@var{width}
+@itemx -w @var{width}
+@itemx --width=@var{width}
+@opindex -@var{width}
+@opindex -w
+@opindex --width
+出力ファイルを@var{width}文字(デフォルトは75)まで補充します．@code{fmt}
+は最初に，これより7%短い行にし，行の長さのバランスのための空間を与えよう
+とします．
+
+@item -p @var{prefix}
+@itemx --prefix=@var{prefix}
+@var{prefix} (空白で始めることも可能です)で始まる行のみ，書式化を適用し
+ます．prefixと前置されたあらゆる空白は，書式化のため取り除かれ，それぞれ
+の出力行に再び取り付けられます．1つの使用方法は，ある種のプログラムのコ
+メントの書式化で，コードは変化されないままになります．
+@end table
+
+
+@node pr invocation
+@section @code{pr}: 印刷のためのファイルのページ化とコラム化
+
+@pindex pr
+@cindex printing, preparing files for
+@cindex multicolumn output, generating
+@cindex merging files in parallel
+
+@code{pr}は，それぞれの@var{file} (@samp{-}は標準入力を意味します)，また
+は，与えられない場合は標準入力を，複数列の書式で，ページ化された任意の出
+力で，標準出力に書き出します．オプションで，全ての@var{file}を結合し，1 
+列毎に，並列に全てを出力します．概要です．
+
+@example
+pr [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+デフォルトで，5行のヘッダがそれぞれのページに出力されます．日付，ファイ
+ル名，そしてページ番号がある行があり，後の2行は空白行です．また，5行の空
+白行を持つフッタも出力します．@samp{-F}オプションで，3行のヘッダを出力し
+ます．2行の空白行は削除され，フッタは使用されません．両方の場合でのデフォ
+ルトの@var{page_length}は，66行です．テキスト行のデフォルト数は56
+(@samp{-F}が無い場合)から63 (@samp{-F}がある場合)まで変化します．ヘッダ
+のテキスト行は，@samp{yyyy-mm-dd HH:MM string Page nnnn}という形式で，
+@var{page_width}まで使用します．文字列は，ヘッダ文字列をセンタリングした
+ものになります．
+
+入力でのフォームフィードは，出力で改ページとなります．複数のフォームフィー
+ドは空のページを生成します．
+
+列は同じ幅で，オプションの文字列(デフォルトは@samp{space})で分けられてい
+ます．複数列の出力では，@samp{-J}オプションを使用していない場合，行は常
+に@var{page_width} (デフォルトで72)で切り詰められます．単一列での出力は，
+デフォルトでは切り詰められません．その場合，行を切り詰めるため@samp{-W}
+オプションを使用してください．
+
+   Including version 1.22i:
+
+いくつかの小さな@var{letter options} (@samp{-s}，@samp{-w})は，より良い
+@var{posix}遵守のオブジェクトにより再定義されています．それ以外の場合で
+のいくつかの出力は，他の@var{unix}に適合されました．下位互換性の侵害は受
+け入れられました．
+
+いくつかの@var{new capital letter}オプション(@samp{-J}，@samp{-S}，
+@samp{-W})は，小文字のオプションの予期せぬインターフェースを取り消すため，
+導入されました．@samp{-N}オプションと2番目の引数@samp{+FIRST_PAGE}の
+@var{last_page}は，より多くの柔軟性を提供します．入力ファイルのフォーム
+フィード設定の詳細な取扱は，@samp{-T}オプションを要求します．
+
+大文字のオプションは，小文字のものより優勢です．
+
+いくつかのオプション引数(@samp{-s}，@samp{-S}，@samp{-e}，@samp{-i}，
+@samp{-n}と比較して)は，(@var{posix}使用で既に述べられた)オプション文字
+の前置から分かれている引数として指定できません．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item +@var{first_page}[:@var{last_page}]
+@itemx --pages=@var{first_page}[:@var{last_page}]
+@opindex +@var{first_page}[:@var{last_page}]
+@opindex --pages
+ページ@var{first_page}から出力を開始し，@var{last_page}で停止します．
+@samp{:@var{last_page}}が無い場合は，ファイルの終りを暗示します．飛ばさ
+れたページ数を見積もる間，入力ファイルのそれぞれのフォームフィードは，結
+果として新しいページになります．@samp{+@var{first_page}}がある場合と無い
+場合のページの数え方は同じです．デフォルトで，入力ファイルの最初のページ
+でカウントを開始します(最初のページは出力されません)．行の番号付けは，
+@samp{-N}オプションで変更できます．
+
+@item -@var{column}
+@itemx --columns=@var{column}
+@opindex -@var{column}
+@opindex --columns
+@cindex down columns
+それぞれ単一ファイルで，@var{column}列(デフォルトで1)の出力を生成し，
+@samp{-a}が使用されない場合は，列を下へ出力します．列の幅は，
+@var{column}が増加するに従い，自動的に減少します．@var{page_width}を増加
+させるため，@samp{-W/-w}を使用していない場合も同様です．このオプションは，
+いくつかの行を切り詰めるかも知れません．それぞれのページの列の行の数は平
+均されます．オプション@samp{-e}と@samp{-i}は，複数のテキスト列の出力のた
+めのものです．@samp{-J}をともに用いた場合，列の整列と行の切り詰めは停止
+します．十分な長さの行は，フリーフィールド書式に組み込まれ，@samp{-S}オ
+プションはフィールドを分けるかも知れません．@samp{-@var{column}}は
+@samp{-m}オプションとともに使用できません．
+
+@item -a
+@itemx --across
+@opindex -a
+@opindex --across
+@cindex across columns
+それぞれ単一@var{file}を用い，列を下ではなく横切って出力します．
+@samp{-@var{column}}オプションは，1以上の@var{column}で与える必要があり
+ます．列にフィットさせるには余りに長い場合，それは切り詰められます．
+
+@item -c
+@itemx --show-control-chars
+@opindex -c
+@opindex --show-control-chars
+ハット表記で(例えば，@samp{^G})を使用して制御文字を出力します．8進のバッ
+クスラッシュ表記で，その他の印刷不可能な文字を表示します．デフォルトで，
+印刷不可能な文字は変更されません．
+
+@item -d
+@itemx --double-space
+@opindex -d
+@opindex --double-space
+@cindex double spacing
+ダブルスペースを出力です．@footnote{JMでは，行間に空行を置くとなっていま
+す．}
+
+@item -e[@var{in-tabchar}[@var{in-tabwidth}]]
+@itemx --expand-tabs[=@var{in-tabchar}[@var{in-tabwidth}]]
+@opindex -e
+@opindex --expand-tabs
+@cindex input tabs
+入力の@var{tab}をスペースに展開します．オプションの引数@var{in-tabchar} 
+は，入力のタブ文字(デフォルトはTAB文字)です．2番目のオプション引数
+@var{in-tabwidth}は，入力タブ文字の幅(デフォルトは8)です．
+
+@item -f
+@itemx -F
+@itemx --form-feed
+@opindex -F
+@opindex -f
+@opindex --form-feed
+出力ページを分けるため，改行の代わりにフォームフィードを使用します．デフォ
+ルトページの長さの66行は，変更されません．しかし，ページ毎のテキスト行の
+数はデフォルトの56から63行に変更されます．
+
+@item -h @var{HEADER}
+@itemx --header=@var{HEADER}
+@opindex -h
+@opindex --header
+ヘッダのファイル名をセンタリングされた文字列@var{header}で置換します．左
+側の(@samp{*}で印が付いた)切り詰めは，ヘッダ行全体の@samp{yyyy-mm-dd
+HH:MM HEADER Page nnnn}が@var{page_width}より大きくなった場合に発生する
+かも知れません．@samp{-h ""}は空白行のヘッダを出力します．@samp{-h""}を
+使用しないでください．@samp{-h}オプションと引数の間の空白は，常に不可欠
+です．
+
+@item -i[@var{out-tabchar}[@var{out-tabwidth}]]
+@itemx --output-tabs[=@var{out-tabchar}[@var{out-tabwidth}]]
+@opindex -i
+@opindex --output-tabs
+@cindex output tabs
+出力上で，スペースを@var{tab}に置換します．オプション引数
+@var{out-tabchar}は出力されるタブ文字です(デフォルトはTAB文字です)．2番
+目のオプション引数@var{out-tabwidth}は出力されるタブ文字の幅(デフォルト
+で8)です．
+
+@item -J
+@itemx --join-lines
+@opindex -J
+@opindex --join-lines
+十分な長さの行に統合します．列オプション@samp{-@var{column}}，@samp{-a
+-@var{column}}や@samp{-m}とともに使用されます．@samp{-W/-w}の行の切り詰
+めを停止します．列の整列は使用されません．@samp{-S[@var{string}]}ととも
+に使用されるかもしれません．@samp{-J}は(@samp{-W}と@samp{-S}とともに)，3
+列オプションの古い(@var{posix}準拠の)オプション@samp{-w}と@samp{-s}を解
+決するために導入されました．
+
+@item -l @var{page_length}
+@itemx --length=@var{page_length}
+@opindex -l
+@opindex --length
+ページの長さを，ヘッダ[とフッタ]の行を含めて，@var{page_length}行(デフォ
+ルトで66)に設定します．@var{page_length}が10以下(で@samp{-F}が3以下)の場
+合，ヘッダとフッタは取り除かれ，入力ファイルの全てのフォームフィード設定
+は，@samp{-T}オプションが指定されたかのように無視されます．
+
+@item -m
+@itemx --merge
+@opindex -m
+@opindex --merge
+全ての@var{file}を並行に，それぞれの列に1つに統合し出力します．列にフィッ
+トさせるには行が長すぎる場合，それは切り詰められます．@var{file}の(フォー
+ムフィード設定の)空のページは空の列を生成しますが，@var{string}で印は付
+いたままです．結果として，連続した行の番号付けと，統合されたファイル全体
+を通じて印が付いた列になります．統合された完全に空のページは，区切りも行
+番号もありません．デフォルトヘッダは，@samp{yyyy-mm-dd HH:MM <blanks>
+Page nnnn}になります．中間の空白部分を満たすため，@samp{-h @var{header}} 
+を使用できます．
+
+@item -n[@var{number-separator}[@var{digits}]]
+@itemx --number-lines[=@var{number-separator}[@var{digits}]]
+@opindex -n
+@opindex --number-lines
+@var{digits}桁の行の番号付けを供給します(デフォルトの@var{digits}は5です)．
+複数列では，出力番号は，それぞれのテキスト列の最初の@var{digits}列の位置
+や，@samp{-m}出力のそれぞれの行のみを占有します．単一列では，出力番号は
+それぞれの行に@samp{-m}が行うように生成します．デフォルトの行のカウント
+の開始は，入力ファイルの最初の行で始まります(@samp{--page}オプションや
+@samp{-N}オプションと比べて，最初に印刷される行ではありません)．オプショ
+ン引数@var{number-separator}は，以下に続くテキストと分けるために行数に後
+置される文字です．デフォルトの分離文字はTAB文字です．厳密な意味で，TABは
+常に単一の列の出力としてのみ出力されます．@var{TAB}幅は@var{TAB}位置で変
+化し，例えば，左の@var{margin}が@samp{-o}オプションで指定された場合です．
+複数列出力のプロパティは，@samp{equal width of output columns}
+(@var{posix}指定)で与えられます．@var{TAB}幅は，最初の列の値で固定され，
+左の@var{margin}の値の違いでは変更されません．それは，固定数のスペースが
+常に@var{number-separator tab}の位置に出力されることを意味します．タブ機
+能は出力位置に依存します．
+
+@item -N @var{line_number}
+@itemx --first-line-number=@var{line_number}
+@opindex -N
+@opindex --first-line-number
+最初のページに出力される最初の行(ほとんどの場合，入力ファイルの最初では
+ありません)を，数字の@var{line_number}で行のカウントを開始します．
+
+@item -o @var{margin}
+@itemx --indent=@var{margin}
+@opindex -o
+@opindex --indent
+@cindex indenting lines
+@cindex left margin
+それぞれの行を@var{margin}スペースのマージン幅(デフォルトはゼロ)で字下げ
+します．ページ全体の幅はマージンに@samp{-W/-w}オプションの
+@var{page_width}設定を加えたものになります．数字付の単一列の出力
+(@samp{-n}オプションと比べて)では限定されたオーバーフローが発生するかも
+しれません．
+
+@item -r
+@itemx --no-file-warnings
+@opindex -r
+@opindex --no-file-warnings
+引数@var{file}が開けなかったとき，警告メッセージを出力しません．(しかし，
+終了ステータスはゼロではありません．)
+
+@item -s[@var{char}]
+@itemx --separator[=@var{char}]
+@opindex -s
+@opindex --separator
+単一文字@var{char}で列を分けます．@var{char}のデフォルトは，@samp{-w}と
+@samp{no character}がなく，@samp{-w}がある場合，TAB文字になります．
+@samp{-s}が無い場合デフォルトの分離文字は@samp{space}に設定されます．
+@samp{-s[char]}は，@samp{-w}が設定されていない場合，全ての3列オプション
+(@samp{-COLUMN}|@samp{-a -COLUMN}|@samp{-m})の行の切り詰めを停止します．
+それは，@var{posix}準拠の公式なものです．
+
+@item -S[@var{string}]
+@itemx --sep-string[=@var{string}]
+@opindex -S
+@opindex --sep-string
+出力の列を分けるため@var{string}を使用します．@samp{-S}オプションは
+@samp{-s}オプションと異なり，@samp{-W/-w}オプションに対し効果がありませ
+ん．それは，行の切り詰めや列の整列に効果がありません．@samp{-S}が無く，
+@samp{-J}がある場合，@code{pr}は，デフォルトの出力セパレータTABを使用し
+ます．@samp{-S}や@samp{-J}が無い場合，@code{pr}は@samp{space}を使用しま
+す(@samp{-S" "}と同じです)．@var{string}無しで@samp{-S}を使用することは，
+@samp{-S""}と同じです．@code{pr}のオプションのいくつかに対し，単一文字の
+オプション文字に，対応する引数を直後に続ける必要があることに注意してくだ
+さい．空白を間に入れることはできません．@samp{-S/-s}はその中の1つです．
+@samp{-S "STRING"}とを使用しないでください．@sc{posix}はこれを要求します．
+
+@item -t
+@itemx --omit-header
+@opindex -t
+@opindex --omit-header
+それぞれのページに，通常のヘッダ[とフッタ]を出力せず，ページの底まで補充
+しません(空白行またはフォームフィードを用います)．ページ構造は生成されま
+せんが，入力ファイルで設定されたフォームフィードは維持されます．前もって
+定義されたページ化は変更されません．@samp{-t}や@samp{-T}は，他のオプショ
+ンとともに使用すると便利かもしれません．例えば，@samp{-t -e4}は，入力ファ
+イルのTAB文字を4つのスペースに展開しますが，それ以外の変更を行いません．
+@samp{-t}の使用は@samp{-h}に優先します．
+
+@item -T
+@itemx --omit-pagination
+@opindex -T
+@opindex --omit-pagination
+ヘッダ[とフッタ]を出力しません．更に，入力ファイルのフォームフィード設定
+から全て削除します．
+
+@item -v
+@itemx --show-nonprinting
+@opindex -v
+@opindex --show-nonprinting
+出力できない文字を，8進のバックスラッシュ表記で出力します．
+
+@item -w @var{page_width}
+@itemx --width=@var{page_width}
+@opindex -w
+@opindex --width
+複数のテキスト列出力に対してのみ，ページ幅を@var{page_width}文字数に設定
+します(@var{page_width}のデフォルトは72です)．@samp{-s[CHAR]}は，デフォ
+ルトページ幅を停止し，あらゆる行は切り詰められ，列は整列されます．十分な
+長さの行は，列オプションの設定にかかわらずマージされます．
+@var{page_width}設定が無い場合，おそらく単一列の出力になります．
+@var{posix}準拠の公式なものです．
+
+@item -W @var{page_width}
+@itemx --page_width=@var{page_width}
+@opindex -W
+@opindex --page_width
+ページ幅を@var{page_width}文字に設定します．それは列オプションによらず有
+効です．@samp{-J}が使用されない場合，テキスト行は切り詰められます．3列オ
+プション(@samp{-@var{column}}，@samp{-a -@var{column}}または@samp{-m})の
+1つとともに用いた場合，列の整列は常に使用されます．セパレータオプション
+の@samp{-S}や@samp{-s}は，@samp{-W}オプションに効果はありません．デフォ
+ルトは72文字です．@samp{-W @var{page_width}}が無く，あらゆる列オプション
+が無い場合，行の切り詰めは行われません(下位互換を保つためと，よくある仕
+事に合わせるために定義されています)．それは，@samp{-W 72 -J}と同じです．
+@samp{-W @var{page_width}}に関係なく，行を溢れさせるのを防ぐため，ヘッダ
+行は常に切り詰められます．
+@end table
+
+
+@node fold invocation
+@section @code{fold}: 指定された幅に合わせるため，入力行を折り曲げる
+
+@pindex fold
+@cindex wrapping long input lines
+@cindex folding long input lines
+
+@code{fold}は，それぞれの@var{file} (@samp{-}は標準入力を意味します)や，
+与えられない場合は標準入力を，長い行を折曲げながら標準出力に書き出します．
+概要です．
+
+@example
+fold [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+デフォルトで，@code{fold}は80列以上の幅の行を折曲げます．出力は必要な行
+数に分けられます．
+
+@cindex screen columns
+@code{fold}はデフォルトで画面の列を数えます．こうして，タブは1列以上に数
+えられ，バックスペースは列のカウント数を減らし，そして，キャリッジリター
+ンは列をゼロに設定します．
+
+プログラムは，以下のオプションも受け入れます．@ref{Common options},も参
+照してください．
+
+@table @samp
+
+@item -b
+@itemx --bytes
+@opindex -b
+@opindex --bytes
+列ではなくバイトを数え，そのため，タブ，バックスペースと，キャリッジリター
+ンは，他の文字同様にそれぞれ1列カウント数を上げます．
+
+@item -s
+@itemx --spaces
+@opindex -s
+@opindex --spaces
+単語の境界で改行します．列は最後の空白の後で，最大の列の長さの前で改行さ
+れます．そのような空白行を行が含まない場合，行は最大の行幅で通常通り改行
+されます．
+
+@item -w @var{width}
+@itemx --width=@var{width}
+@opindex -w
+@opindex --width
+80の代わりに，@var{width}列の最大行幅を使用します．
+@end table
+
+
+@node Output of parts of files
+@chapter ファイルの一部の出力
+
+@cindex output of parts of files
+@cindex parts of files, output of
+
+これらのコマンドは，入力の一部を出力します．
+
+@menu
+* head invocation::             Output the first part of files.
+* tail invocation::             Output the last part of files.
+* split invocation::            Split a file into fixed-size pieces.
+* csplit invocation::           Split a file into context-determined pieces.
+@end menu
+
+@node head invocation
+@section @code{head}: ファイルの最初の部分を出力
+
+@pindex head
+@cindex initial part of files, outputting
+@cindex first part of files, outputting
+
+@code{head}は，それぞれの@var{file}の最初の部分(デフォルトで10行)出力し
+ます．ファイルが与えられない場合や，@samp{-}という@var{file}が与えられた
+ときは標準入力から読み込みます．概要です．
+
+@example
+head [@var{option}]@dots{} [@var{file}]@dots{}
+head -@var{number} [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+1つ以上の@var{file}が指定された場合，@code{head}は以下から成り立つ1行の
+ヘッダを出力します．
+@example
+==> @var{file name} <==
+@end example
+@noindent
+それはそれぞれの@var{file}に対する出力の前になります．
+
+@code{head}は2つのオプションの書式を受け入れます．新しいものは数字がオプ
+ションの引数になるもの(@samp{-q -n 1})で，古いものは数字があらゆるオプショ
+ン文字の前にあるもの(@samp{-1q})です．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -@var{count}@var{options}
+@opindex -@var{count}
+このオプションは，最初に指定された場合のみ認識されます．@var{count}は10 
+進数で，@code{-c}オプションで単位文字(@samp{b}，@samp{k}，@samp{m})や，
+行数を意味する@samp{l}，そしてその他のオプション文字(@samp{cqv})が続きま
+す．
+
+@item -c @var{bytes}
+@itemx --bytes=@var{bytes}
+@opindex -c
+@opindex --bytes
+最初の行の代わりに，最初の@var{bytes}バイトを出力します．後置される
+@samp{b}は@var{bytes}の512倍，@samp{k}は1024倍，そして@samp{m}は1048576 
+倍になります．
+
+@itemx -n @var{n}
+@itemx --lines=@var{n}
+@opindex -n
+@opindex --lines
+最初の@var{n}行を出力します．
+
+@item -q
+@itemx --quiet
+@itemx --silent
+@opindex -q
+@opindex --quiet
+@opindex --silent
+ファイル名のヘッダを出力しません．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+常にファイル名のヘッダを出力します．
+@end table
+
+
+@node tail invocation
+@section @code{tail}: ファイルの最後の部分を出力
+
+@pindex tail
+@cindex last part of files, outputting
+
+@code{tail}は，それぞれの@var{file}の最後の部分(デフォルトで10行)出力し
+ます．ファイルが与えられない場合や，@samp{-}という@var{file}が与えられた
+ときは標準入力から読み込みます．概要です．
+
+@example
+tail [@var{option}]@dots{} [@var{file}]@dots{}
+tail -@var{number} [@var{option}]@dots{} [@var{file}]@dots{}
+tail +@var{number} [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+1つ以上の@var{file}が指定された場合，@code{tail}は以下から成り立つ1行の
+ヘッダを出力します．
+@example
+==> @var{file name} <==
+@end example
+@noindent
+それはそれぞれの@var{file}に対する出力の前になります．
+
+@cindex BSD @code{tail}
+GNU @code{tail} は，あらゆる量のデータを出力できます(@code{tail}の他のバー
+ジョンにはできないものもあります)．ファイルを逆順にすることはファイルの
+終りを出力する仕事と全く異なるので，@samp{-r}オプション(逆順に出力)もあ
+りません．BSD @code{tail} (@code{-r}を伴うものの1つ)は，最大でそのバッファ
+の大きさまで，通常32kのファイルを逆順にすることが可能なだけです．ファイ
+ルを逆順にするより信頼性のある用途が広い方法は，GNU @code{tac}コマンドで
+す．
+
+@code{tail}は2つのオプションの書式を受け入れます．新しいものは数字がオプ
+ションの引数になるもの(@samp{-n 1})で，古いものは数字があらゆるオプショ
+ン文字の前にあるもの(@samp{-1}や@samp{+1})です．
+
+あらゆるオプション引数が，@samp{+}で始まる数字@var{n}の場合，@code{tail} 
+は，ファイルの終りの代わりに，それぞれのファイルの最初から@var{n}番目の
+項目で出力を開始します．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -@var{count}
+@itemx +@var{count}
+@opindex -@var{count}
+@opindex +@var{count}
+このオプションは，最初に指定された場合のみ認識されます．@var{count}は10 
+進数で，@code{-c}オプションで単位文字(@samp{b}，@samp{k}，@samp{m})や，
+行数を意味する@samp{l}，そしてその他のオプション文字(@samp{cfqv})が続き
+ます．
+
+@item -c @var{bytes}
+@itemx --bytes=@var{bytes}
+@opindex -c
+@opindex --bytes
+最後の行の代わりに，最後の@var{bytes}バイトを出力します．後置される
+@samp{b}は@var{bytes}の512倍，@samp{k}は1024倍，そして@samp{m}は1048576 
+倍になります．
+
+@item -f
+@itemx --follow[=@var{how}]
+@opindex -f
+@opindex --follow
+@cindex growing files
+@vindex name @r{follow option}
+@vindex descriptor @r{follow option}
+おそらくファイルが増えているので，ファイルの終りで，それ以上の文字を読み
+込むことを永久に繰り返します．このオプションは，パイプから読み込まれてい
+るとき，無視されます．1ファイル以上が与えられた場合，出力されてるファイ
+ルを示すため，異なるファイルから出力を得るときはいつでも，@code{tail}は
+ヘッダを出力します．
+
+このオプションで，ファイルを追跡する方法を指定する方法が2つありますが，
+その違いは，続くファイルが削除されたか名前を変更されたときのみ，通知可能
+です．リンクが無くなった後でも，増え続けるファイルの終りの追跡を続けたい
+場合は，@samp{--follow=descriptor}を使用してください．これはデフォルトの
+動作ですが，回転(rotate)される(削除や名前の変更がなされ，再び開かれる)ロ
+グファイルを追跡しているときは不便です．その場合，他のプログラムにより削
+除され再作成されたかどうかを周期的に見て，再び開かれる指名されたファイル
+を追跡するため，@samp{--follow=name}を使用してください．
+
+使用している方法にかかわらず，追跡しているファイルが縮まっていると決定さ
+れた場合，@code{tail}はfileが切り詰められたことを告げるメッセージを出力
+し，新たに決定された終端からファイルの終りを再追跡しはじめます．
+
+ファイルが削除されたとき，@code{tail}の動作は，名前で続けるか記述子で続
+けるかに依存します．名前で続けるとき，@code{tail}はファイルが削除された
+ことと，その効果にメッセージを与えることが検出でき，@samp{--retry}が指定
+されている場合，ファイルが再び現れたかどうかを見るため，周期的な調査を続
+けるでしょう．記述子で続けるとき，@code{tail}はファイルのリンクが切れた
+り名前が変更されたことを検出せず，メッセージを発しません．ファイルは既に
+元の名前でアクセスできませんが，まだ増加しているかもしれません．
+
+オプション値の@samp{descriptor}と@samp{name}はオプションの長い形式でのみ
+指定でき，@samp{-f}では指定できません．
+
+@itemx --retry
+@opindex --retry
+このオプションは，名前で続けるときのみ意味があります．このオプションが無
+い場合，@code{tail}が，存在していない，またはそれ以外のアクセスできない
+ファイルに遭遇したとき，それはその事実を報告し再び調査しません．
+
+@itemx --sleep-interval=@var{n}
+@opindex --sleep-interval
+繰り返しの間の待ち時間の秒数を変更します(デフォルトは1)．待っている間，
+指定された全てのファイルは大きさが変ったかどうか調査されます．
+
+@itemx --pid=@var{pid}
+@opindex --pid
+名前または記述子で続ける場合，全ての@var{file}引数に唯一書き込んでいるプ
+ロセスID @var{pid}を指定できます．そして，プロセスが終了した少し後で，
+@code{tail}も終了します．これは書き込んでいるものと@code{tail}プロセスが
+同じマシンで働いている場合のみ正確に働きます．例えば，ファイルにビルドの
+出力を保存したり，ファイルが大きくなるのを見たりするため，@code{make} と
+@code{tail}を以下のように呼び出し，ビルドが完了したとき@code{tail}の処理
+は終了します．このオプションが無い場合，@code{tail -f}プロセスを自分でキ
+ルする必要があります．
+@example
+$ make >& makerr & tail --pid=$! -f makerr
+@end example
+使用中でない，または，@code{tail}されるファイルに書き込んでいるプロセス
+に対応しない@var{pid}を指定した場合，@code{tail}はあらゆる@var{file}が増
+加するのを停止する前に終了する，または，実際に書き込んでいるものが終了し
+た後，しばらくしてから終了します．
+
+@itemx --max-consecutive-size-changes=@var{n}
+@opindex --max-consecutive-size-changes
+このオプションは，名前で続けるときのみ意味があります．削除されたり，名前
+を変更されたりした後でさえ，速いペースで増加し続けるファイルの記述子で続
+けている@code{tail}の長さを制御するために使用してください．ファイルに対
+し，サイズ変更が連続して@var{n}検出した後で，ファイル名が，以前と同じデ
+バイス/inode番号の対で対応されているかどうか決定するため，ファイルを
+@code{open}/@code{fstat}します．デフォルト値は，@code{tail --help}の出力
+を参照してください．
+
+@itemx --max-unchanged-stats=@var{n}
+@opindex --max-unchanged-stats
+名前でファイルを@code{tail}しているとき，同じ大きさのままで，繰り返しが
+連続して何度もある場合，ファイル名が，以前と同じデバイス/inode番号の対で
+対応されているかどうか決定するため，ファイルを@code{open}/@code{fstat}し
+ます．回転(rotate)されているログファイルを続けるとき，前回に回転した行を
+@code{tail}が出力するときと，新しいログファイルで蓄積された行を出力する
+ときの間は，おそらく数秒になります．デフォルト値は@code{tail --help}の出
+力を参照してください．このオプションは，名前で続けているときのみ意味があ
+ります．
+
+@itemx -n @var{n}
+@itemx --lines=@var{n}
+@opindex -n
+@opindex --lines
+最後の@var{n}行出力します．
+
+@item -q
+@itemx -quiet
+@itemx --silent
+@opindex -q
+@opindex --quiet
+@opindex --silent
+ファイル名のヘッダを出力しません．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+常にファイル名のヘッダを出力します．
+@end table
+
+
+@node split invocation
+@section @code{split}: ファイルを固定サイズの部分に分割
+
+@pindex split
+@cindex splitting a file into pieces
+@cindex pieces, splitting a file into
+
+@code{split}は，@var{input}(@var{input}が与えられなかったり，@samp{-}の
+場合は標準入力)の連続したセクションを含む出力ファイルを生成します．概要
+です．
+
+@example
+split [@var{option}] [@var{input} [@var{prefix}]]
+@end example
+
+デフォルトで，@code{split}は@var{input}の1000行(または，最後のセクション
+は残り)を，それぞれの出力ファイルに書き込みます．
+
+@cindex output file name prefix
+出力ファイルの名前は@var{prefix} (デフォルトは@samp{x})から成り立ち，
+@samp{aa}，@samp{ab}等の文字の集合が続き，それは，出力ファイルをファイル
+名の順番でソートして結合したものが，元の入力ファイルを生成するようにする
+ためです．出力ファイルが676以上必要な場合，@code{split}は@samp{zaa}，
+@samp{zab}等を使用します．)
+
+このプログラムは以下のオプションも受け入れます．@ref{Common options},も
+参照してください．
+
+@table @samp
+
+@item -@var{lines}
+@itemx -l @var{lines}
+@itemx --lines=@var{lines}
+@opindex -l
+@opindex --lines
+@var{input}の@var{lines}行を，それぞれの出力ファイルに書き込みます．
+
+@item -b @var{bytes}
+@itemx --bytes=@var{bytes}
+@opindex -b
+@opindex --bytes
+@var{input}の最初の@var{bytes}バイトを，それぞれの出力ファイルに書き込み
+ます．@samp{b}の後置は@var{bytes}の512倍，@samp{k}は1024倍，そして
+@samp{m}は1048576倍です．
+
+@item -C @var{bytes}
+@itemx --line-bytes=@var{bytes}
+@opindex -C
+@opindex --line-bytes
+@var{bytes}バイトを越えない@var{input}の完全な行を，できるだけ多くそれぞ
+れの出力ファイルに書き込みます．@var{bytes}バイトより長い行に対しては，
+行の@var{bytes}バイトより少ない部分が残るまで，それぞれの出力ファイルに
+@var{bytes}バイト書き込み，それから通常に続けます．@var{bytes}は
+@samp{--bytes}オプションに対するものと同じ書式です．
+
+@itemx --verbose
+@opindex --verbose
+それぞれの出力ファイルが開かれる直前に，標準エラーに状態を書き込みます．
+@end table
+
+
+@node csplit invocation
+@section @code{csplit}: ファイルを文脈で決定された部分に分割
+
+@pindex csplit
+@cindex context splitting
+@cindex splitting a file into pieces by context
+
+@code{csplit}は，@var{input} (@var{input}が@samp{-}の場合は標準入力)の部
+分を含む，ゼロ以上の出力ファイルを作成します．概要です．
+
+@example
+csplit [@var{option}]@dots{} @var{input} @var{pattern}@dots{}
+@end example
+
+出力ファイルの内容は，後で詳述する@var{pattern}引数で決定されます．
+@var{pattern}引数が，入力ファイルに存在しない行を参照する場合，エラーが
+発生します(例えば，残っている行が与えられた正規表現に一致しない場合)．全
+ての@var{pattern}が一致した後，あらゆる残りの入力は，1つの最後の出力ファ
+イルにコピーされます．
+
+デフォルトで，@code{csplit}は，それぞれの出力ファイルが作成された後，バ
+イト数を書き込みます．
+
+@var{pattern}引数の形式は以下の通りです．
+
+@table @samp
+
+@item @var{n}
+@var{n}行までの入力を含む出力ファイルを作成しますが，@var{n}行は含みませ
+ん．繰り返し数が続く場合，それぞれの繰り返しに対し，入力ファイルの次の
+@var{line}行を含む出力ファイルも作成します．
+
+@item /@var{regexp}/[@var{offset}]
+@var{regexp}に一致するものを含む入力ファイルの次の行まで現在の行(ただし，
+それは含まれない)を含む出力ファイルを作成します．オプションの
+@var{offset}は，@samp{+}または@samp{-}に正の整数が続きます．与えられた場
+合，一致行までの入力に，@var{offset}加えた，または引いた入力まで出力ファ
+イルに書き出され，その後の行は入力の次の部分になります．
+
+@item %@var{regexp}%[@var{offset}]
+前の形式に似ていますが，出力ファイルを作成しないので，入力ファイルの部分
+は効率的に無視されます．
+
+@item @{@var{repeat-count}@}
+前のパターンを@var{repeat-count}回追加して繰り返します．
+@var{repeat-count}は正の整数，またはアスタリスクになり，それは入力が使い
+果たされるのに必要なだけ繰り返すことを意味します．
+@end table
+
+出力ファイル名は，前置(デフォルトで@samp{xx})とそれに続く接尾子から成り
+立ちます．デフォルトで接尾子は2桁の10進数で，@samp{00}から@samp{99}まで
+順番に上昇します．あらゆる場合で，ファイル名の順番でソートされた出力ファ
+イルを連結すると，元の入力ファイルを生成します．
+
+デフォルトで，@code{csplit}がエラーや，ハングアップ，中断，終了，または
+終端シグナルを検出した場合，それまでに存在する作成されたあらゆる出力ファ
+イルを削除します．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -f @var{prefix}
+@itemx --prefix=@var{prefix}
+@opindex -f
+@opindex --prefix
+@cindex output file name prefix
+出力ファイルの接尾子として，@var{prefix}を使用します．
+
+@item -b @var{suffix}
+@itemx --suffix=@var{suffix}
+@opindex -b
+@opindex --suffix
+@cindex output file name suffix
+出力ファイル名の接尾子として@var{suffix}を使用します．このオプションが指
+定された場合，接尾子の文字列は，正確に1つの@code{printf(3)}形式の変換で
+の指定を含む必要があり，おそらく，書式指定のフラグ，フィールドの幅，正確
+な指定，または，これら全ての修飾語を含みます．フォーマット文字は，2進の
+整数の引数を可読なものに変換する必要があります．このため，@samp{d}，
+@samp{i}，@samp{u}，@samp{o}，@samp{x}，そして@samp{X}の変換は可能です．
+完全な@var{suffix}は，順番にそれぞれの個別な出力ファイルに対し，ファイル
+名の接尾子を形成するため，(現在の出力ファイル数とともに)
+@code{sprintf(3)}に与えられます．このオプションを使用した場合，
+@samp{--digits}オプションは無視されます．
+
+@item -n @var{digits}
+@itemx --digits=@var{digits}
+@opindex -n
+@opindex --digits
+デフォルトの2の代わりに@var{digits}桁の長さの数字を含む出力ファイル名を
+使用します．
+
+@item -k
+@itemx --keep-files
+@opindex -k
+@opindex --keep-files
+エラーが検出された場合でも出力ファイルを削除しません．
+
+@item -z
+@itemx --elide-empty-files
+@opindex -z
+@opindex --elide-empty-files
+長さゼロの出力ファイルの生成を抑制します．(入力ファイルの，部分の区切り
+がそれぞれの部分の区切りの最初の行に印を付ける場合，このオプションを使用
+しなければ，最初の出力ファイルは一般に，長さゼロのファイルになります．) 
+出力ファイルの順番は，このオプションが指定されているときでさえ，0から開
+始し，常に連続して実行します．
+
+@item -s
+@itemx -q
+@itemx --silent
+@itemx --quiet
+@opindex -s
+@opindex -q
+@opindex --silent
+@opindex --quiet
+出力ファイルの大きさを出力しません．
+@end table
+
+
+@node Summarizing files
+@chapter ファイルの要約
+
+@cindex summarizing files
+
+これらのコマンドは，ファイルの内容全体を表現するいくつかの数字を生成しま
+す．
+
+@menu
+* wc invocation::               Print byte, word, and line counts.
+* sum invocation::              Print checksum and block counts.
+* cksum invocation::            Print CRC checksum and byte counts.
+* md5sum invocation::           Print or check message-digests.
+@end menu
+
+
+@node wc invocation
+@section @code{wc}: バイト，単語，行数を出力
+
+@pindex wc
+@cindex byte count
+@cindex word count
+@cindex line count
+
+@code{wc}は，それぞれの与えられた@var{file}や，与えられなかった場合や
+@samp{-}の@var{file}に対し，バイト数，空白で区切られた単語，そして改行を
+数えます．概要です．
+
+@example
+wc [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@cindex total counts
+@code{wc}は，それぞれのファイルに対し，数えたものを1行出力し，ファイルが
+引数として与えられた場合，カウントに続けてファイル名を出力します．1つ以
+上の@var{file}が与えられた場合，@code{wc}は，ファイル名@file{total}と共
+に，累積カウントを最終行に出力します．カウントは，以下の順序で出力されま
+す．改行，単語，バイトです．デフォルトで，それぞれのカウントは，数字とファ
+イル名の行が列にうまく並ぶように，右寄せで，7バイトフィールドで，それぞ
+れのフィールドの間にスペースを入れて出力します．しかし，POSIXは列を分け
+るために，正確に1つのスペースがあることを要求します．
+@env{POSIXLY_CORRECT}環境変数を設定することで，@code{wc}を出力形式が
+POSIXで義務化されているようにさせることができます．
+
+デフォルトで，@code{wc}は3つのカウントすべてを出力します．オプションで，
+出力したいカウントのみを指定することができます．オプションは，前に与えら
+れたものを元に戻すことはできません．そのため，以下のようにした場合を考え
+ます．
+
+@example
+wc --bytes --words
+@end example
+
+@noindent
+これは，バイトカウントと単語のカウントの両方を出力します．
+
+@code{--max-line-length}オプションを用いた場合，@code{wc}はファイル毎の
+最長の行の長さを出力し，1つ以上のファイルがある場合，それらの長さの(合計
+ではなく)最大を出力します．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -c
+@itemx --bytes
+@itemx --chars
+@opindex -c
+@opindex --bytes
+@opindex --chars
+バイトカウントのみ出力します．
+
+@item -w
+@itemx --words
+@opindex -w
+@opindex --words
+単語カウントのみ出力します．
+
+@item -l
+@itemx --lines
+@opindex -l
+@opindex --lines
+改行カウントのみ出力します．
+
+@item -L
+@itemx --max-line-length
+@opindex -L
+@opindex --max-line-length
+最長行の長さのみ出力します．
+@end table
+
+
+@node sum invocation
+@section @code{sum}: チェックサムとブロック数を出力
+
+@pindex sum
+@cindex 16-bit checksum
+@cindex checksum, 16-bit
+
+@code{sum}は，与えられたそれぞれの@var{file}，または，与えられない場合や
+@samp{-}のファイルが与えられた場合は標準入力の16ビットのチェックサムを計
+算します．概要です．
+
+@example
+sum [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@code{sum}は，それぞれの@var{file}のチェックサムに続けて，ファイルのブロッ
+ク数を(切り上げで)出力します．1つ以上の@var{file}が与えられた場合，ファ
+イル名も出力されます(デフォルト)．(@samp{--sysv}オプションを指定した場合，
+少なくとも1つのファイル引数があるときは，対応するファイル名が出力されま
+す．)
+
+デフォルトで，GNU @code{sum}は，BSD @code{sum}と互換性のあるアルゴリズム
+を用いて計算し，ファイルサイズを1024バイトブロックの単位で出力します．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -r
+@opindex -r
+@cindex BSD @code{sum}
+デフォルト(BSD互換)のアルゴリズムを使用します．このオプションは，System
+V @code{sum}との互換性も含みます．@samp{-s}を与えない限り，効果はありま
+せん．
+
+@item -s
+@itemx --sysv
+@opindex -s
+@opindex --sysv
+@cindex System V @code{sum}
+System V @code{sum}のデフォルトと互換のアルゴリズムを使用して，チェック
+サムを計算し，512バイトブロックの単位でファイルサイズを出力します．
+
+@end table
+
+@code{sum}は，互換性のために提供されています．@code{cksum}プログラム(次
+のセクションを参照)は，新しいアプリケーションでは望ましいです．
+
+
+@node cksum invocation
+@section @code{cksum}: CRCチェックサムとバイトカウントを出力
+
+@pindex cksum
+@cindex cyclic redundancy check
+@cindex CRC checksum
+
+@code{cksum}は，与えられたそれぞれの@var{file}，または，与えられない場合
+や@samp{-}のファイルが与えられた場合は標準入力の周期的な冗長性の調査
+(CRC)のチェックサムを計算します．概要です．
+
+@example
+cksum [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@code{cksum}は，ファイルのバイト数と一緒に，それぞれのファイルに対し，
+CRCチェックサムと，引数が与えられていない場合以外はファイル名を出力しま
+す．
+
+@code{cksum}は，通常，信用できない手段(例えば，ネットニュース)で転送され
+たファイルが切り詰められていないか，受信したファイルの@code{cksum}出力と
+元ファイルの@code{cksum}出力(通常は配布物で与えられます)を比較することで
+確認するために使用します．
+
+CRCアルゴリズムは，@sc{posix.2}標準で指定されました． BSDやSystem V
+@code{sum}アルゴリズムとは互換性がありません(前のセクションを参照してく
+ださい)．それはより強固です．
+
+オプションは@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+@node md5sum invocation
+@section @code{md5sum}: メッセージダイジェストの出力と調査
+
+@pindex md5sum
+@cindex 128-bit checksum
+@cindex checksum, 128-bit
+@cindex fingerprint, 128-bit
+@cindex message-digest, 128-bit
+
+@code{md5sum}は，それぞれ指定された@var{file}に対し，128-bitチェックサム
+(または@dfn{fingerprint}，または@dfn{message-digest})を計算します．
+@var{file}が@samp{-}で指定されたり，ファイルが与えられていない場合は，
+@code{md5sum}は標準入力のチェックサムを計算します．@code{md5sum}は，ファ
+イルとチェックサムが一貫しているかどうか決定することも可能です．概要です．
+
+@example
+md5sum [@var{option}]@dots{} [@var{file}]@dots{}
+md5sum [@var{option}]@dots{} --check [@var{file}]
+@end example
+
+それぞれの@var{file}に対し，@samp{md5sum}は，MD5チェックサム，入力ファイ
+ルがバイナリかテキストかを示すフラグ，そしてファイル名を出力します．
+@var{file}が無い，または@samp{-}として指定されている場合，標準入力を読み
+込みます．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -b
+@itemx --binary
+@opindex -b
+@opindex --binary
+@cindex binary input files
+全ての入力ファイルをバイナリとして扱います．このオプションは，Unixシステ
+ムではバイナリとテキストでファイルに差が無いので効果がありません．このオ
+プションは，内部と外部での文字表示が異なるシステムでは便利です．MS-DOSと
+MS-Windowsでは，これはデフォルトです．
+
+@item -c
+@itemx --check
+ファイル名とチェックサム情報を，単一の@var{file}(または，@var{file}が指
+定されない場合は標準入力)から読み込み，それぞれの名前のファイルと対応す
+るチェックサムデータが一貫しているかどうか報告します．@code{md5sum}のこ
+のモードでの入力は，通常前回の出力で，@samp{md5sum}の実行でチェックサム
+が生成したものです．それぞれの入力の有効な行は，MD5チェックサムから成り
+立ち，バイナリ/テキストフラグと，ファイル名です．バイナリファイルは，
+@samp{*}で，テキストは@samp{ }印が付きます．それぞれのそのような行に対し，
+@code{md5sum}は，指名されたファイルを読み込み，そのMD5チェックサムを計算
+します．そして，計算されたメッセージダイジェストが，ファイル名を持つ行の
+1つと一致しない場合，ファイルはテストに失敗したことをメモされます．それ
+以外の場合，ファイルは調査を通過します．デフォルトで，それぞれの有効な行
+に対し，指名されたファイルが調査を通過したかどうかを示す1行を，標準出力
+に書かれます．全ての調査の実行後，失敗があった場合，警告を標準エラーに発
+行します．出力を抑制するために，@samp{--status}オプションを使用してくだ
+さい．リストアップされたファイルに，開いたり読み込んだりでできないものが
+ある場合，有効な行が関連するファイルとMD5チェックサムに一貫性が無い場合，
+または，有効な行が見つからない場合，@code{md5sum}はゼロ以外のステータス
+で終了します．それ以外の場合は，正しく終了します．
+
+@itemx --status
+@opindex --status
+@cindex verifying MD5 checksums
+このオプションは，チェックサムの照合時のみ便利です．チェックサムを照合す
+るとき，デフォルトのファイルに対し1行の診断を生成せず，あらゆる失敗を要
+約する警告を出力しません．ファイルを開くあるいは読み込む際の失敗は，標準
+エラーに個別の診断を喚起します．リストされたファイルがすべて読み込み可能
+で，対応するMD5チェックサムと一貫している場合，正しく終了します．それ以
+外の場合，失敗があることを示すステータスコードで終了します．
+
+@item -t
+@itemx --text
+@opindex -t
+@opindex --text
+@cindex text input files
+全ての入力ファイルを，テキストファイルとして扱います．このオプションは
+@samp{--binary}の反対です．
+
+@item -w
+@itemx --warn
+@opindex -w
+@opindex --warn
+@cindex verifying MD5 checksums
+チェックサムを照合するとき，不適切に書式化されたMD5チェックサム行につい
+て警告します．このオプションは，入力の調査で，全てではなくいくつかの行が
+有効な場合のみ便利です．
+@end table
+
+
+@node Operating on sorted files
+@chapter ソートされたファイルの処理
+
+@cindex operating on sorted files
+@cindex sorted files, operations on
+
+これらのコマンドは，ソートされたファイルで働く(あるいはそれを生成する)コ
+マンドです．
+
+@menu
+* sort invocation::             Sort text files.
+* uniq invocation::             Uniquify files.
+* comm invocation::             Compare two sorted files line by line.
+* ptx invocation::              Produce a permuted index of file contents.
+* tsort invocation::            Topological sort.
+@end menu
+
+
+@node sort invocation
+@section @code{sort}: テキストファイルをソート
+
+@pindex sort
+@cindex sorting files
+
+@code{sort}は，与えられたファイル，または与えられない場合や，@samp{-}の
+@var{file}からの全ての行を，ソート，統合，または比較します．デフォルトで，
+@code{sort}は結果を標準出力に書き出します．概要です．
+
+@example
+sort [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@code{sort}は，処理時に3つのモードがあります．ソート(デフォルト)，統合，
+そしてソートされてることの調査です．以下のオプションで処理モードを変更し
+ます．
+
+@table @samp
+
+@item -c
+@opindex -c
+@cindex checking for sortedness
+与えられたファイルが，すでにソートされているかどうか調査します．全てがソー
+トされていない場合，エラーメッセージを出力し，1のステータスで終了します．
+それ以外の場合は正常に終了します．
+
+@item -m
+@opindex -m
+@cindex merging sorted files
+与えられたファイルを，グループ化してソートすることで，統合します．それぞ
+れの入力ファイルは，個別にソートされている必要があります．それは常に，統
+合ではなくソートのために働きます．統合は，それが動作する場合，より速いた
+め提供されています．
+
+@end table
+
+@vindex LC_COLLATE
+行の対が，以下のように比較されます．キーフィールドが指定された場合，
+@code{sort}は，それぞれのフィールドの組を，コマンドラインで指定された順
+番で，関連する順序オプションで，差が見つかるまで，またはフィールドの残り
+が無くなるまで比較します．指定されない場合は，全てに比較に，
+@env{LC_COLLATE}ロケールで指定された，文字の対照する順番を使用します．
+
+大域的なオプション@samp{Mbdfinr}が与えられて，キーフィールドが指定されて
+いない場合，@code{sort}は大域的なオプションに従い，行全体を比較します．
+
+最終的に，全てのキーが同じとき(または，順序オプションが全く指定されてい
+ない場合)，最後の手段として，@code{sort}は行全体を比較します．最後の手段
+は，@samp{-r}の大域的なオプションを尊重して比較します．@samp{-s}
+(stable)オプションは，この最後の手段では利用できず，それは，全てのフィー
+ルドの比較が同じ行は，元の相対的な順序のままにするためです．フィールド，
+または，大域的なオプションが指定されない場合，@samp{-s}は効果がありませ
+ん．
+
+GNU @code{sort} は，(全てのGNUユーティリティで指定されるように)入力行の
+長さの制限や，行で許可されるバイト数の限界がありません．更に，入力ファイ
+ルの最終バイトが改行でない場合，GNU @code{sort}は，黙ってそれを供給しま
+す．行の後ろの改行は，比較の目的では行の一部です．例えば，@sc{ascii}ロケー
+ルでオプションを用いない場合，@sc{ascii}の対照の順序では，タブは改行の前
+にあるので，タブで始まる行は空の行の前に来ます．
+
+あらゆるエラーで，@code{sort}は@samp{2}のステータスで終了します．
+
+@vindex TMPDIR
+環境変数@env{TMPDIR}が設定されている場合，@code{sort}は，その変数を
+@file{/tmp}の代わりの一時ファイルのためのディレクトリとして使用します．
+@samp{-T @var{tempdir}}オプションは，順序的に環境変数に優先します．
+
+@vindex LC_CTYPE
+以下のオプションは，出力行の順序に影響します．それらは，大域的，またはキー
+フィールドの一部として指定可能です．キーフィールドが指定されていない場合，
+大域的なオプションは行全体の比較に対して適用されます．それ以外では，大域
+的なオプションは，それ自身オプションが指定されていないキーフィールドに継
+承されます．@samp{-b}，@samp{-d}，@samp{-f}，そして@samp{-i}オプションは，
+@env{LC_CTYPE}ロケールに従い，文字を分類します．
+
+@table @samp
+
+@item -b
+@opindex -b
+@cindex blanks, ignoring leading
+それぞれの行でソートするキーを探すとき，前の空白を無視します．
+
+@item -d
+@opindex -d
+@cindex phone directory order
+@cindex telephone directory order
+@dfn{phone directory}の順序でソートします．ソート時に，文字，数字，そし
+て空白以外の全ての文字は無視されます．
+
+@item -f
+@opindex -f
+@cindex case folding
+ソート時に，小文字を大文字と同じに扱い，例えば，@samp{b}と@samp{B}は同等
+にソートされます．
+
+@item -g
+@opindex -g
+@cindex general numeric sort
+数値的なソートをし，それには，それぞれの行のプレフィクスを倍精度浮動小数
+点の数に変換するため，標準C関数@code{strtod}を使用します．これで，
+@code{1.0e-34}と@code{10e100}のような浮動小数点の数を，科学的な表記方で
+指定できます．オーバーフローや，アンダーフロー，変換エラーは報告しません．
+以下の対照の順序を使用します．
+
+@itemize @bullet
+@item
+数字で始まらない行(全て同じと考えます)．
+@item
+NaNs(``Not a Number''値で，IEEE浮動小数点の評価)一貫しているがマシンに依
+存した順番．
+@item
+負の無限大．
+@item
+数字の順番に並んだ有限数(@math{-0}と@math{+0}は等しい)．
+@item
+正の無限大．
+@end itemize
+
+他に選択肢が無い場合のみ，このオプションを使用してください．@samp{-n}よ
+りはるかに遅く，浮動小数点に変換するとき，情報を失うはずです．
+
+@item -i
+@opindex -i
+@cindex unprintable characters, ignoring
+印刷不可能な文字を無視します．
+
+@item -M
+@opindex -M
+@cindex months, sorting by
+@vindex LC_TIME
+あらゆる量の空白と，以下に月の名前の省略が続くものから成り立つ，最初の文
+字列は，大文字に覆われ，@samp{JAN} < @samp{FEB} < @dots{} < @samp{DEC}の
+順に比較されます．無効な名前は，有効な名前の下になります．@env{LC_TIME}
+ロケールは，月の綴を決定します．
+
+@item -n
+@opindex -n
+@cindex numeric sort
+@vindex LC_NUMERIC
+数値的なソートです．数字でそれぞれの行を開始します．特に，オプションの空
+白，オプションの@samp{-}記号，そして，1000で区切られたり，小数点文字とゼ
+ロ以上の桁を続けることが可能な，ゼロ以上の桁から成り立ちます．
+@env{LC_NUMERIC}ロケールで，小数点文字と1000区切りを指定します．
+
+@code{sort -n}は，浮動小数点の数を表現する文字列を比較するため，慣習的と
+は思われない手法を使用します．最初にそれぞれの文字列をC @code{double}形
+式に変換して，それらの値を比較するのではなく，ソートは，2つの文字列の小
+数点文字を一列に並べて，一度に文字の列を比較します．このアプローチを使う
+1つの利益は速度です．実際には，それは，2つの対応する文字列を倍精度浮動小
+数点に(または，文字列を整数に)変換し，倍精度浮動小数点を比較するより効率
+的です．更に，精度に対応する損失はありません．それぞれの文字列を比較前に
+@code{double}に変換することは，ほとんどのシステムで16桁程度に精度が制限
+されるでしょう．
+
+前置される@samp{+}も，指数表記も認識されません．そのような文字列を数値的
+に比較するために，@samp{-g}オプションを使用してください．
+
+@item -r
+@opindex -r
+@cindex reverse sorting
+比較の結果を逆順にし，より大きなキー値を持つ行が，出力で後ろになる代わり
+に，より早く現われるようになります．
+@end table
+
+その他のオプションは以下の通りです．
+@table @samp
+
+@item -o @var{output-file}
+@opindex -o
+@cindex overwriting of input, allowed
+標準出力の代わりに，@var{output-file}に出力を書き出します．
+@var{output-file}が入力ファイルの1つの場合，@code{sort}はそれを，ソート
+前に一時ファイルにコピーし，@var{output-file}に出力を書き出します．
+
+@item -t @var{separator}
+@opindex -t
+@cindex field separator character
+それぞれの行からソート行を検索するとき，フィールドセパレータとして，文字
+@var{separator}を使用します．デフォルトで，フィールドは，空白でない文字
+と空白文字の間の空の文字列で分離されます．すなわち，入力行@w{@samp{ foo
+bar}}が与えられた場合，@code{sort}はそれを，フィールド@w{@samp{ foo}}と
+@w{@samp{ bar}}に分離します．フィールドセパレータは，フィールドの前やフィー
+ルドの後の部分とは考えられません．
+
+@item -u
+@opindex -u
+@cindex uniquifying output
+デフォルトの場合や@samp{-m}オプションに対し，比較が等しい行の順序の最初
+のみを出力します．@samp{-c}オプションに対し，比較が等しい連続した行の対
+が無いことを調査します．
+
+@item -k @var{pos1}[,@var{pos2}]
+@opindex -k
+@cindex sort field
+ソートフィールドを指定するための，@sc{posix}の推薦されるオプションです．
+フィールドは，@var{pos1}と@var{pos2}(または，@var{pos2}が省略された場合
+は行末)の間の行の部分から成り立つ，全てを@emph{包括}します．フィールドと
+文字の位置は，1から番号付けされます．そのため，2番目のフィールドをソート
+するため，@samp{-k 2,2}を使用してください．以下により多くの例があります．
+
+@item -z
+@opindex -z
+@cindex sort zero-terminated lines
+入力を行のセットとして扱い，@sc{ascii} @sc{lf} (Line Feed)の代わりにゼロ
+バイト(@sc{ascii} @sc{nul} (Null)文字)で終端します．このオプションは，任
+意のパス名を(ラインフィード文字を含んでいても)確実に処理するため，
+@samp{perl -0}や，@samp{find -print0}と@samp{xargs -0}と組み合わせると便
+利です．
+
+@item +@var{pos1}[-@var{pos2}]
+時代遅れで，ソートフィールドを指定するための伝統的なオプションです．フィー
+ルドは，行の@var{pos1}と@var{pos2}(または，@var{pos2}が省略された場合は
+行末)を@emph{含まない}間から成り立ちます．フィールドと文字の位置は，0か
+ら番号付けされます．以下を見てください．
+
+@end table
+
+更に，GNU @code{sort}が正確に1つの引数で呼び出されたとき，オプション
+@samp{--help}と@samp{--version}は認識されます．@xref{Common options}.
+
+歴史的な(BSDとSystem Vの)@code{sort}の実装は，いくつかのオプションの解釈
+で異なり，特に，@samp{-b}，@samp{-f}と@samp{-n}です．GNU @code{sort}は，
+@sc{posix}の動作に従い，それは通常(常にではない!)System V の動作に似てい
+ます．@sc{posix}によると，@samp{-n}は，もはや@samp{-b}を暗示しません．一
+貫性のため，@samp{-M}も同様に変更されました．これは，分かりにくい場合の
+フィールドの指定で，文字の位置の意味に影響するかもしれません．唯一の訂正
+は，明示的に@samp{-b}を加えることです．
+
+@samp{-k}や@samp{+}オプションを用いたソート時のフィールド指定の位置は，
+@samp{@var{f}.@var{c}}形式を持ち，@var{f}は使用するフィールド数で，
+@var{c}は(@samp{+@var{pos}}に対する)フィールドの最初から，または，
+(@samp{-@var{pos}}に対する)前のフィールドの終りからの，最初の文字数です．
+@samp{.@var{c}}が省略された場合，フィールドの最初の文字を用います．
+@samp{-b}オプションが指定された場合，指定したフィールドの@samp{.@var{c}} 
+の部分は，(@samp{+@var{pos}}に対する)フィールドの最初の空白ではない文字
+から，または，(@samp{-@var{pos}}に対する)前のフィールドから続く最初の空
+白ではない文字から数えます．
+
+ソートキーオプションは，オプション文字@samp{Mbdfinr}を加えることが可能で，
+その場合，大域的な順序オプションは，特定のフィールドに使用されません．
+@samp{-b}オプションは，指定したフィールドの@samp{+@var{pos}}と
+@samp{-@var{pos}}の部分の，一方または両方に独立に適用され，大域的なオプ
+ションを継承する場合，両方に適用されます．キーは複数のフィールドに跨るこ
+とができます．
+
+ここに，様々なオプションの組合せを紹介する例があります．その中で，ソート
+キーを指定するための@sc{posix} @samp{-k}オプションが，時代遅れの
+@samp{+@var{pos1}-@var{pos2}}構文の代わりに使用されています．
+
+@itemize @bullet
+
+@item
+下降的な(逆順の)数の順序でソートします．
+
+@example
+sort -nr
+@end example
+
+アルファベット順に，最初と2番目のフィールドを除いてソートします．これは，
+フィールド3から始まり，それぞれの行の終りまで続く文字で構成された，単一
+のキーを使用します．
+
+@example
+sort -k3
+@end example
+
+@item
+2番目のフィールドを数値的にソートし，フィールド5の3番目と4番目の文字のア
+ルファベットでソートすることで，対等なものを解決します．フィールド分離に
+@samp{:}を使用します．
+
+@example
+sort -t : -k 2,2n -k 5.3,5.4
+@end example
+
+@samp{-k 2,2}の代わりに@samp{-k 2}と書いた場合，@samp{sort}は2番目のフィー
+ルドで始まり，行の終りまで続く全ての文字を，主要な@emph{数値}キーとして
+使用することに注意してください．アプリケーションのほとんど大多数に対し，
+数値として1フィールド以上に跨って扱うキーは，期待したものではないでしょ
+う．
+
+また，@samp{n}の修飾は，最初のキーに対し，フィールドの終りを指定するもの
+に適用されることに注意してください．それは，@samp{-k 2n,2}や@samp{-k
+2n,2n}を指定することと同じです．全ての修飾は，@samp{b}が関連する
+@emph{フィールド}に適用されることを期待し，修飾文字がフィールドの最初と/また
+は，キー指定のフィールドの終りに適用されるかどうかに依存しません．
+
+@item
+5番目のフィールドでパスワードファイルをソートし，あらゆる前置される空白
+を無視します．フィールド5が等しい値の行を，フィールド3のユーザIDでソート
+します．
+
+@example
+sort -t : -k 5b,5 -k 3,3n /etc/passwd
+@end example
+
+代わりに，大域的な数値の修飾@samp{-n}を使用します．
+
+@example
+sort -t : -n -k 5b,5 -k 3,3 /etc/passwd
+@end example
+
+@item
+大文字小文字を識別するタグファイルを生成します．
+@example
+find src -type f -print0 | sort -t / -z -f | xargs -0 etags --append
+@end example
+
+この場合，@samp{-print0}，@samp{-z}と@samp{-0}の使用は，Line Feed 文字を
+含むパス名がソート処理で分かれないようにします．
+
+最後に，前後の空白を無視するため，@samp{b}修飾を最初のキーに対しフィール
+ドの終りの指定に適用できます．
+
+@example
+sort -t : -n -k 5b,5b -k 3,3 /etc/passwd
+@end example
+
+または，大域的な@samp{-b}修飾を@samp{-n}の代わりに使用し，2番目のキー指
+定に@samp{n}を明示します．
+
+@example
+sort -t : -b -k 5,5 -k 3,3n /etc/passwd
+@end example
+
+@c This example is a bit contrived and needs more explanation.
+@c @item
+@c Sort records separated by an arbitrary string by using a pipe to convert
+@c each record delimiter string to @samp{\0}, then using sort's -z option,
+@c and converting each @samp{\0} back to the original record delimiter.
+@c
+@c @example
+@c printf 'c\n\nb\n\na\n'|perl -0pe 's/\n\n/\n\0/g'|sort -z|perl -0pe 's/\0/\n/g'
+@c @end example
+
+@end itemize
+
+
+@node uniq invocation
+@section @code{uniq}: ファイルのユニーク化
+
+@pindex uniq
+@cindex uniquify files
+
+@code{uniq}は与えられたファイル，または与えられない場合や@samp{-}の
+@var{input}名に対し，ユニークな行を書き出します．概要です．
+
+@example
+uniq [@var{option}]@dots{} [@var{input} [@var{output}]]
+@end example
+
+デフォルトで，@code{uniq}はソートされたファイルのユニークな行を出力し，
+すなわち，一意に識別可能な行以外を全て削除します．オプションで，そうする
+代わりに，1度しか現われない行を表示したり，1度以上現われる行を表示したり
+できます．
+
+入力ファイルはソートされている必要があります．入力がソートされていない場
+合，おそらく@code{sort -u}を使用したいと思います．
+
+@var{output}ファイルが無い場合，@code{uniq}は標準出力に書き出します．
+
+このプログラムは，以下のオプションも受け入れます．@ref{Common options}, 
+も参照してください．
+
+@table @samp
+
+@item -@var{n}
+@itemx -f @var{n}
+@itemx --skip-fields=@var{n}
+@opindex -@var{n}
+@opindex -f
+@opindex --skip-fields
+ユニークさを調査する前に，それぞれの行の@var{n}フィールドスキップします．
+フィールドは，少なくとも1対上のスペースやタブで区切られた，非スペース，
+非タブ文字の並びです．
+
+@item +@var{n}
+@itemx -s @var{n}
+@itemx --skip-chars=@var{n}
+@opindex +@var{n}
+@opindex -s
+@opindex --skip-chars
+ユニークさの調査の前に，@var{n}文字スキップします．フィールドと文字のス
+キップオプションを両方とも使用した場合，フィールドが最初にスキップされま
+す．
+
+@item -c
+@itemx --count
+@opindex -c
+@opindex --count
+それぞれの行で同じものが発生した回数を出力します．
+
+@item -i
+@itemx --ignore-case
+@opindex -i
+@opindex --ignore-case
+行の比較時に大文字小文字の違いを無視します．
+
+@item -d
+@itemx --repeated
+@opindex -d
+@opindex --repeated
+@cindex duplicate lines, outputting
+重複する行のみを出力します．
+
+@item -D
+@itemx --all-repeated
+@opindex -D
+@opindex --all-repeated
+@cindex all duplicate lines, outputting
+全ての重複する行で，重複する行のみを出力します．このオプションは，主に他
+のオプションと組み合わせると便利で，例えば，大文字小文字を無視したり，選
+択したフィールドのみを比較する場合です．これは，GNUの拡張です．
+@c FIXME: give an example showing *how* it's useful
+
+@item -u
+@itemx --unique
+@opindex -u
+@opindex --unique
+@cindex unique lines, outputting
+ユニークな行のみ出力します．
+
+@item -w @var{n}
+@itemx --check-chars=@var{n}
+@opindex -w
+@opindex --check-chars
+(指定されたあらゆるフィールドと文字をスキップした後) それぞれの行の
+@var{n}文字比較します．デフォルトで，行の残りが比較されます．
+
+@end table
+
+
+@node comm invocation
+@section @code{comm}: 2つのソートされた行と行の比較
+
+@pindex comm
+@cindex line-by-line comparison
+@cindex comparing sorted files
+
+@code{comm}は，2つの入力ファイルの共通の行とユニークな行を標準出力に書き
+出します．@samp{-}のファイル名は標準有力を意味します．概要です．
+
+@example
+comm [@var{option}]@dots{} @var{file1} @var{file2}
+@end example
+
+@vindex LC_COLLATE
+@code{comm}を使用する前に，@env{LC_COLLATE}で指定された対照表の順に入力
+ファイルをソートする必要があり，後置される改行が重要です．入力ファイルが
+改行文字で終らない場合，改行は暗黙に付加されます．オプションを用いない
+@code{sort}コマンドは，@code{comm}の入力に適したファイルを常に出力します．
+
+@cindex differing lines
+@cindex common lines
+オプションが無い場合，@code{comm}は3列の出力を生成します．列の1は
+@var{file1}のユニークな行を含み，列の2は@var{file2}のユニークな行を含み，
+列の3は両方のファイルに共通な列を含みます．これ無は単一のTAB文字で分けら
+れます．
+@c FIXME: when there's an option to supply an alternative separator
+@c string, append `by default' to the above sentence.
+
+@opindex -1
+@opindex -2
+@opindex -3
+オプションの@samp{-1}，@samp{-2}と，@samp{-3}は，対応する列の出力を抑制
+します．@ref{Common options},も参照してください．
+
+他の比較ユーティリティと異なり，@code{comm}は比較の結果に依存しない終了
+ステータスがあります．上記の通常の比較で，@code{comm}はゼロのコードで終
+了します．エラーがあった場合，ゼロでないステータスで終了します．
+
+@node tsort invocation
+@section @code{tsort}: 位相幾何学的なソート
+
+@pindex tsort
+@cindex topological sort
+
+@code{tsort}は，位相幾何学的なソートを，与えられたファイルや，入力ファイ
+ルが与えられない場合や@samp{-}のファイルに対しては標準入力で実行します．
+概要です．
+
+@example
+tsort [@var{option}] [@var{file}]
+@end example
+
+@code{tsort}は，その入力を文字列の組として読み込み，空白で分離し，それは
+不完全な順序で示されています．出力は，与えられた不完全な順序に対応する完
+全な順序です．
+
+例えば以下のようにします．
+
+@example
+tsort <<EOF
+a b c
+d
+e f
+b c d e
+EOF
+@end example
+
+@noindent
+これは以下の出力を生成します．
+
+@example
+a
+b
+c
+d
+e
+f
+@end example
+
+@code{tsort}は入力で円を検出し，出現した最初の円を標準エラーに書き出しま
+す．
+
+与えられた不完全な順序が，一般に唯一の完全な順序でないことに注意してくだ
+さい．
+
+オプションは，@samp{--help}と@samp{--version}のみです．@xref{Common
+options}.
+
+@node ptx invocation
+@section @code{ptx}: 並べ替えた索引の生成
+
+@pindex ptx
+
+@code{ptx}は，テキストファイルを読み込み，その内容のそれぞれのキーワード
+を用いて，並べ替えられた索引を本来は生成します．呼び出しの形態は以下の1
+つです．
+
+@example
+ptx [@var{option} @dots{}] [@var{file} @dots{}]
+ptx -G [@var{option} @dots{}] [@var{input} [@var{output}]]
+@end example
+
+@samp{-G}(または同等の: @samp{--traditional})オプションは，全てのGNU拡張
+を利用不可にし，伝統的なモードに切替え，そのため，いくつかの制限と，プロ
+グラムのオプションデフォルト値を変更します．@samp{-G}が指定されていない
+場合，GNU拡張は常に利用可能です．@code{ptx}のGNU拡張は，このドキュメント
+に適切に文章化されています．完全なリストは，@xref{Compatibility in ptx}.
+
+個別のオプションは，以下のセクションで説明されます．
+
+GNU拡張が利用可能なとき，ゼロ，1つまたは複数の@var{file}が，オプションの
+後にあります．@var{file}が無い場合，プログラムは標準入力から読み込みます．
+1つまたは複数@var{file}ある場合，全ての入力ファイルが連結されているかの
+ように，その回で全て読み込まれる入力ファイル名を与えます．しかし，それぞ
+れのファイルの間に完全に文脈の終りが有り，自動的な参照が要求されるとき，
+ファイル名と行番号は，入力ファイルの個別のテキストを参照します．全ての場
+合で，プログラムは並べ替えられた索引を標準出力に書き出します．
+
+GNU拡張が利用可能で@emph{ない}とき，すなわち，伝統的なモードでプログラム
+が動作しているとき，ゼロ，1つまたは2つのパラメータがオプションの後にあり
+ます．パラメータが無い場合，プログラムは標準入力を読み込み，標準出力に並
+べ替えた索引を生成します．1つのパラメータのみの場合，それは標準入力の代
+わりに読み込まれるテキスト@var{input}を指名します．2つのパラメータが与え
+られた場合，それらはそれぞれ，読み込まれる@var{input}ファイル名と，生成
+する@var{output}ファイル名を与えます．この場合，2番目のパラメータとして
+与えられるファイルの内容が壊れることに@emph{十分注意して}ください．この
+動作は，出力パラメータを妨げるGNU標準がオプションで導入されたのではない
+ので，System V @code{ptx}互換のみにより規定されています．
+
+@emph{あらゆる}ファイルは，オプション値や入力テキストファイルとして指
+名され，単一のダッシュ@kbd{-}は使用でき，その場合標準入力と考えられます．
+しかし，プログラムの呼び出しに1回以上，この慣習を使用する意味はありませ
+ん．
+
+@menu
+* General options in ptx::      Options which affect general program behaviour.
+* Charset selection in ptx::    Underlying character set considerations.
+* Input processing in ptx::     Input fields, contexts, and keyword selection.
+* Output formatting in ptx::    Types of output format, and sizing the fields.
+* Compatibility in ptx::
+@end menu
+
+
+@node General options in ptx
+@subsection 一般的なオプション
+
+@table @samp
+
+@item -C
+@itemx --copyright
+著作権とコピー条件の短いメモを出力し，それ以上何も処理せず終了します．
+
+@item -G
+@itemx --traditional
+既に拡張されているので，このオプションは，@code{ptx}に対する全てのGNU拡
+張を利用不可にし，伝統的なモードに切替えます．
+
+@item --help
+短いヘルプを標準出力に出力し，それ以上何も処理せず終了します．
+
+@item --version
+プログラムのバージョンを標準出力に出力し，それ以上何も処理せずに終了しま
+す．
+@end table
+
+
+@node Charset selection in ptx
+@subsection 文字セットの選択
+
+現在セットアップされているので，プログラムは，入力ファイルが8ビットISO
+8859-1コードを使用して符号化されていると考え，Latin-1文字セットだという
+ことも分かりますが，それは，MS-DOSでコンパイル@emph{されていない場合}で，
+その場合はIBM-PCの文字セットを使用します．(GNU @code{ptx}は，より小さい
+MS-DOSマシンで働く方法を知りません．) 7-bit @sc{ascii}に比べて，文字であ
+る文字セットは異なっていて，この事実は正規表現の一致の動作を変更します．
+そのため，キーワードに対するデフォルトの正規表現で，外国や発音記号の文字
+が可能となります．しかし，キーワードのソートはそのままです．それは，全く
+盲目的に基礎的な文字セットの順序に従います．
+
+@table @samp
+
+@item -f
+@itemx --ignore-case
+ソートに対し，小文字を大文字にまとめます．
+@end table
+
+
+@node Input processing in ptx
+@subsection 単語の選択と入力の処理
+
+@table @samp
+
+@item -b @var{file}
+@item --break-file=@var{file}
+
+このオプションは，単語を生成する文字の記述方法(@samp{-W})の代替物を提供
+します．それは，単語の部分にならない文字のリストを含むファイル名を導入し，
+このファイルは@dfn{ブレークファイル}と呼ばれます．ブレークファイルの一部
+でないあらゆる文字は単語の要素です．@samp{-b}と@samp{-W}を両方指定した場
+合，@samp{-W}が優先され@samp{-b}は無視されます．
+
+GNU拡張が利用可能な場合，改行をブレーク文字とすることを避ける唯一の方法
+で，ファイルの終りにさえ改行が全く無いファイルに，全てのブレーク文字を書
+くことでできます．GNU拡張が利用不可能な場合，スペース，タブ，改行は，ブ
+レークファイルの含まれている場合でさえ，常にブレーク文字と考えます．
+
+@item -i @var{file}
+@itemx --ignore-file=@var{file}
+
+このオプションで関連付けられたファイルは，用語索引の出力でキーワードとさ
+れない単語のリストを含みます．それは@dfn{無視ファイル}と呼ばれます．ファ
+イルは，正確にそれぞれの行に1単語を含みます．単語を分ける行の終りは，
+@samp{-S}オプションの値を適用されません．
+
+このオプションが指定されない場合，デフォルトの無視ファイルは@code{ptx}が
+使用され，インストール時に変更されていない場合，通常は
+@file{/usr/local/lib/eign}で見つかります．デフォルトの無視ファイルの影響
+を無くしたい場合，代わりに@code{/dev/null}を指定してください．
+
+@item -o @var{file}
+@itemx --only-file=@var{file}
+
+このオプションで関連付けられたファイルは，用語索引の出力に維持される単語
+のリストを含み，このファイルで述べれいないあらゆる単語は無視されます．ファ
+イルは@dfn{オンリーファイル}と呼ばれています．ファイルは，正確にそれぞれ
+の行に1単語を含みます．単語を分ける行の終りは，@samp{-S}オプションの値を
+適用されません．
+
+オンリーファイルにデフォルトはありません．オンリーファイルと無視ファイル
+の両方にある場合，オンリーファイルで与えられ，無視ファイルで与えられない
+単語のみキーワードに適用されます．
+
+@item -r
+@itemx --references
+
+それぞれの入力行で，空白文字でない前置された並びは，生成され並べ替えされ
+た索引の，この入力行を識別する目的を持つ参照として受け入れます．参照生成
+に関するより多くの情報は，@xref{Output formatting in ptx}.  このオプショ
+ンの使用で，オプション@samp{-S}に対するデフォルト値を変更します．
+
+このオプションの使用で，プログラムは出力の文脈からの参照の削除の試みが非
+常に難しくなりますが，文脈の終りが正確に改行で終る@emph{とき}，そうする
+ことに成功します．オプション@samp{-r}が@samp{-S}デフォルト値とともに使用
+された場合や，GNU拡張が利用不可能なとき，この条件は常に満たされ，参照は
+完全に出力文脈から除外されます．
+
+@item -S @var{regexp}
+@itemx --sentence-regexp=@var{regexp}
+
+このオプションは，行末や文の終りを記述する正規表現を選択します．実際，こ
+の正規表現の効果以外に，行末や文の終わりのには他の区別があり，入力行の境
+界は，このオプションの外で特別な重要性はありません．デフォルトで，GNU拡
+張が使用可能なときや，@samp{-r}オプションが使用されていない場合，文の終
+りが使用されます．この場合，正確な@var{regex}はGNU emacsから取り込まれま
+す．
+
+@example
+[.?!][]\"')@}]*\\($\\|\t\\|  \\)[ \t\n]*
+@end example
+
+GNU拡張が使用不可能なときや，@samp{-r}オプションが使用されている場合は，
+常に行の終りが使用され，この場合デフォルトの@var{regexp}は以下のようにな
+ります．
+
+@example
+\n
+@end example
+
+空の@var{regexp}の使用は，行末と文の終りの認識を完全に不可能にすることと
+同等です．この場合，ファイル全体が単一の大きな行や文と考えられます．ユー
+ザは，オプション@samp{-F ""}を通じて，全ての切り詰めフラグの生成を，不許
+可にしたい場合もあります．@xref{Regexps, , Syntax of Regular
+Expressions, emacs, The GNU Emacs Manual}.
+
+キーワードが入力行や文の最初で発生したとき，出力文脈の行の最初に利用され
+ない領域を作成することが良くあります．キーワードが入力行や文の終り近くで
+発生したとき，出力文脈の行の終りに利用されない領域を作成することが良くあ
+ります．プログラムは，その中の文脈の周りを包むことで，それらの領域を補充
+しようとします．入力行や文の頭は，出力行の右の利用されていない行を補充す
+るために使用されます．
+
+ユーザの利便性の問題として，C言語で見つかる，多くの通常のバックスラッシュ
+されたエスケープ・シーケンスは認識され，@code{ptx}自身によって対応する文
+字に変換されます．
+
+@item -W @var{regexp}
+@itemx --word-regexp=@var{regexp}
+
+このオプションは，それぞれのキーワードを記述している正規表現を選択します．
+デフォルトで，GNU拡張が利用可能な場合，単語は文字の並びです．使用される
+@var{regexp}は@samp{\w+}です．GNU拡張が利用不可能な場合，単語はデフォル
+トで，スペース，タブ，または改行で終るあらゆるものです．使用される
+@var{regexp}は@samp{[^ \t\n]+}です．
+
+空の@var{regexp}は，このオプションを使用しないのと同等で，デフォルト動作
+になります．@xref{Regexps, , Syntax of Regular Expressions, emacs, The
+GNU Emacs Manual}.
+
+ユーザの利便性の問題として，C言語で見つかる，多くの通常のバックスラッシュ
+されたエスケープ・シーケンスは認識され，@code{ptx}自身によって対応する文
+字に変換されます．
+
+@end table
+
+
+@node Output formatting in ptx
+@subsection 出力の書式
+
+出力書式は，主に@samp{-O}と@samp{-T}オプションで制御され，それは以下の表
+で記述されています．@samp{-O}も@samp{-T}も選択されていないときで，GNU拡
+張が利用可能な場合，プログラムは dumb 端末に適した出力書式を選択します．
+それぞれのキーワードの発生は，出力を行の中心にし，周りをその左右の文脈で
+囲います．それぞれのフィールドは適切に正当化されるので，用語索引の出力は
+容易に観察できます．特別な特徴として，自動的な参照がオプション@samp{-A} 
+で指定されていて，左の文脈の前に出力されている，すなわち，オプション
+@samp{-R}が選択されて@emph{いない}場合，コロンが参照の後に追加されます．
+これは，GNU Emacsが@code{next-error}を処理することでうまく作用します．こ
+のデフォルト出力書式では，改行やタブのようなそれぞれの空白文字は，正確に
+1つのスペースに単に変換され，連続したスペースの圧縮は特に試みません．こ
+れは将来変更されるかも知れません．これらの空白文字以外の，256文字の基本
+セットの全ての他の文字は逐語的に転送されます．
+
+出力書式は，以下のオプションで更に制御されます．
+
+@table @samp
+
+@item -g @var{number}
+@itemx --gap-size=@var{number}
+
+出力行のフィールド間の最小の空白の隙間を選択します．
+
+@item -w @var{number}
+@itemx --width=@var{number}
+
+それぞれの最終行の出力最大幅を選択します．参照が使用される場合，
+@samp{-R}オプションの値に依存して，それらは出力最大幅に含められたり省か
+れたりします．これらのオプションが選択されていない場合，すなわち，参照が
+左の文脈の前に出力されるとき，出力最大幅は全ての参照の最大長まで考慮に入
+れられます．このオプションが選択された場合，すなわち，参照が右の文脈の後
+に出力されるとき，出力最大幅は参照が使用するスペースの量も，前にある隙間
+も考慮に入れられません．
+
+@item -A
+@itemx --auto-reference
+
+自動的な参照を選択します．それぞれの入力行は，ファイル名と間に単一のコロ
+ンを用いた行の序数で作成された自動的な参照を持ちます．しかし，標準入力が
+読み込まれているときは，ファイル名は空です．@samp{-A}と@samp{-r}の両方が
+選択された場合，入力参照は読み込まれスキップされますが，自動的な参照は出
+力時に利用され，それは入力参照に優先します．
+
+@item -R
+@itemx --right-side-refs
+
+デフォルト出力書式で，オプション@samp{-R}が使用されていないとき，オプショ
+ン@samp{-r}や@samp{-A}の影響で生成されるあらゆる参照は，右の文脈の後に，
+出力行の右端に与えられます．デフォルト出力書式で，オプション@samp{-R}が
+指定された場合，参照は，左の文脈の前に，それぞれの出力行の始めに代わりに
+与えられます．それ以外のあらゆる出力書式に対し，@samp{-R}が選択されたと
+きは常に，参照の幅が@samp{-w}で与えられた全体の出力幅に含まれ@emph{ない} 
+という事実以外，オプション@samp{-R}はほとんど無視されます．
+
+GNU拡張が利用不可能なときは，常にこのオプションは自動的に選択されます．
+
+@item -F @var{string}
+@itemx --flac-truncation=@var{string}
+
+このオプションは，文字列@var{string}の使用が報告された出力での，あらゆる
+切り詰めを要求します．ほとんどの出力フィールドは，オプション@samp{-S}が
+選択されたのと同様に，現在の行や現在の文の始めや終りに向かって，理論的に
+展開されます．しかし，許可される出力行幅の最大値は存在し，オプション
+@samp{-w}で変更でき，それは様々な出力フィールドに対しスペースで更に分割
+されます．現在の行に適するよう，その行の最初や終りまで拡張することができ
+ないため，フィールドが切り詰める必要があるとき，切り詰めが発生します．デ
+フォルトで，使用される文字列は単一のスラッシュで，@samp{-F /}のようにな
+ります．
+
+@var{string}は1文字以上が可能で，@samp{-F ...}のようになります．また，
+@var{string}が空(@samp{-F ""})となる特定の場合，切り詰めフラグは利用不可
+能で，切り詰めマークはこの場合現われません．
+
+ユーザの利便性の問題として，多くの通常の，C言語で見つかる，バックスペー
+スされたエスケープ・シーケンスは認識され，@code{ptx}自身によって，対応す
+る文字に変換されます．
+
+@item -M @var{string}
+@itemx --macro-name=@var{string}
+
+@code{nroff}，@code{troff}や@TeX{}に適した出力を生成している間，
+@samp{xx}の代わりに，使用する他の@var{string}を選択します．
+
+@item -O
+@itemx --format=roff
+
+@code{nroff}や@code{troff}の処理に適した出力書式を選択します．それぞれの
+出力行は以下のようになります．
+
+@example
+.xx "@var{tail}" "@var{before}" "@var{keyword_and_after}" "@var{head}" "@var{ref}"
+@end example
+
+それで，出力の植字を処理するための，@samp{.xx} roffマクロを書くことが可
+能になります．GNU拡張が利用不可能な場合，これはデフォルト出力です．オプ
+ション@samp{-M}は，@samp{xx}を他のマクロ名に変更するために利用可能です．
+
+この出力形式で，改行やタブのようなそれぞれの表示不可能な文字は，連続した
+スペースを圧縮するという特別な試みを行わず，正確に1つのスペースに単に変
+換されます．それぞれの引用文字：@kbd{"}は2重になるので，@code{nroff}や
+@code{troff}で正しく処理されます．
+
+@item -T
+@itemx --format=tex
+
+@TeX{}での処理に適した出力書式を選択します．それぞれの出力行は以下のよう
+になります．
+
+@example
+\xx @{@var{tail}@}@{@var{before}@}@{@var{keyword}@}@{@var{after}@}@{@var{head}@}@{@var{ref}@}
+@end example
+
+@noindent
+それで，出力の植字の処理するための@code{\xx}定義を書くことが可能になりま
+す．参照が生成されないとき，すなはち，オプション@samp{-A}もオプション
+@samp{-r}も選択されていないとき，それぞれの@code{\xx}の最後のパラメータ
+が抑制されることに注意してください．オプション@samp{-M}は，@samp{xx}を他
+のマクロ名に変更するために利用可能です．
+
+この出力書式では，@kbd{$}，@kbd{%}，@kbd{&}，@kbd{#}そして@kbd{_}のよう
+な，いくつかの特殊文字は，自動的にバックスラッシュで保護されます．弓カッ
+コの@kbd{@{}，@kbd{@}}もバックスラッシュで保護されますが，数学モードを強
+制するドル記号の組でも囲まれます．バックスラッシュ自身は
+@code{\backslash@{@}}の並びを生成します．曲折アクセント記号とティルデ分
+音記号は，@code{^\@{ @}}と@code{~\@{ @}}の並びをそれぞれ生成します．その
+他の基礎となる文字セットの分音文字は，適切な@TeX{}の並びを可能な限り生成
+します．改行とタブのようなその他の表示不可能な文字と，@sc{ascii}ではない
+全ての他の文字は，連続したスペースを圧縮するという特別な試みを行わず，1 
+つのスペースに単に変換されます．これらの特殊文字を@TeX{}で処理する改善方
+法を知らせてください．
+
+@end table
+
+
+@node Compatibility in ptx
+@subsection @code{ptx}のGNU拡張
+
+この@code{ptx}のバージョンには，System V @code{ptx}には存在しないいくつ
+かの特徴があります．これらの拡張された特徴は，他のコマンドラインオプショ
+ンで優先されない場合，@samp{-G}コマンドラインオプションを使用して抑制さ
+れます．GNU拡張には，優先で元に戻すことができないものがあり，そのため，
+GNU拡張を気にする場合，簡単な規則で@samp{-G}を避けるはずです．ここに，こ
+のプログラムとSystem V @code{ptx}の間の違いがあります．
+
+@itemize @bullet
+
+@item
+このプログラムは，一度に多くの入力ファイルを読むことが可能で，それは常に，
+用語索引の結果を標準出力に書き出します．一方，System V @code{ptx}は，1つ
+のみファイルを読み込み，結果を標準出力に書き出すか，2番目の@var{file}パ
+ラメータがコマンドで与えられている場合は，その@var{file}に書き出します．
+
+オプションで導入されない出力パラメータがあるということは，GNUができる限
+り避ける全く危険な操作です．そのため，GNUとSystem Vの間の移植性のある
+@code{ptx}を使用するため，単一の入力ファイルで常に使用することに注意を払
+い，常に標準出力で結果を期待するべきです．配置するものが@samp{-G}を受け
+入れる@code{ptx}がインストールされていることが分かった場合，@code{ptx}を
+使用した製品での@code{ptx}の呼び出しで，@samp{-G}オプションを自動的に配
+置したいと思うかもしれません．
+
+@item
+System V @code{ptx}でのみ利用可能なオプションは，@samp{-b}，@samp{-f}，
+@samp{-g}，@samp{-i}，@samp{-o}，@samp{-r}，@samp{-t}と@samp{-w}です．全
+ての他のオプションはGNU拡張で，この列挙では繰り返しません．さらに，GNU拡
+張が利用可能なとき，わずかに意味が異なるオプションもあり，以下で記述しま
+す．
+
+@item
+デフォルトで，用語索引出力は@code{troff}や@code{nroff}に対して書式化され
+ません．それはむしろ，dumb端末に対する出力です．@code{troff}や
+@code{nroff}の出力は，オプション@samp{-O}を通じて選択可能です．
+
+@item
+@samp{-R}オプションが選択されない場合，最大の参照幅は出力行幅全体から引
+いたものになります．GNU拡張が利用不可能な場合，参照の幅は出力行の幅の計
+算で考慮されません．
+
+@item
+@kbd{NUL}を含む256文字全ては，たとえGNU拡張が利用不可能な場合でも，常に
+入力ファイルから読み込まれ，不利な効果もなく処理されます．しかし，System
+V @code{ptx}は8ビット文字を受け入れず，いくつかの制御文字は削除され，チ
+ルダ@kbd{~}は処分されます．
+
+@item
+入力行の長さは，GNU拡張が利用できない場合でさえ，利用可能なメモリでのみ
+制限されます．しかしSystem V @code{ptx}は，それぞれの行の最初の200文字の
+み処理します．
+
+@item
+ブレーク(noord)文字は，全ての基礎となる文字セット以外，分音記号の有無に
+よらず，全ての文字をデフォルトとします．GNU拡張が利用不可能なとき，ブレー
+ク文字は，スペース，タブと改行のみをデフォルトとします．
+
+@item
+プログラムは，出力行の幅でより良いものを使用します．GNU拡張が利用不可能
+な場合，プログラムは，代わりにSystem V @code{ptx}を模倣しようとしますが，
+このプログラムが完全に再現していない，わずかな配置不備もまだあります．
+
+@item
+ユーザは，IgnoreファイルとOnlyファイルの両方を指定できます．これは，
+System V @code{ptx}では許可されません．
+
+@end itemize
+
+
+@node Operating on fields within a line
+@chapter 行のフィールドの処理
+
+@menu
+* cut invocation::              Print selected parts of lines.
+* paste invocation::            Merge lines of files.
+* join invocation::             Join lines on a common field.
+@end menu
+
+
+@node cut invocation
+@section @code{cut}: 行の選択した部分の出力
+
+@pindex cut
+@code{cut}は，それぞれの入力ファイルや，ファイルが与えられない場合や
+@samp{-}のファイル名に対しては標準入力の，それぞれの行の選択された部分を
+標準出力に書き出します．概要です．
+
+@example
+cut [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+以下の表で，@var{byte-list}，@var{character-list}と，@var{field-list}は，
+1つ以上の数字またはカンマで分けられた(ダッシュで分けられた2つの数字の)範
+囲です．バイト，文字と，フィールドは，1で始まる番号がつきます．不完全な
+範囲を与えることができます．@samp{-@var{m}}は@samp{1-@var{m}}を意味しま
+す．@samp{@var{n}-}は，@samp{@var{n}}から行末やフィールドの終りまでを意
+味します．
+
+このプログラムは以下のオプションも受け入れます．@ref{Common options},も
+参照してください．
+
+@table @samp
+
+@item -b @var{byte-list}
+@itemx --bytes=@var{byte-list}
+@opindex -b
+@opindex --bytes
+@var{byte-list}でリストアップされた位置にあるバイトのみを出力します．タ
+ブとバックスペースは他の文字と同様に扱われます．それらは1バイト使用しま
+す．
+
+@item -c @var{character-list}
+@itemx --characters=@var{character-list}
+@opindex -c
+@opindex --characters
+@var{character-list}にリストアップされた位置にある文字のみを出力します．
+現在は@samp{-b}と同じですが，国際化はそれを変更する可能性があります．タ
+ブとバックスペースは他の文字と同様に扱われます．それらは1バイト使用しま
+す．
+
+@item -f @var{field-list}
+@itemx --fields=@var{field-list}
+@opindex -f
+@opindex --fields
+@var{field-list}にリストアップされたフィールドのみを出力します．デフォル
+トで，フィールドはTAB文字で分けられています．
+
+@item -d @var{input_delim_byte}
+@itemx --delimiter=@var{input_delim_byte}
+@opindex -d
+@opindex --delimiter
+@samp{-f}に対し，フィールドは，@var{input_delim_byte}の最初の文字により，
+入力で分けられます(デフォルトはTABです)．
+
+@item -n
+@opindex -n
+マルチバイトの文字を分けません(現在何もしません)．
+
+@item -s
+@itemx --only-delimited
+@opindex -s
+@opindex --only-delimited
+@samp{-f}に対し，フィールド分離文字を含まない列を出力しません．
+
+@itemx --output-delimiter=@var{output_delim_string}
+@opindex --output-delimiter
+@samp{-f}に対し，出力フィールドは，@var{output_delim_string}で分けられま
+す．デフォルトは入力分離文字を使用します．
+
+@end table
+
+
+@node paste invocation
+@section @code{paste}: ファイルの行を統合します
+
+@pindex paste
+@cindex merging files
+
+@code{paste}は，与えられたそれぞれファイルの連続して対応している行から成
+り立つ行を標準出力に書き出し，それはTAB文字で分けられています．@samp{-} 
+のファイル名や，入力ファイルが与えられない場合，標準入力が使用されます．
+
+概要です．
+
+@example
+paste [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -s
+@itemx --serial
+@opindex -s
+@opindex --serial
+それぞれのファイルから1行ではなく，1度に1つのファイルの行をペーストしま
+す．
+
+@item -d @var{delim-list}
+@itemx --delimiters @var{delim-list}
+@opindex -d
+@opindex --delimiters
+統合される行の分離のTABの代わりに，@var{delim-list}の文字を順番に使用し
+ます．@var{delim-list}が使い尽くされたとき，その最初で再び開始します．
+
+@end table
+
+
+@node join invocation
+@section @code{join}: 共通のフィールドで行を結合
+
+@pindex join
+@cindex common field, joining on
+
+@code{join}は，同一の結合したフィールドを持つそれぞれの入力行の組の行を
+標準出力に書き出します．概要です．
+
+@example
+join [@var{option}]@dots{} @var{file1} @var{file2}
+@end example
+
+@vindex LC_COLLATE
+@var{file1}または@var{file2}は(両方ではなく)@samp{-}が可能で，標準入力を
+意味します．@var{file1}と@var{file2}は，結合したフィールド上で増加してい
+る，原文通りの順番で既に保存されているべきで，それは，@env{LC_COLLATE}ロ
+ケールで指定された，対照の順序を使用します．@samp{-t}オプションが与えら
+れていない場合，入力は，@code{sort -b}で，結合フィールドの最初の空白を無
+視して保存されているべきです．@samp{--ignore-case}オプションが与えられた
+場合，行は@code{sort -f}で，結合フィールドの文字の大文字小文字に関係なく
+ソートされているべきです．
+
+デフォルトは，以下の通りです．結合フィールドは，それぞれの行の最初のフィー
+ルドです．入力のフィールドは，1つ以上の空白で分かれていて，行の前の空白
+は無視されます．出力のフィールドはスペースで分けられています．それぞれの
+出力行は，結合フィールド，@var{file1}からの残りのフィールド，それから，
+@var{file2}の残りのフィールドから成り立ちます．
+
+プログラムは，以下のオプションを受け入れます．@ref{Common options},も参
+照してください．
+
+@table @samp
+
+@item -a @var{file-number}
+@opindex -a
+ファイル@var{file-number} (@samp{1}または@samp{2}のいずれか)で組になって
+いないそれぞれの行に対し，1行を通常の出力に追加して出力します．
+
+@item -e @var{string}
+@opindex -e
+入力で欠けているこれらの出力フィールドを，@var{string}で置換します．
+
+@item -i
+@itemx --ignore-case
+@opindex -i
+@opindex --ignore-case
+キーを比較するとき，大文字小文字の違いを無視します．このオプションを用い
+た場合，入力ファイルの行は同じ方法でソートされている必要があります．この
+順序を生成するために，@samp{sort -f}を使用してください．
+
+@item -1 @var{field}
+@itemx -j1 @var{field}
+@opindex -1
+@opindex -j1
+ファイル1のフィールド@var{field} (正の整数)で結合します．
+
+@item -2 @var{field}
+@itemx -j2 @var{field}
+@opindex -2
+@opindex -j2
+ファイル2のフィールド@var{field} (正の整数)で結合します．
+
+@item -j @var{field}
+@samp{-1 @var{field} -2 @var{field}}と同じです．
+
+@item -o @var{field-list}@dots{}
+@var{field-list}の書式に従い，それぞれの出力行を生成します．
+@var{field-list}のそれぞれの要素は，単一文字@samp{0}，または，ファイル番
+号の@var{m}が@samp{1}または@samp{2}で，@var{n}が正のフィールド番号となる
+@var{m.n}の形式になります．
+
+@samp{0}のフィールド指定は，結合フィールドを示します．ほとんどの場合，
+@samp{0}フィールドの指定の機能は，対応する結合フィールドとなる，明示的な
+@var{m.n}を用いて再現できます．しかし，(@samp{-a}または@samp{-v}オプショ
+ンを用いて)組にならない行を出力するとき，両方のファイルで組にならない行
+がある場合，@var{field-list}で@var{m.n}を用いて結合フィールドを指定する
+方法はありません．@code{join}にその機能を与えるため，@sc{posix}は
+@samp{0}フィールド指定の表記を考え出しました．
+
+@var{field-list}の要素は，カンマまたは空白で分けられています．複数の
+@var{field-list}引数で，単一の@samp{-o}オプションの後に与えることができ
+ます．@samp{-o}で与えられる全てのリストの値は，一緒に連結されます．全て
+の出力行は--@samp{-a}や@samp{-v}オプションで出力されるものを含め--指定さ
+れた@var{field-list}を適用されます．
+
+@item -t @var{char}
+文字@var{char}を入出力のフィールドセパレータとして使用します．
+
+@item -v @var{file-number}
+通常の出力の代わりに，ファイル@var{file-number} (1または2)の組にならない
+それぞれの行に対し，1行を出力します．
+
+@end table
+
+更に，GNU @code{join}が1つの引数で呼び出された場合，オプション
+@samp{--help}と@samp{--version}は認識されます．@xref{Common options}.
+
+@node Operating on characters
+@chapter 文字の処理
+
+@cindex operating on characters
+
+このコマンドは，個別に文字を処理します．
+
+@menu
+* tr invocation::               Translate, squeeze, and/or delete characters.
+* expand invocation::           Convert tabs to spaces.
+* unexpand invocation::         Convert spaces to tabs.
+@end menu
+
+
+@node tr invocation
+@section @code{tr}: 文字の変換，圧縮，そして/または，削除
+
+@pindex tr
+
+概要です．
+
+@example
+tr [@var{option}]@dots{} @var{set1} [@var{set2}]
+@end example
+
+@code{tr}は標準入力を標準出力にコピーし，そのとき以下の処理の一つを実行
+します．
+
+@itemize @bullet
+@item
+変換と，追加で結果の繰り返し文字の圧縮．
+@item
+繰り返し文字の圧縮．
+@item
+文字の削除．
+@item
+文字の削除後，結果から繰り返し文字の圧縮．
+@end itemize
+
+@var{set1}と(与えられている場合)@var{set2}引数は，文字の順序を持つ文字を
+定義し，以下の@var{set1}と@var{set2}を参照します．これらの設定は，
+@code{tr}が処理する入力文字です．@samp{--complement} (@samp{-c})オプショ
+ンは，@var{set1}をその補語(@var{set1}にない全ての文字)に置換します．
+
+@menu
+* Character sets::              Specifying sets of characters.
+* Translating::                 Changing one characters to another.
+* Squeezing::                   Squeezing repeats and deleting.
+* Warnings in tr::              Warning messages.
+@end menu
+
+
+@node Character sets
+@subsection 文字セットの指定
+
+@cindex specifying sets of characters
+
+@var{set1}と@var{set2}の引数の書式は，正規表現の書式に似ています．しかし
+正規表現ではなく，文字のリストのみです．これらの文字列のほとんどの文字は
+単にその文字自身を表すが，利便性のため，文字列には以下でリストアップされ
+た速記を含むことができます．そのうち，以下で注意する@var{set1}または
+@var{set2}のみでしか利用できないものもあります．
+
+@table @asis
+
+@item バックスラッシュエスケープ
+
+@cindex backslash escapes
+
+以下でリストアップされていない，文字が続くバックスラッシュは，エラーメッ
+セージを発生します．
+
+@table @samp
+@item \a
+Control-G.
+@item \b
+Control-H.
+@item \f
+Control-L.
+@item \n
+Control-J.
+@item \r
+Control-M.
+@item \t
+Control-I.
+@item \v
+Control-K.
+@item \@var{ooo}
+@var{ooo}で与えられる値の文字で，1から3桁までの8進数．
+@item \\
+バックスラッシュ．
+@end table
+
+@item 範囲
+
+@cindex ranges
+
+表記方法の@samp{@var{m}-@var{n}}は，@var{m}から@var{n}まで昇順に，全ての
+文字に展開されます．@var{m}は，対照で@var{n}の前であるべきです．そうでな
+い場合，結果としてエラーとなります．例としては，@samp{0-9}は
+@samp{0123456789}と同じです．GNU @code{tr}は，範囲を囲む角括弧を使用する
+System V 構文をサポートしませんが，その書式で指定された変換は，
+@var{set1}のカッコが@var{set2}のカッコと同じように対応する限り働き
+ます．
+
+@item 繰り返される文字
+@cindex repeated characters
+
+@var{set2}での@samp{[@var{c}*@var{n}]}の表記は，文字@var{c}の@var{n}個の
+コピーに展開されます．このため，@samp{[y*6]}は@samp{yyyyyy}と同じです．
+@var{set2}での@samp{[@var{c}*]}の表記は，@var{set2}を@var{set1}と同じ長
+さにするのに必要なだけ，@var{c}の多くのコピーに展開されます．@var{n}が
+@samp{0}で始まる場合は8進数に，それ以外では10進数に解釈されます．
+
+@item 文字クラス
+@cindex characters classes
+
+@samp{[:@var{class}:]}の表記は，(あらかじめ定義された)クラス@var{class}
+にある全ての文字に展開されます．文字は，特定の順序で展開されませんが，
+@code{upper}と@code{lower}クラスは，昇順に展開されます．@samp{--delete}
+(@samp{-d})と@samp{--squeeze-repeats} (@samp{-s})オプションが両方与えら
+れた場合，あらゆる文字クラスは@var{set2}で使用されるはずです．それ以外の
+場合，文字クラス@code{lower}と@code{upper}は，@var{set2}に適用され，そし
+てそれは，対応する(それぞれ@code{upper}と@code{lower}の)文字クラスは
+@var{set1}の位置に関連して同じものが指定されている場合のみです．こうする
+ことで，大文字小文字の変換を指定します．クラス名は以下で与えられます．無
+効なクラス名が与えられた場合，結果としてエラーとなります．
+
+@table @code
+@item alnum
+@opindex alnum
+文字と数字．
+@item alpha
+@opindex alpha
+文字．
+@item blank
+@opindex blank
+水平方向の空白．
+@item cntrl
+@opindex cntrl
+コントロール文字．
+@item digit
+@opindex digit
+数字．
+@item graph
+@opindex graph
+スペースを含まない，印刷可能な文字．
+@item lower
+@opindex lower
+小文字．
+@item print
+@opindex print
+スペースを含む，印刷可能な文字．
+@item punct
+@opindex punct
+句読点文字．
+@item space
+@opindex space
+水平垂直の空白．
+@item upper
+@opindex upper
+大文字．
+@item xdigit
+@opindex xdigit
+16進数の数字．
+@end table
+
+@item 等価なクラス
+@cindex equivalence classes
+
+構文@samp{[=@var{c}=]}は，@var{c}と等価な文字の全てに，特定の順序を持た
+ずに展開されます．等価なクラスは，英語以外のアルファベットをサポートする
+目的で，比較的最近発明されました．しかし，それらの定義や内容を決定する標
+準的な方法はなさそうです．それゆえ，GNU @code{tr}では，完全には実装され
+ていません．それぞれの文字の等価クラスは，その文字からのみ構成されていて，
+特定の利用価値はありません．
+
+@end table
+
+
+@node Translating
+@subsection 変換
+
+@cindex translating characters
+
+@var{set1}と@var{set2}の両方が与えられ，@samp{--delete} (@samp{-d})オプ
+ションが与えられていない場合，@code{tr}は変換を実行します．@code{tr}は，
+@var{set1}にある入力のぞれぞれの文字を，対応する@var{set2}の文字に変換し
+ます．@var{set1}に無い文字は，そのまま変換されず通過します．@var{set1}の
+文字が1回以上現われ，@var{set2}の対応する文字が全て同じではない場合，最
+後の1つのみ使用されます．例えば，以下の2つのコマンドは等価です．
+
+@example
+tr aaa xyz
+tr a z
+@end example
+
+@code{tr}の一般的な使用法は，小文字を大文字に変換することです．これは多
+くの方法で行うことができます．その3つを以下に書きます．
+
+@example
+tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
+tr a-z A-Z
+tr '[:lower:]' '[:upper:]'
+@end example
+
+@code{tr}が変換を実行しているとき，@var{set1}と@var{set2}は，通常同じ長
+さです．@var{set1}が@var{set2}より短い場合，@var{set2}の終りの余分な文字
+は無視されます．
+
+一方，@var{set1}を@var{set2}より大きくすることは移植性がありません．
+@sc{posix.2}は，その結果は未定義だと述べています．この場合，BSD
+@code{tr}は，@var{set2}を@var{set2}の最後文字で必要なだけ繰り返すことで
+@var{set1}の長さに引き延ばします．System V @code{tr}は，@var{set1}を
+@var{set2}の長さに切り詰めます．
+
+デフォルトで，GNU @code{tr}はBSD @code{tr}のようにこの状態を扱います．
+@samp{--truncate-set1} (@samp{-t})オプションが与えられた場合，GNU
+@code{tr}はSystem V @code{tr}のようにこの状態を扱います．このオプション
+は，変換以外の処理では無視されます．
+
+この場合，System V @code{tr}のように動作させると，比較的一般的なBSDの表
+現は壊れます．
+
+@example
+tr -cs A-Za-z0-9 '\012'
+@end example
+
+@noindent
+それは，全ての英数字を改行に変換する代わりに，(@var{set1}の補語の最初の
+要素)ゼロバイトのみ変換されるためです．
+
+@node Squeezing
+@subsection 繰り返しの圧縮と削除
+
+@cindex squeezing repeat characters
+@cindex deleting characters
+
+@samp{--delete} (@samp{-d})オプションのみ与えられたとき，@code{tr}は，
+@var{set1}にあるあらゆる入力文字を削除します．
+
+@samp{--squeeze-repeats} (@samp{-s})オプションのみ与えられたとき，
+@code{tr}は，@var{set1}にある，それぞれの入力の繰り返される文字の並びを，
+その文字の単一の発生(訳注：1つの文字)に置換します．
+
+@samp{--delete}と@samp{--squeeze-repeats}の両方が与えられた場合，
+@code{tr}は，最初に@var{set1}を用いて削除を実行し，@var{set2}を用いて残
+りの文字から繰り返しを圧縮します．
+
+@samp{--squeeze-repeats}オプションは，変換時にも利用でき，その場合，
+@code{tr}は，最初に変換を実行し，@var{set2}を用いて残りの文字から繰り返
+しを圧縮します．
+
+ここに，オプションの様々な組合せの表現例をいくつかあげます．
+
+@itemize @bullet
+
+@item
+全てのゼロバイトを削除．
+@example
+tr -d '\000'
+@end example
+
+@item
+全ての単語を独自の行にします．これは，全ての非英数文字を改行に変換し，繰
+り返される改行となるそれぞれの文字列を単一の改行に圧縮します．
+@example
+tr -cs 'a-zA-Z0-9' '[\n*]'
+@end example
+
+@item
+繰り返される改行のそれぞれの並びを，単一の改行に変換します．
+@example
+tr -s '\n'
+@end example
+
+@item
+ドキュメントで単語の2重の出現を見付けます．例えば，人々は，改行で分かれ
+ている複製された単語で，``the the''と書くこともよくあります．以下の
+bourneシェルスクリプトは，最初に句読点と空白文字の並びを単一の改行文字に
+変換する動作を行います．それはそれぞれの``単語''を単独行に書きます．次に
+それは，全ての大文字を小文字に置き換え，最後に，複製が隣接している単語の
+みを出力するために，@code{uniq}を@samp{-d}オプションで実行します．
+
+@example
+#!/bin/sh
+cat "$@@" \
+  | tr -s '[:punct:][:blank:]' '\n' \
+  | tr '[:upper:]' '[:lower:]' \
+  | uniq -d
+@end example
+
+@end itemize
+
+
+@node Warnings in tr
+@subsection 警告メッセージ
+
+@vindex POSIXLY_CORRECT
+環境変数@env{POSIXLY_CORRECT}を設定すると，@sc{posix.2}を厳密に遵守する
+ため，以下の警告とエラーのメッセージをオフにします．それ以外の場合，以下
+の診断が発生されます．
+
+@enumerate
+
+@item
+@samp{--delete}オプションが与えられているが，@samp{--squeeze-repeats}が
+与えられておらず，@var{set2}が与えられているとき，GNU @code{tr}は，
+@var{set2}が使用されないため，デフォルトで使用方法のメッセージを出力し終
+了します．@sc{posix}指定は，この場合@var{set2}は無視されるはずだと述べて
+います．黙って引数を無視するのは悪い考えです．
+
+@item
+曖昧な8進数のエスケープが与えられたときです．例えば@samp{\400}は，8進数
+の400の値が単一バイトに適さないので，実際には@samp{0}が後置された
+@samp{\40}になります．
+
+@end enumerate
+
+GNU @code{tr}は，BSDやSystem Vとの完全な互換性を提供しません．例えば，
+@sc{posix}の概念@samp{[:alpha:]}，@samp{[=c=]}と，@samp{[c*10]}の解釈を
+利用不可にすることはできません．また，GNU @code{tr}は，ゼロバイトを保護
+する方法を提供できない伝統的なUnixバージョンと異なり，ゼロバイトを自動的
+に削除できません．
+
+
+@node expand invocation
+@section @code{expand}: タブをスペースに変換
+
+@pindex expand
+@cindex tabs to spaces, converting
+@cindex converting tabs to spaces
+
+@code{expand}は，与えられたそれぞれの@var{file}，または，与えられない場
+合や@samp{-}の@var{file}の場合は標準入力の内容を，タブ文字を適切な数のス
+ペースに変換して，標準出力に書き出します．概要です．
+
+@example
+expand [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+デフォルトで，@code{expand}は全てのタブをスペースに変換します．それは全
+ての出力でバックスペース文字を維持します．それらはタブ計算に対し，列の数
+を減少させます．デフォルトの動作は@samp{-8}(タブをそれぞれ8列に設定する)
+と同じです．
+
+プログラムは，以下のオプションを受け入れます．@ref{Common options},も参
+照してください．
+
+@table @samp
+
+@item -@var{tab1}[,@var{tab2}]@dots{}
+@itemx -t @var{tab1}[,@var{tab2}]@dots{}
+@itemx --tabs=@var{tab1}[,@var{tab2}]@dots{}
+@opindex -@var{tab}
+@opindex -t
+@opindex --tabs
+@cindex tabstops, setting
+1つのタブストップのみ与えられた場合，タブを@var{tab1}個の別々のスペース
+(デフォルトで8)に設定します．それ以外の場合，タブを@var{tab1}，
+@var{tab2}，@dots{} (0から番号付けされる)列に設定し，与えられた最後のタ
+ブストップ以降のあらゆるタブを単一のスペースで置換します．タブストップが
+@samp{-t}や@samp{--tabs}オプションで指定された場合，それらは空白およびカ
+ンマで分けられます．
+
+@item -i
+@itemx --initial
+@opindex -i
+@opindex --initial
+@cindex initial tabs, converting
+それぞれの行の最初のタブ(前にあるものが全て非スペース文字や非タブ文字と
+なるもの)をスペースに変換します．
+
+@end table
+
+
+@node unexpand invocation
+@section @code{unexpand}: スペースをタブに変換する
+
+@pindex unexpand
+
+@code{unexpand}は，与えられたそれぞれの@var{file}，または与えられない場
+合や@samp{-}の@var{file}に対しては標準入力の内容を，2つ以上のスペースや
+タブ文字の文字列を，必要とされる多くのスペースと同等の，続けることが可能
+な多くのタブに変換しながら，内容を標準出力に書き出します．概要です．
+
+@example
+unexpand [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+デフォルトで，@code{unexpand}は，最初のスペースとタブ(前にあるものが全て
+非スペース文字や非タブ文字となるもの)のみを，ぞれぞれの行で変換します．
+それは，出力でバックスペース文字を維持します．タブの計算に対し，列の数を
+少なくします．デフォルトで，タブは8列毎に設定されます．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -@var{tab1}[,@var{tab2}]@dots{}
+@itemx -t @var{tab1}[,@var{tab2}]@dots{}
+@itemx --tabs=@var{tab1}[,@var{tab2}]@dots{}
+@opindex -@var{tab}
+@opindex -t
+@opindex --tabs
+1つのタブストップのみ与えられた場合，タブを，デフォルトの8の代わりに，そ
+れぞれ@var{tab1}スペースに設定します．それ以外の場合，タブを@var{tab1}列，
+@var{tab2}列，@dots{} (0から番号付けされる)に設定し，与えられたタブストッ
+プ以降のスペースタブは，変更されずに残ります．タブストップが@samp{-t}や
+@samp{--tabs}オプションで指定された場合，それらは空白とカンマで分けられ
+ます．オプションは暗黙に@samp{-a}オプションを指定します．
+
+@item -a
+@itemx --all
+@opindex -a
+@opindex --all
+最初のものだけでなく，全ての2つ以上のスペースやタブをタブに変換します．
+
+@end table
+
+@c              What's GNU?
+@c              Arnold Robbins
+@node Opening the software toolbox
+@chapter ソフトウェア・ツールボックスを開く(Opening the software toolbox)
+
+この章はもともと@cite{Linux Journal}，volume 1，number 2の@cite{What's
+GNU?}で記載されました．それは，Arnold Robbinsによって書かれました．
+
+@menu
+* Toolbox introduction::        Toolbox introduction
+* I/O redirection::             I/O redirection
+* The who command::             The @code{who} command
+* The cut command::             The @code{cut} command
+* The sort command::            The @code{sort} command
+* The uniq command::            The @code{uniq} command
+* Putting the tools together::  Putting the tools together
+@end menu
+
+
+@node Toolbox introduction
+@unnumberedsec ツールボックスの紹介
+
+今月のコラムは，GNUプロジェクトの周辺に関連するもので，そこでは，Linuxシ
+ステム上のGNUツールのいくつかと，それらの使われ方を記述します．それは正
+に，プログラム開発と使用方法の``ソフトウェアツール''の哲学です．
+
+ソフトウェアツールの哲学は，初期設計と(LinuxとGNUが本質的に複製している)
+Unixの開発では，重要で不可欠な概念でした．不幸にも，インターネットワーキ
+ングと派手なGUIの現在の出版では，それは王道からそれてしまっているように
+感じられます．それは強力な多くの種類の問題を解決するための精神的なモデル
+を提供するので残念です．
+
+多くの人は，ズボンのポケット(またはハンドバッグ)に，スイスのアーミーナイ
+フを持ち運んでいます．スイスのアーミーナイフは有用なハンディーツールです．
+それはいくつかのナイフの刃，ネジ回し，毛抜き，楊子，爪やすり，栓抜き，そ
+しておそらくその他のいくつかがあります．毎日の，単純な汎用のツールが必要
+な小さな様々な仕事でおあつらえ向きです．
+
+一方，経験豊富な大工は，スイスのアーミーナイフを使用して家を建てません．
+その代わりに，専門的な道具---のこぎり，かなづち，ネジ回し，かんな等がぎっ
+しり詰まった道具箱を持っています．そして，それぞれの道具を使用する時と場
+所を知っています．ネジ回しを扱いながら，釘を打っているところを見たことは
+ないでしょう．
+
+ベル研究所のUnix開発者は，全て専門的なプログラマと訓練されたコンピュータ
+科学者です．彼らは，1つのプログラムのみを利用するため，1つで全てに適する
+プログラムをユーザに提示する一方，そのようなプログラムは以下のようになる
+ことが分かりました．
+
+@enumerate a
+@item
+書くのが難しい．
+
+@item
+管理とデバックが難しい．
+
+@item
+新しい状況に対し拡張が難しい．
+@end enumerate
+
+その代わりに，プログラムは専門的なツールであるべきだと感じました．要する
+に，それぞれのプログラムは，``1つのことを上手にすべきである''ということ
+です．それ以上でも以下でもありません．そのようなプログラムは，設計，作成
+がより単純で，正しいものを得られます---ただ1つのことをするだけです．
+
+更に彼らは，良いマシンでプログラムを一緒にハックするため，全体は部分の集
+合より偉大なことに気付きました．いくつかの特別な目的のプログラムを組み合
+わせることで，プログラムが設計された目的には無い特定の仕事を達成したり，
+特定目的のプログラムを書く必要がある場合，より速く簡単にそれを達成したり
+できました．我々は，このコラムでこれ以上の，いくつかの(古い)例を見ます．
+(重要な追加点は，まだいくつかのアプリケーションがツールボックスに無い場
+合，必要があれば回り道して，最初に必要なソフトウェアツールを構築すること
+です．)
+
+@node I/O redirection
+@unnumberedsec I/O リダイレクション
+
+希望としては，皆さんが，``標準入力''，``標準出力''，そして``標準エラー出
+力'' の特定の概念で，シェルのI/Oリダイレクションの基本に慣れています．要
+するに，``標準入力''はデータソースで，データがやってくるところです．デー
+タソースが，ディスクファイル，キーボード，磁気テープやパンチカードかどう
+か，プログラムは知る必要も注意する必要もありません．同様に，``標準出力'' 
+はデータシンクで，データが出て行くところです．プログラムはその場所を知る
+必要も注意する必要もありません．標準入力を読み込み，データに何かを行い，
+それを送り続けるプログラムは，``フィルタ''と呼ばれ，それは水のパイプライ
+ンでのフィルタに似ているためです．
+
+Unixシェルを用いた場合，データパイプラインを設定することは非常に簡単です．
+
+@example
+program_to_create_data | filter1 | .... | filterN > final.pretty.data
+@end example
+
+我々は生データを作ることから始めます．それぞれのフィルタは，それがパイプ
+ラインから出てくるまで，いくつかの連続した変換をデータに適用し，それは望
+ましい形式です．
+
+これは素晴らしく，標準入力と標準出力に適しています．標準エラー出力は，動
+作中どこに行きますか?  まあ，上記のパイプライン@code{filter1}について考
+えて見てください．データでエラーが発生した場合，何が生じるのでしょう? 
+エラーメッセージを標準出力に書き出す場合，それは@code{filter2}の入力のパ
+イプラインの下に隠れ，ユーザーはおそらく見ることはありません．そのため，
+プログラムはユーザに注意を促すため，エラーメッセージを送ることが可能な場
+所が必要です．これは標準エラー出力で，画面から離れているプログラムの標準
+出力をリダイレクトしてさえ，それは通常コンソールやウィンドウに連結してい
+ます．
+
+フィルタプログラムが一緒に動作するため，データの書式は合意されている必要
+があります．最も簡単で最も容易な書式は，単なるテキストの行です．通常，
+Unixデータファイルは，慣習でUnixの文献で``改行''と呼ばれる，@sc{ascii}
+@sc{lf} (Line Feed)文字で分けられた行を用いた，単なるバイトのストリーム
+です．(これは，Cプログラマの場合は@code{'\n'}です．)これは全ての伝統的な
+フィルタプログラムで用いられる書式です．(多くのより早期のオペレーティン
+グシステムは，バイナリデータを管理するため，手の込んだファシリティと特別
+な目的を持つプログラムがありました．Unixは常にそのようなことから身をかわ
+していて，哲学の下では，テキストエディタでデータを見たり編集したりするこ
+とを単純に可能にする，最も簡単な方法です．)
+
+OK，十分紹介しました．いくつかの道具をひと目見て，それから，興味深い方法
+でそれらを一緒に束ねる方法を見ましょう．以下の議論では，これらの興味ある
+コマンドラインオプションを紹介するだけです．常に行うように，完全な話とす
+るために，システムドキュメントを再点検してください．
+
+@node The who command
+@unnumberedsec @code{who}コマンド
+
+最初のプログラムは@code{who}コマンドです．単独では，それは現在ログインし
+ているユーザのリストを生成します．私はシングルユーザシステムでこれを書い
+ていますが，我々は複数の人々がログインしているふりをします．
+
+@example
+$ who
+arnold   console Jan 22 19:57
+miriam   ttyp0   Jan 23 14:19(:0.0)
+bill     ttyp1   Jan 21 09:32(:0.0)
+arnold   ttyp2   Jan 23 20:48(:0.0)
+@end example
+
+ここで，@samp{$}は通常のシェルプロンプトで，そこで私は@code{who}と入力し
+ました．3人ログインしていて，私は2回ログインしてます．伝統的なUnixシステ
+ムでは，ユーザ名は8文字以上の長さはありません．このわずかな平凡なビット
+は後で有用になります．@code{who}の出力は良いのですが，データは余り面白く
+ありません．
+
+@node The cut command
+@unnumberedsec @code{cut}コマンド
+
+次に我々が見るプログラムは@code{cut}コマンドです．このプログラムは，入力
+データの列やフィールドを切り取ります．例えば，我々はそれを用いて，
+@file{/etc/passwd}ファイルからログイン名とフルネームのみを出力させること
+ができます．@file{/etc/passwd}ファイルは，7つのフィールドがあり，コロン
+で分かれています．
+
+@example
+arnold:xyzzy:2076:10:Arnold D. Robbins:/home/arnold:/bin/ksh
+@end example
+
+1番目と5番目のフィールドを得るため，以下のように@code{cut}を使用します．
+
+@example
+$ cut -d: -f1,5 /etc/passwd
+root:Operator
+@dots{}
+arnold:Arnold D. Robbins
+miriam:Miriam A. Robbins
+@dots{}
+@end example
+
+@samp{-c}オプションを用いた場合，@code{cut}は，入力行の指定した文字(例え
+ば，列)を切り出します．このコマンドは，データのフィルタリングに役立ちそ
+うです．
+
+@node The sort command
+@unnumberedsec @code{sort}コマンド
+
+次に見るのは@code{sort}コマンドです．これはUnix形式のシステムで最も強力
+なコマンドの1つです．自分で良く利用していると思うのは，おしゃれなデータ
+の配管を設定している時です．@code{sort}コマンドは，コマンドラインで指名
+されたそれぞれのファイルを読み込みソートします．それはソートされたデータ
+を統合し，標準出力に書き出します．それはファイルがコマンドラインで与えら
+れない場合，標準入力から読み込みます(このため，フィルタになります)．ソー
+トは，順序を正しくするとき文字を基本としたり，ユーザが供給する基準の順番
+を基本としたりします．
+
+@node The uniq command
+@unnumberedsec @code{uniq}コマンド
+
+(少なくとも今のところ)最後に，我々は@code{uniq}プログラムを見ます．デー
+タをソートするとき，重複行，すなわち同一行でよく終ります．通常，それぞれ
+の行に1つのインスタンスが必要です．これは@code{uniq}を用いる場所です．
+@code{uniq}はその標準入力から読み込み，それはソートされてることを期待し
+ます．それは重複行の1つのコピーのみを出力します．それにはいくつかのオプ
+ションがあります．後に，我々は@samp{-c}オプションを使用し，それはそれぞ
+れユニークな行を出力し，入力で行が発生した回数の数えたものを前置します．
+
+@node Putting the tools together
+@unnumberedsec ツールの統合
+
+さて，これが多数のユーザがログインしている大きなBBSシステムだと考えましょ
+う．管理者はシスオペに，ログインしているユーザのソートされたリストを生成
+するプログラムを書かせたいとします．更に，ユーザが複数回ログインしていて
+も，彼または彼女の名前を出力に1度しか表示させないものとします．
+
+シスオペはシステムドキュメントを持って席に付き，これを行うCプログラムを
+書いたはずです．それはおそらく，200行のコードを書いて，テストして，デバッ
+グするため，2時間かけているでしょう．しかし，ソフトウェアツールボックス
+を知っている場合，シスオペは代わりに，ログインしているユーザのリストを生
+成することから始めることができます．
+
+@example
+$ who | cut -c1-8
+arnold
+miriam
+bill
+arnold
+@end example
+
+次に，リストをソートします．
+
+@example
+$ who | cut -c1-8 | sort
+arnold
+arnold
+bill
+miriam
+@end example
+
+終りに，重複を取り除くため，ソートされたリストを@code{uniq}に通します．
+
+@example
+$ who | cut -c1-8 | sort | uniq
+arnold
+bill
+miriam
+@end example
+
+@code{sort}コマンドには，実際は，@code{uniq}を行う@samp{-u}オプションが
+あります．しかし，@code{uniq}は，@samp{sort -u}で代用できない他のユーザ
+のためです．
+
+シスオペは，このパイプラインをシェルスクリプトに置き，システムの全てのユー
+ザが利用可能にしました．
+
+@example
+# cat > /usr/local/bin/listusers
+who | cut -c1-8 | sort | uniq
+^D
+# chmod +x /usr/local/bin/listusers
+@end example
+
+ここで注意すべき主な点が4つあります．最初に，4つのプログラムのみのコマン
+ドラインで，シスオペは仕事に費す2時間を節約することができました．さらに，
+シェルパイプラインはCプログラムが行うのと同じ効果があり，それはプログラ
+マの時間に関してはるかに効果的です．人々の時間はコンピュータの時間よりも
+はるかに高価で，現在の``全てのことをする十分な時間が無い''社会では，プロ
+グラマの時間の2時間を節約することは，並々ならぬ目ざましい成果です．
+
+2番目に，ツールの@emph{組み合わせ}で，個別のプログラマの著者が想像してい
+なかった特定の目的の仕事をすることが可能だということを強調することも重要
+です．
+
+3番目に，我々がここで行ったように，ステージ内ででパイプラインを組み上げ
+ることも価値があります．これで，パイプラインのそれぞれのステージでのデー
+タを見ることが可能になり，それは，これらのツールを全く正しく使用している
+ことの確信を得る助けになります．
+
+最後に，シェルスクリプトでパイプラインを組み上げることで，他のユーザがそ
+のコマンドを使用することができ，それらを設定したおしゃれな配管を覚える必
+要がありません．それを実行する方法という意味では，シェルスクリプトとコン
+パイルされたプログラムは区別できません．
+
+ここまでの準備運動の後で，我々は2つの追加のより複雑なパイプラインを見ま
+す．そのため，我々が2つのツールをさらに紹介する必要があります．
+
+最初は@code{tr}コマンドで，それは``transliterate(変換)''を意味します．
+@code{tr}コマンドは，文字対文字を基本に，文字を変換する作用があります．
+通常，それは大文字を小文字に割り当てることに使用されます．
+
+@example
+$ echo ThIs ExAmPlE HaS MIXED case! | tr '[A-Z]' '[a-z]'
+this example has mixed case!
+@end example
+
+重要ないくつかのオプションがあります．
+
+@table @samp
+@item -c
+リストアップされた文字の補集合で動作し，すなわち，与えられた集合に無い文
+字に適応した処理です．
+
+@item -d
+出力から最初のセットの文字を削除します．
+
+@item -s
+出力で繰り返される文字を1文字に圧縮します．
+@end table
+
+我々は，一度に3つの全てのオプションを使用します．
+
+我々が見る，もう1つのコマンドは@code{comm}です．@code{comm}コマンドは，2 
+つのソートされた入力ファイルを入力データとし，ファイルの行を3列に出力し
+ます．出力列は最初のファイルのユニークなデータ行．2番目のファイルのユニー
+クなデータ行，そして，両方に共通なデータ行です．@samp{-1}，@samp{-2}と
+@samp{-3}のコマンドラインオプションは，対応する列を削除します．(これは直
+観的ではなく，慣れるのに少しかかります．)例えば，以下のようにします．
+
+@example
+$ cat f1
+11111
+22222
+33333
+44444
+$ cat f2
+00000
+22222
+33333
+55555
+$ comm f1 f2
+        00000
+11111
+                22222
+                33333
+44444
+        55555
+@end example
+
+ファイル名としての単一のダッシュは，通常のファイルの代わりに標準入力から
+読みとるよう，@code{comm}に伝えます．
+
+さて，我々はおしゃれなパイプラインを構築する準備ができました．最初の応用
+は，単語の頻度カウンタです．これは，著者が特定の単語を過度に使用している
+かどうかを決定する助けとなります．
+
+最初のステップは，入力ファイルの全ての文字の大文字小文字をどちらか1つに
+変換することです．``The''と``the''は数えているときは同じ単語です．
+
+@example
+$ tr '[A-Z]' '[a-z]' < whats.gnu | ...
+@end example
+
+次のステップは，句読点をを取り除くことです．引用された単語と引用されてい
+ない単語は，同一に扱われるべきです．句読点を片付ける最も簡単な方法です．
+
+@example
+$ tr '[A-Z]' '[a-z]' < whats.gnu | tr -cd '[A-Za-z0-9_ \012]' | ...
+@end example
+
+2番目の@code{tr}コマンドは，リストアップされた文字の補集合を処理し，それ
+は全ての文字，数字，アンダースコアと空白です．@samp{\012}は改行を表現し
+ます．それはそのまま残す必要があります．(@sc{ascii}タブ文字も，生成され
+たスクリプトでは追加として含まれるべきです．)
+
+この時点で，我々は，空白スペースで分けられた単語からなるデータを持ってい
+ます．単語は英数文字(とアンダースコア)のみ含みます．次のステップは，1行
+に1単語となるように，データを別々に分けます．これは数える処理をより容易
+にするためで，まもなく見ることができます．
+
+@example
+$ tr '[A-Z]' '[a-z]' < whats.gnu | tr -cd '[A-Za-z0-9_ \012]' |
+> tr -s '[ ]' '\012' | ...
+@end example
+
+このコマンドは空白を改行に切替えます．@samp{-s}オプションは，出力の複数
+の改行文字を1つに圧縮します．これは空白行を避けたいとき助かります．
+(@samp{>}はシェルの``2番目のプロンプト''を意味します．これは，全てのコマ
+ンドを入力し終えていないことに注意させるとき，シェルが出力するものです．)
+
+我々は今，1行に1単語で，句読点が無く，全て大文字小文字どちらかだけのデー
+タを持っています．我々はそれぞれの単語を数える準備ができました．
+
+@example
+$ tr '[A-Z]' '[a-z]' < whats.gnu | tr -cd '[A-Za-z0-9_ \012]' |
+> tr -s '[ ]' '\012' | sort | uniq -c | ...
+@end example
+
+この時点で，データは以下のようになります．
+
+@example
+  60 a
+   2 able
+   6 about
+   1 above
+   2 accomplish
+   1 acquire
+   1 actually
+   2 additional
+@end example
+
+出力は単語でソートされていて，総数ではありません!  我々が欲しいのは，最
+も頻繁に使用される最初のものです．幸い，これは簡単に達成でき，2つの
+@code{sort}オプションの助けを借ります．
+
+@table @samp
+@item -n
+文字ではなく，数字のソートを行います．
+
+@item -r
+ソートされた順序を反転します．
+@end table
+
+最終的なパイプラインはこのようになります．
+
+@example
+$ tr '[A-Z]' '[a-z]' < whats.gnu | tr -cd '[A-Za-z0-9_ \012]' |
+> tr -s '[ ]' '\012' | sort | uniq -c | sort -nr
+ 156 the
+  60 a
+  58 to
+  51 of
+  51 and
+ ...
+@end example
+
+やれやれ!  それは大量の要約です．まだ同じ原則は適用されます．6つのコマン
+ド2行で(本当は利便性のため長いものを分けたものです)，我々は興味深く便利
+なことを行うプログラムを作成し，それは，Cプログラムで同じことをするもの
+を書くよりはるかに短い時間でした．
+
+上記のパイプラインへのちょっとした変更で，単純なスペルチェッカーを与える
+ことができます．単語を正しく綴っているかどうかを決定するために行う必要が
+あることは，辞書で調べることです．それが無い場合，可能性としては綴りが正
+しくないということです．そのため，我々は辞書が必要です．Slackware Linux 
+配布物を持っている場合，ファイル@file{/usr/lib/ispell/ispell.words}があ
+り，それはソートされていて，38,400語の辞書です．
+
+さて，我々のファイルと辞書をいかにして比較するのでしょう?  以前に我々は，
+ソートされた，1行に1単語の単語リストを生成しました．
+
+@example
+$ tr '[A-Z]' '[a-z]' < whats.gnu | tr -cd '[A-Za-z0-9_ \012]' |
+> tr -s '[ ]' '\012' | sort -u | ...
+@end example
+
+さて，必要なことは辞書に@emph{無い}単語リストです．ここが，@code{comm}コ
+マンドを用いる場所です．
+
+@example
+$ tr '[A-Z]' '[a-z]' < whats.gnu | tr -cd '[A-Za-z0-9_ \012]' |
+> tr -s '[ ]' '\012' | sort -u |
+> comm -23 - /usr/lib/ispell/ispell.words
+@end example
+
+@samp{-2}と@samp{-3}オプションは，辞書(2番目のファイル)のみにある行と，
+両方のファイルにある行を削除します．最初のファイル(我々の単語ストリーム
+の標準入力)のみにある行は，辞書にはありません．これらは綴りエラーに対す
+る好ましい候補です．このパイプラインは，Unixでのスペルチェッカー製品とし
+て，最初に発生しました．
+
+ちょっと記述する価値のある，その他のツールもあります．
+
+@table @code
+@item grep
+正規表現に一致するテキストをファイルで検索します．
+
+@item egrep
+@code{grep}に似ていますが，より強力な正規表現を用います．
+
+@item wc
+行，単語，文字を数えます．
+
+@item tee
+データパイプに対するT部品で，データをファイルと標準出力にコピーします．
+
+@item sed
+ストリームエディタで，より進んだツールです．
+
+@item awk
+データ操作言語で，もう1つのより進んだツールです．
+@end table
+
+ソフトウェアツールの哲学は，以下の短い助言も含んでいます．``難しい部分は
+他人にさせろ''．これは，必要なほとんどのものは与えられるものであり，必要
+な形式にするまでの方法が残っていることを意味します．
+
+要約します．
+
+@enumerate 1
+@item
+それぞれのプログラムは，1つのことでうまく働きます．それ以上でもそれ以下
+でもありません．
+
+@item
+適切な配管でプログラムを組み合わせることで，全体として部分の総和以上の結
+果を導きます．それは，著者が想像していなかったプログラムの新しい使用法も
+導きます．
+
+@item
+プログラムは，決して余分なヘッダや末尾のデータを出力すべきではなく，それ
+はこれらがパイプラインを壊してしまうものを送るはずだからです．(この点は
+以前に記述していません．)
+
+@item
+難しいことは，他人にさせましょう．
+
+@item
+ツールボックスを理解してください!  それぞれのプログラムを適切に使用して
+ください．適切なツールが無い場合，それを構築してください．
+@end enumerate
+
+ここで書いている我々が議論してきた全てのプログラムは，
+@file{/pub/gnu/textutils-1.9.tar.gz}として，@code{prep.ai.mit.edu}からの
+匿名@code{ftp}で利用可能です．@footnote{Version 1.9が，このコラムを書い
+ているときの現在のものです．現在のバージョンは，近くのGNUアーカイブを調
+査してください．主なGNU FTPサイトは，現在@code{ftp.gnu.org}です．}
+
+私がこのコラムで表現したものに新しいものはありません．ソフトウェアツール
+の哲学は，最初に，Brian KernighanとP.J. Plaugerによる@cite{Software
+Tools}の本(Addison-Wesley, ISBN 0-201-03669-X)で紹介されました．この本は，
+ソフトウェアツールの書き方と使用法を表しています．それは1976年に書かれ，
+@code{ratfor} (RATional FORtran)という名のFORTRANに対するプリプロセッサ
+を使用しています．当時，Cは現在ほどubiquitousではなく，FORTRANはそうでし
+た．最後の章で，@code{ratfor}をFORTRANにするプロセッサを提示していて，
+@code{ratfor}で書かれています．@code{ratfor}はCに非常に似ています．Cを知っ
+ている場合，コードを追いかけるのに問題ないでしょう．
+
+1981年に本は更新され，@cite{Software Tools in Pascal} (Addison-Wesley,
+ISBN 0-201-10342-7)として利用可能になりました．両方の本は印刷されていて，
+プログラマにとっては読む価値があります．それらは，確かにプログラミングを
+見る方法で，主な変化をなし得ました．
+
+初めに，両方の本のプログラムはAddison-Wesleyから(9トラックテープで)利用
+可能でした．不幸にも，これはもはや利用できず，Internetの周辺でコピーがあ
+るかも知れません．何年もの間，活発なSoftware Tools Users Groupがあり，そ
+のメンバーは元の@code{ratfor}プログラムを，FORTRANコンピュータを持つ全て
+のコンピュータに本質的に移植しました．グループの人気は，Unixが大学を越え
+て広がり始めたので，80年代半ばで衰えました．
+
+GNUコードとその他のUnixプログラムのクローンの現在の増殖で，これらのプロ
+グラムは，現在ほとんど注目されません．現在のCのバージョンはより効果的で，
+これらのプログラムが行うより多くのことを行います．にもかかわらず，良いプ
+ログラミングスタイルの博覧会と，still-valuableの哲学に対する福音として，
+これらの本は比べるものが無く，私は高く推薦します．
+
+謝辞：私はこのコラムのレビューに対し，ベル研究所のBrian Kernighanと，オ
+リジナルのソフトウェアToolsmithに深く感謝したいと思います．
+
+@node Index
+@unnumbered 索引
+
+@printindex cp
+
+@contents
+@bye
+
+@c Local variables:
+@c texinfo-column-for-description: 32
+@c End:

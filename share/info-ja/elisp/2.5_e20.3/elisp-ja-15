@@ -1,0 +1,1796 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Relative File Names, Next: File Name Expansion, Prev: Directory Names, Up: File Names
+
+ファイルの絶対名と相対名
+------------------------
+
+ファイルシステム内のすべてのディレクトリは, ルートディレクトリから始ま
+る木を形作ります.  ファイル名では, 木のルートから始まるすべてのディレ
+クトリ名を指定できて, これを"絶対"（absolute）ファイル名と呼びます. 
+あるいは, デフォルトディレクトリを基準に木の中でのファイルの位置を指定
+することもでき, これを"相対"（relative）ファイル名と呼びます.  UNIXで
+は, 絶対ファイル名はスラッシュかティルダ（`~'）で始まり, 相対ファイル
+名はそれらでは始まりません.  VMSでの規則は複雑です.
+
+ -- Function: file-name-absolute-p FILENAME
+     この関数は, ファイルFILENAMEが絶対ファイル名であれば`t'を返し, さ
+     もなければ`nil'を返す.  VMS上では, この関数はUNIXの構文とVMSの構
+     文の両方を理解する.
+
+          (file-name-absolute-p "~rms/foo")
+               => t
+          (file-name-absolute-p "rms/foo")
+               => nil
+          (file-name-absolute-p "/user/rms/foo")
+               => t
+
+
+
+File: elisp-ja, Node: File Name Expansion, Next: Unique File Names, Prev: Relative File Names, Up: File Names
+
+ファイル名を展開する関数
+------------------------
+
+ファイル名の"展開"（expansion）とは, 相対ファイル名を絶対ファイル名に
+変換することです.  これはデフォルトディレクトリを基準に行うので, 展開
+すべきファイル名に加えて, デフォルトディレクトリの名前も指定する必要が
+あります.  また, 展開では, `./'や`NAME/../'のような冗長部分を取り除い
+てファイル名を単純にします.
+
+ -- Function: expand-file-name FILENAME &optional DIRECTORY
+     この関数はFILENAMEを絶対ファイル名に変換する.  DIRECTORYが与えら
+     れると, FILENAMEが相対ファイル名であれば, デフォルトディレクトリ
+     を基準にする.  （DIRECTORYの値そのものは絶対ディレクトリ名である
+     こと.  `~'で始まってもよい. ）さもなければ, バッファの
+     `default-directory'の値を使う.  たとえばつぎのとおり.
+
+          (expand-file-name "foo")
+               => "/xcssun/users/rms/lewis/foo"
+          (expand-file-name "../foo")
+               => "/xcssun/users/rms/foo"
+          (expand-file-name "foo" "/usr/spool/")
+               => "/usr/spool/foo"
+          (expand-file-name "$HOME/foo")
+               => "/xcssun/users/rms/lewis/$HOME/foo"
+
+     `.'や`..'を含むファイル名は, それらの正則な形に単純化する.
+
+          (expand-file-name "bar/../foo")
+               => "/xcssun/users/rms/lewis/foo"
+
+     `expand-file-name'は環境変数を展開*しない*ことに注意.
+     `substitute-in-file-name'だけがそれを行う.
+
+ -- Function: file-relative-name FILENAME DIRECTORY
+     この関数は展開の逆操作を行う.  つまり, DIRECTORYを基準に解釈する
+     とFILENAMEと等価になる相対名を返す.
+
+     絶対ファイル名が装置名で始まるシステムもある.  そのようなシステム
+     では, DIRECTORYとFILENAMEが2つの異なる装置名で始まると, FILENAME
+     に等価なDIRECTORYを基準にした相対名はない.  そのような場合,
+     `file-relative-name'は絶対名の形でFILENAMEを返す.
+
+          (file-relative-name "/foo/bar" "/foo/")
+               => "bar"
+          (file-relative-name "/foo/bar" "/hack/")
+               => "/foo/bar"
+
+ -- Variable: default-directory
+     このバッファローカルな変数の値は, カレントバッファのデフォルトディ
+     レクトリである.  これは絶対ディレクトリ名であること.  `~'で始まっ
+     てもよい.  この変数は各バッファにおいてバッファローカルである.
+
+     `expand-file-name'は, その第2引数が`nil'であるとデフォルトディレ
+     クトリを使う.
+
+     UNIXでは, この値はつねにスラッシュで終る文字列である.
+
+          default-directory
+               => "/user/lewis/manual/"
+
+ -- Function: substitute-in-file-name FILENAME
+     この関数は, FILENAME内の環境変数の参照を環境変数の値で置き換える.
+     UNIXのシェルの構文規則に従って, `$'は環境変数の値に置換するための
+     接頭辞である.
+
+     環境変数名は, `$'に続く（下線を含む）英数字の列である.  `$'のつぎ
+     の文字が`{'であると, 対応する`}'までが変数名である.
+
+     ここでは, 環境変数`HOME'はユーザーのホームディレクトリ名
+     `/xcssun/users/rms'を保持していると仮定する.
+
+          (substitute-in-file-name "$HOME/foo")
+               => "/xcssun/users/rms/foo"
+
+     置換後, `/'のつぎに`~'か`/'が現れると, `/'までの部分をすべて取り
+     除く.
+
+          (substitute-in-file-name "bar/~/foo")
+               => "~/foo"
+          (substitute-in-file-name "/usr/local/$HOME/foo")
+               => "/xcssun/users/rms/foo"
+               ;; `/usr/local/' has been discarded.
+
+     VMSでは, `$'による置換は行わないため, この関数は冗長部分を取り除
+     く以外にはなにも行わない.
+
+
+
+File: elisp-ja, Node: Unique File Names, Next: File Name Completion, Prev: File Name Expansion, Up: File Names
+
+一意なファイル名の生成
+----------------------
+
+一時的なファイルに書く必要があるプログラムもあります.  そのようなファ
+イル向けの名前を作る通常の方法はつぎのとおりです.
+
+     (make-temp-name
+      (expand-file-name NAME-OF-APPLICATION
+                        temporary-file-directory))
+
+`make-temp-name'の仕事は, 異なる2人のユーザーや異なる2つのジョブがまっ
+たく同じファイル名を使わないようにすることです.  この例では, 変数
+`temporary-file-directory'を使って一時的なファイルを置く場所を決めてい
+ます.  すべてのEmacs Lispプログラムでは, すべての一時的なファイル向け
+のディレクトリを指定する一意な方法をユーザーに提供するために, この目的
+には`temporary-file-directory'を使うべきです.
+
+ -- Function: make-temp-name STRING
+     この関数は, 一意なファイル名として使える文字列を生成する.  名前は
+     STRINGで始まり, 各Emacsジョブごとに異なる数を含む.
+
+          (make-temp-name "/tmp/foo")
+               => "/tmp/foo232J6v"
+
+     同じEmacsで動作している異なるライブラリのあいだで衝突しないように,
+     `make-temp-name'を使う各Lispプログラムでは, 独自のSTRINGを使うべ
+     きである.  STRINGの末尾に付加される数は, 異なるEmacsジョブで動い
+     ている同じアプリケーションを区別する.  文字を余計に追加することで,
+     1つのEmacsジョブであっても異なる名前の個数を非常に多くできる.
+
+ -- Variable: temporary-file-directory
+     この変数は, 一時的なファイルを作成するためのディレクトリ名を指定
+     する.  その値はディレクトリ名（*Note Directory Names::）であるべ
+     きだが, Lispプログラムにとっては, その値がディレクトリのファイル
+     としての名前であっても処理できるほうがよい.  この値を
+     `expand-file-name'の第2引数に使うと, そのようにできる.
+
+     デフォルト値は, 読者のオペレーティングシステムにおいて合理的な方
+     法で決定される.  GNUとUNIXシステムでは, 環境変数`TMP'や`TMPDIR'を
+     基にする.
+
+     読者が一時的なファイル名を選ぶために`make-temp-name'を使わない場
+     合であっても, 一時的なファイル名を置くディレクトリを決めるために
+     この変数を使うべきである.
+
+
+
+File: elisp-ja, Node: File Name Completion, Next: Standard File Names, Prev: Unique File Names, Up: File Names
+
+ファイル名の補完
+----------------
+
+本節では, ファイル名の補完向けの低レベルのサブルーティンについて述べま
+す.  他の補完関数については, *Note Completion::を参照してください.
+
+ -- Function: file-name-all-completions PARTIAL-FILENAME DIRECTORY
+     この関数は, ディレクトリDIRECTORYにおいてPARTIAL-FILENAMEで始まる
+     名前のファイルに対するすべての補完候補から成るリストを返す.  候補
+     の順番はディレクトリ内でのファイルの順番であり, それは予測できず
+     有用な情報はなにもない.
+
+     引数PARTIAL-FILENAMEは, ディレクトリ部分やスラッシュをいっさい含
+     まないファイル名であること.  DIRECTORYが絶対名でないと, カレント
+     バッファのデフォルトディレクトリをDIRECTORYのまえに補う.
+
+     つぎの例で, カレントデフォルトディレクトリは`~rms/lewis'であり,
+     `f'で始まる名前のファイルは, `foo', `file~', `file.c',
+     `file.c.~1~', `file.c.~2~'の5つであると仮定する.
+
+          (file-name-all-completions "f" "")
+               => ("foo" "file~" "file.c.~2~" 
+                          "file.c.~1~" "file.c")
+
+          (file-name-all-completions "fo" "")  
+               => ("foo")
+
+ -- Function: file-name-completion FILENAME DIRECTORY
+     この関数は, ディレクトリDIRECTORYにおいてファイル名FILENAMEを補完
+     する.  ディレクトリDIRECTORYにおいてFILENAMEで始まるすべてのファ
+     イル名に共通な最長の文字列を返す.
+
+     FILENAMEで始まるものがたった1つであり完全に一致すると, この関数は
+     `t'を返す.  ディレクトリDIRECTORYにFILENAMEで始まる名前がないと
+     `nil'を返す.
+
+     つぎの例で, カレントデフォルトディレクトリには`f'で始まる名前のファ
+     イルは, `foo', `file~', `file.c', `file.c.~1~', `file.c.~2~'の5つ
+     であると仮定する.
+
+          (file-name-completion "fi" "")
+               => "file"
+
+          (file-name-completion "file.c.~1" "")
+               => "file.c.~1~"
+
+          (file-name-completion "file.c.~1~" "")
+               => t
+
+          (file-name-completion "file.c.~3" "")
+               => nil
+
+ -- User Option: completion-ignored-extensions
+     `file-name-completion'は, このリスト内のいずれかの文字列で終る名
+     前のファイルを通常無視する.  補完候補すべてがこれらの接頭辞の1つ
+     で終る場合や, 補完候補すべてを含んだバッファが表示されている場合
+     には無視しない.
+
+     典型的な値はつぎのとおりである.
+
+          completion-ignored-extensions
+               => (".o" ".elc" "~" ".dvi")
+
+
+
+File: elisp-ja, Node: Standard File Names, Next: Contents of Directories, Prev: File Name Completion, Up: File Names
+
+標準ファイル名
+--------------
+
+Lispプログラムで使われるほとんどのファイル名は, ユーザーが入力したもの
+です.  しかし, Lispプログラムでは, 特定目的の標準ファイル名を指定する
+必要がある場合があります.  典型的には, 各ユーザーごとのカスタマイズ情
+報を保持するものです.  たとえば, 省略形の定義は（デフォルトでは）ファ
+イル`~/.abbrev_defs'に保存されます.  パッケージ`completion'は, 補完情
+報をファイル`~/.completions'に保存します.  これらは, Emacsで特定目的に
+使われる多くの標準ファイル名のうちの2つです.
+
+さまざまなのオペレーティングシステムには, 正しいファイル名やユーザーの
+プロフィールデータに使うファイル名に独自の慣習があります.  標準ファイ
+ル名を使用するファイルを読み込むLispプログラムでは, 各システムごとに当
+該システムに適したファイル名を使うべきです.  関数
+`convert-standard-filename'は, これを簡単にします.
+
+ -- Function: convert-standard-filename FILENAME
+     この関数は, ファイル名FILENAMEを使用しているオペレーティングシス
+     テムの慣習に従うように変換し, 新たな文字列として結果を返す.
+
+Lispプログラムにおいて標準ファイル名を指定する推奨方法は, GNUとUNIXシ
+ステムの慣習に従った名前を選ぶことです.  つまり, ピリオドで始まる非ディ
+レクトリ部分を選び, それを直接使うかわりに`convert-standard-filename'
+に渡します.  パッケージ`completion'からの例をつぎに示します.
+
+     (defvar save-completions-file-name
+             (convert-standard-filename "~/.completions")
+       "*The file name to save completions to.")
+
+GNUとUNIXシステム, および, 他のいくつかのシステムでは,
+`convert-standard-filename'は引数を未変更で返します.  別のシステムでは, 
+システムの慣習に従うように名前を変更します.
+
+たとえば, MS-DOSではこの関数は, 先頭の`.'を`_'に, `.'がどこにもなけれ
+ば名前の途中の`_'を`.'に, 8文字目のうしろに`.'がなければ`.'を挿入し,
+`.'以降の3文字よりうしろを切り詰めるなどを行います.  （これ以外にも変
+更する. ）したがって, `.abbrev_defs'は`_abbrev.def'となり,
+`.completions'は`_complet.ion'となります.
+
+
+
+File: elisp-ja, Node: Contents of Directories, Next: Create/Delete Dirs, Prev: File Names, Up: Files
+
+ディレクトリの内容
+==================
+
+ディレクトリは, さまざまな名前で入れた別のファイルを収めているファイル
+の一種です.  ディレクトリは, ファイルシステムの機能です.
+
+Emacsは, ディレクトリ内のファイル名をLispのリストとして一覧にしたり, 
+シェルコマンド`ls'を使ってバッファに名前を表示できます.  後者の場合, 
+コマンド`ls'に渡したオプションに応じて, 各ファイルに関する情報も表示で
+きます.
+
+ -- Function: directory-files DIRECTORY &optional FULL-NAME MATCH-REGEXP NOSORT
+     この関数は, ディレクトリDIRECTORY内のファイルの名前から成るリスト
+     を返す.  デフォルトでは, リストはアルファベット順になる.
+
+     FULL-NAMEが`nil'以外であると, 関数はファイルの絶対ファイル名を返
+     す.  さもなければ, 指定したディレクトリに対する相対名を返す.
+
+     MATCH-REGEXPが`nil'以外であると, この関数は正規表現MATCH-REGEXPに
+     一致するファイル名のみを返す.  つまり, 他の名前のファイルはリスト
+     から除かれる.
+
+     NOSORTが`nil'以外であると, `directory-files'はリストをソートしな
+     いので, ファイル名の順番に規則はない.  処理速度を最大にしてファイ
+     ルの処理順序に拘らないならば, これを用いる.  処理順序がユーザーに
+     見える場合には, ソートしたほうがユーザーは幸せであろう.
+
+          (directory-files "~lewis")
+               => ("#foo#" "#foo.el#" "." ".."
+                   "dired-mods.el" "files.texi" 
+                   "files.texi.~1~")
+
+     DIRECTORYが読めないディレクトリの名前であるとエラーを通知する.
+
+ -- Function: file-name-all-versions FILE DIRNAME
+     この関数は, ディレクトリDIRNAME内のFILEという名前のファイルのすべ
+     ての版から成るリストを返す.
+
+ -- Function: insert-directory FILE SWITCHES &optional WILDCARD FULL-DIRECTORY-P
+     この関数は, `ls'にSWITCHESを渡して表示したディレクトリFILEの一覧
+     を（カレントバッファに）挿入する.  ポイントは挿入したテキストのう
+     しろに置かれる.
+
+     引数FILEは, ディレクトリ名であるかワイルドカードを含んだファイル
+     指定である.  WILDCARDが`nil'以外であると, FILEをワイルドカードを
+     含むファイル指定として扱う.
+
+     FULL-DIRECTORY-Pが`nil'以外であると, ディレクトリ一覧はディレクト
+     リの全内容を表すと仮定することを意味する.  FILEがディレクトリであ
+     りSWITCHESに`-d'を含まない場合には, `t'を指定すべきである. 
+     （`ls'のオプション`-d'は, ディレクトリの内容ではなく, ファイルと
+     してのディレクトリ自身を表示することを意味する. ）
+
+     この関数は, 変数`insert-directory-program'で指定される名前のディ
+     レクトリ表示プログラムを実行して動作する.  WILDCARDが`nil'以外で
+     あると, ワイルドカードを展開するために`shell-file-name'で指定され
+     るシェルを実行する.
+
+ -- Variable: insert-directory-program
+     この変数の値は, 関数`insert-directory'でディレクトリ一覧を生成す
+     るために実行するプログラムである.
+
+
+
+File: elisp-ja, Node: Create/Delete Dirs, Next: Magic File Names, Prev: Contents of Directories, Up: Files
+
+ディレクトリの作成と削除
+========================
+
+Emacs Lispのほとんどのファイル操作関数は, ディレクトリであるファイルに
+使うとエラーになります.  たとえば, `delete-file'ではディレクトリを削除
+できません.  これらの特別な関数はディレクトリを作成したり削除するため
+のものです.
+
+ -- Function: make-directory DIRNAME
+     この関数はDIRNAMEという名前のディレクトリを作る.
+
+ -- Function: delete-directory DIRNAME
+     この関数は, ディレクトリDIRNAMEを削除する.  関数`delete-file'は, 
+     ディレクトリであるファイルには使えない.  ディレクトリには
+     `delete-directory'を使う必要がある.  ディレクトリ内にファイルがあ
+     ると, `delete-directory'はエラーを通知する.
+
+
+
+File: elisp-ja, Node: Magic File Names, Next: Format Conversion, Prev: Create/Delete Dirs, Up: Files
+
+ファイル名を『マジック』にする
+==============================
+
+特定のファイル名を特別に扱うことができます.  これをそれらの名前を"マジッ
+ク"（magic）にするといいます.  この機能の主な用途はリモートファイル名
+（*Note リモートファイル: (emacs-ja)Remote Files..）を実装することです.
+
+マジックファイル名の種類を定義するには, 名前のクラス（正規表現に一致す
+るものすべて）を定義する正規表現と, それに一致するファイルに対する
+Emacsの基本ファイル操作を実装するハンドラを指定する必要があります.
+
+変数`file-name-handler-alist'は, ハンドラと当該ハンドラの適用を決定す
+る正規表現からなるリストを保持します.  各要素の形はつぎのとおりです.
+
+     (REGEXP . HANDLER)
+
+Emacsのすべてのファイル操作基本関数とファイル名変換基本関数は, 指定さ
+れた名前を`file-name-handler-alist'に対して検査します.  ファイル名が
+REGEXPに一致すると, 基本関数はHANDLERを呼び出して当該ファイルを処理し
+ます.
+
+HANDLERに与える最初の引数は基本関数の名前です.  残りの引数は当該操作に
+渡されるべき引数です.  （それらの引数の最初のものは典型的にはファイル
+名自身である. ）たとえば, つぎのようにした場合,
+
+     (file-exists-p FILENAME)
+
+FILENAMEにハンドラHANDLERがあると, HANDLERはつぎのように呼び出されます.
+
+     (funcall HANDLER 'file-exists-p FILENAME)
+
+つぎは, マジックファイル名のハンドラが処理すべき操作です.
+
+`add-name-to-file', `copy-file', `delete-directory', 
+`delete-file', 
+`diff-latest-backup-file', 
+`directory-file-name', 
+`directory-files', 
+`dired-call-process', 
+`dired-compress-file', `dired-uncache', 
+`expand-file-name', 
+`file-accessible-directory-p', 
+`file-attributes', 
+`file-directory-p', 
+`file-executable-p', `file-exists-p', 
+`file-local-copy', 
+`file-modes', `file-name-all-completions'，
+`file-name-as-directory', 
+`file-name-completion', 
+`file-name-directory', 
+`file-name-nondirectory', 
+`file-name-sans-versions', `file-newer-than-file-p', 
+`file-ownership-preserved-p', 
+`file-readable-p', `file-regular-p', `file-symlink-p', 
+`file-truename', `file-writable-p', 
+`find-backup-file-name', 
+`get-file-buffer', 
+`insert-directory', 
+`insert-file-contents', 
+`load', `make-directory', 
+`make-symbolic-link', `rename-file', `set-file-modes', 
+`set-visited-file-modtime', `shell-command', 
+`unhandled-file-name-directory', 
+`vc-registered', 
+`verify-visited-file-modtime', 
+`write-region'. 
+
+`insert-file-contents'に対するハンドラは, 引数VISITが`nil'以外であると
+きには`(set-buffer-modified-p nil)'を使ってバッファの変更フラグをクリ
+アする必要が典型的にはあります.
+
+ハンドラ関数は, 上のすべての操作, ならびに, 将来追加されるものを扱える
+必要があります.  これらの操作すべてをハンドラ自身で実装する必要はあり
+ません.  特定の操作について特別なことを行う必要がなければ, 『通常どお
+りに』操作を処理するために基本関数を再起動できます.  ハンドラが認識で
+きない操作については, 基本関数を再起動するべきです.  1つの方法はつぎの
+とおりです.
+
+     (defun my-file-handler (operation &rest args)
+       ;; まず, 特別に扱う必要がある操作かどうか検査する
+       (cond ((eq operation 'insert-file-contents) ...)
+             ((eq operation 'write-region) ...)
+             ...
+             ;; 知らない操作を扱う
+             (t (let ((inhibit-file-name-handlers
+                       (cons 'my-file-handler 
+                             (and (eq inhibit-file-name-operation operation)
+                                  inhibit-file-name-handlers)))
+                      (inhibit-file-name-operation operation))
+                  (apply operation args)))))
+
+ハンドラ関数で, 指定された操作についてはEmacsの通常の基本関数を呼び出
+すと決定したときには, 基本関数から同じハンドラが再度呼ばれて無限再帰に
+なることを防ぐ必要があります.  上の例は, 変数
+`inhibit-file-name-handlers'と`inhibit-file-name-operation'を使ってこ
+れを行う方法を示すものです.  それらを上に示したとおりに使うように注意
+してください.  複数のハンドラがあったり, 2つのファイルを扱う操作におい
+て各ファイルにハンドラがある場合には, この詳細は重要です.
+
+ -- Variable: inhibit-file-name-handlers
+     この変数は, 特定操作については現在適用を禁止されているハンドラの
+     リストを保持する.
+
+ -- Variable: inhibit-file-name-operation
+     特定のハンドラにおいて現在禁止されている操作.
+
+ -- Function: find-file-name-handler FILE OPERATION
+     この関数はファイル名FILEに対するハンドラ関数を返す.  ハンドラがな
+     ければ`nil'を返す.  引数OPERATIONは, ファイルに対して適用する操作
+     であること.  つまり, ハンドラを呼び出すときに第1引数として渡され
+     る値.  当該操作は`inhibit-file-name-operation'と比較する必要があ
+     る.
+
+ -- Function: file-local-copy FILENAME
+     この関数は, ファイルFILENAMEがマジックでない普通のファイルでなけ
+     れば, FILENAMEをマジックでない普通のファイルにコピーする.
+
+     FILENAMEが, Emacsの外側のプログラムからは直接読んだり書けないマジッ
+     クファイル名であると, この関数は普通のファイルにコピーしてそのファ
+     イルの名前を返す.
+
+     FILENAMEが普通のファイル名でマジックでなければ, この関数はなにも
+     せずに`nil'を返す.
+
+ -- Function: unhandled-file-name-directory FILENAME
+     この関数は, マジックではないディレクトリの名前を返す.  FILENAMEが
+     マジックでなければ, FILENAMEのディレクトリ部分を使う.  マジックファ
+     イル名であると, ファイル名ハンドラを起動し, 当該ハンドラがどんな
+     値を返すか決定する.
+
+     これは実行中のサブプロセスに有用である.  各サブプロセスには, カレ
+     ントディレクトリとしてマジックでないディレクトリが必要であり, こ
+     の関数はそれを扱うのによい方法である.
+
+
+
+File: elisp-ja, Node: Format Conversion, Next: Backups and Auto-Saving, Prev: Magic File Names, Up: Files
+
+ファイル書式変換
+================
+
+変数`format-alist'は, Emacsバッファ内のデータ（テキスト, テキスト属性, 
+その他の情報）をファイル内でテキスト表現する方法を記述した"ファイル書
+式"（file format）のリストを定義します.  Emacsはファイルを読み書きする
+ときに必要ならば書式変換を行います.
+
+ -- Variable: format-alist
+     このリストは, 各ファイル書式の定義を含んだリストである.
+
+各書式定義はつぎの形のリストです.
+
+     (NAME DOC-STRING REGEXP FROM-FN TO-FN MODIFY MODE-FN)
+
+書式定義の各要素の意味はつぎのとおりです.
+
+NAME
+     当該書式の名前.
+
+DOC-STRING
+     当該書式の説明文字列.
+
+REGEXP
+     当該書式で表現されたファイルを認識するために使用する正規表現.
+
+FROM-FN
+     当該書式のデータを復号化（ファイル内のデータをEmacsの通常のデータ
+     表現へ変換）するためのシェルコマンドか関数.
+
+     シェルコマンドは文字列で表現し, Emacsは変換を行うために当該コマン
+     ドをフィルタとして実行する.
+
+     FROM-FNが関数であると, バッファの変換すべき部分を指定するBEGINと
+     ENDの2つの引数で呼ばれる.  当該関数はその場で編集してテキストを変
+     換すること.  これによりテキストの長さが変わる可能性があるので,
+     FROM-FNは変更部分の末尾位置を返すこと.
+
+     FROM-FNの責任の1つは, ファイルの先頭がREGEXPで始まらないように保
+     証することである.  さもないと, 再度呼び出される可能性がある.
+
+TO-FN
+     当該書式にデータを符号化するためのシェルコマンドか関数.  つまり,
+     Emacsの通常のデータ表現を当該書式に変換する.
+
+     TO-FNが文字列であるとそれはシェルコマンドであり, Emacsは変換を行
+     うために当該コマンドをフィルタとして実行する.
+
+     TO-FNが関数であると, バッファの変換すべき部分を指定するBEGINとEND
+     の2つの引数で呼ばれる.  変換を行うには2つの方法がある.
+
+        * その場でバッファを編集する.  この場合, TO-FNは変更したテキス
+          ト範囲の終了位置を返すこと.
+
+        * 注記のリストを返す.  このリストは, `(POSITION . STRING)'の形
+          の要素から成り, POSITIONは書き出すべきテキスト内での相対位置
+          を指定する整数, STRINGはそこに追加すべき注記である.  TO-FNが
+          リストを返すときには, リストはPOSITIONの順にソートしてあるこ
+          と.
+
+          `write-region'がバッファからファイルへ実際に書き出すとき, 指
+          定された注記を対応する位置に埋め込む.  これらすべては, バッ
+          ファを変更せずに行われる.
+
+MODIFY
+     フラグであり, 符号化関数がバッファを変更する場合には`t', 注記のリ
+     ストを返す場合には`nil'である.
+
+MODE
+     当該書式から変換されたファイルを訪問後に呼び出されるモード関数.
+
+関数`insert-file-contents'は, 指定されたファイルを読み込むときにファイ
+ル書式を自動的に認識します.  ファイルの先頭のテキストを書式定義の正規
+表現に対して検査して, 一致がみつかれば当該書式の復号化関数を呼び出しま
+す.  そして, 既知の書式について再度調べ直します.  適用できる書式がなく
+なるまで検査し続けます.
+
+関数`find-file-noselect'やこれを使うコマンドでファイルを訪問すると, 
+（`insert-file-contents'を呼び出すので）同様に変換を行います.  さらに, 
+この関数は, 復号した各書式についてモード関数を呼び出します.  バッファ
+ローカルな変数`buffer-file-format'に書式名のリストを保存します.
+
+ -- Variable: buffer-file-format
+     この変数は, 訪問したファイルの書式を記述している.  より正確には, 
+     カレントバッファのファイルを訪問する過程で復号したファイル書式名
+     のリストである.  この変数は, すべてのバッファにおいてつねにバッファ
+     ローカルである.
+
+`write-region'がデータをファイルに書き出すときには, まず,
+`buffer-file-format'で指定された書式の符号化関数をリストに現れる順に呼
+び出します.
+
+ -- コマンド: format-write-file FILE FORMAT
+     このコマンドは, カレントバッファの内容を書式FORMATにてファイル
+     FILEに書き出す.  さらに, 当該書式をバッファを将来保存するときのデ
+     フォルトとする.  引数FORMATは, 書式名のリストである.
+
+ -- コマンド: format-find-file FILE FORMAT
+     このコマンドは, ファイルFILEを探し, それを書式FORMATに従って変換
+     する.  さらに, 当該書式をバッファをのちに保存するときのデフォルト
+     とする.
+
+     引数FORMATは, 書式名のリストである.  FORMATが`nil'であると, 変換
+     を行わない.  対話的に呼び出した場合, FORMATに`nil'を指定するには
+     RETのみを打つ.
+
+ -- コマンド: format-insert-file FILE FORMAT &optional BEG END
+     このコマンドは, ファイルFILEの内容を書式FORMATに従って変換して挿
+     入する.  BEGとENDが`nil'以外であると, それらは,
+     `insert-file-contents'（*Note Reading from Files::）と同様に, 読
+     み込むべきファイルの部分を指定する.
+
+     戻り値は, `insert-file-contents'が返す値に似ており, 絶対ファイル
+     名と挿入データの（変換後の）長さのリストである.
+
+     引数FORMATは, 書式名のリストである.  FORMATが`nil'であると, 変換
+     を行わない.  対話的に呼び出した場合, FORMATに`nil'を指定するには
+     RETのみを打つ.
+
+ -- Variable: auto-save-file-format
+     この変数は, 自動保存に対して使用する書式を指定する.  その値は,
+     `buffer-file-format'の値のように, 書式名のリストであるが,
+     `buffer-file-format'のかわりに自動保存ファイルを書くために使われ
+     る.  この変数は, すべてのバッファにおいてつねにバッファローカルで
+     ある.
+
+
+
+File: elisp-ja, Node: Backups and Auto-Saving, Next: Buffers, Prev: Files, Up: Top
+
+バックアップと自動保存
+**********************
+
+バックアップファイルと自動保存ファイルは, クラッシュやユーザー自身の誤
+りからEmacsがユーザーを保護するための2つの方式です.  自動保存により, 
+現在の編集セッションにおいて, まえの時点でのテキストを確保します.  バッ
+クアップファイルにより, 現在のセッション以前のファイル内容を確保します.
+
+* Menu:
+
+* Backup Files::   How backup files are made; how their names are chosen.
+* Auto-Saving::    How auto-save files are made; how their names are chosen.
+* Reverting::      `revert-buffer', and how to customize what it does.
+
+
+
+File: elisp-ja, Node: Backup Files, Next: Auto-Saving, Prev: Backups and Auto-Saving, Up: Backups and Auto-Saving
+
+バックアップファイル
+====================
+
+"バックアップファイル"（backup file）とは, 読者が編集中のファイルの古
+い内容のコピーです.  バッファを訪問しているファイルに初めて保存すると
+きに, Emacsはバックアップファイルを作成します.  通常これは, バックアッ
+プファイルは現在の編集セッションよりまえのファイルの内容を保持すること
+を意味します.  バックアップファイルの内容は, 通常, それが作られると変
+更されません.
+
+訪問したファイルを新たな名前に改名することで通常バックアップは作られま
+す.  訪問したファイルをコピーしてバックアップファイルを作るように指示
+することもできます.  どちらを選ぶかによって, 複数の名前を持つファイル
+では違いがでます.  また, 編集したファイルの所有者が元所有者と同じであ
+るか, それとも編集したユーザーが所有者になるかにも影響します.
+
+デフォルトでは, Emacsは各編集ファイルに1つのバックアップファイルを作り
+ます.  番号付きのバックアップファイルを作るように指示することもでき, 
+そうすると, 新たなバックアップファイルごとに新たな名前が付きます.  古
+い番号付きバックアップファイルは必要なくなれば削除できますし, Emacsが
+それらを自動的に削除することも可能です.
+
+* Menu:
+
+* Making Backups::     How Emacs makes backup files, and when.
+* Rename or Copy::     Two alternatives: renaming the old file or copying it.
+* Numbered Backups::   Keeping multiple backups for each source file.
+* Backup Names::       How backup file names are computed; customization.
+
+
+
+File: elisp-ja, Node: Making Backups, Next: Rename or Copy, Prev: Backup Files, Up: Backup Files
+
+バックアップファイルの作成
+--------------------------
+
+ -- Function: backup-buffer
+     この関数は, 必要ならば, カレントバッファで訪問しているファイルの
+     バックアップを作成する.  バッファを初めて保存するまえに
+     `save-buffer'がこの関数を呼び出す.
+
+ -- Variable: buffer-backed-up
+     このバッファローカルな変数は, 当該バッファのもとで当該バッファの
+     ファイルのバックアップを作成済みかどうかを表す.  `nil'以外であれ
+     ば, バックアップファイルは作成済みであることを表す.  さもなければ, 
+     （バックアップがオンになっていれば）つぎに保存するときにファイル
+     のバックアップを作成するべきであることを表す.  これは恒久的にバッ
+     ファローカルであり, `kill-local-variables'によって変更されない.
+
+ -- User Option: make-backup-files
+     この変数は, バックアップファイルを作成するかどうかを決定する.
+     `nil'以外であると, `backup-inhibited'が`nil'ならば（下記参照）
+     Emacsは初めて保存するときに各ファイルのバックアップを作成する.
+
+     つぎの例は, rmailのバッファでのみ変数`make-backup-files'を変更す
+     る方法である.  この変数を`nil'にすると, Emacsはそれらのファイルの
+     バックアップを作成しなくなり, ディスクスペースの節約になる.  （こ
+     のコードを読者のファイル`.emacs'に入れてもよい. ）
+
+          (add-hook 'rmail-mode-hook 
+                    (function (lambda ()
+                                (make-local-variable 
+                                 'make-backup-files)
+                                (setq make-backup-files nil))))
+
+ -- Variable: backup-enable-predicate
+     この変数の値は, ファイルをバックアップすべきかどうかを決定するた
+     めに特定の場面で呼び出される関数である.  当該関数は, 調べるべきファ
+     イルの名前を引数にとる.  当該関数が`nil'を返すと, 当該ファイルの
+     バックアップは禁止である.  さもなければ, 本節の他の変数が, バック
+     アップするかどうかやバックアップ方法を指定する.
+
+     デフォルト値はつぎのとおりである.
+
+          (lambda (name)
+            (or (< (length name) 5)
+                (not (string-equal "/tmp/"
+                                   (substring name 0 5)))))
+
+ -- Variable: backup-inhibited
+     この変数が`nil'以外であると, バックアップを禁止する.  この変数は, 
+     訪問したファイルの名前に対する`backup-enable-predicate'の検査結果
+     を記録している.  訪問したファイルに基づいてバックアップを禁止する
+     他の機構でもこの変数を使える.  たとえば, VCはこの変数に`nil'以外
+     を設定し, 版管理システムで管理されているファイルに対してバックアッ
+     プの作成を禁止する.
+
+     これは恒久的にバッファローカルであり, メジャーモードを変更しても
+     値は失われない.  メジャーモードはこの変数に設定するべきではなく, 
+     かわりに, `make-backup-files'に設定するべきである.
+
+
+
+File: elisp-ja, Node: Rename or Copy, Next: Numbered Backups, Prev: Making Backups, Up: Backup Files
+
+改名によるバックアップかコピーによるバックアップか
+--------------------------------------------------
+
+Emacsは2つの方法でバックアップファイルを作れます.
+
+   * Emacsは, 元ファイルを改名してバックアップファイルとしてから, 保存
+     すべきバッファを新たなファイルに書き出す.  この処理のあとでは, 元
+     ファイルの他の名前（つまりハードリンク）はバックアップファイルを
+     指す.  新たなファイルの所有者は編集しているユーザーになり, そのグ
+     ループは当該ディレクトリでユーザーが新規にファイルを書いた場合の
+     デフォルトである.
+
+   * Emacsは元ファイルをバックアップファイルにコピーしてから, 元ファイ
+     ルを新たな内容で上書きする.  この処理のあとでは, 元ファイルの他の
+     名前（つまりハードリンク）はファイルの（更新した）現在の版を指し
+     続ける.  ファイルの所有者とグループは変わらない.
+
+最初の改名による方式がデフォルトです.
+
+変数`backup-by-copying'が`nil'以外であると, 2番目の方式, つまり, 元ファ
+イルをコピーしてからバッファの新たな内容で上書きすることを指示します. 
+変数`file-precious-flag'が`nil'以外であっても（その主目的の副作用とし
+て）同じ効果があります.  *Note Saving Buffers::.
+
+ -- Variable: backup-by-copying
+     この変数が`nil'以外であると, Emacsはつねにコピーしてバックアップ
+     ファイルを作る.
+
+つぎの2つの変数が`nil'以外であると, 特定の場面では2番目の方式を使うこ
+とになります.  これらの変数は, 特別な場面に該当しないファイルの扱い方
+には影響しません.
+
+ -- Variable: backup-by-copying-when-linked
+     この変数が`nil'以外の場合, Emacsは, 複数の名前（ハードリンク）を
+     持つファイルはコピーしてバックアップする.
+
+     この変数は`backup-by-copying'が`nil'以外の場合にのみ意味を持つ. 
+     というのは, その変数が`nil'以外の場合にコピーを用いるからである.
+
+ -- Variable: backup-by-copying-when-mismatch
+     この変数が`nil'以外の場合, Emacsは, 改名するとファイルの所有者や
+     グループを変更してしまう場合にコピーしてバックアップする.
+
+     改名してもファイルの所有者やグループを変更しなければ, この値は効
+     果を持たない.  つまり, ユーザーが所有しているファイルであり, その
+     グループが当該ユーザーが新規作成するファイルのデフォルトに一致す
+     る場合である.
+
+     この変数は`backup-by-copying'が`nil'以外の場合にのみ意味を持つ. 
+     というのは, その変数が`nil'以外の場合にコピーを用いるからである.
+
+
+
+File: elisp-ja, Node: Numbered Backups, Next: Backup Names, Prev: Rename or Copy, Up: Backup Files
+
+番号付きバックアップファイルの作成と削除
+----------------------------------------
+
+ファイル名が`foo'であると, その番号付きバックアップファイルの名前はVを
+整数として`foo.~V~'となります.  つまり, `foo.~1~', `foo.~2~',
+`foo.~3~', ..., `foo.~259~'といった具合です.
+
+ -- User Option: version-control
+     この変数は, 番号なしの1つのバックアップファイルを作るのか複数の番
+     号付きバックアップファイルを作るのかを制御する.
+
+     `nil'
+          訪問したファイルにすでに番号付きバックアップファイルがあれば
+          番号付きバックアップを作る.  さもなければ作らない.
+
+     `never'
+          番号付きバックアップは作らない.
+
+     その他
+          番号付きバックアップを作る.
+
+番号付きバックアップファイルを使うと, 最終的には非常に多くのバックアッ
+プファイルができてしまい, それらは削除しなければなりません.  Emacsはそ
+れらを自動的に削除したり, 削除するかどうかユーザーに問い合わせることが
+できます.
+
+ -- User Option: kept-new-versions
+     この変数の値は, 新たに番号付きバックアップを作成したときに保存す
+     べき最新のバックアップの個数である.  新たに作成したバックアップも
+     数える.  デフォルト値は2である.
+
+ -- User Option: kept-old-versions
+     この変数の値は, 新たに番号付きバックアップを作成したときに保存す
+     べき最古のバックアップの個数である.  デフォルト値は2である.
+
+1, 2, 3, 5, 7と番号が付いたバックアップがあり, これらのどちらの変数の
+値も2であるとすると, 最古のものとして1と2の番号が付いたバックアップを
+保存し, 最新のものとして5と7の番号が付いたバックアップを保存する.  関
+数`find-backup-file-name'（*Note Backup Names::）は, どの番号のバック
+アップを削除すべきかを決定する責任があるが, それ自身はそれらを削除しな
+い.
+
+ -- User Option: delete-old-versions
+     この変数が`nil'以外であると, ファイルを保存すると黙って範囲外のバッ
+     クアップを削除する.  さもなければ, それを削除するかどうかユーザー
+     に問い合わせる.
+
+ -- User Option: dired-kept-versions
+     この変数は, diredのコマンド`.'（`dired-clean-directory'）で最新の
+     バックアップを何個保存するかを指定する.  これは, 新たなバックアッ
+     プファイルの作成を指示したときに`kept-new-versions'が指定すること
+     と同じである.  デフォルト値は2である.
+
+
+
+File: elisp-ja, Node: Backup Names, Next: Auto-Saving, Prev: Numbered Backups, Up: Backup Files
+
+バックアップファイルの命名方法
+------------------------------
+
+本節の関数は, それらを再定義することでバックアップファイルの命名方法を
+カスタマイズできるため, ここで述べることにします.  どれか1つを変更する
+と, 残りのものも変更する必要があるでしょう.
+
+ -- Function: backup-file-name-p FILENAME
+     この関数は, FILENAMEがバックアップファイルの名前である可能性があ
+     ると`nil'以外の値を返す.  FILENAMEという名前のファイルが存在する
+     必要はなく, この関数は単に名前だけを検査する.
+
+          (backup-file-name-p "foo")
+               => nil
+          (backup-file-name-p "foo~")
+               => 3
+
+     この関数の標準定義はつぎのとおりである.
+
+          (defun backup-file-name-p (file)
+            "Return non-nil if FILE is a backup file \
+          name (numeric or not)..."
+            (string-match "~$" file))
+
+     したがって, ファイル名が`~'で終っていると, この関数は`nil'以外の
+     値を返す.  （説明文字列を2行に分けるためにバックスラッシュを使っ
+     ているが, 文字列としては1行になる. ）
+
+     カスタマイズのために再定義しやすいように, この単純な式を独立した
+     関数にしてある.
+
+ -- Function: make-backup-file-name FILENAME
+     この関数は, ファイルFILENAMEに対する番号なしバックアップファイル
+     に使う名前を表す文字列を返す.  UNIXでは, 単にFILENAMEの末尾にティ
+     ルダを付加したものである.
+
+     ほとんどのオペレーティングシステムでは, この関数の標準定義はつぎ
+     のとおりである.
+
+          (defun make-backup-file-name (file)
+            "Create the non-numeric backup file name for FILE...."
+            (concat file "~"))
+
+     この関数を再定義すれば, バックアップファイルの命名方法を変更でき
+     る.  つぎの例では, ティルダに加えて先頭に`.'を付けるように
+     `make-backup-file-name'を再定義する.
+
+          (defun make-backup-file-name (filename)
+            (expand-file-name
+              (concat "." (file-name-nondirectory filename) "~")
+              (file-name-directory filename)))
+
+          (make-backup-file-name "backups.texi")
+               => ".backups.texi~"
+
+     diredコマンドを含めてEmacsには, バックアップファイルは`~'で終ると
+     仮定しているものがある.  この慣習に従わない場合, 重大な問題には至
+     らないであろうが, それらのコマンドがあまり望ましくない結果をもた
+     らすかもしれない.
+
+ -- Function: find-backup-file-name FILENAME
+     この関数は, FILENAMEに対する新たなバックアップファイルのファイル
+     名を計算する.  さらに, 削除すべき既存のバックアップファイルも計算
+     する.  `find-backup-file-name'は, CARに新たなバックアップファイル
+     の名前, CDRに削除すべきバックアップファイルのリストを持つリストを
+     返す.
+
+     2つの変数, `kept-old-versions'と`kept-new-versions'は, どのバック
+     アップを保存すべきかを決定する.  この関数は, 値のCDRではそれらの
+     バックアップファイルは除外してある.  *Note Numbered Backups::.
+
+     つぎの例の値では, `~rms/foo.~5~'が新たなバックアップファイルの名
+     前であり, `~rms/foo.~3~'が『範囲外』のものであり, 呼び出し側で削
+     除するかどうか考慮すべきである.
+
+          (find-backup-file-name "~rms/foo")
+               => ("~rms/foo.~5~" "~rms/foo.~3~")
+
+ -- Function: file-newest-backup FILENAME
+     この関数は, FILENAMEの最新のバックアップファイルの名前を返す.  当
+     該ファイルにバックアップファイルがなければ`nil'を返す.
+
+     ファイルを比較するコマンドのなかには, 最新のバックアップファイル
+     と自動的に比較できるようにこの関数を使うものがある.
+
+
+
+File: elisp-ja, Node: Auto-Saving, Next: Reverting, Prev: Backup Files, Up: Backups and Auto-Saving
+
+自動保存
+========
+
+Emacsは編集中のすべてのファイルを定期的に保存します.  これを"自動保存"
+（auto-savign）と呼びます.  自動保存により, システムがクラッシュしても, 
+一定量以上の作業を失わないようにします.  デフォルトでは, 300打鍵ごと, 
+あるいは, 30秒間なにもしないと自動保存します.  ユーザー向けの自動保存
+に関する情報については, *Note 自動保存: (不慮の事故に対する備え)Auto
+Save.。ここでは, 自動保存を実装するための関数とそれらを制御する変数に
+ついて述べます.
+
+ -- Variable: buffer-auto-save-file-name
+     このバッファローカルな変数は, カレントバッファの自動保存に用いる
+     ファイル名である.  当該バッファを自動保存しない場合には`nil'であ
+     る.
+
+          buffer-auto-save-file-name
+          => "/xcssun/users/rms/lewis/#files.texi#"
+
+ -- コマンド: auto-save-mode ARG
+     引数なしに対話的に呼ばれると, このコマンドは自動保存機能をトグル
+     する.  つまり, カレントバッファの自動保存がオンであるとオフにし, 
+     オフならばオンにする.  引数ARGを指定すると, ARGの値が`t', 空でな
+     いリスト, 正整数のいずれかであれば, このコマンドは自動保存をオン
+     にする.  さもなければ自動保存をオフにする.
+
+ -- Function: auto-save-file-name-p FILENAME
+     この関数は, FILENAMEが自動保存ファイルの名前でありえれば, `nil'以
+     外を返す.  この関数は自動保存ファイルの名前の慣習に基づいて動作す
+     る.  名前がハッシュマーク（`#'）で始まりかつ終っていれば, 自動保
+     存ファイルの名前である可能性がある.  引数FILENAMEにはディレクトリ
+     部分を含まないこと.
+
+          (make-auto-save-file-name)
+               => "/xcssun/users/rms/lewis/#files.texi#"
+          (auto-save-file-name-p "#files.texi#")
+               => 0
+          (auto-save-file-name-p "files.texi")
+               => nil
+
+     この関数の標準定義はつぎのとおりである.
+
+          (defun auto-save-file-name-p (filename)
+            "Return non-nil if FILENAME can be yielded by..."
+            (string-match "^#.*#$" filename))
+
+     この関数は, 自動保存ファイルの名前の慣習を変更したい場合に当該関
+     数をカスタマイズできるようにするためである.  当該関数を再定義した
+     場合には, 関数`make-auto-save-file-name'もそれに従って必ず再定義
+     すること.
+
+ -- Function: make-auto-save-file-name
+     この関数は, カレントバッファの自動保存に使うファイル名を返す.  そ
+     の名前は, 単にファイル名の前後にハッシュマーク（`#'）を付加するだ
+     けである.  この関数は変数`auto-save-visited-file-name'（下記参照）
+     を調べないため, 読者はこの関数を呼び出すまえにその変数を検査して
+     おくこと.
+
+          (make-auto-save-file-name)
+               => "/xcssun/users/rms/lewis/#backup.texi#"
+
+     この関数の標準定義はつぎのとおりである.
+
+          (defun make-auto-save-file-name ()
+            "Return file name to use for auto-saves \
+          of current buffer...."
+            (if buffer-file-name
+                (concat
+                 (file-name-directory buffer-file-name)
+                 "#"
+                 (file-name-nondirectory buffer-file-name)
+                 "#")
+              (expand-file-name
+               (concat "#%" (buffer-name) "#"))))
+
+     自動保存ファイルの名前の慣習をカスタマイズするために関数を再定義
+     できるように1つの関数にしてある.  関数`auto-save-file-name-p'もそ
+     れに従って必ず変更すること.
+
+ -- Variable: auto-save-visited-file-name
+     この変数が`nil'以外であると, Emacsは訪問しているファイルにバッファ
+     を自動保存する.  つまり, 読者が編集しているファイルと同じファイル
+     に自動保存を行う.  通常, この変数は`nil'であり, 自動保存ファイル
+     には`make-auto-save-file-name'で作成した別の名前がある.
+
+     この変数の値を変更しても, バッファの自動保存をつぎにオンにするま
+     で, この値は効果を発揮しない.  自動保存がすでにオンであると,
+     `auto-save-mode'を再度呼び出すまでは, 同じファイルの名前に自動保
+     存し続ける.
+
+ -- Function: recent-auto-save-p
+     カレントバッファに最後に読み込んだり保存してから以降に自動保存し
+     ていると, この関数は`t'を返す.
+
+ -- Function: set-buffer-auto-saved
+     この関数は, カレントバッファに自動保存済みであると印を付ける.  バッ
+     ファのテキストが再度変更されない限り, バッファは自動保存されない. 
+     この関数は`nil'を返す.
+
+ -- User Option: auto-save-interval
+     この変数の値は, つぎの自動保存までにEmacsがキーボードから読み取る
+     文字の個数である.  これだけの文字を読み取ると, 自動保存をオンにし
+     てあるすべてのバッファを自動保存する.
+
+ -- User Option: auto-save-timeout
+     この変数の値は, 自動保存を引き起こすまでのなにもしていない期間の
+     秒数である.  この時間だけユーザーがなにもしないと, Emacsは自動保
+     存する必要があるバッファを自動保存する.  （実際には, カレントバッ
+     ファの大きさに依存した係数を指定時間に掛ける. ）
+
+ -- Variable: auto-save-hook
+     このノーマルフックは, 自動保存を行う直前に毎回実行される.
+
+ -- User Option: auto-save-default
+     この変数が`nil'以外であると, ファイルを訪問しているバッファはデフォ
+     ルトで自動保存をオンにする.  さもなければ, そうしない.
+
+ -- コマンド: do-auto-save &optional NO-MESSAGE CURRENT-ONLY
+     この関数は, 自動保存する必要があるすべてのバッファを自動保存する. 
+     自動保存がオンになっていて, かつ, 以前の自動保存からあとで変更さ
+     れているすべてのバッファを自動保存する.
+
+     通常, バッファを自動保存すると, 自動保存を実行中にはエコー領域に
+     メッセージ`Auto-saving...'が表示される.  しかし, NO-MESSAGEが
+     `nil'以外であると, メッセージを表示しない.
+
+     CURRENT-ONLYが`nil'以外であると, カレントバッファのみを自動保存す
+     る.
+
+ -- Function: delete-auto-save-file-if-necessary
+     この関数は, `delete-auto-save-files'が`nil'以外であると, カレント
+     バッファの自動保存ファイルを削除する.  バッファを保存するたびに呼
+     び出される.
+
+ -- Variable: delete-auto-save-files
+     この変数は, 関数`delete-auto-save-file-if-necessary'が使う.
+     `nil'以外であると, Emacsは（訪問しているファイルに）実際に保存す
+     ると自動保存ファイルを削除する.  これによりディスクスペースを節約
+     し, 読者のディレクトリを整頓できる.
+
+ -- Function: rename-auto-save-file
+     この関数は, 訪問しているファイルの名前が変更されていると, カレン
+     トバッファの自動保存ファイルの名前を修正する.  さらに, 既存の自動
+     保存ファイルも改名する.  訪問しているファイルの名前が変更されてい
+     なければ, この関数はなにもしない.
+
+ -- Variable: buffer-saved-size
+     このバッファローカルな変数の値は, 最後に読み込んだり保存したり自
+     動保存したときのカレントバッファの長さである.  サイズの大幅な変更
+     を検知すると自動保存をオフにするために使われる.
+
+     この変数が-1であると, 大幅に削除したために一時的に自動保存をオフ
+     にしたことを意味する.  明示的にバッファを保存すると, この変数に正
+     の値が保存され, 自動保存が再度オンになる.  自動保存をオフにしたり
+     オンにしても, この変数が変更される.
+
+ -- Variable: auto-save-list-file-name
+     この変数は（`nil'以外であると）, すべての自動保存ファイルの名前を
+     記録するファイルを指定する.  Emacsが自動保存を行うたびに, 自動保
+     存がオンである各バッファに関する2行をこのファイルに書き出す.  1行
+     目は訪問しているファイルの名前を与え（訪問していなければ空）, 2行
+     目は自動保存ファイルの名前を与える.
+
+     Emacsが正常に終ると, このファイルは削除される.  Emacsがクラッシュ
+     したら, 失われてしまう作業内容を含んでいるかもしれない自動保存ファ
+     イルを探すために読者はこのファイルを調べられる.  コマンド
+     `recover-session'はこれらのファイルを使う.
+
+     このファイルのデフォルト名は, 読者のホームディレクトリにあり
+     `.saves-'で始まる.  さらに, EmacsのプロセスIDとホスト名も含む.
+
+
+
+File: elisp-ja, Node: Reverting, Next: Buffers, Prev: Auto-Saving, Up: Backups and Auto-Saving
+
+復元
+====
+
+ファイルを大幅に変更したあとで, そのような変更をやめたい場合には, コマ
+ンド`revert-buffer'でファイルのまえの版を読み込めます.  *Note バッファ
+を復元する: (emacs-ja)Reverting.
+
+ -- コマンド: revert-buffer &optional IGNORE-AUTO NOCONFIRM
+     このコマンドは, バッファのテキストをディスク上の訪問しているファ
+     イルのテキストで置き換える.  これにより, ファイルを訪問したり保存
+     してから行った変更をすべて取り消せる.
+
+     デフォルトでは, 最後の自動保存ファイルが訪問しているファイルより
+     も新しい場合には, `revert-buffer'は自動保存ファイルを使うかどうか
+     ユーザーに問い合わせる.  しかし, 引数IGNORE-AUTOが`nil'以外である
+     と, 訪問したファイルのみを使う.  対話的に呼ばれた場合, 数値前置引
+     数を指定しない限り, IGNORE-AUTOは`t'である.  したがって, 対話的な
+     場合のデフォルトでは, 自動保存ファイルを検査する.
+
+     通常, バッファを変更するまえに`revert-buffer'は確認してくる.  し
+     かし, 引数NOCONFIRMが`nil'以外であると, `revert-buffer'は確認しな
+     い.
+
+     復元作業では, `insert-file-contents'の置換機能を用いてバッファ内
+     のマーカ位置を保存するように努める.  復元操作のまえにバッファの内
+     容とファイルの内容が同一であれば, すべてのマークが保存される.  同
+     一でなければ, 復元によりバッファが変更され, バッファの先頭と末尾
+     の（あれば）未変更なテキスト内のマーカを保存する.  それ以外のマー
+     カを保存しても問題を引き起こすだけであろう.
+
+以下の変数を典型的にはバッファローカルな変数として設定することで
+`revert-buffer'の動作をカスタマイズできます.
+
+ -- Variable: revert-without-query
+     この変数は, 問い合わせずに復元すべきファイルのリストを保持する. 
+     値は, 正規表現のリストである.  ファイル名がこれらの正規表現の1つ
+     に一致すると, ディスク上のファイルが変更されていて当該バッファが
+     未変更であれば, `revert-buffer'はユーザーに確認せずに当該ファイル
+     を復元する.
+
+ -- Variable: revert-buffer-function
+     この変数の値は, このバッファを復元するために使う関数である.
+     `nil'以外であれば, 復元を行う引数なしの関数として呼び出される. 
+     値が`nil'であると, 復元操作は通常の方法で行われる.
+
+     diredモードなどのモードでは, 編集中のテキストはファイルの内容では
+     なく別の方法で再生成されたものなので, この変数のバッファローカル
+     な値には内容を再生成する関数を指定すること.
+
+ -- Variable: revert-buffer-insert-file-contents-function
+     この変数の値が`nil'以外であると, このバッファを復元するときに更新
+     内容を挿入するために使われる関数である.  当該関数は2つの引数をと
+     る.  第1引数は, 使用するファイル名である.  第2引数は, ユーザーが
+     自動保存ファイルを読むように指示していると`t'である.
+
+ -- Variable: before-revert-hook
+     このノーマルフックは, `revert-buffer-function'が`nil'である場合に
+     のみ, 変更内容を実際に挿入するまえに`revert-buffer'が実行する.
+
+     フォントロック（font-lock）モードはこのフックを使って, バッファ内
+     容をこれ以上強調表示しないことを記録する.
+
+ -- Variable: after-revert-hook
+     このノーマルフックは, `revert-buffer-function'が`nil'である場合に
+     のみ, 変更内容を実際に挿入したあとに`revert-buffer'が実行する.
+
+     フォントロック（font-lock）モードはこのフックを使って, 更新された
+     バッファ内容に対するフォントを再計算する.
+
+
+
+File: elisp-ja, Node: Buffers, Next: Windows, Prev: Backups and Auto-Saving, Up: Top
+
+バッファ
+********
+
+"バッファ"（buffer）は, 編集するテキストを収めているLispオブジェクトで
+す.  バッファは, 訪問しているファイルのテキストを保持するために使われ
+ますが, ファイルを訪問していないバッファもあります.  一度に複数のバッ
+ファが存在してかまいませんが, ある時点ではたった1つのバッファが"カレン
+トバッファ" （current buffer）として区別されます.  ほとんどの編集コマ
+ンドは, カレントバッファの内容に作用します.  カレントバッファを含む各
+バッファは, ウィンドウに表示されることもされないこともあります.
+
+* Menu:
+
+* Buffer Basics::       What is a buffer?
+* Current Buffer::      Designating a buffer as current
+                          so primitives will access its contents.
+* Buffer Names::        Accessing and changing buffer names.
+* Buffer File Name::    The buffer file name indicates which file is visited.
+* Buffer Modification:: A buffer is "modified" if it needs to be saved.
+* Modification Time::   Determining whether the visited file was changed
+                         "behind Emacs's back".
+* Read Only Buffers::   Modifying text is not allowed in a read-only buffer.
+* The Buffer List::     How to look at all the existing buffers.
+* Creating Buffers::    Functions that create buffers.
+* Killing Buffers::     Buffers exist until explicitly killed.
+* Indirect Buffers::    An indirect buffer shares text with some other buffer.
+
+
+
+File: elisp-ja, Node: Buffer Basics, Next: Current Buffer, Prev: Buffers, Up: Buffers
+
+バッファの基本
+==============
+
+"バッファ"（buffer）は, 編集するテキストを収めているLispオブジェクトで
+す.  バッファは, 訪問しているファイルのテキストを保持するために使われ
+ますが, ファイルを訪問していないバッファもあります.  一度に複数のバッ
+ファが存在してかまいませんが, ある時点ではたった1つのバッファが"カレン
+トバッファ" （current buffer）として区別されます.  ほとんどの編集コマ
+ンドは, カレントバッファの内容に作用します.  カレントバッファを含む各
+バッファは, ウィンドウに表示されることもされないこともあります.
+
+Emacsの編集においてバッファとは, 異なる名前を持ち編集可能なテキストを
+保持するオブジェクトです.  バッファは, Lispプログラムには特別なデータ
+型として見えます.  バッファの内容は拡張可能な文字列であると考えること
+ができます.  つまり, バッファのどの部分ででも挿入や削除を行えるのです.
+*Note Text::.
+
+Lispのバッファオブジェクトには, さまざまな情報が含まれています.  変数
+を介してプログラマが直接参照できる情報もあれば, 特別目的の関数のみを介
+して参照できる情報もあります.  たとえば, 訪問しているファイルの名前は, 
+変数を介して直接参照できますが, ポイントの値は基本関数を介してのみ参照
+できます.
+
+直接参照可能なバッファに固有の情報は, "バッファローカル"（buffer-local）
+な変数束縛, つまり, 特定のバッファでのみ有効な変数に保持されています. 
+この機能により, 各バッファでは特定の変数の値を優先できます.  ほとんど
+のメジャーモードでは, このようにして, `fill-column'や`comment-column'
+などの変数を優先させます.  バッファローカルな変数とそれらに関する関数
+について詳しくは, *Note Buffer-Local Variables::を参照してください.
+
+バッファで訪問しているファイルに関する関数や変数については, *Note
+Visiting Files::と*Note Saving Buffers::を参照してください.  ウィンド
+ウにバッファを表示することに関する関数や変数については, *Note Buffers
+and Windows::を参照してください.
+
+ -- Function: bufferp OBJECT
+     この関数は, OBJECTがバッファであれば`t'を返し, さもなければ`nil'
+     を返す.
+
+
+
+File: elisp-ja, Node: Current Buffer, Next: Buffer Names, Prev: Buffer Basics, Up: Buffers
+
+カレントバッファ
+================
+
+一般に, Emacsセッションには多くのバッファがあります.  いつの時点でも, 
+それらの1つを"カレントバッファ" （current buffer）として区別します. 
+バッファ内のテキストを検査したり変更する基本関数は暗黙のうちにカレント
+バッファに作用するため, ほとんどの編集はカレントバッファに対して行われ
+ます（*Note Text::）.  通常, スクリーン上で選択されたウィンドウに表示
+されているバッファがカレントバッファですが, つねにそうとは限りません.
+Lispプログラムでは, スクリーン上の表示は変えずに, 任意のバッファの内容
+を操作するために一時的に当該バッファをカレントバッファにできます.
+
+Lispプログラムでカレントバッファを指定するには, `set-buffer'を呼び出し
+ます.  新たに指定し直すまで指定したバッファがカレントバッファであり続
+けます.
+
+編集コマンドがエディタコマンドループへ戻ると, コマンドループは, 混乱を
+避けるために, 選択されているウィンドウに表示されているバッファをカレン
+トバッファとします.  つまり, Emacsがコマンドを読むときにカーソルがある
+バッファがコマンドが適用されるバッファです.  （*Note Command
+Loop::. ）したがって, `set-buffer'は, ユーザーが編集できるように別のバッ
+ファへ切り替える方法にはなりません.  これには, *Note Displaying
+Buffers::で述べている関数を使う必要があります.
+
+しかし, 別のカレントバッファに替えるLisp関数では, コマンドループがカレ
+ントバッファをあとで戻すということに依存してはいけません.  Emacs Lisp
+で書かれた編集コマンドは, コマンドループに加えて別のプログラムからも呼
+ばれます.  サブルーティンがカレントバッファを替えないほうが（それがサ
+ブルーティンの目的でなければ）, 呼び出し側にとっては便利です.  したがっ
+て, 関数の実行が終るともとのカレントバッファに戻すフォーム
+`save-current-buffer'や`save-excursion'（*Note Excursions::）の内側で, 
+普通は`set-buffer'を使います.  例として, （説明文字列を簡略にして）コ
+マンド`append-to-buffer' のコードを示します.
+
+     (defun append-to-buffer (buffer start end)
+       "Append to specified buffer the text of the region.
+     ..."
+       (interactive "BAppend to buffer: \nr")
+       (let ((oldbuf (current-buffer)))
+         (save-current-buffer
+           (set-buffer (get-buffer-create buffer))
+           (insert-buffer-substring oldbuf start end))))
+
+この関数では, ローカル変数を束縛してカレントバッファを記録し,
+`save-current-buffer'でそれがカレントバッファに戻るようにしています. 
+つぎに, `set-buffer'で指定したバッファをカレントバッファにします.  最
+後に, `insert-buffer-substring'でもとのカレントバッファから指定された
+（いまはカレント）バッファに文字列をコピーします.
+
+内容を付加したバッファがどれかのウィンドウに表示されていると, つぎに表
+示を更新したときに変更されたテキストが表示されます.  それ以外では, ス
+クリーン上でただちには変更を見ることはできません.  コマンドの実行中に
+はバッファが一時的にカレントバッファになりますが, それによりそのバッファ
+が表示されるわけではありません.
+
+バッファローカルな束縛を持つ変数を（`let'や関数の引数で）ローカルに束
+縛する場合には, ローカルな束縛の有効範囲の開始時と終了時には, 同じバッ
+ファが必ずカレントバッファであるようにします.  さもないと, あるバッファ
+では変数を束縛し, 別のバッファではその束縛を解除してしまうことがありま
+す.  これには2つの方法があります.  単純な場合には, 束縛の有効範囲内で
+カレントバッファが替わらないを確認します.  さもなければ,
+`save-current-buffer'や`save-excursion'を使って, 始めにカレントバッファ
+であったバッファが, 変数束縛が解除されるときにはつねにカレントバッファ
+であるようにします.
+
+`set-buffer'でもとのカレントバッファに戻すのでは信頼性がありません. 
+正しくないバッファがカレントバッファであるときに中断が起きると戻せない
+からです.  しては*いけない*ことをつぎに示します.
+
+     (let (buffer-read-only
+           (obuf (current-buffer)))
+       (set-buffer ...)
+       ...
+       (set-buffer obuf))
+
+つぎのように`save-current-buffer'を使えば, 通常の評価に加えて, 中断, 
+エラー, `throw'も扱えます.
+
+     (let (buffer-read-only)
+       (save-current-buffer
+         (set-buffer ...)
+         ...))
+
+ -- Function: current-buffer
+     この関数はカレントバッファを返す.
+
+          (current-buffer)
+               => #<buffer buffers.texi>
+
+ -- Function: set-buffer BUFFER-OR-NAME
+     この関数は, BUFFER-OR-NAMEをカレントバッファにする.  この関数は現
+     在選択されているウィンドウやその他のウィンドウに当該バッファを表
+     示しないので, ユーザーが当該バッファを見られるとは限らない.  しか
+     し, Lispプログラムはいずれにしても当該バッファを操作できる.
+
+     この関数はBUFFER-OR-NAMEで指定されるバッファを返す.
+     BUFFER-OR-NAMEが既存のバッファを指定しなければ, エラーを通知する.
+
+ -- Special form: save-current-buffer BODY...
+     マクロ`save-current-buffer'は, カレントバッファの識別子を保存し, 
+     フォームBODYを評価し, 最後にもとのカレントバッファに戻す.  戻り値
+     は, BODYの最後のフォームの値である.  `throw'やエラー（*Note
+     Nonlocal Exits::）による異常終了であってもカレントバッファは戻さ
+     れる.
+
+     `save-current-buffer'から抜けるときに, もとのカレントバッファとし
+     て使われていたバッファが削除されていると, もちろん, カレントバッ
+     ファにはならない.  そのかわりに, 抜けるまえにカレントバッファであっ
+     たバッファがカレントバッファであり続ける.
+
+ -- Macro: with-current-buffer BUFFER BODY...
+     マクロ`with-current-buffer'は, カレントバッファの識別子を保存し,
+     BUFFERをカレントバッファにし, フォームBODYを評価し, 最後にもとの
+     カレントバッファに戻す.  戻り値は, BODYの最後のフォームの値である.
+     `throw'やエラー（*Note Nonlocal Exits::）による異常終了であっても
+     カレントバッファは戻される.
+
+ -- Macro: with-temp-buffer BODY...
+     マクロ`with-temp-buffer'は, 一時的なバッファをカレントバッファと
+     してフォームBODYを評価する.  カレントバッファの識別子を保存し, 一
+     時的なバッファを作成してそれをカレントバッファにし, フォームBODY
+     を評価し, 最後にもとのカレントバッファに戻すとともに一時的なバッ
+     ファを削除する.
+
+     戻り値は, BODYの最後のフォームの値である.  最後のフォームとして
+     `(buffer-string)'を使えば, 一時的なバッファの内容を返せる.
+
+     `throw'やエラー（*Note Nonlocal Exits::）による異常終了であっても
+     カレントバッファは戻される.
+
+*Note Writing to Files::の`with-temp-file'も参照してください.
+
+
+
+File: elisp-ja, Node: Buffer Names, Next: Buffer File Name, Prev: Current Buffer, Up: Buffers
+
+バッファ名
+==========
+
+各バッファには, 文字列で一意な名前があります.  バッファに作用するほと
+んどの関数は, 引数としてバッファかバッファ名を受け付けます.
+BUFFER-OR-NAMEという名前の引数はこの種のものであり, 当該引数が文字列で
+もバッファでもないとエラーを通知します.  BUFFERという名前の引数は実際
+のバッファオブジェクトである必要があり, 名前ではだめです.
+
+短命で一般にはユーザーが関心を示さないバッファの名前は空白で始まり, コ
+マンド`list-buffers'や`buffer-menu'はそれらを表示しません.  さらに, 空
+白で始まる名前のバッファでは, アンドゥ情報の記録も最初は禁止してありま
+す.  *Note Undo::を参照してください.
+
+ -- Function: buffer-name &optional BUFFER
+     この関数は, BUFFERの名前を文字列で返す.  BUFFERを指定しないと, デ
+     フォルトはカレントバッファである.
+
+     `buffer-name'が`nil'を返す場合, BUFFERが削除されたことを意味する.
+     *Note Killing Buffers::.
+
+          (buffer-name)
+               => "buffers.texi"
+
+          (setq foo (get-buffer "temp"))
+               => #<buffer temp>
+          (kill-buffer foo)
+               => nil
+          (buffer-name foo)
+               => nil
+          foo
+               => #<killed buffer>
+
+ -- コマンド: rename-buffer NEWNAME &optional UNIQUE
+     この関数は, カレントバッファをNEWNAMEと改名する.  NEWNAMEが文字列
+     でなかったり, 当該名のバッファがすでに存在していると, エラーを通
+     知する.  関数はNEWNAMEを返す.
+
+     通常, NEWNAMEがすでに使われていると, `rename-buffer'はエラーを通
+     知する.  しかし, UNIQUEが`nil'以外であると, NEWNAMEを未使用な名前
+     に修正する.  対話的に呼び出した場合, 数値前置引数を指定すると
+     UNIQUEは`nil'以外になる.
+
+     このコマンドの1つの用途は, バッファ`*shell*'を別の名前に改名して, 
+     同じ`*shell*'という名前で別のシェルを作れるようにすることである.
+
+ -- Function: get-buffer BUFFER-OR-NAME
+     この関数は, BUFFER-OR-NAMEで指定したバッファを返す.
+     BUFFER-OR-NAMEが文字列であり, そのような名前のバッファが存在しな
+     ければ`nil'を返す.  BUFFER-OR-NAMEがバッファであればそれ自身を返
+     す.  （これは有用ではないので, 普通, 引数は名前である. ）例を示す.
+
+          (setq b (get-buffer "lewis"))
+               => #<buffer lewis>
+          (get-buffer b)
+               => #<buffer lewis>
+          (get-buffer "Frazzle-nots")
+               => nil
+
+     *Note Creating Buffers::の関数`get-buffer-create'も参照.
+
+ -- Function: generate-new-buffer-name STARTING-NAME
+     この関数は, 新たなバッファ向けの一意な名前を返すが, バッファは作
+     成しない.  名前はSTARTING-NAMEで始まり, `<...>'で囲った数を追加す
+     ることで, どのバッファでも現在使っていない名前を作成する.
+
+     *Note Creating Buffers::の関連する関数`generate-new-buffer'を参照.
+
+
+
+File: elisp-ja, Node: Buffer File Name, Next: Buffer Modification, Prev: Buffer Names, Up: Buffers
+
+バッファファイル名
+==================
+
+"バッファファイル名"（buffer file name）とは, 当該バッファで訪問してい
+るファイルの名前です.  バッファでファイルを訪問していないときには, バッ
+ファファイル名は`nil'です.  ほとんどの場面で, バッファ名はバッファファ
+イル名の非ディレクトリ部分と同じですが, バッファファイル名とバッファ名
+は別のものであり個別に設定できます.  *Note Visiting Files::.
+
+ -- Function: buffer-file-name &optional BUFFER
+     この関数は, BUFFERで訪問しているファイルの絶対ファイル名を返す.
+     BUFFERがファイルを訪問していなければ, `buffer-file-name'は`nil'を
+     返す.  BUFFERを指定しないと, デフォルトはカレントバッファである.
+
+          (buffer-file-name (other-buffer))
+               => "/usr/user/lewis/manual/files.texi"
+
+ -- Variable: buffer-file-name
+     このバッファローカルな変数は, カレントバッファで訪問しているファ
+     イルの名前を保持する.  あるいは, ファイルを訪問していなければ
+     `nil'である.  これは恒久的にバッファローカルであり,
+     `kill-local-variables'に影響されない.
+
+          buffer-file-name
+               => "/usr/user/lewis/manual/buffers.texi"
+
+     他のさまざまなことを行わずにこの変数の値だけを変更することは危険
+     である.  通常, `set-visited-file-name'（下記参照）を使うほうがよ
+     い.  バッファ名を変更するなどの重要でないことも行うが, Emacsを混
+     乱させないように本質的なことも行うからである.
+
+ -- Variable: buffer-file-truename
+     このバッファローカルな変数は, カレントバッファで訪問しているファ
+     イルの実名を保持する.  あるいは, ファイルを訪問していなければ
+     `nil'である.  これは恒久的にバッファローカルであり,
+     `kill-local-variables'に影響されない.  *Note Truenames::.
+
+ -- Variable: buffer-file-number
+     このバッファローカルな変数は, カレントバッファで訪問しているファ
+     イルのファイル番号とディレクトリ装置番号を保持する.  あるいは, ファ
+     イルを訪問していなければ`nil'である.  これは恒久的にバッファロー
+     カルであり, `kill-local-variables'に影響されない.
+
+     この値は, 通常, `(FILENUM DEVNUM)'の形のリストである.  この数の対
+     により, システム上のすべての参照可能なファイルを一意に識別できる. 
+     これらについてより詳しくは, *Note File Attributes::の関数
+     `file-attributes'を参照.
+
+ -- Function: get-file-buffer FILENAME
+     この関数は, ファイルFILENAMEを訪問しているバッファを返す.  そのよ
+     うなバッファが存在しなければ`nil'を返す.  引数FILENAMEは文字列で
+     あり, 展開（*Note File Name Expansion::）してからすべてのバッファ
+     の訪問しているファイル名と比較する.
+
+          (get-file-buffer "buffers.texi")
+              => #<buffer buffers.texi>
+
+     稀れな状況では, 複数のバッファが同じ名前のファイルを訪問している
+     場合がある.  そのような場合, この関数はバッファリストで最初にみつ
+     かったバッファを返す.
+
+ -- コマンド: set-visited-file-name FILENAME &optional NO-QUERY ALONG-WITH-FILE
+     FILENAMEが空でない文字列であると, この関数はカレントバッファで訪
+     問しているファイルの名前をFILENAMEに変える.  （ファイルを訪問して
+     いないバッファでは, 当該バッファに訪問しているファイル名を指定す
+     る. ）バッファを*つぎに*保存すると, 指定した新たなファイルに保存
+     される.  このコマンドは, バッファに変更済みと印を付ける.  変更ま
+     えの訪問しているファイルの内容とバッファ内容が一致していたとして
+     も（Emacsにとっては）バッファ内容はFILENAMEの内容と一致しないから
+     である.
+
+     FILENAMEが`nil'だったり空文字列であると, 『ファイルを訪問していな
+     い』ことにする.  この場合, `set-visited-file-name'は, 当該バッファ
+     ではファイルを訪問していないと印を付ける.
+
+     通常, この関数は, 指定したファイルが既存の場合にはユーザーに確認
+     をとる.  NO-QUERYが`nil'以外であると, 確認をとらない.
+
+     ALONG-WITH-FILEが`nil'以外であると, それ以前に訪問していたファイ
+     ルはFILENAMEと改名してあると仮定する.
+
+     関数`set-visited-file-name'を対話的に呼び出すと, ミニバッファで
+     FILENAMEを問い合わせる.
+
+ -- Variable: list-buffers-directory
+     このバッファローカルな変数は, 訪問しているファイル名を持たないバッ
+     ファに対して, バッファ一覧において訪問しているファイル名を表示す
+     る部分に表示する文字列を指定する.  diredのバッファはこの変数を使
+     う.
+
+
+
+File: elisp-ja, Node: Buffer Modification, Next: Modification Time, Prev: Buffer File Name, Up: Buffers
+
+バッファの変更
+==============
+
+Emacsは, 各バッファごとに当該バッファのテキストを変更したかどうかを記
+録する"変更フラグ"（modified flag）と呼ばれるフラグを保持しています. 
+バッファの内容が変わるたびにこのフラグは`t'に設定され, 保存するたびに
+`nil'に設定されます.  つまり, このフラグは未保存の変更があるかどうかを
+表します.  このフラグの値は通常モード行（*Note Mode Line Variables::）
+に表示され, 保存（*Note Saving Buffers::）と自動保存（*Note
+Auto-Saving::）を制御します.
+
+このフラグを明示的に設定するLispプログラムもあります.  たとえば, 関数
+`set-visited-file-name'はこのフラグを`t'に設定します.  ファイルを訪問
+してから変更していなくても, バッファのテキストが新たな訪問しているファ
+イルとは一致しないからです.
+
+バッファの内容を変更する関数については*Note Text::に述べてあります.
+
+ -- Function: buffer-modified-p &optional BUFFER
+     この関数は, 最後にファイルから読み込んだり保存してからバッファ
+     BUFFERが変更されていれば`t'を返し, さもなければ`nil'を返す.
+     BUFFERを指定しないとカレントバッファを調べる.
+
+ -- Function: set-buffer-modified-p FLAG
+     この関数は, FLAGが`nil'以外であればカレントバッファは変更されてい
+     ると印を付け, `nil'ならば未変更であると印を付ける.
+
+     この関数を呼び出した別の効果として, カレントバッファのモード行を
+     無条件に再表示する.  実際, 関数`force-mode-line-update'はつぎのよ
+     うにしている.
+
+          (set-buffer-modified-p (buffer-modified-p))
+
+ -- コマンド: not-modified
+     このコマンドは, カレントバッファを未変更であり保存する必要がない
+     と印を付ける.  前置引数を指定すると, バッファに変更されていると印
+     を付け, 以降の適当な場面で保存される.
+
+     エコー領域にメッセージを表示するので, プログラムからこの関数を使
+     わないこと.  かわりに`set-buffer-modified-p'を使う（上記）.
+
+ -- Function: buffer-modified-tick &optional BUFFER
+     この関数は, BUFFERの変更回数を返す.  変更回数はバッファを変更する
+     たびに増やされる.  BUFFERが`nil'であると（あるいは省略すると）, 
+     カレントバッファを使う.
+
+
+
+File: elisp-ja, Node: Modification Time, Next: Read Only Buffers, Prev: Buffer Modification, Up: Buffers
+
+更新時刻の比較
+==============
+
+ファイルを訪問してそのバッファで変更したとします.  そのあいだに, ディ
+スク上の当該ファイル自身も変更されたとします.  ここでバッファを保存す
+ると, ファイルの変更内容を上書きしてしまいます.  たしかにこれを望む場
+合もあるでしょうが, 普通は重要な情報を失うことになります.  そのため,
+Emacsは, ファイルに保存するまえに, 以下に述べる関数を用いてファイルの
+更新時刻を検査します.
+
+ -- Function: verify-visited-file-modtime BUFFER
+     この関数は, BUFFERに記録してある訪問しているファイルの更新時刻と, 
+     オペレーティングシステムが記録しているファイルの実際の更新時刻を
+     比較する.  Emacsが当該ファイルを訪問したり保存してから他のプロセ
+     スが当該ファイルに書いていない限り, 2つの時刻は同じはずである.
+
+     実際の更新時刻とEmacsに記録している更新時刻が同じならば`t'を返し, 
+     さもなければ`nil'を返す.
+
+ -- Function: clear-visited-file-modtime
+     この関数は, カレントバッファで訪問しているファイルの最終更新時刻
+     の記録を破棄する.  その結果, つぎにこのバッファを保存しようとして
+     も, ファイルの更新時刻のと不一致を報告しない.
+
+     この関数は, `set-visited-file-name'や変更されたファイルを上書きし
+     ないためのテストを行わない例外的な場面で呼び出される.
+
+ -- Function: visited-file-modtime
+     この関数は, バッファに記録されているファイルの最終更新時刻を
+     `(HIGH . LOW)'の形のリストで返す.  （これは`file-attributes'が時
+     刻を返すために使う形と同じである.  *Note File Attributes::を参
+     照. ）
+
+ -- Function: set-visited-file-modtime &optional TIME
+     この関数は, TIMEが`nil'以外であるときには, バッファに記録してある
+     ファイルの最終更新時刻をTIMEで指定された時刻にする.  さもなければ, 
+     訪問しているファイルの最終更新時刻にする.
+
+     TIMEが`nil'でないときには, `(HIGH . LOW)'か`(HIGH LOW)'の形である
+     こと.  いずれの場合も, 2つの整数は時刻の16ビットを保持する.
+
+     この関数は, ファイルから普通に読み込んだのではないバッファやファ
+     イル自体が明確な理由で変更された場合に有用である.
+
+ -- Function: ask-user-about-supersession-threat FILENAME
+     この関数は, ファイルFILENAMEを訪問している廃れたバッファを変更し
+     ようとしたときにどのように処理すべきかをユーザーに問い合わせるた
+     めに用いる.  "廃れたバッファ"（obsolete buffer）とは, 未変更のバッ
+     ファではあるが, 対応するディスク上のファイルがバッファの最終更新
+     時刻よりも新しいものである.  つまり, 別のプログラムが当該ファイル
+     を変更した可能性があることを意味する.
+
+     ユーザーの応答に依存して, 関数は正常に戻る.  その場合, バッファは
+     変更できる.  あるいは, データ`(FILENAME)'を付けてエラー
+     `file-supersession'を通知する.  その場合, バッファの変更は許され
+     ない.
+
+     この関数は, 適切な場面でEmacsが自動的に呼び出す.  これを再定義す
+     ることでEmacsをカスタマイズできるようにしている.  標準定義につい
+     てはファイル`userlock.el'を参照.
+
+     *Note File Locks::のファイルロック機構も参照.
+
+
+
+File: elisp-ja, Node: Read Only Buffers, Next: The Buffer List, Prev: Modification Time, Up: Buffers
+
+読み出し専用バッファ
+====================
+
+バッファが"読み出し専用"（read-only）であると, スクロールしたりナロイ
+ングしてその内容を眺めることはできますが, その内容は変更できません.
+
+読み出し専用バッファは, 2種類の場面で使われます.
+
+   * 書き込み不可のファイルを訪問しているバッファは, 通常, 読み出し専
+     用である.
+
+     ここでの目的は, バッファを編集してファイルに保存しようとしてもそ
+     れに失敗するか望ましくないことであることをユーザーに伝えることで
+     ある.  それにも関わらずバッファのテキストを変更したいユーザーは, 
+     読み出し専用フラグを`C-x C-q'でクリアすれば編集できる.
+
+   * diredやrmailなどのモードは, 普通の編集コマンドで内容を変更するこ
+     とが誤りであるような場合にバッファを読み出し専用にする.
+
+     これらのモードの特別なコマンドは, それら自身がテキストを変更する
+     場面では, （`let'で）`buffer-read-only'に`nil'を束縛したり,
+     `inhibit-read-only'に`t'を束縛する.
+
+ -- Variable: buffer-read-only
+     このバッファローカルな変数は, バッファが読み出し専用であるかどう
+     かを指定する.  この変数が`nil'以外であると, バッファは読み出し専
+     用である.
+
+ -- Variable: inhibit-read-only
+     この変数が`nil'以外であると, 読み出し専用バッファや読み出し専用文
+     字を変更できる.  バッファ内の読み出し専用文字とは（テキスト属性や
+     オーバレイ属性の）属性`read-only'が`nil'以外の文字である.  テキス
+     ト属性について詳しくは, *Note Special Properties::.  重ね合わせと
+     それらの属性について詳しくは, *Note Overlays::.
+
+     `inhibit-read-only'が`t'であると, すべての文字の属性`read-only'は
+     効果を失う.  `inhibit-read-only'がリストであると, 文字の属性
+     `read-only'が（`eq'で比較して）リストのメンバであると効果を失う.
+
+ -- コマンド: toggle-read-only
+     このコマンドは, カレントバッファが読み出し専用かどうかを変更する. 
+     対話的な使用を意図しており, プログラムからは使わないこと.  プログ
+     ラムの任意の箇所で, 読み出し専用フラグをオンにしたいかオフにした
+     いかを読者は知っているはずであり, そうすれば, 読者は
+     `buffer-read-only'を`t'か`nil'の正しい値に明示的に設定できる.
+
+ -- Function: barf-if-buffer-read-only
+     この関数は, カレントバッファが読み出し専用であるとエラー
+     `buffer-read-only'を通知する.  カレントバッファが読み出し専用であ
+     るときにエラーを通知する別の方法については, *Note Interactive
+     Call::.
+
+
+

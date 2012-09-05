@@ -1,0 +1,4975 @@
+\input texinfo
+@c %**start of header
+@setfilename m4-ja.info
+@settitle GNU macro processor
+@finalout
+@c %**end of header
+
+@include m4-v.texi
+
+@ifinfo
+@set Francois Franc,ois
+@end ifinfo
+@tex
+@set Francois Fran\noexpand\ptexc cois
+@end tex
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* m4(ja): (m4-ja).		A powerful macro processor.
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@ifinfo
+This file documents the GNU @code{m4} utility.
+
+Copyright (C) 1989, 1990, 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@titlepage
+@title GNU m4, version @value{VERSION}
+@subtitle A powerful macro processor
+@subtitle Edition @value{EDITION}, @value{UPDATED}
+@author by Ren@'e Seindal
+@author Japanese translation by Yuji Minejima
+@c  Japanese translation by Yuji Minejima (ggb01164@nifty.ne.jp)
+@c  2001年6月18日
+@c  GNU m4 マニュアルの日本語訳に関する私(Yuji Minejima)の著作権はすべて
+@c  フリーソフトウェア財団(Free Software Foundation, Inc.)に委譲しました。
+@c  $Revision: 1.7 $
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1989, 90, 91, 92, 93, 94 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+
+@ifnottex
+@node Top, Preliminaries, (dir), (dir)
+@top GNU @code{m4}
+
+@c @item @b{@code{m4}} @value{hfillkludge} (UtilD, UtilT, SrcCD)
+@c
+@c  GNU @code{m4} is an implementation of the traditional UNIX macro
+@c  processor.  It is mostly SVR4 compatible, although it has some
+@c  extensions (for example, handling more than 9 positional parameters
+@c  to macros).  @code{m4} also has builtin functions for including
+@c  files, running shell commands, doing arithmetic, etc.  Autoconf needs
+@c  GNU @code{m4} for generating @file{configure} scripts, but not for
+@c  running them.
+GNU @code{m4}はUNIXに古くからあるマクロプロセッサの実装です。
+SVR4版とほぼ互換性がありますが、いくつかの機能が拡張がされています
+(たとえば、9個を超える位置パラメータをマクロで扱うことができます)。
+@code{m4}にはマクロの展開機能に加え、ファイルのインクルード、
+シェルコマンドの実行、計算、その他のための関数も組み込まれています。
+Autoconfで@file{configure}スクリプトを生成するにはGNU @code{m4}が
+必要ですが、そのスクリプトを実行するときには必要ありません。
+
+@c  GNU @code{m4} was originally written by Ren@'e Seindal, with
+@c  subsequent changes by @value{Francois} Pinard and other volunteers
+@c  on the Internet.  All names and email addresses can be found in the
+@c  file @file{THANKS} from the GNU @code{m4} distribution.
+Ren@'e SeindalがGNU @code{m4}を最初に書きました。
+続いて、@value{Francois} Pinardやその他のインターネット上のボランティアたちが
+変更を行ないました。これらの人たちの氏名および電子メールアドレスは、
+GNU @code{m4}の配布用アーカイブファイルに含まれている@file{THANKS}ファイルに
+すべて記載されています。
+
+@c  This is release @value{VERSION}.  It is now to be considered stable,
+@c  future releases are only meant to fix bugs, increase speed, or improve
+@c  documentation.  However@dots{}
+本GNU @code{m4}はリリース@value{VERSION}です。
+現在すでに安定していることを考えると、
+今後のリリースではバグの修正や速度の向上、ドキュメントの改善だけを
+するべきでしょう。しかし@dots{}
+
+@c  An experimental feature, which would improve @code{m4} usefulness,
+@c  allows for changing the syntax for what is a @dfn{word} in @code{m4}.
+@c  You should use:
+@c  @comment ignore
+@c  @example
+@c  ./configure --enable-changeword
+@c  @end example
+@c  @noindent
+@c  if you want this feature compiled in.  The current implementation
+@c  slows down @code{m4} considerably and is hardly acceptable.  So, it
+@c  might go away, do not count on it yet.
+@code{m4}の実用性をさらに増す思われる、試験的なある機能(@pxref{Changeword})
+を使うと、@code{m4}において何が@dfn{単語}（word）として
+認識されるかを決めている規則を変更できるようになります。
+この機能を試してみたい人は、
+@comment ignore
+@example
+./configure --enable-changeword
+@end example
+@noindent
+としてコンパイル時にこの機能が組み込まれるようにしてください。
+現在の実装では@code{m4}の動作がかなり遅くなってしまうので、
+これをそのまま採用するには抵抗があります。
+したがって将来この機能が削除されるということも考えられるので、
+まだこの機能に依存した使い方はしないでください。
+
+
+@menu
+@c  * Preliminaries::               Introduction and preliminaries
+@c  * Syntax::                      Lexical and syntactic conventions
+* Preliminaries::               序論
+* Syntax::                      字句・構文解析の規則
+
+@c  * Macros::                      How to invoke macros
+@c  * Definitions::                 How to define new macros
+@c  * Conditionals::                Conditionals and loops
+@c ! shoud be "Conditionals, loops and recursion"
+* Macros::                      マクロを呼び出す方法
+* Definitions::                 新たにマクロを定義する方法
+* Conditionals::                条件分岐、ループ、再帰
+
+@c  * Debugging::                   How to debug macros and input
+* Debugging::                   マクロや入力をデバッグする方法
+
+@c  * Input Control::               Input control
+@c  * File Inclusion::              File inclusion
+@c  * Diversions::                  Diverting and undiverting output
+* Input Control::               入力制御
+* File Inclusion::              ファイルのインクルード
+* Diversions::                  出力の切替え（divert）と逆切替え（undivert）
+
+@c  * Text handling::               Macros for text handling
+@c  * Arithmetic::                  Macros for doing arithmetic
+@c  * UNIX commands::               Macros for running UNIX commands
+@c  * Miscellaneous::               Miscellaneous builtin macros
+@c  * Frozen files::                Fast loading of frozen states
+* Text handling::               テキスト操作用の組み込みマクロ
+* Arithmetic::                  計算用の組み込みマクロ
+* UNIX commands::               UNIXコマンド実行用の組み込みマクロ
+* Miscellaneous::               その他の組み込みマクロ
+* Frozen files::                凍結状態（frozen state）の高速ロード
+
+@c  * Compatibility::               Compatibility with other versions of m4
+@c  * Concept index::               Index for many concepts
+@c  * Macro index::                 Index for all m4 macros
+* Compatibility::               他の版のm4との互換性
+* Concept index::               さまざまな概念の索引
+* Macro index::                 m4マクロすべての索引
+
+ --- The Detailed Node Listing ---
+
+@c  Introduction and preliminaries
+序論
+
+@c  * Intro::                       Introduction to @code{m4}
+@c  * History::                     Historical references
+* Intro::                       @code{m4}序説
+* History::                     @code{m4}の由来
+
+@c  * Invoking m4::                 Invoking @code{m4}
+@c  * Bugs::                        Problems and bugs
+@c  * Manual::                      Using this manual
+* Invoking m4::                 @code{m4}の起動(オプション一覧)
+* Bugs::                        問題やバグへの対処方法
+* Manual::                      このマニュアルの読み方
+
+@c  Lexical and syntactic conventions
+字句・構文解析の規則
+
+@c  * Names::                       Macro names
+@c  * Quoted strings::              Quoting input to m4
+@c  * Other tokens::                Other kinds of input tokens
+@c  * Comments::                    Comments in m4 input
+* Names::                       入力トークン: マクロ名
+* Quoted strings::              入力トークン: クォートされた文字列
+* Other tokens::                入力トークン: その他
+* Comments::                    m4への入力中のコメント
+
+@c  How to invoke macros
+マクロを呼び出す方法
+
+@c  * Invocation::                  Macro invocation
+@c  * Inhibiting Invocation::       Preventing macro invocation
+@c  * Macro Arguments::             Macro arguments
+@c  * Quoting Arguments::           On Quoting Arguments to macros
+@c  * Macro expansion::             Expanding macros
+* Invocation::                  マクロの呼び出し
+* Inhibiting Invocation::       マクロの呼び出しを抑制する
+* Macro Arguments::             マクロの引数
+* Quoting Arguments::           マクロの引数をクォートする
+* Macro expansion::             マクロの展開
+
+@c  How to define new macros
+新たにマクロを定義する方法
+
+@c  * Define::                      Defining a new macro
+@c  * Arguments::                   Arguments to macros
+@c  * Pseudo Arguments::            Pseudo arguments to macros
+@c  * Undefine::                    Deleting a macro
+@c  * Defn::                        Renaming macros
+@c  * Pushdef::                     Temporarily redefining macros
+* Define::                      新しいマクロを定義する
+* Arguments::                   マクロの引数
+* Pseudo Arguments::            マクロの疑似引数
+* Undefine::                    マクロの削除
+* Defn::                        マクロ名の変更
+* Pushdef::                     マクロの一時的な再定義
+
+@c  * Indir::                       Indirect call of macros
+@c  * Builtin::                     Indirect call of builtins
+* Indir::                       マクロの間接的な呼び出し
+* Builtin::                     組み込みマクロの間接的な呼び出し
+
+@c  Conditionals, loops and recursion
+条件分岐、ループ、再帰
+
+@c  * Ifdef::                       Testing if a macro is defined
+@c  * Ifelse::                      If-else construct, or multibranch
+@c  * Loops::                       Loops and recursion in m4
+* Ifdef::                       マクロが定義済みかを判定する
+* Ifelse::                      If-else 構文と多重分岐
+* Loops::                       m4におけるループと再帰
+
+@c  How to debug macros and input
+マクロや入力をデバッグする方法
+
+@c  * Dumpdef::                     Displaying macro definitions
+@c  * Trace::                       Tracing macro calls
+@c  * Debug Levels::                Controlling debugging output
+@c  * Debug Output::                Saving debugging output
+* Dumpdef::                     マクロの定義を表示する
+* Trace::                       マクロの呼び出しをトレースする
+* Debug Levels::                デバッグ出力の制御
+* Debug Output::                デバッグ出力の保存
+
+@c  Input control
+入力制御
+
+@c  * Dnl::                         Deleting whitespace in input
+@c  * Changequote::                 Changing the quote characters
+@c  * Changecom::                   Changing the comment delimiters
+@c  * Changeword::                  Changing the lexical structure of words
+@c  * M4wrap::                      Saving input until end of input
+* Dnl::                         空白（whitespace）を入力から削除する
+* Changequote::                 引用符（quote characters）の変更
+* Changecom::                   コメントデリミタ（comment delimiters）の変更
+* Changeword::                  単語（word）の字句構造を変更する
+* M4wrap::                      入力の一部を入力が終るまで保存（save）しておく
+
+@c  File inclusion
+ファイルのインクルード
+
+@c  * Include::                     Including named files
+@c  * Search Path::                 Searching for include files
+* Include::                     名前を指定してファイルをインクルードする
+* Search Path::                 インクルードするファイルのサーチ
+
+@c  Diverting and undiverting output
+出力の切替え（divert）と逆切替え（undivert）
+
+@c  * Divert::                      Diverting output
+@c  * Undivert::                    Undiverting output
+@c  * Divnum::                      Diversion numbers
+@c  * Cleardiv::                    Discarding diverted text
+* Divert::                      出力を切替える（divert）
+* Undivert::                    出力を逆切替えする（undivert）
+* Divnum::                      出力切替え先番号（diversion number）
+* Cleardiv::                    出力切替え先のテキストを破棄する
+
+@c  Macros for text handling
+テキスト操作用の組み込みマクロ
+
+@c  * Len::                         Calculating length of strings
+@c  * Index::                       Searching for substrings
+@c  * Regexp::                      Searching for regular expressions
+@c  * Substr::                      Extracting substrings
+@c  * Translit::                    Translating characters
+@c  * Patsubst::                    Substituting text by regular expression
+@c  * Format::                      Formatting strings (printf-like)
+* Len::                         文字列の長さを計算する
+* Index::                       部分文字列で検索する
+* Regexp::                      正規表現で検索する
+* Substr::                      部分文字列を抽出する
+* Translit::                    文字の置換
+* Patsubst::                    正規表現でテキストの置換をする
+* Format::                      文字列を(printf風に)フォーマットする
+
+@c  Macros for doing arithmetic
+計算用の組み込みマクロ
+
+@c  * Incr::                        Decrement and increment operators
+@c  * Eval::                        Evaluating integer expressions
+* Incr::                        インクリメント演算子とデクリメント演算子
+* Eval::                        整数式を計算する
+
+@c  Running UNIX commands
+UNIXコマンド実行用の組み込みマクロ
+
+@c  * Syscmd::                      Executing simple commands
+@c  * Esyscmd::                     Reading the output of commands
+@c  * Sysval::                      Exit codes
+@c  * Maketemp::                    Making names for temporary files
+* Syscmd::                      単一のコマンドを実行する
+* Esyscmd::                     コマンドの出力を読む
+* Sysval::                      終了コード
+* Maketemp::                    一時ファイル用の名前を生成する
+
+@c  Miscellaneous builtin macros
+その他の組み込みマクロ
+
+@c  * Errprint::                    Printing error messages
+@c  * M4exit::                      Exiting from m4
+* Errprint::                    エラーメッセージを表示する
+* M4exit::                      m4を終了させる
+
+@c  Compatibility with other versions of @code{m4}
+他の版の@code{m4}との互換性
+
+@c  * Extensions::                  Extensions in GNU m4
+@c  * Incompatibilities::           Facilities in System V m4 not in GNU m4
+@c  * Other Incompat::              Other incompatibilities
+* Extensions::                  GNU m4で拡張された機能
+* Incompatibilities::           System V m4にあってGNU m4にない機能
+* Other Incompat::              その他の非互換性
+@end menu
+
+@end ifnottex
+
+@node Preliminaries, Syntax, Top, Top
+@c  @chapter Introduction and preliminaries
+@chapter 序論
+
+@c  This first chapter explains what is GNU @code{m4}, where @code{m4}
+@c  comes from, how to read and use this documentation, how to call the
+@c  @code{m4} program and how to report bugs about it.  It concludes by
+@c  giving tips for reading the remainder of the manual.
+この章ではGNU @code{m4}とは何か、その由来、このマニュアルの読み方と
+使い方、@code{m4}を起動する方法、バグを報告する方法などを説明します。
+マニュアルの続きを読むにあたっての助言をもってこの章は終ります。
+
+@c The following chapters then detail all the features of the @code{m4}
+@c language.
+ここから後の章では@code{m4}言語の全機能を詳しく説明します。
+
+@c  @menu
+@c  * Intro::                       Introduction to @code{m4}
+@c  * History::                     Historical references
+@c  * Invoking m4::                 Invoking @code{m4}
+@c  * Bugs::                        Problems and bugs
+@c  * Manual::                      Using this manual
+@c  @end menu
+@menu
+* Intro::                       @code{m4}序説
+* History::                     @code{m4}の由来
+* Invoking m4::                 @code{m4}の起動(オプション一覧)
+* Bugs::                        問題やバグへの対処方法
+* Manual::                      このマニュアルの読み方
+@end menu
+
+@node Intro, History, Preliminaries, Preliminaries
+@c  @section Introduction to @code{m4}
+@section @code{m4}序説
+
+@c  @code{m4} is a macro processor, in the sense that it copies its
+@c  input to the output, expanding macros as it goes.  Macros are either
+@c  builtin or user-defined, and can take any number of arguments.
+@c  Besides just doing macro expansion, @code{m4} has builtin functions
+@c  for including named files, running UNIX commands, doing integer
+@c  arithmetic, manipulating text in various ways, recursion, etc@dots{}
+@c  @code{m4} can be used either as a front-end to a compiler, or as a
+@c  macro processor in its own right.
+マクロを展開しながら入力を出力へコピーするという意味で、@code{m4}は
+マクロプロセッサだと言えます。マクロには@code{m4}に最初から組み込まれて
+いる組み込み（builtin）マクロと、ユーザが自分で定義するユーザ定義
+（user-defined）マクロの2種類があります。マクロは何個でも引数を
+取ることができます。@code{m4}には単なるマクロの展開機能に加え、
+ファイルのインクルード、UNIXコマンドの実行、整数演算、さまざまな方法での
+テキスト操作、再帰、その他のための関数がそろっています。
+@code{m4}はコンパイラのフロントエンドとして、またマクロプロセッサ
+そのものとしても使うことができます。
+
+@c  The @code{m4} macro processor is widely available on all UNIXes.
+@c  Usually, only a small percentage of users are aware of its existence.
+@c  However, those who do often become commited users.  The growing
+@c  popularity of GNU Autoconf, which prerequires GNU @code{m4} for
+@c  @emph{generating} the @file{configure} scripts, is an incentive
+@c  for many to install it, while these people will not themselves
+@c  program in @code{m4}.  GNU @code{m4} is mostly compatible with the
+@c  System V, Release 3 version, except for some minor differences.
+@c  @xref{Compatibility} for more details.
+@code{m4}マクロプロセッサは、ほとんどすべてのUNIXで利用することができます。
+通常その存在に気づいているのは、ほんのわずかな人たちだけです。
+しかし実際に気づいた人たちは往々にして熱心なユーザとなります。
+GNU Autoconfで@file{configure}スクリプトを@emph{生成}するにはGNU @code{m4}が
+必要なため、GNU Autoconfの人気が高まったのがきっかけとなってGNU @code{m4}を
+インストールする人が増えました。もっとも、そういう人が自分で@code{m4}の
+プログラミングをすることは無いでしょう。GNU @code{m4}はわずかな違いを除けば
+System V, Release 3 版とほぼ互換性があります。
+詳細は@xref{Compatibility}を参照してください。
+
+@c  Some people found @code{m4} to be fairly addictive.  They first use
+@c  @code{m4} for simple problems, then take bigger and bigger challenges,
+@c  learning how to write complex @code{m4} sets of macros along the way.
+@c  Once really addicted, users pursue writing of sophisticated @code{m4}
+@c  applications even to solve simple problems, devoting more time
+@c  debugging their @code{m4} scripts than doing real work.  Beware that
+@c  @code{m4} may be dangerous for the health of compulsive programmers.
+ユーザの中には@code{m4}中毒になってしまった人たちもいます。
+そういう人たちは最初は簡単なことに@code{m4}を使い、徐々に複雑な@code{m4}マクロ
+の書き方を習得しながら、大きなこと大きなことへと挑戦していくのです。
+いちど病みつきになってしまえば、簡単な問題を解くためにさえ洗練された
+@code{m4}アプリケーションを書こうとして、実際の仕事よりも自分の@code{m4}スクリプト
+のデバッグに多くの時間をさくことになるのです。
+熱中しやすいプログラマーは@code{m4}で健康を損なうおそれがあるので注意しましょう。
+
+@node History, Invoking m4, Intro, Preliminaries
+@c  @section Historical references
+@section @code{m4}の由来
+
+@c  The historical notes included here are fairly incomplete, and not
+@c  authoritative at all.  Please knowledgeable users help us to more
+@c  properly write this section.
+ここに記されている歴史に関する覚え書きはきわめて不完全なものであり、
+なんら権威あるものでもありません。事情に通じている方は、どうかこの節を
+ふさわしいものにするのを手伝ってください。
+
+@c  @code{GPM} has been an important ancestor of @code{m4}.  See
+@c  C. Stratchey: ``A General Purpose Macro generator'', Computer Journal
+@c  8,3 (1965), pp. 225 ff.  @code{GPM} is also succintly described into
+@c  David Gries classic ``Compiler Construction for Digital Computers''.
+@c ! succintly -> succinctly
+@code{GPM}は@code{m4}の重要な祖先です。
+C. Stratchey: ``A General Purpose Macro generator'', Computer Journal
+8,3 (1965), pp. 225 ff を参照してください。
+@code{GPM}は、David Gries classic 
+``Compiler Construction for Digital Computers''でも簡潔に説明されています。
+
+@c  While @code{GPM} was @emph{pure}, @code{m4} was meant to deal more
+@c  with the true intricacies of real life: macros could be recognized
+@c  with being pre-announced, skipping whitespace or end-of-lines was
+@c  made easier, more constructs were builtin instead of derived, etc.
+@c ! with being pre-announced -> without being pre-announced  (maybe ok as is)
+@code{GPM}は@emph{純粋}だったのに対して、
+@code{m4}は実生活にまつわる本物の複雑さを扱うことを意図したものでした。
+そのため、たとえばマクロは前もって宣言しなくても認識されるようになり、
+改行文字などの空白（whitespace）をスキップするのは簡単になり、多くの
+構成要素が借り物ではなく内蔵されるようになりました。
+
+@c  Originally, @code{m4} was the engine for Rational FORTRAN preprocessor,
+@c  that is, the @code{ratfor} equivalent of @code{cpp}.
+もともと@code{m4}はRational FORTRANプリプロセッサすなわち@code{ratfor}
+(@code{cpp}に相当)のエンジンでした。
+
+@node Invoking m4, Bugs, History, Preliminaries
+@c  @section Invoking @code{m4}
+@section @code{m4}の起動(オプション一覧)
+
+@c  The format of the @code{m4} command is:
+@code{m4}コマンドを起動するときの形式は次のようになります。
+
+@comment ignore
+@example
+@code{m4} [@var{option}@dots{}] [@var{macro-definitions}@dots{}] [@var{input-file}@dots{}]
+@end example
+
+@cindex command line, options
+@cindex options, command line
+@cindex コマンドライン, オプション
+@c  All options begin with @samp{-}, or if long option names are used, with
+@c  a @samp{--}.  A long option name need not be written completely, and
+@c  unambigous prefix is sufficient.  @code{m4} understands the following
+@c  options:
+@c ! unambigous -> unambiguous
+オプションは、短いオプション名を使うときは@samp{-}で始め、
+長いオプション名を使うときは@samp{--}で始めます。
+長いオプション名は、
+そのオプションだと明確に特定できる先頭部分を書くだけで十分です。
+@code{m4}は次のオプションを受けつけます。
+
+@table @code
+@item --version
+@c  Print the version number of the program on standard output, then
+@c  immediately exit @code{m4} without reading any @var{input-files}.
+プログラムのバージョン番号を標準出力に出力し、
+@var{input-files}はいっさい読まずに、ただちに@code{m4}の実行を終了します。
+
+@item --help
+@c  Print an help summary on standard output, then immediately exit
+@c  @code{m4} without reading any @var{input-files}.
+ヘルプ情報の要約を標準出力へ出力し、
+@var{input-files}はいっさい読まずに、ただちに@code{m4}の実行を終了します。
+
+@item -G
+@itemx --traditional
+@c  Suppress all the extensions made in this implementation, compared to the
+@c  System V version.  @xref{Compatibility}, for a list of these.
+System V版と比べて、この実装で拡張された機能をすべて抑制します。
+これらの一覧は@xref{Compatibility}を参照してください。
+
+@item -E
+@itemx --fatal-warnings
+@c  Stop execution and exit @code{m4} once the first warning has been
+@c  issued, considering all of them to be fatal.
+すべての警告（warning）を致命的なものと見なし、
+最初の警告が発行された時点で@code{m4}の実行を停止し終了します。
+
+@item -d@var{flags}
+@itemx --debug=@var{flags}
+@c  Set the debug-level according to the flags @var{flags}.  The debug-level
+@c  controls the format and amount of information presented by the debugging
+@c  functions.  @xref{Debug Levels} for more details on the format and
+@c  meaning of @var{flags}.
+デバッグ・レベルを@var{flags}に設定します。
+デバッグ・レベルはデバッグ用関数が表示する情報の形式と量の制御に使われます。
+@var{flags}の形式と意味についての詳細は@xref{Debug Levels}を参照してください。
+
+@item -l@var{num}
+@itemx --arglength=@var{num}
+@c  Restrict the size of the output generated by macro tracing.  @xref{Debug
+@c  Levels} for more details.
+マクロをトレースすることによって生じる出力の量を制限します。
+詳細は@xref{Debug Levels}を参照してください。
+
+@item -o@var{file}
+@itemx --error-output=@var{file}
+@c  Redirect debug and trace output to the named file.  Error messages are
+@c  still printed on the standard error output.  @xref{Debug Output} for
+@c  more details.
+デバッグやトレースの出力を名前が指定されたファイルへ
+リダイレクト（redirect）します。
+エラーメッセージは通常どおり標準エラー出力へ出力します。
+詳細は@xref{Debug Output}を参照してください。
+
+@item -I@var{dir}
+@itemx --include=@var{dir}
+@c  Make @code{m4} search @var{dir} for included files that are not found in
+@c  the current working directory.  @xref{Search Path} for more details.
+インクルード指定されたファイルが現在の作業ディレクトリ
+（current working directory）で見つからない場合に、@code{m4}が@var{dir}を
+探すようにします。詳細は@xref{Search Path}を参照してください。
+
+@item -e
+@itemx --interactive
+@c  Makes this invocation of @code{m4} interactive.  This means that all
+@c  output will be unbuffered, and interrupts will be ignored.
+起動時に@code{m4}を対話的な状態（interactive）にします。
+これは、すべての出力をバッファリング無しで行ない、
+割り込み（interrupt）を無視するということを意味します。
+
+@item -s
+@itemx --synclines
+@c  Generate synchronisation lines, for use by the C preprocessor or other
+@c  similar tools.  This is useful, for example, when @code{m4} is used as a
+@c  front end to a compiler.  Source file name and line number information
+@c  is conveyed by directives of the form @samp{#line @var{linenum}
+@c  "@var{filename}"}, which are inserted as needed into the middle of the
+@c  input.  Such directives mean that the following line originated or was
+@c  expanded from the contents of input file @var{filename} at line
+@c  @var{linenum}.  The @samp{"@var{filename}"} part is often omitted when
+@c  the file name did not change from the previous directive.
+@c ! input -> output (might be ok as is)
+Cプリプロセッサやそれに類するツールで使うための同期情報を含む行を
+生成します。これは@code{m4}をコンパイラのフロントエンドとして使う
+ときなどに便利です。ソースファイル名と行番号の情報は、@samp{#line
+ @var{linenum} "@var{filename}"}という形式の指令（directive）によって表され、
+出力の途中へ必要に応じて挿入されます。この指令（directive）は次の
+行が入力ファイル@var{filename}の第@var{linenum}行そのものであるか、
+もしくはその行の展開によるものであることを意味します。
+@samp{"@var{filename}"}の部分は、ファイル名が前の指令（directive）と
+変わらない場合はしばしば省かれます。
+
+@c  Synchronisation directives are always given on complete lines per
+@c  themselves.  When a synchronisation discrepancy occurs in the middle of
+@c  an output line, the associated synchronisation directive is delayed
+@c  until the beginning of the next generated line.
+このような同期指令は、必ずそれ自身で完全な一行に対してのみ与えられます。
+ある出力行の途中に同期情報の食い違いがあるときは、
+対応する同期指令の出力は次の行へと持ち越されます。
+
+@item -P
+@itemx --prefix-builtins
+@c  Internally modify @emph{all} builtin macro names so they all start with
+@c  the prefix @samp{m4_}.  For example, using this option, one should write
+@c  @samp{m4_define} instead of @samp{define}, and @samp{m4___file__}
+@c  instead of @samp{__file__}.
+@code{m4}の内部に登録されている@emph{すべて}の組み込みマクロの名前を
+接頭辞@samp{m4_}が付いたものに変更します。
+このオプションを使ったときには、たとえば@samp{define}の代わりに
+@samp{m4_define}、@samp{__file__}の代わりに@samp{m4___file__}と書かなければ
+なりません。
+
+@item -W@var{REGEXP}
+@itemx --word-regexp=@var{REGEXP}
+@c  Use an alternative syntax for macro names.  This experimental
+@c  option might not be present on all GNU @code{m4} implementations.
+@c  (@pxref{Changeword}).
+マクロ名の字句構成規則を指定します。
+このオプションは試験的なものであり、
+このオプションを含まないGNU @code{m4}の実装も存在する可能性があります。
+(@pxref{Changeword})
+
+@item -H@var{n}
+@itemx --hashsize=@var{n}
+@c  Make the internal hash table for symbol lookup be @var{n} entries big.
+@c  The number should be prime.  The default is 509 entries.  It should not
+@c  be necessary to increase this value, unless you define an excessive
+@c  number of macros.
+シンボルを表引きするための内部ハッシュテーブルの項目数を@var{n}にします。
+この数は素数にするべきです。デフォルトは509項目です。
+極端に多くのマクロを定義しないかぎり、この値を増やす必要は無いはずです。
+
+@item -L@var{n}
+@itemx --nesting-limit=@var{n}
+@c  Artificially limit the nesting of macro calls to @var{n} levels,
+@c  stopping program execution if this limit is ever exceeded.  When not
+@c  specified, nesting is limited to 250 levels.
+入れ子になったマクロの呼び出しを@var{n}段階に制限し、
+この制限を超えたときは、プログラムの実行を停止します。
+指定がない状態では、入れ子は250段階に制限されています。
+
+@c  The precise effect of this option might be more correctly associated
+@c  with textual nesting than dynamic recursion.  It has been useful
+@c  when some complex @code{m4} input was generated by mechanical means.
+@c  Most users would never need this option.  If shown to be obtrusive,
+@c  this option (which is still experimental) might well disappear.
+このオプションの正確な効力は、動的な再帰構造というよりは、
+テキスト上での入れ子構造に対して発揮されるものだと理解したほうが
+より正しいでしょう。
+このオプションは、機械的な方法で@code{m4}への複雑な入力を生成したときに
+役に立ったという例もありますが、大部分のユーザにとっては無用の長物でしょう。
+目障りだということになったときは、
+このオプションは(まだ試験段階です)削除されてしまうかも知れません。
+
+@c  This option does @emph{not} have the ability to break endless
+@c  rescanning loops, while these do not necessarily consume much memory
+@c  or stack space.  Through clever usage of rescanning loops, one can
+@c  request complex, time-consuming computations to @code{m4} with useful
+@c  results.  Putting limitations in this area would break @code{m4} power.
+@c  There are many pathological cases: @w{@samp{define(`a', `a')a}} is
+@c  only the simplest example (but @pxref{Compatibility}).  Expecting GNU
+@c  @code{m4} to detect these would be a little like expecting a compiler
+@c  system to detect and diagnose endless loops: it is a quite @emph{hard}
+@c  problem in general, if not undecidable!
+このオプションを使っても、再走査(rescanning)による無限ループを抜け出す
+ことは@emph{できません}。その一方で、再走査ループは必ずしもメモリや
+スタック領域を大量に消費するわけではありません。
+再走査ループをうまく使えば、複雑で時間のかかる処理を@code{m4}に
+やらせることができます。
+この領域に制限をもうけるのは、@code{m4}の能力を弱めてしまうことになるでしょう。
+異常な使い方の例はいくらでもあります。
+@w{@samp{define(`a', `a')a}}はもっとも単純なものの例です
+(しかし@pxref{Compatibility})。
+GNU @code{m4}がこのようなケースを検出するのを期待するのは、
+コンパイラシステムが無限ループを検出し、診断メッセージをだすのを
+期待することに似ています。つまり、決定不能ではないとしても、
+一般にとても@emph{ハード}な問題です。
+
+@item -Q
+@itemx --quiet
+@itemx --silent
+@c  Suppress warnings about missing or superflous arguments in macro calls.
+マクロの呼び出しで、引数が不足していたり余分にあるときの警告を抑制します。
+
+@item -B
+@itemx -S
+@itemx -T
+@c  These options are present for compatibility with System V @code{m4}, but
+@c  do nothing in this implementation.
+これらのオプションはSystem V版@code{m4}との互換性のために存在しますが、
+この実装では何の効果もありません。
+
+@item -N@var{n}
+@itemx --diversions=@var{n}
+@c  These options are present only for compatibility with previous
+@c  versions of GNU @code{m4}, and were controlling the number of possible
+@c  diversions which could be used at the same time.  They do nothing,
+@c  because there is no fixed limit anymore.
+これらのオプションはGNU @code{m4}の以前のバージョンとの互換性のためだけに
+存在し、同時に使うことができる出力切替え先（diversion）の数を制御するために
+使われていました。現在は固定された制限値がなくなったので、
+何の働きもしません。
+
+@end table
+
+@cindex macro definitions, on the command line
+@cindex command line, macro definitions on the
+@cindex コマンドライン上でマクロを定義
+@c  Macro definitions and deletions can be made on the command line, by
+@c  using the @samp{-D} and @samp{-U} options.  They have the following
+@c  format:
+@samp{-D}や@samp{-U}オプションを使うと、コマンドライン上でマクロを定義したり
+削除したりすることができます。これらは次の形式をとります。
+
+@table @code
+@item -D@var{name}
+@itemx -D@var{name}=@var{value}
+@itemx --define=@var{name}
+@itemx --define=@var{name}=@var{value}
+@c  This enters @var{name} into the symbol table, before any input files are
+@c  read.  If @samp{=@var{value}} is missing, the value is taken to be the
+@c  empty string.  The @var{value} can be any string, and the macro can be
+@c  defined to take arguments, just as if it was defined from within the
+@c  input.
+どの入力ファイルを読むよりも前に、@var{name}をシンボルテーブルに
+登録します。@samp{=@var{value}}が省略されたときは、値は空文字列として
+解釈します。@var{value}はどんな文字列でもよく、したがって、マクロは入力内で
+定義するときと同じように引数を取るものとして定義することもできます。
+
+@item -U@var{name}
+@itemx --undefine=@var{name}
+@c  This deletes any predefined meaning @var{name} might have.  Obviously,
+@c  only predefined macros can be deleted in this way.
+@var{name}のすでに定義された意味を削除します。
+当然、この方法で削除できるのは定義済みのマクロだけです。
+
+@item -t@var{name}
+@itemx --trace=@var{name}
+@c  This enters @var{name} into the symbol table, as undefined but traced.
+@c  The macro will consequently be traced from the point it is defined.
+@var{name}を未定義として、しかしトレースが行われるように、シンボルテーブルへ
+登録します。
+その結果、このマクロは定義された時点からトレースされるようになります。
+
+@item -F@var{file}
+@itemx --freeze-state @var{file}
+@c  Once execution is finished, write out the frozen state on the specified
+@c  @var{file} (@pxref{Frozen files}).
+実行が終了すると、凍結状態（frozen state）の内容を指定された@var{file}
+(@pxref{Frozen files})へ書き出します。
+
+@item -R@var{file}
+@itemx --reload-state @var{file}
+@c  Before execution starts, recover the internal state from the specified
+@c  frozen @var{file} (@pxref{Frozen files}).
+実行の前に、指定された凍結ファイル@var{file} (@pxref{Frozen files})から
+内部状態を復元します。
+
+@end table
+
+@cindex command line, filenames on the
+@cindex filenames, on the command line
+@cindex コマンドライン上のファイル名
+@c  The remaining arguments on the command line are taken to be input file
+@c  names.  If no names are present, the standard input is read.  A file
+@c  name of @file{-} is taken to mean the standard input.
+コマンドライン上の残りの引数は、入力ファイルの名前として解釈します。
+ファイル名の指定がないときは、標準入力から読み込みます。
+ファイル名@file{-}は、標準入力を意味するものとして解釈します。
+
+@c  The input files are read in the sequence given.  The standard input can
+@c  only be read once, so the filename @file{-} should only appear once on
+@c  the command line.
+入力ファイルは、指定された順番に読み込みます。
+標準入力は1度しか読むことができませんので、ファイル名@file{-}は
+コマンドライン上で1度しか使えません。
+
+@node Bugs, Manual, Invoking m4, Preliminaries
+@c  @section Problems and bugs
+@section 問題やバグへの対処方法
+
+@c  If you have problems with GNU @code{m4} or think you've found a bug,
+@c  please report it.  Before reporting a bug, make sure you've actually
+@c  found a real bug.  Carefully reread the documentation and see if it
+@c  really says you can do what you're trying to do.  If it's not clear
+@c  whether you should be able to do something or not, report that too; it's
+@c  a bug in the documentation!
+GNU @code{m4}に関して問題が起こったり、バグと思われることを見つけたときは、
+ぜひ、それを報告してください。
+バグを報告する前に、実際にそれが本物のバグなのか確かめてください。
+注意深くドキュメントを読み直して、あなたのしようとしたことが
+実際にできると本当に書いてあるか確かめてください。
+もし、ある事ができるのかどうか明確でないときは、それも報告してください。
+それはドキュメントのバグです。
+
+@c  Before reporting a bug or trying to fix it yourself, try to isolate it
+@c  to the smallest possible input file that reproduces the problem.  Then
+@c  send us the input file and the exact results @code{m4} gave you.  Also
+@c  say what you expected to occur; this will help us decide whether the
+@c  problem was really in the documentation.
+バグを報告したり、自分で直そうとする前に、
+そのバグを発現させる、できるだけ小さな入力ファイルを作れないか試してください。
+作ることができたときは、その入力ファイルと@code{m4}が出す正確な結果を
+私たちに送ってください。
+また、あなたはどうなるはずだと思ったのかも添えてください。
+これは、問題の原因が実はドキュメントにあるものなのか判断するのに役立ちます。
+
+@c  Once you've got a precise problem, send e-mail to (Internet)
+@c  @file{bug-gnu-utils@@prep.ai.mit.edu} or (UUCP)
+@c  @file{mit-eddie!prep.ai.mit.edu!bug-gnu-utils}.  Please include the
+@c  version number of @code{m4} you are using.  You can get this information
+@c  with the command @samp{m4 --version}.
+問題を正確に把握したら、電子メールを(インターネット)
+@file{bug-m4@@gnu.org}または(UUCP)
+@file{mit-eddie!prep.ai.mit.edu!bug-gnu-utils}へ送ってください。
+あなたが使っている@code{m4}のバージョン番号も書いてください、
+コマンド@samp{m4 --version}で調べられます。
+
+@c  Non-bug suggestions are always welcome as well.  If you have questions
+@c  about things that are unclear in the documentation or are just obscure
+@c  features, please report them too.
+バグの報告以外の提案もいつでも歓迎します。
+ドキュメントの不明確なところや分かりにくい機能についての質問があれば、
+それも送ってください。
+
+@node Manual,  , Bugs, Preliminaries
+@c  @section Using this manual
+@section このマニュアルの読み方
+
+@c  This manual contains a number of examples of @code{m4} input and output,
+@c  and a simple notation is used to distinguish input, output and error
+@c  messages from @code{m4}.  Examples are set out from the normal text, and
+@c  shown in a fixed width font, like this
+このマニュアルには@code{m4}の入力と出力の例がたくさん含まれており、
+入力、出力および@code{m4}からのエラーメッセージを区別するための
+簡単な表記法が用いられています。
+これらの例は通常の文章とは間隔をあけて、
+固定幅フォントで次のように表示されます。
+
+@comment ignore
+@example
+@c  This is an example of an example!
+This is an example of an example!
+@end example
+
+@c  To distinguish input from output, all output from @code{m4} is prefixed
+@c  by the string @samp{@result{}}, and all error messages by the string
+@c  @samp{@error{}}.  Thus
+入力と出力を区別するため、@code{m4}からの出力にはすべて@samp{@result{}}が、
+エラーメッセージにはすべて@samp{@error{}}が先頭につきます。
+したがって次のようになります。
+
+@comment ignore
+@example
+Example of input line (入力行の例)
+@result{}Output line from m4 (m4からの出力行の例)
+@error{}and an error message (エラーメッセージの例)
+@end example
+
+@c  As each of the predefined macros in @code{m4} is described, a prototype
+@c  call of the macro will be shown, giving descriptive names to the
+@c  arguments, e.g.,
+@code{m4}に最初から定義されているマクロの説明をするときは、
+引数に分かりやすい名前をつけたマクロ呼び出しのプロトタイプを示します。
+これは次のようになります。
+
+@comment ignore
+@c  @example
+@c  regexp(@var{string}, @var{regexp}, opt @var{replacement})
+@c  @end example
+@example
+regexp(@var{string}, @var{regexp}, opt @var{replacement})
+@end example
+
+@c  All macro arguments in @code{m4} are strings, but some are given special
+@c  interpretation, e.g., as numbers, filenames, regular expressions, etc.
+@code{m4}ではマクロの引数はすべて文字列ですが、
+数字、ファイル名、正規表現としてなど特別な解釈のされかたをするものもあります。
+
+@c  The @samp{opt} before the third argument shows that this argument is
+@c  optional---if it is left out, it is taken to be the empty string.  An
+@c  ellipsis (@samp{...}) last in the argument list indicates that any
+@c  number of arguments may follow.
+3番目の引数の前にある@samp{opt}は、この引数が省略可能であることを
+表しています。省略したときは、空文字列として解釈されます。
+引数リストの最後にある省略記号(@samp{...})は、その後にいくつでも引数を
+続けてよいことを示してます。
+
+@c  This document consistently writes and uses @dfn{builtin}, without an
+@c  hyphen, as if it were an English word.  This is how the @code{builtin}
+@c  primitive is spelled within @code{m4}.
+
+@node Syntax, Macros, Preliminaries, Top
+@c  @chapter Lexical and syntactic conventions
+@chapter 字句・構文解析の規則
+
+@cindex input tokens
+@cindex tokens
+@cindex 入力トークン
+@cindex トークン
+@c  As @code{m4} reads its input, it separates it into @dfn{tokens}.  A
+@c  token is either a name, a quoted string, or any single character, that
+@c  is not a part of either a name or a string.  Input to @code{m4} can also
+@c  contain comments.
+@code{m4}は入力を読み込むと、それを@dfn{トークン}（token）に分割します。
+トークン（token）は名前（name）、クォートされた文字列(quoted string)、
+それらの構成要素にはならない単独の文字のどれか1つの種類に属します。
+また、@code{m4}への入力にはコメントを含めることができます。
+
+@c  @menu
+@c  * Names::                       Macro names
+@c  * Quoted strings::              Quoting input to m4
+@c  * Other tokens::                Other kinds of input tokens
+@c  * Comments::                    Comments in m4 input
+@c  @end menu
+@menu
+* Names::                       入力トークン: マクロ名
+* Quoted strings::              入力トークン: クォートされた文字列
+* Other tokens::                入力トークン: その他
+* Comments::                    m4への入力中のコメント
+@end menu
+
+@node Names, Quoted strings, Syntax, Syntax
+@c  @section Names
+@section 入力トークン: マクロ名
+
+@c  @cindex names
+@c  A name is any sequence of letters, digits, and the character @kbd{_}
+@c  (underscore), where the first character is not a digit.  If a
+@c  name has a macro definition, it will be subject to macro expansion
+@c  (@pxref{Macros}).
+@cindex names
+@cindex 名前
+名前（name）はアルファベット、数字、@kbd{_}(アンダースコア)
+を自由に並べたもののうち、先頭の文字が数字でないものです。
+名前にマクロの定義が存在するときは、マクロの呼び出しとして認識され、
+展開の対象となります(@pxref{Macros})。
+
+@c  Examples of legal names are: @samp{foo}, @samp{_tmp}, and @samp{name01}.
+正しい名前（name）の例を挙げると@samp{foo}, @samp{_tmp}, 
+@samp{name01}などがあります。
+
+@node Quoted strings, Other tokens, Names, Syntax
+@c  @section Quoted strings
+@section 入力トークン: クォートされた文字列
+
+@cindex quoted string
+@cindex クォートされた文字列
+@cindex 引用符で囲まれた文字列
+@cindex 引用符で括られた文字列
+@c  A quoted string is a sequence of characters surrounded by the quotes
+@c  @kbd{`} and @kbd{'}, where the number of start and end quotes within the
+@c  string balances.  The value of a string token is the text, with one
+@c  level of quotes stripped off.  Thus
+クォートされた文字列（quoted string）は、
+引用符@kbd{`}と@kbd{'}に囲まれた文字列のうち、
+文字列の内部で開始引用符@kbd{`}と終了引用符@kbd{'}の数が釣り合っているものです。
+クォートされた文字列（quoted string）のトークンとしての値は、
+いちばん外側にある引用符を一対だけ取った文字列です。
+したがって、
+
+@comment ignore
+@example
+`'
+@end example
+
+@c  is the empty string, and
+の値は空文字列です。そして、
+
+@comment ignore
+@example
+`@w{}`quoted'@w{}'
+@end example
+
+@c  is the string
+の値は次の文字列になります。
+
+@comment ignore
+@example
+`quoted'
+@end example
+
+@c  The quote characters can be changed at any time, using the builtin macro
+@c  @code{changequote}.  @xref{Changequote} for more information.
+引用符を表す文字は、組み込みマクロ@code{changequote}を使って、
+いつでも替えることができます。
+詳細は@xref{Changequote}を参照してください。
+
+@node Other tokens, Comments, Quoted strings, Syntax
+@c  @section Other tokens
+@section 入力トークン: その他
+
+@c  Any character, that is neither a part of a name, nor of a quoted string,
+@c  is a token by itself.
+名前（name）とクォートされた文字列（quoted string）の構成要素にならない
+文字はすべて、それ自身で一つのトークンとなります。
+
+@node Comments,  , Other tokens, Syntax
+@c  @section Comments
+@section コメント
+
+@cindex comments
+@cindex コメント
+@c  Comments in @code{m4} are normally delimited by the characters @samp{#}
+@c  and newline.  All characters between the comment delimiters are ignored,
+@c  but the entire comment (including the delimiters) is passed through to
+@c  the output---comments are @emph{not} discarded by @code{m4}.
+@code{m4}では通常@samp{#}と改行文字で区切られた部分がコメントとなります。
+これらコメントデリミタ（comment delimiters）の間にあるすべての文字は
+処理の対象とならず無視されます。
+しかし、コメントデリミタ（comment delimiters）を含むコメント全体は、
+出力へそのまま流されて行きます。
+つまり@code{m4}においてコメントは破棄@emph{されません}。
+
+@c  Comments cannot be nested, so the first newline after a @samp{#} ends
+@c  the comment.  The commenting effect of the begin comment character
+@c  can be inhibited by quoting it.
+コメントを入れ子にすることはできません。したがって、@samp{#}の後の
+最初の改行文字でコメントは終りとなります。
+コメント開始文字をクォートすることによって、
+コメント開始文字としての働きを抑制できます。
+
+@c  The comment delimiters can be changed to any string at any time, using
+@c  the builtin macro @code{changecom}.  @xref{Changecom} for more
+@c  information.
+コメントデリミタ（comment delimiters）は組み込みマクロ@code{changecom}を
+使って、いつでも好きな文字列に変更できます。
+詳細は@xref{Changecom}を参照してください。
+
+@c FIXME: more examples would be useful here --ADR
+
+@node Macros, Definitions, Syntax, Top
+@c  @chapter How to invoke macros
+@chapter マクロを呼び出す方法
+
+@c  This chapter covers macro invocation, macro arguments and how macro
+@c  expansion is treated.
+この章ではマクロの呼び出し、マクロの引数、マクロの展開が行われる過程
+について説明します。
+
+@c  @menu
+@c  * Invocation::                  Macro invocation
+@c  * Inhibiting Invocation::       Preventing macro invocation
+@c  * Macro Arguments::             Macro arguments
+@c  * Quoting Arguments::           On Quoting Arguments to macros
+@c  * Macro expansion::             Expanding macros
+@c  @end menu
+@menu
+* Invocation::                  マクロの呼び出し
+* Inhibiting Invocation::       マクロの呼び出しを抑制する
+* Macro Arguments::             マクロの引数
+* Quoting Arguments::           マクロの引数をクォートする
+* Macro expansion::             マクロの展開
+@end menu
+
+@node Invocation, Inhibiting Invocation, Macros, Macros
+@c  @section Macro invocation
+@section マクロの呼び出し
+
+@cindex macro invocation
+@cindex マクロの呼び出し
+@cindex マクロ呼び出し
+@c  Macro invocations has one of the forms
+マクロを呼び出すときの形式には次のものがあります。
+
+@comment ignore
+@example
+name
+@end example
+
+@noindent
+@c  which is a macro invocation without any arguments, or
+これは引数を伴わないマクロの呼び出しです。
+
+@comment ignore
+@example
+name(arg1, arg2, ..., arg@var{n})
+@end example
+
+@noindent
+@c  which is a macro invocation with @var{n} arguments.  Macros can have any
+@c  number of arguments.  All arguments are strings, but different macros
+@c  might interpret the arguments in different ways.
+これは@var{n}個の引数を伴うマクロの呼び出しです。
+マクロはいくつでも引数を取ることができます。
+すべての引数は文字列ですが、
+マクロによって引数の解釈のしかたが違うことがあります。
+
+@c  The opening parenthesis @emph{must} follow the @var{name} directly, with
+@c  no spaces in between.  If it does not, the macro is called with no
+@c  arguments at all.
+開きカッコ@samp{(}は、
+スペースを入れずに@var{name}の@emph{直後に}書かなければいけません。
+そうしないと、そのマクロは引数なしで呼び出されてしまいます。
+
+@c  For a macro call to have no arguments, the parentheses @emph{must} be
+@c  left out.  The macro call
+引数なしでマクロを呼び出すためには、カッコを付けては@emph{いけません}。
+たとえば、
+
+@comment ignore
+@example
+name()
+@end example
+
+@noindent
+@c  is a macro call with one argument, which is the empty string, not a call
+@c  with no arguments.
+これは、空の文字列を1つだけ引数として持つマクロの呼び出しであり、
+引数を伴わないマクロの呼び出しではありません。
+
+@node Inhibiting Invocation, Macro Arguments, Invocation, Macros
+@c  @section Preventing macro invocation
+@section マクロの呼び出しを抑制する
+
+@c  An innovation of the @code{m4} language, compared to some of its
+@c  predecessors (like Stratchey's @code{GPM}, for example), is the ability
+@c  to recognize macro calls without resorting to any special, prefixed
+@c  invocation character.  While generally useful, this feature might
+@c  sometimes be the source of spurious, unwanted macro calls.  So, GNU
+@c  @code{m4} offers several mechanisms or techniques for inhibiting the
+@c  recognition of names as macro calls.
+先行するマクロプロセッサ(Stratcheyの@code{GPM}など)に比べて、
+@code{m4}言語の革新的なところは、
+先頭に特別な文字をつけて書くといったことをしなくても、マクロの呼び出しを識別できる能力です。
+この機能は多くの場合において便利なのですが、
+ときには不必要なマクロの呼び出しの原因となることがあります。
+そこで、GNU @code{m4}には名前（name）がマクロの呼び出しとして認識されるのを
+抑制するいくつかの機構やテクニックがあります。
+
+@c  First of all, many builtin macros cannot meaningfully be called
+@c  without arguments.  For any of these macros, whenever an opening
+@c  parenthesis does not immediately follow their name, the builtin macro
+@c  call is not triggered.  This solves the most usual cases, like for
+@c  @samp{include} or @samp{eval}.  Later in this document, the sentence
+@c  ``This macro is recognized only when given arguments'' refers to this
+@c  specific provision.
+まず、多くの組み込みマクロは引数なしで呼び出しても意味がないので、
+それらの名前の直後に開きカッコがないときは、組み込みマクロは呼び出されません。
+これによって、@samp{include}や@samp{eval}がマクロとして認識されてしまう
+といったよくあるケースに対処できます。
+後ほど、この文書に出てくる
+``このマクロは引数を与えたときだけ認識されます''という文は、
+この動作を意味します。
+
+@c  There is also a command call option (@code{--prefix-builtins}, or
+@c  @code{-P}) which requires all builtin macro names to be prefixed
+@c  by @samp{m4_} for them to be recognized.  The option has no effect
+@c  whatsoever on user defined macros.  For example, with this option,
+@c  one has to write @code{m4_dnl} and even @code{m4_m4exit}.
+また、コマンドオプション(@code{--prefix-builtins}, または@code{-P})
+を使うと、組み込みマクロを呼び出すときは、
+その名前の先頭に@samp{m4_}をつけなければ認識されなくなります。
+たとえば@code{m4_dnl}や、さらには@code{m4_m4exit}と
+書かなければならなくなります。
+ちなみに、このオプションはユーザ定義のマクロには何の効果ももちません。
+
+@c  If your version of GNU @code{m4} has the @code{changeword} feature
+@c  compiled in, there it offers far more flexibility in specifying the
+@c  syntax of macro names, both builtin or user-defined.  @xref{Changeword}
+@c  for more information on this experimental feature.
+@code{changeword}機能がコンパイル時に組み込まれた@code{m4}を
+使用しているときは、マクロ名の認識に使われる字句構成規則をはるかに柔軟に
+指定することができます。
+この規則は組み込みマクロとユーザ定義マクロ両方の名前に作用します。
+この試験的な機能の詳細は@xref{Changeword}を参照してください。
+
+@c  Of course, the simplest way to prevent a name to be interpreted
+@c  as a call to an existing macro is to quote it.  The remainder of
+@c  this section studies a little more deeply how quoting affects macro
+@c  invocation, and how quoting can be used to inhibit macro invocation.
+もちろん、ある名前がマクロの呼び出しとして認識されるのを防ぐ、
+もっとも単純な方法は、その名前をクォートする(引用符で囲む)ことです。
+この節の残り部分では、クォートすることがマクロの呼び出しにどのように
+影響するのか、またマクロの呼び出しを抑制するには
+それをどのように使えばよいのかを、もうすこし詳しく見ていきます。
+
+@c  Even if quoting is usually done over the whole macro name, it can also
+@c  be done over only a few characters of this name.  It is also possible
+@c  to quote the empty string, but this works only @emph{inside} the name.
+@c  For example:
+マクロの呼び出しを抑制したいときは名前全体をクォートするのが普通ですが、
+名前の数文字をクォートするだけでも同じ効果があります。
+また、空文字列をクォートするだけでもよいのですが、
+この場合は名前の@emph{内部}でないと効果はありません。たとえば、
+
+@comment ignore
+@example
+`divert'
+`d'ivert
+di`ver't
+div`'ert
+@end example
+
+@noindent
+@c  all yield the string @samp{divert}.  While in both:
+これらの結果はすべて文字列@samp{divert}となりますが、
+
+@comment ignore
+@example
+`'divert
+divert`'
+@end example
+
+@noindent
+@c  the @code{divert} builtin macro will be called.
+こちらは両方とも組み込みマクロ@code{divert}が呼ばれます。
+
+@c  The output of macro evaluations is always rescanned.  The following
+@c  example would yield the string @samp{de}, exactly as if @code{m4}
+@c  has been given @w{@samp{substr(abcde, 3, 2)}} as input:
+マクロを評価して生じた出力は常に再走査（rescan）されます。
+次の例では、@code{m4}に@w{@samp{substr(abcde, 3, 2)}}を入力として
+与えたときと同様に、文字列@samp{de}が生成されます。
+
+@comment ignore
+@example
+define(`x', `substr(ab')
+define(`y', `cde, 3, 2)')
+x`'y
+@end example
+
+@c  Unquoted strings on either side of a quoted string are subject to
+@c  being recognized as macro names.  In the following example, quoting the
+@c  empty string allows for the @code{dnl} macro to be recognized as such:
+クォートされた文字列（quoted string）の両端にあるクォートされていない文字列は、
+マクロ名として認識される対象となります。
+次の例では、空文字列をクォートすることによって
+@code{dnl}マクロが認識されるようになります。
+
+@comment ignore
+@example
+define(`macro', `di$1')
+macro(v)`'dnl
+@end example
+
+@noindent
+@c  Without the quotes, this would rather yield the string @samp{divdnl}
+@c  followed by an end of line.
+もし引用符がなかったら、
+文字列@samp{divdnl}とそれに続く改行文字が生成されるだけでしょう。
+
+@c  Quoting may prevent recognizing as a macro name the concatenation of a
+@c  macro expansion with the surrounding characters.  In this example:
+クォートすることで、マクロ展開による文字列とその周囲の文字を連結したものが
+マクロの名前として認識されるのを防ぐことができます。たとえば、
+
+@comment ignore
+@example
+define(`macro', `di$1')
+macro(v)`ert'
+@end example
+
+@noindent
+@c  the input will produce the string @samp{divert}.  If the quote was
+@c  removed, the @code{divert} builtin would be called instead.
+この入力からは、文字列@samp{divert}が生み出されます。
+もし引用符がなければ、組み込みマクロ@code{divert}が呼びだされるでしょう。
+
+@node Macro Arguments, Quoting Arguments, Inhibiting Invocation, Macros
+@c  @section Macro arguments
+@section マクロの引数
+
+@cindex macros, arguments to
+@cindex arguments to macros
+@cindex マクロへの引数
+@cindex マクロの引数
+@cindex 引数
+@c  When a name is seen, and it has a macro definition, it will be expanded
+@c  as a macro.
+ある名前（name）が認識され、その名前に対するマクロの定義が存在するとき、
+それはマクロとして展開されます。
+
+@c  If the name is followed by an opening parenthesis, the arguments will be
+@c  collected before the macro is called.  If too few arguments are
+@c  supplied, the missing arguments are taken to be the empty string.  If
+@c  there are too many arguments, the excess arguments are ignored.
+その名前の直後に開きカッコ@samp{(}があるときは、
+引数をすべて集めてから、マクロが呼び出されます。
+足りない引数があるときは、空文字列が与えられたものとして解釈されます。
+余分な引数は無視されます。
+
+@c  Normally @code{m4} will issue warnings if a builtin macro is called
+@c  with an inappropriate number of arguments, but it can be suppressed with
+@c  the @samp{-Q} command line option.  For user defined macros, there is no
+@c  check of the number of arguments given.
+組み込みマクロの呼び出しで引数の数が不足しているとき、通常なら@code{m4}は
+警告を発しますが、コマンドラインオプション@samp{-Q}を使えば、
+この警告を抑制できます。
+ユーザ定義マクロに対する引数の個数チェックはありません。
+
+@c  Macros are expanded normally during argument collection, and whatever
+@c  commas, quotes and parentheses that might show up in the resulting
+@c  expanded text will serve to define the arguments as well.  Thus, if
+@c  @var{foo} expands to @samp{, b, c}, the macro call
+引数の収集が行われているときでも、通常と同じようにマクロの展開は行われます。
+そして展開後のテキストに出現した、コンマ、引用符、
+カッコなどはすべて個々の引数の定義に寄与します。
+したがって@var{foo}が@samp{, b, c}に展開されるとき、
+次のマクロの呼び出し、
+
+@comment ignore
+@example
+bar(a foo, d)
+@end example
+
+@c  is a macro call with four arguments, which are @samp{a }, @samp{b},
+@c  @samp{c} and @samp{d}.  To understand why the first argument contains
+@c  whitespace, remember that leading unquoted whitespace is never part
+@c  of an argument, but trailing whitespace always is.
+は、4つの引数、@samp{a }, @samp{b}, @samp{c}, @samp{d}
+を伴うマクロの呼び出しとなります。
+なぜ最初の引数に空白（whitespace）が含まれているのか理解するには、
+引数の前にある空白はすべて削除されるのに対して、引数の後ろにある空白は
+削除されないことを覚えておくとよいでしょう。
+
+@node Quoting Arguments, Macro expansion, Macro Arguments, Macros
+@c  @section Quoting macro arguments
+@section マクロの引数をクォートする
+
+@cindex quoted macro arguments
+@cindex macros, quoted arguments to
+@cindex arguments, quoted macro
+@cindex クォートされたマクロの引数
+@c  Each argument has leading unquoted whitespace removed.  Within each
+@c  argument, all unquoted parentheses must match.  For example, if
+@c  @var{foo} is a macro,
+個々の引数の前にある、クォートされていない空白（whitespace）は削除されます。
+各引数の内部では、
+クォートされていないカッコはすべて対になっていなければなりません。
+たとえば、@var{foo}がマクロのとき、
+
+@comment ignore
+@example
+foo(() (`(') `(')
+@end example
+
+@c  is a macro call, with one argument, whose value is @samp{()@w{ }(()@w{ }(}.
+これはひとつの引数を伴ったマクロの呼び出しで、
+その引数の値は@samp{()@w{ }(()@w{ }(}です。
+
+@c  It is common practice to quote all arguments to macros, unless you are
+@c  sure you want the arguments expanded.  Thus, in the above
+@c  example with the parentheses, the `right' way to do it is like this:
+引数自体がマクロ展開の対象になって欲しいのでない限り、
+マクロへの引数はすべてクォートするのが普通です。
+したがって、上記のカッコを含む例の`正しい'書き方は次のようになります。
+
+@comment ignore
+@example
+foo(`() (() (')
+@end example
+
+@c  It is, however, in certain cases necessary to leave out quotes for some
+@c  arguments, and there is nothing wrong in doing it.  It just makes life a
+@c  bit harder, if you are not careful.
+しかし、ときにはいくつかの引数をクォートしないでおく必要がある場合もあり、
+また、そうすることに何ら問題はありません。
+ただ、注意を怠ると人生がすこしばかり厳しいものになるだけです。
+
+@node Macro expansion,  , Quoting Arguments, Macros
+@section マクロの展開
+
+@cindex macros, expansion of
+@cindex expansion of macros
+@cindex マクロの展開
+@c  When the arguments, if any, to a macro call have been collected, the
+@c  macro is expanded, and the expansion text is pushed back onto the input
+@c  (unquoted), and reread.  The expansion text from one macro call might
+@c  therefore result in more macros being called, if the calls are included,
+@c  completely or partially, in the first macro calls' expansion.
+マクロの呼び出しが引数を伴うときはその収集が行われたあと、
+マクロは展開されます。
+そして展開後のテキストは入力に(クォートされずに)戻され、
+そして再び読み込まれます(再走査)。
+したがって、マクロを1つ呼び出したことで得られたテキストの中に、
+完全なマクロの呼び出しやその一部が含まれている場合、
+そこから更に多くのマクロが呼ばれることもあるわけです。
+
+@c  Taking a very simple example, if @var{foo} expands to @samp{bar}, and
+@c  @var{bar} expands to @samp{Hello world}, the input
+非常に簡単な例を挙げると、@var{foo}が@samp{bar}へ展開され、
+@var{bar}が@samp{Hello world}へ展開されるとすると、入力
+
+@comment ignore
+@example
+foo
+@end example
+
+@noindent
+@c  will expand first to @samp{bar}, and when this is reread and
+@c  expanded, into @samp{Hello world}.
+は最初に@samp{bar}へ展開された後、再び走査が行われ
+@samp{Hello world}へ展開されます。
+
+@node Definitions, Conditionals, Macros, Top
+@c  @chapter How to define new macros
+@chapter 新たにマクロを定義する方法
+
+@cindex macros, how to define new
+@cindex defining new macros
+@cindex マクロを新しく定義する方法
+@c  Macros can be defined, redefined and deleted in several different ways.
+@c  Also, it is possible to redefine a macro, without losing a previous
+@c  value, which can be brought back at a later time.
+マクロはいくつかの異なる方法で定義、再定義、削除することができます。
+また現在の定義を失うことなく一時的にマクロを再定義しておいて、
+後で元の定義に戻すこともできます。
+
+@c  @menu
+@c  * Define::                      Defining a new macro
+@c  * Arguments::                   Arguments to macros
+@c  * Pseudo Arguments::            Pseudo arguments to macros
+@c  * Undefine::                    Deleting a macro
+@c  * Defn::                        Renaming macros
+@c  * Pushdef::                     Temporarily redefining macros
+@menu
+* Define::                      新しいマクロを定義する
+* Arguments::                   マクロの引数
+* Pseudo Arguments::            マクロの疑似引数
+* Undefine::                    マクロの削除
+* Defn::                        マクロ名の変更
+* Pushdef::                     マクロの一時的な再定義
+
+@c  * Indir::                       Indirect call of macros
+@c  * Builtin::                     Indirect call of builtins
+* Indir::                       マクロの間接的な呼び出し
+* Builtin::                     組み込みマクロの間接的な呼び出し
+@end menu
+
+@node Define, Arguments, Definitions, Definitions
+@c  @section Defining a macro
+@section マクロの定義方法
+
+@findex define
+@c  The normal way to define or redefine macros is to use the builtin
+@c  @code{define}:
+通常はマクロを定義したり再定義するときは、
+組み込みマクロ@code{define}を使います。
+
+@comment ignore
+@example
+define(@var{name} [, @var{expansion}])
+@end example
+
+@c  @noindent which defines @var{name} to expand to @var{expansion}.  If
+@c  @var{expansion} is not given, it is taken to be empty.
+@noindent
+これは@var{name}が@var{expansion}に展開されるように定義します。
+もし@var{expansion}が与えられなかったときは、空文字列だと見なされます。
+
+@c  The expansion of @code{define} is void.
+@code{define}は展開されると消滅します。
+
+@c  The following example defines the macro @var{foo} to expand to the text
+@c  @samp{Hello World.}.
+次の例では、マクロ@var{foo}が@samp{Hello World.}に展開されるように
+定義しています。
+
+@example
+define(`foo', `Hello world.')
+@result{}
+foo
+@result{}Hello world.
+@end example
+
+@c  The empty line in the output is there because the newline is not
+@c  a part of the macro definition, and it is consequently copied to
+@c  the output.  This can be avoided by use of the macro @code{dnl}.
+@c  @xref{Dnl}, for details.
+出力に空行がある理由は、マクロ定義の直後にある改行文字が
+定義の一部分ではないので、出力にそのままコピーされるためです。
+これは@code{dnl}マクロを使うことで避けることができます。
+詳しくは@xref{Dnl}を参照してください。
+
+@c  The macro @code{define} is recognized only with parameters.
+マクロ@code{define}は引数を与えたときだけ認識されます。
+
+@node Arguments, Pseudo Arguments, Define, Definitions
+@c  @section Arguments to macros
+@section マクロの引数
+
+@cindex macros, arguments to
+@cindex Arguments to macros
+@cindex マクロへの引数
+@c  Macros can have arguments.  The @var{n}th argument is denoted by
+@c  @code{$n} in the expansion text, and is replaced by the @var{n}th actual
+@c  argument, when the macro is expanded.  Here is a example of a macro with
+@c  two arguments.  It simply exchanges the order of the two arguments.
+マクロは引数を取ることができます。@var{n}番目の引数は展開用テキストの中では
+@code{$n}として書き示され、マクロが展開されるときに@var{n}番目の
+実引数（actual argument）に置き換えられます。
+次の例は2つの引数を取るマクロです。2つの引数の順番を単に交換します。
+
+@example
+define(`exch', `$2, $1')
+@result{}
+exch(arg1, arg2)
+@result{}arg2, arg1
+@end example
+
+@c  This can be used, for example, if you like the arguments to
+@c  @code{define} to be reversed.
+これは@code{define}への引数の順番を逆にしたいときなどに使えます。
+
+@example
+define(`exch', `$2, $1')
+@result{}
+define(exch(``expansion text'', ``macro''))
+@result{}
+macro
+@result{}expansion text
+@end example
+@c ! `` and '' become " in Japanese info file
+
+@c  @xref{Quoting Arguments}, for an explanation of the double quotes.
+二重になった引用符の説明については@xref{Quoting Arguments}を参照してください。
+
+@cindex GNU extensions
+@cindex GNU拡張
+@c  GNU @code{m4} allows the number following the @samp{$} to consist of one
+@c  or more digits, allowing macros to have any number of arguments.  This
+@c  is not so in UNIX implementations of @code{m4}, which only recognize
+@c  one digit.
+GNU @code{m4}では@samp{$}に続く数字は複数の桁でもよいので、
+マクロはいくつでも引数を取ることができます。
+これと違いUNIXの@code{m4}では1桁の数字しか認識されません。
+
+@c  As a special case, the zero'th argument, @code{$0}, is always the name
+@c  of the macro being expanded.
+特殊なケースとして、0番目の引数@code{$0}は常に現在展開されているマクロの名前
+となります。
+
+@example
+define(`test', ``Macro name: $0'')
+@result{}
+test
+@result{}Macro name: test
+@end example
+
+@c  If you want quoted text to appear as part of the expansion text,
+@c  remember that quotes can be nested in quoted strings.  Thus, in
+クォートされたテキストを展開後のテキストに含めたい時は、
+クォートは入れ子にできることを思い出しましょう。したがって、
+
+@example
+define(`foo', `This is macro `foo'.')
+@result{}
+foo
+@result{}This is macro foo.
+@end example
+
+@noindent
+@c  The @samp{foo} in the expansion text is @emph{not} expanded, since it is
+@c  a quoted string, and not a name.
+展開されたテキストに含まれる@samp{foo}は、
+クォートされた文字列（quoted string）であり名前（name）ではないので、
+再走査によって展開は@emph{されず}、
+引用符がはぎ取られるだけです(@pxref{Syntax})。
+
+@node Pseudo Arguments, Undefine, Arguments, Definitions
+@c  @section Special arguments to macros
+@section マクロの特殊な引数
+
+@cindex special arguments to macros
+@cindex macros, special arguments to
+@cindex arguments to macros, special
+@cindex マクロの特殊な引数
+@c  There is a special notation for the number of actual arguments supplied,
+@c  and for all the actual arguments.
+与えられた実引数（actual arguments）の個数や全ての実引数をまとめて表すための
+特別な表記方法があります。
+
+@c  The number of actual arguments in a macro call is denoted by @code{$#}
+@c  in the expansion text.  Thus, a macro to display the number of arguments
+@c  given can be
+マクロを呼び出すときに与えられた実引数の個数は、
+展開用テキストの中で@code{$#}として表します。
+したがって与えられた実引数の個数を表示するマクロは次のようになります。
+
+@example
+define(`nargs', `$#')
+@result{}
+nargs
+@result{}0
+nargs()
+@result{}1
+nargs(arg1, arg2, arg3)
+@result{}3
+@end example
+
+@c  The notation @code{$*} can be used in the expansion text to denote all
+@c  the actual arguments, unquoted, with commas in between.  For example
+展開用テキストの中で@code{$*}という表記をすることで、
+全ての実引数を(クォートはせずに)コンマで区切ったものを表すことができます。
+
+@example
+define(`echo', `$*')
+@result{}
+echo(arg1,    arg2, arg3 , arg4)
+@result{}arg1,arg2,arg3 ,arg4
+@end example
+
+@c  Often each argument should be quoted, and the notation @code{$@@} handles
+@c  that.  It is just like @code{$*}, except that it quotes each argument.
+@c  A simple example of that is:
+引数をそれぞれクォートしなければならないことがよくありますが、
+そんなときは@code{$@@}という表記を使います。
+これは各引数がクォートされることを除けば@code{$*}と同じです。
+
+@example
+define(`echo', `$@@')
+@result{}
+echo(arg1,    arg2, arg3 , arg4)
+@result{}arg1,arg2,arg3 ,arg4
+@end example
+
+@c  Where did the quotes go?  Of course, they were eaten, when the expanded
+@c  text were reread by @code{m4}.  To show the difference, try
+引用符はどこに行ったのでしょうか? もちろん展開後のテキストを
+再走査したときに@code{m4}が食べてしまったのです。
+違いを見るために、次のようにしてみましょう。
+
+@example
+define(`echo1', `$*')
+@result{}
+define(`echo2', `$@@')
+@result{}
+define(`foo', `This is macro `foo'.')
+@result{}
+echo1(foo)
+@result{}This is macro This is macro foo..
+echo2(foo)
+@result{}This is macro foo.
+@end example
+
+@noindent
+@c  @xref{Trace}, if you do not understand this.
+これが理解できないときは@xref{Trace}を参照してください。
+
+@c  A @samp{$} sign in the expansion text, that is not followed by anything
+@c  @code{m4} understands, is simply copied to the macro expansion, as any
+@c  other text is.
+展開用テキストに記号@samp{$}が存在し、それに続く部分が@code{m4}に理解できる
+ものでないときは、@samp{$}は他のテキストと同じように
+マクロ展開後のテキストへ単にコピーされます。
+
+@example
+define(`foo', `$$$ hello $$$')
+@result{}
+foo
+@result{}$$$ hello $$$
+@end example
+
+@c  If you want a macro to expand to something like @samp{$12}, put a pair
+@c  of quotes after the @code{$}.  This will prevent @code{m4} from
+@c  interpreting the @code{$} sign as a reference to an argument.
+マクロを@samp{$12}などに展開させたいときは、
+@code{$}の後に一組の引用符を置きます。
+これによって、@code{m4}がその@code{$}記号を引数への参照だと解釈してまうのを
+防ぐことができます。
+
+@node Undefine, Defn, Pseudo Arguments, Definitions
+@c  @section Deleting a macro
+@section マクロの削除
+
+@cindex macros, how to delete
+@cindex deleting macros
+@cindex undefining macros
+@cindex マクロを削除する方法
+@findex undefine
+@c  A macro definition can be removed with @code{undefine}:
+@code{undefine}を使えばマクロの定義を削除することができます。
+
+@comment ignore
+@example
+undefine(@var{name})
+@end example
+
+@noindent
+@c  which removes the macro @var{name}.  The macro name must necessarily be
+@c  quoted, since it will be expanded otherwise.
+これによってマクロ@var{name}が削除されます。
+展開されてしまうのを防ぐためにマクロの名前は必ずクォートしなくてはなりません。
+
+@c  The expansion of @code{undefine} is void.
+@code{undefine}は展開されると消滅します。
+
+@example
+foo
+@result{}foo
+define(`foo', `expansion text')
+@result{}
+foo
+@result{}expansion text
+undefine(`foo')
+@result{}
+foo
+@result{}foo
+@end example
+
+@c  It is not an error for @var{name} to have no macro definition.  In that
+@c  case, @code{undefine} does nothing.
+@var{name}がマクロとして定義されていなくても問題はありません。
+その場合、@code{undefine}は何もしません。
+
+@c  The macro @code{undefine} is recognized only with parameters.
+@code{undefine}は引数を与えたときだけ認識されます。
+
+@node Defn, Pushdef, Undefine, Definitions
+@c  @section Renaming macros
+@section マクロ名の変更
+
+@cindex macros, how to rename
+@cindex renaming macros
+@cindex マクロの名前をかえる方法
+@findex defn
+@c  It is possible to rename an already defined macro.  To do this, you need
+@c  the builtin @code{defn}:
+すでに定義済みのマクロの名前を替えることができます。
+それには組み込みマクロ@code{defn}が必要となります。
+
+@comment ignore
+@example
+defn(@var{name})
+@end example
+
+@noindent
+@c  which expands to the @emph{quoted definition} of @var{name}.  If the
+@c  argument is not a defined macro, the expansion is void.
+これは@var{name}の@emph{定義をクォートしたもの}に展開されます。
+引数が定義済みのマクロでないときは展開されると消滅します。
+
+@c  If @var{name} is a user-defined macro, the quoted definition is simply
+@c  the quoted expansion text.  If, instead, @var{name} is a builtin, the
+@c  expansion is a special token, which points to the builtin's internal
+@c  definition.  This token is only meaningful as the second argument to
+@c  @code{define} (and @code{pushdef}), and is ignored in any other context.
+@var{name}がユーザ定義マクロの場合、
+クォートされた定義とは単にクォートされた展開用テキストのことです。
+@var{name}が組み込みマクロの場合、
+展開後のテキストは、@code{m4}の内部にある組み込みマクロの定義を指す
+特殊なトークンとなります。
+このトークンは、@code{define} (および @code{pushdef})
+の第2引数としてのみ意味を持ち、その他の文脈では無視されます。
+
+@c  Its normal use is best understood through an example, which shows how to
+@c  rename @code{undefine} to @code{zap}:
+通常の使用方法は、次の例で@code{undefine}の名前を@code{zap}に換える方法を
+見るのが一番分かりやすいでしょう。
+
+@example
+define(`zap', defn(`undefine'))
+@result{}
+zap(`undefine')
+@result{}
+undefine(`zap')
+@result{}undefine(zap)
+@end example
+
+@c  In this way, @code{defn} can be used to copy macro definitions, and also
+@c  definitions of builtin macros.  Even if the original macro is removed,
+@c  the other name can still be used to access the definition.
+このように@code{defn}はユーザ定義マクロの定義や
+組み込みマクロの定義をコピーするために使うことができます。
+たとえ元のマクロが削除されても、もう一方の名前を使って
+定義にアクセスすることができます。
+
+@c  The macro @code{defn} is recognized only with parameters.
+@code{defn}は引数を与えたときだけ認識されます。
+
+@node Pushdef, Indir, Defn, Definitions
+@c  @section Temporarily redefining macros
+@section マクロの一時的な再定義
+
+@cindex macros, temporary redefinition of
+@cindex temporary redefinition of macros
+@cindex redefinition of macros, temporary
+@cindex マクロを一時的に再定義
+@c  It is possible to redefine a macro temporarily, reverting to the
+@c  previous definition at a later time.
+あるマクロを一時的に再定義しておき、後で元の定義に戻すことができます。
+@findex popdef
+@findex pushdef
+@c  This is done with the builtins @code{pushdef} and @code{popdef}:
+それには@code{define}と@code{undefine}に良く似た、
+組み込みマクロ@code{pushdef}と@code{popdef}を使います。
+
+@comment ignore
+@example
+pushdef(@var{name} [, @var{expansion}])
+popdef(@var{name})
+@end example
+
+@noindent
+@c  which are quite analogous to @code{define} and @code{undefine}.
+@c  These macros work in a stack-like fashion.  A macro is temporarily
+@c  redefined with @code{pushdef}, which replaces an existing definition of
+@c  @var{name}, while saving the previous definition, before the new one is
+@c  installed.  If there is no previous definition, @code{pushdef} behaves
+@c  exactly like @code{define}.
+これらのマクロはスタック（stack）に似た仕組みで機能します。
+@code{pushdef}は、あるマクロを一時的に再定義します。
+このとき@var{name}の前の定義は、新しい定義によって置き換えられる前に
+保存されます。もし前の定義が存在しない場合は、
+@code{pushdef}は@code{define}とまったく同じように機能します。
+
+@c  If a macro has several definitions (of which only one is accessible),
+@c  the topmost definition can be removed with @code{popdef}.  If there is
+@c  no previous definition, @code{popdef} behaves like @code{undefine}.
+あるマクロに複数の定義が存在する場合(その中の一つだけがアクセス可能です)、
+@code{popdef}を使って一番上の定義を削除することができます。
+前の定義が無い場合、@code{popdef}は@code{undefine}のように機能します。
+
+@example
+define(`foo', `Expansion one.')
+@result{}
+foo
+@result{}Expansion one.
+pushdef(`foo', `Expansion two.')
+@result{}
+foo
+@result{}Expansion two.
+popdef(`foo')
+@result{}
+foo
+@result{}Expansion one.
+popdef(`foo')
+@result{}
+foo
+@result{}foo
+@end example
+
+@c  If a macro with several definitions is redefined with @code{define}, the
+@c  topmost definition is @emph{replaced} with the new definition.  If it is
+@c  removed with @code{undefine}, @emph{all} the definitions are removed,
+@c  and not only the topmost one.
+@code{define}によって、複数の定義を持つマクロを再定義したときは、
+一番上の定義が新しい定義で@emph{置き換え}られます。
+@code{undefine}によって定義を削除するときは、
+一番上のもの一つだけではなく、@emph{すべて}の定義が削除されます。
+
+@example
+define(`foo', `Expansion one.')
+@result{}
+foo
+@result{}Expansion one.
+pushdef(`foo', `Expansion two.')
+@result{}
+foo
+@result{}Expansion two.
+define(`foo', `Second expansion two.')
+@result{}
+foo
+@result{}Second expansion two.
+undefine(`foo')
+@result{}
+foo
+@result{}foo
+@end example
+
+@c  It is possible to temporarily redefine a builtin with @code{pushdef}
+@c  and @code{defn}.
+@code{pushdef}と@code{defn}を使えば、組み込みマクロを一時的に再定義することが
+できます。
+
+@c  The macros @code{pushdef} and @code{popdef} are recognized only with
+@c  parameters.
+マクロ@code{pushdef}と@code{popdef}は引数を与えたときだけ認識されます。
+
+@node Indir, Builtin, Pushdef, Definitions
+@c  @section Indirect call of macros
+@section マクロの間接的な呼び出し
+
+@cindex indirect call of macros
+@cindex call of macros, indirect
+@cindex macros, indirect call of
+@cindex GNU extensions
+@cindex マクロを間接的に呼び出す
+@cindex GNU拡張
+@findex indir
+@c  Any macro can be called indirectly with @code{indir}:
+@code{indir}を使うと、どんなマクロでも間接的に呼び出すことができます。
+
+@comment ignore
+@example
+indir(@var{name}, ...)
+@end example
+
+@noindent
+@c  which results in a call to the macro @var{name}, which is passed the
+@c  rest of the arguments.  This can be used to call macros with ``illegal''
+@c  names (@code{define} allows such names to be defined):
+@code{indir}はマクロ@var{name}を残りの引数と共に呼び出します。
+これを``不正な''名前を持つマクロを呼ぶのに使うことができます(@code{define}
+はそういう名前でも定義できます。)
+
+@example
+define(`$$internal$macro', `Internal macro (name `$0')')
+@result{}
+$$internal$macro
+@result{}$$internal$macro
+indir(`$$internal$macro')
+@result{}Internal macro (name $$internal$macro)
+@end example
+
+@c  The point is, here, that larger macro packages can have private macros
+@c  defined, that will not be called by accident.  They can @emph{only} be
+@c  called through the builtin @code{indir}.
+ここでの要点は、大きなマクロパッケージで、
+間違って呼ばれてしまうことのないマクロを定義できるということです。
+それらは組み込みマクロ@code{indir}によって@emph{だけ}呼びだすことができます。
+
+@c FIXME: Why indir does not require at least one parameter?
+
+@node Builtin,  , Indir, Definitions
+@c  @section Indirect call of builtins
+@section 組み込みマクロの間接的な呼び出し
+
+@cindex indirect call of builtins
+@cindex call of builtins, indirect
+@cindex builtins, indirect call of
+@cindex GNU extensions
+@cindex 組み込みマクロを間接的に呼び出す
+@cindex GNU拡張
+@findex builtin
+@c  Builtin macros can be called indirectly with @code{builtin}:
+@code{builtin}を使えば、組み込みマクロを間接的に呼び出すことができます。
+
+@comment ignore
+@example
+builtin(@var{name}, ...)
+@end example
+
+@noindent
+@c  which results in a call to the builtin @var{name}, which is passed the
+@c  rest of the arguments.  This can be used, if @var{name} has been given
+@c  another definition that has covered the original.
+これは組み込みマクロ@var{name}を、残りの引数と共に呼び出します。
+たとえ@var{name}に本来の定義を隠している別の定義が与えられていても、
+本来の定義を呼び出します。
+
+@c  The macro @code{builtin} is recognized only with parameters.
+マクロ@code{builtin}は引数を与えたときだけ認識されます。
+
+@node Conditionals, Debugging, Definitions, Top
+@c  @chapter Conditionals, loops and recursion
+@chapter 条件分岐、ループ、再帰
+
+@c  Macros, expanding to plain text, perhaps with arguments, are not quite
+@c  enough.  We would like to have macros expand to different things, based
+@c  on decisions taken at run-time.  E.g., we need some kind of conditionals.
+@c  Also, we would like to have some kind of loop construct, so we could do
+@c  something a number of times, or while some condition is true.
+単純なテキストに展開されるようなマクロだけでは、
+引数を取ることができるとしても、十分ではありません。
+実行時に下される判断にもとづいて、
+異なる展開がおこなわれるようなマクロが必要でしょう。
+たとえば、何らかの条件構文が必要です。
+また、ある処理を何回も繰り返したり、条件が真の間だけ繰り返したりするために、
+ある種のループ構文も必要でしょう。
+
+@menu
+@c  * Ifdef::                       Testing if a macro is defined
+@c  * Ifelse::                      If-else construct, or multibranch
+@c  * Loops::                       Loops and recursion in m4
+* Ifdef::                       マクロが定義済みかを判定する
+* Ifelse::                      If-else 構文と多重分岐
+* Loops::                       m4におけるループと再帰
+@end menu
+
+@node Ifdef, Ifelse, Conditionals, Conditionals
+@c  @section Testing macro definitions
+@section マクロが定義済みかを判定する
+
+@cindex conditionals
+@cindex 条件構文
+@findex ifdef
+@c  There are two different builtin conditionals in @code{m4}.  The first is
+@c  @code{ifdef}:
+@code{m4}には2つの異なる条件構文が組み込まれています。
+その1つは@code{ifdef}です。
+
+@comment ignore
+@example
+ifdef(@var{name}, @var{string-1}, opt @var{string-2})
+@end example
+
+@noindent
+@c  which makes it possible to test whether a macro is defined or not.  If
+@c  @var{name} is defined as a macro, @code{ifdef} expands to
+@c  @var{string-1}, otherwise to @var{string-2}.  If @var{string-2} is
+@c  omitted, it is taken to be the empty string (according to the normal
+@c  rules).
+これにより、あるマクロが定義されているかどうかをテストできるようになります。
+@var{name}がマクロとして定義されていれば
+@code{ifdef}は@var{string-1}に展開され、
+そうでないときは@var{string-2}に展開されます。
+@var{string-2}が省略されたときは
+(通常の規則に従い)空文字列として解釈されます。
+
+@example
+ifdef(`foo', ``foo' is defined', ``foo' is not defined')
+@result{}foo is not defined
+define(`foo', `')
+@result{}
+ifdef(`foo', ``foo' is defined', ``foo' is not defined')
+@result{}foo is defined
+@end example
+
+@c  The macro @code{ifdef} is recognized only with parameters.
+マクロ@code{ifdef}は引数を与えたときだけ認識されます。
+
+@node Ifelse, Loops, Ifdef, Conditionals
+@c  @section Comparing strings
+@section 文字列の比較
+
+@cindex comparing strings
+@cindex 文字列の比較
+@findex ifelse
+@c  The other conditional, @code{ifelse}, is much more powerful.  It can be
+@c  used as a way to introduce a long comment, as an if-else construct, or
+@c  as a multibranch, depending on the number of arguments supplied:
+もう一方の条件構文@code{ifelse}はずっと強力です。
+与える引数の個数によって長いコメントの挿入のためや、
+if-else構文、多重分岐などとして使うことができます。
+
+@comment ignore
+@example
+ifelse(@var{comment})
+ifelse(@var{string-1}, @var{string-2}, @var{equal}, opt @var{not-equal})
+ifelse(@var{string-1}, @var{string-2}, @var{equal}, ...)
+@end example
+
+@noindent
+@c  Used with only one argument, the @code{ifelse} simply discards it and
+@c  produces no output.  This is a common @code{m4} idiom for introducing a
+@c  block comment, as an alternative to repeatedly using @code{dnl}.  This
+@c  special usage is recognized by GNU @code{m4}, so that in this case, the
+@c  warning about missing arguments is never triggered.
+@code{ifelse}に1つだけ引数を与えた場合、
+それは単に捨てられて、何も出力されません。
+これは@code{dnl}を何度も使わずにブロックコメントを
+挿入するために良く使われる、@code{m4}におけるイディオムです。
+GNU @code{m4}ではこの特殊な使用法が認められているので、
+引数が足りないことに対する警告はこのケースでは発せられません。
+
+@c  If called with three or four arguments, @code{ifelse} expands into
+@c  @var{equal}, if @var{string-1} and @var{string-2} are equal (character
+@c  for character), otherwise it expands to @var{not-equal}.
+@code{ifelse}に3つ、または4つの引数を与えて呼び出すと、
+@var{string-1}と@var{string-2}が(文字毎に比べて)等しければ
+@var{equal}に展開されます。
+等しくなければ@var{not-equal}に展開されます。
+
+@example
+ifelse(foo, bar, `true')
+@result{}
+ifelse(foo, foo, `true')
+@result{}true
+ifelse(foo, bar, `true', `false')
+@result{}false
+ifelse(foo, foo, `true', `false')
+@result{}true
+@end example
+
+@cindex multibranches
+@cindex 多重分岐
+@c  However, @code{ifelse} can take more than four arguments.  If given more
+@c  than four arguments, @code{ifelse} works like a @code{case} or @code{switch}
+@c  statement in traditional programming languages.  If @var{string-1} and
+@c  @var{string-2} are equal, @code{ifelse} expands into @var{equal}, otherwise
+@c  the procedure is repeated with the first three arguments discarded.  This
+@c  calls for an example:
+また@code{ifelse}には4つ以上の引数を与えることができます。
+この場合、@code{ifelse}は伝統的なプログラミング言語における@code{case}文や
+@code{switch}文と同じように機能します。
+@var{string-1}と@var{string-2}が等しければ@code{ifelse}は@var{equal}に
+展開され、等しくなければ最初の3つの引数が捨てられたあと、
+まったくおなじ手続きが繰り返されます。例で示したほうがいいでしょう。
+
+@example
+ifelse(foo, bar, `third', gnu, gnats, `sixth', `seventh')
+@result{}seventh
+@end example
+
+@c  Naturally, the normal case will be slightly more advanced than these
+@c  examples.  A common use of @code{ifelse} is in macros implementing loops
+@c  of various kinds.
+もちろん、通常はこれらの例よりもうすこし高度な使い方をするでしょう。
+@code{ifelse}のよくある使い方のひとつは、さまざまな種類のループ処理を
+実装するマクロの中で使用する場合です。
+
+@c  The macro @code{ifelse} is recognized only with parameters.
+マクロ@code{ifelse}は引数を与えたときだけ認識されます。
+
+@node Loops,  , Ifelse, Conditionals
+@c  @section Loops and recursion
+@section ループと再帰
+
+@cindex recursive macros
+@cindex macros, recursive
+@cindex 再帰的なマクロ
+@c  There is no direct support for loops in @code{m4}, but macros can be
+@c  recursive.  There is no limit on the number of recursion levels, other
+@c  than those enforced by your hardware and operating system.
+@code{m4}ではループ処理が直接的にはサポートされていませんが、
+再帰的なマクロを定義することはできます。
+使用しているハードウェアとオペレーティングシステムによるもの以外、
+再帰の深さに制限はありません。
+
+@cindex loops
+@cindex ループ
+@c  Loops can be programmed using recursion and the conditionals described
+@c  previously.
+ループ処理は再帰とすでに説明した条件構文を使うことで実現できます。
+
+@findex shift
+@c  There is a builtin macro, @code{shift}, which can, among other things,
+@c  be used for iterating through the actual arguments to a macro:
+マクロの実引数を反復処理するときには組み込みマクロ@code{shift}を
+使うことができます。
+
+
+@comment ignore
+@example
+shift(...)
+@end example
+
+@noindent
+@c  It takes any number of arguments, and expands to all but the first
+@c  argument, separated by commas, with each argument quoted.
+このマクロは任意の個数の引数を受け取り、
+最初の引数を除く残りの引数をそれぞれクォートしてから、
+それらをコンマで区切ったものに展開します。
+
+@example
+shift(bar)
+@result{}
+shift(foo, bar, baz)
+@result{}bar,baz
+@end example
+
+@c  An example of the use of @code{shift} is this macro, which reverses the
+@c  order of its arguments:
+@code{shift}を使った次の例では引数の順番を逆にするマクロを定義しています。
+
+@example
+define(`reverse', `ifelse($#, 0, , $#, 1, ``$1'',
+			  `reverse(shift($@@)), `$1'')')
+@result{}
+reverse
+@result{}
+reverse(foo)
+@result{}foo
+reverse(foo, bar, gnats, and gnus)
+@result{}and gnus, gnats, bar, foo
+@end example
+
+@c  While not a very interesting macro, it does show how simple loops can be
+@c  made with @code{shift}, @code{ifelse} and recursion.
+それほど興味深いマクロではありませんが、
+@code{shift}と@code{ifelse}そして再帰を使えばループ処理をどんなに簡単に
+実現できるか示しています。
+
+@cindex forloops
+@cindex loops, counting
+@cindex counting loops
+@cindex ループの回数を数える
+@c  Here is an example of a loop macro that implements a simple forloop.  It
+@c  can, for example, be used for simple counting:
+次に挙げるのは、単純なforループを実現するマクロの例です。
+単純な数え上げのためなどに使えます。
+
+@comment ignore
+@example
+forloop(`i', 1, 8, `i ')
+@result{}1 2 3 4 5 6 7 8
+@end example
+
+@c  The arguments are a name for the iteration variable, the starting value,
+@c  the final value, and the text to be expanded for each iteration.  With
+@c  this macro, the macro @code{i} is defined only within the loop.  After
+@c  the loop, it retains whatever value it might have had before.
+それぞれの引数は順に、反復変数（iteration variable）の名前、
+開始値、終了値、そして反復するたびに展開されるテキストです。
+このマクロにおいて、マクロ@code{i}はループ処理の内部でだけ定義されています。
+@code{i}が以前に値を持っていた場合は、ループが終ればまたその値にもどります。
+
+@c  For-loops can be nested, like
+@code{forloop}は次のように入れ子にすることもできます。
+
+@comment ignore
+@example
+forloop(`i', 1, 4, `forloop(`j', 1, 8, `(i, j) ')
+')
+@result{}(1, 1) (1, 2) (1, 3) (1, 4) (1, 5) (1, 6) (1, 7) (1, 8)
+@result{}(2, 1) (2, 2) (2, 3) (2, 4) (2, 5) (2, 6) (2, 7) (2, 8)
+@result{}(3, 1) (3, 2) (3, 3) (3, 4) (3, 5) (3, 6) (3, 7) (3, 8)
+@result{}(4, 1) (4, 2) (4, 3) (4, 4) (4, 5) (4, 6) (4, 7) (4, 8)
+@result{}
+@end example
+
+@c  The implementation of the @code{forloop} macro is fairly
+@c  straightforward.  The @code{forloop} macro itself is simply a wrapper,
+@c  which saves the previous definition of the first argument, calls the
+@c  internal macro @code{_forloop}, and re-establishes the saved definition of
+@c  the first argument.
+@code{forloop}マクロはとても簡潔に実装することができます。
+@code{forloop}マクロ自体は単なるラッパー(wrapper)で、
+第1引数が持つ元の定義を保存してから、内部マクロ@code{_forloop}を呼び、
+再び保存しておいた第1引数の定義を再確立します。
+
+@c  The macro @code{_forloop} expands the fourth argument once, and tests
+@c  to see if it is finished.  If it has not finished, it increments
+@c  the iteration variable (using the predefined macro @code{incr},
+@c  @pxref{Incr}), and recurses.
+マクロ@code{_forloop}は第4引数を一度展開し、これで反復が終りかどうか調べます。
+もし終りでなければ、反復変数を(すでに定義済みのマクロ@code{incr}を使って)
+1増やしてから、自分自身を再帰的に呼び出します。
+
+@c  Here is the actual implementation of @code{forloop}:
+@code{forloop}の実際の実装は次のようになります:
+
+@comment ignore
+@example
+define(`forloop',
+       `pushdef(`$1', `$2')_forloop(`$1', `$2', `$3', `$4')popdef(`$1')')
+define(`_forloop',
+       `$4`'ifelse($1, `$3', ,
+		   `define(`$1', incr($1))_forloop(`$1', `$2', `$3', `$4')')')
+@end example
+
+@c  Notice the careful use of quotes.  Only three macro arguments are
+@c  unquoted, each for its own reason.  Try to find out @emph{why} these
+@c  three arguments are left unquoted, and see what happens if they are
+@c  quoted.
+注意深い引用符の使い方に注目してください。
+マクロの引数でクォートされていないのは3つだけで、
+それぞれに固有の理由があります。これら3つの引数がクォート
+されていないのはなぜか、その@emph{理由}を見つけてください、
+これらがクォートされていると、どうなるのかも確かめてみてください。
+@c | $4 は、iterationごとに展開しなければならないから。quoteされていると
+@c | unquoteされて終り。
+@c | forloop(`i', 0, 3, `i, ')
+@c |  => 0, 1, 2, 3, となるべきところが、
+@c |  => i, i, i, i, となってしまう。
+@c | $1 は、変数の名前ではなくて、変数の値を使って比較したいから。
+@c | incr($1) は、クォートされていると、define(`i', `incr(i)')
+@c | となって、無間^h限地獄。
+
+
+@c  Now, even though these two macros are useful, they are still not robust
+@c  enough for general use. They lack even basic error handling of cases
+@c  like start value less than final value, and the first argument not being
+@c  a name.  Correcting these errors are left as an exercise to the reader.
+これら2つのマクロは便利ではありますが、
+一般の使用に耐えるほど堅牢ではありません。
+開始値が終了値より小さい場合や、第1引数が名前でなかった場合など、
+初歩的なエラー対策さえ欠いています。
+これら不備の訂正は、読者への課題として残しておきます。
+
+@node Debugging, Input Control, Conditionals, Top
+@c  @chapter How to debug macros and input
+@chapter マクロや入力をデバッグする方法
+
+@c  When writing macros for @code{m4}, most of the time they woould not
+@c  work as intended (as is the case with most programming languages).
+@c  There is a little support for macro debugging in @code{m4}.
+@c ! typo woould
+@code{m4}のマクロを書いていると、
+(たいていのプログラミング言語の場合と同様に)
+往々にしてそれらは思ったようには動いてくれないものです。
+@code{m4}にはデバッグを支援するしくみがいくつか存在します。
+
+@menu
+@c  * Dumpdef::                     Displaying macro definitions
+@c  * Trace::                       Tracing macro calls
+@c  * Debug Levels::                Controlling debugging output
+@c  * Debug Output::                Saving debugging output
+* Dumpdef::                     マクロの定義を表示する
+* Trace::                       マクロの呼び出しをトレースする
+* Debug Levels::                デバッグ出力の制御
+* Debug Output::                デバッグ出力の保存
+@end menu
+
+@node Dumpdef, Trace, Debugging, Debugging
+@c  @section Displaying macro definitions
+@section マクロの定義を表示する
+
+@cindex displaying macro definitions
+@cindex macros, displaying definitions
+@cindex definitions, displaying macro
+@cindex マクロの定義を表示
+@findex dumpdef
+@c  If you want to see what a name expands into, you can use the builtin
+@c  @code{dumpdef}:
+ある名前（name）が展開されるとどうなるのか調べたいときは、
+組み込みマクロ@code{dumpdef}を使用することができます。
+
+@comment ignore
+@example
+dumpdef(...)
+@end example
+
+@noindent
+@c  which accepts any number of arguments.  If called without any arguments,
+@c  it displays the definitions of all known names, otherwise it displays
+@c  the definitions of the names given.  The output is printed directly on
+@c  the standard error output.
+このマクロは任意の個数の引数を取ります。
+引数を与ずに呼びだすと、既知の名前すべての定義を表示します。
+それ以外の場合は与えた引数の定義を表示します。
+出力は標準エラー出力に直接行われます。
+
+@c  The expansion of @code{dumpdef} is void.
+@code{dumpdef}は展開されると消滅します。
+
+@example
+define(`foo', `Hello world.')
+@result{}
+dumpdef(`foo')
+@error{}foo:	`Hello world.'
+@result{}
+dumpdef(`define')
+@error{}define:	<define>
+@result{}
+@end example
+
+@c  The last example shows how builtin macros definitions are displayed.
+最後の例は組み込みマクロの定義が表示される様子です。
+
+@c  @xref{Debug Levels} for information on controlling the details of the
+@c  display.
+表示の詳細を調整するための情報については@xref{Debug Levels}を参照してください。
+
+@node Trace, Debug Levels, Dumpdef, Debugging
+@c  @section Tracing macro calls
+@section マクロの呼び出しをトレースする
+
+@cindex tracing macro expansion
+@cindex macro expansion, tracing
+@cindex expansion, tracing macro
+@cindex マクロの展開をトレース
+@findex traceon
+@findex traceoff
+@c  It is possible to trace macro calls and expansions through the builtins
+@c  @code{traceon} and @code{traceoff}:
+組み込みマクロ@code{traceon}と@code{traceoff}を使うと、マクロの呼び出しと
+展開をトレース（trace）することができます。
+
+@comment ignore
+@example
+traceon(...)
+traceoff(...)
+@end example
+
+@noindent
+@c  When called without any arguments, @code{traceon} and @code{traceoff}
+@c  will turn tracing on and off, respectively,  for all defined macros.
+@c  When called with arguments, only the named macros are affected.
+@code{traceon}と@code{traceoff}を引数なしで呼ぶと、
+すべての定義済みのマクロに対してトレースがそれぞれオンまたはオフとなります。
+引数を指定した場合、その名前のマクロに対してだけ作用します。
+
+@c  The expansion of @code{traceon} and @code{traceoff} is void.
+@code{traceon}と@code{traceoff}は展開されると消滅します。
+
+@c  Whenever a traced macro is called and the arguments have been collected,
+@c  the call is displayed.  If the expansion of the macro call is not void,
+@c  the expansion can be displayed after the call.  The output is printed
+@c  directly on the standard error output.
+トレース中のマクロが呼ばれるたびに、
+そのマクロの呼び出しに関する情報が引数の収集が終ったあとに表示されます。
+マクロの呼び出しが展開後に消滅しないときは展開の結果が表示されます。
+出力は標準エラー出力へ直接行われます。
+
+@example
+define(`foo', `Hello World.')
+@result{}
+define(`echo', `$@@')
+@result{}
+traceon(`foo', `echo')
+@result{}
+foo
+@error{}m4trace: -1- foo -> `Hello World.'
+@result{}Hello World.
+echo(gnus, and gnats)
+@error{}m4trace: -1- echo(`gnus', `and gnats') -> ``gnus',`and gnats''
+@result{}gnus,and gnats
+@end example
+
+@c  The number between dashes is the depth of the expansion.  It is one most
+@c  of the time, signifying an expansion at the outermost level, but it
+@c  increases when macro arguments contain unquoted macro calls.
+ダッシュ(-)の間にある数字は展開の深さを表します。
+たいていは最も外側のレベルでの展開を表す1となりますが、
+クォートされていないマクロの呼び出しを引数が含む場合には増えていきます。
+
+@c  @xref{Debug Levels} for information on controlling the details of the
+@c  display.
+表示の詳細を調整するための情報については@xref{Debug Levels}を参照してください。
+
+@node Debug Levels, Debug Output, Trace, Debugging
+@c  @section Controlling debugging output
+@section デバッグ出力の制御
+
+@cindex controlling debugging output
+@cindex debugging output, controlling
+@cindex デバッグ出力の制御
+@c  The @samp{-d} option to @code{m4} controls the amount of details
+@c  presented, when using the macros described in the preceding sections.
+@code{m4}に@samp{-d}オプションを与えることにより、
+これまでの節に記載されているマクロを使ったときに表示される情報の詳しさを
+制御します。
+
+@c  The @var{flags} following the option can be one or more of the
+@c  following:
+このオプションに続けて次のうち1つまたは複数の@var{フラグ}を指定します。
+
+@table @code
+@item t
+@c  Trace all macro calls made in this invocation of @code{m4}.
+今回起動する@code{m4}におけるマクロの呼び出しを全てトレースします。
+
+@item a
+@c  Show the actual arguments in each macro call.  This applies to all macro
+@c  calls if the @samp{t} flag is used, otherwise only the macros covered by
+@c  calls of @code{traceon}.
+マクロの呼び出しに伴う実引数を表示します。
+@samp{t}フラグと共に指定したときは全てのマクロの呼び出しが対象となりますが、
+それ以外の場合は@code{traceon}マクロによってトレースしているマクロだけが
+対象となります。
+
+@item e
+@c  Show the expansion of each macro call, if it is not void.  This applies
+@c  to all macro calls if the @samp{t} flag is used, otherwise only the
+@c  macros covered by calls of @code{traceon}.
+マクロの呼び出しが展開後に消滅しない場合、展開後のテキストを表示します。
+@samp{t}フラグと共に指定したときは全てのマクロの呼び出しが対象となりますが、
+それ以外の場合は@code{traceon}マクロによってトレースしているマクロだけが
+対象となります。
+
+@item q
+@c  Quote actual arguments and macro expansions in the display with the
+@c  current quotes.
+実引数やマクロの展開後のテキストを表示するときに現在の引用符でクォートします。
+
+@item c
+@c  Show several trace lines for each macro call.  A line is shown when the
+@c  macro is seen, but before the arguments are collected; a second line
+@c  when the arguments have been collected and a third line after the call
+@c  has completed.
+ひとつのマクロの呼び出しにつき複数のトレース行を表示します。
+マクロが認識された時点で引数を集める前に1行表示し、
+引数を集め終った後に2行目を、
+マクロの呼び出しが完了したあとに3行目を表示します。
+
+@item x
+@c  Add a unique `macro call id' to each line of the trace output.  This is
+@c  useful in connection with the @samp{c} flag above.
+トレースの各出力行にマクロの呼び出し毎に異なる`識別番号(id)'を加えます。
+これは上記の@samp{c}フラグを使うときに便利です。
+
+@item f
+@c  Show the name of the current input file in each trace output line.
+トレースの各出力行に、現在の入力ファイルの名前を表示します。
+
+@item l
+@c  Show the the current input line number in each trace output line.
+トレースの各出力行に、現在の入力行番号を表示します。
+
+@item p
+@c  Print a message when a named file is found through the path search
+@c  mecanism (@pxref{Search Path}), giving the actual filename used.
+指定した名前のファイルをパスサーチ機構(@pxref{Search Path})を使って
+見つけたときは、実際に使われるファイル名を表示します。
+
+@item i
+@c  Print a message each time the current input file is changed, giving file
+@c  name and input line number.
+現在の入力ファイルが替わるたびに、ファイル名と入力行番号を表示します。
+
+@item V
+@c  A shorthand for all of the above flags.
+上記すべてのフラグを表す簡略表記です。
+@end table
+
+@c  If no flags are specified with the @samp{-d} option, the default is
+@c  @samp{aeq}. The examples in the previous two sections assumed the
+@c  default flags.
+@samp{-d}オプションに何もフラグを指定しない場合、
+デフォルトで@samp{aeq}が使われます。
+前2つの節にある例は、これらデフォルトのフラグを使うことを想定しています。
+
+@cindex GNU extensions
+@cindex GNU拡張
+@findex debugmode
+@c  There is a builtin macro @code{debugmode}, which allows on-the-fly control of
+@c  the debugging output format:
+組み込みマクロ@code{debugmode}を使うと、実行時にデバッグ出力のフォーマットを
+制御できます。
+
+@comment ignore
+@example
+debugmode(opt @var{flags})
+@end example
+
+@noindent
+@c  The argument @var{flags} should be a subset of the letters listed above.
+@c  As special cases, if the argument starts with a @samp{+}, the flags are
+@c  added to the current debug flags, and if it starts with a @samp{-}, they
+@c  are removed.  If no argument is present, the debugging flags are set to
+@c  zero (as if no @samp{-d} was given), and with an empty argument the flags
+@c  are reset to the default.
+引数@var{flags}は上に列挙されている文字をいくつか指定します。
+特殊なケースとして引数を@samp{+}で始めると、
+それらのフラグが現在のデバッグフラグ群に追加されます。
+また引数を@samp{-}で始めると現在のデバッグフラグ群から削除されます。
+引数をまったく与えない場合、デバッグフラグは(@samp{-d}を与えない場合と同様に)
+すべてゼロに設定されます。
+引数として空文字列を与えるとフラグはデフォルトの値にリセットされます。
+
+@node Debug Output,  , Debug Levels, Debugging
+@c  @section Saving debugging output
+@section デバッグ出力の保存
+
+@cindex saving debugging output
+@cindex debugging output, saving
+@cindex output, saving debugging
+@cindex GNU extensions
+@cindex デバッグ出力を保存
+@cindex GNU拡張
+@findex debugfile
+@c  Debug and tracing output can be redirected to files using either the
+@c  @samp{-o} option to @code{m4}, or with the builtin macro @code{debugfile}:
+デバッグとトレースの出力は、@code{m4}に@samp{-o}オプションを与えるか
+組み込みマクロ@code{debugfile}を使うことで、
+ファイルにリダイレクト（redirect）することができます。
+
+@comment ignore
+@example
+debugfile(opt @var{filename})
+@end example
+
+@noindent
+@c  will send all further debug and trace output to @var{filename}.  If
+@c  @var{filename} is empty, debug and trace output are discarded and if
+@c  @code{debugfile} is called without any arguments, debug and trace output
+@c  are sent to the standard error output.
+このマクロにより、ここから後に発生するデバッグとトレースの出力は
+すべて@var{filename}へ送られます。
+@var{filename}が空文字列のときはデバッグとトレースの出力は捨てられます。
+@code{debugfile}が引数無しで呼ばれたときは、デバッグとトレースの出力は
+標準エラー出力へ送られます。
+
+@node Input Control, File Inclusion, Debugging, Top
+@c  @chapter Input control
+@chapter 入力制御
+
+@c  This chapter describes various builtin macros for controlling the input
+@c  to @code{m4}.
+この章では@code{m4}への入力を制御するための、さまざまな組み込みマクロを
+説明します。
+
+@menu
+@c  * Dnl::                         Deleting whitespace in input
+@c  * Changequote::                 Changing the quote characters
+@c  * Changecom::                   Changing the comment delimiters
+@c  * Changeword::                  Changing the lexical structure of words
+@c  * M4wrap::                      Saving input until end of input
+* Dnl::                         入力中の空白（whitespace）を削除する
+* Changequote::                 引用符（quote characters）を変更する
+* Changecom::                   コメントデリミタ（comment delimiters）を変更する
+* Changeword::                  単語（word）の字句構造を変更する
+* M4wrap::                      入力の一部を入力が終るまで保存（save）しておく
+@end menu
+
+@node Dnl, Changequote, Input Control, Input Control
+@c  @section Deleting whitespace in input
+@section 入力中の空白（whitespace）を削除する
+
+@cindex deleting whitespace in input
+@cindex 入力の空白を削除
+@findex dnl
+@c  The builtin @code{dnl} reads and discards all characters, up to and
+@c  including the first newline:
+組み込みマクロ@code{dnl}は最初の改行文字までにある文字をすべて読み込んでから
+改行文字も含めてそれらを捨てます。
+
+@comment ignore
+@example
+dnl
+@end example
+
+@noindent
+@c  and it is often used in connection with @code{define}, to remove the
+@c  newline that follow the call to @code{define}.  Thus
+次の例のように@code{define}の呼び出しの後に続く改行を取り除くために、
+@code{define}と一緒によく使います。
+
+@example
+define(`foo', `Macro `foo'.')dnl A very simple macro, indeed.
+foo
+@result{}Macro foo.
+@end example
+
+@c  The input up to and including the next newline is discarded, as opposed
+@c  to the way comments are treated (@pxref{Comments}).
+コメントの扱かわれ方とは対照的に(@pxref{Comments})、
+次の改行までの入力が改行を含めて捨てられます。
+
+
+@c  Usually, @code{dnl} is immediately followed by an end of line or some
+@c  other whitespace.  GNU @code{m4} will produce a warning diagnostic if
+@c  @code{dnl} is followed by an open parenthesis.  In this case, @code{dnl}
+@c  will collect and process all arguments, looking for a matching close
+@c  parenthesis.  All predictable side effects resulting from this
+@c  collection will take place.  @code{dnl} will return no output.  The
+@c  input following the matching close parenthesis up to and including the
+@c  next newline, on whatever line containing it, will still be discarded.
+通常@code{dnl}の後ろには、行末もしくはその他の空白（whitespace）が続きます。
+GNU @code{m4}は@code{dnl}に続いて開きカッコがあるとき、
+それを警告する診断メッセージを出します。
+この場合@code{dnl}は閉じカッコを探しながら、引数をすべて集めて処理します。
+この引数の収集に起因する副作用はすべて発生します。
+このとき@code{dnl}は何も出力せず、閉じカッコのあとに続く次の改行までの入力は、
+それがどの行にあっても、改行を含めてやはり捨てられます。
+
+@node Changequote, Changecom, Dnl, Input Control
+@c  @section Changing the quote characters
+@section 引用符（quote characters）を変更する
+
+@cindex changing the quote delimiters
+@cindex quote delimiters, changing the
+@cindex 引用符を変更
+@findex changequote
+@c  The default quote delimiters can be changed with the builtin
+@c  @code{changequote}:
+デフォルトの引用符は組み込みマクロ@code{changequote}によって変更できます。
+
+@comment ignore
+@example
+changequote(opt @var{start}, opt @var{end})
+@end example
+
+@noindent
+@c  where @var{start} is the new start-quote delimiter and @var{end} is the
+@c  new end-quote delimiter.  If any of the arguments are missing, the default
+@c  quotes (@code{`} and @code{'}) are used instead of the void arguments.
+@var{start}は新しい開始引用符で@var{end}は新しい終了引用符です。
+もし欠けている引数があるときは、デフォルトの引用符(@code{`} と @code{'})
+がその欠けている引数の代わりに使用されます。
+@c ! 第一引数をvoidにする方法は?  Single Unix Specificationの説明のほうが良い
+
+@c  The expansion of @code{changequote} is void.
+@code{changequote}は展開されると消滅します。
+
+@example
+changequote([, ])
+@result{}
+define([foo], [Macro [foo].])
+@result{}
+foo
+@result{}Macro foo.
+@end example
+
+@c  If no single character is appropriate, @var{start} and @var{end} can be
+@c  of any length.
+適切な文字がないときは@var{start}や@var{end}を好きな長さにしてかまいません。
+
+@example
+changequote([[, ]])
+@result{}
+define([[foo]], [[Macro [[[foo]]].]])
+@result{}
+foo
+@result{}Macro [foo].
+@end example
+
+@c  Changing the quotes to the empty strings will effectively disable the
+@c  quoting mechanism, leaving no way to quote text.
+引用符を両方とも空文字列にすると、事実上クォート機構が無効になり、
+テキストをクォートする方法が無くなります。
+@c ! 両方または、開始引用符を空文字列にすると、無効になる。
+
+@example
+define(`foo', `Macro `FOO'.')
+@result{}
+changequote(, )
+@result{}
+foo
+@result{}Macro `FOO'.
+`foo'
+@result{}`Macro `FOO'.'
+@end example
+
+@c  There is no way in @code{m4} to quote a string containing an unmatched
+@c  left quote, except using @code{changequote} to change the current
+@c  quotes.
+@code{changequote}を使って現在の引用符を替えない限り、
+終了引用符と対になっていない開始引用符を含む文字列をクォートする
+方法は@code{m4}には存在しません。
+
+@c  Neither quote string should start with a letter or @samp{_} (underscore),
+@c  as they will be confused with names in the input.  Doing so disables
+@c  the quoting mechanism.
+入力に含まれる名前と混同されてしまうので、
+どちらの引用符も記号でない普通の文字や@samp{_} (アンダースコア)で
+始めるべきではありません。そうした場合はクォート機構が無効になります。
+@c 2004/01/19 m4 1.4 クォート機構が無効になるのを確認。
+@c /home/gnujdoc/m4-1.4$ m4
+@c define(`foo', `MACRO `FOO'')dnl
+@c define(`afoob', `MACRO `AFOOB'')dnl
+@c afoob
+@c MACRO AFOOB
+@c changequote(a, b)dnl
+@c afoob
+@c MACRO `AFOOB'
+
+@node Changecom, Changeword, Changequote, Input Control
+@c  @section Changing comment delimiters
+@section コメントデリミタ（comment delimiters）を変更する
+
+@cindex changing comment delimiters
+@cindex comment delimiters, changing
+@cindex コメントデリミタを変更
+@findex changecom
+@c  The default comment delimiters can be changed with the builtin
+@c  macro @code{changecom}:
+デフォルトのコメントデリミタ（comment delimiters）は
+組み込みマクロ@code{changecom}で変更できます。
+
+@comment ignore
+@example
+changecom(opt @var{start}, opt @var{end})
+@end example
+
+@noindent
+@c  where @var{start} is the new start-comment delimiter and @var{end} is
+@c  the new end-comment delimiter.  If any of the arguments are void, the
+@c  default comment delimiters (@code{#} and newline) are used instead of
+@c  the void arguments.  The comment delimiters can be of any length.
+@var{start}が新しいコメント開始デリミタ（start-comment delimiter）で、
+@var{end}が新しいコメント終了デリミタ（end-comment delimiter）です。
+欠けている引数があるときは、デフォルトのコメント区切り記号
+(@code{#} と 改行文字)がその欠けている引数の代わりに使用されます。
+コメント区切り記号は任意の長さにすることができます。
+
+@c  The expansion of @code{changecom} is void.
+@code{changecom}は展開されると消滅します。
+
+@example
+define(`comment', `COMMENT')
+@result{}
+# A normal comment
+@result{}# A normal comment
+changecom(`/*', `*/')
+@result{}
+# Not a comment anymore
+@result{}# Not a COMMENT anymore
+But: /* this is a comment now */ while this is not a comment
+@result{}But: /* this is a comment now */ while this is not a COMMENT
+@end example
+
+@cindex comments, copied to output
+@cindex 出力にコピーされるコメント
+@c  Note how comments are copied to the output, much as if they were quoted
+@c  strings.  If you want the text inside a comment expanded, quote the
+@c  start comment delimiter.
+あたかもクォートされた文字列であるかのようにコメントが出力にコピーされている
+様子に注目してください。
+コメント内部のテキストが展開されるようにしたいときは、
+コメント開始デリミタをクォートしてください。
+
+@c  Calling @code{changecom} without any arguments disables the commenting
+@c  mechanism completely.
+引数なしで@code{changecom}を呼ぶとコメント機構が完全に無効になります。
+
+@example
+define(`comment', `COMMENT')
+@result{}
+changecom
+@result{}
+# Not a comment anymore
+@result{}# Not a COMMENT anymore
+@end example
+
+@node Changeword, M4wrap, Changecom, Input Control
+@c  @section Changing the lexical structure of words
+@section 単語（word）の字句構造を変更する
+
+@cindex lexical structure of words
+@cindex words, lexical structure of
+@cindex 単語の字句構造
+@findex changeword
+@quotation
+@c  The macro @code{changeword} and all associated functionnality is
+@c  experimental.  It is only available if the @code{--enable-changeword}
+@c  option was given to @code{configure}, at GNU @code{m4} installation
+@c  time.  The functionnality might change or even go away in the future.
+@c  @emph{Do not rely on it}.  Please direct your comments about it the
+@c  same way you would do for bugs.
+マクロ@code{changeword}とそれに関連する機能すべてが実験段階にあります。
+GNU @code{m4}をインストールする際
+@code{configure}に@code{--enable-changeword}オプションを与えたときだけ
+この機能を使用することができます。
+これから先、この機能が変更されたり、削除されてしまうことさえありえます。
+したがって、@emph{この機能に依存した使い方はしないで下さい}。
+この機能について意見を寄せていただくときは
+バグを報告するときと同じ方法で行ってください。
+@end quotation
+
+@c  A file being processed by @code{m4} is split into quoted strings, words
+@c  (potential macro names) and simple tokens (any other single character).
+@c  Initially a word is defined by the following regular expression:
+@code{m4}によって処理されるファイルは、クォートされた文字列、
+単語(潜在的なマクロ名)、そして単純なトークン(その他の単一の文字すべて)
+に分割されます。
+初めに単語は次の正規表現によって定義されています。
+
+@comment ignore
+@example
+[_a-zA-Z][_a-zA-Z0-9]*
+@end example
+
+@c  Using @code{changeword}, you can change this regular expression.  Relaxing
+@c  @code{m4}'s lexical rules might be useful (for example) if you wanted to
+@c  apply translations to a file of numbers:
+@code{changeword}を使えばこの正規表現を変更できます。
+たとえば数字が詰まったファイルに置換をかけたい場合など、
+@code{m4}の字句構成規則を緩めると便利なときもあるでしょう。
+
+@comment ignore
+@example
+changeword(`[_a-zA-Z0-9]+')
+define(1, 0)
+@result{}1
+@end example
+
+@c  Tightening the lexical rules is less useful, because it will generally
+@c  make some of the builtins unavailable.  You could use it to prevent
+@c  accidental call of builtins, for example:
+字句構成規則を厳しくすると
+組み込みマクロのうちいくつかが使えなくなってしまうことが多いので、
+緩める場合ほど便利にはなりません。
+次の例のように、間違って組み込みマクロを呼んでしまうのを避けるために
+使うことはできるでしょう。
+
+@comment ignore
+@example
+define(`_indir', defn(`indir'))
+changeword(`_[_a-zA-Z0-9]*')
+esyscmd(foo)
+_indir(`esyscmd', `ls')
+@end example
+
+@c  Because @code{m4} constructs its words a character at a time, there
+@c  is a restriction on the regular expressions that may be passed to
+@c  @code{changeword}.  This is that if your regular expression accepts
+@c  @samp{foo}, it must also accept @samp{f} and @samp{fo}.
+@code{m4}は単語を一文字ずつ組み立てていくので、
+@code{changeword}に渡すことができる正規表現には制限があります。
+それは、もし指定した正規表現が@samp{foo}を受理するのなら
+その正規表現は@samp{f}と@samp{fo}も受理するものでなければならないというものです。
+
+@c  @code{changeword} has another function.  If the regular expression
+@c  supplied contains any bracketed subexpressions, then text outside
+@c  the first of these is discarded before symbol lookup.  So:
+@code{changeword}には、もう一つ機能があります。
+指定した正規表現の中にカッコ@kbd{\(} @kbd{\)}でくくられた部分表現が1つ以上存在する
+場合、最初のカッコでくくられた部分表現の外側にあるテキストが、
+シンボルを表引きする前に捨てられます。
+
+@comment ignore
+@example
+changecom(`/*', `*/')
+changeword(`#\([_a-zA-Z0-9]*\)')
+#esyscmd(ls)
+@end example
+
+@c  @code{m4} now requires a @samp{#} mark at the beginning of every
+@c  macro invocation, so one can use @code{m4} to preprocess shell
+@c  scripts without getting @code{shift} commands swallowed, and plain
+@c  text without losing various common words.
+こうすると、@code{m4}はすべてのマクロの呼び出しの先頭に
+@samp{#}記号を必要とするようになるので、
+@code{m4}でシェルスクリプトを処理するときに
+@code{shift}コマンドが@code{m4}に飲み込まれてしまわないようにできます。
+また種々の一般的な単語を失うことなくプレーンテキストを
+処理できるようになります。
+
+@c  @code{m4}'s macro substitution is based on text, while @TeX{}'s is based
+@c  on tokens.  @code{changeword} can throw this difference into relief.  For
+@c  example, here is the same idea represented in @TeX{} and @code{m4}.
+@c  First, the @TeX{} version:
+@code{m4}のマクロ置換はテキストに基づいていますが、
+@TeX{}のものはトークンに基づいています。
+@code{changeword}によって、この違いを浮き彫りにすることができます。
+たとえば次の例は同じアイデアを@TeX{}と@code{m4}で表現したものです。
+初めは@TeX{} バージョンからです。
+
+@comment ignore
+@example
+\def\a@{\message@{Hello@}@}
+\catcode`\@@=0
+\catcode`\\=12
+@@a
+@c !上の行のオリジナルは下の行。間違いだと思われるので上の行に翻訳者が変更した。
+@c @result{}@@a
+@c !間違いだと思われるので下の行は翻訳者がコメントアウトした。
+@c @result{}@@bye
+@end example
+
+@noindent
+@c  Then, the @code{m4} version:
+つぎに@code{m4}バージョンです。
+
+@comment ignore
+@example
+define(a, `errprint(`Hello')')
+changeword(`@@\([_a-zA-Z0-9]*\)')
+@@a
+@c !上の行のオリジナルは下の行。間違いだと思われるので上の行に翻訳者が変更した。
+@c @result{}@@a
+@c ! @resultは不要か?
+@end example
+
+@c  In the @TeX{} example, the first line defines a macro @code{a} to
+@c  print the message @samp{Hello}.  The second line defines @key{@@} to
+@c  be usable instead of @key{\} as an escape character.  The third line
+@c  defines @key{\} to be a normal printing character, not an escape.
+@c  The fourth line invokes the macro @code{a}.  So, when @TeX{} is run
+@c  on this file, it displays the message @samp{Hello}.
+@TeX{}の例において、最初の行はマクロ@code{a}が@samp{Hello}メッセージを
+表示するように定義しています。
+2行目は@key{\}の代わりに@key{@@}をエスケープ文字として使えるように
+定義しています。
+3行目は@key{\}をエスケープ文字ではなく通常の表示可能文字として
+定義しています。
+4行目はマクロ@code{a}を呼び出しています。
+したがって、このファイルに対して@TeX{}を走らせると
+@samp{Hello}メッセージを表示します。
+
+@c  When the @code{m4} example is passed through @code{m4}, it outputs
+@c  @samp{errprint(Hello)}.  The reason for this is that @TeX{} does
+@c  lexical analysis of macro definition when the macro is @emph{defined}.
+@c  @code{m4} just stores the text, postponing the lexical analysis until
+@c  the macro is @emph{used}.
+@code{m4}の例を@code{m4}に与えると@samp{errprint(Hello)}を表示します。
+この理由は@TeX{}はマクロが@emph{定義されたとき}にマクロ定義の字句解析
+を行うのに対し、@code{m4}は単純にテキストを保存しておき、
+字句解析は実際にマクロが@emph{使われる}まで後回しにするからです。
+
+@c  You should note that using @code{changeword} will slow @code{m4} down
+@c  by a factor of about seven.
+@code{changeword}を使用すると、
+@code{m4}の速度が7倍ほど遅くなることに注意してください。
+
+@node M4wrap,  , Changeword, Input Control
+@c  @section Saving input
+@section 入力の保存（save）
+
+@cindex saving input
+@cindex input, saving
+@cindex 入力を保存
+@findex m4wrap
+@c  It is possible to `save' some text until the end of the normal input has
+@c  been seen.  Text can be saved, to be read again by @code{m4} when the
+@c  normal input has been exhausted.  This feature is normally used to
+@c  initiate cleanup actions before normal exit, e.g., deleting temporary
+@c  files.
+通常の入力が終りになるまで、テキストを`保存（save）'しておくことができます。
+保存されたテキストは通常の入力が終った段階で@code{m4}に再び読み込まれます。
+通常この機能は一時ファイルの削除など正常終了前に行うクリーンアップ動作を
+開始するために使われます。
+
+@c  To save input text, use the builtin @code{m4wrap}:
+入力テキストを保存するためには組み込みマクロ@code{m4wrap}を使います。
+
+@comment ignore
+@example
+m4wrap(@var{string}, ...)
+@end example
+
+@noindent
+@c  which stores @var{string} and the rest of the arguments in a safe place,
+@c  to be reread when end of input is reached.
+@var{string}と残りの引数は入力が終端に達したときに再び読み込まれるように
+安全な場所に保存されます。
+
+@example
+define(`cleanup', `This is the `cleanup' actions.
+')
+@result{}
+m4wrap(`cleanup')
+@result{}
+This is the first and last normal input line.
+@result{}This is the first and last normal input line.
+^D
+@result{}This is the cleanup actions.
+@end example
+
+@c  The saved input is only reread when the end of normal input is seen, and
+@c  not if @code{m4exit} is used to exit @code{m4}.
+保存されている入力は通常の入力が終端に達したときだけ再び読み込まれます。
+@code{m4}を終了するために@code{m4exit}が使われたときは再読み込みは行われません。
+
+@c  It is safe to call @code{m4wrap} from saved text, but then the order in
+@c  which the saved text is reread is undefined.  If @code{m4wrap} is not used
+@c  recursively, the saved pieces of text are reread in the opposite order
+@c  in which they were saved (LIFO---last in, first out).
+保存されたテキストの中で@code{m4wrap}を呼びだしても差し支えありませんが、
+そのとき保存されたテキストが再読み込みされる順番は決まっていません。
+@code{m4wrap}が再帰的に使われていない場合、
+保存された各テキストはそれぞれが保存されたのと逆の順番(LIFO---last in, first out)で再読み込みが行われます。
+
+@node File Inclusion, Diversions, Input Control, Top
+@c  @chapter File inclusion
+@chapter ファイルのインクルード
+
+@cindex file inclusion
+@cindex ファイルのインクルード
+@cindex inclusion, of files
+
+@c  @code{m4} allows you to include named files at any point in the input.
+@code{m4}では入力のどこででも名前を指定してファイルをインクルード
+（include）することができます。
+
+@menu
+@c  * Include::                     Including named files
+@c  * Search Path::                 Searching for include files
+* Include::                     名前を指定してファイルをインクルードする
+* Search Path::                 インクルードするファイルのサーチ
+@end menu
+
+@node Include, Search Path, File Inclusion, File Inclusion
+@c  @section Including named files
+@section 名前を指定してファイルをインクルードする
+
+@findex include
+@findex sinclude
+@c  There are two builtin macros in @code{m4} for including files:
+@code{m4}にはファイルをインクルードするための組み込みマクロが2つあります。
+
+@comment ignore
+@example
+include(@var{filename})
+sinclude(@var{filename})
+@end example
+
+@noindent
+@c  both of which cause the file named @var{filename} to be read by
+@c  @code{m4}.  When the end of the file is reached, input is resumed from
+@c  the previous input file.
+どちらも@var{filename}という名前のファイルを@code{m4}に読み込ませます。
+そのファイルの終りに達すると以前の入力ファイルから入力を再開します。
+
+@c  The expansion of @code{include} and @code{sinclude} is therefore the
+@c  contents of @var{filename}.
+したがって@code{include}と@code{sinclude}は展開後に
+@var{filename}の内容となります。
+
+@c  It is an error for an @code{include}d file not to exist.  If you do
+@c  not want error messages about non-existent files, @code{sinclude} can
+@c  be used to include a file, if it exists, expanding to nothing if it
+@c  does not.
+@code{include}に指定したファイルが存在しないとエラーとなります。
+ファイルが存在しないときのエラーメッセージを避けたいときは
+@code{sinclude}を使います。
+@code{sinclude}は、もしファイルが存在すればそのファイルをインクルードし、
+存在しなければ消滅します。
+
+@example
+include(`no-such-file')
+@result{}
+@error{}30.include:2: m4: Cannot open no-such-file: No such file or directory
+sinclude(`no-such-file')
+@result{}
+@end example
+
+@c  Assume in the following that the file @file{incl.m4} contains the lines:
+これ以降ファイル@file{incl.m4}の内容は仮に以下のものだとします。
+@comment ignore
+@example
+Include file start
+foo
+Include file end
+@end example
+
+@noindent
+@c  Normally file inclusion is used to insert the contents of a file
+@c  into the input stream.  The contents of the file will be read by
+@c  @code{m4} and macro calls in the file will be expanded:
+通常、ファイルのインクルードはファイルの内容を入力ストリームに挿入するために
+使用されます。
+インクルードされたファイルの内容は@code{m4}によって読まれ、
+そのファイルに含まれるマクロの呼び出しは展開されます。
+
+@example
+define(`foo', `FOO')
+@result{}
+include(`incl.m4')
+@result{}Include file start
+@result{}FOO
+@result{}Include file end
+@result{}
+@end example
+
+@c  The fact that @code{include} and @code{sinclude} expand to the contents
+@c  of the file can be used to define macros that operate on entire files.
+@c  Here is an example, which defines @samp{bar} to expand to the contents
+@c  of @file{incl.m4}:
+@code{include}と@code{sinclude}がファイルの内容に展開されることを利用して、
+ファイル全体に作用するマクロを定義することができます。
+次の例では@samp{bar}が@file{incl.m4}の内容に展開されるように定義しています。
+
+@example
+define(`bar', include(`incl.m4'))
+@result{}
+This is `bar':  >>>bar<<<
+@result{}This is bar:  >>>Include file start
+@result{}foo
+@result{}Include file end
+@result{}<<<
+@end example
+
+@c  This use of @code{include} is not trivial, though, as files can contain
+@c  quotes, commas and parentheses, which can interfere with the way the
+@c  @code{m4} parser works.
+もっとも、これは@code{include}のよくある使い方とは言えません。
+なぜならファイルにはクォート、コンマ、カッコといった
+@code{m4}のパーサ（parser）の働き方に干渉するものがランダムに含まれている可能性が
+あるからです。
+
+@c  The builtin macros @code{include} and @code{sinclude} are recognized
+@c  only when given arguments.
+組み込みマクロ@code{include}と@code{sinclude}は引数を与えたときだけ認識されます。
+
+@node Search Path,  , Include, File Inclusion
+@c  @section Searching for include files
+@section インクルードするファイルのサーチ
+
+@cindex search path for included files
+@cindex included files, search path for
+@cindex GNU extensions
+@cindex インクルードファイルのサーチパス
+@cindex GNU拡張
+@c  GNU @code{m4} allows included files to be found in other directories
+@c  than the current working directory.
+GNU @code{m4}ではインクルード対象のファイルが現在の作業ディレクトリ
+（current working directory）とは別のディレクトリにあっても
+かまいません。
+
+@c  If a file is not found in the current working directory, and the file
+@c  name is not absolute, the file will be looked for in a specified search
+@c  path.  First, the directories specified with the @samp{-I} option will
+@c  be searched, in the order found on the command line.  Second, if the
+@c  @samp{M4PATH} environment variable is set, it is expected to contain a
+@c  colon-separated list of directories, which will be searched in order.
+ファイルが現在の作業ディレクトリで見つからずファイル名が絶対ファイル名
+（absolute file name）でないとき、GNU @code{m4}は指定されたサーチパス
+（search path）を使ってそのファイルを探します。
+最初に@samp{-I}オプションで指定された各ディレクトリの中を
+コマンドラインに書かれている順番に探します。
+次に環境変数@samp{M4PATH}が設定されているときは、
+それをコロン(:)で区切られたディレクトリのリストとして解釈し、
+それらの中を順に探します。
+
+@c  If the automatic search for include-files causes trouble, the @samp{p}
+@c  debug flag (@pxref{Debug Levels}) can help isolate the problem.
+インクルードファイルの自動サーチがトラブルの原因となったときは、
+@samp{p}デバッグフラグ(@pxref{Debug Levels})が問題の切り分けに
+役立つでしょう。
+
+@node Diversions, Text handling, File Inclusion, Top
+@c  @chapter Diverting and undiverting output
+@chapter 出力の切替え（divert）と逆切替え（undivert）
+
+@c  Diversions are a way of temporarily saving output.  The output of
+@c  @code{m4} can at any time be diverted to a temporary file, and be
+@c  reinserted into the output stream, @dfn{undiverted}, again at a later
+@c  time.
+出力切替え（diversions）は出力を一時的に保存しておく方法です。
+@code{m4}では好きなときに出力を一時ファイルへ切替え（divert）ておき、
+後で再び出力ストリームへと逆切替え（@dfn{undiverted}）することができます。
+
+@c  Numbered diversions are counted from 0 upwards, diversion number 0
+@c  being the normal output stream.  The number of simultaneous diversions
+@c  is limited mainly by the memory used to describe them, because GNU
+@c  @code{m4} tries to keep diversions in memory.  However, there is a
+@c  limit to the overall memory usable by all diversions taken altogether
+@c  (512K, currently).  When this maximum is about to be exceeded,
+@c  a temporary file is opened to receive the contents of the biggest
+@c  diversion still in memory, freeing this memory for other diversions.
+@c  So, it is theoretically possible that the number of diversions be
+@c  limited by the number of available file descriptors.
+切り替え先番号は0から数え上げます。切替え先0は通常の出力ストリームです。
+同時に存在できる切替え先の数はそれらの記述に費されるメモリの量によって
+主に制限を受けます。これはGNU @code{m4}が切替え先の情報とそこへの出力を
+できればメモリに置いておこうとするためです。そして全ての切替え先の分を
+あわせたもののために使えるメモリ量には制限があります(現在は512Kです)。
+この最大値を超えそうになったときは、一番大きな切替え先の内容を入れるために
+一時ファイルが作られ、その分のメモリが他の切替え先のために開放されます。
+したがって理論上は切替え先の数が利用可能なファイルディスクリプタの数
+によって制限されることもありえます。
+
+@c FIXME: need some explanation here why this is a useful feature, not
+@c just how you use it.
+
+@menu
+@c  * Divert::                      Diverting output
+@c  * Undivert::                    Undiverting output
+@c  * Divnum::                      Diversion numbers
+@c  * Cleardiv::                    Discarding diverted text
+* Divert::                      出力を切替える（divert）
+* Undivert::                    出力を逆切替え（undivert）する
+* Divnum::                      出力切替え先番号（diversion number）
+* Cleardiv::                    出力切替え先のテキストを破棄する
+@end menu
+
+@node Divert, Undivert, Diversions, Diversions
+@c  @section Diverting output
+@section 出力を切替える（divert）
+
+@cindex diverting output to files
+@cindex output, diverting to files
+@cindex files, diverting output to
+@cindex 出力をファイルへ切替える（divert）
+@findex divert
+@c  Output is diverted using @code{divert}:
+出力は@code{divert}を使って切替えます。
+
+@comment ignore
+@example
+divert(opt @var{number})
+@end example
+
+@noindent
+@c  where @var{number} is the diversion to be used.  If @var{number} is left
+@c  out, it is assumed to be zero.
+@var{number}は使用する切替え先です。
+@var{number}を省略したときはゼロとして解釈されます。
+
+@c  The expansion of @code{divert} is void.
+@code{divert}は展開されると消滅します。
+
+@c  When all the @code{m4} input will have been processed, all existing
+@c  diversions are automatically undiverted, in numerical order.
+@code{m4}への入力がすべて処理されると、
+その時点で存在するすべての切替え先が自動的に番号の順で逆切替え（undivert）
+されて、そこにたまっていたテキストが出力されます。
+
+@example
+divert(1)
+This text is diverted.
+divert
+@result{}
+This text is not diverted.
+@result{}This text is not diverted.
+^D
+@result{}
+@result{}This text is diverted.
+@end example
+
+@c  Several calls of @code{divert} with the same argument do not overwrite
+@c  the previous diverted text, but append to it.
+同じ引数で@code{divert}を何回か呼び出すと、
+切替え先にある以前のテキストは上書きされずに、
+新しいテキストが以前のテキストの後に追加されてゆきます。
+
+@c  If output is diverted to a non-existent diversion, it is simply
+@c  discarded.  This can be used to suppress unwanted output.  A common
+@c  example of unwanted output is the trailing newlines after macro
+@c  definitions.  Here is how to avoid them.
+存在するはずのない切替え先へ出力を切替えるとそこから後の出力は
+単に捨てられます。
+よくある不要な出力の例はマクロ定義の後にある改行です。
+次はそれらを避ける方法です。
+
+@example
+divert(-1)
+define(`foo', `Macro `foo'.')
+define(`bar', `Macro `bar'.')
+divert
+@result{}
+@end example
+
+@c  This is a common programming idiom in @code{m4}.
+これは@code{m4}でのプログラミングで広く使われている慣用句のひとつです。
+
+@node Undivert, Divnum, Divert, Diversions
+@c  @section Undiverting output
+@section 出力を逆切替え（undivert）する
+
+@findex undivert
+@c  Diverted text can be undiverted explicitly using the builtin
+@c  @code{undivert}:
+切替え先に出力されたテキスト（diverted text）は組み込みマクロ
+@code{undivert}を使って明示的に逆切替え（undivert）することができます。
+
+@comment ignore
+@example
+undivert(opt @var{number}, ...)
+@end example
+
+@noindent
+@c  which undiverts the diversions given by the arguments, in the order
+@c  given.  If no arguments are supplied, all diversions are undiverted, in
+@c  numerical order.
+このマクロは引数で指定された切替え先を、指定された順に逆切替えして出力します。
+引数が与えられなかったときは、すべての切替え先を番号順に逆切替えします。
+
+@c FIXME: Explain what happens when undiverting all to else than 0.
+
+@c  The expansion of @code{undivert} is void.
+@code{undivert}は展開されると消滅します。
+
+@example
+divert(1)
+This text is diverted.
+divert
+@result{}
+This text is not diverted.
+@result{}This text is not diverted.
+undivert(1)
+@result{}
+@result{}This text is diverted.
+@result{}
+@end example
+
+@c  Notice the last two blank lines.  One of them comes from the newline
+@c  following @code{undivert}, the other from the newline that followed the
+@c  @code{divert}!  A diversion often starts with a blank line like this.
+@c !わかり安くするために、内容を補足した。
+@c /home/gnujdoc/m4-1.4$ m4
+@c divert(1)
+@c This text is diverted
+@c divert
+@c 
+@c This text is not diverted
+@c This text is not diverted
+@c undivert(1)dnl
+@c 
+@c This text is diverted
+@c ^D/home/gnujdoc/m4-1.4$ m4
+@c divert(1)dnl
+@c This text is diverted
+@c divert
+@c 
+@c This text is not diverted
+@c This text is not diverted
+@c undivert(1)
+@c This text is diverted
+@c 
+@c ^D/home/gnujdoc/m4-1.4$
+
+最後にある2つの空行に注目してください。
+最後のものは@code{undivert(1)}に続く改行によるもので、
+前のものはなんと@code{divert(1)}に続く改行によるものです。
+切替え先のテキストはしばしばこのような空行で始まります。
+
+@c  When diverted text is undiverted, it is @emph{not} reread by @code{m4},
+@c  but rather copied directly to the current output, and it is therefore
+@c  not an error to undivert into a diversion.
+切替え先のテキスト（diverted text）は逆切替え(undiverted)されると、
+@code{m4}によって再走査@emph{されずに}、
+現在の出力(切替え先)に直接コピーされます。
+したがってある切替え先（diversion）へ出力中に、
+逆切替え（undivert）しても問題ありません。
+
+@c  When a diversion has been undiverted, the diverted text is discarded,
+@c  and it is not possible to bring back diverted text more than once.
+逆切替えをすると、その切替え先にあるテキストは破棄されるので
+切替え先のテキストを取り出せるのは1回だけです。
+
+@example
+divert(1)
+This text is diverted first.
+divert(0)undivert(1)dnl
+@result{}
+@result{}This text is diverted first.
+undivert(1)
+@result{}
+divert(1)
+This text is also diverted but not appended.
+divert(0)undivert(1)dnl
+@result{}
+@result{}This text is also diverted but not appended.
+@end example
+
+@c  Attempts to undivert the current diversion are silently ignored.
+現在の切替え先（current diversion）を逆切替え（undivert）
+しようとしても黙殺されます。
+
+@cindex GNU extensions
+@cindex file inclusion
+@cindex inclusion, of files
+@cindex ファイルのインクルード
+@cindex GNU拡張
+@c  GNU @code{m4} allows named files to be undiverted.  Given a non-numeric
+@c  argument, the contents of the file named will be copied, uninterpreted, to
+@c  the current output.  This complements the builtin @code{include}
+@c  (@pxref{Include}).  To illustrate the difference, assume the file
+@c  @file{foo} contains the word @samp{bar}:
+GNU @code{m4}では名前を指定したファイルを逆切替え（undivert）
+することができます。数字以外の引数を与えると、その名前をもつファイルの
+内容が現在の出力(切替え先)に解釈されずにコピーされます。
+これによって組み込みマクロ@code{include}の機能が補完されます(@pxref{Include})。
+次の例で違いを説明します。ファイル@file{foo}の内容は@samp{bar}だとします。
+
+@example
+define(`bar', `BAR')
+@result{}
+undivert(`foo')
+@result{}bar
+@result{}
+include(`foo')
+@result{}BAR
+@result{}
+@end example
+
+@node Divnum, Cleardiv, Undivert, Diversions
+@c  @section Diversion numbers
+@section 出力切替え先番号（diversion number）
+
+@cindex diversion numbers
+@cindex 出力切替え先番号（diversion number）
+@findex divnum
+@c  The builtin @code{divnum}:
+組み込みマクロ@code{divnum}は現在の切替え先（current diversion）の番号に展開されます。
+
+@comment ignore
+@example
+divnum
+@end example
+
+@noindent
+@c  expands to the number of the current diversion.
+@example
+Initial divnum
+@result{}Initial 0
+divert(1)
+Diversion one: divnum
+divert(2)
+Diversion two: divnum
+divert
+@result{}
+^D
+@result{}
+@result{}Diversion one: 1
+@result{}
+@result{}Diversion two: 2
+@end example
+
+@c  The last call of @code{divert} without argument is necessary, since the
+@c  undiverted text would otherwise be diverted itself.
+逆切替えされて出力されるテキスト自身が切替え先に出力されてしまうのを防ぐため
+に最後にある引数無しの@code{divert}の呼び出しが必要です。
+@c !最後のdivertがなくても結果は同じになった。
+
+
+@node Cleardiv,  , Divnum, Diversions
+@c  @section Discarding diverted text
+@section 出力切替え先のテキストを破棄する
+
+@cindex discarding diverted text
+@cindex diverted text, discarding
+@cindex 出力切替え先のテキストを破棄する
+@c  Often it is not known, when output is diverted, whether the diverted
+@c  text is actually needed.  Since all non-empty diversion are brought back
+@c  on the main output stream when the end of input is seen, a method of
+@c  discarding a diversion is needed.  If all diversions should be
+@c  discarded, the easiest is to end the input to @code{m4} with
+@c  @samp{divert(-1)} followed by an explicit @samp{undivert}:
+出力を切替えているときは切替え先のテキストが実際に
+必要となるかどうかは分からないことがよくあります。
+テキストが溜っている切替え先は入力が終りに達した段階で
+メインの出力ストリームにすべて出力されるので、
+切替え先にたまっているテキストを破棄するためのなんらかの手段が必要です。
+すべての切替え先のテキストを破棄したいときは
+@code{m4}への入力を@samp{divert(-1)}とそれに続く明示的な@samp{undivert}
+で終えるのが最も簡単でしょう。
+
+@example
+divert(1)
+Diversion one: divnum
+divert(2)
+Diversion two: divnum
+divert(-1)
+undivert
+^D
+@end example
+
+@noindent
+@c  No output is produced at all.
+このとき出力はいっさいありません。
+
+@c  Clearing selected diversions can be done with the following macro:
+特定の切替え先のテキストは次のマクロで消去できます。
+
+@example
+define(`cleardivert',
+`pushdef(`_num', divnum)divert(-1)undivert($@@)divert(_num)popdef(`_num')')
+@result{}
+@end example
+
+@c  It is called just like @code{undivert}, but the effect is to clear the
+@c  diversions, given by the arguments.  (This macro has a nasty bug!  You
+@c  should try to see if you can find it and correct it.)
+@code{undivert}と同じように呼び出しますが、
+その効果は引数として与えられた切替え先のテキストを消去することです。
+(このマクロにはひどいバグがあります!
+それを見つけて直せるか挑戦してみてください。)
+
+@node Text handling, Arithmetic, Diversions, Top
+@c  @chapter Macros for text handling
+@chapter テキスト操作用の組み込みマクロ
+
+@c  There are a number of builtins in @code{m4} for manipulating text in
+@c  various ways, extracting substrings, searching, substituting, and so on.
+@code{m4}には部分文字列の抽出、検索、置換など様々な方法でテキストを
+操作するための組み込みマクロがあります。
+
+@menu
+* Len::                         文字列の長さを計算する
+* Index::                       部分文字列を検索する
+* Regexp::                      正規表現で検索する
+* Substr::                      部分文字列を抽出する
+* Translit::                    文字の置換
+* Patsubst::                    正規表現でテキストの置換をする
+* Format::                      文字列を(printf風に)フォーマットする
+@end menu
+
+@node Len, Index, Text handling, Text handling
+@section 文字列の長さを計算する
+
+@cindex length of strings
+@cindex strings, length of
+@cindex 文字列の長さ
+@findex len
+@c  The length of a string can be calculated by @code{len}:
+文字列の長さは@code{len}で数えられます。
+
+@comment ignore
+@example
+len(@var{string})
+@end example
+
+@noindent
+@c  which expands to the length of @var{string}, as a decimal number.
+このマクロは@var{string}の長さを表す10進数に展開されます。
+
+@example
+len()
+@result{}0
+len(`abcdef')
+@result{}6
+@end example
+
+@c  The builtin macro @code{len} is recognized only when given arguments.
+組み込みマクロ@code{len}は引数を与えたときだけ認識されます。
+
+@node Index, Regexp, Len, Text handling
+@section 部分文字列を検索する
+
+@findex index
+@c  Searching for substrings is done with @code{index}:
+部分文字列の検索は@code{index}で行います。
+
+@comment ignore
+@example
+index(@var{string}, @var{substring})
+@end example
+
+@noindent
+@c  which expands to the index of the first occurrence of @var{substring} in
+@c  @var{string}.  The first character in @var{string} has index 0.  If
+@c  @var{substring} does not occur in @var{string}, @code{index} expands to
+@c  @samp{-1}.
+このマクロは@var{string}の中で@var{substring}が最初に出現する
+位置のインデックスに展開されます。
+@var{string}の先頭にある文字のインデックスは0です。
+@var{substring}が@var{string}に含まれないとき、
+@code{index}は@samp{-1}に展開されます。
+
+@example
+index(`gnus, gnats, and armadillos', `nat')
+@result{}7
+index(`gnus, gnats, and armadillos', `dag')
+@result{}-1
+@end example
+
+@c  The builtin macro @code{index} is recognized only when given arguments.
+組み込みマクロ@code{index}は引数を与えたときだけ認識されます。
+
+@node Regexp, Substr, Index, Text handling
+@section 正規表現で検索する
+
+@cindex regular expressions
+@cindex GNU extensions
+@cindex 正規表現
+@cindex GNU拡張
+@findex regexp
+@c  Searching for regular expressions is done with the builtin
+@c  @code{regexp}:
+正規表現の検索は組み込みマクロ@code{regexp}で行います。
+
+@comment ignore
+@example
+regexp(@var{string}, @var{regexp}, opt @var{replacement})
+@end example
+
+@noindent
+@c  which searches for @var{regexp} in @var{string}.  The syntax for regular
+@c  expressions is the same as in GNU Emacs.  @xref{Regexps, , Syntax of
+@c  Regular Expressions, emacs, The GNU Emacs Manual}.
+このマクロは@var{regexp}で@var{string}の中を検索します。
+正規表現の構文はGNU Emacsのものと同じです。
+@xref{Regexps, , Syntax of Regular Expressions, emacs, The GNU Emacs Manual}.
+
+@c  If @var{replacement} is omitted, @code{regexp} expands to the index of
+@c  the first match of @var{regexp} in @var{string}.  If @var{regexp} does
+@c  not match anywhere in @var{string}, it expands to -1.
+@var{replacement}を省略すると、@code{regexp}は@var{string}の中で
+@var{regexp}に最初にマッチした部分のインデックスに展開されます。
+@var{regexp}が@var{string}のどこにもマッチしない場合は-1に展開されます。
+
+@example
+regexp(`GNUs not Unix', `\<[a-z]\w+')
+@result{}5
+regexp(`GNUs not Unix', `\<Q\w*')
+@result{}-1
+@end example
+
+@c  If @var{replacement} is supplied, @code{regexp} changes the expansion
+@c  to this argument, with @samp{\@var{n}} substituted by the text
+@c  matched by the @var{n}th parenthesized sub-expression of @var{regexp},
+@c  @samp{\&} being the text the entire regular expression matched.
+@var{replacement}を与えたときは、@code{regexp}はこの引数の値に展開されます。
+このとき@var{replacement}に含まれる@samp{\@var{n}}は@var{regexp}中の
+@var{n}番目のカッコでくくられた部分式にマッチしたテキストに置き換えられ、
+@samp{\&}は正規表現全体にマッチしたテキストに置き換えられます。
+
+@example
+regexp(`GNUs not Unix', `\w\(\w+\)$', `*** \& *** \1 ***')
+@result{}*** Unix *** nix ***
+@end example
+
+@c  The builtin macro @code{regexp} is recognized only when given arguments.
+組み込みマクロ@code{regexp}は引数を与えたときだけ認識されます。
+
+@node Substr, Translit, Regexp, Text handling
+@section 部分文字列を抽出する
+
+@cindex extracting substrings
+@cindex substrings, extracting
+@cindex 部分文字列を抽出
+@cindex 部分文字列を切り出す
+@findex substr
+@c  Substrings are extracted with @code{substr}:
+部分文字列は@code{substr}を使って抽出します。
+
+@comment ignore
+@example
+substr(@var{string}, @var{from}, opt @var{length})
+@end example
+
+@noindent
+@c  which expands to the substring of @var{string}, which starts at index
+@c  @var{from}, and extends for @var{length} characters, or to the end of
+@c  @var{string}, if @var{length} is omitted.  The starting index of a string
+@c  is always 0.
+このマクロは@var{string}のインデックス@var{from}から始まる@var{length}文字分
+の部分文字列に展開されます。
+@var{length}を省いたときは@var{string}の最後までになります。
+文字列の最初のインデックスは常に0です。
+
+@example
+substr(`gnus, gnats, and armadillos', 6)
+@result{}gnats, and armadillos
+substr(`gnus, gnats, and armadillos', 6, 5)
+@result{}gnats
+@end example
+
+@c  The builtin macro @code{substr} is recognized only when given arguments.
+組み込みマクロ@code{substr}は引数を与えたときだけ認識されます。
+
+@node Translit, Patsubst, Substr, Text handling
+@section 文字の置換
+
+@cindex translating characters
+@cindex characters, translating
+@cindex 文字の置換
+@cindex 文字の置き換え
+@findex translit
+@c  Character translation is done with @code{translit}:
+文字の置き換えは@code{translit}で行います。
+
+@comment ignore
+@example
+translit(@var{string}, @var{chars}, @var{replacement})
+@end example
+
+@noindent
+@c  which expands to @var{string}, with each character that occurs in
+@c  @var{chars} translated into the character from @var{replacement} with
+@c  the same index.
+@var{string}の各文字のうち@var{chars}に出て来る文字をそれぞれ
+@var{replacement}中で同じ位置にある文字に置き換えたものに展開されます。
+
+@c  If @var{replacement} is shorter than @var{chars}, the excess characters
+@c  are deleted from the expansion.  If @var{replacement} is omitted, all
+@c  characters in @var{string}, that are present in @var{chars} are deleted
+@c  from the expansion.
+@var{replacement}が@var{chars}より短いときは
+余分な文字は展開後のテキストから削除されます。
+@var{replacement}を省略すると展開後のテキストは
+@var{string}から@var{chars}に含まれる文字すべてを削除したものになります。
+
+@c  Both @var{chars} and @var{replacement} can contain character-ranges,
+@c  e.g., @samp{a-z} (meaning all lowercase letters) or @samp{0-9} (meaning
+@c  all digits).  To include a dash @samp{-} in @var{chars} or
+@c  @var{replacement}, place it first or last.
+@var{chars}と@var{replacement}のどちらにも文字範囲を含めることができます。
+たとえば@samp{a-z} (すべての小文字アルファベット)や
+@samp{0-9} (すべての数字)などです。
+@var{chars}や@var{replacement}にダッシュ@samp{-}そのものを含めるときは
+最初か最後に置いてください。
+
+@c  It is not an error for the last character in the range to be `larger'
+@c  than the first.  In that case, the range runs backwards, i.e.,
+@c  @samp{9-0} means the string @samp{9876543210}.
+@c ! `smaller'が正しい?
+範囲の最後の文字が最初の文字より`小さい'場合もエラーではありません。
+そういうケースでは範囲が逆に広がります。
+つまり@samp{9-0}は文字列@samp{9876543210}を意味します。
+
+@example
+translit(`GNUs not Unix', `A-Z')
+@result{}s not nix
+translit(`GNUs not Unix', `a-z', `A-Z')
+@result{}GNUS NOT UNIX
+translit(`GNUs not Unix', `A-Z', `z-a')
+@result{}tmfs not fnix
+@end example
+
+@c  The first example deletes all uppercase letters, the second converts
+@c  lowercase to uppercase, and the third `mirrors' all uppercase letters,
+@c  while converting them to lowercase.  The two first cases are by far the
+@c  most common.
+最初の例は大文字のアルファベットをすべて削除します。
+2番目の例は小文字を大文字に変換します。
+3番目の例は大文字すべてを小文字に変換しながら`反転'させます。
+使用頻度は最初の2つの例のほうがはるかに高いです。
+
+@c  The builtin macro @code{translit} is recognized only when given
+@c  arguments.
+組み込みマクロ@code{translit}は引数を与えたときだけ認識されます。
+
+@node Patsubst, Format, Translit, Text handling
+@section 正規表現でテキストの置換をする
+
+@cindex regular expressions
+@cindex pattern substitution
+@cindex substitution by regular expression
+@cindex GNU extensions
+@cindex 正規表現で置換
+@cindex パターンマッチ
+@cindex GNU拡張
+@findex patsubst
+@c  Global substitution in a string is done by @code{patsubst}:
+文字列の全置換（global substitution）は@code{patsubst}で行います。
+
+@comment ignore
+@example
+patsubst(@var{string}, @var{regexp}, opt @var{replacement})
+@end example
+
+@noindent
+@c  which searches @var{string} for matches of @var{regexp}, and substitutes
+@c  @var{replacement} for each match.  The syntax for regular expressions
+@c  is the same as in GNU Emacs.
+@var{string}中で@var{regexp}にマッチする部分を探し、
+それらをすべて@var{replacement}に置換します。
+正規表現の構文はGNU Emacsのものと同じです。
+
+@c  The parts of @var{string} that are not covered by any match of
+@c  @var{regexp} are copied to the expansion.  Whenever a match is found, the
+@c  search proceeds from the end of the match, so a character from
+@c  @var{string} will never be substituted twice.  If @var{regexp} matches a
+@c  string of zero length, the start position for the search is incremented,
+@c  to avoid infinite loops.
+@var{string}の中で@var{regexp}に適合するどの箇所にも含まれない部分は展開後の
+テキストにそのまま残ります。
+マッチする箇所が見つかるたびに、
+サーチはそのマッチした箇所の終りから続行されます。
+したがって@var{string}内のある文字が2回置換されることは決してありません。
+@var{regexp}が長さ0の文字列にマッチしたときは、
+無限ループを避けるためサーチの開始位置は1文字前に進められます。
+
+@c  When a replacement is to be made, @var{replacement} is inserted into
+@c  the expansion, with @samp{\@var{n}} substituted by the text matched by
+@c  the @var{n}th parenthesized sub-expression of @var{regexp}, @samp{\&}
+@c  being the text the entire regular expression matched.
+置き換えが行われるときは、@var{replacement}に含まれる@samp{\@var{n}}を
+@var{regexp}内のカッコでくくられた@var{n}番目の部分式にマッチしたテキスト
+に置き換え、@samp{\&}を正規表現全体にマッチしたテキストに置き換えたものが
+展開後のテキストに挿入されます。
+
+@c  The @var{replacement} argument can be omitted, in which case the text
+@c  matched by @var{regexp} is deleted.
+引数@var{replacement}は省略することができます。
+そのときは@var{regexp}にマッチしたテキストは削除されます。
+
+@example
+patsubst(`GNUs not Unix', `^', `OBS: ')
+@result{}OBS: GNUs not Unix
+patsubst(`GNUs not Unix', `\<', `OBS: ')
+@result{}OBS: GNUs OBS: not OBS: Unix
+patsubst(`GNUs not Unix', `\w*', `(\&)')
+@result{}(GNUs)() (not)() (Unix)
+patsubst(`GNUs not Unix', `\w+', `(\&)')
+@result{}(GNUs) (not) (Unix)
+patsubst(`GNUs not Unix', `[A-Z][a-z]+')
+@result{}GN not 
+@end example
+
+@c  Here is a slightly more realistic example, which capitalizes individual
+@c  word or whole sentences, by substituting calls of the macros
+@c  @code{upcase} and @code{downcase} into the strings.
+次はもうすこし現実的な例です。
+文字列の中にマクロ@code{upcase}と@code{downcase}の呼び出しを挿入することで、
+単独の単語または文全体をキャピタライズ（capitalize）します。
+
+@example
+define(`upcase', `translit(`$*', `a-z', `A-Z')')dnl
+define(`downcase', `translit(`$*', `A-Z', `a-z')')dnl
+define(`capitalize1',
+     `regexp(`$1', `^\(\w\)\(\w*\)', `upcase(`\1')`'downcase(`\2')')')dnl
+define(`capitalize',
+     `patsubst(`$1', `\w+', `capitalize1(`\&')')')dnl
+capitalize(`GNUs not Unix')
+@result{}Gnus Not Unix
+@end example
+
+@c  The builtin macro @code{patsubst} is recognized only when given
+@c  arguments.
+組み込みマクロ@code{patsubst}は引数を与えたときだけ認識されます。
+
+@node Format,  , Patsubst, Text handling
+@section 書式付き出力
+
+@cindex formatted output
+@cindex output, formatted
+@cindex GNU extensions
+@cindex 書式付き出力
+@cindex GNU拡張
+@findex format
+@c  Formatted output can be made with @code{format}:
+書式付き出力は@code{format}を使って行うことができます。
+
+@comment ignore
+@example
+format(@var{format-string}, ...)
+@end example
+
+@noindent
+@c  which works much like the C function @code{printf}.  The first argument
+@c  is a format string, which can contain @samp{%} specifications, and the
+@c  expansion of @code{format} is the formatted string.
+このマクロはC言語の関数@code{printf}とよく似た動作をします。
+最初の引数は書式指定文字列で@samp{%}指定を含めることができます。
+@code{format}は展開されると書式付の文字列になります。
+
+@c  Its use is best described by a few examples:
+2, 3の例を使って説明するのが一番でしょう。
+
+@example
+define(`foo', `The brown fox jumped over the lazy dog')
+@result{}
+format(`The string "%s" is %d characters long', foo, len(foo))
+@result{}The string "The brown fox jumped over the lazy dog" is 38 characters long
+@end example
+
+@c  Using the @code{forloop} macro defined in @xref{Loops}, this
+@c  example shows how @code{format} can be used to produce tabular output.
+@xref{Loops}で定義されている@code{forloop}マクロを使って
+表形式の出力をするときは@code{format}を次のように使うことができます。
+
+@comment ignore
+@example
+forloop(`i', 1, 10, `format(`%6d squared is %10d
+', i, eval(i**2))')
+@result{}     1 squared is	    1
+@result{}     2 squared is	    4
+@result{}     3 squared is	    9
+@result{}     4 squared is	   16
+@result{}     5 squared is	   25
+@result{}     6 squared is	   36
+@result{}     7 squared is	   49
+@result{}     8 squared is	   64
+@result{}     9 squared is	   81
+@result{}    10 squared is	  100
+@end example
+
+@c  The builtin @code{format} is modeled after the ANSI C @samp{printf}
+@c  function, and supports the normal @samp{%} specifiers: @samp{c},
+@c  @samp{s}, @samp{d}, @samp{o}, @samp{x}, @samp{X}, @samp{u}, @samp{e},
+@c  @samp{E} and @samp{f}; it supports field widths and precisions, and the
+@c  modifiers @samp{+}, @samp{-}, @samp{@w{ }}, @samp{0}, @samp{#}, @samp{h} and
+@c  @samp{l}.  For more details on the functioning of @code{printf}, see the
+@c  C Library Manual.
+組み込みマクロ@code{format}はANSI Cの@samp{printf}関数をモデルとしており、
+次の標準的な@samp{%}指定をサポートしています: @samp{c}, @samp{s}, @samp{d},
+@samp{o}, @samp{x}, @samp{X}, @samp{u}, @samp{e}, @samp{E}, @samp{f}。
+またフィールド幅と精度指定、モディファイア @samp{+}, @samp{-}, @samp{@w{ }},
+@samp{0}, @samp{#}, @samp{h}, @samp{l}をサポートしています。
+@code{printf}の動作について更に詳しいことは
+C ライブラリマニュアルを見てください。
+
+@c FIXME: Why format does not require at least one argument?
+
+@node Arithmetic, UNIX commands, Text handling, Top
+@c  @chapter Macros for doing arithmetic
+@chapter 計算用の組み込みマクロ
+
+@cindex arithmetic
+@cindex integer arithmetic
+@cindex 計算, 演算
+@cindex 整数演算
+@c  Integer arithmetic is included in @code{m4}, with a C-like syntax.  As
+@c  convenient shorthands, there are builtins for simple increment and
+@c  decrement operations.
+@code{m4}にはCに似た文法の整数演算機構が組み込まれています。
+また、単純なインクリメントとデクリメント操作のための組み込みマクロが手軽な
+省略記法として用意されています。
+
+@menu
+@c  * Incr::                        Decrement and increment operators
+@c  * Eval::                        Evaluating integer expressions
+* Incr::                        インクリメント演算子とデクリメント演算子
+* Eval::                        整数式を計算する
+@end menu
+
+@node Incr, Eval, Arithmetic, Arithmetic
+@c  @section Decrement and increment operators
+@section インクリメント演算子とデクリメント演算子
+
+@cindex decrement operator
+@cindex increment operator
+@cindex インクリメント演算子
+@cindex デクリメント演算子
+@findex incr
+@findex decr
+@c  Increment and decrement of integers are supported using the builtins
+@c  @code{incr} and @code{decr}:
+整数のインクリメントとデクリメントは組み込みマクロ@code{incr}と@code{decr}
+によってサポートされています。
+
+@comment ignore
+@example
+incr(@var{number})
+decr(@var{number})
+@end example
+
+@noindent
+@c  which expand to the numerical value of @var{number}, incremented,
+@c  or decremented, respectively, by one.
+@var{number}の数値を1だけ増やした値、または1だけ減らした値に展開されます。
+
+@example
+incr(4)
+@result{}5
+decr(7)
+@result{}6
+@end example
+
+@c  The builtin macros @code{incr} and @code{decr} are recognized only when
+@c  given arguments.
+組み込みマクロ@code{incr}および@code{decr}は引数を与えたときだけ認識されます。
+
+@node Eval,  , Incr, Arithmetic
+@c  @section Evaluating integer expressions
+@section 整数式を計算する
+
+@cindex integer expression evaluation
+@cindex evaluation, of integer expressions
+@cindex expressions, evaluation of integer
+@cindex 整数式の計算
+@cindex 整数式の評価
+@findex eval
+@c  Integer expressions are evaluated with @code{eval}:
+整数式は@code{eval}を使って計算します。
+
+@comment ignore
+@example
+eval(@var{expression}, opt @var{radix}, opt @var{width})
+@end example
+
+@noindent
+@c  which expands to the value of @var{expression}.
+このマクロは@var{expression}の値に展開されます。
+
+@c  Expressions can contain the following operators, listed in order of
+@c  decreasing precedence.
+式（expression）には次の演算子を含めることができます。
+リストは優先順位の高い順に並んでいます。
+
+@table @code
+@item -
+単項差（unary minus）
+@item **
+累乗（exponentiation）
+@item *  /  %
+積（multiplication）、商（division）、剰余（modulo）
+@item +  -
+和（addition）、差（subtraction）
+@item <<  >>
+左シフト（shift left）、右シフト（shift right）
+@item ==  !=  >  >=  <  <=
+関係演算子（relational operator）
+@item !
+論理否定（logical negation）
+@item ~
+ビットごとの論理否定（bitwise negation）
+@item &
+ビットごとの論理積（bitwise and）
+@item ^
+ビットごとの排他的論理和（bitwise exclusive-or）
+@item |
+ビットごとの論理和（bitwise or）
+@item &&
+論理積（logical and）
+@item ||
+論理和（logical or）
+@end table
+
+@c  All operators, except exponentiation, are left associative.
+累乗（exponentiation）を除いたすべての演算子は左結合（left associative）をします。
+
+@c  Note that many @code{m4} implementations use @samp{^} as an alternate
+@c  operator for the exponentiation, while many others use @samp{^} for the
+@c  bitwise exclusive-or.  GNU @code{m4} changed its behavior: it used to
+@c  exponentiate for @samp{^}, it now computes the bitwise exclusive-or.
+@code{m4}の実装には@samp{^}を累乗（exponentiation）演算子の代用として使うもの
+が多くありますが、@samp{^}をビットごとの排他的論理和（bitwise exclusive-or）
+に使っている実装も多くあります。GNU @code{m4}では、かつて@samp{^}は累乗を行う
+演算子でしたが、動作の変更を行い、現在はビットごとの排他的論理和を行う
+演算子になっています。
+
+@c  Numbers without special prefix are given decimal.  A simple @samp{0}
+@c  prefix introduces an octal number.  @samp{0x} introduces an hexadecimal
+@c  number.  @samp{0b} introduces a binary number.  @samp{0r} introduces a
+@c  number expressed in any radix between 1 and 36: the prefix should be
+@c  immediately followed by the decimal expression of the radix, a colon,
+@c  then the digits making the number.  For any radix, the digits are
+@c  @samp{0}, @samp{1}, @samp{2}, @dots{}.  Beyond @samp{9}, the digits are
+@c  @samp{a}, @samp{b} @dots{} up to @samp{z}.  Lower and upper case letters
+@c  can be used interchangeably in numbers prefixes and as number digits.
+特別な接頭辞（prefix）がついていない数字は10進数となります。
+@samp{0}のみの接頭辞は8進数の始まりを表します。
+@samp{0x}は16進数の始まりを表します。
+@samp{0b}は2進数の始まりを表します。
+@samp{0r}は1から36までの任意の基数で表現した数字の始まりを表します。
+@samp{0r}の後には10進数で表現した基数、コロン（:）、
+および数値を表す数字列を続けなくてはなりません。
+いずれの基数で表すにしても数字としては@samp{0}, @samp{1}, @samp{2},
+@dots{}を使い、@samp{9}から上は@samp{a}, @samp{b} @dots{} @samp{z}までを
+数字として使います。
+アルファベットの大文字と小文字は基数を表す接頭辞および数値を表す数字列のなかで
+区別なく使用することができます。
+
+@c  Parentheses may be used to group subexpressions whenever needed.  For the
+@c  relational operators, a true relation returns @code{1}, and a false
+@c  relation return @code{0}.
+部分式をグループ化するために必要なときはカッコを使うことができます。
+関係演算子は関係が真のときは@code{1}を返し、偽のときは@code{0}を返します。
+
+@c  Here are a few examples of use of @code{eval}.
+@code{eval}の使用例をいくつか次に挙げます。
+
+@example
+eval(-3 * 5)
+@result{}-15
+eval(index(`Hello world', `llo') >= 0)
+@result{}1
+define(`square', `eval(($1)**2)')
+@result{}
+square(9)
+@result{}81
+square(square(5)+1)
+@result{}676
+define(`foo', `666')
+@result{}
+eval(`foo'/6)
+@error{}51.eval:14: m4: Bad expression in eval: foo/6
+@result{}
+eval(foo/6)
+@result{}111
+@end example
+
+@c  As the second to last example shows, @code{eval} does not handle macro
+@c  names, even if they expand to a valid expression (or part of a valid
+@c  expression).  Therefore all macros must be expanded before they are
+@c  passed to @code{eval}.
+最後から2番目の例が示しているように@code{eval}がマクロ名を勝手に展開することはありません。
+例えそれらが有効な式(もしくは有効な式の一部)に展開されるにしてもです。
+したがって全てのマクロは@code{eval}に渡される前に展開済である必要があります。
+
+@c  If @var{radix} is specified, it specifies the radix to be used in the
+@c  expansion.  The default radix is 10.  The result of @code{eval} is
+@c  always taken to be signed.  The @var{width} argument specifies a minimum
+@c  output width.  The result is zero-padded to extend the expansion to the
+@c  requested width.
+@var{radix}を指定すると展開後のテキストではその基数が使われます。
+デフォルトの基数は10です。
+@code{eval}の結果は常に符号付き（signed）の値であると解釈されます。
+引数@var{width}は最低限の出力幅を指定します。
+展開後のテキストが要求された幅になるように
+結果には0が埋め草（zero-padded）として付加されます。
+
+@example
+eval(666, 10)
+@result{}666
+eval(666, 11)
+@result{}556
+eval(666, 6)
+@result{}3030
+eval(666, 6, 10)
+@result{}0000003030
+eval(-666, 6, 10)
+@result{}-000003030
+@end example
+
+@c  Take note that @var{radix} cannot be larger than 36.
+@var{radix}は36より大きくてはいけないことに注意してください。
+
+@c  The builtin macro @code{eval} is recognized only when given arguments.
+組み込みマクロ@code{eval}は引数を与えたときだけ認識されます。
+
+@node UNIX commands, Miscellaneous, Arithmetic, Top
+@c  @chapter Running UNIX commands
+@chapter UNIXコマンド実行用の組み込みマクロ
+
+@cindex executing UNIX commands
+@cindex running UNIX commands
+@cindex UNIX commands, running
+@cindex commands, running UNIX
+@cindex UNIXコマンドの実行
+@c  There are a few builtin macros in @code{m4} that allow you to run UNIX
+@c  commands from within @code{m4}.
+UNIXコマンドを@code{m4}内部から呼び出すための組み込みマクロが
+@code{m4}にはいくつか存在します。
+
+@menu
+@c  * Syscmd::                      Executing simple commands
+@c  * Esyscmd::                     Reading the output of commands
+@c  * Sysval::                      Exit codes
+@c  * Maketemp::                    Making names for temporary files
+* Syscmd::                      単一のコマンドを実行する
+* Esyscmd::                     コマンドの出力を読む
+* Sysval::                      終了コード
+* Maketemp::                    一時ファイル用の名前を生成する
+@end menu
+
+@node Syscmd, Esyscmd, UNIX commands, UNIX commands
+@c  @section Executing simple commands
+@section 単一のコマンドを実行する
+
+@findex syscmd
+@c  Any shell command can be executed, using @code{syscmd}:
+@code{syscmd}を使えば任意のシェルコマンドを実行することができます。
+
+@comment ignore
+@example
+syscmd(@var{shell-command})
+@end example
+
+@noindent
+@c  which executes @var{shell-command} as a shell command.
+シェルコマンドとして@var{shell-command}を実行します。
+
+@c  The expansion of @code{syscmd} is void, @emph{not} the output from
+@c  @var{shell-command}!  Output or error messages from @var{shell-command}
+@c  are not read by @code{m4}.  @xref{Esyscmd} if you need to process the
+@c  command output.
+@code{syscmd}は展開後、@var{shell-command}からの出力には@emph{ならず}に
+消滅します。@var{shell-command}からの出力やエラーメッセージは
+@code{m4}には読み込まれません。
+コマンドの出力を処理する必要があるときは@xref{Esyscmd}を参照してください。
+
+@c  Prior to executing the command, @code{m4} flushes its output buffers.
+@c  The default standard input, output and error of @var{shell-command} are
+@c  the same as those of @code{m4}.
+コマンドの実行に先立ち、@code{m4}は自分の出力バッファをフラッシュします。
+@var{shell-command}におけるデフォルトの標準入力、標準出力、
+および標準エラー出力は@code{m4}のものと同じです。
+
+@c  The builtin macro @code{syscmd} is recognized only when given arguments.
+@code{syscmd}は引数を与えたときだけ認識されます。
+
+@node Esyscmd, Sysval, Syscmd, UNIX commands
+@c  @section Reading the output of commands
+@section コマンドの出力を読む
+
+@findex esyscmd
+@cindex GNU extensions
+@cindex GNU拡張
+@c  If you want @code{m4} to read the output of a UNIX command, use
+@c  @code{esyscmd}:
+UNIXコマンドの出力を@code{m4}に読み込ませたいときは
+@code{esyscmd}を使ってください。
+
+@comment ignore
+@example
+esyscmd(@var{shell-command})
+@end example
+
+@noindent
+@c  which expands to the standard output of the shell command
+@c  @var{shell-command}.
+このマクロはシェルコマンド@var{shell-command}の標準出力の内容に展開されます。
+
+@c  Prior to executing the command, @code{m4} flushes its output buffers.
+@c  The default standard input and error output of @var{shell-command} are
+@c  the same as those of @code{m4}.  The error output of @var{shell-command}
+@c  is not a part of the expansion: it will appear along with the error
+@c  output of @code{m4}.
+@code{m4}はコマンドの実行に先立ち自分の出力バッファをフラッシュします。
+@var{shell-command}のデフォルトの標準入力および標準エラー出力は
+@code{m4}のものと同じになります。
+@var{shell-command}のエラー出力は展開テキストの一部にはなりません
+ ― @code{m4}のエラー出力と一緒に出てくるでしょう。
+
+@c  Assume you are positioned into the @file{checks} directory of GNU
+@c  @code{m4} distribution, then:
+次の例ではGNU @code{m4}ディストリビューションの@file{checks}ディレクトリ
+にいると仮定します。
+
+@example
+define(`vice', `esyscmd(grep Vice ../COPYING)')
+@result{}
+vice
+@result{}  Ty Coon, President of Vice
+@result{}
+@end example
+
+@c  Note how the expansion of @code{esyscmd} has a trailing newline.
+@code{esyscmd}の展開によるテキストの後ろに改行がついている様子に
+注意してください。
+
+@c  The builtin macro @code{esyscmd} is recognized only when given
+@c  arguments.
+@code{esyscmd}は引数を与えたときだけ認識されます。
+
+@node Sysval, Maketemp, Esyscmd, UNIX commands
+@c  @section Exit codes
+@section 終了コード
+
+@cindex exit code from UNIX commands
+@cindex UNIX commands, exit code from
+@cindex commands, exit code from UNIX
+@cindex UNIXコマンドの終了コード
+@findex sysval
+@c  To see whether a shell command succeeded, use @code{sysval}:
+シェルコマンドの実行が成功したか調べるときは
+@code{sysval}を使ってください。
+
+@comment ignore
+@example
+sysval
+@end example
+
+@noindent
+@c  which expands to the exit status of the last shell command run with
+@c  @code{syscmd} or @code{esyscmd}.
+このマクロは@code{syscmd}や@code{esyscmd}で実行した最後のシェルコマンドの
+終了ステータス（exit status）に展開されます。
+
+@example
+syscmd(`false')
+@result{}
+ifelse(sysval, 0, zero, non-zero)
+@result{}non-zero
+syscmd(`true')
+@result{}
+sysval
+@result{}0
+@end example
+
+@node Maketemp,  , Sysval, UNIX commands
+@c  @section Making names for temporary files
+@section 一時ファイル用の名前を生成
+
+@cindex temporary filenames
+@cindex files, names of temporary
+@cindex 一時ファイル名
+@findex maketemp
+@c  Commands specified to @code{syscmd} or @code{esyscmd} might need a
+@c  temporary file, for output or for some other purpose.
+@c  There is a builtin macro, @code{maketemp}, for making temporary file
+@c  names:
+@code{syscmd}や@code{esyscmd}に指定されたコマンドが出力やその他の目的で
+一時ファイルを必要とすることもあるでしょう。
+一時ファイルの名前を生成するために組み込みマクロ@code{maketemp}が用意されています。
+
+@comment ignore
+@example
+maketemp(@var{template})
+@end example
+
+@noindent
+@c  which expands to a name of a non-existent file, made from the string
+@c  @var{template}, which should end with the string @samp{XXXXXX}.  The six
+@c  @code{X}'s are then replaced, usually with something that includes the
+@c  process id of the @code{m4} process, in order to make the filename unique.
+このマクロは@var{template}を元に作られる、現時点で存在しないファイルの名前に
+展開されます。@var{template}は文字列@samp{XXXXXX}で終らなければなりません。
+この6つの@code{X}はファイル名をユニークにするために@code{m4}のプロセスidを含む
+何らかの文字列によって置き換えられます。
+
+@comment ignore
+@example
+maketemp(`/tmp/fooXXXXXX')
+@result{}/tmp/fooa07346
+maketemp(`/tmp/fooXXXXXX')
+@result{}/tmp/fooa07346
+@end example
+
+@c  As seen in the example, several calls of @code{maketemp} might expand to
+@c  the same string, since the selection criteria is whether the file exists
+@c  or not.  If a file has not been created before the next call, the two
+@c  macro calls might expand to the same name.
+例にあるように@code{maketemp}を複数回呼び出すと同じ文字列に展開されることが
+あります。これは選択の基準がファイルが存在するかどうかだからです。
+最初のファイルが作成されていないうちに、@code{maketemp}を次に呼び出すと、
+2つの@code{maketemp}マクロの呼び出しは同じ名前に展開される可能性があります。
+
+@c  The builtin macro @code{maketemp} is recognized only when given
+@c  arguments.
+@code{maketemp}は引数を与えたときだけ認識されます。
+
+@node Miscellaneous, Frozen files, UNIX commands, Top
+@c  @chapter Miscellaneous builtin macros
+@chapter その他の組み込みマクロ
+
+@c  This chapter describes various builtins, that do not really belong in
+@c  any of the previous chapters.
+この章では、これまでのどの章にも分類できない様々な組み込みマクロを説明します。
+
+@menu
+@c  * Errprint::                    Printing error messages
+@c  * M4exit::                      Exiting from m4
+* Errprint::                    エラーメッセージを表示する
+* M4exit::                      m4を終了させる
+@end menu
+
+@node Errprint, M4exit, Miscellaneous, Miscellaneous
+@c  @section Printing error messages
+@section エラーメッセージを表示する
+
+@cindex printing error messages
+@cindex error messages, printing
+@cindex messages, printing error
+@cindex エラーメッセージの表示
+@findex errprint
+@c  You can print error messages using @code{errprint}:
+エラーメッセージは@code{errprint}を使って表示することができます。
+
+@comment ignore
+@example
+errprint(@var{message}, ...)
+@end example
+
+@noindent
+@c  which simply prints @var{message} and the rest of the arguments on the
+@c  standard error output.
+このマクロが行うのは@var{message}と残りの引数を標準エラー出力に表示する
+ことだけです。
+
+@c  The expansion of @code{errprint} is void.
+@code{errprint}は展開されると消滅します。
+
+@example
+errprint(`Illegal arguments to forloop
+')
+@error{}Illegal arguments to forloop
+@result{}
+@end example
+
+@c  A trailing newline is @emph{not} printed automatically, so it must be
+@c  supplied as part of the argument, as in the example.  (BSD flavored
+@c  @code{m4}'s do append a trailing newline on each @code{errprint} call).
+末尾の改行は自動的に印字され@emph{ません}。したがって例にあるように
+引数の一部として与えなければなりません。
+(BSDフレーバーの@code{m4}は@code{errprint}呼び出しごとに改行を1つ末尾に
+付加します。)
+
+@c  To make it possible to specify the location of the error, two
+@c  utility builtins exist:
+エラーの場所を特定するためには、組み込みユーティリティマクロが2つ用意
+されています。
+
+@findex file
+@findex line
+@comment ignore
+@example
+__file__
+__line__
+@end example
+
+@noindent
+@c  which expands to the quoted name of the current input file, and the
+@c  current input line number in that file.
+これらは現在の入力ファイルの名前をクォートしたものと
+そのファイル内での現在の入力行番号に展開されます。
+
+@example
+errprint(`m4:'__file__:__line__: `Input error
+')
+@error{}m4:56.errprint:2: Input error
+@result{}
+@end example
+
+@node M4exit,  , Errprint, Miscellaneous
+@c  @section Exiting from @code{m4}
+@section @code{m4}を終了させる
+
+@cindex exiting from @code{m4}
+@cindex m4を終了させる
+@findex m4exit
+@c  If you need to exit from @code{m4} before the entire input has been
+@c  read, you can use @code{m4exit}:
+すべての入力を読み込んでしまう前に@code{m4}を終了したいときは
+@code{m4exit}を使うことができます。
+
+@comment ignore
+@example
+m4exit(opt @var{code})
+@end example
+
+@noindent
+@c  which causes @code{m4} to exit, with exit code @var{code}.  If
+@c  @var{code} is left out, the exit code is zero.
+このマクロは@var{code}を終了コード（exit code）として@code{m4}を終了させます。
+@var{code}を省略したときは終了コードは0になります。
+
+@example
+define(`fatal_error', `errprint(`m4: '__file__: __line__`: fatal error: $*
+')m4exit(1)')
+@result{}
+fatal_error(`This is a BAD one, buster')
+@error{}m4: 57.m4exit: 5: fatal error: This is a BAD one, buster
+@end example
+
+@c  After this macro call, @code{m4} will exit with exit code 1.  This macro
+@c  is only intended for error exits, since the normal exit procedures are
+@c  not followed, e.g., diverted text is not undiverted, and saved text
+@c  (@pxref{M4wrap}) is not reread.
+この例では@var{fatal_error}マクロが呼び出された後、@code{m4}は終了コード1で
+終了します。このマクロはエラー終了だけを行うためのものです、なぜなら通常の
+終了手続き、例えば出力切替え先のテキスト（diverted text）の逆切替え
+（undivert）や保存されているテキスト(@pxref{M4wrap})の再読み込みなどが
+行われないからです。
+
+@node Frozen files, Compatibility, Miscellaneous, Top
+@c  @chapter Fast loading of frozen states
+@chapter 凍結状態（frozen state）の高速ロード
+
+@cindex fast loading of frozen files
+@cindex frozen files for fast loading
+@cindex initialization, frozen states
+@cindex dumping into frozen file
+@cindex reloading a frozen file
+@cindex GNU extensions
+@cindex 凍結状態（frozen state）の高速ロード
+@cindex GNU拡張
+@c  Some bigger @code{m4} applications may be built over a common base
+@c  containing hundreds of definitions and other costly initializations.
+@c  Usually, the common base is kept in one or more declarative files,
+@c  which files are listed on each @code{m4} invocation prior to the
+@c  user's input file, or else, @code{include}'d from this input file.
+何百もの定義やその他の手間がかかる初期化をまとめた共通の基盤を土台として、
+その上にさらに大きな@code{m4}アプリケーションをいくつも構築していくことが
+できます。通常はその共通の基盤を1つ以上のファイルに格納しておいて@code{m4}を
+起動するたびにユーザの入力ファイル名の前にそれらのファイル名を羅列するか、
+ユーザの入力ファイルから@code{include}します。
+
+@c  Reading the common base of a big application, over and over again, may
+@c  be time consuming.  GNU @code{m4} offers some machinery to speed up
+@c  the start of an application using lengthy common bases.  Presume the
+@c  user repeatedly uses:
+巨大なアプリケーションの共通基盤を何度も何度も繰り返し読み込むのは
+時間がかかることでしょう。@code{m4}には大きな共通基盤を使う
+アプリケーションの開始時間をスピードアップするための機構が用意されて
+います。ユーザが次のコマンドラインを繰り返し使うとします。
+
+@comment ignore
+@example
+m4 base.m4 input.m4
+@end example
+
+@noindent
+@c  with a varying contents of @file{input.m4}, but a rather fixed contents
+@c  for @file{base.m4}.  Then, the user might rather execute:
+ここで@file{input.m4}は起動のたびにいろいろな内容を持ち、
+@file{base.m4}はかなり固定的な内容を持っているとします。
+こういうときは、次のようにした方がいいでしょう。
+
+@comment ignore
+@example
+m4 -F base.m4f base.m4
+@end example
+
+@noindent
+@c  once, and further execute, as often as needed:
+このように一度実行しておき、必要になるたびに次のように実行します。
+
+@comment ignore
+@example
+m4 -R base.m4f input.m4
+@end example
+
+@noindent
+@c  with the varying input.  The first call, containing the @code{-F}
+@c  option, only reads and executes file @file{base.m4}, so defining
+@c  various application macros and computing other initializations.  Only
+@c  once the input file @file{base.m4} has been completely processed, GNU
+@c  @code{m4} produces on @file{base.m4f} a @dfn{frozen} file, that is, a
+@c  file which contains a kind of snapshot of the @code{m4} internal state.
+最初の@code{-F}オプションを含んでいる呼び出しは@file{base.m4}を読んで実行
+することで、さまざまなアプリケーションマクロの定義やその他の初期化を
+行います。入力ファイル@file{base.m4}の処理が完全に終ってから、
+GNU @code{m4}は凍結（@dfn{frozen}）ファイルを@file{base.m4f}として生成します。
+このファイルは@code{m4}の内部状態のある種のスナップショットとなっています。
+
+@c  Later calls, containing the @code{-R} option, are able to reload
+@c  the internal state of @code{m4}'s memory, from @file{base.m4f},
+@c  @emph{prior} to reading any other input files.  By this mean,
+@c  instead of starting with a virgin copy of @code{m4}, input will be
+@c  read after having effectively recovered the effect of a prior run.
+@c  In our example, the effect is the same as if file @file{base.m4} has
+@c  been read anew.  However, this effect is achieved a lot faster.
+@c ! TYPO by this mean -> by this meanS
+後者の@code{-R}オプションを含んでいる呼び出しでは、どの入力ファイルが
+読み込まれるよりも@emph{前}に、@file{base.m4f}から@code{m4}のメモリの内部状態を
+リロード（reload）しておくことができます。
+このようにして、まっさらな状態の@code{m4}から始めるかわりに
+前もって起動しておいたときの状態へと効率的に復帰したあとで入力を読み込み
+ます。この例では@file{base.m4}を新たに読んだときと効果は同じですが、それを
+ずっと速く行うことができます。
+
+@c  Only one frozen file may be created or read in any one @code{m4}
+@c  invocation.  It is not possible to recover two frozen files at once.
+@c  However, frozen files may be updated incrementally, through using
+@c  @code{-R} and @code{-F} options simultaneously.  For example, if
+@c  some care is taken, the command:
+@code{m4}の1回の起動で作ったり読み込んだりできる凍結ファイルはそれぞれ
+1つだけです。
+一度に2つの凍結ファイルの内容を回復することはできません。
+しかし@code{-R}と@code{-F}オプションを同時につかうことで、凍結ファイルを
+すこしずつ更新していくことはできます。例えば多少の注意を払う事で、次のコマンドは、
+
+@comment ignore
+@example
+m4 file1.m4 file2.m4 file3.m4 file4.m4
+@end example
+
+@noindent
+@c  could be broken down in the following sequence, accumulating the same
+@c  output:
+最終的にこれと同じ出力が段段と蓄積されていくような、次の一連の
+コマンド列に分けることができるでしょう。
+
+@comment ignore
+@example
+m4 -F file1.m4f file1.m4
+m4 -R file1.m4f -F file2.m4f file2.m4
+m4 -R file2.m4f -F file3.m4f file3.m4
+m4 -R file3.m4f file4.m4
+@end example
+
+@c  Some care is necessary because not every effort has been made for
+@c  this to work in all cases.  In particular, the trace attribute of
+@c  macros is not handled, nor the current setting of @code{changeword}.
+@c  Also, interactions for some options of @code{m4} being used in one call
+@c  and not for the next, have not been fully analyzed yet.  On the other
+@c  end, you may be confident that stacks of @code{pushdef}'ed definitions
+@c  are handled correctly, so are @code{undefine}'d or renamed builtins,
+@c  changed strings for quotes or comments.
+多少の注意を払う必要があるというのは、これがどんな場合にもうまく動く
+ようにするためのあらゆる対策がこうじられているわけではないからです。
+とりわけ、マクロのトレース属性には対応していませんし@code{changeword}の
+現在の設定に関してもそうです。@code{m4}のいくつかのオプションが1度目で
+使用されて、次は使用されなかった場合にどのように作用するかも完全には検討
+されていません。一方で@code{pushdef}された定義のスタックが正しく扱われる
+ことは保証されています。また@code{undefine}された定義、組み込みマクロの
+名前変更、引用符やコメント記号の変更についても同じく正しい動作が保証され
+ています。
+
+@c  When an @code{m4} run is to be frozen, the automatic undiversion
+@c  which takes place at end of execution is inhibited.  Instead, all
+@c  positively numbered diversions are saved into the frozen file.
+@c  The active diversion number is also transmitted.
+@code{m4}の実行が凍結されるとき、実行終了時に起こる自動的な出力の
+逆切替え（undiversion）は抑制されます。そのかわり全ての正の番号をもつ
+出力切替え先の内容は凍結ファイルに保存されます。使用中の出力切替え先の
+番号も伝えられます。
+
+@c  A frozen file to be reloaded need not reside in the current directory.
+@c  It is looked up the same way as an @code{include} file (@pxref{Search
+@c  Path}).
+リロード（reload）しようとしている凍結ファイルがカレントディレクトリに
+ある必要はありません。凍結ファイルを探す方法はインクルードファイル
+（@code{include}）の場合と同じです。(@pxref{Search Path})
+
+@c  Frozen files are sharable across architectures.  It is safe to write
+@c  a frozen file one one machine and read it on another, given that the
+@c  second machine uses the same, or a newer version of GNU @code{m4}.
+@c  These are simple (editable) text files, made up of directives,
+@c  each starting with a capital letter and ending with a newline
+@c  (@key{NL}).  Wherever a directive is expected, the character
+@c  @kbd{#} introduces a comment line, empty lines are also ignored.
+@c  In the following descriptions, @var{length}s always refer to
+@c  corresponding @var{string}s.  Numbers are always expressed in decimal.
+@c  The directives are:
+@c ! TYPO  one one
+凍結ファイルは複数のアーキテクチャで共有することができます。
+1つのマシンで凍結ファイルを作り、それを他のマシンで使うときは2番目の
+マシンで同じか新しいバージョンのGNU @code{m4}を使っているのなら確実です。
+凍結ファイルは単純な(編集可能な)テキストファイルで、アルファベット大文字
+で始まり改行文字(@key{NL})で終る指令から成り立っています。指令があるはず
+の場所に@kbd{#}があるときはコメント行の始まりとなり、空行とあわせて無視
+されます。次の説明では@var{length}は常に対応する@var{string}を参照します。
+数字は常に10進数で表されます。指令の一覧です。
+
+@table @code
+@item V @var{number} @key{NL}
+@c  Confirms the format of the file.  @var{number} should be 1.
+凍結ファイルのフォーマットを確認します。
+@var{number}は1のはずです。
+
+@item C @var{length1} , @var{length2} @key{NL} @var{string1} @var{string2} @key{NL}
+@c  Uses @var{string1} and @var{string2} as the beginning comment and
+@c  end comment strings.
+@var{string1}と@var{string2}を開始コメントと終了コメント文字列として使います。
+
+@item Q @var{length1} , @var{length2} @key{NL} @var{string1} @var{string2} @key{NL}
+@c  Uses @var{string1} and @var{string2} as the beginning quote and end quote
+@c  strings.
+@var{string1}と@var{string2}を開始クォートと終了クォート文字列として使います。
+
+@item F @var{length1} , @var{length2} @key{NL} @var{string1} @var{string2} @key{NL}
+@c  Defines, through @code{pushdef}, a definition for @var{string1}
+@c  expanding to the function whose builtin name is @var{string2}.
+@code{pushdef}を使い、@var{string1}が組み込みマクロとして名前@var{string2}を
+もつ関数に展開されるように定義します。
+
+@item T @var{length1} , @var{length2} @key{NL} @var{string1} @var{string2} @key{NL}
+@c  Defines, though @code{pushdef}, a definition for @var{string1}
+@c  expanding to the text given by @var{string2}.
+@code{pushdef}を使い、@var{string1}がテキスト@var{string2}に展開される
+ように定義します。
+
+@item D @var{number}, @var{length} @key{NL} @var{string} @key{NL}
+@c  Selects diversion @var{number}, making it current, then copy
+@c  @var{string} in the current diversion.  @var{number} may be a negative
+@c  number for a non-existing diversion.  To merely specify an active
+@c  selection, use this command with an empty @var{string}.  With 0 as the
+@c  diversion @var{number}, @var{string} will be issued on standard output
+@c  at reload time, however this may not be produced from within @code{m4}.
+番号@var{number}を出力切替え先番号として選択し、それを現在の出力切替え先
+（current diversion）にし、@var{string}をその出力切替え先にコピーします。
+@var{number}は存在しない出力切替え先を表す負数にすることができます。
+現在の出力切替え先の選択だけをしたいときは、@var{string}を空文字列にして、
+このコマンドを使います。出力切替え先番号@var{number}として0を使うと、
+リロード時に@var{string}が標準出力へ出力されるでしょう、しかし@code{m4}内部
+からそのようにこのコマンドが生成されることはありません。
+@c !
+
+@end table
+
+@node Compatibility, Concept index, Frozen files, Top
+@c  @chapter Compatibility with other versions of @code{m4}
+@chapter 他の版の@code{m4}との互換性
+
+@cindex compatibility
+@cindex 互換性
+@c  This chapter describes the differences between this implementation of
+@c  @code{m4}, and the implementation found under UNIX, notably System V,
+@c  Release 3.  
+この章では@code{m4}の本実装とUNIXとりわけSystem V, Release 3における実装
+との相違点を説明します。
+
+@c  There are also differences in BSD flavors of @code{m4}.  No attempt
+@c  is made to summarize these here.
+
+@menu
+@c  * Extensions::                  Extensions in GNU m4
+@c  * Incompatibilities::           Facilities in System V m4 not in GNU m4
+@c  * Other Incompat::              Other incompatibilities
+* Extensions::                  GNU m4で拡張された機能
+* Incompatibilities::           System V m4にあってGNU m4にない機能
+* Other Incompat::              その他の非互換性
+@end menu
+
+@node Extensions, Incompatibilities, Compatibility, Compatibility
+@section GNU @code{m4}で拡張された機能
+
+@cindex GNU extensions
+@cindex GNU拡張
+@c  This version of @code{m4} contains a few facilities, that do not exist
+@c  in System V @code{m4}.  These extra facilities are all suppressed by
+@c  using the @samp{-G} command line option, unless overridden by other
+@c  command line options.
+本バージョンの@code{m4}にはSystem V @code{m4}に存在しない機能が
+いくつかあります。
+これらの追加された機能はコマンドラインオプション@samp{-G}を使うことで、
+他のコマンドラインオプションによってくつがえされない限り、すべて抑制されます。
+
+@itemize @bullet
+@item
+@c  In the @code{$}@var{n} notation for macro arguments, @var{n} can contain
+@c  several digits, while the System V @code{m4} only accepts one digit.
+@c  This allows macros in GNU @code{m4} to take any number of arguments, and
+@c  not only nine (@pxref{Arguments}).
+マクロの引数を表す@code{$}@var{n}表記において、
+@var{n}は複数の数字を含むことができますが、
+System V @code{m4}は1つの数字しか受けつけません。
+これによりGNU @code{m4}ではマクロが引数を9つだけでなく
+いくつでも取ることができます。(@pxref{Arguments})
+
+@item
+@c  Files included with @code{include} and @code{sinclude} are sought in a
+@c  user specified search path, if they are not found in the working
+@c  directory.  The search path is specified by the @samp{-I} option and the
+@c  @samp{M4PATH} environment variable (@pxref{Search Path}).
+@code{include}と@code{sinclude}でインクルードされるファイルは、
+作業ディレクトリで見つからないときは指定されたサーチパスのなかから
+捜し出されます。サーチパスは@samp{-I}オプションと環境引数@samp{M4PATH}で
+指定します。(@pxref{Search Path})
+
+@item
+@c  Arguments to @code{undivert} can be non-numeric, in which case the named
+@c  file will be included uninterpreted in the output (@pxref{Undivert}).
+@code{undivert}への引数は数字以外でもよく、
+そのときはその名前を持つファイルを解釈しないまま出力に含めます。
+(@pxref{Undivert})
+
+@item
+@c  Formatted output is supported through the @code{format} builtin, which
+@c  is modeled after the C library function @code{printf} (@pxref{Format}).
+書式付き出力が、Cのライブラリ関数@code{printf}をモデルとした
+組み込みマクロ@code{format}を通じてサポートされています。(@pxref{Format})
+
+@item
+@c  Searches and text substitution through regular expressions are
+@c  supported by the @code{regexp} (@pxref{Regexp}) and @code{patsubst}
+@c  (@pxref{Patsubst}) builtins.
+正規表現を使った探索とテキストの置換が
+組み込みマクロ@code{regexp} (@pxref{Regexp})と
+@code{patsubst} (@pxref{Patsubst})によってサポートされています。
+
+@item
+@c  The output of shell commands can be read into @code{m4} with
+@c  @code{esyscmd} (@pxref{Esyscmd}).
+シェルコマンドの出力を@code{esyscmd} (@pxref{Esyscmd})で
+@code{m4}に読み込むことができます。
+
+@item
+@c  There is indirect access to any builtin macro with @code{builtin}
+@c  (@pxref{Builtin}).
+@code{builtin} (@pxref{Builtin})により任意の組み込みマクロへ
+間接的にアクセスできます。
+
+@item
+@c  Macros can be called indirectly through @code{indir} (@pxref{Indir}).
+@code{indir} (@pxref{Indir})を通じてマクロを間接的に呼び出せます。
+
+@item
+@c  The name of the current input file and the current input line number are
+@c  accessible through the builtins @code{__file__} and @code{__line__}
+@c  (@pxref{Errprint}).
+組み込みマクロ@code{__file__}と@code{__line__} (@pxref{Errprint})
+を通じて現在の入力ファイルの名前と現在の入力行番号へアクセスできます。
+
+@item
+@c  The format of the output from @code{dumpdef} and macro tracing can be
+@c  controlled with @code{debugmode} (@pxref{Debug Levels}).
+@code{dumpdef}とマクロトレースの出力書式を
+@code{debugmode} (@pxref{Debug Levels})で制御することができます。
+
+@item
+@c  The destination of trace and debug output can be controlled with
+@c  @code{debugfile} (@pxref{Debug Output}).
+トレースとデバッグの出力先を@code{debugfile} (@pxref{Debug Output})
+で制御可能です。
+@end itemize
+
+@c  In addition to the above extensions, GNU @code{m4} implements the
+@c  following command line options: @samp{-F}, @samp{-G}, @samp{-I},
+@c  @samp{-L}, @samp{-R}, @samp{-V}, @samp{-W}, @samp{-d},
+@c  @samp{-l}, @samp{-o} and @samp{-t}.  @xref{Invoking m4}, for a
+@c  description of these options.
+上記の拡張に加えGNU @code{m4}には次のコマンドラインオプションが
+実装されています ― @samp{-F}, @samp{-G}, @samp{-I},
+@samp{-L}, @samp{-R}, @samp{-V}, @samp{-W}, @samp{-d},
+@samp{-l}, @samp{-o}, @samp{-t}。
+これらオプションの説明は@xref{Invoking m4}を参照してください。
+
+@c  Also, the debugging and tracing facilities in GNU @code{m4} are much
+@c  more extensive than in most other versions of @code{m4}.
+またGNU @code{m4}のデバッグとトレース機構は
+他バージョンの@code{m4}にあるものより遥かに大規模です。
+
+@node Incompatibilities, Other Incompat, Extensions, Compatibility
+@section System V @code{m4} にあってGNU @code{m4}にない機能
+
+@c  The version of @code{m4} from System V contains a few facilities that
+@c  have not been implemented in GNU @code{m4} yet.
+System Vバージョンの@code{m4}にはGNU @code{m4}にまだ実装されていない
+機能がいくつかあります。
+
+@itemize @bullet
+@item
+@c  System V @code{m4} supports multiple arguments to @code{defn}.  This is
+@c  not implemented in GNU @code{m4}.  Its usefulness is unclear to me.
+System V @code{m4}は@code{defn}への複数の引数をサポートしています。
+GNU @code{m4}はこれを実装していません。
+この機能の有用性が筆者には不明確です。
+@end itemize
+
+@node Other Incompat,  , Incompatibilities, Compatibility
+@c  @section Other incompatibilities
+@section その他の非互換性
+
+@c  There are a few other incompatibilities between this implementation of
+@c  @code{m4}, and the System V version.
+System Vバージョンの@code{m4}と本実装との間には他にいくつか非互換な部分
+があります。
+
+@itemize @bullet
+@item
+@c  GNU @code{m4} implements sync lines differently from System V @code{m4},
+@c  when text is being diverted.  GNU @code{m4} outputs the sync lines when
+@c  the text is being diverted, and System V @code{m4} when the diverted
+@c  text is being brought back.
+テキストが出力切替え先（diversion）に送られるときのときの同期行の実装が
+GNU @code{m4}とSystem V @code{m4}では異なります。
+GNU @code{m4}はテキストが出力切替え先に送られるときに同期行を出力しますが、
+System V @code{m4}ではこれが、出力切替え先のテキストが引き戻されるときになります。
+
+@c  The problem is which lines and filenames should be attached to text that
+@c  is being, or has been, diverted.  System V @code{m4} regards all the
+@c  diverted text as being generated by the source line containing the
+@c  @code{undivert} call, whereas GNU @code{m4} regards the diverted text as
+@c  being generated at the time it is diverted.
+問題は出力切替え先に送られる、または送られていたテキストに
+どの行番号とファイル名をつけ加えるかです。
+System V @code{m4}は出力切替え先に送られていたすべてのテキストが
+@code{undivert}の呼び出しを含むソース行によって生成されたと見なしますが、
+GNU @code{m4}は出力切替え先に送られる時にテキストが生成されたと見なします。
+
+@c  I expect the sync line option to be used mostly when using @code{m4} as
+@c  a front end to a compiler.  If a diverted line causes a compiler error,
+@c  the error messages should most probably refer to the place where the
+@c  diversion were made, and not where it was inserted again.
+筆者は同期行オプションを使うのは大抵@code{m4}をコンパイラのフロントエンド
+として使うときだと考えます。
+もし出力切替え先に送られた行がコンパイラエラーを引き起こしたら、
+エラーメッセージは出力切替え先のテキストが挿入しなおされた場所ではなく、
+出力切替え先に送られた場所をおそらく指し示すべきでしょう。
+
+@item
+@c  GNU @code{m4} makes no attempt at prohiting autoreferential definitions
+@c  like:
+@c ! TYPO prohiting
+GNU @code{m4}は自己参照的な定義を防ごうとはしません。
+
+@comment ignore
+@example
+define(`x', `x')
+define(`x', `x ')
+@end example
+
+@c  There is nothing inherently wrong with defining @samp{x} to
+@c  return @samp{x}.  The wrong thing is to expand @samp{x} unquoted.
+@c  In @code{m4}, one might use macros to hold strings, as we do for
+@c  variables in other programming languages, further checking them with:
+@samp{x}が@samp{x}を返すように定義することに、本質的に間違っているところは
+ありません。
+間違っているのはクォートされていない@samp{x}を展開することです。
+他のプログラミング言語で変数を使うのと同じように、
+@code{m4}で文字列を保持するためにマクロ使い、
+さらにそれを次のようにチェックする人もいるでしょう:
+
+@comment ignore
+@example
+ifelse(defn(`@var{holder}'), `@var{value}', @dots{})
+@end example
+
+@noindent
+@c  In cases like this one, an interdiction for a macro to hold its own
+@c  name would be a useless limitation.  Of course, this leave more rope
+@c  for the GNU @code{m4} user to hang himself!  Rescanning hangs may be
+@c  avoided through careful programming, a little like for endless loops
+@c  in traditional programming languages.
+このような場合、マクロが自分自身の名前を保持するのを禁止するのは
+余計なお世話でしょう。
+もちろん、これはGNU @code{m4}ユーザが自分で首をくくるためのロープを
+放置しておくことにはなります!
+再走査によるハング（hang）は、
+伝統的なプログラミング言語において無限ループに対するときのような、
+注意深いプログラミングによって避けることができるでしょう。
+
+@item
+@findex gnu
+@c  GNU @code{m4} without @samp{-G} option will define the macro
+@c  @code{__gnu__} to expand to the empty string.
+GNU @code{m4}は@samp{-G}オプション無しだと、
+@code{__gnu__}が空行に展開されるように定義します。
+
+@findex unix
+@c  On UNIX systems, GNU @code{m4} without the @samp{-G} option will define
+@c  the macro @code{__unix__}, otherwise the macro @code{unix}.  Both will
+@c  expand to the empty string.
+UNIX システム上においてGNU @code{m4}は@samp{-G}オプションをつけると
+マクロ@code{__unix__}、つけないときはマクロ@code{unix}を定義します。
+両方とも空文字列に展開されます。
+@end itemize
+
+@node Concept index, Macro index, Compatibility, Top
+@unnumbered Concept index
+
+@printindex cp
+
+@node Macro index,  , Concept index, Top
+@unnumbered Macro index
+
+@c  References are exclusively to the places where a builtin is introduced
+@c  the first time.  Names starting and ending with @samp{__} have these
+@c  characters removed in the index.
+参照先は組み込みマクロが最初に紹介されている場所だけです。
+索引では始めや終りに@samp{__}のある名前はそれらが取り除かれています。
+
+@iftex
+@sp 1
+@end iftex
+
+@printindex fn
+
+@summarycontents
+@contents
+@bye

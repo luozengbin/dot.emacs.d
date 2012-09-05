@@ -1,0 +1,1240 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: 例 7,  Prev: エラー処理 2,  Up: callback オプション
+
+例
+..
+
+以下に引数をとらず、単に見つかったオプションを記録するだけの
+コールバックオプションの例を示します:
+
+     def record_foo_seen (option, opt, value, parser):
+         parser.saw_foo = 1
+     
+     parser.add_option("--foo", action="callback", callback=record_foo_seen)
+
+もちろん、"store_true" アクションを使っても同じことができます。
+もう少し興味深い例もあります: `-a' がコマンドライン上に
+見つかった事実を記録するが、`-b' が見つかると `-a'
+を消し去るというものです。
+
+     def check_order (option, opt, value, parser):
+         if parser.values.b:
+             raise OptionValueError("can't use -a after -b")
+         parser.values.a = 1
+     ...
+     parser.add_option("-a", action="callback", callback=check_order)
+     parser.add_option("-b", action="store_true", dest="b")
+
+このコールバックを同様のオプションに対して複数回使いたい
+(オプションが見つかるとフラグが設定されるが、`-b'
+が見つかると常に消し去られる) 場合、少しだけ作業する必要が あります:
+すなわち、エラーメッセージと設定されるフラグを
+一般化しておかなければなりません。
+
+     def check_order (option, opt, value, parser):
+         if parser.values.b:
+             raise OptionValueError("can't use %s after -b" % opt)
+         setattr(parser.values, option.dest, 1)
+     ...
+     parser.add_option("-a", action="callback", callback=check_order, dest='a')
+     parser.add_option("-b", action="store_true", dest="b")
+     parser.add_option("-c", action="callback", callback=check_order, dest='c')
+
+もちろん、ここでは任意の条件を入れることができます -- できることは、
+すでに定義されたオプションの値に対するチェックにとどまりません。
+例えば、満月 (full moon) にならないと呼び出してはならないオプション
+があったとすると、やらなければならない作業は以下のようになります:
+
+     def check_moon (option, opt, value, parser):
+         if is_full_moon():
+             raise OptionValueError("%s option invalid when moon full" % opt)
+         setattr(parser.values, option.dest, 1)
+     ...
+     parser.add_option("--foo",
+                       action="callback", callback=check_moon, dest="foo")
+
+(is_full_moon() の定義は読者の練習用に残しておきます。)
+
+*固定個の引数*
+
+決まった数の引数をとるような callback オプションを定義する際には、
+状況は少し興味深いものとなります。callback オプションが引数を
+とるよう定義する操作は "store" や "append" オプションと同様です: TYPE
+を定義すると、オプションは単一の引数をとり、この値は
+指定された型に変換可能でなくてはなりません; 加えて NARGS
+を定義すると、オプションは指定数の引数をとるようになります。
+
+標準的な "store" アクションをエミュレートするだけの例を以下に 示します:
+
+     def store_value (option, opt, value, parser):
+         setattr(parser.values, option.dest, value)
+     ...
+     parser.add_option("--foo",
+                       action="callback", callback=store_value,
+                       type="int", nargs=3, dest="foo")
+
+`optparse' は 3 つの引数を取り出し、整数に変換しようと配慮
+することに気をつけてください; これらの値を保存する必要があります
+(あるいは、何らかの処理を行う必要があります: 明らかに、この例
+ではコールバックを使う必要はありません。想像力を働かせてください！)
+
+*可変個の引数*
+
+オプションが可変個の引数をとるようにしたいのなら、状況はやや
+困難になります。この場合、コールバックを書かなければなりません;
+`optparse' では可変個の引数に対する組み込みの機能は
+まったく提供していません。このため、慣習的な UNIX コマンドライン
+解析のための本格的な書法を扱わなくてはなりません。 (以前は、`optparse'
+はこの問題に対する配慮を行っていましたが、
+これは不具合がありました。この不具合は、この種のコールバックを
+より複雑にすることで修正されました。) とりわけ、コールバックでは、裸の
+`--' や `-' 引数のことを考えなければなりません;
+やりかたは以下のようになります:
+
+   * 裸の `--' が存在し、何らかのオプションの引数で
+     ない場合、コマンドライン処理を停止させ、`--' 自体は消失します。
+
+   * 裸の `-' も同様にコマンドライン処理を停止させますが、 `-'
+     自体は残されます。
+
+   * `--' か `-' のいずれかがオプションに 対する引数となり得ます。
+
+オプションが可変個の引数をとるようにさせたいなら、いくつかの
+巧妙で厄介な問題に配慮しなければなりません。どういう実装を
+とるかは、アプリケーションでどのようなトレードオフを考慮するか
+によります (このため、`optparse' では可変個の引数に
+関する問題を直接的に取り扱わないのです)。
+
+とはいえ、可変個の引数をもつオプションに対するスタブ (stub、仲介
+インタフェース) を以下に示しておきます:
+
+     def varargs (option, opt, value, parser):
+         assert value is None
+         done = 0
+         value = []
+         rargs = parser.rargs
+         while rargs:
+             arg = rargs[0]
+     
+             # Stop if we hit an arg like "--foo", "-a", "-fx", "--file=f",
+             # etc.  Note that this also stops on "-3" or "-3.0", so if
+             # your option takes numeric values, you will need to handle
+             # this.
+             if ((arg[:2] == "--" and len(arg) > 2) or
+                 (arg[:1] == "-" and len(arg) > 1 and arg[1] != "-")):
+                 break
+             else:
+                 value.append(arg)
+                 del rargs[0]
+     
+          setattr(parser.values, option.dest, value)
+     
+     ...
+     parser.add_option("-c", "--callback",
+                       action="callback", callback=varargs)
+
+この実装固有の弱点は、`-c' 以後に続いて負の数を表す
+引数があった場合、`-c' の引数ではなく次のオプションとして
+解釈されるということです。この問題の修正は読者の練習課題として
+おきます。
+
+
+File: python-lib-jp.info,  Node: optparse を拡張する,  Prev: callback オプション,  Up: optparse
+
+`optparse' を拡張する
+---------------------
+
+`optparse' がコマンドラインオプションを解析する手法における
+二つの主要な制御要素は、各オプションに対するアクションと型です。
+このため、ほとんどの拡張の方向性は、新たなアクションか型の追加に
+なっています。
+
+また、拡張例の節には `optparse' に対する異なったやり方での
+拡張を実演したものが収められています: 例えば、大小文字の区別
+をしないオプションパーザや、"必須オプション" を実装している
+二種類のオプションパーザです。
+
+* Menu:
+
+* 新たな型を追加する::
+* 新たなアクションを追加する::
+* 拡張を行う他の理由 optparse::
+* 拡張の例::
+
+
+File: python-lib-jp.info,  Node: 新たな型を追加する,  Next: 新たなアクションを追加する,  Prev: optparse を拡張する,  Up: optparse を拡張する
+
+新たな型を追加する
+..................
+
+新たな型を追加するには、`optparse' の `Option' クラス
+から自前のサブクラスを定義する必要があります。 このクラスは `optparse'
+の型を定義する二つの属性: `TYPES' と `TYPE_CHECKER' を持っています。
+
+`TYPES' は型の名前からなるタプルです; サブクラスでは、
+標準のタプルに基づいて新たなタプル `TYPES' を定義するだけです。
+
+`TYPE_CHECKER' は型の名前を型チェック関数に対応付ける辞書
+です。型チェック関数は以下の形式をとります:
+
+     def check_foo (option : Option, opt : string, value : string)
+                    -> foo
+
+この関数はどんな名前にしてもよく、どんな型を返すようにもできます。
+型チェック関数が返す値は `OptionParser.parse_args()' が返す
+`OptionValues' インスタンスになるか、VALUE パラメタと
+してコールバック関数に渡されます。
+
+自前の型チェック関数が問題に遭遇した場合、`OptionValueError'
+を送出しなければなりません。`OptionValueError' は単一の
+文字列引数をとり、この引数はそのまま `OptionParser' の `error()'
+メソッドに渡されます。 `error()' メソッドは プログラム名と文字列
+"error:" を渡された文字列の前に付け、
+プロセスを終了する前に全てを標準エラー出力に出力します。
+
+以下のつまらない例では、コマンドライン上の Python 形式の複素数を解析
+するために "複素数 (complex)" 型を追加する操作を実演します。
+(この例は今ではさらにつまらなくなっていましました。というのは、
+`optparse' 1.3 からは組み込みで [純粋に完備性のためだけに]
+複素数のサポートが追加されるようになったからです。ですが、気にしない
+ことにします。)
+
+まず、必要な import を行います:
+
+     from copy import copy
+     from optparse import Option, OptionValueError
+
+まず型チェック関数を定義する必要があります。というのは、型チェック
+関数は後で (自前の `Option' サブクラスにおける `TYPE_CHECKER' 属性で)
+参照されるからです:
+
+     def check_complex (option, opt, value):
+         try:
+             return complex(value)
+         except ValueError:
+             raise OptionValueError(
+                 "option %s: invalid complex value: %r" % (opt, value))
+
+最後に、`Option' サブクラスを定義します:
+
+     class MyOption (Option):
+         TYPES = Option.TYPES + ("complex",)
+         TYPE_CHECKER = copy(Option.TYPE_CHECKER)
+         TYPE_CHECKER["complex"] = check_complex
+
+(`Option.TYPE_CHECKER' の `copy()' を作成しなければ、 `optparse' の
+`Option' クラスにおける `TYPE_CHECKER' 属性を変更するだけで済みます。
+Python では、良いマナーと常識以外にこうした省略をとどめるものは
+ありません。)
+
+これで完成です！もう、新たなオプション型を使うようなスクリプトを 他の
+`optparse' ベースのスクリプトと同じように書くことができます。
+ただし、`OptionParser' に `Option' ではなく `MyOption'
+を使うように指示しなければなりません:
+
+     parser = OptionParser(option_class=MyOption)
+     parser.add_option("-c", action="store", type="complex", dest="c")
+
+別の方法として、自前のオプションリストを構築して、 `OptionParser'
+に渡すこともできます; 上の方法で `add_option()'
+を使わなければ、`OptionParser' に
+どのオプションクラスを使うかを教える必要はありません:
+
+     option_list = [MyOption("-c", action="store", type="complex", dest="c")]
+     parser = OptionParser(option_list=option_list)
+
+
+File: python-lib-jp.info,  Node: 新たなアクションを追加する,  Next: 拡張を行う他の理由 optparse,  Prev: 新たな型を追加する,  Up: optparse を拡張する
+
+新たなアクションを追加する
+..........................
+
+アクションの追加は少しだけ厄介です。というのは、`optparse'
+がアクションを二種類に分類していることを理解しなければならないからです:
+
+""store" アクション"
+     結果的に `optparse' の OptionValues インスタンスの属性に値を
+     保存することになるアクションです; このアクションをとるオプションは
+     Option のコンストラクタに 'dest' 属性を指定する必要があります。
+
+""typed" アクション"
+     コマンドラインから値をとり、それが特定の型か、あるいは特定の型に
+     変換される文字列になるはずのアクションです。このアクションをとる
+     オプションは Option のコンストラクタに 'type'
+     属性を指定する必要があります。
+
+デフォルトの "store" アクションには、"store"、 "store_const"、
+"append"、および "count" があります。デフォルトの "typed"
+アクションは、"store"、 "append"、および "callback" です。
+
+アクションを追加する際、 アクションが "store"、"typed"、
+どちらでもない、両方である、のいずれか決めなければなりません。 `Option'
+(または `Option' サブクラス) の3つのクラス属性 がこの決定を制御します:
+
+`ACTIONS'
+     すべてのアクションは ACTIONS
+     に文字列で列挙されていなければなりません。
+
+`STORE_ACTIONS'
+     "store" 系のアクションはここに列挙されていなければなりません。
+
+`TYPED_ACTIONS'
+     "typed" 系のアクションはここに列挙されていなければなりません。
+
+自前の新たなアクションを実際に実装するには、`Option' の `take_action()'
+メソッドを上書きして、自前のアクションを
+認識する場合を追加しなければなりません。
+
+例として、"extend" アクションを追加してみましょう。このアクションは
+標準の "append" アクションに似ていますが、コマンドラインから単一の
+値をとって既存のリストに追加する代わりに、 "extend" では
+コンマで区切られた単一の文字列から複数の値をとり、既存のリストに
+追加します。すなわち、`--names' が "extend" のタイプの
+オプション文字列であれば、以下のコマンドライン:
+
+     --names=foo,bar --names blah --names ding,dong
+
+は以下のリスト:
+
+     ["foo", "bar", "blah", "ding", "dong"]
+
+になります。
+
+再び `Option' のサブクラスを定義します:
+
+     class MyOption (Option):
+     
+         ACTIONS = Option.ACTIONS + ("extend",)
+         STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+         TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+     
+         def take_action (self, action, dest, opt, value, values, parser):
+             if action == "extend":
+                 lvalue = value.split(",")
+                 values.ensure_value(dest, []).extend(lvalue)
+             else:
+                 Option.take_action(
+                     self, action, dest, opt, value, values, parser)
+
+以下のことに注意します:
+
+   * "extend" は値をコマンドラインから要求し、その値をどこかへ
+     保存するという両方の操作を行うので、`STORE_ACTIONS' と
+     `TYPED_ACTIONS' の両方に相当します。
+
+   * `MyOption.take_action()' ではこの新しいアクションだけを
+     実装し、標準の`Option.take_action()' で `optparse' アクションへ
+     制御を戻します。
+
+   * VALUES は `Values' クラスのインスタンスで、 非常に便利な
+     `ensure_value()' メソッドを提供しています。 `ensure_value()'
+     は実質的には安全値 (safety value) のある `getattr()' です;
+     このメソッドは以下のようにして 呼び出されます:
+
+          values.ensure_value(attr, value)
+
+
+VALUES の `attr' 属性が存在しないか、または None の
+場合、`ensure_value()' は属性の値を VALUE に設定して から VALUE
+を返します。この機能は "extend"、 "append"、 および "count"
+で便利です。というのは、これらのアクションは
+すべて、データを変数に蓄積し、その変数が特定の型であるはず
+(最初の二つはリストで、最後の一つは整数) だからです。 `ensure_value()'
+を使うことで、アクションを使う
+スクリプトにおいて、オプションの目的変数にデフォルトの値を設定
+するよう配慮しなくてよくなります; こうした目的変数はデフォルトを None
+にしておいてよく、`ensure_value()' が必要なときに
+正しい値にするよう面倒を見ることになります。
+
+
+File: python-lib-jp.info,  Node: 拡張を行う他の理由 optparse,  Next: 拡張の例,  Prev: 新たなアクションを追加する,  Up: optparse を拡張する
+
+拡張を行う他の理由 `optparse'
+.............................
+
+新たな型やアクションの追加は、`optparse' を拡張しようと考える
+大きな、かつ明白な理由です。その他に少なくとも二つの分野がかかわって
+くると考えています。
+
+一つ目の理由は簡単なものです: `OptionParser' は必要に応じて、
+すなわちコマンドラインにエラーが生じたときはユーザがヘルプを要求
+した際に `sys.exit()' を呼び出して役に立とうとします。
+前者の場合、スクリプトをクラッシュさせてトレースバックを出力する
+伝統的なやり方は受け入れがたいものです; このような応答を行うと、
+ユーザはコマンドラインエラーを起こしたときにスクリプトにバグが
+あるのだと考えさせてしまいます。後者の場合、一般的にはヘルプを
+出力した後に継続する利点はあまりありません。
+
+この動作が目障りなら、 "修正" するのはさほど難しいことでは
+ありません。以下の実装をおこなわねばなりません。
+
+  1. OptionParser をサブクラス化して error() メソッドを上書きします
+
+  2. Option をサブクラス化して take_action() メソッドを上書きします --
+     アクション "help" の処理を自前で提供し、sys.exit() を呼ばない
+     用にする必要があるでしょう
+
+もう一つの理由は、より複雑ですが、`optparse' で実装されている
+コマンドライン文法をオーバライドするということです。
+この場合、オプションに対するアクションと型の機構はすべて捨ておき、
+`sys.argv' を処理するコードを上書きします。
+いずれの場合も、`OptionParser' をサブクラス化する必要があります;
+どれくらい徹底的に書き換えたいかによって、 `parse_args()'、
+`_process_long_opt()'、および `_process_short_opts()'
+について、一つからすべてのメソッド を上書きする必要があるでしょう。
+
+これらは両方とも、読者の練習課題として残しておきます。
+実は私は両方とも自分では書いたことがありません。というのも、 `optparse'
+のデフォルトの (自然な) 動作で十分ハッピーで いられるからです。
+
+Happy hacking、 そしてこの言葉を忘れないでください: ルークよ、source
+を使え (Use the Source, Luke)。
+
+
+File: python-lib-jp.info,  Node: 拡張の例,  Prev: 拡張を行う他の理由 optparse,  Up: optparse を拡張する
+
+拡張の例
+........
+
+以下に `optparse' モジュールを拡張する例をいくつか示します。
+
+まず、オプション解析で大小文字の区別をしないように変更しましょう:
+
+`caseless.py'
+
+次に、 `optparse' で "必須オプション" を実装する方法を二つ 挙げます。
+
+その 1: アプリケーションが引数を解析した後に必ず呼び出すメソッドを
+`OptionParser' に追加します:
+
+`required_1.py'
+
+その 2: `Option' を拡張して `required' 属性を追加します; `OptionParser'
+を拡張して、必須オプションが引数解析語に存在する ことを確認させます:
+
+`required_2.py'
+
+
+File: python-lib-jp.info,  Node: tempfile,  Next: errno,  Prev: optparse,  Up: 汎用オペレーティングシステムサービス
+
+一時的なファイルやディレクトリの生成
+====================================
+
+一時的なファイルやディレクトリを生成。
+
+このモジュールを使うと、一時的なファイルやディレクトリを生成できます。
+このモジュールはサポートされている全てのプラットフォームで利用可能
+です。
+
+バージョン 2.3 の Python では、このモジュールに対してセキュリティを
+高める為の見直しが行われました。現在では新たに 3 つの関数、
+`NamedTemporaryFile()'、 `mkstemp()'、および `mkdtemp()'
+が提供されており、安全でない `mktemp' を使いつづける必要をなくしました。
+このモジュールで生成される一時ファイルはもはやプロセス番号を
+含みません; その代わり、6 桁のランダムな文字からなる文字列が
+使われます。
+
+また、ユーザから呼び出し可能な関数は全て、一時ファイルの場所や
+名前を直接操作できるようにするための追加の引数をとるように
+なりました。もはや変数 TEMPDIR および TEMPLATE を
+使う必要はありません。以前のバージョンとの互換性を維持するために、
+引数の順番は多少変です; 明確さのためにキーワード引数を使うことを
+お勧めします。
+
+このモジュールではユーザから呼び出し可能な以下の関数を定義しています:
+
+`TemporaryFile([mode='w+b'] [, bufsize=-1] [, suffix] [, prefix] [, dir])'
+     一時的な記憶領域として使うことができるファイル
+     (またはファイル類似の) オブジェクトを返します。ファイルは
+     `mkstemp' を使って 生成されます。このファイルは閉じられると
+     (オブジェクトが
+     ガーベジコレクションされた際に、暗黙のうちに閉じられる場合を含みます)
+     すぐに消去されます。UNIX環境では、ファイルが生成されるとすぐに
+     そのファイルのディレクトリエントリは除去されてしまいます。一方、他の
+     プラットフォームではこの機能はサポートされていません; 従って、
+     コードを書くときには、この関数で作成した一時ファイルをファイルシステム上で見る
+     ことができる、あるいはできないということをあてにすべきではありません。
+
+     生成されたファイルを一旦閉じなくてもファイルを読み書きできるように
+     するために、MODE パラメタは標準で `'w+b'' に設定されています。
+     ファイルに記録するデータが何であるかに関わらず全てのプラットフォームで
+     一貫性のある動作をさせるために、バイナリモードが使われています。
+     BUFSIZE の値は標準で `-1' で、これはオペレーティングシステム
+     における標準の値を使うことを意味しています。
+
+     DIR、PREFIX および SUFFIX パラメタは `mkstemp()' に渡されます。
+
+`NamedTemporaryFile([mode='w+b'] [, bufsize=-1] [, suffix] [, prefix] [, dir])'
+     この関数はファイルがファイルシステム上で見ることができるよう保証
+     されている点を除き、`TemporaryFile()' と全く同じに働きます。
+     (UNIXでは、ディレクトリ エントリはunlinkされません)
+     ファイル名はファイルオブジェクトの `name' メンバから
+     取得することができます。このファイル名を使って一時ファイルをもう一度
+     開くとことができるかどうかは、プラットフォームによって異なります。
+     (UNIXでは可能でしたが、Windows NT以降では開く事ができません。)
+
+     _Added in Python version 2.3_
+
+`mkstemp([suffix] [, prefix] [, dir] [, text=False])'
+     可能な限り最も安全な手段で一時ファイルを生成します。
+     使用するプラットフォームで`os.open()' の `O_EXCL'
+     フラグが正しく実装されている限り、ファイルの生成で競合条件が起こる
+     ことはありません。このファイルは、ファイルを生成したユーザのユーザ
+     ID からのみ読み書き可能です。使用するプラットフォームにおいて、
+     ファイルを実行可能かどうかを示す許可ビットが使われている場合、
+     ファイルは誰からも実行不可なように設定されます。
+     このファイルのファイル記述子は子プロセスに継承されません。
+
+     `TemporaryFile()' と違って、`mkstemp()' で生成された
+     ファイルが用済みになったときにファイルを消去するのはユーザの責任です。
+
+     SUFFIX が指定された場合、ファイル名は指定された
+     拡張子で終わります。そうでない場合には拡張子は付けられません。
+     `mkstemp()' はファイル名と拡張子の間にドットを追加 しません;
+     必要なら、SUFFIX の先頭につけてください。
+
+     PREFIX が指定された場合、ファイル名は指定された
+     プレフィクス(接頭文字列) で始まります; そうでない場合、標準の
+     プレフィクスが使われます。
+
+     DIR が指定された場合、一時ファイルは指定されたディレクトリ
+     下に作成されます; そうでない場合、標準のディレクトリが使われます。
+
+     TEXT が指定された場合、ファイルをバイナリモード (標準の設定)
+     かテキストモードで開くかを示します。使用するプラットフォームによっては
+     この値を設定しても変化はありません。
+
+     `mkstemp()' は開かれたファイルを扱うための OS レベルの値
+     とファイルの絶対パス名が順番に並んだタプルを返します。 _Added in
+     Python version 2.3_
+
+`mkdtemp([suffix] [, prefix] [, dir])'
+     可能な限り安全な方法で一時ディレクトリを作成します。
+     ディレクトリの生成で競合条件は発生しません。
+     ディレクトリを作成したユーザ ID だけが、このディレクトリ
+     に対して内容を読み出したり、書き込んだり、検索したりすることが
+     できます。
+
+     `mkdtemp()' によって作られたディレクトリとその内容が用済みに
+     なった時、にそれを消去するのはユーザの責任です。
+
+     PREFIX、SUFFIX、および DIR 引数は `mkstemp()' のものと同じです。
+
+     `mkdtemp()' は新たに生成されたディレクトリの絶対パス名を 返します。
+     _Added in Python version 2.3_
+
+`mktemp([suffix] [, prefix] [, dir])'
+     _This is deprecated in Python 2.3.  Use `mkstemp()' instead._
+     一時ファイルの絶対パス名を返します。このパス名は少なくともこの関数が
+     呼び出された時点ではファイルシステム中に存在しなかったパス名です。
+     PREFIX、PREFIX、 SUFFIX、および DIR 引数は `mkstemp()'
+     のものと同じです。
+
+     _この関数を使うとプログラムのセキュリティホールになる可能性
+     があります。この関数が返したファイル名を返した後、あなたがそのファイル名
+     を使って次に何かをしようとする段階に至る前に、誰か他の人間が
+     あなたにパンチをくらわせてしまうかもしれません。_
+
+このモジュールでは、一時的なファイル名の作成方法を指定する 2 つの
+グローバル変数を使います。これらの変数は上記のいずれかの関数を最初
+に呼び出した際に初期化されます。関数呼び出しをおこなうユーザは
+これらの値を変更することができますが、これはお勧めできません;
+その代わりに関数に適切な引数を指定してください。
+
+`tempdir'
+     この値が `None' 以外に設定された場合、このモジュールで定義されて
+     いる関数全てのDIR 引数に対する標準の設定値となります。
+
+     TEMPDIR が設定されていないか `None' の場合、上記のいずれかの
+     関数を呼び出した際は常に、Python は標準的なディレクトリ候補のリスト
+     を検索し、関数を呼び出しているユーザの権限でファイルを作成できる
+     最初のディレクトリ候補を TEMPDIR に設定します。リストは以下の
+     ようになっています:
+
+       1. 環境変数 `TMPDIR' で与えられているディレクトリ名。
+
+       2. 環境変数 `TEMP' で与えられているディレクトリ名。
+
+       3. 環境変数 `TMP' で与えられているディレクトリ名。
+
+       4. プラットフォーム依存の場所:
+             * Macintosh では `Temporary Items' フォルダ。
+
+             * RiscOS では環境変数 `Wimp$ScrapDir' で与えられて
+               いるディレクトリ名。
+
+             * Windows ではディレクトリ `C:\TEMP'、 `C:\TMP'、
+               `\TEMP'、および `\TMP' の順。
+
+             * その他の全てのプラットフォームでは、`/tmp'、
+               `/var/tmp'、および `/usr/tmp' の順。
+
+       5. 最後の手段として、現在の作業ディレクトリ。
+
+`gettempdir()'
+     現在選択されている、テンポラリファイルを作成するためのディレクトリ
+     を返します。TEMPDIR が `None' でない場合、単にその内容 を返します;
+     そうでない場合には上で記述されている検索が実行され、
+     その結果が返されます。
+
+`template'
+     _This is deprecated in Python 2.0.  代わりに `gettempprefix()'
+     を使ってください。_ この値に `None'
+     以外の値を設定した場合、`mktemp()'
+     が返すファイル名のディレクトリ部を含まない先頭部分 (プレフィクス)
+     を 定義します。ファイル名を一意にするために、 6
+     つのランダムな文字および
+     数字がこのプレフィクスの後に追加されます。Windows では、標準の
+     プレフィクスは`~T' です; 他のシステムでは `tmp' です。
+
+     このモジュールの古いバージョンでは、`os.fork()' を呼び出した 後に
+     `template' を `None' に設定することが必要でした;
+     この仕様はバージョン 1.5.2 からは必要なくなりました。
+
+`gettempprefix()'
+     一時ファイルを生成する際に使われるファイル名の先頭部分を返します。
+     この先頭部分にはディレクトリ部は含まれません。変数 TEMPLATE
+     を直接読み出すよりもこの関数を使うことを勧めます。 _Added in
+     Python version 1.5.2_
+
+
+File: python-lib-jp.info,  Node: errno,  Next: glob,  Prev: tempfile,  Up: 汎用オペレーティングシステムサービス
+
+標準の errno システムシンボル
+=============================
+
+標準の errno システムシンボル。
+
+このモジュールから標準の `errno' システムシンボルを取得することが
+できます。個々のシンボルの値は `errno' に対応する整数値です。
+これらのシンボルの名前は、`linux/include/errno.h' から借用され
+ており、かなり網羅的なはずです。
+
+`errorcode'
+     errno 値を背後のシステムにおける文字列表現に対応付ける辞書です。
+     例えば、`errno.errorcode[errno.EPERM]' は `'EPERM''
+     に対応付けられます。
+
+数値のエラーコードをエラーメッセージに変換するには、 `os.strerror()'
+を使ってください。
+
+以下のリストの内、現在のプラットフォームで使われていないシンボルは
+モジュール上で定義されていません。定義されているシンボルだけを挙げた
+リストは `errno.errorcode.keys()' として取得することができます。
+取得できるシンボルには以下のようなものがあります:
+
+`EPERM'
+     許可されていない操作です (Operation not permitted)
+
+`ENOENT'
+     ファイルまたはディレクトリがありません (No such file or directory)
+
+`ESRCH'
+     指定したプロセスが存在しません (No such process)
+
+`EINTR'
+     割り込みシステムコールです (Interrupted system call)
+
+`EIO'
+     I/O エラーです (I/O error)
+
+`ENXIO'
+     そのようなデバイスまたはアドレスはありません (No such device or
+     address)
+
+`E2BIG'
+     引数リストが長すぎます (Arg list too long)
+
+`ENOEXEC'
+     実行形式にエラーがあります (Exec format error)
+
+`EBADF'
+     ファイル番号が間違っています (Bad file number)
+
+`ECHILD'
+     子プロセスがありません (No child processes)
+
+`EAGAIN'
+     再試行してください (Try again)
+
+`ENOMEM'
+     空きメモリがありません (Out of memory)
+
+`EACCES'
+     許可がありません (Permission denied)
+
+`EFAULT'
+     不正なアドレスです (Bad address)
+
+`ENOTBLK'
+     ブロックデバイスが必要です (Block device required)
+
+`EBUSY'
+     そのデバイスまたは資源は使用中です (Device or resource busy)
+
+`EEXIST'
+     ファイルがすでに存在します	(File exists)
+
+`EXDEV'
+     デバイス間のリンクです (Cross-device link)
+
+`ENODEV'
+     そのようなデバイスはありません (No such device)
+
+`ENOTDIR'
+     ディレクトリではありません (Not a directory)
+
+`EISDIR'
+     ディレクトリです (Is a directory)
+
+`EINVAL'
+     無効な引数です (Invalid argument)
+
+`ENFILE'
+     ファイルテーブルがオーバフローしています (File table overflow)
+
+`EMFILE'
+     開かれたファイルが多すぎます (Too many open files)
+
+`ENOTTY'
+     タイプライタではありません (Not a typewriter)
+
+`ETXTBSY'
+     テキストファイルが使用中です (Text file busy)
+
+`EFBIG'
+     ファイルが大きすぎます (File too large)
+
+`ENOSPC'
+     デバイス上に空きがありません (No space left on device)
+
+`ESPIPE'
+     不正なシークです (Illegal seek)
+
+`EROFS'
+     読み出し専用ファイルシステムです (Read-only file system)
+
+`EMLINK'
+     リンクが多すぎます (Too many links)
+
+`EPIPE'
+     パイプが壊れました (Broken pipe)
+
+`EDOM'
+     数学引数が関数の定義域を越えています (Math argument out of domain
+     of func)
+
+`ERANGE'
+     表現できない数学演算結果になりました (Math result not
+     representable)
+
+`EDEADLK'
+     リソースのデッドロックが起きます (Resource deadlock would occur)
+
+`ENAMETOOLONG'
+     ファイル名が長すぎます (File name too long)
+
+`ENOLCK'
+     レコードロッキングが利用できません (No record locks available)
+
+`ENOSYS'
+     実装されていない機能です (Function not implemented)
+
+`ENOTEMPTY'
+     ディレクトリが空ではありません (Directory not empty)
+
+`ELOOP'
+     これ以上シンボリックリンクを追跡できません (Too many symbolic
+     links encountered)
+
+`EWOULDBLOCK'
+     操作がブロックします (Operation would block)
+
+`ENOMSG'
+     指定された型のメッセージはありません (No message of desired type)
+
+`EIDRM'
+     識別子が除去されました (Identifier removed)
+
+`ECHRNG'
+     チャネル番号が範囲を超えました (Channel number out of range)
+
+`EL2NSYNC'
+     レベル 2 で同期がとれていません (Level 2 not synchronized)
+
+`EL3HLT'
+     レベル 3 で終了しました (Level 3 halted)
+
+`EL3RST'
+     レベル 3 でリセットしました (Level 3 reset)
+
+`ELNRNG'
+     リンク番号が範囲を超えています (Link number out of range)
+
+`EUNATCH'
+     プロトコルドライバが接続されていません (Protocol driver not
+     attached)
+
+`ENOCSI'
+     CSI 構造体がありません (No CSI structure available)
+
+`EL2HLT'
+     レベル 2 で終了しました (Level 2 halted)
+
+`EBADE'
+     無効な変換です (Invalid exchange)
+
+`EBADR'
+     無効な要求記述子です (Invalid request descriptor)
+
+`EXFULL'
+     変換テーブルが一杯です (Exchange full)
+
+`ENOANO'
+     陰極がありません (No anode)
+
+`EBADRQC'
+     無効なリクエストコードです (Invalid request code)
+
+`EBADSLT'
+     無効なスロットです (Invalid slot)
+
+`EDEADLOCK'
+     ファイルロックにおけるデッドロックエラーです (File locking
+     deadlock error)
+
+`EBFONT'
+     フォントファイル形式が間違っています (Bad font file format)
+
+`ENOSTR'
+     ストリーム型でないデバイスです (Device not a stream)
+
+`ENODATA'
+     利用可能なデータがありません (No data available)
+
+`ETIME'
+     時間切れです (Timer expired)
+
+`ENOSR'
+     streams リソースを使い切りました (Out of streams resources)
+
+`ENONET'
+     計算機はネットワーク上にありません (Machine is not on the network)
+
+`ENOPKG'
+     パッケージがインストールされていません (Package not installed)
+
+`EREMOTE'
+     対象物は遠隔にあります (Object is remote)
+
+`ENOLINK'
+     リンクが切られました (Link has been severed)
+
+`EADV'
+     Advertise エラーです (Advertise error)
+
+`ESRMNT'
+     Srmount エラーです (Srmount error)
+
+`ECOMM'
+     送信時の通信エラーです (Communication error on send)
+
+`EPROTO'
+     プロトコルエラーです (Protocol error)
+
+`EMULTIHOP'
+     多重ホップを試みました (Multihop attempted)
+
+`EDOTDOT'
+     RFS 特有のエラーです (RFS specific error)
+
+`EBADMSG'
+     データメッセージではありません (Not a data message)
+
+`EOVERFLOW'
+     定義されたデータ型にとって大きすぎる値です (Value too large for
+     defined data type)
+
+`ENOTUNIQ'
+     名前がネットワーク上で一意でありません (Name not unique on
+     network)
+
+`EBADFD'
+     ファイル記述子の状態が不正です (File descriptor in bad state)
+
+`EREMCHG'
+     遠隔のアドレスが変更されました (Remote address changed)
+
+`ELIBACC'
+     必要な共有ライブラリにアクセスできません (Can not access a needed
+     shared library)
+
+`ELIBBAD'
+     壊れた共有ライブラリにアクセスしています (Accessing a corrupted
+     shared library)
+
+`ELIBSCN'
+     a.out の .lib セクションが壊れています (.lib section in a.out
+     corrupted)
+
+`ELIBMAX'
+     リンクを試みる共有ライブラリが多すぎます (Attempting to link in
+     too many shared libraries)
+
+`ELIBEXEC'
+     共有ライブラリを直接実行することができません (Cannot exec a shared
+     library directly)
+
+`EILSEQ'
+     不正なバイト列です (Illegal byte sequence)
+
+`ERESTART'
+     割り込みシステムコールを復帰しなければなりません (Interrupted
+     system call should be restarted)
+
+`ESTRPIPE'
+     ストリームパイプのエラーです (Streams pipe error)
+
+`EUSERS'
+     ユーザが多すぎます (Too many users)
+
+`ENOTSOCK'
+     非ソケットに対するソケット操作です (Socket operation on
+     non-socket)
+
+`EDESTADDRREQ'
+     目的アドレスが必要です (Destination address required)
+
+`EMSGSIZE'
+     メッセージが長すぎます (Message too long)
+
+`EPROTOTYPE'
+     ソケットに対して不正なプロトコル型です (Protocol wrong type for
+     socket)
+
+`ENOPROTOOPT'
+     利用できないプロトコルです (Protocol not available)
+
+`EPROTONOSUPPORT'
+     サポートされていないプロトコルです (Protocol not supported)
+
+`ESOCKTNOSUPPORT'
+     サポートされていないソケット型です (Socket type not supported)
+
+`EOPNOTSUPP'
+     通信端点に対してサポートされていない操作です (Operation not
+     supported on transport endpoint)
+
+`EPFNOSUPPORT'
+     サポートされていないプロトコルファミリです (Protocol family not
+     supported)
+
+`EAFNOSUPPORT'
+     プロトコルでサポートされていないアドレスファミリです (Address
+     family not supported by protocol)
+
+`EADDRINUSE'
+     アドレスは使用中です (Address already in use)
+
+`EADDRNOTAVAIL'
+     要求されたアドレスを割り当てできません (Cannot assign requested
+     address)
+
+`ENETDOWN'
+     ネットワークがダウンしています (Network is down)
+
+`ENETUNREACH'
+     ネットワークに到達できません (Network is unreachable)
+
+`ENETRESET'
+     リセットによってネットワーク接続が切られました (Network dropped
+     connection because of reset)
+
+`ECONNABORTED'
+     ソフトウェアによって接続が終了されました (Software caused
+     connection abort)
+
+`ECONNRESET'
+     接続がピアによってリセットされました (Connection reset by peer)
+
+`ENOBUFS'
+     バッファに空きがありません (No buffer space available)
+
+`EISCONN'
+     通信端点がすでに接続されています (Transport endpoint is already
+     connected)
+
+`ENOTCONN'
+     通信端点が接続されていません (Transport endpoint is not connected)
+
+`ESHUTDOWN'
+     通信端点のシャットダウン後は送信できません (Cannot send after
+     transport endpoint shutdown)
+
+`ETOOMANYREFS'
+     参照が多すぎます: 接続できません (Too many references: cannot
+     splice)
+
+`ETIMEDOUT'
+     接続がタイムアウトしました (Connection timed out)
+
+`ECONNREFUSED'
+     接続を拒否されました (Connection refused)
+
+`EHOSTDOWN'
+     ホストはシステムダウンしています (Host is down)
+
+`EHOSTUNREACH'
+     ホストへの経路がありません (No route to host)
+
+`EALREADY'
+     すでに処理中です (Operation already in progress)
+
+`EINPROGRESS'
+     現在処理中です (Operation now in progress)
+
+`ESTALE'
+     無効な NFS ファイルハンドルです (Stale NFS file handle)
+
+`EUCLEAN'
+     (Structure needs cleaning)
+
+`ENOTNAM'
+     XENIX 名前付きファイルではありません (Not a XENIX named type file)
+
+`ENAVAIL'
+     XENIX セマフォは利用できません (No XENIX semaphores available)
+
+`EISNAM'
+     名前付きファイルです (Is a named type file)
+
+`EREMOTEIO'
+     遠隔側の I/O エラーです (Remote I/O error)
+
+`EDQUOT'
+     ディスククオータを超えました (Quota exceeded)
+
+
+File: python-lib-jp.info,  Node: glob,  Next: fnmatch,  Prev: errno,  Up: 汎用オペレーティングシステムサービス
+
+UNIX 形式のパス名のパターン展開
+===============================
+
+UNIX シェル形式のパス名のパターン展開。
+
+`glob' モジュールはUNIX シェルで使われているルールに従って指定され
+たパターンにマッチするすべてのパス名を見つけ出します。
+チルダ展開は使えませ んが、`*'、 `?'と
+`[]'で表される文字範囲には正しくマッチしま す。これは`os.listdir()'
+関数と `fnmatch.fnmatch()'関数を 一緒に使って実行されていて、 実際に
+subshell を呼び出しているわけではありま
+せん。(チルダ展開とシェル変数展開を利用したければ、
+`os.path.expantion()' と`os.path.expandvars()'を 使ってください。)
+
+`glob(pathname)'
+     PATHNAME
+     (パスの指定を含んだ文字列でなければいけません。)にマッチする
+     空の可能性のあるパス名のリストを返します。
+
+     PATHNAME は( `/usr/src/Python-1.5/Makefile'のように)絶対パスでも
+     いいし、(`../../Tools/*/*.gif'のように)相対パスでもよくて、シェル形式の
+     ワイルドカードを含んでいてもかまいません。
+
+たとえば、次のファイルだけがあるディレクトリを考えてください: `1.gif'、
+`2.txt'、 and `card.gif'。`glob()'は次のような結果になり ます。
+パスに接頭するどの部分が保たれているかに注意してください。
+
+     >>> import glob
+     >>> glob.glob('./[0-9].*')
+     ['./1.gif', './2.txt']
+     >>> glob.glob('*.gif')
+     ['1.gif', 'card.gif']
+     >>> glob.glob('?.gif')
+     ['1.gif']
+
+See also:
+     *Note fnmatch:: シェル形式の(パスではない)ファイル名展開
+
+
+File: python-lib-jp.info,  Node: fnmatch,  Next: shutil,  Prev: glob,  Up: 汎用オペレーティングシステムサービス
+
+UNIX ファイル名のパターンマッチ
+===============================
+
+UNIX シェル形式のファイル名のパターンマッチ。
+
+このモジュールは UNIX のシェル形式のワイルドカードへの対応を提供します
+が、(`re'  モジュールでドキュメント化されている)
+正規表現と同じでは_ありません_。シェル形式のワイルドカードで使われる特
+別な文字は、
+
+Pattern                              Meaning
+------                               -----
+*                                    すべてにマッチします
+?                                    任意の一文字にマッチします
+[SEQ]                                SEQにある任意の文字にマッチします
+[!SEQ]                               SEQにない任意の文字にマッチします
+
+ファイル名のセパレーター(UNIXでは`'/'')はこのモジュールに固有なもので
+は _ない_ ことに注意してください。パス名展開については、 `glob'
+モジュールを参照してください
+(`glob'はパス名の部分にマッチさせるのに`fnmatch()'を使っ
+ています)。同様に、ピリオドで始まるファイル名はこのモジュールに固有ではなく
+て、`*' と`?' のパターンでマッチします。
+
+`fnmatch(filename, pattern)'
+     filenameの文字列がpatternの文字列にマッチするかテストして、真、偽のいずれか
+     を返します。
+     オペレーティングシステムが大文字、小文字を区別しない場合、
+     比較を行う前に、両方のパラメタを全て大文字、または全て小文字に揃えます。
+     オペレーティングシステムが標準でどうなっているかに関係なく、大小文字を
+     区別して比較したい場合には、`fnmatchcase()' を代わりに使って
+     ください。
+
+`fnmatchcase(filename, pattern)'
+     FILENAME が PATTERN にマッチするかテストして、真、偽を返します。
+     比較は大文字、小文字を区別します。
+
+`filter(names, pattern)'
+     PATTERN にマッチする NAMES のリストの部分集合を返します。 `[n for
+     n in names if fnmatch(n, pattern)]'と同じですが、もっと効率よく
+     実装しています。 _Added in Python version 2.2_
+
+See also:
+     *Note glob:: UNIX シェル形式のパス展開。
+
+
+File: python-lib-jp.info,  Node: shutil,  Next: locale,  Prev: fnmatch,  Up: 汎用オペレーティングシステムサービス
+
+高レベルなファイル操作
+======================
+
+コピーを含む高レベルなファイル操作。
+
+`shutil'モジュールはファイルやファイルの収集に関する多くの高レベ
+ルな操作方法を提供します。特にファイルのコピーや削除のための関数が用意さ
+れています。
+
+*注意:* MacOSにおいてはリソースフォークや他のメタデータは取り扱う
+ことができません。
+
+つまり、ファイルをコピーする際にこれらのリソースは失われたり、ファイルタ
+イプや作成者コードは正しく認識されないことを意味します。
+
+`copyfile(src, dst)'
+     SRCで指定されたファイル内容をDSTで指定されたファイルへとコ
+     ピーします。
+     もしDSTが存在したら置き換えられ、そうでなければ新規作成されます。
+     キャラクタやブロックデバイス、パイプ等の特別なファイルはこの関数ではコ
+     ピーできません。 SRCとDSTには文字列としてパス名を与えられます。
+
+`copyfileobj(fsrc, fdst[, length])'
+     ファイル形式のオブジェクトFSRCの内容をFDSTへコピーします。
+     整数値LENGTHはバッファサイズを表します。特に負のLENGTHは
+     チャンク内のソースデータを繰り返し操作することなくコピーします。
+     つまり標準ではデータは制御不能なメモリ消費を避けるためにチャンク内
+     に読み込まれます。
+
+`copymode(src, dst)'
+     SRCからDSTへパーミッションをコピーします。ファイル内容や所
+     有者、グループは影響を受けません。
+     SRCとDSTには文字列としてパス名を与えられます。
+
+`copystat(src, dst)'
+     SRCからDSTへパーミッション最終アクセス時間、最終更新時間を
+     コピーします。ファイル内容や所有者、グループは影響を受けません。
+     SRCとDSTには文字列としてパス名を与えられます。
+
+`copy(src, dst)'
+     ファイルSRCをファイルまたはディレクトリDISTへコピーします。
+     もし、DSTがディレクトリであればファイル名はSRCと同じものが
+     指定されたディレクトリ内に作成（または上書き）されます。
+     パーミッションはコピーされます。
+     SRCとDSTには文字列としてパス名を与えられます。
+
+`copy2(src, dst)'
+     `copy()'と類似していますが、最終アクセス時間や最終更新時間も同
+     様にコピーされます。これは  UNIX コマンドの `cp'
+     `-p'と同様の働きをします。
+
+`copytree(src, dst[, symlinks])'
+     SRCを起点としてディレクトリツリー全体を再帰的にコピーします。
+     DSTで指定されたディレクトリは既存のものではなく新規に作成されるも
+     のでなくてはなりません。個々のファイルは`copy2()'によってコピー
+     されます。If SYMLINKSが真であれば、元のディレクトリ内の
+     シンボリックリンクはコピー先のディレクトリ内へシンボリックリンクとして
+     コピーされます。偽が与えられたり省略された場合は元のディレクトリ内のリ
+     ンクの対象となっているファイルがコピー先のディレクトリ内へコピーされま
+     す。エラーが発生したときはエラー理由のリストを持った例外を引き起こします。
+
+     この関数のソースコードは道具としてよりも使用例として捉えられるべきでしょう。
+
+     _Changed in Python version 2.3_
+
+
+`rmtree(path[, ignore_errors[, onerror]])'
+     ディレクトリツリー全体を削除します。もしIGNORE_ERRORSが真であれば
+     削除に失敗したことによるエラーは無視され、偽が与えられたり省略された場
+     合はこれらのエラーはONERRORで与えられたハンドラを呼び出して処理
+     され、これが省略された場合は例外を引き起こします。
+
+     ONERRORが与えられた場合、それは3つのパラメータFUNCTION,
+     PATHおよびEXCINFOを受け入れて呼び出し可能のものでなくてはな
+     りません。最初のパラメータFUNCTIONは例外を引き起こす関数で、
+     `os.remove()'や`os.listdir()'、`os.rmdir()'
+     等が用いられるでしょう。
+     二番目のパラメータはPATHはFUNCTIONへ渡らせるパス名です。
+     三番目のパラメータEXCINFOは`sys.exc_info()'で返されるよ
+     うな例外情報になるでしょう。ONERRORが引き起こす例外はキャッチでき
+     ません。
+
+`move(src, dst)'
+     再帰的にファイルやディレクトリを別の場所へ移動します。
+
+     もし移動先が現在のファイルシステム上であれば単純に名前を変更します。
+     そうでない場合はコピーを行い、その後コピー元は削除されます。
+
+     _Added in Python version 2.3_
+
+`Error'
+     この例外は複数ファイルの操作を行っているときに生じる例外をまとめたもの
+     です。`copytree'に対しては例外の引数は3つのタプル(SRCNAME,
+     DSTNAME, EXCEPTION)からなるリストです。
+
+     _Added in Python version 2.3_
+
+* Menu:
+
+* 使用例 3::
+
+
+File: python-lib-jp.info,  Node: 使用例 3,  Prev: shutil,  Up: shutil
+
+使用例
+------
+
+以下は前述の`copytree()'関数のドキュメント文字列を省略した実装 例です。
+本モジュールで提供される他の関数の使い方を示しています。
+
+     def copytree(src, dst, symlinks=0):
+         names = os.listdir(src)
+         os.mkdir(dst)
+         for name in names:
+             srcname = os.path.join(src, name)
+             dstname = os.path.join(dst, name)
+             try:
+                 if symlinks and os.path.islink(srcname):
+                     linkto = os.readlink(srcname)
+                     os.symlink(linkto, dstname)
+                 elif os.path.isdir(srcname):
+                     copytree(srcname, dstname, symlinks)
+                 else:
+                     copy2(srcname, dstname)
+             except (IOError, os.error), why:
+                 print "Can't copy %s to %s: %s" % (`srcname`, `dstname`, str(why))
+

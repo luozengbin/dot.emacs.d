@@ -1,0 +1,1274 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: SMTP オブジェクト,  Next: SMTP 使用例,  Prev: smtplib,  Up: smtplib
+
+SMTP オブジェクト
+-----------------
+
+`SMTP'クラスインスタンスは次のメソッドを提供します:
+
+`set_debuglevel(level)'
+     コネクション間でやりとりされるメッセージ出力のレベルをセットします。
+     メッセージの冗長さはLEVELに応じて決まります。
+
+`connect([host[, port]])'
+     ホスト名とポート番号をもとに接続します。デフォルトはlocalhostの
+     標準的なSMTPポート(25番)に接続します。
+     もしホスト名の末尾がコロン(`:')で、後に番号がついている場合は、
+     「ホスト名:ポート番号」として扱われます。
+     このメソッドはコンストラクタにホスト名及びポート番号が指定されている場合、
+     自動的に呼び出されます。
+
+`docmd(cmd, [, argstring])'
+     サーバへコマンドCMDを送信します。
+     オプション引数ARGSTRINGはスペース文字でコマンドに連結します。
+     戻り値は、整数値のレスポンスコードと、サーバからの応答の値をタプルで返します。
+     (サーバからの応答が数行に渡る場合でも一つの大きな文字列で返します。)
+
+     通常、この命令を明示的に使う必要はありませんが、
+     自分で拡張するする時に使用するときに役立つかもしれません。
+
+     応答待ちのときに、サーバへのコネクションが失われると、
+     `SMTPServerDisconnected'が上がります。
+
+`helo([hostname])'
+     SMTPサーバに`HELO'コマンドで身元を示します。
+     デフォルトではhostname引数はローカルホストを指します。
+
+     通常は`sendmail()'が呼びだすため、
+     これを明示的に呼び出す必要はありません。
+
+`ehlo([hostname])'
+     `EHLO'を利用し、ESMTPサーバに身元を明かします。
+     デフォルトではhostname引数はローカルホストを指します。
+
+     また、ESMTPオプションのために応答を調べたものは、
+     `has_extn()'に備えて保存されます。
+
+     `has_extn()'をメールを送信する前に使わない限り、
+     明示的にこのメソッドを呼び出す必要があるべきではなく、
+     `sendmail()'が必要とした場合に呼ばれます。、
+
+`has_extn(name)'
+     NAMEが拡張SMTPサービス可能な場合には`1'を返し、
+     そうでなければ`0'を返します。
+
+`verify(address)'
+     `VRFY'を利用してSMTPサーバにアドレスの妥当性をチェックします。
+     妥当である場合はコード250と完全なRFC 822
+     アドレス(人名)のタプルを返します。
+     それ以外の場合は、400以上のエラーコードとエラー文字列を返します。
+
+     _Note:_ ほとんどのサイトはスパマーの裏をかくためにSMTPの`VRFY'は
+     使用不可になっています。
+
+`login(user, password)'
+     認証が必要なSMTPサーバにログインします。
+     認証に使用する引数はユーザ名とパスワードです。
+     まだセッションが無い場合は、`EHLO'または`HELO'コマンドで
+     セッションを作ります。ESMTPの場合は`EHLO'が先に試されます。
+     認証が成功した場合は通常このメソッドは戻りますが、
+     例外が起こった場合は以下の例外が上がります:
+
+    ``SMTPHeloError''
+          サーバが`HELO'に返答できなかった。
+
+    ``SMTPAuthenticationError''
+          サーバがユーザ名/パスワードでの認証に失敗した。
+
+    ``SMTPError''
+          どんな認証方法も見付からなかった。
+
+
+`starttls([keyfile[, certfile]])'
+     TLS(Transport Layer Security)モードでSMTPコネクションを出し、
+     全てのSMTPコマンドは暗号化されます。
+     これは`ehlo()'をもう一度呼びだすときにするべきです。
+
+     KEYFILEとCERTFILEが提供された場合に、
+     `socket'モジュールの`ssl()'関数が通るようになります。
+
+`sendmail(from_addr, to_addrs, msg[, mail_options, rcpt_options])'
+     メールを送信します。必要な引数はRFC 822 のfromアドレス文字列、 RFC
+     822 のtoアドレス文字列のリスト、メッセージ文字列です。
+     送信側は`MAIL FROM'コマンドで使用されるMAIL_OPTIONSの
+     ESMTPオプション(`8bitmime'のような)のリストを得るかもしれません。
+
+     全ての`RCPT'コマンドで使われるべきESMTPオプション
+     (例えば`DSN'コマンド)は、RCPT_OPTIONSを通して
+     利用することができます。(もし送信先別にESMTPオプションを使う必要があれば、
+     メッセージを送るために`mail'、`rcpt'、`data'
+     といった下位レベルのメソッドを使う必要があります。)
+
+     _Note:_ 配送エージェントはFROM_ADDR、TO_ADDRS引数を使い、
+     メッセージのエンベロープを構成します。
+     `SMTP'はメッセージヘッダを修正しません。
+
+     まだセッションが無い場合は、`EHLO'または`HELO'コマンドで
+     セッションを作ります。ESMTPの場合は`EHLO'が先に試されます。
+     また、サーバがESMTP対応ならば、メッセージサイズとそれぞれ指定された
+     オプションも渡します。(featureオプションがあればサーバの広告をセットします)
+     `EHLO'が失敗した場合は、ESMTPオプションの無い`HELO'が試されます。
+
+     このメソッドはメールが受け入れられたときは普通に戻りますが、
+     そうでない場合は例外を投げます。このメソッドが例外を投げられなければ、
+     誰かが送信したメールを得るべきです。また、例外を投げれなかった場合は、
+     拒絶された受取人ごとへの1つのエントリーと共に、辞書を返します。
+     各エントリーは、サーバーによって送られたSMTPエラーコードおよび
+     エラーメッセージのタプルを含んでいます。
+
+     このメソッドは次の例外を上げることがあります:
+
+    ``SMTPRecipientsRefused''
+          全ての受信を拒否され、誰にもメールが届けられませんでした。
+          例外オブジェクトの`recipients'属性は、
+          受信拒否についての情報の入った辞書オブジェクトです。
+          (辞書は少なくとも一つは受信されたときに似ています)。
+
+    ``SMTPHeloError''
+          サーバが`HELP'に返答しませんでした。
+
+    ``SMTPSenderRefused''
+          サーバがFROM_ADDRを弾きました。
+
+    ``SMTPDataError''
+          サーバが予期しないエラーコードを返しました。(受信拒否以外)
+
+     また、この他の注意として、例外が上がった後も
+     コネクションは開いたままになっています。
+
+
+`quit()'
+     SMTPセッションを終了し、コネクションを閉じます。
+
+下位レベルのメソッドは標準SMTP/ESMTPコマンド`HELP'、 `RSET'、
+`NOOP'、`MAIL'、`RCPT'、`DATA'に対応しています。
+通常これらは直接呼ぶ必要はなく、また、ドキュメントもありません。
+詳細はモジュールのコードを調べてください。
+
+
+File: python-lib-jp.info,  Node: SMTP 使用例,  Prev: SMTP オブジェクト,  Up: smtplib
+
+SMTP 使用例
+-----------
+
+次の例は最低限必要なメールアドレス(`To' と `From')を含んだ
+メッセージを送信するものです。この例ではRFC 822
+ヘッダの加工もしていません。
+メッセージに含まれるヘッダは、メッセージに含まれる必要があり、
+特に、明確な'To'、と'From'アドレスはメッセージヘッダに
+含まれている必要があります。
+
+     import smtplib
+     import string
+     
+     def prompt(prompt):
+         return raw_input(prompt).strip()
+     
+     fromaddr = prompt("From: ")
+     toaddrs  = prompt("To: ").split()
+     print "Enter message, end with ^D (Unix) or ^Z (Windows):"
+     
+     # Add the From: and To: headers at the start!
+     msg = ("From: %s\r\nTo: %s\r\n\r\n"
+            % (fromaddr, ", ".join(toaddrs, ", ")))
+     while 1:
+         try:
+             line = raw_input()
+         except EOFError:
+             break
+         if not line:
+             break
+         msg = msg + line
+     
+     print "Message length is " + repr(len(msg))
+     
+     server = smtplib.SMTP('localhost')
+     server.set_debuglevel(1)
+     server.sendmail(fromaddr, toaddrs, msg)
+     server.quit()
+
+
+File: python-lib-jp.info,  Node: telnetlib,  Next: urlparse,  Prev: smtplib,  Up: インターネットプロトコルとその支援
+
+Telnet クライアント
+===================
+
+Telnet クライアントクラス
+
+`telnetlib' モジュールでは、Telnet プロトコルを実装している `Telnet'
+クラスを提供します。Telnet プロトコルについての詳細は RFC 854
+を参照してください。加えて、このモジュールでは Telnet
+プロトコルにおける制御文字 (下を参照してください) と、telnet オプション
+に対するシンボル定数を提供しています。telnet オプションに対する
+シンボル名は `arpa/telnet.h' の `TELOPT_' がない状態
+での定義に従います。伝統的に `arpa/telnet.h' に含められて いない telnet
+オプションのシンボル名については、このモジュールの
+ソースコード自体を参照してください。
+
+telnet コマンドのシンボル定数は、IAC、DONT、DO、WONT、WILL、SE
+(サブネゴシエーション終了)、NOP (何もしない)、DM (データマーク)、 BRK
+(ブレーク)、IP (プロセス割り込み)、AO (出力中断)、 AYT (応答確認)、EC
+(文字削除)、EL (行削除)、GA (進め)、SB ( サブネゴシエーション開始)
+です。
+
+`Telnet([host[, port]])'
+     `Telnet' は Telnet サーバへの接続を表現します。 標準では、`Telnet'
+     クラスのインスタンスは最初はサーバに 接続していません;
+     接続を確立するには `open()' を使わなければ
+     なりません。別の方法として、コンストラクタにホスト名とオプションの
+     ポート番号を渡すことができます。この場合はコンストラクタの呼び出し
+     が返る以前にサーバへの接続が確立されます。
+
+     すでに接続の開かれているンスタンスを再度開いてはいけません。
+
+     このクラスは多くの `read_*()' メソッドを持っています。
+     これらのメソッドのいくつかは、接続の終端を示す文字を読み込んだ場合に
+     `EOFError' を送出するので注意してください。例外を送出する
+     のは、これらの関数が終端に到達しなくても空の文字列を返す可能性
+     があるからです。詳しくは下記の個々の説明を参照してください。
+
+See also:
+    *RFC854 Telnet プロトコル仕様 (Telnet Protocol Specification)*
+          Telnet プロトコルの定義。
+
+
+* Menu:
+
+* Telnet オブジェクト::
+* Telnet Example::
+
+
+File: python-lib-jp.info,  Node: Telnet オブジェクト,  Next: Telnet Example,  Prev: telnetlib,  Up: telnetlib
+
+Telnet オブジェクト
+-------------------
+
+`Telnet' インスタンスは以下のメソッドを持っています:
+
+`read_until(expected[, timeout])'
+     EXPECTEDで指定された文字列を読み込むか、TIMEOUTで指定された
+     秒数が経過するまで読み込みます。
+
+     与えられた文字列に一致する部分が見つからなかった場合、読み込む
+     ことができたもの全てを返します。これは空の文字列になる可能性が
+     あります。接続が閉じられ、転送処理済みのデータが得られない場合
+     には `EOFError' が送出されます。
+
+`read_all()'
+     `EOF'に到達するまでの全てのデータを読み込みます; 接続が
+     閉じられるまでブロックします。
+
+`read_some()'
+     `EOF' に到達しない限り、少なくとも 1 バイトの転送処理済みデータ
+     を読み込みます。`EOF' に到達した場合は `''' を返します。
+     すぐに読み出せるデータが存在しない場合にはブロックします。
+
+`read_very_eager()'
+     I/O によるブロックを起こさずに読み出せる全てのデータを読み込み
+     ます (eager モード)。
+
+     接続が閉じられており、転送処理済みのデータとして読み出せるもの
+     がない場合には `EOFError' が送出されます。それ以外の
+     場合で、単に読み出せるデータがない場合には `''' を返します。 IAC
+     シーケンス操作中でないかぎりブロックしません。
+
+`read_eager()'
+     現在すぐに読み出せるデータを読み出します。
+
+     接続が閉じられており、転送処理済みのデータとして読み出せるものが
+     ない場合には `EOFError' が送出されます。それ以外の
+     場合で、単に読み出せるデータがない場合には `''' を返します。 IAC
+     シーケンス操作中でないかぎりブロックしません。
+
+`read_lazy()'
+     すでにキューに入っているデータを処理して返します (lazy モード)。
+
+     接続が閉じられており、読み出せるデータがない場合には `EOFError'
+     を送出します。それ以外の場合で、転送処理済みの
+     データで読み出せるものがない場合には `''' を返します。 IAC
+     シーケンス操作中でないかぎりブロックしません。
+
+`read_very_lazy()'
+     すでに処理済みキューに入っているデータを処理して返します (very
+     lazy モード)。
+
+     接続が閉じられており、読み出せるデータがない場合には `EOFError'
+     を送出します。それ以外の場合で、転送処理済みの
+     データで読み出せるものがない場合には `''' を返します。
+     このメソッドは決してブロックしません。
+
+`read_sb_data()'
+     SB/SE ペア (サブオプション開始／終了)
+     の間に収集されたデータを返します。 `SE'
+     コマンドによって起動されたコールバック関数はこれらのデータ
+     にアクセスしなければなりません。
+
+     このメソッドはけっしてブロックしません。 _Added in Python version
+     2.3_
+
+`open(host[, port])'
+     サーバホストに接続します。
+     第二引数はオプションで、ポート番号を指定します。 標準の値は通常の
+     Telnet ポート番号 (23) です。
+
+     すでに接続しているインスタンスで再接続を試みてはいけません。
+
+`msg(msg[, *args])'
+     デバッグレベルが `>' 0 のとき、デバッグ用のメッセージを
+     出力します。追加の引数が存在する場合、標準の 文字列書式化演算子
+     `%' を使って MSG 中の 書式指定子に代入されます。
+
+`set_debuglevel(debuglevel)'
+     デバッグレベルを設定します。DEBUGLEVEL が大きくなるほど、
+     (`sys.stdout' に) デバッグメッセージがたくさん出力されます。
+
+`close()'
+     接続を閉じます。
+
+`get_socket()'
+     内部的に使われているソケットオブジェクトです。
+
+`fileno()'
+     内部的に使われているソケットオブジェクトのファイル記述子です。
+
+`write(buffer)'
+     ソケットに文字列を書き込みます。このとき IAC 文字については 2
+     度送信します。接続がブロックした場合、書き込みがブロックする
+     可能性があります。接続が閉じられた場合、`socket.error'
+     が送出されるかもしれません。
+
+`interact()'
+     非常に低機能の telnet クライアントをエミュレートする対話 関数です。
+
+`mt_interact()'
+     `interact()' のマルチスレッド版です。
+
+`expect(list[, timeout])'
+     正規表現のリストのうちどれか一つにマッチするまでデータを読みます。
+
+     第一引数は正規表現のリストです。コンパイルされたもの
+     (`re.RegexObject' のインスタンス) でも、コンパイルされて
+     いないもの (文字列) でもかまいません。オプションの第二引数は
+     タイムアウトで、単位は秒です; 標準の値は無期限に設定されています。
+
+     3 つの要素からなるタプル: 最初にマッチした正規表現のインデクス;
+     返されたマッチオブジェクト;
+     マッチ部分を含む、マッチするまでに読み込まれたテキストデータ、
+     を返します。
+
+     ファイル終了子が見つかり、かつ何もテキストデータが読み込まれ
+     なかった場合、`EOFError' が送出されます。そうでない
+     場合で何もマッチしなかった場合には `(-1, None, TEXT)'
+     が返されます。ここで TEXT はこれまで受信したテキストデータ です
+     (タイムアウトが発生した場合には空の文字列になる場合もあります)。
+
+     正規表現の末尾が (".*" のような) 貪欲マッチングになっている
+     場合や、入力に対して 1 つ以上の正規表現がマッチする場合には、
+     その結果は決定不能で、I/O のタイミングに依存するでしょう。
+
+`set_option_negotiation_callback(callback)'
+     telnet オプションが入力フローから読み込まれるたびに、 CALLBACK が
+     (設定されていれば) 以下の引数形式: callback(telnet socket, command
+     (DO/DONT/WILL/WONT), option) で呼び出されます。その後 telnet
+     オプションに対しては telnetlib は何も行いません。
+
+
+File: python-lib-jp.info,  Node: Telnet Example,  Prev: Telnet オブジェクト,  Up: telnetlib
+
+Telnet Example
+--------------
+
+典型的な使い方を表す単純な例を示します:
+
+     import getpass
+     import sys
+     import telnetlib
+     
+     HOST = "localhost"
+     user = raw_input("Enter your remote account: ")
+     password = getpass.getpass()
+     
+     tn = telnetlib.Telnet(HOST)
+     
+     tn.read_until("login: ")
+     tn.write(user + "\n")
+     if password:
+         tn.read_until("Password: ")
+         tn.write(password + "\n")
+     
+     tn.write("ls\n")
+     tn.write("exit\n")
+     
+     print tn.read_all()
+
+
+File: python-lib-jp.info,  Node: urlparse,  Next: SocketServer,  Prev: telnetlib,  Up: インターネットプロトコルとその支援
+
+URL を解析して構成要素にする
+============================
+
+URL を解析して構成要素にします。
+
+このモジュールでは URL (Uniform Resource Locator) 文字列をその構成要素
+(アドレススキーム、ネットワーク上の位置、パスその他) に分解したり、
+構成要素を URL に組みなおしたり、"相対 URL (relative URL)" を指定した
+"基底 URL (base URL)" に基づいて絶対 URL に変換するための標準的な
+インタフェースを定義しています。
+
+このモジュールは相対 URL のインターネット RFC に対応するように設計
+されました (そして RFC の初期ドラフトのバグを発見しました！)。
+
+以下の関数が定義されています:
+
+`urlparse(urlstring[, default_scheme[, allow_fragments]])'
+     URL を解釈して 6 つの構成要素にし、6 要素のタプル:
+     (アドレススキーム、ネットワーク上の位置、パス、パラメタ、クエリ、
+     フラグメント指定子) を返します。このタプルは URL の一般的な 構造:
+     `SCHEME://NETLOC/PATH;PARAMETERS?QUERY#FRAGMENT' に対応しています。
+     各タプル要素は文字列で、空の場合もあります。
+     構成要素がさらに小さい要素に分解されることはありません (例えば
+     ネットワーク上の位置は単一の文字列になります)。また %
+     によるエスケープ
+     は展開されません。上で示された区切り文字がタプルの各要素の一部分
+     として含まれることはありませんが、PATH 要素の先頭のスラッシュ
+     がある場合には例外です。
+
+     以下の例:
+
+          urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
+
+     では、タプル
+
+          ('http', 'www.cwi.nl:80', '/%7Eguido/Python.html', '', '', '')
+
+     になります。
+
+     DEFAULT_SCHEME 引数が最低されている場合、標準のアドレススキーム
+     を表し、アドレススキームを指定していない URL 文字列に対してのみ
+     使われます。この引数の標準の値は空文字列です。
+
+     ALLOW_FRAGMENTS 引数がゼロの場合、URL のアドレススキームが
+     フラグメント指定をサポートしていても指定できなくなります。
+     この引数の標準の値は `1' です。
+
+`urlunparse(tuple)'
+     `urlparse()' が返すような形式のタプルから URL 文字列を構築します。
+     解析された元の URL が、例えばクエリ内容が空の ?
+     のような冗長な区切り文字
+     を持っていた場合には、多少違いはあるが等価な URL
+     になるかもしれません。 (RFC
+     のドラフトの時点では、これらは等価でした)。
+
+`urlsplit(urlstring[, default_scheme[, allow_fragments]])'
+     `urlparse()' に似ていますが、URL から params を切り離し
+     ません。このメソッドは通常、URL の PATH 部分において、各セグメント
+     にパラメタ指定をできるようにした最近の URL 構文 (RFC 2396 参照) の
+     場合に、`urlparse()' の代わりに使われます。
+     パスセグメントとパラメタを分割するためには分割用の関数が必要
+     です。この関数は 5 要素のタプル:
+     (アドレススキーム、ネットワーク上の位置、パス、クエリ、フラグメント指定子)
+     を返します。 _Added in Python version 2.2_
+
+`urlunsplit(tuple)'
+     `urlsplit()' が返すような形式のタプル中のエレメントを組み合わせ
+     て、文字列の完全な URL にします。 _Added in Python version 2.2_
+
+`urljoin(base, url[, allow_fragments])'
+     "基底 URL" (BASE) と "相対 URL" (URL) を組み合わせて、 完全な URL
+     ("絶対 URL") を構成します。 ぶっちゃけ、この関数は 基底 URL
+     の要素、特にアドレススキーム、 ネットワーク上の位置、およびパス
+     (の一部) を使って、相対 URL に ない要素を提供します。
+
+     以下の例:
+
+          urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
+
+     では、文字列
+
+          'http://www.cwi.nl/%7Eguido/FAQ.html'
+
+     になります。
+
+     ALLOW_FRAGMENTS 引数は `urlparse()' における引数と同じ意味
+     を持ちます。
+
+`urldefrag(url)'
+     URL がフラグメント指定子を含む場合、フラグメント指定子
+     を持たないバージョンに修正された URL と、別の文字列に分割
+     されたフラグメント指定子を返します。URL 中にフラグメント
+     指定子がない場合、そのままの URL と空文字列を返します。
+
+See also:
+    *RFC1738 Uniform Resource Locators (URL)*
+          この RFC では絶対 URL
+          の形式的な文法と意味付けを仕様化しています。
+
+    *RFC1808 Relative Uniform Resource Locators*
+          この RFC には絶対 URL と相対 URL を結合するための規則が
+          ボーダケースの取扱い方を決定する "異常な例" つきで
+          収められています。
+
+    *RFC2396 Uniform Resource Identifiers (URI): Generic Syntax*
+          この RFC では Uniform Resource Name (URN) と Uniform Resource
+          Locator (URL)
+          の両方に対する一般的な文法的要求事項を記述しています。
+
+
+
+File: python-lib-jp.info,  Node: SocketServer,  Next: BaseHTTPServer,  Prev: urlparse,  Up: インターネットプロトコルとその支援
+
+ネットワークサーバ構築のための フレームワーク
+=============================================
+
+ネットワークサーバ構築のためのフレームワーク。
+
+`SocketServer' モジュールはネットワークサーバを実装するタスクを
+単純化します。
+
+このモジュールには 4 つのサーバクラスがあります: `TCPServer'
+は、クライアントとサーバ間に継続的なデータ流路を提供
+する、インターネット TCP プロトコルを使います。 `UDPServer'
+は、順序通りに到着しなかったり、転送中に喪失して
+しまってもかまわない情報の断続的なパケットである、データグラムを使います。
+`UnixStreamServer' および `UnixDatagramServer' クラスも
+同様ですが、UNIX ドメインソケットを使います; 従って非 UNIX
+プラットフォームでは利用できません。ネットワークプログラミングに
+ついての詳細は、W. Richard Steven 著 や、 Ralph Davis 著  のような
+書籍を参照してください。
+
+これらの 4 つのクラスは要求を "同期的に (synchronously)" 処理します;
+各要求は次の要求を開始する前に完結していなければなりません。
+同期的な処理は、サーバで大量の計算を必要とする、あるいはクライアントが
+処理するには時間がかかりすぎるような大量のデータを返す、といった理由に
+よってリクエストに長い時間がかかる状況には向いていません。
+こうした状況の解決方法は別のプロセスを生成するか、個々の要求を
+扱うスレッドを生成することです; `ForkingMixIn' および `ThreadingMixIn'
+配合クラス (mix-in classes) を使えば、非同期的な動作をサポートできます。
+
+サーバの作成にはいくつかのステップがあります。最初に、
+`BaseRequestHandler' クラスをサブクラス化して 要求処理クラス (request
+hander class) を生成し、その `handle()'
+メソッドを上書きしなければなりません; このメソッドで入力される
+要求を処理します。次に、サーバクラスのうち一つをインスタンス化して、
+サーバのアドレスと要求処理クラスを渡さなければなりません。最後に、
+サーバオブジェクトの `handle_request()' または `serve_forever()'
+メソッドを呼び出して、単一または多数の 要求を処理します。
+
+`ThreadingMixIn' から継承してスレッドを利用した接続を行う場合、
+突発的な通信切断時の処理を明示的に指定する必要があります。
+`ThreadingMixIn' クラスには DAEMON_THREADS 属性があり、
+サーバがスレッドの終了を待ち合わせるかどうかを指定する事ができます。
+スレッドが独自の処理を行う場合は、このフラグを明示的に指定します。
+デフォルトは`False'で、Pythonは`ThreadingMixIn'クラス
+が起動した全てのスレッドが終了するまで実行し続けます。
+
+サーバクラス群は使用するネットワークプロトコルに関わらず、同じ外部
+メソッドおよび属性を持ちます:
+
+`fileno()'
+     サーバが要求待ちを行っているソケットのファイル記述子を整数で返します。
+     この関数は一般的に、同じプロセス中の複数のサーバを監視できるように
+     するために、 `select.select()' に渡されます。
+
+`handle_request()'
+     単一の要求を処理します。この関数は以下のメソッド:
+     `get_request()'、 `verify_request()'、および `process_request()'
+     を順番に呼び出します。 ハンドラ中でユーザによって提供された
+     `handle()' が例外 を送出した場合、サーバの `handle_error()'
+     メソッドが 呼び出されます。
+
+`serve_forever()'
+     無限個の要求を処理します。この関数は単に無限ループ内で
+     `handle_request()' を呼び出します。
+
+`address_family'
+     サーバのソケットが属しているプロトコルファミリです。 取りえる値は
+     `socket.AF_INET' および `socket.AF_UNIX' です。
+
+`RequestHandlerClass'
+     ユーザが提供する要求処理クラスです;
+     要求ごとにこのクラスのインスタンス が生成されます。
+
+`server_address'
+     サーバが要求待ちを行うアドレスです。アドレスの形式はプロトコルファミリ
+     によって異なります。詳細は `socket' モジュールを参照してください。
+     インターネットプロトコルでは、この値は例えば`('127.0.0.1', 80)'の
+     ようにアドレスを与える文字列と整数のポート番号を含むタプルです。
+
+`socket'
+     サーバが入力の要求待ちを行うためのソケットオブジェクトです。
+
+サーバクラスは以下のクラス変数をサポートします:
+
+`allow_reuse_address'
+     サーバがアドレスの再使用を許すかどうかを示す値です。この値は標準
+     で `False' で、サブクラスで再使用ポリシを変更するために
+     設定することができます。
+
+`request_queue_size'
+     要求待ち行列 (queue) のサイズです。単一の要求を処理するのに長時間
+     かかる場合には、サーバが処理中に届いた要求は最大
+     `request_queue_size' 個まで待ち行列に置かれます。
+     待ち行列が一杯になると、それ以降のクライアントからの要求は
+     "接続拒否 (Connection denied)" エラーになります。標準の値は 通常 5
+     ですが、この値はサブクラスで上書きすることができます。
+
+`socket_type'
+     サーバが使うソケットの型です; 取りえる値は 2 つで、
+     `socket.SOCK_STREAM' と `socket.SOCK_DGRAM' です。
+
+`TCPServer' のような基底クラスのサブクラスで上書きできる
+サーバメソッドは多数あります; これらのメソッドはサーバオブジェクトの
+外部のユーザにとっては役にたたないものです。
+
+`finish_request()'
+     `RequestHandlerClass' をインスタンス化し、`handle()'
+     メソッドを呼び出して、実際に要求を処理します。
+
+`get_request()'
+     ソケットから要求を受理して、 クライアントとの通信に使われる
+     _新しい_
+     ソケットオブジェクト、およびクライアントのアドレスからなる、 2
+     要素のタプルを返します。
+
+`handle_error(request, client_address)'
+     この関数は `RequestHandlerClass' の `handle()'
+     メソッドが例外を送出した際に呼び出されます。標準の動作では
+     標準出力へトレースバックを出力し、後続する要求を継続して処理します。
+
+`process_request(request, client_address)'
+     `finish_request()' を呼び出して、`RequestHandlerClass'
+     のインスタンスを生成します。必要なら、この関数から
+     新たなプロセスかスレッドを生成して要求を処理することができます;
+     その処理は `ForkingMixIn' または `ThreadingMixIn'
+     クラスが行います。
+
+`server_activate()'
+     サーバのコンストラクタによって呼び出され、サーバを活動状態に
+     します。 このメソッドは上書きできます。
+
+`server_bind()'
+     サーバのコンストラクタによって呼び出され、適切なアドレスにソケットを
+     バインドします。 このメソッドは上書きできます。
+
+`verify_request(request, client_address)'
+     ブール値を返さなければなりません; 値が真の場合には要求が処理され、
+     偽の場合には要求は拒否されます。
+     サーバへのアクセス制御を実装するためにこの関数を上書きすることが
+     できます。標準の実装では常に真を返します。
+
+要求処理クラスでは、新たな `handle()' メソッドを定義
+しなくてはならず、また以下のメソッドのいずれかを上書きすることができます。
+各要求ごとに新たなインスタンスが生成されます。
+
+`finish()'
+     `handle()' メソッドが呼び出された後、何らかの後始末を行うために
+     呼び出されます。標準の実装では何も行いません。`setup()' または
+     `handle()' が例外を送出した場合には、この関数は呼び出されません。
+
+`handle()'
+     この関数では、クライアントからの要求を実現するために必要な全ての作業を
+     行わなければなりません。この作業の上で、いくつかのインスタンス属性を
+     利用することができます; クライアントからの要求は `self.request'
+     です; クライアントのアドレスは `self.client_address' です;
+     そしてサーバごとの情報にアクセスする場合には、サーバインスタンスを
+     `self.server' で取得できます。
+
+     `self.request' の型はサービスがデータグラム型かストリーム型かで
+     異なります。ストリーム型では、`self.request' はソケットオブジェクト
+     です; データグラムサービスでは、`self.request' は文字列になります。
+     しかし、この違いは要求処理配合クラスの`StreamRequestHandler' や
+     `DatagramRequestHandler'を使うことで隠蔽することができます。
+     これらのクラスでは `setup()' および `finish()' メソッド
+     を上書きしており、`self.rfile' および `self.wfile' 属性を
+     提供しています。 `self.rfile' および `self.wfile'
+     は、要求データを取得したり
+     クライアントにデータを返すために、それぞれ読み出し、書き込みを行うことが
+     できます。
+
+`setup()'
+     `handle()'	 メソッドより前に呼び出され、何らかの必要な
+     初期化処理を行います。標準の実装では何も行いません。
+
+
+File: python-lib-jp.info,  Node: BaseHTTPServer,  Next: SimpleHTTPServer,  Prev: SocketServer,  Up: インターネットプロトコルとその支援
+
+基本的な機能を持つ HTTP サーバ
+==============================
+
+基本的な機能を持つ HTTP サーバ  (`SimpleHTTPServer' および
+`CGIHTTPServer' の基底クラス)。
+
+このモジュールでは、 HTTP サーバ (Web サーバ) を実装するための
+二つののクラスを定義しています。通常、このモジュールが直接使用
+されることはなく、特定の機能を持つ Web サーバを構築するために
+使われます。 `SimpleHTTPServer'  および `CGIHTTPServer'  モジュール
+を参照してください。
+
+最初のクラス、`HTTPServer' は `SocketServer.TCPServer'
+のサブクラスです。`HTTPServer' は HTTP ソケットを生成して
+リクエスト待ち (listen) を行い、リクエストをハンドラに渡します。
+サーバを作成して動作させるためのコードは以下のようになります:
+
+     def run(server_class=BaseHTTPServer.HTTPServer,
+             handler_class=BaseHTTPServer.BaseHTTPRequestHandler):
+         server_address = ('', 8000)
+         httpd = server_class(server_address, handler_class)
+         httpd.serve_forever()
+
+`HTTPServer(server_address, RequestHandlerClass)'
+     このクラスは `TCPServer' 型のクラスの上に構築されており、
+     サーバのアドレスをインスタンス変数 `server_name' および
+     `server_port' に記憶します。サーバはハンドラから
+     アクセス可能で、通常 `server' インスタンス変数でアクセス します。
+
+`BaseHTTPRequestHandler(request, client_address, server)'
+     このクラスはサーバに到着したリクエストを処理します。このメソッド
+     自体では、実際のリクエストに応答することはできません; (GET や POST
+     のような) 各リクエストメソッドを処理するためには
+     サブクラス化しなければなりません。 `BaseHTTPRequestHandler'
+     では、サブクラスで使うための
+     クラスやインスタンス変数、メソッド群を数多く提供しています。
+
+     このハンドラはリクエストを解釈し、次いでリクエスト形式ごとに固有の
+     メソッドを呼び出します。メソッド名はリクエストの名称から構成
+     されます。例えば、リクエストメソッド `SPAM' に対しては、
+     `do_SPAM()' メソッドが引数なしで呼び出されます。
+     リクエストに関連する情報は全て、ハンドラのインスタンス変数
+     に記憶されています。サブクラスでは `__init__()' メソッドを
+     上書きしたり拡張したりする必要はありません。
+
+`BaseHTTPRequestHandler' は以下のインスタンス変数を持っています:
+
+`client_address'
+     HTTP クライアントのアドレスを参照している、 `(HOST, PORT)'
+     の形式をとるタプルが入っています。
+
+`command'
+     HTTP 命令 (リクエスト形式) が入っています。例えば `'GET'' です。
+
+`path'
+     リクエストされたパスが入っています。
+
+`request_version'
+     リクエストのバージョン文字列が入っています。例えば `'HTTP/1.0''
+     です。
+
+`headers'
+     `MessageClass' クラス変数で指定されたクラスのインスタンス
+     を保持しています。このインスタンスは HTTP リクエストのヘッダを
+     解釈し、管理しています。
+
+`rfile'
+     入力ストリームが入っており、そのファイルポインタはオプション
+     入力データ部の先頭を指しています。
+
+`wfile'
+     クライアントに返送する応答を書き込むための出力ストリームが
+     入っています。このストリームに書き込む際には、HTTP プロトコル
+     に従った形式をとらなければなりません。
+
+`BaseHTTPRequestHandler' は以下のクラス変数を持っています:
+
+`server_version'
+     サーバのソフトウェアバージョンを指定します。
+     この値は上書きする必要が生じるかもしれません。
+     書式は複数の文字列を空白で分割したもので、各文字列は
+     ソフトウェア名[/バージョン] の形式をとります。
+     例えば、`'BaseHTTP/0.2'' です。
+
+`sys_version'
+     Python 処理系のバージョンが、`version_string' メソッドや
+     `server_version' クラス変数で利用可能な形式で入っています。 例えば
+     `'Python/1.4'' です。
+
+`error_message_format'
+     クライアントに返すエラー応答を構築するための書式化文字列を指定
+     します。この文字列は丸括弧で囲ったキー文字列で指定する形式を
+     使うので、書式化の対象となる値は辞書でなければなりません。 キー
+     CODE は整数で、HTTP エラーコードを特定する数値です。 MESSAGE
+     は文字列で、何が発生したかを表す (詳細な)
+     エラーメッセージが入ります。EXPLAIN はエラーコード番号
+     の説明です。MESSAGE および EXPLAIN の標準の値は RESPONSE
+     クラス変数でみつけることができます。
+
+`protocol_version'
+     この値には応答に使われる HTTP プロトコルのバージョンを指定します。
+     `'HTTP/1.1'' に設定されると、サーバは持続的 HTTP 接続を
+     許可します; しかしその場合、サーバは全てのクライアントに対する
+     応答に、正確な値を持つ `Content-Length' ヘッダを (`send_header()'
+     を使って) 含め _なければなりません_。
+     以前のバージョンとの互換性を保つため、標準の設定値は `'HTTP/1.0''
+     です。
+
+`MessageClass'
+     HTTP ヘッダを解釈するための `rfc822.Message' 類似のクラスを
+     指定します。通常この値が上書きされることはなく、標準の値
+     `mimetools.Message' になっています。
+
+`responses'
+     この変数はエラーコードを表す整数を二つの要素をもつタプルに対応付け
+     ます。タプルには短いメッセージと長いメッセージが入っています。
+     例えば、 `{CODE: (SHORTMESSAGE, LONGMESSAGE)}'
+     といったようになります。SHORTMESSAGE は通常、エラー応答に おける
+     MESSAGE キーの値として使われ、LONGMESSAGE は EXPLAIN
+     キーの値として使われます (`error_message_format'
+     クラス変数を参照してください) 。
+
+`BaseHTTPRequestHandler' インスタンスは以下のメソッドを持っています:
+
+`handle()'
+     `handle_one_request()' を一度だけ (持続的接続が有効になって
+     いる場合には複数回) 呼び出して、HTTP リクエストを処理します。
+     このメソッドを上書きする必要はまったくありません; そうする代わりに
+     適切な `do_*()' を実装してください。
+
+`handle_one_request()'
+     このメソッドはリクエストを解釈し、適切な `do_*()' メソッドに
+     転送します。このメソッドを上書きする必要はまったくありません。
+
+`send_error(code[, message])'
+     完全なエラー応答をクライアントに送信し、ログ記録します。 CODE
+     は数値型で、 HTTP エラーコードを指定します。 MESSAGE
+     はオプションで、より詳細なメッセージテキストです。
+     完全なヘッダのセットが送信された後、`error_message_format'
+     クラス変数を使って組み立てられたテキストが送られます。
+
+`send_response(code[, message])'
+     応答ヘッダを送信し、受理したリクエストをログ記録します。HTTP
+     応答行が送られた後、_Server_ および _Date_ ヘッダが
+     送られます。これら二つのヘッダはそれぞれ `version_string()' および
+     `date_time_string()' メソッドで取り出します。
+
+`send_header(keyword, value)'
+     出力ストリームに特定の MIME ヘッダを書き込みます。KEYWORD
+     はヘッダのキーワードを指定し、VALUE にはその値を指定します。
+
+`end_headers()'
+     応答中の MIME ヘッダの終了を示す空行を送信します。
+
+`log_request([code[, size]])'
+     受理された (成功した) リクエストをログに記録します。CODE には
+     この応答に関連付けられた HTTP コード番号を指定します。
+     応答メッセージの大きさを知ることができる場合、SIZE パラメタ
+     に渡すとよいでしょう。
+
+`log_error(...)'
+     リクエストを遂行できなかった際に、エラーをログに記録します。
+     標準では、メッセージを `log_message()' に渡します。 従って同じ引数
+     (FORMAT と追加の値) を取ります。
+
+`log_message(format, ...)'
+     任意のメッセージを `sys.stderr' にログ記録します。
+     このメソッドは通常、カスタムのエラーログ記録機構を作成するために
+     上書きされます。FORMAT 引数は標準の printf 形式の書式化
+     文字列で、`log_message()' に渡された追加の引数は
+     書式化の入力として適用されます。ログ記録される全てのメッセージ
+     には、クライアントのアドレスおよび現在の日付、時刻が先頭に
+     付けられます。
+
+`version_string()'
+     サーバソフトウェアのバージョン文字列を返します。この文字列は
+     クラス変数 `server_version' および `sys_version'
+     を組み合わせたものです。
+
+`date_time_string()'
+     メッセージヘッダ向けに書式化された、現在の日付および時刻を返します。
+
+`log_data_time_string()'
+     ログ記録向けに書式化された、現在の日付および時刻を返します。
+
+`address_string()'
+     ログ記録向けに書式化された、クライアントのアドレスを返します。
+     このときクライアントの IP アドレスに対する名前解決を行います。
+
+See also:
+     *Note CGIHTTPServer:: CGI
+     スクリプトをサポートするように拡張されたリクエストハンドラ。
+
+     *Note SimpleHTTPServer::
+     ドキュメントルートの下にあるファイルに対する要求への応答のみに制限した基本リクエストハンドラ。
+
+
+File: python-lib-jp.info,  Node: SimpleHTTPServer,  Next: CGIHTTPServer,  Prev: BaseHTTPServer,  Up: インターネットプロトコルとその支援
+
+簡潔な HTTP リクエストハンドラ
+==============================
+
+このモジュールは HTTP サーバに基本的なリクエストハンドラを提供します。
+
+`SimpleHTTPServer' モジュールはリクエストハンドラ (request-handler)
+クラスを定義しています。インタフェースは
+`BaseHTTPServer.BaseHTTPRequestHandler' と互換で、
+基底ディレクトリにあるファイルだけを提供します。
+
+`SimpleHTTPServer' モジュールでは以下のクラスを定義しています:
+
+`SimpleHTTPRequestHandler(request, client_address, server)'
+     このクラスは、現在のディレクトリ以下にあるファイルを、HTTP
+     リクエストにおけるディレクトリ構造に直接対応付けて提供するために
+     利用されます。
+
+     リクエストの解釈のような、多くの作業は基底クラス
+     `BaseHTTPServer.BaseHTTPRequestHandler' で行われます。
+     このクラスは関数 `do_GET()' および `do_HEAD()' を実装しています。
+
+`SimpleHTTPRequestHandler' では以下のメンバ変数を定義しています:
+
+`server_version'
+     この値は `"SimpleHTTP/" + __version__' になります。 `__version__'
+     はこのモジュールで定義されている値です。
+
+`extensions_map'
+     拡張子を MIME
+     型指定子に対応付ける辞書です。標準の型指定は空文字列で
+     表され、この値は `text/plain' と見なされます。
+     対応付けは大小文字の区別をするので、小文字のキーのみを入れるべきです。
+
+`SimpleHTTPRequestHandler' では以下のメソッドを定義しています:
+
+`do_HEAD()'
+     このメソッドは `'HEAD'' 型のリクエスト処理を実行します: すなわち、
+     `GET' リクエストの時に送信されるものと同じヘッダを送信します。
+     送信される可能性のあるヘッダについての完全な説明は `do_GET()'
+     メソッドを参照してください。
+
+`do_GET()'
+     リクエストを現在の作業ディレクトリからの相対的なパスとして解釈することで、
+     リクエストをローカルシステム上のファイルと対応付けます。
+
+     リクエストがディレクトリに対応付けられた場合、 出力は `403' 応答
+     であり、その後に説明 `'Directory listing not supported'' が
+     続きます。 要求されたファイルを開く際に何らかの `IOError' 例外が
+     送出された場合、リクエストは `404'、`'File not found''
+     エラーに対応づけられます。そうでない場合、コンテントタイプが
+     EXTENSIONS_MAP 変数を用いて推測されます。
+
+     出力は `'Content-type:'' と推測されたコンテントタイプで、その
+     後にヘッダの終了を示す空白行が続き、さらにその後にファイルの内容が
+     続きます。このファイルは常にバイナリモードで開かれます。
+
+     使用例については関数 `test()' の実装を参照してください。
+
+See also:
+     *Note BaseHTTPServer:: Web
+     サーバおよび要求ハンドラの基底クラス実装。
+
+
+File: python-lib-jp.info,  Node: CGIHTTPServer,  Next: Cookie,  Prev: SimpleHTTPServer,  Up: インターネットプロトコルとその支援
+
+CGI 実行機能付き HTTP リクエスト処理機構
+========================================
+
+CGI スクリプトの実行機能を持つ HTTP
+サーバのためのリクエスト処理機構を提供します。
+
+`CGIHTTPServer' モジュールでは、
+`BaseHTTPServer.BaseHTTPRequestHandler' 互換のインタフェース
+を持ち、`SimpleHTTPServer.SimpleHTTPRequestHandler' の動作を
+継承していますが CGI スクリプトを動作することもできる、 HTTP
+要求処理機構クラスを定義しています。
+
+_Note:_ このモジュールは CGI スクリプトを UNIX および Windows システム
+上で実行させることができます; Mac OS 上では、自分と同じプロセス内で
+Python スクリプトを実行することしかできないはずです。
+
+`CGIHTTPServer' モジュールでは、以下のクラスを定義しています:
+
+`CGIHTTPRequestHandler(request, client_address, server)'
+     このクラスは、現在のディレクトリかその下のディレクトリにおいて、ファイルか
+     CGI スクリプト出力を提供するために使われます。HTTP 階層構造から
+     ローカルなディレクトリ構造への対応付けは
+     `SimpleHTTPServer.SimpleHTTPRequestHandler' と
+     全く同じなので注意してください。
+
+     このクラスでは、ファイルが CGI スクリプトであると推測された
+     場合、これをファイルして提供する代わりにスクリプトを実行します。
+     他の一般的なサーバ設定は特殊な拡張子を使って CGI
+     スクリプトであることを 示すのに対し、ディレクトリベースの CGI
+     だけが使われます。
+
+     `do_GET()' および `do_HEAD()' 関数は、HTTP 要求 が
+     `cgi_directories' パス以下のどこかを指している場合、
+     ファイルを提供するのではなく、CGI スクリプトを実行してその出力を
+     提供するように変更されています。
+
+`CGIHTTPRequestHandler' では以下のデータメンバを定義しています:
+
+`cgi_directories'
+     この値は標準で `['/cgi-bin', '/htbin']' であり、CGI スクリプト
+     を含んでいることを示すディレクトリを記述します。
+
+`CGIHTTPRequestHandler' では以下のメソッドを定義しています:
+
+`do_POST()'
+     このメソッドは、CGI スクリプトでのみ許されている `'POST'' 型の
+     HTTP 要求に対するサービスを行います。 CGI でない url に対して POST
+     を試みた場合、出力は Error 501, "Can only POST to CGI scripts"
+     になります。
+
+セキュリティ上の理由から、CGI スクリプトはユーザ nobody の UID で動作
+するので注意してください。CGI スクリプトが原因で発生した問題は、 Error
+403 に変換されます。
+
+使用例については、`test()' 関数の実装を参照してください。
+
+See also:
+     *Note BaseHTTPServer:: Web
+     サーバとリクエスト処理機構を実装した基底クラスです。
+
+
+File: python-lib-jp.info,  Node: Cookie,  Next: xmlrpclib,  Prev: CGIHTTPServer,  Up: インターネットプロトコルとその支援
+
+HTTPの状態管理
+==============
+
+HTTP状態管理(cookies)のサポート.
+
+`Cookie'モジュールはHTTPの状態管理機能であるcookieの概念を抽象
+化、定義しているクラスです。単純な文字列のみで構成されるcookieのほか、
+シリアル化可能なあらゆるデータ型でクッキーの値を保持するための機能も備
+えています。
+
+このモジュールは元々RFC 2109 とRFC 2068 に定義されている構文解析の規
+則を厳密に守っていました。しかし、MSIE 3.0xがこれらのRFCで定義された文
+字の規則に従っていないことが判明したため、結局、やや厳密さを欠く構文
+解析規則にせざるを得ませんでした。
+
+`CookieError'
+     属性や`Set-Cookie'ヘッダが正しくないなど、RFC 2109 に合致してい
+     ないときに発生する例外です。
+
+`BaseCookie([input])'
+     このクラスはキーが文字列、値が`Morsel'インスタンスで構成される辞書風オブジェ
+     クトです。値に対するキーを設定するときは、値がキーと値を含む
+     `Morsel'に変換されることに注意してください。
+
+     INPUTが与えられたときは、そのまま`load()'メソッドへ渡され ます。
+
+`SimpleCookie([input])'
+     このクラスは`BaseCookie'の派生クラスで、`value_decode()'
+     は与えられた値の正当性を確認するように、`value_encode()'は
+     `str()'で文字列化するようにそれぞれオーバライドします。
+
+`SerialCookie([input])'
+     このクラスは`BaseCookie'の派生クラスで、`value_decode()'
+     と`value_encode()'をそれぞれ`pickle.loads()'と
+     `pickle.dumps()'を実行するようにオーバーライドします。
+
+     _This is deprecated in Python 2.3.
+     このクラスを使ってはいけません! 信頼できないcookieのデータか
+     らピクルス化された値を読み込むことは、あなたのサーバ上で任意のコードを
+     実行するためにピクルス化した文字列の作成が可能であることを意味し、重大
+     なセキュリティホールとなります。_
+
+`SmartCookie([input])'
+     このクラスは`BaseCookie'の派生クラスで、`value_decode()'
+     を、値がピクルス化されたデータとして正当なときは
+     `pickle.loads()'を実行、そうでないときはその値自体を返すよう
+     にオーバーライドします。また`value_encode()'を、値が文字列以外
+     のときは`pickle.dumps()'を実行、文字列のときはその値自体を返
+     すようにオーバーライドします。
+
+     _This is deprecated in Python 2.3.
+     `SerialCookie'と同じセキュリティ上の注意が当ては まります。_
+
+関連して、さらなるセキュリティ上の注意があります。後方互換性のため、
+`Cookie'モジュールは`Cookie'というクラス名を
+`SmartCookie'のエイリアスとしてエクスポートしています。これはほ
+ぼ確実に誤った措置であり、将来のバージョンでは削除することが適当と思わ
+れます。アプリケーションにおいて`SerialCookie'クラスを使うべきで
+ないのと同じ理由で`Cookie'クラスを使うべきではありません。
+
+See also:
+    *RFC2109 HTTP State Management Mechanism*
+          このモジュールが実装 しているHTTPの状態管理に関する規格です。
+
+
+* Menu:
+
+* Cookieオブジェクト::
+* Morselオブジェクト::
+* 例 13::
+
+
+File: python-lib-jp.info,  Node: Cookieオブジェクト,  Next: Morselオブジェクト,  Prev: Cookie,  Up: Cookie
+
+Cookieオブジェクト
+------------------
+
+`value_decode(val)'
+     文字列表現を値にデコードして返します。戻り値の型はどのようなものでも許
+     されます。このメソッドは`BaseCookie'において何も実行せず、オーバー
+     ライドされるためにだけ存在します。
+
+`value_encode(val)'
+     エンコードした値を返します。元の値はどのような型でもかまいませんが、戻
+     り値は必ず文字列となります。このメソッドは`BaseCookie'において何
+     も実行せず、オーバーライドされるためにだけ存在します。
+
+     通常`value_encode()'と`value_decode()'はともに
+     VALUE_DECODEの処理内容から逆算した範囲に収まっていなければなりま
+     せん。
+
+`output([attrs[, header[, sep]]])'
+     HTTPヘッダ形式の文字列表現を返します。ATTRSとHEADERはそれ
+     ぞれ`Morsel'の`output()'メソッドに送られます。SEP
+     はヘッダの連結に用いられる文字で、デフォルトは改行となっています。
+
+`js_output([attrs])'
+     ブラウザがJavaScriptをサポートしている場合、HTTPヘッダを送信した場合と
+     同様に動作する埋め込み可能なJavaScript snippetを返します。
+
+     ATTRSの意味は`output()'と同じです。
+
+`load(rawdata)'
+     RAWDATAが文字列であれば、`HTTP_COOKIE'として処理し、その値
+     を`Morsel'として追加します。辞書の場合は次と同様の処理をおこない
+     ます。
+
+          for k, v in rawdata.items():
+              cookie[k] = v
+
+
+
+File: python-lib-jp.info,  Node: Morselオブジェクト,  Next: 例 13,  Prev: Cookieオブジェクト,  Up: Cookie
+
+Morselオブジェクト
+------------------
+
+`Morsel()'
+     RFC 2109 の属性をキーと値で保持するabstractクラスです。
+
+     Morselは辞書風のオブジェクトで、キーは次のようなRFC 2109
+     準拠の定数と なっています。
+
+        * `expires'
+
+        * `path'
+
+        * `comment'
+
+        * `domain'
+
+        * `max-age'
+
+        * `secure'
+
+        * `version'
+
+     キーは大文字、小文字が区別されます。
+
+`value'
+     クッキーの値。
+
+`coded_value'
+     実際に送信する形式にエンコードされたcookieの値。
+
+`key'
+     cookieの名前。
+
+`set(key, value, coded_value)'
+     メンバKEY、VALUE、CODED_VALUEに値をセットします。
+
+`isReservedKey(K)'
+     Kが`Morsel'のキーであるかどうかを判定します。
+
+`output([attrs[, header]])'
+     MoselをHTTPヘッダ形式の文字列表現にして返します。ATTRSが与えられ
+     なければ、デフォルトですべての属性が含まれます。ATTRSを指定する
+     ときは属性をリストとして渡さなければなりません。HEADERのデフォル
+     トは`"Set-Cookie:"'です。
+
+`js_output([attrs])'
+     ブラウザがJavaScriptをサポートしている場合、HTTPヘッダを送信した場合と
+     同様に動作する埋め込み可能なJavaScript snippetを返します。
+
+     ATTRSの意味は`output()'と同じです。
+
+`OutputString([attrs])'
+     Moselの文字列表現をHTTPやJavaScriptで囲まずに出力します。
+
+     ATTRSの意味は`output()'と同じです。
+
+
+File: python-lib-jp.info,  Node: 例 13,  Prev: Morselオブジェクト,  Up: Cookie
+
+例
+--
+
+次の例は`Cookie'の使い方を示したものです。
+
+     >>> import Cookie
+     >>> C = Cookie.SimpleCookie()
+     >>> C = Cookie.SerialCookie()
+     >>> C = Cookie.SmartCookie()
+     >>> C["fig"] = "newton"
+     >>> C["sugar"] = "wafer"
+     >>> print C # generate HTTP headers
+     Set-Cookie: sugar=wafer;
+     Set-Cookie: fig=newton;
+     >>> print C.output() # same thing
+     Set-Cookie: sugar=wafer;
+     Set-Cookie: fig=newton;
+     >>> C = Cookie.SmartCookie()
+     >>> C["rocky"] = "road"
+     >>> C["rocky"]["path"] = "/cookie"
+     >>> print C.output(header="Cookie:")
+     Cookie: rocky=road; Path=/cookie;
+     >>> print C.output(attrs=[], header="Cookie:")
+     Cookie: rocky=road;
+     >>> C = Cookie.SmartCookie()
+     >>> C.load("chips=ahoy; vienna=finger") # load from a string (HTTP header)
+     >>> print C
+     Set-Cookie: vienna=finger;
+     Set-Cookie: chips=ahoy;
+     >>> C = Cookie.SmartCookie()
+     >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
+     >>> print C
+     Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;";
+     >>> C = Cookie.SmartCookie()
+     >>> C["oreo"] = "doublestuff"
+     >>> C["oreo"]["path"] = "/"
+     >>> print C
+     Set-Cookie: oreo=doublestuff; Path=/;
+     >>> C = Cookie.SmartCookie()
+     >>> C["twix"] = "none for you"
+     >>> C["twix"].value
+     'none for you'
+     >>> C = Cookie.SimpleCookie()
+     >>> C["number"] = 7 # equivalent to C["number"] = str(7)
+     >>> C["string"] = "seven"
+     >>> C["number"].value
+     '7'
+     >>> C["string"].value
+     'seven'
+     >>> print C
+     Set-Cookie: number=7;
+     Set-Cookie: string=seven;
+     >>> C = Cookie.SerialCookie()
+     >>> C["number"] = 7
+     >>> C["string"] = "seven"
+     >>> C["number"].value
+     7
+     >>> C["string"].value
+     'seven'
+     >>> print C
+     Set-Cookie: number="I7\012.";
+     Set-Cookie: string="S'seven'\012p1\012.";
+     >>> C = Cookie.SmartCookie()
+     >>> C["number"] = 7
+     >>> C["string"] = "seven"
+     >>> C["number"].value
+     7
+     >>> C["string"].value
+     'seven'
+     >>> print C
+     Set-Cookie: number="I7\012.";
+     Set-Cookie: string=seven;
+

@@ -1,0 +1,3775 @@
+START-INFO-DIR-ENTRY
+* Standards: (standards-ja).     GNUコーディング・スタンダード
+END-INFO-DIR-ENTRY
+
+   GNU Coding Standards Copyright (C) 1992, 1993, 1994, 1995, 1996,
+1997, 1998 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Free Software Foundation.
+
+
+File: standards-ja.info,  Node: Top,  Next: Preface,  Prev: (dir),  Up: (dir)
+
+Version
+*******
+
+Last updated November 18, 1998.
+
+* Menu:
+
+* Preface::                     GNUコーディング・スタンダードについて
+* Legal Issues::                フリーソフトウェアを自由に保つ
+* Design Advice::               一般的なプログラムのデザイン
+* Program Behavior::            全てのプログラムの振る舞い
+* Writing C::                   Cの一番良い使い方
+* Documentation::               プログラムの文書化
+* Managing Releases::           リリースの過程
+
+
+File: standards-ja.info,  Node: Preface,  Next: Legal Issues,  Prev: Top,  Up: Top
+
+1 GNUコーディング・スタンダードについて
+***************************************
+
+GNUコーディング・スタンダードはRichard Stallmanと他のGNU Projectのボラ
+ンティア達によって書かれた。彼らの目的はGNUシステムをきれいで、一貫性
+のある、インストールの容易なシステムにすることである。この文書は、移植
+性に優れ、頑丈で、信頼性あるプログラムを書くためのガイドとして読むこと
+もできる。Cで書かれたプログラムに焦点を当てるが、規則や原理の多くは他
+のプログラミング言語の場合でも有効である。規則は、ある方法で書く理由を
+しばしば記述してある。
+
+   この文書に対する訂正や助言は<gnu@gnu.org>に送ってほしい (1)。
+助言をする
+場合、そのための新たな用語を入れていただきたい。我々の時間は限られている
+からだ。我々は`standards.texi'か`make-stds.texi'ファイルに対す
+る、context diffを好むが、もしそれらのファイルを持っていないなら、いずれ
+にせよメールしてほしい。
+
+   GNUコーディング・スタンダードのこのリリースは、最近では November 18,
+1998に更新された。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注: この日本語訳は奥地秀則が行っている。日本語訳に対する訂正
+や助言は<okuji@kuicr.kyoto-u.ac.jp>に送ってほしい。
+
+
+File: standards-ja.info,  Node: Legal Issues,  Next: Design Advice,  Prev: Preface,  Up: Top
+
+2 フリーソフトウェアを自由に保つ
+********************************
+
+この節では、
+GNUソフトウェアを邪魔されないように保つための方法について議論している。
+
+* Menu:
+
+* Reading Non-Free Code::       独占的プログラムの参照
+* Contributions::               貢献の受け取り
+
+
+File: standards-ja.info,  Node: Reading Non-Free Code,  Next: Contributions,  Up: Legal Issues
+
+2.1 独占的プログラムの参照
+==========================
+
+どんなところでも、GNUに関する作業のためや、作業中に、Unixのソースコー
+ドを参照してはいけない！ (他の独占的プログラムについても。)
+
+もしUnixプログラムの内部の曖昧な記憶を持っているなら、このことは、その
+イミテーションを書くことができない、とは言っていないが、そのイミテー
+ションを内部的に違った行で構成するようにしなさい。なぜなら、こうするこ
+とで、Unixバージョンの細部とあなたの結果とを、無関係で似ていないものに
+する傾向があるからだ。
+
+例えば、Unixユーティリティは普通、メモリ使用量を最小化するように最適化
+されている。もしあなたが代わりにスピードを追い求めれば、あなたのプログ
+ラムはかなり異なるものになるだろう。stdioを使わずに、入力ファイル全体
+をコアに置き、それを検査してよい。Unixプログラムより最近に見付かった、
+より賢いアルゴリズムを使いなさい。一時ファイルの利用を省きなさい。
+二度やらず一回のパスでやりなさい (我々はこれをアセンブラで行った)。
+
+あるいは、逆に、スピードではなく単純さを強めなさい。アプリケーションに
+よっては、今日のコンピュータのスピードでは、より単純なアルゴリズムが適
+切である。
+
+あるいは一般性を求めなさい。例えば、Unixプログラムはよく静的なテーブル
+や固定長の文字列を使っているが、それは制限を課していることになる。代わ
+りに動的な確保を行いなさい。あなたのプログラムを入力ファイルのNULや他
+の変な文字を扱えるようにしなさい。拡張性のためにプログラミング言語を加
+え、その言語でプログラムの一部を記述しなさい。
+
+あるいは、プログラムのいくらかを独立して利用できるライブラリにしなさい。
+あるいは、いつメモリを解放するか正確にトラッキングせずに、簡単なガーベ
+ージ・コレクタを使うか、obstacksのような新しいGNUの機能を利用しなさい。
+
+
+File: standards-ja.info,  Node: Contributions,  Prev: Reading Non-Free Code,  Up: Legal Issues
+
+2.2 貢献の受け取り
+==================
+
+もしあなたが作業しているプログラムが、Free Software Foundationによる著
+作権を持っているなら、誰か他の人がそのプログラムに加えるコードを送って
+きたとき、我々はそれを使うのに法的な文書を必要とする。ちょうど、我々が
+初めにあなたに文書に署名するよう頼むときのように。プログラムに明解で
+ない寄与をする人は、我々がそのプログラムにはっきりした所有権を付ける
+ために、_誰でもみな_何らかの類いの法的な文書に署名しなければならない。
+中心となった作者だけでは十分ではないのだ。
+
+だから、他の人からの貢献を加える前に、我々に訊いてほしい。そうすると、
+我々はその文書を手に入れられるよう計らうことができる。そして、その貢献
+を実際に使う前に、署名された文書を受け取ったことをあなたに伝えるまで
+待ちなさい。
+
+これはプログラムをリリースする前と後の両方に当てはまる。もしバグを潰す
+ための差分を受け取り、それが顕著な変更を行うなら、我々はその変更のため
+の法的な文書を必要とする。
+
+これはコメントや解説ファイルにも当てはまる。著作権法のため、コメントと
+コードは単なるテキストである。著作権はあらゆる種類のテキストに適用され
+るので、我々は全ての種類に対して法的な文書を必要とする。
+
+法的な文書を請求するのが面倒だということは知っている。それは我々にとっ
+ても面倒なことなのだ。しかし、もしあなたが待たなければ、不利な立場に向
+かっていることになる。例えば、その貢献者が雇った人間が著作権放棄の文書
+に署名したがらなかったとしたら？あなたはそのコードを再び取り除かなくて
+はならないかもしれない！
+
+あちこちの数行の変更には対しては、文書を必要としない。それらは著作権の目
+的からは重要でないからだ。また、もし受け取った提案が発想であって、使用
+する本当のコードでないなら、文書を必要としない。例えば、誰かがある実装
+を送ったが、あなたが同じ発想の異なる実装を書いたなら、文書を受け取る必
+要はない。
+
+まさしく最悪なのは、他の貢献者を我々に伝えるのを忘れた場合だ。我々は、
+結果として、いつか法廷で非常に決まり悪い思いをするかもしれない。
+
+   我々はプログラムの管理者にもっと詳細な情報を持っている。もし、GNUのた
+めのプログラムを(リリースされているかどうかに拘らず)実際に管理する段階
+に達したら、コピーを請求していただきたい。
+
+
+File: standards-ja.info,  Node: Design Advice,  Next: Program Behavior,  Prev: Legal Issues,  Up: Top
+
+3 一般的なプログラムのデザイン
+******************************
+
+この節では、
+プログラムを設計するときに気を付けるべき話題をいくつか議論する。
+
+* Menu:
+
+* Compatibility::               他の実装との互換性
+* Using Extensions::            標準的でない機能の使用
+* ANSI C::                      ANSI Cの機能の使用
+* Source Language::             C以外の言語の使用
+
+
+File: standards-ja.info,  Node: Compatibility,  Next: Using Extensions,  Up: Design Advice
+
+3.1 他の実装との互換性
+======================
+
+ときには例外もあるが、GNU用のユーティリティプログラムやライブラリは、
+バークレーUnixの上位互換であるべきで、ANSI Cがその振る舞いを規定
+しているなら、ANSI Cの上位互換に、POSIXがその振る舞いを規定
+していれば、POSIXの上位互換であるべきだ。
+
+   もしこれらの標準が矛盾していたら、それぞれに対し互換モードを提供する
+と便利だ。
+
+   ANSI CやPOSIXはたくさんの拡張を禁じている。拡張をどんな風に
+行っても構わない、そうして、それを使わないための、`--ansi'とか
+`--posix'とか`--compatible'オプションを含めなさい。
+しかしながら、その拡張が実際のプログラムやスクリプトをおかしくする、
+十分な可能性があるなら、それは本当のところ上位互換ではない。そのインタ
+ーフェースを再設計してみなさい。
+
+   多くのGNUプログラムは、環境変数`POSIXLY_CORRECT'が定義されている
+と(例え、それは空の値と定義されていても)、POSIXと抵触する拡張を
+行わない。適切であれば、あなたのプログラムをこの変数を認識するように
+してください。
+
+ある機能が(プログラムやコマンド・ファイルではなく)ユーザだけに使われ、
+かつ、それがUnixでは貧弱なものなら、それをまるで違った、もっと良いもの
+に完全に置き換えてしまってよい。(例えば、`vi'はEmacsと置き換えら
+れている。) しかし互換機能も提供するのが良い。(フリーな`vi'クローン
+があるので、我々はそれを提供する。)
+
+   バークレーUnixにはない、便利な機能の追加は歓迎である。
+
+
+File: standards-ja.info,  Node: Using Extensions,  Next: ANSI C,  Prev: Compatibility,  Up: Design Advice
+
+3.2 標準的でない機能の使用
+==========================
+
+すでに存在する、たくさんのGNUの機能は、相当するUnixの機能以上の便利な
+拡張を数多くサポートしている。あなたのプログラムを実装する中でそれらの
+拡張を使用するかどうかは難しい問題だ。
+
+一方、その拡張を使用することで、より美しいプログラムを作ることができる。
+他方、他のGNUツールが手に入らなかったら、人々はそのプログラムを構築で
+きないだろう。このために、そのプログラムはより少ないマシンでしか動かな
+くなるだろう。
+
+いくつかの拡張によって、代わりのものも提供するのが容易であるかもしれな
+い。例えば、"キーワード" `INLINE'を定義し、コンパイラによって、
+`inline'か中身のないマクロに展開させることができる。
+
+一般的に言って、おそらく、拡張を使わずに平易に書けるならそれらを使わな
+いのが最善で、大きく改善されるなら拡張を使うのが最善だ。
+
+   この規則の例外は、非常にたくさんのシステムで走る、(Emacsのような)大き
+くて完成されているプログラムだ。そのようなプログラムでは、GNUの拡張の
+使用によって、上手く行かなくなってしまうだろう。
+
+   別の例外は、コンパイル過程の一部として使われるプログラムだ。GNUコンパ
+イル環境の機能を立ち上げるために、他のコンパイラによってコンパイルされ
+なければならないものはどんなものでも。もしこれらがGNUコンパイラを必要
+としていると、すでにインストール済みでない限り、それらをコンパイルする
+ことは誰にもできない。これは良くないだろう。
+
+
+File: standards-ja.info,  Node: ANSI C,  Next: Source Language,  Prev: Using Extensions,  Up: Design Advice
+
+3.3 ANSI CとANSI以前のC
+=======================
+
+決してANSI Cの "trigraph" 機能(1)を使っては ならない。
+
+   ANSI Cは、今ではもうANSI Cの機能を使う(それゆえnon-ANSI
+コンパイラでは動かない)新しいプログラムを書いていいぐらい広まっている。
+そして、もしプログラムがすでにANSI Cで書かれているなら、それを
+non-ANSIコンパイラをサポートするよう変換する必要はない。
+
+   しかしながら、ほとんどのプログラムではnon-ANSIコンパイラをサポー
+トするのは容易だから、プログラムを書くときにはそうするよう心掛けてもよ
+いだろう。ANSIプロトタイプ形式での関数定義、
+
+     int
+     foo (int x, int y)
+     ...
+
+を書く代わりに、このようなANSI以前の形式で定義を書きなさい。
+
+     int
+     foo (x, y)
+          int x, y;
+     ...
+
+そして、引数のプロトタイプを特定するのに、別に宣言しなさい。
+
+     int foo (int, int);
+
+   いずれにせよ、その関数を呼ぶ全てのファイルでANSI Cプロトタイプの恩恵
+を得るためには、あるヘッダファイル内でそのような宣言を必要とする。
+そして、それを一度書いてしまえば、ANSI以前の形式で関数定義を書く
+ことによって失うものは何もない。
+
+   もしあなたがnon-ANSI Cを知らないなら、それを勉強する必要はない。
+ANSI Cで書けばいい。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注: 何それ？
+
+
+File: standards-ja.info,  Node: Source Language,  Prev: ANSI C,  Up: Design Advice
+
+3.4 C以外の言語の使用
+=====================
+
+C以外の言語の使用は標準的でない機能を使うようなものだ。ユーザは問題を
+引き起こすだろう。例えGCCが他の言語をサポートしていても、ユーザは、
+あなたのプログラムの構築するために、その他の言語のコンパイラをインスト
+ールしなければならないことを不便に感じるかもしれない。例えば、あなた
+のプログラムをC++で書いたら、人々はあなたのプログラムをコンパイルす
+るためにC++コンパイラをインストールしなければならないだろう。このよ
+うに、Cで書く方が良いのだ。しかし他の言語を使う欠点がない状況が3つあ
+る。
+
+   *
+     その言語用のインタープリタをあなたのプログラムが含んでいるなら、他の言
+     語を使っていい。
+
+     例えば、あなたのプログラムがGUILEとリンクしているなら、そのプログラム
+     の一部をSchemeやGUILEがサポートする他の言語で書いても良い。
+
+   *
+     その言語と一緒に使われることを特に意図しているツールでは、他の言語を
+     使って良い。
+
+     そのツールを構築したい人々は、その他の言語をいずれにせよインストールしてい
+     る人々だけだろうから、これで構わないのだ。
+
+   * もしそのアプリケーションが狭い集団に対して関心があるなら、おそらく
+     そのアプリケーションのインストールが不便かどうかなど重要ではない。
+
+   CはC++や他のコンパイル用言語以上の利点を持っている。より多くの人々がC
+を知っている。だから、プログラムがCで書かれていると、それを読んだり変
+更したりするのが、より多くの人々にとって容易だろう。
+
+
+File: standards-ja.info,  Node: Program Behavior,  Next: Writing C,  Prev: Design Advice,  Up: Top
+
+4 全てのプログラムの振る舞い
+****************************
+
+この節では、頑丈なソフトウェアの書き方を記述する。また、
+エラーメッセージや、コマンドラインのインターフェース、ライブラリの挙動
+の、汎用的な標準についても記述する。
+
+* Menu:
+
+* Semantics::                   頑丈なプログラムの作成
+* Libraries::                   ライブラリの挙動
+* Errors::                      エラーメッセージの書式
+* User Interfaces::             コマンドラインのインターフェースの標準
+* Option Table::                長いオプションの表
+* Memory Usage::                メモリの必要性をいつ、いかに注意するか
+
+
+File: standards-ja.info,  Node: Semantics,  Next: Libraries,  Up: Program Behavior
+
+4.1 頑丈なプログラムの作成
+==========================
+
+動的に全てのデータ構造を確保することによって、ファイル名、行、ファイル、
+シンボルを含む、_いかなる_データ構造の長さや数についても、勝手な
+制限を避けなさい。
+ほとんどのUnixユーティリティでは、"長い行は黙って切り詰める"。
+これはGNUユーティリティでは許容できない。
+
+   ファイルを読むユーティリティはNUL文字や、_0177以上のコードを持つ
+文字を含む_あらゆる他の印字できない文字も、落とすべきではない。
+唯一意味のある例外は、そういった文字を扱えない、ある種のプリンタへのイ
+ンターフェースを特別に意図したユーティリティだろう。
+可能な限りいつでも、UTF-8やその他のエンコーディングを使って、
+多バイト文字を表すバイト列を適切に扱えるようにしなさい。
+
+エラーを無視したいと思っているのでなければ、あらゆるシステムコールのエ
+ラーを確認しなさい。失敗したシステムコールから発生する_あらゆる_
+エラーメッセージに、もしあればファイルの名前とそのユーティリティの名前
+だけでなく、(`perror'や同等のものから得られる)システムエラー文字
+列を含めなさい。単なる"cannot open foo.c"や"stat failed"は十分でな い。
+
+   `malloc'や`realloc'のすべての呼び出しを、ゼロを返したかどう
+か確認しなさい。例えそのブロックをもっと小さくしようとしていても、
+`realloc'の確認をしなさい。2の階乗にブロックサイズを丸めるシステム
+では、`realloc'はもっと小さい領域を要求する場合に異なるブロックを
+得ることがある。
+
+   Unixでは、`realloc'がゼロを返す場合、記憶領域を破壊してしまう。 GNU
+`realloc'はこのバグを持たない。失敗すると、元のブロックは変更
+されない。そのバグは直っているとみなしても構わない。もしあなたのプログ
+ラムをUnix上で走らせたくて、こういう損失を避けたいなら、GNU `malloc'
+を使うことができる。
+
+   `free'は解放されたブロックの中身を変えてしまうと考えなければなら
+ない。そのブロックの値を取り出したかったら、必ず`free'を呼ぶ前に
+取り出さなくてはならない。
+
+   もし`malloc'が対話的でないプログラムで失敗したら、それを致命的な
+エラーにしなさい。対話的なプログラム(ユーザからコマンドを呼んでくるも
+の)では、そのコマンドを中止して、コマンド読み込みループから返るのがよ
+り良い。こうすると、そのユーザは仮想メモリを解放するために他のプロセス
+を殺して、再びそのコマンドを試すことができる。
+
+   もし引数の文法が上手く行かなくなるわけでないなら、引数の解読に
+`getopt_long'を使いなさい。
+
+静的な記憶領域がプログラムの実行中に書き込まれるためであるとき、それを
+初期化するための、明示的なCのコードを使いなさい。変更されないデータに
+対する、Cの初期化付き宣言を残しておきなさい。
+
+(ファイルディレクトリや、utmp、カーネルメモリの配置のような)Unixのデー
+タ構造を見えにくくする、低水準のインターフェースを避けるよう努めなさい。
+これらは互換性を失いがちだからだ。もしあるディレクトリの全ファイルを見
+付ける必要があるなら、`readdir'や他の高水準のインターフェースを使
+いなさい。これらはGNUによって互換性を持ってサポートされるだろう。
+
+   好ましいシグナルハンドリングの機能はBSD流の`signal'と POSIX
+`sigaction'関数である。別にあるUSGの`signal'は 劣った設計だ。
+
+   今日では、POSIXシグナル関数の使用がプログラムを移植しやすくする
+一番簡単な方法かもしれない。`signal'を使うと、GNU libc version 1
+を使うGNU/Linuxシステム上でBSDの振る舞いを得るために、`signal.h'
+ではなく`bsd/signal.h'をincludeすべきだ。`signal'がUSGの振る
+舞いしか持たないシステムをサポートするか、あるいは、それらを諦めてしま
+うかはあなた次第だ。
+
+   "あり得ない"状態を検出するエラーチェックでは、単に中止しなさい。メッ
+セージを出力する意味は普通ない。これらのチェックはバグの存在を示している。
+そのバグを直したい人なら誰でも、そのソースコードを読み、デバッガを走ら
+せないといけないだろう。だから、そのソースにコメントでその問題を説明し
+なさい。関係のあるデータは変数の中で、それはデバッガで検査するのは容易
+だろう。だから、それらをどこか他の位置に移す意味はない。
+
+   プログラムの終了状態として、エラーのカウントを使ってはならない。
+_これは上手く行かない_。なぜなら、終了状態の値は(0から255までの)
+8ビットに制限されているからだ。そのプログラムが一回走る間に256のエラー
+が起きるかもしれない。もし終了状態として256を返そうとすると、親プロセ
+スはその状態として0を見ることになり、そのプログラムが成功したかのよう
+に見えるだろう。
+
+   もし一時ファイルを作るなら、`TMPDIR'環境変数を確認しなさい。この
+変数が定義されていれば、`/tmp'ではなく、指定されたディレクトリを
+使いなさい。
+
+
+File: standards-ja.info,  Node: Libraries,  Next: Errors,  Prev: Semantics,  Up: Program Behavior
+
+4.2 ライブラリの挙動
+====================
+
+ライブラリ関数を再入可能にするよう努力しなさい。それらが動的な記憶領域
+の確保を必要とするなら、少なくとも`malloc'自体は別として、再入
+不能を避けるよう努力しなさい。
+
+名前がぶつかるのを避けるために、ライブラリ用の名前付けの取り決めがある。
+
+二文字以上の長さで、そのライブラリ用の接頭辞を決めなさい。外部に見せる
+関数と変数の名前すべてに、この接頭辞を付けるべきだ。さらに、どの特定のラ
+イブラリ・メンバーでも、これらのうち一つだけが入っているべきだ。これは通
+常それぞれを別のソースファイルに置くことを意味する。
+
+   二つの外部シンボルが常に一緒に使われ、片方を使ってもう片方を使わない
+ような意味のあるプログラムがあり得ないようなときには、例外となる。それ
+らは両方とも同じファイルに入れられる。
+
+   ユーザにエントリ・ポイントとして記述されない外部シンボルは、`_'で
+始まる名前を持つべきだ。それらはまた、他のライブラリと衝突するのを防ぐ
+ために、そのライブラリのために選ばれた接頭辞を含むべきだ。これらは、好
+むなら、ユーザのエントリ・ポイントと同じファイルの中に含めても良い。
+
+静的な関数や変数は好きなように使って良く、どんな名前付け規則にも当ては
+まらなくていい。
+
+
+File: standards-ja.info,  Node: Errors,  Next: User Interfaces,  Prev: Libraries,  Up: Program Behavior
+
+4.3 エラーメッセージの書式
+==========================
+
+コンパイラからのエラーメッセージは次のようであるべきだ。
+
+     SOURCE-FILE-NAME:LINENO: MESSAGE
+
+   適切なソースファイルがあるときには、
+他の対話的でないプログラムからのエラーメッセージは次のようであるべきだ。
+
+     PROGRAM:SOURCE-FILE-NAME:LINENO: MESSAGE
+
+関連のあるソースファイルがないときには、次のようだ。
+
+     PROGRAM: MESSAGE
+
+対話的なプログラム(端末からコマンドを読んでいるもの)では、エラーメッセ
+ージにプログラム名を含めない方が良い。どのプログラムが走っているかを示
+す場所は、プロンプトか、スクリーンのレイアウトだ。(同じプログラムが端
+末以外のソースから入力を受け取って走るとき、それは対話的ではなく、対話
+的でない形式を使ってエラーメッセージを出力するのが一番良いだろう。)
+
+   文字列MESSAGEは、プログラム名やファイル名に続くときには、大文字
+で始めるべきではない。また、ピリオドで終わるべきではない。
+
+対話的なプログラムからのエラーメッセージや使い方のメッセージのような他
+のメッセージは大文字で始めるべきだ。しかしピリオドで終わるべきではない。
+
+
+File: standards-ja.info,  Node: User Interfaces,  Next: Option Table,  Prev: Errors,  Up: Program Behavior
+
+4.4 コマンドラインのインターフェースの標準
+==========================================
+
+ユーティリティの挙動をそれを起動した名前に依存させないでください。あ
+るユーティリティに別の名前をリンクすることは、ときどき有用で、そのこと
+で何をやるのかを換えるべきでない。
+
+代わりに、動作時のオプションか、コンパイルするときのスィッチか、両方を
+別の挙動を選択するために使いなさい。
+
+同様に、プログラムの挙動をそれが使う出力デバイスの種類に依存しないよう
+にしてください。デバイス独立はシステム設計の重要な原理だ。単に誰かがと
+きどきオプションを打ち込むのを省略することに妥協してはならない。(端末
+を使うときのエラーメッセージの文法を変化させるのは構わない。なぜなら、
+それは人々が依存していない別な問題だからだ。)
+
+もし出力が端末に向かうときある挙動が最も有用で、出力がファイルかパイプ
+なら他の挙動が最も有用なら、端末への出力で有用な挙動をデフォルトにして、
+他の挙動のオプションを持つのが通常一番良い。
+
+   互換性のために、出力デバイスの種類に依存するプログラムを必要とする。
+もし`ls'や`sh'が、あらゆるユーザが期待する方法で働かなかった
+ら、それはひどいだろう。これらの場合のうちいくつかでは、出力デバイスの
+種類に依存しない、より好ましい別バージョンを我々は補う。例えば、
+`ls'にとても似ているが、デフォルトの出力形式が常に複数欄形式であ
+る、`dir'プログラムを提供する。
+
+   プログラムのコマンドライン・オプションをPOSIXのガイドラインに従わ
+せるのは良い考えだ。これを行う一番簡単な方法は、それらを解析するのに
+`getopt'を使うことだ。`getopt'のGNUバージョンは、特別な引数
+`--'が使われなければ、通常オプションが引数のどこにあっても良いこ
+とに注意しなさい。これはPOSIXが規定していることではない。GNUの拡 張だ。
+
+一文字のUnix形式オプションと等価な長い名前のオプションを定義してくださ
+い。我々はこの方法でGNUをよりユーザに親しみやすいものにしたいと思って
+いる。これはGNUの関数`getopt_log'を使えば簡単だ。
+
+長い名前のオプションの利点の一つはどのプログラムでも一貫したものにでき
+るからだ。例えば、ユーザは"verbose"オプションを持つどのGNUプログラム
+もそれが正確に`--verbose'と綴られると期待することができるべきだ。
+この不変性を成すために、あなたのプログラムのオプション名を選ぶとき、共
+通の長いオプション名の表を見なさい (*note Option Table::)。
+
+普通の引数として与えられるファイル名が入力ファイルだけにするのは普通良い
+考えだ。どんな出力ファイルでも(願わくは`-o'や`--output'のよう
+な)オプションによって指定されるだろう。互換性のために普通の引数として出
+力ファイル名を許す場合でも、それを指定する他の方法としてオプションを与え
+てみなさい。これはGNUユーティリティの一貫性を増し、そしてユーザが覚える
+べき独自性を減らすであろう。
+
+   あらゆるプログラムは次の二つの標準的なオプションをサポートすべきだ。
+`--version'と`--help'だ。
+
+`--version'
+     このオプションはそのプログラムに、その名前、バージョン、出所と法的な状態
+     に関する情報を、すべて標準出力に出させ、そして成功状態で終了させるべきだ。
+     他のオプションや引数はこれが現れたら無視されるべきで、そのプログラムはそ
+     の通常の機能を行うべきではない。
+
+     最初の行をプログラムが解析しやすくする。そのバージョン・ナンバーを最後の
+     スペースの後に始める。加えて、このプログラムの正しい名前を次の形式で含め
+     る。
+
+          GNU Emacs 19.30
+
+     プログラム名は固定文字列であるべきだ。それを`argv[0]'から計算しては
+     _いけない_。その考えは、そのファイル名ではなく、そのプログラムの標
+     準的、あるいは、正統な名前を表明することである。コマンドを`PATH'か
+     ら見付けることで、正確なファイル名を見付け出す他の方法があるのだ。
+
+     もしプログラムが大きいパッケージの補助的な部分なら、次のようにそのプログ
+     ラム名を括弧の中で記述しなさい。
+
+          emacsserver (GNU Emacs) 19.30
+
+     もしそのパッケージがこのプログラムのバージョン・ナンバーとは違うバージョ
+     ン・ナンバーを持っているなら、閉じ括弧の直前にそのパッケージのバージョン・
+     ナンバーを記述して良い。
+
+     もしこのプログラムを含むパッケージとは別に配布されるライブラリのバージョ
+     ン・ナンバーを記述*したい*のなら、記述したいそれぞれのライブラ
+     リ毎に行を追加して、バージョン情報を出力することで、そうして良い。それら
+     の行に最初の行と同じ形式を使いなさい。
+
+     そのプログラムが使うライブラリ全てを、"単に完全であるためだけに"記述し
+     ないでください。--そうすると、たくさんの役に立たない乱雑さを生み出して
+     しまうだろう。あなたがデバッグをするのに非常に重要であると実際に見出し
+     た場合にだけ、ライブラリのバージョン・ナンバーを記述してください。
+
+     バージョン・ナンバーの行の後の、次の行は著作権通知であるべきだ。二つ以上の
+     著作権通知が必要なら、それぞれ別の行に入れなさい。
+
+     次は、そのプログラムがフリーソフトウェアであり、ユーザは自由に複製したり、
+     ある条件でそれを改変して良いという、簡単な記述が続くべきだ。もしそのプロ
+     グラムがGNU
+     GPLによって保護されているなら、ここでそう言いなさい。また、
+     法に認められる範囲に対し、無保証であることを書きなさい。
+
+     名誉を与える方法として、そのプログラムの主要な作者の名簿を出力して終わら
+     せて構わない。
+
+     これらの規則に従う出力の例を示そう。
+
+          GNU Emacs 19.34.5
+          Copyright (C) 1996 Free Software Foundation, Inc.
+          GNU Emacs comes with NO WARRANTY,
+          to the extent permitted by law.
+          You may redistribute copies of GNU Emacs
+          under the terms of the GNU General Public License.
+          For more information about these matters,
+          see the files named COPYING.
+
+     これをあなたのプログラムに一致させるべきだ。当然、適切な年、著作権者、プ
+     ログラムの名前、そして、配布条件の言及を入れ、必要に応じて残りの言葉遣い
+     を換えるべきだ。
+
+     この著作権通知は変更がなされた一番最近の年を記述するだけでいい。--以前
+     のバージョンの変更に対して年を列挙する必要はない。もし不便なら、プログラ
+     ムの名前をこの通知の中で記述しなくて良い。最初の行に現れているから。
+
+`--help'
+     このオプションはそのプログラムをどのように起動するかを、標準出力上に、簡
+     単な解説を出力し、成功終了すべきだ。他のオプションや引数はこれが現れたら
+     無視すべきで、そのプログラムはその通常の機能を行うべきではない。
+
+     `--help'オプションの出力の最後の辺りで、バグ報告をどこにメールする
+     かを表す行があるべきだ。こういう書式を持つ。
+
+          Report bugs to MAILING-ADDRESS.
+
+
+File: standards-ja.info,  Node: Option Table,  Next: Memory Usage,  Prev: User Interfaces,  Up: Program Behavior
+
+4.5 長いオプションの表
+======================
+
+GNUプログラムによって使われる長いオプションの表をここで示す。きっと不完
+全ではあるが、新しいプログラムが互換性を持ちたいであろうオプションをすべ
+て列挙するつもりだ。もしこの表にまだない名前を使うなら、それらの表と、そ
+れらの意味を<gnu@gnu.org>に送ってください。我々がこの表を更新でき
+るので(1)。
+
+`after-date'
+     `-N' in `tar'.
+
+`all'
+     `-a' in `du', `ls', `nm', `stty', `uname', and `unexpand'.
+
+`all-text'
+     `-a' in `diff'.
+
+`almost-all'
+     `-A' in `ls'.
+
+`append'
+     `-a' in `etags', `tee', `time'; `-r' in `tar'.
+
+`archive'
+     `-a' in `cp'.
+
+`archive-name'
+     `-n' in `shar'.
+
+`arglength'
+     `-l' in `m4'.
+
+`ascii'
+     `-a' in `diff'.
+
+`assign'
+     `-v' in `gawk'.
+
+`assume-new'
+     `-W' in Make.
+
+`assume-old'
+     `-o' in Make.
+
+`auto-check'
+     `-a' in `recode'.
+
+`auto-pager'
+     `-a' in `wdiff'.
+
+`auto-reference'
+     `-A' in `ptx'.
+
+`avoid-wraps'
+     `-n' in `wdiff'.
+
+`background'
+     For server programs, run in the background.
+
+`backward-search'
+     `-B' in `ctags'.
+
+`basename'
+     `-f' in `shar'.
+
+`batch'
+     Used in GDB.
+
+`baud'
+     Used in GDB.
+
+`before'
+     `-b' in `tac'.
+
+`binary'
+     `-b' in `cpio' and `diff'.
+
+`bits-per-code'
+     `-b' in `shar'.
+
+`block-size'
+     Used in `cpio' and `tar'.
+
+`blocks'
+     `-b' in `head' and `tail'.
+
+`break-file'
+     `-b' in `ptx'.
+
+`brief'
+     Used in various programs to make output shorter.
+
+`bytes'
+     `-c' in `head', `split', and `tail'.
+
+`c++'
+     `-C' in `etags'.
+
+`catenate'
+     `-A' in `tar'.
+
+`cd'
+     Used in various programs to specify the directory to use.
+
+`changes'
+     `-c' in `chgrp' and `chown'.
+
+`classify'
+     `-F' in `ls'.
+
+`colons'
+     `-c' in `recode'.
+
+`command'
+     `-c' in `su'; `-x' in GDB.
+
+`compare'
+     `-d' in `tar'.
+
+`compat'
+     Used in `gawk'.
+
+`compress'
+     `-Z' in `tar' and `shar'.
+
+`concatenate'
+     `-A' in `tar'.
+
+`confirmation'
+     `-w' in `tar'.
+
+`context'
+     Used in `diff'.
+
+`copyleft'
+     `-W copyleft' in `gawk'.
+
+`copyright'
+     `-C' in `ptx', `recode', and `wdiff'; `-W copyright' in `gawk'.
+
+`core'
+     Used in GDB.
+
+`count'
+     `-q' in `who'.
+
+`count-links'
+     `-l' in `du'.
+
+`create'
+     Used in `tar' and `cpio'.
+
+`cut-mark'
+     `-c' in `shar'.
+
+`cxref'
+     `-x' in `ctags'.
+
+`date'
+     `-d' in `touch'.
+
+`debug'
+     `-d' in Make and `m4'; `-t' in Bison.
+
+`define'
+     `-D' in `m4'.
+
+`defines'
+     `-d' in Bison and `ctags'.
+
+`delete'
+     `-D' in `tar'.
+
+`dereference'
+     `-L' in `chgrp', `chown', `cpio', `du', `ls', and `tar'.
+
+`dereference-args'
+     `-D' in `du'.
+
+`diacritics'
+     `-d' in `recode'.
+
+`dictionary-order'
+     `-d' in `look'.
+
+`diff'
+     `-d' in `tar'.
+
+`digits'
+     `-n' in `csplit'.
+
+`directory'
+     Specify the directory to use, in various programs.  In `ls', it
+     means to show directories themselves rather than their contents.
+     In `rm' and `ln', it means to not treat links to directories
+     specially.
+
+`discard-all'
+     `-x' in `strip'.
+
+`discard-locals'
+     `-X' in `strip'.
+
+`dry-run'
+     `-n' in Make.
+
+`ed'
+     `-e' in `diff'.
+
+`elide-empty-files'
+     `-z' in `csplit'.
+
+`end-delete'
+     `-x' in `wdiff'.
+
+`end-insert'
+     `-z' in `wdiff'.
+
+`entire-new-file'
+     `-N' in `diff'.
+
+`environment-overrides'
+     `-e' in Make.
+
+`eof'
+     `-e' in `xargs'.
+
+`epoch'
+     Used in GDB.
+
+`error-limit'
+     Used in `makeinfo'.
+
+`error-output'
+     `-o' in `m4'.
+
+`escape'
+     `-b' in `ls'.
+
+`exclude-from'
+     `-X' in `tar'.
+
+`exec'
+     Used in GDB.
+
+`exit'
+     `-x' in `xargs'.
+
+`exit-0'
+     `-e' in `unshar'.
+
+`expand-tabs'
+     `-t' in `diff'.
+
+`expression'
+     `-e' in `sed'.
+
+`extern-only'
+     `-g' in `nm'.
+
+`extract'
+     `-i' in `cpio'; `-x' in `tar'.
+
+`faces'
+     `-f' in `finger'.
+
+`fast'
+     `-f' in `su'.
+
+`fatal-warnings'
+     `-E' in `m4'.
+
+`file'
+     `-f' in `info', `gawk', Make, `mt', and `tar'; `-n' in `sed'; `-r'
+     in `touch'.
+
+`field-separator'
+     `-F' in `gawk'.
+
+`file-prefix'
+     `-b' in Bison.
+
+`file-type'
+     `-F' in `ls'.
+
+`files-from'
+     `-T' in `tar'.
+
+`fill-column'
+     Used in `makeinfo'.
+
+`flag-truncation'
+     `-F' in `ptx'.
+
+`fixed-output-files'
+     `-y' in Bison.
+
+`follow'
+     `-f' in `tail'.
+
+`footnote-style'
+     Used in `makeinfo'.
+
+`force'
+     `-f' in `cp', `ln', `mv', and `rm'.
+
+`force-prefix'
+     `-F' in `shar'.
+
+`foreground'
+     For server programs, run in the foreground; in other words, don't
+     do anything special to run the server in the background.
+
+`format'
+     Used in `ls', `time', and `ptx'.
+
+`freeze-state'
+     `-F' in `m4'.
+
+`fullname'
+     Used in GDB.
+
+`gap-size'
+     `-g' in `ptx'.
+
+`get'
+     `-x' in `tar'.
+
+`graphic'
+     `-i' in `ul'.
+
+`graphics'
+     `-g' in `recode'.
+
+`group'
+     `-g' in `install'.
+
+`gzip'
+     `-z' in `tar' and `shar'.
+
+`hashsize'
+     `-H' in `m4'.
+
+`header'
+     `-h' in `objdump' and `recode'
+
+`heading'
+     `-H' in `who'.
+
+`help'
+     Used to ask for brief usage information.
+
+`here-delimiter'
+     `-d' in `shar'.
+
+`hide-control-chars'
+     `-q' in `ls'.
+
+`idle'
+     `-u' in `who'.
+
+`ifdef'
+     `-D' in `diff'.
+
+`ignore'
+     `-I' in `ls'; `-x' in `recode'.
+
+`ignore-all-space'
+     `-w' in `diff'.
+
+`ignore-backups'
+     `-B' in `ls'.
+
+`ignore-blank-lines'
+     `-B' in `diff'.
+
+`ignore-case'
+     `-f' in `look' and `ptx'; `-i' in `diff' and `wdiff'.
+
+`ignore-errors'
+     `-i' in Make.
+
+`ignore-file'
+     `-i' in `ptx'.
+
+`ignore-indentation'
+     `-I' in `etags'.
+
+`ignore-init-file'
+     `-f' in Oleo.
+
+`ignore-interrupts'
+     `-i' in `tee'.
+
+`ignore-matching-lines'
+     `-I' in `diff'.
+
+`ignore-space-change'
+     `-b' in `diff'.
+
+`ignore-zeros'
+     `-i' in `tar'.
+
+`include'
+     `-i' in `etags'; `-I' in `m4'.
+
+`include-dir'
+     `-I' in Make.
+
+`incremental'
+     `-G' in `tar'.
+
+`info'
+     `-i', `-l', and `-m' in Finger.
+
+`initial'
+     `-i' in `expand'.
+
+`initial-tab'
+     `-T' in `diff'.
+
+`inode'
+     `-i' in `ls'.
+
+`interactive'
+     `-i' in `cp', `ln', `mv', `rm'; `-e' in `m4'; `-p' in `xargs';
+     `-w' in `tar'.
+
+`intermix-type'
+     `-p' in `shar'.
+
+`jobs'
+     `-j' in Make.
+
+`just-print'
+     `-n' in Make.
+
+`keep-going'
+     `-k' in Make.
+
+`keep-files'
+     `-k' in `csplit'.
+
+`kilobytes'
+     `-k' in `du' and `ls'.
+
+`language'
+     `-l' in `etags'.
+
+`less-mode'
+     `-l' in `wdiff'.
+
+`level-for-gzip'
+     `-g' in `shar'.
+
+`line-bytes'
+     `-C' in `split'.
+
+`lines'
+     Used in `split', `head', and `tail'.
+
+`link'
+     `-l' in `cpio'.
+
+`lint'
+`lint-old'
+     Used in `gawk'.
+
+`list'
+     `-t' in `cpio'; `-l' in `recode'.
+
+`list'
+     `-t' in `tar'.
+
+`literal'
+     `-N' in `ls'.
+
+`load-average'
+     `-l' in Make.
+
+`login'
+     Used in `su'.
+
+`machine'
+     No listing of which programs already use this; someone should
+     check to see if any actually do, and tell <gnu@gnu.org>.
+
+`macro-name'
+     `-M' in `ptx'.
+
+`mail'
+     `-m' in `hello' and `uname'.
+
+`make-directories'
+     `-d' in `cpio'.
+
+`makefile'
+     `-f' in Make.
+
+`mapped'
+     Used in GDB.
+
+`max-args'
+     `-n' in `xargs'.
+
+`max-chars'
+     `-n' in `xargs'.
+
+`max-lines'
+     `-l' in `xargs'.
+
+`max-load'
+     `-l' in Make.
+
+`max-procs'
+     `-P' in `xargs'.
+
+`mesg'
+     `-T' in `who'.
+
+`message'
+     `-T' in `who'.
+
+`minimal'
+     `-d' in `diff'.
+
+`mixed-uuencode'
+     `-M' in `shar'.
+
+`mode'
+     `-m' in `install', `mkdir', and `mkfifo'.
+
+`modification-time'
+     `-m' in `tar'.
+
+`multi-volume'
+     `-M' in `tar'.
+
+`name-prefix'
+     `-a' in Bison.
+
+`nesting-limit'
+     `-L' in `m4'.
+
+`net-headers'
+     `-a' in `shar'.
+
+`new-file'
+     `-W' in Make.
+
+`no-builtin-rules'
+     `-r' in Make.
+
+`no-character-count'
+     `-w' in `shar'.
+
+`no-check-existing'
+     `-x' in `shar'.
+
+`no-common'
+     `-3' in `wdiff'.
+
+`no-create'
+     `-c' in `touch'.
+
+`no-defines'
+     `-D' in `etags'.
+
+`no-deleted'
+     `-1' in `wdiff'.
+
+`no-dereference'
+     `-d' in `cp'.
+
+`no-inserted'
+     `-2' in `wdiff'.
+
+`no-keep-going'
+     `-S' in Make.
+
+`no-lines'
+     `-l' in Bison.
+
+`no-piping'
+     `-P' in `shar'.
+
+`no-prof'
+     `-e' in `gprof'.
+
+`no-regex'
+     `-R' in `etags'.
+
+`no-sort'
+     `-p' in `nm'.
+
+`no-split'
+     Used in `makeinfo'.
+
+`no-static'
+     `-a' in `gprof'.
+
+`no-time'
+     `-E' in `gprof'.
+
+`no-timestamp'
+     `-m' in `shar'.
+
+`no-validate'
+     Used in `makeinfo'.
+
+`no-wait'
+     Used in `emacsclient'.
+
+`no-warn'
+     Used in various programs to inhibit warnings.
+
+`node'
+     `-n' in `info'.
+
+`nodename'
+     `-n' in `uname'.
+
+`nonmatching'
+     `-f' in `cpio'.
+
+`nstuff'
+     `-n' in `objdump'.
+
+`null'
+     `-0' in `xargs'.
+
+`number'
+     `-n' in `cat'.
+
+`number-nonblank'
+     `-b' in `cat'.
+
+`numeric-sort'
+     `-n' in `nm'.
+
+`numeric-uid-gid'
+     `-n' in `cpio' and `ls'.
+
+`nx'
+     Used in GDB.
+
+`old-archive'
+     `-o' in `tar'.
+
+`old-file'
+     `-o' in Make.
+
+`one-file-system'
+     `-l' in `tar', `cp', and `du'.
+
+`only-file'
+     `-o' in `ptx'.
+
+`only-prof'
+     `-f' in `gprof'.
+
+`only-time'
+     `-F' in `gprof'.
+
+`output'
+     In various programs, specify the output file name.
+
+`output-prefix'
+     `-o' in `shar'.
+
+`override'
+     `-o' in `rm'.
+
+`overwrite'
+     `-c' in `unshar'.
+
+`owner'
+     `-o' in `install'.
+
+`paginate'
+     `-l' in `diff'.
+
+`paragraph-indent'
+     Used in `makeinfo'.
+
+`parents'
+     `-p' in `mkdir' and `rmdir'.
+
+`pass-all'
+     `-p' in `ul'.
+
+`pass-through'
+     `-p' in `cpio'.
+
+`port'
+     `-P' in `finger'.
+
+`portability'
+     `-c' in `cpio' and `tar'.
+
+`posix'
+     Used in `gawk'.
+
+`prefix-builtins'
+     `-P' in `m4'.
+
+`prefix'
+     `-f' in `csplit'.
+
+`preserve'
+     Used in `tar' and `cp'.
+
+`preserve-environment'
+     `-p' in `su'.
+
+`preserve-modification-time'
+     `-m' in `cpio'.
+
+`preserve-order'
+     `-s' in `tar'.
+
+`preserve-permissions'
+     `-p' in `tar'.
+
+`print'
+     `-l' in `diff'.
+
+`print-chars'
+     `-L' in `cmp'.
+
+`print-data-base'
+     `-p' in Make.
+
+`print-directory'
+     `-w' in Make.
+
+`print-file-name'
+     `-o' in `nm'.
+
+`print-symdefs'
+     `-s' in `nm'.
+
+`printer'
+     `-p' in `wdiff'.
+
+`prompt'
+     `-p' in `ed'.
+
+`query-user'
+     `-X' in `shar'.
+
+`question'
+     `-q' in Make.
+
+`quiet'
+     Used in many programs to inhibit the usual output.  *Note_* every
+     program accepting `--quiet' should accept `--silent' as a synonym.
+
+`quiet-unshar'
+     `-Q' in `shar'
+
+`quote-name'
+     `-Q' in `ls'.
+
+`rcs'
+     `-n' in `diff'.
+
+`re-interval'
+     Used in `gawk'.
+
+`read-full-blocks'
+     `-B' in `tar'.
+
+`readnow'
+     Used in GDB.
+
+`recon'
+     `-n' in Make.
+
+`record-number'
+     `-R' in `tar'.
+
+`recursive'
+     Used in `chgrp', `chown', `cp', `ls', `diff', and `rm'.
+
+`reference-limit'
+     Used in `makeinfo'.
+
+`references'
+     `-r' in `ptx'.
+
+`regex'
+     `-r' in `tac' and `etags'.
+
+`release'
+     `-r' in `uname'.
+
+`reload-state'
+     `-R' in `m4'.
+
+`relocation'
+     `-r' in `objdump'.
+
+`rename'
+     `-r' in `cpio'.
+
+`replace'
+     `-i' in `xargs'.
+
+`report-identical-files'
+     `-s' in `diff'.
+
+`reset-access-time'
+     `-a' in `cpio'.
+
+`reverse'
+     `-r' in `ls' and `nm'.
+
+`reversed-ed'
+     `-f' in `diff'.
+
+`right-side-defs'
+     `-R' in `ptx'.
+
+`same-order'
+     `-s' in `tar'.
+
+`same-permissions'
+     `-p' in `tar'.
+
+`save'
+     `-g' in `stty'.
+
+`se'
+     Used in GDB.
+
+`sentence-regexp'
+     `-S' in `ptx'.
+
+`separate-dirs'
+     `-S' in `du'.
+
+`separator'
+     `-s' in `tac'.
+
+`sequence'
+     Used by `recode' to chose files or pipes for sequencing passes.
+
+`shell'
+     `-s' in `su'.
+
+`show-all'
+     `-A' in `cat'.
+
+`show-c-function'
+     `-p' in `diff'.
+
+`show-ends'
+     `-E' in `cat'.
+
+`show-function-line'
+     `-F' in `diff'.
+
+`show-tabs'
+     `-T' in `cat'.
+
+`silent'
+     Used in many programs to inhibit the usual output.  *Note_* every
+     program accepting `--silent' should accept `--quiet' as a synonym.
+
+`size'
+     `-s' in `ls'.
+
+`socket'
+     Specify a file descriptor for a network server to use for its
+     socket, instead of opening and binding a new socket.  This
+     provides a way to run, in a nonpriveledged process, a server that
+     normally needs a reserved port number.
+
+`sort'
+     Used in `ls'.
+
+`source'
+     `-W source' in `gawk'.
+
+`sparse'
+     `-S' in `tar'.
+
+`speed-large-files'
+     `-H' in `diff'.
+
+`split-at'
+     `-E' in `unshar'.
+
+`split-size-limit'
+     `-L' in `shar'.
+
+`squeeze-blank'
+     `-s' in `cat'.
+
+`start-delete'
+     `-w' in `wdiff'.
+
+`start-insert'
+     `-y' in `wdiff'.
+
+`starting-file'
+     Used in `tar' and `diff' to specify which file within a directory
+     to start processing with.
+
+`statistics'
+     `-s' in `wdiff'.
+
+`stdin-file-list'
+     `-S' in `shar'.
+
+`stop'
+     `-S' in Make.
+
+`strict'
+     `-s' in `recode'.
+
+`strip'
+     `-s' in `install'.
+
+`strip-all'
+     `-s' in `strip'.
+
+`strip-debug'
+     `-S' in `strip'.
+
+`submitter'
+     `-s' in `shar'.
+
+`suffix'
+     `-S' in `cp', `ln', `mv'.
+
+`suffix-format'
+     `-b' in `csplit'.
+
+`sum'
+     `-s' in `gprof'.
+
+`summarize'
+     `-s' in `du'.
+
+`symbolic'
+     `-s' in `ln'.
+
+`symbols'
+     Used in GDB and `objdump'.
+
+`synclines'
+     `-s' in `m4'.
+
+`sysname'
+     `-s' in `uname'.
+
+`tabs'
+     `-t' in `expand' and `unexpand'.
+
+`tabsize'
+     `-T' in `ls'.
+
+`terminal'
+     `-T' in `tput' and `ul'.  `-t' in `wdiff'.
+
+`text'
+     `-a' in `diff'.
+
+`text-files'
+     `-T' in `shar'.
+
+`time'
+     Used in `ls' and `touch'.
+
+`to-stdout'
+     `-O' in `tar'.
+
+`total'
+     `-c' in `du'.
+
+`touch'
+     `-t' in Make, `ranlib', and `recode'.
+
+`trace'
+     `-t' in `m4'.
+
+`traditional'
+     `-t' in `hello'; `-W traditional' in `gawk'; `-G' in `ed', `m4',
+     and `ptx'.
+
+`tty'
+     Used in GDB.
+
+`typedefs'
+     `-t' in `ctags'.
+
+`typedefs-and-c++'
+     `-T' in `ctags'.
+
+`typeset-mode'
+     `-t' in `ptx'.
+
+`uncompress'
+     `-z' in `tar'.
+
+`unconditional'
+     `-u' in `cpio'.
+
+`undefine'
+     `-U' in `m4'.
+
+`undefined-only'
+     `-u' in `nm'.
+
+`update'
+     `-u' in `cp', `ctags', `mv', `tar'.
+
+`usage'
+     Used in `gawk'; same as `--help'.
+
+`uuencode'
+     `-B' in `shar'.
+
+`vanilla-operation'
+     `-V' in `shar'.
+
+`verbose'
+     Print more information about progress.  Many programs support this.
+
+`verify'
+     `-W' in `tar'.
+
+`version'
+     Print the version number.
+
+`version-control'
+     `-V' in `cp', `ln', `mv'.
+
+`vgrind'
+     `-v' in `ctags'.
+
+`volume'
+     `-V' in `tar'.
+
+`what-if'
+     `-W' in Make.
+
+`whole-size-limit'
+     `-l' in `shar'.
+
+`width'
+     `-w' in `ls' and `ptx'.
+
+`word-regexp'
+     `-W' in `ptx'.
+
+`writable'
+     `-T' in `who'.
+
+`zeros'
+     `-z' in `gprof'.
+
+   ---------- Footnotes ----------
+
+   (1) 訳注: ここには訳するほど難解な事はないはずなので、原文の まま。
+
+
+File: standards-ja.info,  Node: Memory Usage,  Prev: Option Table,  Up: Program Behavior
+
+4.6 メモリの使用
+================
+
+概して、たった数メガしかメモリを使わないなら、メモリの使用を減らす努力を
+行うことに悩まないように。例えば、数メガ以上のファイルを扱うことが他の
+事情で実際的でなかったら、それらを処理するのに入力ファイル全体をコアに読
+み込むことは理に適っている。
+
+   しかしながら、普通に非常に大きいファイルを扱うことのある、`cat'や
+`tail'のようなプログラムにとって、それが処理できるファイルの大きさ
+を人為的に制限する手法の使用は避けることが重要だ。もしプログラムが行毎に
+働き、ユーザが提供する任意の入力ファイルが与えられるならば、一行だけをメ
+モリに保持するべきだ。なぜなら、これは大して難しくなく、全て一度にコアに
+入るよりも大きいファイルを扱えることをユーザが望むだろうからだ。
+
+もしあなたのプログラムが複雑なデータ構造を作るなら、単にコアにそれを作っ
+て、もし`malloc'がゼロを返したら致命的なエラーにしてしまいなさい。
+
+
+File: standards-ja.info,  Node: Writing C,  Next: Documentation,  Prev: Program Behavior,  Up: Top
+
+5 Cの一番良い使い方
+*******************
+
+この節では、GNUソフトウェアを書くときの一番良いC言語の使い
+方について助言を与える。
+
+* Menu:
+
+* Formatting::                  あなたのソースコードの書式
+* Comments::                    あなたの仕事のコメント
+* Syntactic Conventions::       Cの構成のきれいな利用
+* Names::                       変数と関数の名前付け
+* System Portability::          異なるオペレーティング・システム間の移植性
+* CPU Portability::             様々なCPUの種類のサポート
+* System Functions::            ``標準''ライブラリ関数の移植性
+* Internationalization::        国際化の手法
+* Mmap::                        `mmap'の安全な使い方
+
+
+File: standards-ja.info,  Node: Formatting,  Next: Comments,  Up: Writing C
+
+5.1 あなたのソースコードの書式
+==============================
+
+C関数の本体を開始する開き大括弧をゼロ列目に置き、他の開き大括弧や開き丸
+括弧や開き角括弧をゼロ列目に置かないようにするのは重要だ。いくつかのツー
+ルは、C関数の始まりを探すのに、ゼロ列目の開き大括弧を捜す。これらのツー
+ルはそういう風にフォーマットされていないコードでは上手く動かないだろう。
+
+関数定義で、関数の名前がゼロ列目で始まっていることも重要だ。人々はこれの
+おかげで関数定義を探すのが楽になり、あるツールがそれらを認識するのも楽に
+なるかもしれない。こうして、適切な書式は次のようになる。
+
+     static char *
+     concat (s1, s2)        /* Name starts in column zero here */
+          char *s1, *s2;
+     {                     /* Open brace in column zero here */
+       ...
+     }
+
+あるいは、もしANSI Cを使いたいなら、次のように定義をフォーマットす る。
+
+     static char *
+     concat (char *s1, char *s2)
+     {
+       ...
+     }
+
+   ANSI Cでは、もし引数が上手く一行に収まらないなら、次のようにそれを
+分ける。
+
+     int
+     lots_of_args (int an_integer, long a_long, short a_short,
+                   double a_double, float a_float)
+     ...
+
+   関数の本体では、次のようにフォーマットされたコードを好んでいる。
+
+     if (x < foo (y, z))
+       haha = bar[4] + 5;
+     else
+       {
+         while (z)
+           {
+             haha += foo (z, z);
+             z--;
+           }
+         return ++x + bar ();
+       }
+
+我々は開き丸括弧の前とコンマの後にスペースがあるとプログラムを読むのがよ
+り簡単であることを見出している。とりわけコンマの後は。
+
+式を複数行に分けるとき、演算子の後ではなく、それの前で分ける。こうするの
+が正しいやり方だ。
+
+     if (foo_this_is_long && bar > win (x, y, z)
+         && remaining_condition)
+
+字下げが同じところで、異なる優先度の二つの演算子を持たないようにしなさい。
+例えば、こう書いてはいけない。
+
+     mode = (inmode[j] == VOIDmode
+             || GET_MODE_SIZE (outmode[j]) > GET_MODE_SIZE (inmode[j])
+            ? outmode[j] : inmode[j]);
+
+   代わりに、字下げが入れ子を表すよう、余分な丸括弧を使う。
+
+     mode = ((inmode[j] == VOIDmode
+              || (GET_MODE_SIZE (outmode[j]) > GET_MODE_SIZE (inmode[j])))
+             ? outmode[j] : inmode[j]);
+
+Emacsがそのコードを適切に字下げするよう、余分な丸括弧を入れなさい。例え
+ば、次の字下げは手でやるといい感じだが、Emacsは台なしにしてしまう。
+
+     v = rup->ru_utime.tv_sec*1000 + rup->ru_utime.tv_usec/1000
+         + rup->ru_stime.tv_sec*1000 + rup->ru_stime.tv_usec/1000;
+
+   でも開き括弧一組を加えると問題は解決する。
+
+     v = (rup->ru_utime.tv_sec*1000 + rup->ru_utime.tv_usec/1000
+          + rup->ru_stime.tv_sec*1000 + rup->ru_stime.tv_usec/1000);
+
+   do-while文は次のようにフォーマットする。
+
+     do
+       {
+         a = foo (a);
+       }
+     while (a > 0);
+
+   フォームフィード文字 (control-L)
+を使って、プログラムを(関数の中ではなく)
+論理的な位置でページに分割してほしい。ページがどれぐらいの長さかなんて問
+題じゃない。印刷されるページに合わせなくていいのだから。フォームフィード
+は行の中にそれ自身だけを置くべきだ。
+
+
+File: standards-ja.info,  Node: Comments,  Next: Syntactic Conventions,  Prev: Formatting,  Up: Writing C
+
+5.2 あなたの仕事のコメント
+==========================
+
+どんなプログラムでもそれが何なのか簡単に表すコメントで始まるべきだ。例:
+`fmt - filter for simple filling of text'.
+
+英語は全ての国のほとんど全てのプログラマが読むことのできる唯一の言語なの
+で、GNUプログラムでは英語でコメントを書いてほしい。もしあなたが英語を上
+手く書けないなら、出来るだけ上手く英語でコメントを書き、他の人々にそれら
+を書き直すのを手伝ってくれるよう頼んでください。もし英語でコメントを書く
+ことができないなら、一緒に仕事してくれる誰かを探して、あなたのコメントを
+英語に翻訳してもらってください。
+
+それぞれの関数に、その関数が何をやり、どういう引数を受け取り、引数のあり
+得る値が何を意味し、そして何に使われるのかを表すコメントを書いてください。
+もしCの型が習慣的なやり型で使われるなら、Cの引数宣言の意味をくどくどと複
+製する必要はない。もしその利用が(実際には文字列の最初ではなく、二文字目
+のアドレスである`char *'型の引数のような)標準的でないものだったら、
+あるいは、(改行を含む文字列は動作保証されない、というような)期待される方
+法では働かない値があり得るなら、そう書くのを忘れないようにしなさい。
+
+   また、もしあるなら、返り値の意味を説明しなさい。
+
+   Emacsのセンテンス・コマンド(sentence
+command)が働くように、コメントの行
+の最後の後に二つのスペースを置いてください。また、完全な文を書き、最初の
+単語を大文字で書いてください。もし小文字の識別子が文の最初に来たら、それ
+を大文字で書いてはいけない! 綴りを変えると違う識別子になる。もし小文字で
+文を始めるのが好きじゃないなら、文を違うように書きなさい(例えば、"The
+identifier lower-case is ...")。
+
+関数の上のコメントは、引数の値について言うときにその引数の名前を使えば、
+ずっとはっきりする。変数名それ自体は小文字であるべきだが、変数そのもので
+はなく、その値について言っているときには大文字で書きなさい。従って、"an
+inode"よりも、"the inode number NODE_NUM"である。
+
+普通コメントに関数の名前を再び言うことに意味はない。なぜなら、読者は自分で
+それを見ることができるからだ。関数自身がスクリーンの一番下からはみ出てし
+まうぐらいコメントが長いときは例外かもしれない。
+
+   静的な変数それぞれにも、次のようにコメントがあるべきだ。
+
+     /* Nonzero means truncate lines in the display;
+        zero means continue them.  */
+     int truncate_lines;
+
+   すべての`#endif'に、入れ子になっていない(たった数行の)短い条件分岐
+の場合を除いて、コメントを付けるべきだ。そのコメントには、
+_その意味を含めて_、終了する条件分岐の状態を記すべきだ。
+`#else'はその条件と続くコードの_意味_を記述するコメントを持つ
+べきだ。例えば、
+
+     #ifdef foo
+       ...
+     #else /* not foo */
+       ...
+     #endif /* not foo */
+     #ifdef foo
+       ...
+     #endif /* foo */
+
+しかし、対照的に、`#ifndef'では次のようなコメントを書く。
+
+     #ifndef foo
+       ...
+     #else /* foo */
+       ...
+     #endif /* foo */
+     #ifndef foo
+       ...
+     #endif /* not foo */
+
+
+File: standards-ja.info,  Node: Syntactic Conventions,  Next: Names,  Prev: Comments,  Up: Writing C
+
+5.3 Cの構成のきれいな利用
+=========================
+
+関数への全ての引数を明示的に宣言してください。それらが単に`int'だか
+らという理由で省いていけない。
+
+外部関数とソースファイルの後ろに現れる関数の宣言は、ファイルの先頭の近く
+一箇所か、ヘッダファイルの中に書くべきだ。関数の中に`extern'宣言を
+置いてはいけない。
+
+   以前、一つの関数内で繰り返し繰り返し異なる値のために(`tem'のような
+名前で)同じ局所変数を使うのが普通のやり方だった。こうする代わりに、別の
+目的毎に別の局所変数を宣言し、意味のある名前を付ける方がより良い。これで
+プログラムがより理解しやすくなるだけでなく、良いコンパイラの最適化を促進
+するのである。また、局所変数の宣言をそれぞれ、それを全て使用する一番小さ
+い領域に入れることができる。こうすると、プログラムがさらにきれいになるの
+だ。
+
+   大域識別子を隠す局所変数や引数を使ってはならない。
+
+複数行に及ぶ一つの宣言で複数の変数を宣言してはいけない。代わりに、それぞ
+れ行で新しく宣言を始めなさい。例えば、こうする代わりに、
+
+     int    foo,
+            bar;
+
+こう書くか、
+
+     int foo, bar;
+
+あるいは、こうする。
+
+     int foo;
+     int bar;
+
+(もしそれらが大域変数なら、いずれにせよその前にコメントを付けるべきだ。)
+
+   他の`if'文に入れ子になる`if'-`else'文があるとき、必ずその
+`if'-`else'の周りに大括弧を付ける。従って、次のように決して書
+いてはならない。
+
+     if (foo)
+       if (bar)
+         win ();
+       else
+         lose ();
+
+常に次のようにする。
+
+     if (foo)
+       {
+         if (bar)
+           win ();
+         else
+           lose ();
+       }
+
+   もし`else'文の中に入れ子になる`if'文があれば、次のように、
+`then'部分をその前の`then'部分のように字下げして一行に `else
+if'を書くか、
+
+     if (foo)
+       ...
+     else if (bar)
+       ...
+
+あるいは、次のように大括弧の中に入れ子の`if'を書く。
+
+     if (foo)
+       ...
+     else
+       {
+         if (bar)
+           ...
+       }
+
+同じ宣言で、構造体のタグや変数、typedefを一緒に宣言してはならない。代わ
+りに、構造体のタグを別に宣言して、それから変数やtypedefを宣言する。
+
+   `if'条件文内で代入しないようにしなさい。例えば、こう書いてはいけ
+ない。
+
+     if ((foo = (char *) malloc (sizeof *foo)) == 0)
+       fatal ("virtual memory exhausted");
+
+代わりに、こう書く。
+
+     foo = (char *) malloc (sizeof *foo);
+     if (foo == 0)
+       fatal ("virtual memory exhausted");
+
+   `lint'をおとなしくするのに、プログラムを見苦しくしてはならない。
+`void'へのキャストを入れないでください。キャストなしのゼロは、可変
+引数の関数を呼ぶときを除くと、ヌル・ポインタ定数として全く結構である。
+
+
+File: standards-ja.info,  Node: Names,  Next: System Portability,  Prev: Syntactic Conventions,  Up: Writing C
+
+5.4 変数と関数の名前付け
+========================
+
+プログラムの大域的な変数や関数の名前はコメントのように働く。だから、簡潔
+な名前を選ばないように。--代わりに、その変数や関数の意味について役に立
+つ情報を与える名前を探しなさい。GNUプログラムでは、名前は他のコメント
+と同様英語であるべきである。
+
+局所変数の名前はもっと短くていい。なぜなら、それらは一つの文脈の中でだけ
+使われ、そこでは(たぶん)コメントがそれらの目的を説明している。
+
+ある名前の単語を分けるのに、Emacsの単語コマンドがその中で使えるように、
+アンダースコアを使ってください。小文字にしておきなさい。大文字をマクロや
+`enum'定数や一定の取り決めに従う接頭辞のために取っておきなさい。
+
+   例えば、`ignore_space_change_flag'のような名前を使うべきだ。
+`iCantReadThis'のような名前を使ってはいけない。
+
+コマンドラインのオプションが指定されたかどうかを示す変数は、オプションの
+文字ではなく、オプションの意味にちなんだ名前を付けるべきだ。コメントがオ
+プションの正確な意味とその文字の両方を記述すべきだ。例えば、
+
+     /* Ignore changes in horizontal whitespace (-b).  */
+     int ignore_space_change_flag;
+
+   一定の整数値に名前を定義したいとき、`#define'よりも`enum'を使
+いなさい。GDBは列挙定数について知っている。
+
+   古いSystem
+Vシステムで不必要な問題を引き起こさないよう、14文字以下のファ
+イル名を使いなさい。これを試験するのに`doschk'というプログラムを使
+うことができる。`doschk'はまた、MS-DOSファイルシステムにファイルが
+置かれたとしたら、名前が衝突する可能性を試験する。--注意してもしなくて
+も構わないものだ。
+
+
+File: standards-ja.info,  Node: System Portability,  Next: CPU Portability,  Prev: Names,  Up: Writing C
+
+5.5 システム間の移植性
+======================
+
+Unixの世界では、"移植性"は異なるUnixバージョンに移植することを言ってい
+る。GNUプログラムにとって、この種の移植性は望ましいが、最も重要ではない。
+
+   GNUソフトウェアの主要な目的は、GNUカーネルの上で走り、GNU
+Cコンパイラで
+コンパイルされ、様々なCPU上で動くことだ。異なるCPU上のGNUシス
+テム間の多様性の量と種類は、今日のLinuxに基づくGNUシステムやBSDシステム
+間の多様性と比較できる程度であろう。だから、絶対に必要な移植性の種類
+はかなり限られている。
+
+   しかしたくさんのユーザがGNUソフトウェアをGNUでないUnixやUnix-likeシス
+テムで走らせている。だから、さまざまなUnix-likeシステムをサポートするこ
+とが望ましい。最も重要ではないけれど。
+
+ほとんどのUnix-likeシステムへの移植性を得る一番簡単な方法はAutoconfを使
+うことだ。あなたのプログラムがAutoconfが提供できる以上にホスト・プラット
+ホームに関する情報を知る必要があることはあまりない。単にそういう情報を必
+要とするプログラムの大部分はすでに書かれているから。
+
+準内部的データベース(例えば、ディレクトリ)のフォーマットを使わないように
+しなさい。もっと高水準の方法(`readdir')があるときは。
+
+MSDOS、Windows、Macintosh、VMS、MVSのような、Unixに似てないシステムにつ
+いて言うと、それらをサポートするのは普通しない方がいいぐらい大変な仕事だ。
+
+   計画されているGNUカーネルはまだ出来てないが、GNU
+Cライブラリのマニュアル
+を見ることで、それが提供するであろう機能がどれなのか分かる。GNUカーネル
+はMachに基づいているから、Machの機能も利用できるだろう。しかしながら、
+Machの機能を使用すると、おそらくあなたのプログラムを今日デバッグする困難
+に見舞われるだろう(1)。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注: 今日デバッグするってどういうこと？ 原文: However, if you
+use Mach features, you'll probably have trouble debugging your program
+today.
+
+
+File: standards-ja.info,  Node: CPU Portability,  Next: System Functions,  Prev: System Portability,  Up: Writing C
+
+5.6 CPU間の移植性
+=================
+
+GNUシステムでさえ、CPUタイプ間の違いのせいで異なってしまうだろう。--
+例えば、バイト順序や境界の必要性の違いなどだ。こういう違うを扱うことは絶
+対に不可欠だ。しかし、`int'が32ビットより小さい可能性を扱うために努
+力してはいけない。GNUでは16ビットのマシンはサポートしない。
+
+   `int'オブジェクトのアドレスがまたその一番下のバイトのアドレスである
+とみなしてはいけない。これはビッグ・エンディアンのマシンでは誤りだ。だか
+ら、次の間違いをしてはいけない。
+
+     int c;
+     ...
+     while ((c = getchar()) != EOF)
+       write(file_descriptor, &c, 1);
+
+関数を呼ぶとき、さまざまな型のポインタ間やポインタと整数間での違いを心配
+する必要はない。ほとんどのマシンでは、いずれにせよ違いはない。違いのある
+わずかなマシンについて言うと、それらの全てがANSI Cをサポートしてい
+るので、それらのシステム上でそのコードが動くように、(ANSI Cでだけ使
+われるように条件付けされた)プロトタイプを使うことができる。
+
+ある場合には、整数とポインタの引数を無差別に同じ関数へ渡し、いかなるシス
+テムでもプロトタイプを使わないでも構わない。例えば、多くのGNUプログラム
+は`printf'やその類いに引数をどんどん渡すエラー報告関数を持っている。
+
+     error (s, a1, a2, a3)
+          char *s;
+          int a1, a2, a3;
+     {
+       fprintf (stderr, "error: ");
+       fprintf (stderr, s, a1, a2, a3);
+     }
+
+実際、これは全てのマシンで動作し、他の"正しい"やり方よりずっと単純だ。
+そのような関数に対してプロトタイプを使うことを_しない_ように。
+
+しかしながら、本当に必要としているのでないなら、ポインタを整数にキャスト
+しないようにしなさい。これらの仮定は実に移植性を減らしており、ほとんどの
+プログラムでは簡単に避けられる。ポインタから整数にキャストすることが不可
+欠な
+--アドレスだけでなく型情報をあるワードに収めるLispインタープリタ、の
+ような-- 場合には、そうして構わないが、異なるワードサイズを扱う明示的な
+準備をしなくてはならないだろう。
+
+
+File: standards-ja.info,  Node: System Functions,  Next: Internationalization,  Prev: CPU Portability,  Up: Writing C
+
+5.7 システム関数の呼び出し
+==========================
+
+Cの実装は十分に違う。ANSI Cは非互換性を減らすが、無くなりはしない。
+その一方では、多くのユーザがGNUソフトウェアをANSI以前のコンパイラで
+コンパイルしたがる。この章では、移植性を不必要に失くさないよう、標準Cラ
+イブラリ関数をどれぐらいたくさん、あるいは、少なく使うか、推奨する方法を
+見せる。
+
+   * `sprintf'の値を使ってはいけない。あるシステムでは書かれた文字の数を
+     返し、すべてのシステムでそうだというわけではない。
+
+   * `main'は`int'型を返すと宣言するべきだ。それは`exit'を呼ぶ
+     か、整数状態コードを返すことによって終了するべきだ。決して未定義の値を返
+     すことができないようにしなさい。
+
+   * システム関数を明示的に宣言してはならない。
+
+     あるシステムでは、システム関数の宣言はほとんどが間違っている。衝突を最小
+     化するために、システム関数を宣言するのをシステムのヘッダファイルに任せな
+     さい。もしヘッダが関数を宣言しなければ、宣言せずに置いておきなさい。
+
+     関数を宣言せずに使うのはきれいじゃないように見えるかもしれないが、実際に
+     はこれが本当に起こるシステム上の、ほとんどのシステムライブラリ関数に対し
+     て上手く働く。対照的に、現実の宣言は頻繁に現実の衝突を引き起こしている。
+
+   *
+     もしシステム関数を宣言しなければならないなら、引数の型を指定してはいけな
+     い。ANSIプロトタイプではなく、古い形式の宣言を使いなさい。関数を特
+     定すればするほど、衝突しがちになる。
+
+   * 特に、無条件に`malloc'や`realloc'を宣言してはいけない。
+
+     ほとんどのGNUプログラムは、慣習的に`xmalloc'や`xrealloc'と名付
+     けられる関数の中で、たった一回だけそれらを使用する。これらの関数はそれぞ
+     れ`malloc'や`realloc'を呼び、結果を確認する。
+
+     `xmalloc'や`xrealloc'はあなたのプログラムで定義されるので、型
+     の衝突の危険性なしに他のファイルにそれらを宣言できる。
+
+     ほとんどのシステム上で、`int'はポインタと同じ長さだ。それゆえ、
+     `malloc'や`realloc'の呼び出しは上手く動く。数少ない例外的なシ
+     ステム(ほとんどは64ビット・マシン)では、`malloc'や`realloc'の
+     *条件付き*宣言を使うか、これらの宣言をそれらのシステムに特化した
+     設定ファイルに置くことができる。
+
+   * 文字列関数は特別な扱いが必要だ。いくつかのUnixシステムは`string.h'
+     というヘッダファイルを持っている。他では`strings.h'を持っている。どっ
+     ちのファイル名も可搬性がない。できることは二つある。どっちのファイルをイ
+     ンクルードするかAutoconfで見付け出すか、どっちもインクルードしないかだ。
+
+   *
+     文字列のファイルをどっちもインクルードしないなら、普通の方法ではヘッダファ
+     イルから文字列関数の宣言を得ることができない。
+
+     このことは、あなたが思うよりも問題を起こさない。多くのシステムがまだサポー
+     トしていないので、いずれにせよ、新しいANSI文字列関数は避ける
+     べきだ。使って良い文字列関数は次の通りだ。
+
+          strcpy   strncpy   strcat   strncat
+          strlen   strcmp    strncmp
+          strchr   strrchr
+
+     複製や連結の関数は、それらの値を使わない限り、宣言なしで上手く働く。宣言
+     なしにそれらの値を使うと、ポインタの大きさが`int'の大きさと違うシス
+     テムや、おそらく他の場合に失敗する。それらの値を使うのを避けるのはささい
+     なことだから、そうしなさい。
+
+     比較の関数や`strlen'は、ほとんどのシステムで、おそらくGNUソフトウェ
+     アが動くすべてのシステムで、宣言なしに上手く働く。少数のシステムで
+     *条件付きで*それらを宣言することが必要だと気付くかもしれない。
+
+     検索関数は`char *'を返すと宣言されなければならない。幸運にも、それ
+     らが返すデータ型には多様性がない。しかしそれらの名前には多様性がある。あ
+     るシステムでは、それらの関数に`index'と`rindex'という名前を付
+     けている。他のシステムでは、`strchr'と`strrchr'という名前を使
+     う。あるシステムは両方の名前をサポートするが、どっちも全てのシステムで働
+     くわけではない。
+
+     片方の組の名前を取り出し、プログラム中でそれを使うべきだ。(今日では、新
+     しいプログラムには`strchr'と`strrchr'を選ぶのがより良い。それ
+     らは標準のANSI名だから。) それらの名前を両方とも`char *'を返す
+     関数として宣言しなさい。それらの名前をサポートしないシステムでは、他方の
+     組のことばをマクロとして定義しなさい。例えば、`strchr'と
+     `strrchr'の名前を通して使いたいなら、ファイルの始め(あるいはヘッダ
+     に)次のように書いておく。
+
+          #ifndef HAVE_STRCHR
+          #define strchr index
+          #endif
+          #ifndef HAVE_STRRCHR
+          #define strrchr rindex
+          #endif
+
+          char *strchr ();
+          char *strrchr ();
+
+   ここでは、`HAVE_STRCHR'と`HAVE_STRRCHR'が対応する関数が存在す
+るシステムでは定義されるマクロだとみなしている。それらを適切に定義する一
+つのやり方はAutoconfを使うことだ。
+
+
+File: standards-ja.info,  Node: Internationalization,  Next: Mmap,  Prev: System Functions,  Up: Writing C
+
+5.8 国際化
+==========
+
+GNUはあるプログラムのメッセージを様々な言語に翻訳するのを容易にするGNU
+gettextと呼ばれるライブラリを持っている。あらゆるプログラムでこのライブ
+ラリを使うべきだ。メッセージがプログラムに現れるとき、それらに英語を使い
+なさい。そして、それらを他の言語に翻訳するための方法をgettextで提供しな
+さい。
+
+   GNU gettextの使用は翻訳が必要かもしれない、それぞれの文字列の周りに
+`gettext'マクロの呼び出しを付けることを含む --次のように。
+
+     printf (gettext ("Processing file `%s'..."));
+
+こうすると、GNU gettextが文字列`"Processing file `%s'..."'を翻訳さ
+れたバージョンで置き換えられる。
+
+一度プログラムがgettextを使うことになったら、翻訳が必要な新しい文字列を
+加えるとき、`gettext'への呼び出しを書く地点を作ってください。
+
+   あるパッケージでのGNU gettextの使用は、そのパッケージに対して"テキス
+ト領域名"を指定することを含む。テキスト領域名はこのパッケージの翻訳を他
+のパッケージの翻訳と分離するのに使われる。通常、テキスト領域名はパッケー
+ジの名前と同じであるべきだ --例えば、GNU file utilityのために
+`fileutils'が使われる。
+
+gettextが上手く働くようにするために、単語や文の構造に仮定を設けるコード
+を書かないようにしなさい。文の正確なテキストがデータによって変わるのよう
+にしたいとき、条件付けられた単語や句を単一の文脈構成に押し込むよりも、そ
+れぞれ完全な文を含む二つ以上の文字列定数を使いなさい。
+
+   これがやるべきではないものの例だ。
+
+     printf ("%d file%s processed", nfiles,
+             nfiles != 1 ? "s" : "");
+
+この例の問題は複数形が`s'を加えることで行われると仮定していることだ。も
+し書式文字列にgettextを適用するなら、次のように、メッセージが異なる単語
+を使うことができるが、
+
+     printf (gettext ("%d file%s processed"), nfiles,
+             nfiles != 1 ? "s" : "");
+
+複数形が`s'を使うようになお強制されている。これがより良い方法だ。
+
+     printf ((nfiles != 1 ? "%d files processed"
+              : "%d file processed"),
+             nfiles);
+
+このやり方で、二つの文字列それぞれに独立してgettextを適用できる。
+
+     printf ((nfiles != 1 ? gettext ("%d files processed")
+              : gettext ("%d file processed")),
+             nfiles);
+
+こうすると、"file"という単語の複数形を作る、いかなる方法でも実現でき、
+"processed"に対して、単語が一致しないといけない言語を扱うこともできる。
+
+   同じような問題は次のコードで文脈の構造の水準で現れる。
+
+     printf ("#  Implicit rule search has%s been done.\n",
+             f->tried_implicit ? "" : " not");
+
+このコードに`gettext'呼び出しを与えても、すべての言語で正しい結果を
+得られるわけではない。なぜなら、いくつかの言語で否定は文中に一つよりもた
+くさんの場所で単語を加える必要があるからだ。対照的に、`gettext'呼び
+出しの追加は、もしそのコードが次のように始まるなら、簡単に行える。
+
+     printf (f->tried_implicit
+             ? "#  Implicit rule search has been done.\n",
+             : "#  Implicit rule search has not been done.\n");
+
+
+File: standards-ja.info,  Node: Mmap,  Prev: Internationalization,  Up: Writing C
+
+5.9 Mmap
+========
+
+`mmap'がすべてのファイルに働くとも、すべてのファイルで失敗するとも、
+みなしてはいけない。一部のファイルでは上手く行き、他では駄目かもしれない。
+
+   `mmap'を使う適切な方法は、使いたい特定のファイルで試してみることだ。
+--そして、もし`mmap'が働かなかったら、`read'や`write'を
+使う他の方法で作業することに頼りなさい。
+
+この用心が必要である理由はGNUカーネル(HURD)はユーザが拡張可能なファイル
+システムを提供することで、そこではたくさんの異なる種類の"普通のファイル"
+があり得る。それらの多くは`mmap'をサポートするが、いくつかはしない。
+プログラムをすべてのそういうファイルを扱えるようにすることは重要だ。
+
+
+File: standards-ja.info,  Node: Documentation,  Next: Managing Releases,  Prev: Writing C,  Up: Top
+
+6 プログラムの文書化
+********************
+
+* Menu:
+
+* GNU Manuals::                 適切なマニュアルの執筆
+* Manual Structure Details::    特定の構造の慣習
+* NEWS File::                   NEWSファイル補足マニュアル
+* Change Logs::                 変更の記録
+* Man Pages::                   manページは二番目だ。
+* Reading other Manuals::       どれほど他のマニュアルから学ぶことができるか。
+
+
+File: standards-ja.info,  Node: GNU Manuals,  Next: Manual Structure Details,  Up: Documentation
+
+6.1 GNUマニュアル
+=================
+
+GNUシステムの一部を文書にする好ましい方法はTexinfo整形言語
+でマニュアルを書くことだ。Texinfoのマニュアルを、ハードコピーか、
+`info'やEmacsのInfoサブシステム(`C-h i')を使って利用できるオン
+ラインのバージョンで見なさい。
+
+プログラマはしばしば、彼らが知っている実装の構造に従う文書を構成するのが
+最も自然だと感じる。しかしこの構造はそのプログラムの使い方を説明するには
+必ずしも良いとは言えない。それはユーザには関係がなく、ユーザを混乱させる
+かもしれない。
+
+段落の文から別々のマニュアルに論題を分類することまで、あらゆる水準で、文
+書を構成する正しい方法は、それを読むときにユーザが心に抱くであろう概念や
+疑問に従う。ときどきこの考えの構造は文書化されるソフトウェアの実装の構造
+と一致する。--でもしばしばそれらは異なる。しばしば良い文書を執筆するた
+めに学ぶ一番重要な部分は、実装のように文書を構成していて、もっと良い別の
+構成について考えるときに気付くことを学ぶことだ。
+
+例えば、GNUシステムのそれぞれのプログラムはおそらく一つのマニュアルに記
+述されるべきだ。しかしこれはそれぞれのプログラムがそれ自身のマニュアルに
+文書化されるべきであることを意味していない。このことはユーザが理解するの
+を助ける構造よりもむしろ、その実装の構造に従っているだろう。
+
+   代わりに、それぞれのマニュアルは密接な_論題_を包含するべきだ。例え
+ば、`diff'のマニュアルと`diff3'のマニュアルの代わりに、
+`cmp'だけでなく、これらのプログラム両方も包含する、"ファイルの比較"
+のマニュアルが一つある。それらのプログラムを一緒に文書にすることで、全体
+の主題をよりすっきりさせることができる。
+
+プログラムを論じるマニュアルはそのプログラムのコマンドライン・オプション
+全てとそのコマンド全てを記述すべきだ。それはそれらの使用例を与えるべきだ。
+しかしマニュアルを機能の列挙として構成してはならない。代わりに、副題によっ
+て、論理的に構成しなさい。プログラムが行う仕事について考えるときにユーザ
+が尋ねるであろう質問を提出しなさい。
+
+概して、GNUマニュアルは指導書と参考書の両方に役に立つべきだ。それはInfo
+によりそれぞれの論題に対する便利な手段のために、そして(付録は別として)通読
+するために作り上げられるべきだ。GNUマニュアルは始めから通して読む初心者
+への良い紹介を行うべきで、ハッカーが欲しがる詳細のすべてを与えるべきでも
+ある。
+
+そのことは最初に思われるほど難しくない。それぞれの章をその論題の論理的な
+分類として整理しなさい。しかしその節を整頓して、それらのテキストを執筆し
+なさい。その章を通読することが意味を為すように。その著書を章に構成すると
+きや、節を段落に構成するとき、同様にしなさい。その標語は、_それぞれ
+の地点で、先行するテキストによって上げられた最も基本的で最も重要な話題を
+提出しなさい_、だ。
+
+必要なら、マニュアルの最初に、純粋に指導的で、主題の基礎を包含する、余分
+な章を入れなさい。これらは初心者がマニュアルの残りを理解するための枠組み
+を提供する。Bisonのマニュアルはこれの使い方の良い例を提供する。
+
+GNUの文書を書き方の手本としてUnixのmanページを使ってはいけない。それらの
+ほとんどは簡潔で、構成が悪く、根底にある概念について不適切な説明を与えて
+いる。(もちろん例外はある。) またUnixのmanページはGNUマニュアルで使用す
+るものとは異なる、特有の構成を使用する。
+
+Unixの文書で使われる"pathname"という用語を使わないでください。代わりに
+"file name"(二語)を使いなさい。"path"という用語は検索パスに対しての
+み使用し、それはファイル名のリストだ。
+
+   コンピュータ・プログラムへの間違った入力を表すのに、"illegal"という用
+語を使わないでください。このためには"invalid"を使い、"illegal"という
+用語は違法のために確保してください。
+
+
+File: standards-ja.info,  Node: Manual Structure Details,  Next: NEWS File,  Prev: GNU Manuals,  Up: Documentation
+
+6.2 マニュアルの構造の詳細
+==========================
+
+マニュアルの表紙は、そのマニュアルで記述されるプログラムやパッケージのバー
+ジョンを述べるべきだ。マニュアルの一番上の節もまたこの情報を含むべきだ。
+もしマニュアルがプログラムより頻繁に、あるいは、無関係に変更されているな
+ら、それらの場所の両方で、そのマニュアルのバージョン・ナンバーを記述しな
+さい。
+
+   そのマニュアルで記述されるそれぞれのプログラムは、`PROGRAM
+Invocation'とか`Invoking PROGRAM'と名付けられた節を持つべきだ。
+この節は(もしあれば、その副節と共に)そのプログラムのコマンドラインの引数
+とそれの走らせ方(人々がmanページで探し求める情報の類い)を記すべきだ。そ
+のプログラムが使う、すべてのオプションと引数のテンプレートを含む
+`@example'で始めなさい。
+
+   あるいは、項目の名前が上の様式の一つに合う表に項目を書きなさい。これ
+は、その節の本当の名前とは関係なしに、この目的のための節として、項目が指
+し示す節を識別する(1)。
+
+プログラム名を指定し、そのマニュアルのこれの部分だけを素早く読むための自
+動的な機能があるだろう。
+
+もし一つのマニュアルがいくつかのプログラムを記述するなら、それぞれのプロ
+グラムを記述する節を持つべきだ。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注: 自分でも何書いてるのか意味不明。訂正乞 う。原文:
+Alternatively, put a menu item in some menu whose item name fits one of
+the above patterns.  This identifies the node which that item points to
+as the node for this purpose, regardless of the node's actual name.
+
+
+File: standards-ja.info,  Node: NEWS File,  Next: Change Logs,  Prev: Manual Structure Details,  Up: Documentation
+
+6.3 NEWSファイル
+================
+
+マニュアルに加えて、パッケージは言及するに値するユーザに見える変更の
+一覧を含む`NEWS'と名付けられたファイルを持つべきだ。新しいリリー
+ス毎に、そのファイルの前に項目を加え、それらが属するバージョンを同定しな
+さい。古い項目を捨てないように。新しい項目の後へ、そのファイルの中に残し
+ておきなさい。こうして、以前のどのバージョンからアップグレードするユーザ
+でも何が新しいのかを見ることができる。
+
+   もし`NEWS'ファイルが非常に長くなれば、古い項目をいくらか
+`ONEWS'という名前のファイルに移し、ユーザがそのファイルを参照するた
+めに最後に覚え書きを書いておきなさい。
+
+
+File: standards-ja.info,  Node: Change Logs,  Next: Man Pages,  Prev: NEWS File,  Up: Documentation
+
+6.4 変更履歴
+============
+
+変更履歴にプログラムのソースファイルに行われた変更を全て記述し続けなさい。
+これの目的は将来バグを発見する人々がそのバグを入れた変更が分かるようにす
+ることだ。しばしば新しいバグは最近何が変わったのかを見ることで発見され得
+る。さらに重要なことに、変更履歴は矛盾する概念がいかに起きそれらが誰
+に起因するのかということについての履歴を与えてくれるので、プログラムの
+異なる部分間での概念的な矛盾を失くすことに役立つことができるのだ。
+
+* Menu:
+
+* Change Log Concepts::
+* Style of Change Logs::
+* Simple Changes::
+* Conditional Changes::
+
+
+File: standards-ja.info,  Node: Change Log Concepts,  Next: Style of Change Logs,  Up: Change Logs
+
+6.4.1 変更履歴の概念
+--------------------
+
+変更履歴を、もっと前のバージョンが現在のバージョンとどう違うかを説明する、
+概念な"復元一覧表"として考えることができる。人々は現在のバージョンを見
+ることができる。彼らは何がその中にあるのかを言うのに変更履歴を必要としな
+い。変更履歴から欲しいものはもっと前のバージョンがどう違ったのかに関する、
+すっきりした説明だ。
+
+   変更履歴ファイルは通常`ChangeLog'と呼ばれ、ディレクトリ全体を包含す
+る。それぞれのディレクトリはそれ自身の変更履歴を持って良いし、あるディレ
+クトリはその親ディレクトリの変更履歴を使って良い。--それはあなたに任さ
+れる。
+
+他のやり方は変更履歴をRCSやCVSのようなバージョン管理システムで記録するこ
+とだ。これは自動的に`ChangeLog'ファイルに変換される。
+
+変更の目的全部やそれらが一緒にどう働くのかを記述する必要性はない。もし変
+更が説明を必要とすると考えるなら、おそらくその通りだ。それを説明してくだ
+さい。--しかしコードのコメントに説明を入れてください。そこは人々がその
+コードを見るときはいつでも見るところだろう。例えば、関数を加えるとき、
+"New function"は変更履歴には十分だ。なぜなら、それが何をするのか説明す
+るために、関数定義の前にコメントがあるはずだからだ。
+
+しかしながら、ときどき変更の組の全体の目的を記述する一行を書くのが有用だ。
+
+   `ChangeLog'に項目を加える一番簡単な方法はEmacsのコマンド、`M-x
+add-change-log-entry'を使うことだ。項目はアスタリスク、変更されたファイ
+ルの名前、そして変更された関数、変数、それ以外のものの名前を丸括弧の中に
+含むべきだ。その後にコロンを付ける。そしてその関数や変数に行った変更を記
+述しなさい。
+
+
+File: standards-ja.info,  Node: Style of Change Logs,  Next: Simple Changes,  Prev: Change Log Concepts,  Up: Change Logs
+
+6.4.2 変更履歴の形式
+--------------------
+
+ここに変更履歴の項目の例をいくつか挙げる。
+
+     * register.el (insert-register): Return nil.
+     (jump-to-register): Likewise.
+
+     * sort.el (sort-subr): Return nil.
+
+     * tex-mode.el (tex-bibtex-file, tex-file, tex-region):
+     Restart the tex shell if process is gone or stopped.
+     (tex-shell-running): New function.
+
+     * expr.c (store_one_arg): Round size up for move_block_to_reg.
+     (expand_call): Round up when emitting USE insns.
+     * stmt.c (assign_parms): Round size up for move_block_from_reg.
+
+変更された関数や変数を略さずに名前を付けることが重要だ。関数や変数の名前
+を略していけない。そして、それらをくっ付けてはいけない。その後の管理者は
+しばしばある関数に属する変更履歴の項目を全部見付けるのに、関数名で検索す
+るだろう。もしその名前を略していると、彼らは検索するときそれを見付けられ
+ないだろう。
+
+   例えば、ある人々は`* register.el ({insert,jump-to}-register)'と書
+くことで、関数名の集まりを略する傾向がある。これは良くない考えだ。
+`jump-to-register'や`insert-register'の検索はその項目を見付け
+ないだろうから。
+
+無関係な変更履歴の項目を空行で分けなさい。二つの項目が一緒に働き、同じ変
+更部分を表しているとき、それらの間に空行を入れてはいけない。そして、続い
+ている項目が同じファイルにあるとき、そのファイル名とアスタリスクを省いて
+良い。
+
+
+File: standards-ja.info,  Node: Simple Changes,  Next: Conditional Changes,  Prev: Style of Change Logs,  Up: Change Logs
+
+6.4.3 単純な変更
+----------------
+
+ある単純な類いの変更は変更履歴にやたら詳細に記す必要はない。
+
+   単純なやり方で関数の呼び出し順序を変更し、その関数の呼び出し元を全て
+変更するとき、変更した呼び出し元全てに個々の項目を作る必要はない。単に
+呼ばれる関数の項目に"All callers changed"と書きなさい。
+
+     * keyboard.c (Fcommand_execute): New arg SPECIAL.
+     All callers changed.
+
+コメントや解説の文字列だけを変更するとき、関数に言及せずに、そのファイル
+の項目を書けば十分だ。単なる"Doc fixes"だけで変更履歴には十分だ。
+
+解説ファイルのための変更履歴の項目は作る必要はない。これは解説は直すのが
+困難であるバグに影響しないからだ。解説は正確に設計されたやり方で相互作用
+するに違いない部分から成り立っているわけではない。誤りを正すために、間違っ
+た経過の履歴を知る必要はない。その解説が言っていることと、そのプログラム
+が実際に働く方法を比較すれば十分だ。
+
+
+File: standards-ja.info,  Node: Conditional Changes,  Prev: Simple Changes,  Up: Change Logs
+
+6.4.4 条件文の履歴
+------------------
+
+Cのプログラムはしばしばコンパイル時の`#if'条件文を含む。たくさんの
+変更は条件文だ。ときどき条件文に全体的に含まれている新しい定義を加える。
+変更履歴にその変更が適用されるのがどれか条件を示すことは非常に役に立つ。
+
+条件付きの変更を示す我々の慣習は条件の名前の周りに角括弧を使うことだ。
+
+ここで、条件付きだが、それに付随する関数や実体の名前を持たない変更を記述
+する、簡単な例を挙げる。
+
+     * xterm.c [SOLARIS2]: Include string.h.
+
+   ここで全部条件付きである新しい定義を記述する項目を挙げる。
+`FRAME_WINDOW_P'というマクロに対するこの新しい定義は
+`HAVE_X_WINDOWS'が定義されているときだけ使われる。
+
+     * frame.h [HAVE_X_WINDOWS] (FRAME_WINDOW_P): Macro defined.
+
+   ここに、全体として定義は無条件だが、変更自体は`#ifdef
+HAVE_LIBNCURSES'条件に含まれる、`init_display'という関数内での変更
+に対する項目を挙げる。
+
+     * dispnew.c (init_display) [HAVE_LIBNCURSES]: If X, call tgetent.
+
+ここであるマクロが定義され_ない_ときだけ影響を持つ変更の項目を挙げる。
+
+     (gethostname) [!HAVE_SOCKETS]: Replace with winsock version.
+
+
+File: standards-ja.info,  Node: Man Pages,  Next: Reading other Manuals,  Prev: Change Logs,  Up: Documentation
+
+6.5 manページ
+=============
+
+GNUプロジェクトでは、manページは副次的だ。あらゆるGNUプログラムがmanペー
+ジを持つことは必要でないか期待されていない。しかし一部は持っている。あな
+たのプログラムにmanページを含めるかどうかはあなたの選択である。
+
+   この決定をするとき、manページをサポートするにはそのプログラムが変更
+される時毎に継続的な努力が必要であることを考えなさい。そのmanページに費
+す時間はもっと有用な作業から奪われる時間なのだ。
+
+ほとんど変更しない簡単なプログラムでは、manページの更新はちょっとした作
+業かもしれない。そして、もし持っていれば、manページを含めない理由はほと
+んどない。
+
+多量に変更する大きなプログラムでは、manページの更新は相当な重荷かもしれ
+ない。もしユーザがmanページを寄付すると申し出たら、この贈り物は受け取る
+のに高くつくと考えるかもしれない。同じ人がそれを維持する全責任を負うと合
+意しなければ、そのmanページを拒否することがより良いかもしれない。--完全
+にそれから手を洗えるように。もしこの有志が後にその作業をするのをやめたら、
+自分でそれを取り上げなければならないと感じてはいけない。誰か他の人がその
+manページを更新すると合意するまで、配布物からそれを引込めるのがより良い
+かもしれない。
+
+プログラムをほんの少ししか変更しないとき、manページは更新せずに役に立つ
+状態に保たれるぐらい不一致は少ないと感じるかもしれない。そうなら、それを
+維持しておらず、Texinfoマニュアルがもっと信頼できることを説明する目に付
+く覚え書きをmanページの最初の方に書いておきなさい。その覚え書きはTexinfo
+文書を呼び出す方法を表すべきだ。
+
+
+File: standards-ja.info,  Node: Reading other Manuals,  Prev: Man Pages,  Up: Documentation
+
+6.6 他のマニュアルを読む
+========================
+
+あなたが解説しているプログラムを記述する、自由でない書籍や解説ファイルが
+あるかもしれない。
+
+単に新しい代数の教科書の著者が代数に関する他の本を読むことができるように、
+これらの文書を参考文献として使って構わない。どのノンフィクションの書籍の
+大部分も事実から出来ていて、この場合、あるプログラムがどう動くかについて
+の事実で、これらの事実はその主題で書いているすべての人にとって必ず同じで
+ある。しかし、すでにある自由でない解説文から、あなたの概要の構成、言葉遣
+い、表や例を複製しないように気を付けなさい。自由な解説文から複製すること
+は構わないかもしれない。個々の場合についてFSFに確認してください。
+
+
+File: standards-ja.info,  Node: Managing Releases,  Prev: Documentation,  Up: Top
+
+7 リリースの過程
+****************
+
+リリースを行うことは、単にあなたのソースファイルをtarファイルに束ねてFTP
+に置くだけ以上のことである。あなたのソフトウェアを様々なシステムで走るよ
+うに設定できるように作り上げるべきだ。あなたのMakefileは以下で述べるGNU
+標準に従うべきだし、あなたのディレクトリ設計も以下で記述されるGNU標準に
+従うべきだ。そうすることで、あなたのパッケージを全てのGNUソフトウェアの
+より大きな骨組みに組み込むことが簡単になる。
+
+* Menu:
+
+* Configuration::               設定がいかに働くべきか
+* Makefile Conventions::	Makefileの取り決め
+* Releases::                    リリースを行う
+
+
+File: standards-ja.info,  Node: Configuration,  Next: Makefile Conventions,  Up: Managing Releases
+
+7.1 設定がいかに働くべきか
+==========================
+
+各GNU配布物は`configure'という名前のシェル・スクリプトと一緒に配ら
+れるべきだ。このスクリプトにはそのプログラムをコンパイルしたいマシンやシス
+テムの種類を表す引数を与えられる。
+
+   `configure'スクリプトはコンパイルに効果を与えられるように設定オプショ
+ンを記録しなければならない。
+
+   これを行う一つの方法は、`config.h'のような標準的な名前から、選んだ
+システム用の適切な設定ファイルにリンクすることだ。これによって、人々はま
+ず設定しないとプログラムを構築できなくなるだろう。
+
+   `configure'が設定できる他の方法はMakefileを編集することだ。こうする
+なら、配布物は`Makefile'と名付けらたファイルを含むべきでは_ない_。
+代わりに、編集に使われる入力を含む`Makefile.in'というファイルを入れ
+るべきだ。またもう一度、これはまず設定をしてないとプログラムを構築できな
+いようになるようにする。
+
+   もし`configure'が`Makefile'に書き込むなら、`Makefile'は、
+`configure'が再び走り、最後に行ったのと同じ設定を作り上げる、
+`Makefile'と名付けられたターゲットを持つべきだ。`configure'が
+読むファイルは`Makefile'の依存関係として列挙されているべきだ。
+
+   `configure'スクリプトからの出力であるファイルはすべて、それらが
+`configure'を使って自動的に生成されたことを説明するコメントを先頭に
+持っているべきだ。これによって、ユーザはそれらを手動で編集しようと考えな
+くなるだろう。
+
+   `configure'スクリプトは、プログラムが最後に設定されたときに指定され
+た設定オプションを記述する、`config.status'という名前のファイルを書
+くべきである。このファイルはもし走ると同じ設定を再生成するシェル・スク
+リプトであるべきだ。
+
+   `configure'スクリプトは、(もし現在のディレクトリでなければ)ソー
+スが見付かるディレクトリを指定するための`--srcdir=DIRNAME'と
+いう形式にオプションを受け取るべきだ。こうすると、プログラムを別ディレク
+トリで構築することが可能なり、実際のソース・ディレクトリは変更されないよ
+うにできる。
+
+   もしユーザが`--srcdir'を指定しなければ、`configure'はソースが
+見付かるかどうか見るのに、`.'と`..'の両方を確認するべきだ。も
+しこれらの場所の一つでソースが見付かったら、そこからソースを使うべきだ。
+そうでなければ、ソースが見付けられないと報告し、ゼロでない状態で終了する
+べきだ。
+
+   普通`--srcdir'をサポートする簡単な方法はMakefileの`VPATH'の定
+義を編集することによる。これを可能にするために、`configure'は
+Makefileに正確に指定されたディレクトリの値を持つ`srcdir'という名
+前の変数を加えることができる。
+
+   `configure'スクリプトはまたそのプログラムを構築するシステムの種類を
+指定する引数を受け取るべきである。この引数は次のようであるべきだ。
+
+     CPU-COMPANY-SYSTEM
+
+   例えば、Sun 3は`m68k-sun-sunos4.1'だ。
+
+   `configure'スクリプトは、マシンを表す方法として、全てのもっともらし
+い他の方法を解読できる必要がある。だから、`sun3-sunos4.1'は正しい別
+名だろう。多くのプログラムでは、`vax-dec-ultrix'は
+`vax-dec-bsd'の別名だろう。単にUltrixとBSDの違いはほとんど気付
+かない程度だからだが、少数のプログラムはそれらを区別する必要があるかもし
+れない。
+
+   サブルーチンとして使える、システムの種類を有効にし別名を正規化する、
+`config.sub'と呼ばれるシェル・スクリプトがある。
+
+他のオプションで、そのマシンにあるソフトウェアやハードウェアをもっと詳細
+に指定して良いし、パッケージの付加的な部分を入れたり、外したりして良い。
+
+`--enable-FEATURE[=PARAMETER]'
+     FEATUREと呼ばれる付加的なユーザ水準の機能を構築しインストールする
+     よう、パッケージを設定する。これで、ユーザはどの付加的な機能を入れるか選
+     択することができる。付加的なPARAMETERに`no'を与えれば、もしデ
+     フォルトでは構築されるなら、FEATUREを除くべきだ。
+
+     どの`--enable'オプションも*決して*ある機能を他と置き換えるべ
+     きではない。どの`--enable'オプションも決してある有用な挙動を他の有
+     用な挙動の代わりにするべきではない。`--enable'の唯一の適切な使用は
+     そのプログラムの一部を構築するか除くかの質問に対してだけだ。
+
+`--with-PACKAGE'
+     パッケージPACKAGEがインストールされるだろうから、このパッケージが
+     PACKAGEと一緒に働くように設定する。
+
+     PACKAGEの可能な値には、`gnu-as'(あるいは`gas')、
+     `gnu-ld'、`gnu-libc'、`gdb'、`x'、そして、 `x-toolkit'がある。
+
+     `--with'オプションをあるファイルを見付けるためにファイル名を指定す
+     るのに使ってはいけない。こういう使い方は`--with'オプションの目的か
+     ら外れている。
+
+`--nfp'
+     ターゲット・マシンは浮動小数点プロセッサを持っていない。
+
+`--gas'
+     ターゲット・マシンのアセンブラはGAS、つまり、GNUアセンブラである。これは
+     もはや使われていない。ユーザは代わりに`--with-gnu-as'を使うべきだ。
+
+`--x'
+     ターゲット・マシンはX Window
+     Systemをインストールしている。これはもはや
+     使われていない。ユーザは代わりに`--with-x'を使うべきだ。
+
+   全ての`configure'スクリプトはこれらの"詳細な"オプションをすべて受
+け入れるべきだ。それらが手もとの特定のパッケージに違いを作るかどうかにか
+かわらず。特に、それらは`--with-'や`--enable-'で始まるどんなオ
+プションでも受け入れるべきだ。これはユーザがオプション一組で一度にGNUソー
+ス・ツリー全体を設定できるするためだ。
+
+   `--with-'や`--enable-'の部類が狭いことに気付くだろう。それらは
+あなたが考えるようなオプションの類いに役目を果たさ*ない*。このこ
+とは計画的なのだ。我々はGNUソフトウェアで可能な設定オプションを制限した
+いのだ。我々はGNUプログラムに特異な設定オプションを持たせたくない。
+
+コンパイルの過程の一部を行うパッケージはクロス・コンパイルをサポートする
+かもしれない。そういう場合、そのプログラムのホストとターゲットのマシンは
+異なるかもしれない。`configure'スクリプトは通常指定されたシステムの
+種類がホストとターゲットの両方だとして扱うべきだ。こうして、それが走るの
+と同じ種類のマシンで動くプログラムを作り出す。
+
+クロス・コンパイラ、クロス・アセンブラ、あるいはあなたが持つどんなもので
+も、構築する方法は、`configure'を走らせるときに
+`--host=HOSTTYPE'というオプションを指定する。これはターゲッ
+ト・システムの種類を変えないでホスト・システムを指定する。HOSTTYPE
+の文法は上で述べたのと同じである(1)。
+
+クロス・コンパイラを開始するには、それが走るホスト以外のマシンでコンパイ
+ルすることが必要である。コンパイルされるパッケージは、あなたがそれらをコ
+ンパイルするシステムがホストとは異なる場合、設定を指定するために、
+`--build=HOSTTYPE'という設定オプションを受け取る(2)。
+
+   クロス作業は意味がないプログラムは、`--host'オプションを受け取る必
+要はない。なぜなら、クロス作業のためにオペレーティング・システム全体を設
+定することは意味のあることではないからだ。
+
+プログラムの中には自動的に自分自身を設定する方法を持っているものがある。
+あなたのプログラムがこうするように作られていると、あなたの
+`configure'スクリプトはその引数のほとんどを無視して良い。
+
+   ---------- Footnotes ----------
+
+   (1) 訳注: 嘘八百。この場合、
+`--target=HOSTTYPE'を指定する。逆にホストの方を変えるとターゲッ
+トも変わる。詳しくはAutoconfのマニュアルを見よ。
+
+   (2) 訳 注:
+原文のitはいまいち何を意味しているのか分からないが、内容から推測する
+に多分クロス・コンパイルされるパッケージかと思う。
+
+
+File: standards-ja.info,  Node: Makefile Conventions,  Next: Releases,  Prev: Configuration,  Up: Managing Releases
+
+7.2 Makefileの取り決め
+======================
+
+この 節
+では、GNUプログラムのMakefileを執筆するための慣例について記述する。
+
+* Menu:
+
+* Makefile Basics::		Makefileの一般的な慣例
+* Utilities in Makefiles::	Makefileのユーティリティ
+* Command Variables::		コマンド指定の変数
+* Directory Variables::		インストール命令の変数
+* Standard Targets::		ユーザ用の標準的なターゲット
+* Install Command Categories::  `インストール'規則のコマンドの三つの部類:
+                                  normal、pre-install、そしてpost-install。
+
+
+File: standards-ja.info,  Node: Makefile Basics,  Next: Utilities in Makefiles,  Up: Makefile Conventions
+
+7.2.1 Makefileの一般的な慣例
+----------------------------
+
+あらゆるMakefileは次の行を含むべきだ。
+
+     SHELL = /bin/sh
+
+`SHELL'変数が環境から受け継がれるようなシステム上での問題を避けるた
+めに。(これはGNU `make'では問題には決してならない。)
+
+   異なる`make'プログラムは互換性のない接尾辞のリストと暗黙の規則を持
+ち、これはときどき混乱やおかしな挙動を生み出す。だから特定のMakefileで必
+要とする接尾辞だけを使用するのに、明示的に接尾辞のリストを設定するのは良
+い考えだ。
+
+     .SUFFIXES:
+     .SUFFIXES: .c .o
+
+最初の行は接尾辞のリストを処分し、二番目はこのMakefileで暗黙の規則の対象
+になるかもしれない接尾辞すべてを導入する。
+
+   `.'がコマンド実行のパスに入っていると仮定してはいけない。makeの間に
+あなたのパッケージの一部であるプログラムを走らせる必要があるとき、そのプ
+ログラムがmakeの一部として構築されるなら`./'を使い、もしファイルが
+ソース・コードの変更されない部分なら、`$(srcdir)/'を使うようにして
+ください。これらの接頭辞の一つを使わないと、現在の検索パスが使われる。
+
+   `./'("構築ディレクトリ")と`$(srcdir)/'("ソース・ディレ
+クトリ")の区別は、ユーザは`configure'に`--srcdir'オプションを
+使って別のディレクトリで構築することができるので、重要である。次の書式の
+規則は構築ディレクトリがソース・ディレクトリではないとき失敗する。
+`foo.man'と`sedscript'はソース・ディレクトリの中にあるからだ。
+
+     foo.1 : foo.man sedscript
+             sed -e sedscript foo.man > foo.1
+
+GNU `make'を使うとき、ソースファイルを見付けるのに`VPATH'を頼
+りにすることは、単一の依存関係ファイルがある場合には上手く行くだろう。
+`make'の自動変数`$<'は、ソースファイルがどこにあっても、それを
+表すから。(`make'のたくさんのバージョンは暗黙的規則でだけ`$<'
+を設定する。)
+
+     foo.o : bar.c
+             $(CC) -I. -I$(srcdir) $(CFLAGS) -c bar.c -o foo.o
+
+このようなMakefileのターゲットは代わりに次のように書かれるべきだ。
+
+     foo.o : bar.c
+             $(CC) -I. -I$(srcdir) $(CFLAGS) -c $< -o $@
+
+`VPATH'が正しく働くようにするために。ターゲットが複数の依存関係を持
+つとき、明示的な`$(srcdir)'を使うことがその規則を上手く働かせる一番
+簡単な方法だ。例えば、`foo.1'に対するターゲットは次のように書かれて
+るのが一番良い。
+
+     foo.1 : foo.man sedscript
+             sed -e $(srcdir)/sedscript $(srcdir)/foo.man > $@
+
+GNUの配布物は普通ソースファイルではない、いくつかのファイルを含む。--例
+えば、InfoファイルやAutoconf、Automake、BisonやFlexからの出力だ。これら
+のファイルは通常ソース・ディレクトリに現れるので、それらは構築ディレクト
+リではなく、常にソース・ディレクトリに現れるべきだ。だからそれらを更新す
+るMakefileの規則はソース・ディレクトリに更新されたファイルを置くべきだ。
+
+しかしながら、もしファイルが配布物に現れないなら、Makefileはソース・ディ
+レクトリにそれを置くべきではない。なぜなら、普通の環境でプログラムを構築
+することで、どんな方法でもソース・ディレクトリを変更するべきではないから
+だ。
+
+   構築とインストールのターゲットを少なくとも(そしてそれらのサブターゲッ
+ト全てが)並列`make'で正しく働くように試みなさい。
+
+
+File: standards-ja.info,  Node: Utilities in Makefiles,  Next: Command Variables,  Prev: Makefile Basics,  Up: Makefile Conventions
+
+7.2.2 Makefileのユーティリティ
+------------------------------
+
+Makefileのコマンド(そして`configure'のようなシェル・スクリプト)を、
+`csh'ではなく、`sh'で走るように書きなさい。`ksh'や
+`bash'の特別な機能を一切使ってはいけない。
+
+   `configure'スクリプトと構築とインストールのためのMakefileの規則は次
+のものを除いて、どんなユーティリティも直接使うべきではない。
+
+     cat cmp cp diff echo egrep expr false grep install-info
+     ln ls mkdir mv pwd rm rmdir sed sleep sort tar test touch true
+
+   圧縮プログラムの`gzip'は`dist'規則で使って良い。
+
+これらのプログラムに対して、一般的にサポートされているオプションを守りな
+さい。例えば、あったら便利な、`mkdir -p'はほとんどのシステムでサポー
+トしていないので使ってはいけない。
+
+少数のシステムではサポートしていないので、makefileではシンボリック・リン
+クを作らないようにするのは良い考えだ。
+
+構築とインストールのためのMakefileの規則はまたコンパイラや関連したプログ
+ラムを使っていいが、ユーザが代わりのものと換えられるように`make'変
+数を通して使うべきだ。我々が言っているプログラムをここでいくつか挙げる。
+
+     ar bison cc flex install ld ldconfig lex
+     make makeinfo ranlib texi2dvi yacc
+
+   これらのプログラムを走らせるのに次の`make'変数を使いなさい。
+
+     $(AR) $(BISON) $(CC) $(FLEX) $(INSTALL) $(LD) $(LDCONFIG) $(LEX)
+     $(MAKE) $(MAKEINFO) $(RANLIB) $(TEXI2DVI) $(YACC)
+
+   `ranlib'や`ldconfig'を使うとき、システムが当のプログラムを持っ
+ていなくても悪いことが何も起きないようにするべきだ。そのコマンドからのエ
+ラーを無視するように調整し、そのコマンドの前にユーザにこのコマンドの失敗
+が問題ではないことを伝えるメッセージを出力しなさい。(Autoconfの
+`AC_PROG_RANLIB'マクロはこれを助けることができる。)
+
+もしシンボリック・リンクを使うなら、シンボリック・リンクを持たないシステ
+ム用に別手段を実装するべきだ。
+
+   Make変数を通して使って良い別のユーティリティには次のものがある。
+
+     chgrp chmod chown mknod
+
+他のユーティリティを使うことは、あなたがそれらのユーティリティが存在する
+と知っている特定のシステムのためだけに、Makefileの一部(やスクリプト)が意
+図されているなら使って良い。
+
+
+File: standards-ja.info,  Node: Command Variables,  Next: Directory Variables,  Prev: Utilities in Makefiles,  Up: Makefile Conventions
+
+7.2.3 コマンド指定の変数
+------------------------
+
+Makefileはあるコマンドやオプションなどを上書きするために変数を提供するべ
+きだ。
+
+とりわけ、ほとんどのユーティリティ・プログラムを変数を通して走らせるべき
+だ。だから、もしBisonを使うなら、`BISON'と名付けられた、そのデフォ
+ルトの値が`BISON = bison'と設定されている変数を持ち、Bisonを使う必
+要があるときにはいつでも`$(BISON)'を使ってそれを参照しなさい。
+
+   `ln'、`rm'、`mv'などなどのようなファイル管理ユーティリティ
+はこのやり方の変数を通した参照をする必要はない。ユーザはそれらを他のプロ
+グラムと置き換える必要がないので。
+
+それぞれのプログラム名変数は、プログラムにオプションを与えるのに使われる
+オプション変数と一緒に使われるべきだ。オプション変数の名前を得るのにプロ
+グラム名変数の名前に`FLAGS'を付け加えなさい。--例えば、
+`BISONFLAGS'のように。(Cコンパイラに対する`CFLAGS'、yaccに対す
+る`YFLAGS'、lexに対する`LFLAGS'の名前はこの規則には例外的だが、
+我々はそれらは標準的なのでそうしておく。) プリプロセッサを走らせるどのコ
+ンパイルのコマンドでも`CPPFLAGS'を使い、`ld'の直接的な使用だけ
+ではなく、リンクを行うどのコンパイルのコマンドでも`LDFLAGS'を使いな
+さい。
+
+   もしあるファイルの適切なコンパイルに使われ_なければならない_Cコンパ
+イラのオプションがあれば、`CFLAGS'にそれらを入れてはいけない。ユー
+ザは`CFLAGS'を自分で自由に指定できると期待する。代わりに、
+`CFLAGS'とは独立に必要なオプションをCコンパイラに渡すように調整しな
+さい。次のように、それらを明示的にコンパイルのコマンドに書くか、暗黙の規
+則を定義することによって。
+
+     CFLAGS = -g
+     ALL_CFLAGS = -I. $(CFLAGS)
+     .c.o:
+             $(CC) -c $(CPPFLAGS) $(ALL_CFLAGS) $<
+
+   `-g'オプションを`CFLAGS'に入れなさい。なぜなら、それは適切なコ
+ンパイルには_必要_ではないからだ。それを単に推奨されるデフォルトで
+あると考えることができる。もしパッケージがデフォルトでGCCでコンパイルさ
+れるように設定されているなら、`CFLAGS'のデフォルトの値に`-O'も
+入れてもいい。
+
+   ユーザが他を上書きするのに`CFLAGS'を使うことができるので、
+`CFLAGS'をコンパイルのコマンドの最後、コンパイラのオプションを含む
+他の変数の後に置きなさい。
+
+   `CFLAGS'は、コンパイルを行うのとリンクを行う両方の、Cコンパイラのあ
+らゆる起動で使われるべきだ。
+
+   あらゆるMakefileは`INSTALL'という変数を定義するべきで、それはファイ
+ルをシステムにインストールするための基本的なコマンドである。
+
+   あらゆるMakefileはまた`INSTALL_PROGRAM'と`INSTALL_DATA'という
+変数を定義するべきだ。(これらは各々デフォルトは`$(INSTALL)'であるべ
+きだ。) そして、これらの変数を実際のインストールのコマンドとして、それぞ
+れ実行ファイルと実行ファイルでないものに対して使うべきだ。これらの変数は
+次のように使いなさい。
+
+     $(INSTALL_PROGRAM) foo $(bindir)/foo
+     $(INSTALL_DATA) libfoo.a $(libdir)/libfoo.a
+
+インストールのコマンドの二番目の引数として、ディレクトリ名ではなく、常に
+ファイル名を使いなさい。インストールされるそれぞれのファイルに対して、別々
+のコマンドを使いなさい。
+
+
+File: standards-ja.info,  Node: Directory Variables,  Next: Standard Targets,  Prev: Command Variables,  Up: Makefile Conventions
+
+7.2.4 インストール命令の変数
+----------------------------
+
+インストール命令は常に変数によって名前が付けられているべきだ。だから、標
+準的でない場所にインストールするのは簡単である。これらの変数の標準的な名
+前は以下で述べる。それらは標準的なファイルシステムの構造に基いている。そ
+れに似たものがSVR4、4.4BSD、Linux、Ultrix v4や他の現代的なオペレーティン
+グ・システムで使われている。
+
+これらの二つの変数はインストールのためのルートを設定する。他のインストー
+ル命令はすべてこれら二つのうちの一つのサブディレクトリであるべきで、これ
+ら二つのディレクトリへ直接インストールされるものがあるべきではない。
+
+`prefix'
+     以下で列挙する変数のデフォルトの値を作るのに使われる接頭辞。
+     `prefix'のデフォルトの値は`/usr/local'であるべきだ。完全なGNU
+     システムを構築するとき、接頭辞は空で、`/usr'は`/'へのシンボリッ
+     ク・リンクになるだろう。(もしAutoconfを使っているなら、それを
+     `@prefix@'と書きなさい。)
+
+`exec_prefix'
+     以下で列挙する変数の一部のデフォルトの値を作るのに使われる接頭辞。
+     `exec_prefix'のデフォルトの値は`$(prefix)'であるべきだ。(もし
+     Autoconfを使っているなら、それを`@exec_prefix@'と書きなさい。)
+
+     一般的に、`$(exec_prefix)'は(実行ファイルやサブルーチン・ライブラリ
+     のような)マシンに特定のファイルを含むディレクトリに対して使われるが、
+     `$(prefix)'は他のディレクトリに対して直接使われる。
+
+   実行プログラムは以下のディレクトリの一つにインストールされる。
+
+`bindir'
+     ユーザが走らせることができる実行プログラムをインストールするためのディレ
+     クトリ。これは普通`/usr/local/bin'であるべきだが、それを
+     `$(exec_prefix)/bin'と書きなさい。(もしAutoconfを使っているなら、そ
+     れを`@bindir@'と書きなさい。)
+
+`sbindir'
+     シェルから走らせることができるが、普通はシステム管理者にだけ有用な実行プ
+     ログラムをインストールするためのディレクトリ。これは通常
+     `/usr/local/sbin'であるべきだが、それを`$(exec_prefix)/sbin'と
+     書きなさい。(もしAutoconfを使っているなら、それを`@sbindir@'と書
+     きなさい。)
+
+`libexecdir'
+     ユーザよりも他のプログラムに実行されるための実行プログラムをインストール
+     するためのディレクトリ。このディレクトリは通常`/usr/local/libexec'
+     であるべきだが、それを`$(exec_prefix)/libexec'と書きなさい。(もし
+     Autoconfを使っているなら、それを`@libexecdir@'と書きなさい。)
+
+実行中にプログラムによって使われるデータ・ファイルは二つの方法の部類に分
+けられる。
+
+   *
+     一部のファイルは普通プログラムによって変更される。他のものは普通絶対に変
+     更されない(ユーザはこれらのうち一部を編集するかもしれないけど)。
+
+   *
+     一部のファイルはアーキテクチャに依存しておらず、あるサイトの全てのマシン
+     に共有されうる。一部はアーキテクチャ依存で、同じ種類のマシンやオペレーティ
+     ング・システムによってのみ共有されうる。他のものは二つのマシン間で決して
+     共有できないかもしれない。
+
+これは6つの異なる可能性をもたらす。しかしながら、我々は、オブジェクト・
+ファイルやライブラリは別にして、アーキテクチャ依存のファイルの使用をやめ
+させたい。他のデータ・ファイルをアーキテクチャ非依存にすることはずっとき
+れいで、普通は困難ではない。
+
+それゆえ、ここにMakefileがディレクトリを指定するのに使うべき変数を挙げる。
+
+`datadir'
+     読み込みだけのアーキテクチャに依存しないデータ・ファイルをインストールす
+     るためのディレクトリ。これは通常`/usr/local/share'であるべきだが、
+     それを`$(prefix)/share'と書きなさい。(もしAutoconfを使っているなら、
+     それを`@datadir@'と書きなさい。) 特別な例外として、以下の
+     `$(infodir)'と`$(includedir)'を見なさい。
+
+`sysconfdir'
+     一つのマシンに属する読み込みだけのデータ・ファイル-つまり、ホストを設定
+     するためのファイル、をインストールするためのディレクトリ。メイラーやネッ
+     トワークの設定ファイル、`/etc/passwd'などはここに属する。このディレ
+     クトリの全てのファイルは普通のASCIIテキスト・ファイルであるべきだ。この
+     ディレクトリは普通`/usr/local/etc'だが、それを`$(prefix)/etc'
+     と書きなさい。(もしAutoconfを使っているなら、それを`@sysconfdir@'
+     と書きなさい。)
+
+     このディレクトリに実行ファイルをインストールしてはいけない(それらおそら
+     く`$(libexecdir)'か`$(sbindir)'に属する)。また、普通の方針で使っ
+     ているときに変更するファイルはインストールしてはいけない(システムの設定
+     を変更するための目的のプログラムは除く)。それらはおそらく
+     `$(localstatedir)'に属する。
+
+`sharedstatedir'
+     アーキテクチャに依存しない、プログラムが走る間に変更するデータ・ファイル
+     をインストールするためのディレクトリ。これは普通`/usr/local/com'で
+     あるべきだが、それを`$(prefix)/com'と書きなさい。(もしAutoconfを使っ
+     ているなら、それを`@sharedstatedir@'と書きなさい。)
+
+`localstatedir'
+     プログラムが走る間に変更し、特定のマシンに属しているデータ・ファイルをイ
+     ンストールするためのディレクトリ。ユーザは、パッケージの操作を設定するた
+     めに、このディレクトリにあるファイルを変更する必要が決してあるべきではな
+     い。そのような設定情報は`$(datadir)'や`$(sysconfdir)'に入る別
+     のファイルに置きなさい。`$(localstatedir)'は通常
+     `/usr/local/var'であるべきだが、それを`$(prefix)/var'と書きな
+     さい。(もしAutoconfを使っているなら、それを`@localstatedir@'と書
+     きなさい。)
+
+`libdir'
+     オブジェクト・ファイルやオブジェクト・コードのライブラリのためのディレク
+     トリ。ここに実行ファイルをインストールしてはいけない。それらはおそらく代わ
+     りに`$(libexecdir)'に入るべきだ。`libdir'の値は普通
+     `/usr/local/lib'だが、それを`$(exec_prefix)/lib'と書きなさい。
+     (もしAutoconfを使っているなら、それを`@libdir@'と書きなさい。)
+
+`infodir'
+     このパッケージのInfoファイルをインストールするためのディレクトリ。デフォ
+     ルトでは、それは`/usr/local/info'であるべきだが、それは
+     `$(prefix)/info'と書かれるべきだ。(もしAutoconfを使っているなら、そ
+     れを`@infodir@'と書きなさい。)
+
+`lispdir'
+     このパッケージのどんなEmacs
+     Lispファイルでもインストールためのディレクト
+     リ。デフォルトでは、それは`/usr/local/share/emacs/site-lisp'である
+     べきだが、それは`$(prefix)/share/emacs/site-lisp'と書かれるべきだ。
+
+     もしAutoconfを使っているなら、デフォルトを`@lispdir@'と書きなさい。
+     `@lispdir@'が働くようにするために、`configure.in'ファイルに
+     以下の行が必要である。
+
+          lispdir='${datadir}/emacs/site-lisp'
+          AC_SUBST(lispdir)
+
+`includedir'
+     Cの`#include'プリプロセッサ命令でユーザ・プログラムによってインクルー
+     ドされるヘッダ・ファイルをインストールするためのディレクトリ。これは通常
+     `/usr/local/include'であるべきだが、それを`$(prefix)/include'
+     と書きなさい。(もしAutoconfを使っているなら、それを`@includedir@'
+     と書きなさい。)
+
+     GCC以外のほとんどのコンパイラは`/usr/local/include'ディレクトリのヘッ
+     ダ・ファイルを探さない。だからこの方法でヘッダ・ファイルをインストールす
+     ることはGCCにだけ役に立つ。一部のライブラリはGCCで働くことだけを本当に意
+     図しているので、これは時には問題ではない。しかし一部のライブラリは他のコ
+     ンパイラと働くことを意図している。それらはヘッダ・ファイルを二つの場所、
+     `includedir'に指定されるところと`oldincludedir'に指定されると
+     ころにインストールするべきだ。
+
+`oldincludedir'
+     GCC以外のコンパイラで使われるための`#include'ヘッダ・ファイルをイン
+     ストールするためのディレクトリ。これは通常`/usr/include'であるべき
+     だ。(もしAutoconfを使っているなら、それを`@oldincludedir@'と書く
+     ことができる。)
+
+     Makefileのコマンドは`oldincludedir'の値が空かどうか確認すべきだ。も
+     しそうなら、それを使おうとするべきではない。ヘッダ・ファイルの二番目のイ
+     ンストールを取りやめるべきだ。
+
+     パッケージはこのディレクトリにすでにあるヘッダを、そのヘッダが同じパッケー
+     ジに由来しているのでないなら、置き換えるべきではない。だから、もしあなた
+     のFooパッケージがヘッダ・ファイルの`foo.h'を提供するなら、もし、
+     (1)`foo.h'がないか、(2)すでにある`foo.h'がFooパッケージ由来か、
+     のどちらかなら、`oldincludedir'ディレクトリにそのヘッダ・ファイルを
+     インストールするべきだ。
+
+     `foo.h'がFooパッケージ由来かどうかを見分けるために、そのファイルに
+     魔法の文字列--コメントの一部--を置き、その文字列を`grep'しなさい。
+
+   Unix形式のmanページは次のうちの一つにインストールされる。
+
+`mandir'
+     このパッケージの(あれば)manページをインストールするための一番上のディレ
+     クトリ。それは普通`/usr/local/man'だろう。しかしそれを
+     `$(prefix)/man'と書くべきだ。(もしAutoconfを使っているなら、それを
+     `@mandir@'と書きなさい。)
+
+`man1dir'
+     セクション1のmanページをインストールするためのディレクトリ。それを
+     `$(mandir)/man1'と書きなさい。
+
+`man2dir'
+     セクション2のmanページをインストールするためのディレクトリ。それを
+     `$(mandir)/man2'と書きなさい。
+
+`...'
+     *どんなGNUソフトウェアの主要な解説書もmanページにしてはならない。
+     代わりにTexinfoでマニュアルを書きなさい。manページは単にUnix上でGNUソフ
+     トウェアを走らせる人々のためだけで、それは副次的なアプリケーションだけだ。*
+
+`manext'
+     インストールされるmanページのファイル名拡張子。これは適切な数字が続くピ
+     リオドを含むべきだ。それは普通`.1'であるべきだ。
+
+`man1ext'
+     セクション1にインストールされるmanページのためのファイル名拡張子。
+
+`man2ext'
+     セクション2にインストールされるmanページのためのファイル名拡張子。
+
+`...'
+     もしパッケージがマニュアルの2以上にmanページをインストールする必要がある
+     なら、これらの名前を`manext'の代わりに使いなさい。
+
+   そして最後に、以下の変数を設定するべきだ。
+
+`srcdir'
+     コンパイルされるソースのディレクトリ。この変数の値は通常`configure'
+     シェル・スクリプトによって挿入される。(もしAutoconfを使っているなら、
+     `srcdir = @srcdir@'を使いなさい。)
+
+   例。
+
+     # Common prefix for installation directories.
+     # NOTE: This directory must exist when you start the install.
+     prefix = /usr/local
+     exec_prefix = $(prefix)
+     # Where to put the executable for the command `gcc'.
+     bindir = $(exec_prefix)/bin
+     # Where to put the directories used by the compiler.
+     libexecdir = $(exec_prefix)/libexec
+     # Where to put the Info files.
+     infodir = $(prefix)/info
+
+もしあなたのプログラムが標準的なユーザ指定のディレクトリに、非常にたくさ
+んのファイルをインストールするなら、このプログラムに特定のサブディレクト
+リにそれらをまとめると有用かもしれない。もしこうするなら、これらのサブディ
+レクトリを作るための`install'規則を書くべきだ。
+
+上に挙げたどの変数の値にも、ユーザがサブディレクトリの名前を含めると期待し
+てはいけない。インストール・ディレクトリのための変数名の一組を持つという
+考えは、ユーザがいくつかの異なるGNUパッケージに正確に同じ値を指定できる
+ようにすることである。これを有用なものとするために、あらゆるパッケージは
+ユーザがそうするときに賢く働くように設計されなければならない。
+
+
+File: standards-ja.info,  Node: Standard Targets,  Next: Install Command Categories,  Prev: Directory Variables,  Up: Makefile Conventions
+
+7.2.5 ユーザ用の標準的なターゲット
+----------------------------------
+
+全てのGNUプログラムはそれらのMakefileに以下のターゲットを持つべきだ。
+
+`all'
+     プログラム全体をコンパイルする。これはデフォルトのターゲットであるべきだ。
+     このターゲットはどの解説ファイルも再構築しなくて良い。Infoファイルは通常
+     配布物の中に含まれるべきで、DVIファイルは明示的に要求されたときにのみ作
+     られるべきだ。
+
+     デフォルトでは、Makeの規則は`-g'付きでコンパイルしリンクするべきだ。
+     こうして実行プログラムはデバッグのシンボルを持つ。無力なことを気にしない
+     ユーザは、彼らが望むなら、その実行ファイルを後でstripすることができる。
+
+`install'
+     プログラムをコンパイルし、実行ファイル、ライブラリなどを、それらが実際に
+     使われるべきファイル名に複製する。もしプログラムが適切にインストールされ
+     たことを確かめるための簡単な試験があるなら、このターゲットはその試験を走
+     らせるべきだ。
+
+     実行ファイルをインストールするときにstripしてはいけない。向こう見ずなユー
+     ザはそうするために`install-strip'ターゲットを使うことができる。
+
+     もし可能なら、`make all'が終わっていたら、そのプログラムが構築され
+     たディレクトリのどんなものも変更しないように`install'ターゲットの規
+     則を書きなさい。これはあるユーザ名でプログラムを構築し、他のユーザ名でそ
+     れをインストールするのに便利である。
+
+     そのコマンドはファイルがインストールされるディレクトリを、もしまだなかっ
+     たら、全て作成するべきである。これは必要とされるサブディレクトリ全てだけ
+     でなく、変数`prefix'や`exec_prefix'の値で指定されるディレクト
+     リも含む。これを行う一つの方法は以下で述べるような`installdirs'ター
+     ゲットを使うことによる。
+
+     manページをインストールためのどんなコマンドの前にも、`make'がどんな
+     エラーも無視するように、`-'を使いなさい。これはUnixのmanページ解説
+     システムがインストールされてないシステムの場合である。
+
+     Infoファイルをインストールする方法は、それらを`$(INSTALL_DATA)'
+     (*note Command Variables::)で`$(infodir)'に複製することで、もしあれ
+     ば、`install-info'プログラムを走らせる。`install-info'は与えら
+     れたInfoファイルのメニュー項目を加えたり更新したりするためにInfoの
+     `dir'ファイルを編集するプログラムである。それはTexinfoパッケージの
+     一部だ。ここでInfoファイルをインストールする見本の規則を挙げる。
+
+          $(infodir)/foo.info: foo.info
+                  $(POST_INSTALL)
+          # There may be a newer info file in . than in srcdir.
+                  -if test -f foo.info; then d=.; \
+                   else d=$(srcdir); fi; \
+                  $(INSTALL_DATA) $$d/foo.info $@; \
+          # Run install-info only if it exists.
+          # Use `if' instead of just prepending `-' to the
+          # line so we notice real errors from install-info.
+          # We use `$(SHELL) -c' because some shells do not
+          # fail gracefully when there is an unknown command.
+                  if $(SHELL) -c 'install-info --version' \
+                     >/dev/null 2>&1; then \
+                    install-info --dir-file=$(infodir)/dir \
+                                 $(infodir)/foo.info; \
+                  else true; fi
+
+     `install'ターゲットを書くとき、三つの部類に全てのコマンドを分類しな
+     ければならない。普通のものと、"pre-installation"コマンドと
+     "post-installation"コマンドだ。*Note Install Command Categories::。
+
+`uninstall'
+     インストールされたファイル--`install'ターゲットが作る複製--を全て
+     削除する。
+
+     この規則はコンパイルが行われたディレクトリを変更せず、ファイルがインストー
+     ルされるディレクトリだけを変更するべきだ。
+
+     アンインストールのコマンドはインストールのコマンドと同様、三つの部類に分
+     けられる。*Note Install Command Categories::。
+
+`install-strip'
+     `install'に似ているが、実行ファイルをインストールする間にそれらを
+     stripする。多くの場合、このターゲットの定義は非常に単純で良い。
+
+          install-strip:
+                  $(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' \
+                          install
+
+     通常我々は、あなたがそのプログラムにバグがないと確信しているのでないなら、
+     実行ファイルをstripすることを推奨しない。しかしながら、バグがある場合用
+     にstripしていない実行ファイルを別のところに保存して、実際の実行用にstrip
+     された実行ファイルをインストールすることは理に適っていることもあり得る。
+
+`clean'
+     現在のディレクトリから、普通プログラムを構築することによって作られた全て
+     のファイルを削除する。設定を記録するファイルは削除してはいけない。また、
+     構築によって作ることができても、配布物から手に入るので普通は作らないファ
+     イルは残しておきなさい。
+
+     もし配布物の一部でないなら、`.dvi'ファイルは削除しなさい。
+
+`distclean'
+     現在のディレクトリから、プログラムを設定したり、構築することによって作ら
+     れた全てのファイルを削除する。もしソースを展開し、他のファイルを作らずに
+     プログラムを構築しているなら、`make distclean'は配布物にあったファ
+     イルだけを残すべきである。
+
+`mostlyclean'
+     `clean'に似ているが、人々が通常再びコンパイルしたいとは思わない、少
+     数のファイルは削除してなくて良い。例えば、GCCの`mostlyclean'ターゲッ
+     トは`libgcc.a'を削除しない。なぜなら、それを再びコンパイルすること
+     は滅多に必要でなく、長い時間がかかるからだ。
+
+`maintainer-clean'
+     現在のディレクトリから、このMakefileで復元され得る、ほとんど全てを削除す
+     る。これは典型的には`distclean'によって削除される全てのものと、さら
+     に、Bisonによって生み出されたCのソース・ファイル、タグの表、Infoファイル
+     などなどを含む。
+
+     "ほとんど全て"と言う理由は、コマンド`make maintainer-clean'を走ら
+     せることで、例え`configure'はMakefileの規則を使って再生できたとして
+     も、`configure'を削除するべきでないということだ。もっと一般的に、
+     `make maintainer-clean'は`configure'を走らせるために、そしてプ
+     ログラムを構築し始めるために存在する必要があるどんなものも削除するべきで
+     はない。これが唯一の例外だ。`maintainer-clean'は再構築される得る他
+     のものは全て削除するべきだ。
+
+     `maintainer-clean'ターゲットは、普通のユーザではなく、そのパッケー
+     ジの管理者によって使われることが意図されている。`make
+     maintainer-clean'が削除するファイルの一部を復元するために、特別なツール
+     を必要とするかもしれない。これらのファイルは普通配布物に含められるので、
+     それらが簡単に復元することは気にしない。もし全配布物を再び展開する必要が
+     あることを見出しても、我々を非難してはいけない。
+
+     ユーザがこれに気付くのを助けるために、特別な`maintainer-clean'ター
+     ゲットのためのコマンドはこれら二つで始まるべきだ。
+
+          @echo 'This command is intended for maintainers to use; it'
+          @echo 'deletes files that may need special tools to rebuild.'
+
+`TAGS'
+     このプログラムのタグ表を更新する。
+
+`info'
+     必要とされるどのInfoファイルでも生成する。規則を書く最善の方法は次のよう
+     だ。
+
+          info: foo.info
+
+          foo.info: foo.texi chap1.texi chap2.texi
+                  $(MAKEINFO) $(srcdir)/foo.texi
+
+     Makefileに`MAKEINFO'という変数を定義してなければならない。それは
+     `makeinfo'プログラムを走らせるべきで、それはTexinfo配布物の一部であ
+     る。
+
+     普通、GNU配布物はInfoファイルと一緒に手に入り、このことはInfoファイルが
+     ソース・ディレクトリにあることを意味する。それゆえ、infoファイルのための
+     Makeの規則はソース・ディレクトリでそれを更新するべきだ。ユーザがそのパッ
+     ケージを構築するとき、普通のMakeはInfoファイルを更新しないだろう。なぜな
+     ら、それらはすでに最新だろうから。
+
+`dvi'
+     Texinfo解説書全てのDVIファイルを生成する。 例えば、
+
+          dvi: foo.dvi
+
+          foo.dvi: foo.texi chap1.texi chap2.texi
+                  $(TEXI2DVI) $(srcdir)/foo.texi
+
+     Makefileに`TEXI2DVI'という変数を定義してなければならない。それは
+     `texi2dvi'というプログラムを走らせるべきで、それはTexinfo配布物の一
+     部である。(1) あるいは、単に依存 関係だけを書き、GNU
+     `make'がそのコマンドを提供できるようにしなさい。
+
+`dist'
+     このプログラムの配布用tarファイルを作成する。tarファイルは、そのtarファ
+     イルの中のファイル名が配布されるパッケージの名前のサブディレクトリ名で始
+     まるように作り上げられるべきだ。この名前はバージョン・ナンバーを含んで良
+     い。
+
+     例えば、GCCのバージョン1.40の配布用tarファイルは`gcc-1.40'と名付け
+     られたサブディレクトリに展開する。
+
+     これを行う一番簡単な方法は適切に名付けられたサブディレクトリを作り、
+     `ln'か`cp'でそれに適当なファイルをインストールし、そのサブディ
+     レクトリに`tar'することである。
+
+     そのtarファイルを`gzip'で圧縮しなさい。例えば、GCCのバージョン1.40
+     の実際の配布ファイルは`gcc-1.40.tar.gz'と名付けられている。
+
+     配布物にあるソースではないファイル全てを配布物中で最新にしておくために、
+     `dist'ターゲットは明示的にそれらに依存すべきだ。 *Note Making
+     Releases: Releases.
+
+`check'
+     (もしあれば)自己診断を行う。ユーザはその試験を走らせる前にプログラムを構
+     築しなければならないが、そのプログラムをインストールする必要はない。その
+     プログラムが構築されているがインストールされていないときに働くように自己
+     診断を書くべきである。
+
+以下のターゲットは、それらが有用であるプログラムに対して、慣習的な名前を
+提案している。
+
+`installcheck'
+     (もしあれば)インストールの診断を行う。ユーザはその試験を走らせる前にその
+     プログラムを構築しインストールしなければならない。`$(bindir)'が検索
+     パスにあると仮定するべきではない。
+
+`installdirs'
+     ファイルがインストールされるディレクトリとそれらの親ディレクトリを作成す
+     るために、`installdirs'という名前のターゲットを加えると役に立つ。こ
+     のために便利である`mkinstalldirs'と名付けられたスクリプトがある。そ
+     れはTexinfoパッケージの中で見付けることができる。
+     このような規則を使うことができる。
+
+          # Make sure all installation directories (e.g. $(bindir))
+          # actually exist by making them if necessary.
+          installdirs: mkinstalldirs
+                  $(srcdir)/mkinstalldirs $(bindir) $(datadir) \
+                                          $(libdir) $(infodir) \
+                                          $(mandir)
+
+     この規則はコンパイルがなされるディレクトリを変更するべきではない。インス
+     トール用のディレクトリを作成する以外に何もするべきではない。
+
+   ---------- Footnotes ----------
+
+   (1) `texi2dvi'は整形の実際の作業を行うためにTeX
+を使用する。TeXはTexinfoと一緒配布されていない。
+
+
+File: standards-ja.info,  Node: Install Command Categories,  Prev: Standard Targets,  Up: Makefile Conventions
+
+7.2.6 インストールのコマンドの部類
+----------------------------------
+
+`install'ターゲットを書くとき、三つの部類にそのコマンド全てを分類し
+なければならない。普通のものと、"pre-installation"コマンドと、
+"post-installation"コマンドに。
+
+普通のコマンドは適切な場所にファイルを移動し、それらのモードを設定する。
+それらはどんなファイルも、完全にそれらが属するパッケージから手に入るもの
+を除いて、変化させないのが良い。
+
+pre-installationとpost-installationのコマンドは他のファイルを変えても良
+い。特に、それらは大域的な設定ファイルやデータベースを編集して良い。
+
+   pre-installationコマンドは典型的には普通のコマンドの前に実行され、
+post-installationコマンドは典型的には普通のコマンドの後に走らされる。
+
+   post-installationコマンドの最も普通の利用は`install-info'を走らせる
+ことである。これは普通のコマンドでは行われ得ない。それは、完全には、そし
+てインストールされるパッケージだけからは手に入らないファイル(Infoディレ
+クトリ)を変化させる。それはパッケージのInfoファイルをインストールする普
+通のコマンドの後に行われる必要があるのでpost-installationコマンドである。
+
+ほとんどのプログラムはpre-installationコマンドを必要としないが、我々はそ
+れが必要とされる場合にだけその機能を持つ。
+
+   `install'規則のコマンドをこれら三つの部類に分類するために、それらの
+中に"部類行"を挿入しなさい。部類行は次のコマンドの部類を指定する。
+
+部類行はタブと特別なMake変数への参照に加えて、最後に付加的なコメントから
+成る。それぞれの部類に対して一つ、使うことができる三つの変数がある。変数
+名は部類を指定する。部類行は、これら三つのMake変数は普通未定義(そして、
+それらをmakefileで定義する_べきではない_)ので、普通の実行では何も行
+わない。
+
+ここで、それぞれそれが何を意味するのか説明するコメントと共に、その三つの
+あり得る部類行を挙げる。
+
+             $(PRE_INSTALL)     # Pre-install commands follow.
+             $(POST_INSTALL)    # Post-install commands follow.
+             $(NORMAL_INSTALL)  # Normal commands follow.
+
+   もし`install'規則の始めに部類行を使わないなら、全てのコマンドは、最
+初の部類行まで普通のものと分類される。もしどの部類行も使わないなら、全て
+のコマンドは普通のものと分類される。
+
+   これらは`uninstall'のための部類行である。
+
+             $(PRE_UNINSTALL)     # Pre-uninstall commands follow.
+             $(POST_UNINSTALL)    # Post-uninstall commands follow.
+             $(NORMAL_UNINSTALL)  # Normal commands follow.
+
+典型的には、pre-uninstallコマンドはInfoディレクトリから項目を削除するた
+めに使われるだろう。
+
+   もし`install'や`uninstall'ターゲットがインストールのサブルーチ
+ンとして振る舞う依存関係を持つなら、_それぞれの_依存関係のコマンド
+を部類行で始めるべきで、主要なターゲットのコマンドも部類行で始めるべきだ。
+こうして、それぞれのコマンドが、依存関係のそれが実際に走るかどうかに関係
+なく、正しい部類に位置するように保証できる。
+
+pre-installationとpost-installationのコマンドはこれら以外のプログラムを
+走らせるべきではない。
+
+     [ basename bash cat chgrp chmod chown cmp cp dd diff echo
+     egrep expand expr false fgrep find getopt grep gunzip gzip
+     hostname install install-info kill ldconfig ln ls md5sum
+     mkdir mkfifo mknod mv printenv pwd rm rmdir sed sort tee
+     test touch true uname xargs yes
+
+この方法でコマンドを区別する理由はバイナリ・パッケージを作るためである。
+典型的にはバイナリ・パッケージは全ての実行ファイルとインストールされる必
+要がある他のファイルを含み、それらをインストールする、それ自身の方法を持
+つ--だから、それは普通のインストールのコマンドを走らせる必要がない。し
+かし、バイナリ・パッケージをインストールすることはpre-installationと
+post-installationのコマンドを走らせることを必要とする。
+
+   バイナリ・パッケージを構築するためのプログラムはpre-installationと
+post-installationのコマンドを抜粋することによって働く。ここで
+pre-installationコマンドを抜粋する一つの方法を示す。
+
+     make -n install -o all \
+           PRE_INSTALL=pre-install \
+           POST_INSTALL=post-install \
+           NORMAL_INSTALL=normal-install \
+       | gawk -f pre-install.awk
+
+ここで`pre-install.awk'というファイルは次のものを含む。
+
+     $0 ~ /^\t[ \t]*(normal_install|post_install)[ \t]*$/ {on = 0}
+     on {print $0}
+     $0 ~ /^\t[ \t]*pre_install[ \t]*$/ {on = 1}
+
+pre-installationコマンドの結果生じるファイルはバイナリ・パッケージをイン
+ストールすることの一部として、シェル・スクリプトとして実行される。
+
+
+File: standards-ja.info,  Node: Releases,  Prev: Makefile Conventions,  Up: Managing Releases
+
+7.3 リリースを行う
+==================
+
+`Foo version 69.96'の配布物を`foo-69.96.tar.gz'という名前で
+gzipされたtarファイルにまとめなさい。それは`foo-69.96'という名前の
+サブディレクトリに展開されるべきだ。
+
+そのプログラムの構築やインストールは配布物に含まれるどのファイルも決して
+変更するべきではない。これは、どんな方法でもプログラムの一部を作るファイル
+は全て、"ソースファイル"と"ソースでないファイル"に分類されていな
+ければならないことを意味する。ソースファイルは人間によって書かれ、自動的
+には決して変更されない。ソースでないファイルはMakefileの管理の下に、プロ
+グラムによってソースファイルから生成される。
+
+   配布物は、パッケージの名前とそれが何をするのか一般的な記述を与える、
+`README'という名前のファイルを含むべきだ。また、もしあるなら、パッ
+ケージの一番上にあるサブディレクトリそれぞれの目的を説明するのも良い。
+`README'ファイルはパッケージのバージョン・ナンバーを記述するか、そ
+れが見付かるパッケージ内の場所を参照するべきだ。
+
+   `README'ファイルは`INSTALL'というファイルを参照すべきだ。それ
+はインストールのやり方の説明を含むべきだ。
+
+   `README'ファイルはまた著作物の条件を含むファイルを参照するべきだ。
+もし使われていれば、GNU GPLは`COPYING'と呼ばれるファイルにあるべき
+だ。もしGNU LGPLが使われているなら、それは`COPYING.LIB'と呼ばれるファ
+イルにあるべきだ。
+
+   当然ソースファイルは全部配布物になければならない。ソースでないファイ
+ルを配布物に入れても構わない。もしそれらが最新状態でマシンに依存しておら
+ず、配布物は通常それらを変更することがあり得ないのなら。我々は普通Bison、
+`lex'、TeX、そして`makeinfo'によって生成されたソースでない
+ファイルを含めている。これは、ユーザがインストールしたいパッケージではど
+れでもインストールできるので、我々の配布物間での不必要な依存関係を避ける
+のに役立っている。
+
+プログラムを構築したりインストールすることによって実際に変更されるかもし
+れないソースでないファイルは、*絶対に*配布物に入れるべきではない。
+だからもしソースでないファイルを配布するなら、新しい配布物を作るとき、そ
+れらを常に最新にしておきなさい。
+
+配布物が展開するディレクトリは(どのサブディレクトリも)全て誰でも書き込み
+可能にしておきなさい(8進数モードの777)。これは、tarアーカイブのファイル
+の所有者と許可を保存する、`tar'の古いバージョンがそのユーザが特権的
+でない場合でも全てのファイルを展開できるようにするためだ。
+
+   配布物の全てのファイルは誰でも読み込み可能にしておきなさい。
+
+配布物の中にファイル名が14文字より長いものがないようにしておきなさい。同
+様に、そのプログラムを構築することによって出来るファイルはどれも14文字よ
+り長い名前を持たないようにするべきだ。これの理由は一部のシステムは
+POSIX標準の馬鹿げた解釈に固執し、過去にやっていたように長い名前を切
+り詰めるよりも開くことを拒んでいるからだ。
+
+配布物それ自体にシンボリック・リンクを含めてはいけない。tarファイルがシ
+ンボリック・リンクを含むなら、人々はシンボリック・リンクをサポートしない
+システム上ではそれを展開することさえできない。また、異なるディレクトリで
+一つのファイルに複数の名前を使ってはいけない。なぜなら、あるファイルシス
+テムはこれを扱えないし、このことは配布物を展開できなくするからだ。
+
+全てのファイル名がMS-DOS上で重ならないようにしてみなさい。MS-DOSでの名前
+は8文字以下から成り立ち、付加的にピリオドと3文字以下の文字がくっつく。
+MS-DOSは余分な文字をピリオドの前と後両方で切り詰めるだろう。だから、
+`foobarhacker.c'と`foobarhacker.o'は曖昧でない。それらは
+`foobarha.c'と`foobarha.o'に切り詰められ、それらは区別できる。
+
+   あなたの配布物に`*.texinfo'や`*.texi'ファイルの出力を試験する
+のに使った`texinfo.tex'のコピーを入れなさい。
+
+同様に、もしあなたのプログラムがregex、getopt、obstack、あるいはtermcap
+のような小さなGNUソフトウェア・パッケージを使うなら、配布物にそれらを含
+めなさい。それらを省くと、その配布ファイルはちょっと小さくなるが、他のファ
+イルをどうやって手に入れるか分からないユーザにいくらか不便になるという犠
+牲を払うことになる。
+
+
+
+Tag Table:
+Node: Top1011
+Node: Preface1553
+Ref: Preface-Footnote-12607
+Node: Legal Issues2730
+Node: Reading Non-Free Code3091
+Node: Contributions4802
+Node: Design Advice6933
+Node: Compatibility7397
+Node: Using Extensions8800
+Node: ANSI C10217
+Ref: ANSI C-Footnote-111482
+Node: Source Language11505
+Node: Program Behavior12939
+Node: Semantics13628
+Node: Libraries17852
+Node: Errors19060
+Node: User Interfaces20181
+Node: Option Table26355
+Ref: Option Table-Footnote-140941
+Node: Memory Usage41013
+Node: Writing C41949
+Node: Formatting42702
+Node: Comments45772
+Node: Syntactic Conventions48651
+Node: Names51216
+Node: System Portability52799
+Ref: System Portability-Footnote-154488
+Node: CPU Portability54637
+Node: System Functions56592
+Node: Internationalization61239
+Node: Mmap64164
+Node: Documentation64867
+Node: GNU Manuals65362
+Node: Manual Structure Details68801
+Ref: Manual Structure Details-Footnote-170050
+Node: NEWS File70325
+Node: Change Logs71039
+Node: Change Log Concepts71700
+Node: Style of Change Logs73299
+Node: Simple Changes74738
+Node: Conditional Changes75714
+Node: Man Pages76872
+Node: Reading other Manuals78425
+Node: Managing Releases79171
+Node: Configuration79855
+Ref: Configuration-Footnote-186380
+Ref: Configuration-Footnote-286526
+Node: Makefile Conventions86661
+Node: Makefile Basics87301
+Node: Utilities in Makefiles90320
+Node: Command Variables92489
+Node: Directory Variables95465
+Node: Standard Targets106123
+Ref: Standard Targets-Footnote-1116363
+Node: Install Command Categories116464
+Node: Releases120825
+
+End Tag Table

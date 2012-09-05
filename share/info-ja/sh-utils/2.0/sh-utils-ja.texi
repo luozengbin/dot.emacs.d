@@ -1,0 +1,3120 @@
+\input texinfo
+@c %**start of header
+@setfilename sh-utils-ja.info
+@settitle GNU shell utilities
+@c %**end of header
+
+@c @documentlanguage ja
+
+@include sh-utils-v.texi
+
+@c Define new indices for file names and options.
+@defcodeindex fl
+@defcodeindex op
+
+@c Put everything in one index (arbitrarily chosen to be the concept index).
+@syncodeindex fl cp
+@syncodeindex fn cp
+@syncodeindex ky cp
+@syncodeindex op cp
+@syncodeindex pg cp
+@syncodeindex vr cp
+
+@set Francois Fran@,{c}ois
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* Shell utilities(ja): (sh-utils-ja).             GNU shell utilities.
+* basename(ja): (sh-utils-ja)basename invocation. Strip directory and suffix.
+* chroot(ja): (sh-utils-ja)chroot invocation.     Specify the root directory.
+* date(ja): (sh-utils-ja)date invocation.         Print/set system date and time.
+* dirname(ja): (sh-utils-ja)dirname invocation.   Strip non-directory suffix.
+* echo(ja): (sh-utils-ja)echo invocation.         Print a line of text.
+* env(ja): (sh-utils-ja)env invocation.           Modify the environment.
+* expr(ja): (sh-utils-ja)expr invocation.         Evaluate expressions.
+* factor(ja): (sh-utils-ja)factor invocation.     Print prime factors
+* false(ja): (sh-utils-ja)false invocation.       Do nothing, unsuccessfully.
+* groups(ja): (sh-utils-ja)groups invocation.     Print group names a user is in.
+* hostname(ja): (sh-utils-ja)hostname invocation. Print or set system name.
+* id(ja): (sh-utils-ja)id invocation.             Print real/effective uid/gid.
+* logname(ja): (sh-utils-ja)logname invocation.   Print current login name.
+* nice(ja): (sh-utils-ja)nice invocation.         Modify scheduling priority.
+* nohup(ja): (sh-utils-ja)nohup invocation.       Immunize to hangups.
+* pathchk(ja): (sh-utils-ja)pathchk invocation.   Check file name portability.
+* printenv(ja): (sh-utils-ja)printenv invocation. Print environment variables.
+* printf(ja): (sh-utils-ja)printf invocation.     Format and print data.
+* pwd(ja): (sh-utils-ja)pwd invocation.           Print working directory.
+* seq(ja): (sh-utils-ja)seq invocation.           Print numeric sequences
+* sleep(ja): (sh-utils-ja)sleep invocation.       Delay for a specified time.
+* stty(ja): (sh-utils-ja)stty invocation.         Print/change terminal settings.
+* su(ja): (sh-utils-ja)su invocation.             Modify user and group id.
+* tee(ja): (sh-utils-ja)tee invocation.           Redirect to multiple files.
+* test(ja): (sh-utils-ja)test invocation.         File/string tests.
+* true(ja): (sh-utils-ja)true invocation.         Do nothing, successfully.
+* tty(ja): (sh-utils-ja)tty invocation.           Print terminal name.
+* uname(ja): (sh-utils-ja)uname invocation.       Print system information.
+* users(ja): (sh-utils-ja)users invocation.       Print current user names.
+* who(ja): (sh-utils-ja)who invocation.           Print who is logged in.
+* whoami(ja): (sh-utils-ja)whoami invocation.     Print effective user id.
+* yes(ja): (sh-utils-ja)yes invocation.           Print a string indefinitely.
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@ifinfo
+このファイルは，GNUシェルユーティリティを説明します．
+
+Copyright (C) 1994, 95, 96 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@titlepage
+@title GNU @code{sh-utils}
+@subtitle A set of shell utilities
+@subtitle for version @value{VERSION}, @value{UPDATED}
+@author David MacKenzie et al.
+@c 翻訳 西尾 太
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1994, 95, 96 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+
+
+@ifnottex
+@node Top
+@top GNUシェルユーティリティ
+
+@cindex shell utilities
+@cindex utilities for shell programming
+
+このマニュアルは，GNUシェルユーティリティのバージョン@value{VERSION}を解
+説します．
+
+@menu
+* Introduction::                Caveats, overview, and authors.
+* Common options::              Common options.
+
+* Date input formats::          Specifying date strings.
+* Printing text::               echo printf yes
+* Conditions::                  false true test expr
+* Redirection::                 tee
+* File name manipulation::      dirname basename pathchk
+* Working context::             pwd stty printenv tty
+* User information::            id logname whoami groups users who
+* System context::              date uname hostname
+* Modified command invocation:: chroot env nice nohup su
+* Delaying::                    sleep
+* Numeric operations::          factor seq
+
+* Index::                       General index.
+@end menu
+@end ifnottex
+
+@node Introduction
+@chapter はじめに
+
+@cindex introduction
+
+まずはじめに，このマニュアルは不完全です．特に@code{stty}セクションは，
+他のGNUマニュアルの標準に到達するまでには，本質的な再構成と追加の説明文
+が必要です．一般的に説明文が足りません．マニュアルは現在，何をするべきか
+知っていて，その方法を思い出す必要しかない人を想定しています．このため，
+興味がある場合はこのマニュアルの改善に参加してください．GNUコミュニティ
+全体が恩恵をあずかります．
+
+これらのプログラムには，シェルスクリプトを書くときのみ役に立つものもあり
+ます．このようなユーティリティは，実際，シェルスクリプト(を拡張する)
+``言語''です．それ以外は，対話的なとき役に立つときがあります．
+
+@cindex POSIX.2
+GNUシェルユーティリティは，POSIX.2標準とほとんど互換性があります．
+
+@c This paragraph appears in all of fileutils.texi, textutils.texi, and
+@c sh-utils.texi too -- so be sure to keep them consistent.
+@cindex bugs, reporting
+バグを@samp{bug-sh-utils@@gnu.org}に報告してください．バージョンナンバー，
+マシンアーキテクチャ，入力ファイル，期待したもの，得られたもの，そして，
+なぜ間違っているかを含めることを忘れないでください．差分は歓迎しますが，
+推察が困難なときもあるので，同様に問題の記述も含めてください．
+@xref{Bugs, , , gcc, GNU CC}.
+
+@cindex history
+@cindex MacKenzie, David
+@cindex Meyering, Jim
+@c Sorry, but the @value trick doesn't work with TeX in indexing
+@c commands, and I don't want to fix it right now. --karl.
+@cindex Pinard, @value{Francois}
+@cindex Berry, Karl
+@cindex Stallman, Richard
+このマニュアルは元々，配布されているUnixのmanページから持ってきていて，
+それはDavid MacKenzieが書き，Jim Meyeringが更新しました．今読んでいるも
+のは，これらのユーティリティに対する権威のあるドキュメントです．manペー
+ジは既に管理されていません．@value{Francois} Pinardが，最初にTexinfo書式
+に変更しました．Karl Berryが，索引の作成，いくつかの再編成，そして，結果
+の編集を行いました．Richard Stallmanは，全体の処理についていつもの有益な
+洞察を寄与しました．
+
+@node Common options
+@chapter 共通のオプション
+
+@cindex common options
+
+ある特定のオプションはこれらのプログラムの全てで利用可能です．それぞれの
+プログラムの個別の記述で書くのではなく，ここで記述します．(実際，全ての
+GNUプログラムはそれらを受け入れる(または受け入れるべき)です．)
+
+これらのプログラムの多くは曖昧な文字列を引数として受け入れます．その場合，
+@samp{--help}と@samp{--version}は，コマンドライン引数にただ一つだけある
+場合のみこれらのオプションとして受け入れます．
+
+@table @samp
+
+@item --help
+@opindex --help
+@cindex help, online
+全ての利用可能なオプションをリストアップする使用方法のメッセージを出力し，
+正しく終了します．
+
+@item --version
+@opindex --version
+@cindex version number, finding
+バージョンナンバーを出力し，正しく終了します．
+
+@end table
+
+
+@include getdate-ja.texi
+
+
+@node Printing text
+@chapter テキストの表示
+
+@cindex printing text, commands for
+@cindex commands for printing text
+
+このセクションは，テキスト文字列を画面に表示するコマンドを説明します．
+
+@menu
+* echo invocation::             Print a line of text.
+* printf invocation::           Format and print data.
+* yes invocation::              Print a string until interrupted.
+@end menu
+
+
+@node echo invocation
+@section @code{echo}: テキストの行を表示(Print a line of text)
+
+@pindex echo
+@cindex displaying text
+@cindex printing text
+@cindex text, displaying
+@cindex arbitrary text, displaying
+
+@code{echo}は，与えられたそれぞれの@var{string}を，それぞれの間にスペー
+スを用い，最後のものの後に改行を用いて，標準出力に書き出します．構文は以
+下のとおりです．
+
+@example
+echo [@var{option}]@dots{} [@var{string}]@dots{}
+@end example
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -n
+@opindex -n
+終りの改行を出力しません．
+
+@item -e
+@opindex -e
+@cindex backslash escapes
+それぞれの@var{string}で，以下のバックスペースエスケープされた文字の解釈
+を可能にします．
+
+@table @samp
+@item \a
+警報(ベル)
+@item \b
+バックスペース
+@item \c
+終りの改行を抑制
+@item \f
+用紙送り
+@item \n
+改行
+@item \r
+キャリッジリターン
+@item \t
+水平タブ
+@item \v
+垂直タブ
+@item \\
+バックスラッシュ
+@item \@var{nnn}
+ASCIIコードが@var{nnn}(８進数)の文字．@var{nnn}が有効な数字でない場合，
+それは文字通りに出力されます．
+@end table
+
+@end table
+
+
+@node printf invocation
+@section @code{printf}: データの書式化と出力
+
+@pindex printf
+@code{printf}はテキストの書式化された表示を行います．構文は以下のとおり
+です．
+
+@example
+printf @var{format} [@var{argument}]@dots{}
+@end example
+
+@code{printf}は，C @code{printf}関数と同じ方法で，@samp{%}指示語と
+@samp{\}エスケープを解釈しながら@var{format}文字列を表示します．与えられ
+た@var{argument}のすべてを変換する必要があるので，@var{format}引数は再利
+用されます．
+
+@code{printf}は追加の指示語@samp{%b}があり，それは，@var{format}文字列と
+同じ方法で@samp{\}エスケープを解釈しながら，その引数文字列を表示します．
+
+@kindex \0ooo
+@kindex \0xhhh
+@code{printf}は，表示文字を指定するとき，@var{format}内の@samp{\0ooo}を
+(@var{ooo}が0から3桁の8進の場合)8進数として，そして，表示文字を指定する
+とき，@samp{\xhhh}を(@var{hhh}が0から3桁の16進の場合)16進数として解釈し
+ます．
+
+@kindex \c
+追加のエスケープ@samp{\c}は，@code{printf}にそれ以上の出力を生成させませ
+ん．
+
+オプションは，単独の@samp{--help}や@samp{--version}だけです．
+@xref{Common options}.
+
+
+@node yes invocation
+@section @code{yes}: 中断するまで文字列を出力
+
+@pindex yes
+@cindex repeated output of a string
+
+@code{yes}は，スペースで分けられた改行が続くコマンド行引数を，キルされる
+まで永遠に出力します．引数が与えられない場合は，改行が続く@samp{y}を，キ
+ルされるまで永遠に出力します．
+
+オプションは，単独の@samp{--help}や@samp{--version}だけです．
+@xref{Common options}.
+
+
+@node Conditions
+@chapter 条件
+
+@cindex conditions
+@cindex commands for exit status
+@cindex exit status commands
+
+このセクションは，その出力ではなく，終了ステータスが主に役に立つコマンド
+を記述します．このためそれらは，シェルの@code{if}文の条件やパイプライン
+の最後のコマンドとしてよく使用されます．
+
+@menu
+* false invocation::            Do nothing, unsuccessfully.
+* true invocation::             Do nothing, successfully.
+* test invocation::             Check file types and compare values.
+* expr invocation::             Evaluate expressions.
+@end menu
+
+
+@node false invocation
+@section @code{false}: 何もせず失敗します
+
+@pindex false
+@cindex do nothing, unsuccessfully
+@cindex failure exit status
+@cindex exit status of @code{false}
+
+@code{false}は，@dfn{失敗}を意味する1の終了ステータスを返す以外何もしま
+せん．それは，シェルスクリプトの失敗のコマンドが必要な位置で使用すること
+が可能です．
+
+@code{false}は，@samp{--help}と@samp{--version}を含む，すべてのコマンド
+ライン引数を無視し，それは，そうしない場合，プログラマがあてにしている期
+待する動作を変更するためです．@footnote{訳注：実際にはこれらのオプション
+を受け入れますが，失敗の終了ステータスを返します．}
+
+このバージョンの@code{false}は，Cプログラムとして実装されていて，そのた
+め，シェルスクリプトの実装より安全かつ高速になり，アカウントの使用を禁止
+する目的のダミーシェルとして安全に使用できます．
+
+
+@node true invocation
+@section @code{true}: 何もせず成功します
+
+@pindex true
+@cindex do nothing, successfully
+@cindex no-op
+@cindex successful exit
+@cindex exit status of @code{true}
+
+@code{true}は，@dfn{成功}を意味する0の終了ステータスを返す以外何もしませ
+ん．それは，シェルスクリプトの成功のコマンドが必要な位置で使用することが
+可能ですが，シェル組み込みコマンド @code{:} (コロン)は同じことをより高速
+に行います．
+
+@code{true}は，@samp{--help}と@samp{--version}を含む，すべてのコマンドラ
+イン引数を無視し，それは，そうしない場合，プログラマがあてにしている期待
+する動作を変更するためです．@footnote{訳注：実際にはこれらのオプションを
+受け入れますが，成功の終了ステータスを返します．}
+
+このバージョンの@code{true}は，Cプログラムとして実装されていて，そのため，
+シェルスクリプトの実装より安全かつ高速になり，アカウントの使用を禁止する
+目的のダミーシェルとして安全に使用できます．
+
+
+@node test invocation
+@section @code{test}: ファイル形式の調査と値の比較
+
+@pindex test
+@cindex check file types
+@cindex compare values
+@cindex expression evaluation
+
+条件式@var{expr}の評価に依存して，0(真)または1(偽)のステータスを返します．
+表現のそれぞれの部分は，分離された引数にする必要があります．
+
+@code{test}には，ファイルのステータスの調査，文字演算子，そして数字比較
+の演算子があります．
+
+@cindex conflicts with shell built-ins
+@cindex built-in shell commands, conflicts with
+ほとんどのシェルは，同じ名前の組み込みコマンドがあるため，スクリプト内や
+対話的に簡素なコマンド名を使用すると，ここで記述するものと異なる機能を得
+る可能性があります．
+
+以下のオプションの他に，@code{test}は，単独の@samp{--help}や
+@samp{--version}を受け入れます．@xref{Common options}. 単一のオプション
+なしの引数も可能です．@code{test}は，引数がnullでない場合，真を返します．
+
+@menu
+* File type tests::             -[bcdfhLpSt]
+* Access permission tests::     -[gkruwxOG]
+* File characteristics tests::  -e -s -nt -ot -ef
+* String tests::                -z -n = !=
+* Numeric tests::               -eq -ne -lt -le -gt -ge
+* Connectives for test::        ! -a -o
+@end menu
+
+
+@node File type tests
+@subsection ファイル形式のテスト
+
+@cindex file type tests
+
+これらのオプションは，ファイルの特定の形式をテストします．(ファイルのす
+べてですが，すべてのファイルが同じではありません！)
+
+@table @samp
+
+@item -b @var{file}
+@opindex -b
+@cindex block special check
+@var{file}が存在し，ブロックスペシャルデバイスの場合，真です．
+
+@item -c @var{file}
+@opindex -c
+@cindex character special check
+@var{file}が存在し，キャラクタスペシャルデバイスの場合は真です．
+
+@item -d @var{file}
+@opindex -d
+@cindex directory check
+@var{file}が存在し，ディレクトリの場合は真です．
+
+@item -f @var{file}
+@opindex -f
+@cindex regular file check
+@var{file}が存在し，通常のファイルの場合は真です．
+
+@item -h @var{file}
+@itemx -L @var{file}
+@opindex -L
+@opindex -h
+@cindex symbolic link check
+@var{file}が存在し，シンボリックリンクの場合は真です．
+
+@item -p @var{file}
+@opindex -p
+@cindex named pipe check
+@var{file}が存在し，名前付きパイプの場合は真です．
+
+@item -S @var{file}
+@opindex -S
+@cindex socket check
+@var{file}が存在し，ソケットの場合は真です．
+
+@item -t [@var{fd}]
+@opindex -t
+@cindex terminal check
+@var{fd}が端末上で開かれている場合は真です．@var{fd}が省略された場合，そ
+れはデフォルトで1(標準出力)になります．
+
+@end table
+
+
+@node Access permission tests
+@subsection アクセス許可のテスト
+
+@cindex access permission tests
+@cindex permission tests
+
+これらのオプションは，特定のアクセス許可をテストします．
+
+@table @samp
+
+@item -g @var{file}
+@opindex -g
+@cindex set-group-id check
+@var{file}が存在し，そのセットグループidビットが設定されている場合は真で
+す．
+
+@item -k @var{file}
+@opindex -k
+@cindex sticky bit check
+@var{file}が存在し，@dfn{スティッキー}ビットが設定されている場合は真です．
+
+@item -r @var{file}
+@opindex -r
+@cindex readable file check
+@var{file}が存在し，読み込み可能な場合は真です．
+
+@item -u @var{file}
+@opindex -u
+@cindex set-user-id check
+@var{file}が存在し，セットユーザidビットが設定されている場合は真です．
+
+@item -w @var{file}
+@opindex -w
+@cindex writable file check
+@var{file}が存在し，書き込み可能な場合は真です．
+
+@item -x @var{file}
+@opindex -x
+@cindex executable file check
+@var{file}が存在し，実行可能な場合は真です．
+
+@item -O @var{file}
+@opindex -O
+@cindex owned by effective uid check
+@var{file}が存在し，現在実施中のユーザidに所有されている場合は真です．
+
+@item -G @var{file}
+@opindex -G
+@cindex owned by effective gid check
+@var{file}が存在し，現在実施中のグループidに所有されている場合は真です．
+
+@end table
+
+
+@node File characteristics tests
+@subsection ファイルの特徴テスト
+
+@cindex file characteristics tests
+
+これらのオプションはその他のファイルの特徴を調査します．
+
+@table @samp
+
+@item -e @var{file}
+@opindex -e
+@cindex existence-of-file check
+@var{file}が存在している場合は真です．
+
+@item -s @var{file}
+@opindex -s
+@cindex nonempty file check
+@var{file}が存在し，大きさがゼロより大きい場合は真です．
+
+@item @var{file1} -nt @var{file2}
+@opindex -nt
+@cindex newer-than file check
+@var{file1}が@var{file2}より(修正日で)新しい場合は真です．
+
+@item @var{file1} -ot @var{file2}
+@opindex -ot
+@cindex older-than file check
+@var{file1}が@var{file2}より(修正日で)古い場合は真です．
+
+
+@item @var{file1} -ef @var{file2}
+@opindex -ef
+@cindex same file check
+@cindex hard link check
+@var{file1}と@var{file2}が同じデバイスとi-node番号を持つ場合，すなわち，
+それらがお互いにハードリンクの場合は真です．
+
+@end table
+
+
+@node String tests
+@subsection 文字列のテスト
+
+@cindex string tests
+
+これらのオプションは文字列の特徴をテストします．文字列は@code{test}に対
+し引用符で囲みませんが，例えばスペースのような，シェルで特別な意味を持つ
+文字を保護するために，それらを引用符で囲む必要があるかもしれません．
+
+@table @samp
+
+@item -z @var{string}
+@opindex -z
+@cindex zero-length string check
+@var{string}の長さがゼロの場合は真です．
+
+@item -n @var{string}
+@itemx @var{string}
+@opindex -n
+@cindex nonzero-length string check
+@var{string}の長さがゼロではないの場合は真です．
+
+@item @var{string1} = @var{string2}
+@opindex =
+@cindex equal string check
+文字列が等しい場合は真です．
+
+@item @var{string1} != @var{string2}
+@opindex !=
+@cindex not-equal string check
+文字列が等しくない場合は真です．
+
+@end table
+
+
+@node Numeric tests
+@subsection 数値テスト
+
+@cindex numeric tests
+@cindex arithmetic tests
+
+数値の関係です．引数は，完全な数値(負も可能です)，または，@var{string}の
+長さを評価する特別な式@w{@code{-l @var{string}}}にする必要があります．
+
+@table @samp
+
+@item @var{arg1} -eq @var{arg2}
+@itemx @var{arg1} -ne @var{arg2}
+@itemx @var{arg1} -lt @var{arg2}
+@itemx @var{arg1} -le @var{arg2}
+@itemx @var{arg1} -gt @var{arg2}
+@itemx @var{arg1} -ge @var{arg2}
+@opindex -eq
+@opindex -ne
+@opindex -lt
+@opindex -le
+@opindex -gt
+@opindex -ge
+これらの算数の二項演算子は，それぞれ，@var{arg1}が@var{arg2}に比べて，等
+しい，等しくない，小さい，以下，大きい，または以上の場合に真を返します．
+
+@end table
+
+例えば以下のようにします．
+
+@example
+test -1 -gt -2 && echo yes
+@result{} yes
+test -l abc -gt 1 && echo yes
+@result{} yes
+test 0x100 -eq 1
+@error{} test: integer expression expected before -eq
+@end example
+
+
+@node Connectives for test
+@subsection @code{test}に対する連結
+
+@cindex logical connectives
+@cindex connectives, logical
+
+通常の論理結合子です．
+
+@table @samp
+
+@item ! @var{expr}
+@opindex !
+@var{expr}が偽の場合は真です．
+
+@item @var{expr1} -a @var{expr2}
+@opindex -a
+@cindex logical and operator
+@cindex and operator
+@var{expr1}と@var{expr2}の両方が真の場合は真です．
+
+@item @var{expr1} -o @var{expr2}
+@opindex -o
+@cindex logical or operator
+@cindex or operator
+@var{expr1}または@var{expr2}のどちらかが真の場合は真です．
+
+@end table
+
+
+@node expr invocation
+@section @code{expr}: 式の評価
+
+@pindex expr
+@cindex expression evaluation
+@cindex evaluation of expressions
+
+@code{expr}は式を評価し，結果を標準出力に書き出します．それぞれの式のトー
+クンは，分離している引数にする必要があります．
+
+オペランドは数字または文字列のどちらかになります．@code{expr}は，あらゆ
+るものが，適用されているオペレーションに依存して，整数または文字列がオペ
+ランドの位置に存在することを強制します．
+
+文字列は@code{expr}対し引用符で囲みませんが，例えばスペースのような，シェ
+ルで特別な意味を持つ文字を保護するために，それらを引用符で囲む必要がある
+かもしれません．
+
+@cindex parentheses for grouping
+演算子は，挿入辞シンボルや前置キーワードとして与えることができます．カッ
+コは，通常の方法のグループとして使用可能です(しかし，シェルがカッコを評
+価することを避けるために，カッコを引用符で囲む必要があります)．
+
+@cindex exit status of @code{expr}
+終了ステータスは，以下のようになります．
+
+@display
+0 式がnullでも0でもない場合．
+1 式がnullまたは0の場合．
+2 有効な式の場合．
+@end display
+
+@menu
+* String expressions::          <colon> match substr index length quote
+* Numeric expressions::         + - * / %
+* Relations for expr::          | & < <= = == != >= >
+* Examples of expr::            Examples.
+@end menu
+
+
+@node String expressions
+@subsection 文字列式
+
+@cindex string expressions
+@cindex expressions, string
+
+@code{expr}は，パターンマッチングと，その他の文字列演算子をサポートしま
+す．これらは，(次のセクションの)数字と関係の両演算子より低い優先順位にな
+ります．
+
+@table @samp
+
+@item @var{string} : @var{regex}
+@cindex pattern matching
+@cindex regular expression matching
+@cindex matching patterns
+パターンマッチングを実行します．引数は文字列に制限され，2番目は，
+@code{^}が暗黙に前置された(基本的にGNU流の@code{grep}の)正規表現と考慮さ
+れます．最初の引数は，この正規表現に対し一致の評価がなされます．
+
+一致の評価が成功し，@var{regex}が@samp{\(}と@samp{\)}を使用している場合，
+@code{:}式は，サブ式に一致した@var{string}の一部となります．それ以外の場
+合は一致した文字の数を返します．
+
+一致の評価に失敗した場合，@var{regex}で@samp{\(}と@samp{\)}が使用されて
+いれば@code{:}演算子はnull文字を返し，それ以外では0を返します．
+
+@kindex \( @r{regexp operator}
+最初の@samp{\( @dots{} \)}の組のみ，戻り値に関係します．追加の組は，正規
+表現演算子のグループ化の意味しかありません．
+
+@kindex \+ @r{regexp operator}
+@kindex \? @r{regexp operator}
+@kindex \| @r{regexp operator}
+正規表現内では，@code{\+}，@code{\?}，そして@code{\|}は，それぞれ，1以上，
+ゼロ以上，オア分離の選択肢の演算子です．SunOSとその他の@code{expr}はこれ
+らを通常の文字として扱います．(POSIXは，どちらの動作も許可します．)正規
+表現の構文の詳細は，@xref{Top, , Regular Expression Library, regex,
+Regex}.例は@ref{Examples of expr},にあります．
+
+@item match @var{string} @var{regex}
+@findex match
+パターンマッチングを行う別の方法です．これは，@w{@samp{@var{string} :
+@var{regex}}}と同じです．
+
+@item substr @var{string} @var{position} @var{length}
+@findex substr
+少なくとも@var{length}の長さの，@var{position}から始まる，@var{string}の
+サブ文字列を返します．@var{position}または@var{length}のどちらかが，負，
+ゼロ，または数字以外の場合，null文字列を返します．
+
+@item index @var{string} @var{charset}
+@findex index
+@var{charset}の最初の文字が見つかった，@var{string}の最初の位置を返しま
+す．@var{charset}の文字が@var{string}で見つからない場合は，0を返します．
+
+@item length @var{string}
+@findex length
+@var{string}の長さを返します．
+
+@item quote @var{token}
+@findex quote
+キーワードのような@var{match}や，演算子のような@code{/}の場合でも，
+@var{token}を文字列として解釈します．これで，@code{expr length quote
+"$x"}や@code{expr quote "$x" : '.*/\(.\)'}のテストが可能となり，@var{$x} 
+の値が(例えば)@code{/}や@code{index}に偶然なった場合でも，正しくなります．
+この演算子はGNUの拡張です．環境変数@env{POSIXLY_CORRECT}が設定されている
+ときは，利用不可能です．
+
+@end table
+
+@code{expr}にキーワードとして文字列を解釈させるために，@code{quote}演算
+子を使用する必要があります．
+
+
+@node Numeric expressions
+@subsection 数式
+
+@cindex numeric expressions
+@cindex expressions, numeric
+
+@code{expr}は，通常の算術演算子をサポートし，優先順位は順に増加します．
+(前のセクションの)文字列演算子は，より順位の低い演算子で，(次のセクショ
+ンの)連結子は，より順位が高くなります．
+
+@table @samp
+
+@item + -
+@kindex +
+@kindex -
+@cindex addition
+@cindex subtraction
+加算と減算です．どちらの引数も数字が強制されます．そうでない場合はエラー
+を生じます．
+
+@item * / %
+@kindex *
+@kindex /
+@kindex %
+@cindex multiplication
+@cindex division
+@cindex remainder
+乗算，除算，剰余です．どちらの引数も数字が強制されます．そうでない場合は
+エラーを生じます．
+
+@end table
+
+
+@node Relations for expr
+@subsection @code{expr}の関係式
+
+@cindex connectives, logical
+@cindex logical connectives
+@cindex relations, numeric or string
+
+@code{expr}は，通常の論理結合と関係式をサポートします．これらは(前のセク
+ションの)文字や数字の演算子より優先順位が高くなっています．ここに，低い
+優先順位を最初にしたリストがあります．
+
+@table @samp
+
+@item |
+@kindex |
+@cindex logical or operator
+@cindex or operator
+最初の引数がnullや0でない場合はそれを，それ以外では二番目の引数を返しま
+す．
+
+@item &
+@kindex &
+@cindex logical and operator
+@cindex and operator
+どちらの引数もnullや0でない場合は最初の引数を，それ以外では0を返します．
+
+@item < <= = == != >= >
+@kindex <
+@kindex <=
+@kindex =
+@kindex ==
+@kindex >
+@kindex >=
+@cindex comparison operators
+引数を比較し，関係が真の場合は1を，それ以外では0を返します．@code{==}は
+@code{=}の同義語です．@code{expr}は最初に，両方の引数を数字に強制し，数
+値の比較を行います．どちらかの強制が失敗した場合，辞書的な比較を行います．
+
+@end table
+
+
+@node Examples of expr
+@subsection @code{expr}の使用例
+
+@cindex examples of @code{expr}
+ここに，シェルのメタ文字を引用符で囲むものを含む，いくつかの例があります．
+
+Bourne互換シェルで，シェル変数@code{foo}に1を加えます．
+@example
+foo=`expr $foo + 1`
+@end example
+
+@code{$fname}に保存されているファイル名のディレクトリ以外の部分を，
+@code{/}を含めずに出力します．
+@example
+expr $fname : '.*/\(^.*\)' '^|' $fname
+@end example
+
+@code{\+}が演算子だということを表示する例です．
+@example
+expr aaa : 'a\+'
+@result{} 3
+@end example
+
+@example
+expr abc : 'a\(.\)c'
+@result{} b
+expr index abcdef cz
+@result{} 3
+expr index index a
+@error{} expr: syntax error
+expr index quote index a
+@result{} 0
+@end example
+
+
+@node Redirection
+@chapter リダイレクション
+
+@cindex redirection
+@cindex commands for redirection
+
+Unixシェルは，通常いくつかの形式の@dfn{リダイレクション}を提供します--- 
+コマンドの入力元や出力先を変更する方法です．しかし，一つの便利なリダイレ
+クションは，シェルではなく，コマンドで分けられて実行ます．その記述がここ
+にあります．
+
+@menu
+* tee invocation::              Redirect output to multiple files.
+@end menu
+
+
+@node tee invocation
+@section @code{tee}: 出力を複数のファイルにリダイレクトする
+
+@pindex tee
+@cindex pipe fitting
+@cindex destinations, multiple output
+@cindex read from stdin and write to stdout and files
+
+@code{tee}コマンドは，標準入力を標準出力と，引数で与えられたあらゆるファ
+イルにコピーします．これは，データをパイプに送るだけでなく，コピーを保存
+したいときに役に立ちます．構文は以下のとおりです．
+
+@example
+tee [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+存在しないファイルに書き出す場合，それは作成されます．既存のファイルに書
+き出す場合，前から含まれているデータは，@code{-a}オプションが使用されな
+い場合は上書きされます．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -a
+@itemx --append
+@opindex -a
+@opindex --append
+標準入力を与えられたファイルに，上書きせずに追加します．
+
+@item -i
+@itemx --ignore-interrupts
+@opindex -i
+@opindex --ignore-interrupts
+中断シグナルを無視します．
+
+@end table
+
+
+@node File name manipulation
+@chapter ファイル名の操作
+
+@cindex file name manipulation
+@cindex manipulation of file names
+@cindex commands for file name manipulation
+
+このセクションはファイル名を操作するコマンドを記述します．
+
+@menu
+* basename invocation::         Strip directory and suffix from a file name.
+* dirname invocation::          Strip non-directory suffix from a file name.
+* pathchk invocation::          Check file name portability.
+@end menu
+
+
+@node basename invocation
+@section @code{basename}: ディレクトリと接尾子をファイル名から除去
+
+@pindex basename
+@cindex strip directory and suffix from file names
+@cindex directory, stripping from file names
+@cindex suffix, stripping from file names
+@cindex file names, stripping directory and suffix
+@cindex leading directory components, stripping
+
+@code{basename}は，前置されるディレクトリ要素を@var{name}から削除します．
+構文は以下のとおりです．
+
+@example
+basename @var{name} [@var{suffix}]
+@end example
+
+@var{suffix}が指定され，@var{name}の終りが同じ場合，それは@var{name}から
+同様に削除されます．@code{basename}は結果を標準出力に出力します．
+
+オプションは@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+
+@node dirname invocation
+@section @code{dirname}: ディレクトリ以外の接尾子をファイル名から除去
+
+@pindex dirname
+@cindex directory components, printing
+@cindex stripping non-directory suffix
+@cindex non-directory suffix, stripping
+
+@code{dirname}は，最後のスラッシュで分離されている(おそらくファイル名と
+なる)文字列の内容以外をすべて出力します．構文は以下のとおりです．
+
+@example
+dirname @var{name}
+@end example
+
+@var{name}は単一の要素で，@code{dirname}は(現在のディレクトリを意味する)
+@samp{.}を表示します．
+
+オプションは@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+
+@node pathchk invocation
+@section @code{pathchk}: ファイル名の移植性を調査
+
+@pindex pathchk
+@cindex file names, checking validity and portability
+@cindex valid file names, checking for
+@cindex portable file names, checking for
+
+@code{pathchk}は，ファイル名の移植性を調査します．構文は以下のとおりです．
+
+@example
+pathchk [@var{option}]@dots{} @var{name}@dots{}
+@end example
+
+それぞれの@var{name}に対し，@code{pathchk}はこれらの条件が真かどうかのメッ
+セージを出力します．
+@enumerate
+@item
+@var{name}に存在するディレクトリの一つが検索(実行)許可を持たない．
+@item
+@var{name}の長さが，ファイルシステムのファイル名の長さの最大より長い．
+
+@item
+既存のディレクトリ名に一致する@var{name}の一つの要素の長さが，ファイルシ
+ステムのファイル名の要素の長さの最大より長い．
+@end enumerate
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -p
+@itemx --portability
+@opindex -p
+@opindex --portability
+根底にあるファイルシステムの長さ調査を実行する代わりに，POSIX.1の移植性
+のための最小制限に対し，それぞれのファイル名とその要素の長さをテストしま
+す．ファイル名が，ファイル名文字集合の，移植性にない文字を含まないことも
+調査します．
+
+@end table
+
+@cindex exit status of @code{pathchk}
+終了ステータス．
+
+@display
+0 すべての指定されたファイル名が，すべてのテストを通過した場合．
+1 それ以外．
+@end display
+
+
+@node Working context
+@chapter 作業中のコンテクスト
+
+@cindex working context
+@cindex commands for printing the working context
+
+このセクションは，作業しているコンテクストを表示または変更するコマンドを
+記述します．現在のディレクトリ，端末設定，その他です．次のセクションのユー
+ザ関連のコマンドも参照してください．
+
+@menu
+* pwd invocation::              Print working directory.
+* stty invocation::             Print or change terminal characteristics.
+* printenv invocation::         Print environment variables.
+* tty invocation::              Print file name of terminal on standard input.
+@end menu
+
+
+@node pwd invocation
+@section @code{pwd}: 作業中のディレクトリを表示
+
+@pindex pwd
+@cindex print name of current directory
+@cindex current working directory, printing
+@cindex working directory, printing
+
+@cindex symbolic links and @code{pwd}
+@code{pwd}は，現在のディレクトリの完全に解決された名前を出力します．すな
+わち，出力される名前のすべての要素は，実際のディレクトリ名です---シンボ
+リックリンクではありません．
+
+@cindex conflicts with shell built-ins
+@cindex built-in shell commands, conflicts with
+ほとんどのシェルは同じ名前の組み込みコマンドがあるので，装飾なしのスクリ
+プト内や対話的なコマンド名を用いると，ここで記述している以外の異なる機能
+を得る可能性があります．
+
+オプションは単独の@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+
+@node stty invocation
+@section @code{stty}: 端末の特徴を表示または変更
+
+@pindex stty
+@cindex change or print terminal settings
+@cindex terminal settings
+@cindex line settings of terminal
+
+@code{stty}は，ボーレートのような，端末の特徴を表示または変更します．構
+文は以下のとおりです．
+
+@example
+stty [@var{option}] [@var{setting}]@dots{}
+stty [@var{option}]
+@end example
+
+設定行がない場合，@code{stty}は，ボーレート，(システムがサポートする)回
+線制御数，そして@samp{stty sane}で設定された値から変更された回線設定を表
+示します．デフォルトで，モードの読み込みと設定は標準入力に接続されている
+tty回線で実行されますが，これは@samp{--file}オプションで修正可能です．
+
+@code{stty}は，端末回線処理の状況を変更する，以下で記述するような多くの
+オプションではない引数を受け入れます．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -a
+@itemx --all
+@opindex -a
+@opindex --all
+すべての現在の設定を人間が読める形式で出力します．このオプションは，あら
+ゆる回線設定と組み合わせて使用することはできません．
+
+@item -F @var{device}
+@itemx --file @var{device}
+@opindex -F
+@opindex --file
+標準入力に接続しているtty回線の代わりに，@var{device}で指定されているファ
+イル名で開かれた回線を設定します．このオプションは，@code{clocal}が設定
+されていない場合，キャリア検出回線が高速ではないので，POSIX ttyのブロッ
+キングを避けるために，@code{O_NONDELAY}フラグの使用を要求するPOSIX ttyを
+開くために必要です．そのため，従来の方法でシェルがデバイスを開くことが，
+常に可能なわけではありません．
+
+@item -g
+@itemx --save
+@opindex -g
+@opindex --save
+@cindex machine-readable @code{stty} output
+他の@code{stty}コマンドが現在の設定を復元するための引数として使用可能な
+形式で，すべての現在の設定を表示します．このオプションは，あらゆる回線設
+定と組み合わせて使用することはできません．
+
+@end table
+
+多くの設定は，前置される@samp{-}で止めることが可能です．そのような引数は，
+それら記述で``取り消し可能''として以下では印がついています．記述自身は，
+肯定の場合を述べていて，すなわち，(もちろん，明言されていなければ)取り消
+しでは@emph{ありません}．
+
+設定には，拡張を使用しているため，すべてのPOSIXシステムで利用可能ではな
+いものもあります．そのような引数はその記述で``非POSIX''という印がついて
+います．非POSIXシステムでは，これらやその他の設定も利用可能ではありませ
+んが，すべてのバリエーションを説明するのは実行不可能です．まずは，試して
+みてください．
+
+@menu
+* Control::                     Control settings
+* Input::                       Input settings
+* Output::                      Output settings
+* Local::                       Local settings
+* Combination::                 Combination settings
+* Characters::                  Special characters
+* Special::                     Special settings
+@end menu
+
+
+@node Control
+@subsection 制御設定
+
+@cindex control settings
+制御設定です．
+
+@table @samp
+@item parenb
+@opindex parenb
+@cindex two-way parity
+出力の一般的なパリティビットと，入力の期待するパリティビットです．取り消
+し可能です．
+
+@item parodd
+@opindex parodd
+@cindex odd parity
+@cindex even parity
+(取り消す場合も)偶パリティです．取り消し可能です．
+
+@item cs5
+@itemx cs6
+@itemx cs7
+@itemx cs8
+@opindex cs@var{n}
+@cindex character size
+@cindex eight-bit characters
+文字サイズを5，6，7，または8ビットに設定します．
+
+@item hup
+@itemx hupcl
+@opindex hup[cl]
+最後の処理がttyを閉じるとき，ハングアップシグナルを送ります．取り消し可
+能です．
+
+@item cstopb
+@opindex cstopb
+@cindex stop bits
+2つのストップビット(取消しの場合は1つ)を使用します．取り消し可能です．
+
+@item cread
+@opindex cread
+入力の受信を許可します．取り消し可能です．
+
+@item clocal
+@opindex clocal
+@cindex modem control
+モデム制御シグナルを利用不可能にします．取り消し可能です．
+
+@item crtscts
+@opindex crtscts
+@cindex hardware flow control
+@cindex flow control, hardware
+@cindex RTS/CTS flow control
+RTS/CTSフロー制御を利用可能にします．非POSIXです．取り消し可能です．
+@end table
+
+
+@node Input
+@subsection 入力設定
+
+@cindex input settings
+
+@table @samp
+@item ignbrk
+@opindex ignbrk
+@cindex breaks, ignoring
+ブレーク文字を無視します．取り消し可能です．
+
+@item brkint
+@opindex brkint
+@cindex breaks, cause interrupts
+ブレークを中断シグナルにします．取り消し可能です．
+
+@item ignpar
+@opindex ignpar
+@cindex parity, ignoring
+パリティエラーの文字を無視します．取り消し可能です．
+
+@item parmrk
+@opindex parmrk
+@cindex parity errors, marking
+(255-0の文字の順に)パリティーエラーに印を付けます．取り消し可能です．
+
+@item inpck
+@opindex inpck
+入力パリティチェックを可能にします．取り消し可能です．
+
+@item istrip
+@opindex istrip
+@cindex eight-bit input
+入力文字のハイビット(8番目)をクリアします．取り消し可能です．
+
+@item inlcr
+@opindex inlcr
+@cindex newline, translating to return
+ニューラインをキャリッジリターンに変換します．取り消し可能です．
+
+@item igncr
+@opindex igncr
+@cindex return, ignoring
+キャリッジリターンを無視します．取り消し可能です．
+
+@item icrnl
+@opindex icrnl
+@cindex return, translating to newline
+キャリッジリターンをニューラインに変換します．取り消し可能です．
+
+@item ixon
+@opindex ixon
+@kindex C-s/C-q flow control
+@cindex XON/XOFF flow control
+XON/XOFFフロー制御(すなわち，@kbd{CTRL-S}/@kbd{CTRL-Q})を可能にします．
+取り消し可能です．
+
+@item ixoff
+@itemx tandem
+@opindex ixoff
+@opindex tandem
+@cindex software flow control
+@cindex flow control, software
+システム入力バッファがほぼいっぱいのときの@code{stop}文字と，再びほとん
+ど空になったときの@code{start}文字の送信を可能にします．取り消し可能です．
+
+@item iuclc
+@opindex iuclc
+@cindex uppercase, translating to lowercase
+大文字を小文字に変換します．非POSIXです．取り消し可能です．
+
+@item ixany
+@opindex ixany
+あらゆる文字の出力の再開を許可します(取消しの場合は開始文字のみです)．非
+POSIXです．取り消し可能です．
+
+@item imaxbel
+@opindex imaxbel
+@cindex beeping at input buffer full
+入力バッファがいっぱいになったときに文字が届いた場合，ビープを鳴し，入力
+バッファをフラッシュしないことを可能にします．非POSIXです．取り消し可能
+です．
+@end table
+
+
+@node Output
+@subsection 出力設定
+
+@cindex output settings
+これらの引数は出力に関連する処理です．
+
+@table @samp
+@item opost
+@opindex opost
+出力を後処理します．取り消し可能です．
+
+@item olcuc
+@opindex olcuc
+@cindex lowercase, translating to output
+小文字を大文字に変換します．非POSIXです．取り消し可能です．
+
+@item ocrnl
+@opindex ocrnl
+@cindex return, translating to newline
+キャリッジリターンをニューラインに変換します．非POSIXです．取り消し可能
+です．
+
+@item onlcr
+@opindex onlcr
+@cindex newline, translating to crlf
+ニューラインをキャリッジリターンに変換します．非POSIXです．取り消し可能
+です．
+
+@item onocr
+@opindex onocr
+最初の列のキャリッジリターンを出力しません．非POSIXです．取り消し可能で
+す．
+
+@item onlret
+@opindex onlret
+ニューラインがキャリッジリターンを実行します．非POSIXです．取り消し可能
+です．
+
+@item ofill
+@opindex ofill
+@cindex pad instead of timing for delaying
+遅延に対する時間調整の代わりに，文字の補充(パディング)を使用します．非
+POSIXです．取り消し可能です．
+
+@item ofdel
+@opindex ofdel
+@cindex pad character
+補充に対し，null文字の代わりにデリート文字を使用します．非POSIXです．取
+り消し可能です．
+
+@item nl1
+@itemx nl0
+@opindex nl@var{n}
+ニューラインの遅延形式です．非POSIXです．
+
+@item cr3
+@itemx cr2
+@itemx cr1
+@itemx cr0
+@opindex cr@var{n}
+キャリッジリターンの遅延形式です．非POSIXです．
+
+@item tab3
+@itemx tab2
+@itemx tab1
+@itemx tab0
+@opindex tab@var{n}
+水平タブの遅延形式です．非POSIXです．
+
+@item bs1
+@itemx bs0
+@opindex bs@var{n}
+バックスペースの遅延形式です．非POSIXです．
+
+@item vt1
+@itemx vt0
+@opindex vt@var{n}
+垂直タブの遅延形式です．非POSIXです．
+
+@item ff1
+@itemx ff0
+@opindex ff@var{n}
+フォームフィードの遅延形式です．非POSIXです．
+@end table
+
+
+@node Local
+@subsection ローカル設定
+
+@cindex local settings
+
+@table @samp
+@item isig
+@opindex isig
+@code{interrupt}， @code{quit}，そして@code{suspend}特殊文字を可能にしま
+す．取り消し可能です．
+
+@item icanon
+@opindex icanon
+@code{erase}，@code{kill}，@code{werase}，そして@code{rprnt}特殊文字を可
+能にします．取り消し可能です．
+
+@item iexten
+@opindex iexten
+非POSIX特殊文字を可能にします．取り消し可能です．
+
+@item echo
+@opindex echo
+入力文字をエコーバックします．取り消し可能です．
+
+@item echoe
+@itemx crterase
+@opindex echoe
+@opindex crterase
+@code{erase}文字をバックスペース-スペース-バックスペースとしてエコーバッ
+クします．取り消し可能です．
+
+@item echok
+@opindex echok
+@cindex newline echoing after @code{kill}
+@code{kill}文字の後のニューラインをエコーバックします．取り消し可能です．
+
+@item echonl
+@opindex echonl
+@cindex newline, echoing
+他の文字をエコーバックしていなくても，ニューラインをエコーバックします．
+取り消し可能です．
+
+@item noflsh
+@opindex noflsh
+@cindex flushing, disabling
+@code{interrupt}と@code{quit}特殊文字の後のフラッシュを不可能にします．
+取り消し可能です．
+
+@item xcase
+@opindex xcase
+@cindex case translation
+@code{icanon}が設定されているとき，同じ小文字に@samp{\}を前置することで，
+入力と出力の大文字を可能にします．非POSIXです．取り消し可能です．
+
+@item tostop
+@opindex tostop
+@cindex background jobs, stopping at terminal write
+端末に書き込もうとしているバックグラウンド処理を停止します．非POSIXです．
+取り消し可能です．
+
+@item echoprt
+@itemx prterase
+@opindex echoprt
+@opindex prterase
+削除された文字を後方の@samp{\}と@samp{/}の間にエコーバックします．非
+POSIXです．取り消し可能です．
+
+@item echoctl
+@itemx ctlecho
+@opindex echoctl
+@opindex ctlecho
+@cindex control characters, using @samp{^@var{c}}
+@cindex hat notation for control characters
+制御文字を，そのままではなく，ハット表示(@samp{^@var{c}})でエコーバック
+します．非POSIXです．取り消し可能です．
+
+@item echoke
+@itemx crtkill
+@opindex echoke
+@opindex crtkill
+@code{echoctl}と@code{echok}の設定の代わりに，@code{echoprt}と
+@code{echoe}の設定で示すものとして，行のそれぞれの文字を削除することで，
+@code{kill}特殊文字をエコーバックします．非POSIXです．取り消し可能です．
+@end table
+
+
+@node Combination
+@subsection 組み合わせ設定
+
+@cindex combination settings
+組み合わせ設定です．
+
+@table @samp
+@item evenp
+@opindex evenp
+@itemx parity
+@opindex parity
+@code{parenb -parodd cs7}と同じです．取り消し可能です．取り消しの場合は，
+@code{-parenb cs8}と同じです．
+
+@item oddp
+@opindex oddp
+@code{parenb parodd cs7}と同じです．取り消し可能です．取り消しの場合は，
+@code{-parenb cs8}と同じです．
+
+@item nl
+@opindex nl
+@code{-icrnl -onlcr}と同じです．取り消し可能です．取り消しの場合は，
+@code{icrnl -inlcr -igncr onlcr -ocrnl -onlret}と同じです．
+
+@item ek
+@opindex ek
+@code{erase}と@code{kill}特殊文字をそのデフォルト値にリセットします．
+
+@item sane
+@opindex sane
+以下と同じです．
+@c This is too long to write inline.
+@example
+cread -ignbrk brkint -inlcr -igncr icrnl -ixoff -iuclc -ixany
+imaxbel opost -olcuc -ocrnl onlcr -onocr -onlret -ofill -ofdel
+nl0 cr0 tab0 bs0 vt0 ff0 isig icanon iexten echo echoe echok
+-echonl -noflsh -xcase -tostop -echoprt echoctl echoke
+@end example
+@noindent
+そして，すべての特殊文字をそのデフォルト値に設定します．
+
+@item cooked
+@opindex cooked
+@code{brkint ignpar istrip icrnl ixon opost isig icanon}と同じで，
+@code{min}と@code{time}文字が@code{eof}と@code{eol}文字と同じ場合は，
+@code{eof}と@code{eol}文字をそのデフォルト値に設定します．取り消し可能で
+す．取り消しの場合は，@code{raw}と同じです．
+
+@item raw
+@opindex raw
+以下と同じです．
+@example
+-ignbrk -brkint -ignpar -parmrk -inpck -istrip -inlcr -igncr
+-icrnl -ixon -ixoff -iuclc -ixany -imaxbel -opost -isig -icanon
+-xcase min 1 time 0
+@end example
+@noindent
+取り消し可能です．取り消しの場合は，@code{cooked}と同じです．
+
+@item cbreak
+@opindex cbreak
+@code{-icanon}と同じです．取り消し可能です．取り消しの場合は，
+@code{icanon}と同じです．
+
+@item pass8
+@opindex pass8
+@cindex eight-bit characters
+@code{-parenb -istrip cs8}と同じです．取り消し可能です．取り消しの場合は，
+@code{parenb istrip cs7}と同じです．
+
+@item litout
+@opindex litout
+@code{-parenb -istrip -opost cs8}と同じです．取り消し可能です．取り消し
+の場合は，@code{parenb istrip opost cs7}同じです．
+
+@item decctlq
+@opindex decctlq
+@code{-ixany}と同じです．非POSIXです．取り消し可能です．
+
+@item tabs
+@opindex tabs
+@code{tab0}と同じです．取り消し可能です．取り消しの場合は，@code{tab3}と
+同じです．
+
+@item lcase
+@itemx LCASE
+@opindex lcase
+@opindex LCASE
+@code{xcase iuclc olcuc}と同じです．非POSIXです．取り消し可能です．
+
+@item crt
+@opindex crt
+@code{echoe echoctl echoke}と同じです．
+
+@item dec
+@opindex dec
+@code{echoe echoctl echoke -ixany intr ^C erase ^? kill C-u}と同じです．
+@end table
+
+
+@node Characters
+@subsection 特殊文字
+
+@cindex special characters
+@cindex characters, special
+
+特殊文字のデフォルト値はシステム毎に異なります．それらは，構文@samp{name
+value}で設定され，nameは以下にリストアップされていて，valueはハット表示
+(@samp{^@var{c}})の文字通り，または，16進を示す@samp{0x}，8真数を示す
+@samp{0}，または，10進を示すその他もので始まる整数のどちらかで，与えるこ
+とが可能です．
+
+@cindex disabling special characters
+@kindex u@r{, and disabling special characters}
+GNU sttyに対し，@code{^-}や@code{undef}の値を与えることで，特殊文字を使
+用不可能にします．(これは，Ultrix @code{stty}と互換性がなく，それは特殊
+文字を使用不可能にするために@samp{u}の値を使用します．GNU @code{stty}は，
+値@samp{u}を他と同じように扱い，言い換えると，特殊文字を@key{U}に設定し
+ます．)
+
+@table @samp
+
+@item intr
+@opindex intr
+中断シグナルを送信します．
+
+@item quit
+@opindex quit
+終了シグナルを送信します．
+
+@item erase
+@opindex erase
+最後に入力された文字を削除します．
+
+@item kill
+@opindex kill
+現在の行を削除します．
+
+@item eof
+@opindex eof
+ファイルの終りを送信します(入力を終了します)．
+
+@item eol
+@opindex eol
+行の終りです．
+
+@item eol2
+@opindex eol2
+行の終りの別文字です．非POSIXです．
+
+@item swtch
+@opindex swtch
+異なるシェルレイヤーに切り替えます．非POSIXです．
+
+@item start
+@opindex start
+停止後の出力を再開します．
+
+@item stop
+@opindex stop
+出力を停止します．
+
+@item susp
+@opindex susp
+端末の停止シグナルを送信します．
+
+@item dsusp
+@opindex dsusp
+入力をフラッシュした後，停止シグナルを送信します．非POSIXです．
+
+@item rprnt
+@opindex rprnt
+現在の行を再描画します．非POSIXです．
+
+@item werase
+@opindex werase
+最後に入力された単語を消去します．非POSIXです．
+
+@item lnext
+@opindex lnext
+入力された次の文字を，それが特殊文字の場合でも，そのまま入力します．非
+POSIXです．
+@end table
+
+
+@node Special
+@subsection 特殊設定
+
+@cindex special settings
+
+@table @samp
+@item min @var{n}
+@opindex min
+@code{-icanon}が設定されているとき，制限されている時間値までに安全に読み
+込む文字の最小数を設定します．
+
+@item time @var{n}
+@opindex time
+@code{-icanon}が設定されているとき，文字の最小数が読み込まれていない場合，
+読み込み時間切れまでの10秒単位の数字を設定します．
+
+@item ispeed @var{n}
+@opindex ispeed
+入力速度を@var{n}に設定します．
+
+@item ospeed @var{n}
+@opindex ospeed
+出力速度を@var{n}に設定します．
+
+@item rows @var{n}
+@opindex rows
+ttyカーネルドライバに端末の行数@var{n}を伝えます．非POSIXです．
+
+@item cols @var{n}
+@itemx columns @var{n}
+@opindex cols
+@opindex columns
+カーネルに端末の列数@var{n}を伝えます．非POSIXです．
+
+@item size
+@opindex size
+@vindex LINES
+@vindex COLUMNS
+端末が持っているとカーネルが想像する，列と行の数を表示します．(カーネル
+で行と列をサポートしないシステムでは，特に環境変数@env{LINES}と
+@env{COLUMNS}が代わりに使用されます．しかし，GNU @code{stty}はそれについ
+て何も知りません．)非POSIXです．
+
+@item line @var{n}
+@opindex line
+回線制御@var{n}を使用します．非POSIXです．
+
+@item speed
+@opindex speed
+端末の速度を出力します．
+
+@item @var{n}
+@cindex baud rate, setting
+入出力の速度を@var{n}に設定します．@var{n}は，以下の一つになります．0 50
+75 110 134 134.5 150 200 300 600 1200 1800 2400 4800 9600 19200 38400
+@code{exta} @code{extb}です．@code{exta}は19200と同じです．@code{extb}は
+38400と同じです．@code{-clocal}が設定されている場合，0は回線を切断します．
+@end table
+
+
+@node printenv invocation
+@section @code{printenv}: すべてまたはいくつかの環境変数を出力
+
+@pindex printenv
+@cindex printing all or some environment variables
+@cindex environment variables, printing
+
+@code{printenv}は，環境変数の値を出力します．構文は以下のとおりです．
+
+@example
+printenv [@var{option}] [@var{variable}]@dots{}
+@end example
+
+引数がしていされていない場合，@code{printenv}はすべての環境変数の値を出
+力します．それ以外の場合，それは，それぞれの設定されている@var{variable}
+の値を出力し，設定されていないものには何もしません．
+
+オプションは，単独の@samp{--help}または@samp{--version}だけです．
+@xref{Common options}.
+
+@cindex exit status of @code{printenv}
+終了ステータス．
+
+@display
+0 すべての指定された変数が見つかった場合．
+1 指定された変数の少なくとも一つが見つかった場合．
+2 書き込みエラーが発生した場合．
+@end display
+
+
+@node tty invocation
+@section @code{tty}: 標準入力につながっている端末のファイル名を出力
+
+@pindex tty
+@cindex print terminal file name
+@cindex terminal file name, printing
+
+@code{tty}は，標準入力が接続してある端末のファイル名を出力します．標準入
+力が端末でない場合，それは，@samp{not a tty}を出力します．構文は以下のと
+おりです．
+
+@example
+tty [@var{option}]@dots{}
+@end example
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -s
+@itemx --silent
+@itemx --quiet
+@opindex -s
+@opindex --silent
+@opindex --quiet
+何も出力しません．終了ステータスを返すだけです．
+@end table
+
+@cindex exit status of @code{tty}
+@code{tty}の終了ステータスです．
+
+@display
+0 標準入力が端末の場合．
+1 標準入力が端末でない場合．
+2 不正な引数が与えられた場合．
+3 書き込みエラーが発生した場合．
+@end display
+
+
+@node User information
+@chapter ユーザ情報
+
+@cindex user information, commands for
+@cindex commands for printing user information
+
+このセクションは，ユーザに関連する情報を出力するコマンドを記述します．
+login，グループ，その他です．
+
+@menu
+* id invocation::               Print real and effective uid and gid.
+* logname invocation::          Print current login name.
+* whoami invocation::           Print effective user id.
+* groups invocation::           Print group names a user is in.
+* users invocation::            Print login names of users currently logged in.
+* who invocation::              Print who is currently logged in.
+@end menu
+
+
+@node id invocation
+@section @code{id}: 実際と実効のuidとgidを出力
+
+@pindex id
+@cindex real uid and gid, printing
+@cindex effective uid and gid, printing
+@cindex printing real and effective uid and gid
+
+@code{id}は，与えられたユーザや，ユーザが指定されていない場合はそれを実
+行しているプロセスの情報を出力します．構文は以下のとおりです．
+
+@example
+id [@var{option}]@dots{} [@var{username}]
+@end example
+
+デフォルトで，それは実際のユーザid，実際のグループid，実際のユーザidと異
+なる場合は実効ユーザid，実際のグループidと異なる場合は実効グループid，そ
+して，追加のグループidを出力します．
+
+それぞれのこれらの数値は，識別文字が前置され，カッコ内に対応するユーザや
+グループ名が続きます．
+
+オプションで，@code{id}は，上記の情報の一部のみを出力します．@ref{Common
+options},も参照してください．
+
+@table @samp
+@item -g
+@itemx --group
+@opindex -g
+@opindex --group
+グループidのみ出力します．
+
+@item -G
+@itemx --groups
+@opindex -G
+@opindex --groups
+追加のグループのみ出力します．
+
+@item -n
+@itemx --name
+@opindex -n
+@opindex --name
+ID番号の代わりにユーザやグループの名前を出力します．@code{-u}，@code{-g}，
+または@code{-G}が必要です．
+
+@item -r
+@itemx --real
+@opindex -r
+@opindex --real
+実効の代わりに，実際のユーザやグループのidを出力します．@code{-u}，
+@code{-g}，または@code{-G}が必要です．
+
+
+@item -u
+@itemx --user
+@opindex -u
+@opindex --user
+ユーザidのみ出力します．
+@end table
+
+
+@node logname invocation
+@section @code{logname}: 現在のログイン名を出力
+
+@pindex logname
+@cindex printing user's login name
+@cindex login name, printing
+@cindex user name, printing
+
+@flindex /etc/utmp
+@flindex utmp
+
+@code{logname}は，ファイル@file{/etc/utmp}に見つかる，呼び出しているユー
+ザ名を出力し，0のステータスで終了します．呼び出しているプロセスに対する
+@file{/etc/utmp}項目がない場合，@code{logname}はエラーメッセージを出力し，
+1のステータスで終了します．
+
+オプションは@samp{--help}と@samp{--version}のみです．@xref{Common
+options}.
+
+
+@node whoami invocation
+@section @code{whoami}: 実効ユーザidの出力
+
+@pindex whoami
+@cindex effective UID, printing
+@cindex printing the effective UID
+
+@code{whoami}は，現在の実効ユーザidに関連しているユーザ名を出力します．
+コマンド@samp{id -un}と同じです．
+
+オプションは@samp{--help}と@samp{--version}のみです．@xref{Common
+options}.
+
+
+@node groups invocation
+@section @code{groups}: ユーザが所属するグループ名を出力
+
+@pindex groups
+@cindex printing groups a user is in
+@cindex supplementary groups, printing
+
+@code{groups}は，与えられたそれぞれの@var{username}，または，名前が与え
+られない場合は現在のプロセスに対する，プライマリと追加のグループ名を出力
+します．名前が与えられた場合は，それぞれのユーザ名が，ユーザのグループの
+リストの前に出力されます．構文は以下のとおりです．
+
+
+@example
+groups [@var{username}]@dots{}
+@end example
+
+グループリストは，コマンド@samp{id -Gn}の出力と同じです．
+
+オプションは@samp{--help}と@samp{--version}のみです．@xref{Common
+options}.
+
+
+@node users invocation
+@section @code{users}: 現在ログインしているユーザのログイン名を出力
+
+@pindex users
+@cindex printing current usernames
+@cindex usernames, printing current
+
+@cindex login sessions, printing users with
+@code{users}は，現在のホストに現在ログインしているユーザの，空白で分けら
+れたユーザ名のリストを，単一行に出力します．それぞれのユーザ名はログイン
+セッションに対応するので，一回以上のログインセッションがあるユーザは，ユー
+ザ名が回数と同じ数だけ出力にあらわれます．構文は以下のとおりです．
+
+@example
+users [@var{file}]
+@end example
+
+@flindex /etc/utmp
+@flindex /etc/wtmp
+@var{file}引数がない場合は，@code{users}は，その情報をファイル
+@file{/etc/utmp}から，抽出します．ファイル引数が与えられた場合は，
+@code{users}は，代わりにそのファイルを使用します．普通は，
+@file{/etc/wtmp}を選択します．
+
+オプションは@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+
+@node who invocation
+@section @code{who}: 現在ログインしているユーザを出力
+
+@pindex who
+@cindex printing current user information
+@cindex information, about current users
+
+@code{who}は，現在ログオンしているユーザの情報を出力します．構文は以下の
+とおりです．
+
+@example
+@code{who} [@var{option}] [@var{file}] [am i]
+@end example
+
+@cindex terminal lines, currently used
+@cindex login time
+@cindex remote hostname
+非オプション引数が与えられていない場合，@code{who}は，現在ログオンしてい
+るそれぞれのユーザに対し，以下の情報を出力します．ログイン名，端末回線，
+ログイン時間，そして，リモートホスト名やXディスプレイです．
+
+
+@flindex /etc/utmp
+@flindex /etc/wtmp
+非オプション引数が1つ与えられている場合，@code{who}は，@file{/etc/utmp} 
+の代わりに，それをログオンしているユーザの記録を含むファイル名として使用
+します．通常，以前ログインしていた人を見るために，@file{/etc/wtmp}が引数
+として与えられます．
+
+@opindex am i
+@opindex who am i
+非オプションが2つ与えられている場合，@code{who}は，(標準入力から決定され
+る)それを実行しているユーザの項目のみ出力し，それにはホスト名が前置され
+ます．伝統的に，2つの与えられる引数は，@samp{am i}で，@samp{who am i}と
+なります．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -m
+@opindex -m
+@samp{who am i}と同じです．
+
+@item -q
+@itemx --count
+@opindex -q
+@opindex --count
+ログイン名と，ログオンしているユーザの数のみを出力します．他のすべてのオ
+プションに優先します．
+
+@item -s
+@opindex -s
+無視します．他のバージョンの@code{who}との互換性のためです．
+
+@item -i
+@itemx -u
+@itemx --idle
+@opindex -i
+@opindex -u
+@opindex --idle
+@cindex idle time
+ログイン時間後，ユーザがアイドル状態の時間と分の数を出力します．@samp{.} 
+は，ユーザがこの1分間の間にアクティブだったということを意味します．
+@samp{old}は，ユーザが24時間以上アイドル状態だということを意味します．
+
+@item -l
+@itemx --lookup
+@opindex -l
+@opindex --lookup
+DNSルックアップを通じて，utmpで見つかるホスト名の標準化を試みます．これ
+は，自動ダイアルアップインターネットアクセスを用いたシステムで，重大な遅
+延を引き起こすため，デフォルトではありません．
+
+@item -H
+@itemx --heading
+@opindex -H
+@opindex --heading
+列の見出しを出力します．
+
+@item -w
+@itemx -T
+@itemx --mesg
+@itemx --message
+@itemx --writable
+@opindex -w
+@opindex -T
+@opindex --mesg
+@opindex --message
+@opindex --writable
+@cindex message status
+@pindex write@r{, allowed}
+それぞれのログイン名の後に，ユーザのメッセージステータスを示す文字を出力
+します．
+
+@display
+@samp{+} @code{write}メッセージが利用可能です．
+@samp{-} @code{write}メッセージが利用不可能です．
+@samp{?} 端末デバイスが見つかりません．
+@end display
+
+@end table
+
+
+@node System context
+@chapter システムコンテクスト
+
+@cindex system context
+@cindex context, system
+@cindex commands for system context
+
+このセクションは，システム全体の情報を出力または変更するコマンドを記述し
+ます．
+
+@menu
+* date invocation::             Print or set system date and time.
+* uname invocation::            Print system information.
+* hostname invocation::         Print or set system name.
+@end menu
+
+
+@node date invocation
+@section @code{date}: システムの日付と時間を出力または設定
+
+@pindex date
+@cindex time, printing or setting
+@cindex printing the current time
+
+引数を伴わない@code{date}は，(以下で記述する)@samp{%c}指示語の書式で，現
+在の時間と日付を出力します．構文は以下のとおりです．
+
+@example
+date [@var{option}]@dots{} [+@var{format}]
+date [-u|--utc|--universal] @c this avoids a newline in the output
+[ @var{MMDDhhmm}[[@var{CC}]@var{YY}][.@var{ss}] ]
+@end example
+
+@findex strftime @r{and @code{date}}
+@cindex time formats
+@cindex formatting times
+
+@samp{+}で始まる引数が与えられた場合，@code{date}は現在の時間と日付(また
+は，以下で参照できる，@code{--date}オプションで指定された日付と時間)を，
+引数で定義された書式で出力し，それは，@code{strftime}関数と同じです．
+@samp{%}で始まる指示語以外の，書式文字列内の文字は，変更されずに出力され
+ます．指示語は以下で記述します．
+
+@menu
+* Time directives::             %[HIklMprsSTXzZ]
+* Date directives::             %[aAbBcdDhjmUwWxyY]
+* Literal directives::          %[%nt]
+* Padding::                     Pad with zeroes, spaces (%_), or nothing (%-).
+* Setting the time::            Changing the system clock.
+* Options for date::            Instead of the current time.
+* Examples of date::            Examples.
+@end menu
+
+@node Time directives
+@subsection 時間指示語
+
+@cindex time directives
+@cindex directives, time
+
+時間に関連する@code{date}の指示語です．
+
+@table @samp
+@item %H
+時間(00@dots{}23)
+@item %I
+時間(01@dots{}12)
+@item %k
+時間( 0@dots{}23)
+@item %l
+時間( 1@dots{}12)
+@item %M
+分(00@dots{}59)
+@item %p
+ロケールの午前または午後
+@item %r
+時間で，12時間基準(hh:mm:ss [AP]M)
+@item %s
+@cindex epoch, seconds since
+@cindex seconds since the epoch
+@cindex beginning of time
+エポック，すなわち1970年1月1日00:00:00 UTCからの秒(GNU拡張)です．この値
+は，エポックとlocaltimeシステムコールで定義される現在の日付の間の時間だ
+ということに注意してください．それは，@samp{--date}オプションで変更され
+ません．
+@item %S
+秒(00@dots{}61)
+@item %T
+時間で，24時間基準(hh:mm:ss)
+@item %X
+ロケールの時間表現(%H:%M:%S)
+@item %z
+RFC-822スタイルの数値的なタイムゾーン(例えば，-0600や+0100)，または，タ
+イムゾーンが決定できない場合は何もしません．この値は@emph{現在の}タイム
+ゾーンを反映します．それは，@samp{--date}オプションで変更されません．
+@item %Z
+タイムゾーン(例えば，EDT)，または，タイムゾーンが決定できない場合は何も
+しません．この値は@emph{現在の}タイムゾーンを反映することに注意してくだ
+さい．それは，@samp{--date}オプションで変更されません．
+@end table
+
+
+@node Date directives
+@subsection 日付指示語
+
+@cindex date directives
+@cindex directives, date
+
+日付に関連する@code{date}指示語です．
+
+@table @samp
+@item %a
+ロケール略記される曜日の名前(Sun@dots{}Sat)
+@item %A
+ロケールの完全な週の曜日の名前で，可変長(Sunday@dots{}Saturday)
+@item %b
+ロケールの略記される月の名前(Jan@dots{}Dec)
+@item %B
+ロケールの完全な月の名前で，可変長(January@dots{}December)
+@item %c
+ロケールの日付と時間(Sat Nov 04 12:02:33 EST 1989)
+@item %d
+月の何日目(01@dots{}31)
+@item %D
+日付(mm/dd/yy)
+@item %h
+%bと同じ
+@item %j
+年の何日目(001@dots{}366)
+@item %m
+月(01@dots{}12)
+@item %U
+日曜日を週の最初の日として用いた，年の何週目(00@dots{}53)です．新年の最
+初の日曜日の前の日付は，0週目になります．
+@item %V
+月曜日を週の最初の日として用いた，年の何週目の10進(00@dots{}53)です．新
+年の1月1日が含まれる週が，4日以上の日を含む場合，それは第1週と考えられま
+す．それ以外の場合は，前年の53週目となり，翌週が第1週となります．(ISO
+8601: 1988標準を参照してください．)
+@item %w
+週の何日目(0@dots{}6)で，0は日曜日に対応します．
+@item %W
+月曜日を週の最初の日として用いた，年の何週目(00@dots{}53)です．新年の最
+初の月曜日の前の日付は，0週目になります．
+@item %x
+ロケールの日付表現(mm/dd/yy)
+@item %y
+最後の2桁を用いた年(00@dots{}99)
+@item %Y
+年(1970@dots{}.)
+@end table
+
+
+@node Literal directives
+@subsection リテラル指示語
+
+@cindex literal directives
+@cindex directives, literal
+
+リテラル文字列を生成する@code{date}の指示語です．
+
+@table @samp
+@item %%
+リテラルの%
+@item %n
+改行
+@item %t
+水平タブ
+@end table
+
+
+@node Padding
+@subsection パディング
+
+@cindex numeric field padding
+@cindex padding of numeric fields
+@cindex fields, padding numeric
+
+デフォルトで，@code{date}は数値フィールドをゼロでパディングし，例えば，
+数字の月は，常に2桁で出力されます．GNU @code{date}は，以下の@samp{%}と指
+示語の間の数値修飾子を認識します．
+
+@table @samp
+@item -
+(ハイフン) フィールドをパディングしません．出力を人間が利用する目的の場
+合役に立ちます．
+@item _
+(アンダースコア)フィールドをスペースでパディングします．出力に固定数の文
+字が必要で，ゼロでは混乱する場合，役に立ちます．
+@end table
+
+@noindent
+これらはGNU拡張です．
+
+ここに違いを表現する例があります．
+
+@example
+date +%d/%m -d "Feb 1"
+@result{} 01/02
+date +%-d/%-m -d "Feb 1"
+@result{} 1/2
+date +%_d/%_m -d "Feb 1"
+@result{}  1/ 2
+@end example
+
+
+@node Setting the time
+@subsection 時間の設定
+
+@cindex setting the time
+@cindex time setting
+@cindex appropriate privileges
+
+@samp{+}で始まらない引数が与えられた場合，@code{date}は，システム時計を
+その引数(以下で記述)で指定された時間と日付に設定します．システム時計を設
+定するため，適切な特権を持っている必要があります．@samp{--date}と
+@samp{--set}オプションは，引数として使用できません．@samp{--universal}オ
+プションは，指定された時間と日付がローカルなタイムゾーンではなく世界標準
+時に関連することを示すために，引数として使用できます．
+
+引数は，完全な数字から成り立つ必要があり，それは以下の意味を持ちます．
+
+@table @var
+@item MM
+月
+@item DD
+月の日付
+@item hh
+時間
+@item mm
+分
+@item CC
+年の最初の2桁(オプション)
+@item YY
+年の最後の2桁(オプション)
+@item ss
+秒(オプション)
+@end table
+
+@samp{--set}オプションもシステム時計を設定します．次のオプションを参照し
+てください．
+
+
+@node Options for date
+@subsection @code{date}のオプション
+
+@cindex @code{date} options
+@cindex options for @code{date}
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -d @var{datestr}
+@itemx --date=@var{datestr}
+@opindex -d
+@opindex --date
+@cindex parsing date strings
+@cindex date strings, parsing
+@cindex arbitrary date strings, parsing
+@opindex yesterday
+@opindex tomorrow
+@opindex next @var{day}
+@opindex last @var{day}
+現在の時間と日付の代わりに，@var{datestr}で指定された時間と日付を表示し
+ます．@var{datestr}は，ほとんどあらゆる一般的な書式が可能です．月の名前，
+タイムゾーン，@samp{am}と@samp{pm}，@samp{yesterday}，@samp{ago}，
+@samp{next}，等を含めることが可能です．@xref{Date input formats}.
+
+@item -f @var{datefile}
+@itemx --file=@var{datefile}
+@opindex -f
+@opindex --file
+@samp{-d}と同様に，@var{datefile}のそれぞれの行を解析し，結果の時間と日
+付を表示します．@var{datefile}が@samp{-}の場合，標準入力を使用します．
+@code{date}の実行を何度も開始するシステムのオーバーへッドは無視できない
+ので，これは多くの日付を処理するとき役に立ちます．
+
+@item -I[@var{timespec}]
+@itemx --iso-8601[=@var{timespec}]
+@opindex -I[@var{timespec}]
+@opindex --iso-8601[=@var{timespec}]
+ISO 8601書式@samp{%Y-%m-%d}を使用して日付を表示します．
+
+オプション引数の@var{timespec}は，含める時間の追加の単語の数を指定します．
+以下の一つになるはずです．
+@table @samp
+@item auto
+デフォルトの動作です．日付のみ出力します．
+@item hours
+日付に時間を追加します．
+@item minutes
+時間と分を追加します．
+@item seconds
+時間，分，そして秒を追加します．
+@end table
+
+時間の用語を表示する場合，書式@samp{%z}を使用したタイムゾーンを含めます．
+@samp{--utc}も指定されている場合，@samp{%z}の場所に@samp{%Z}を使用します．
+
+@item -R
+@itemx --rfc-822
+@opindex -R
+@opindex --rfc-822
+RFC-822で指定される書式@samp{%a, %_d %b %Y %H:%M:%S %z}で時間と日付を表
+示します．@samp{--utc}も指定されている場合，@samp{%z}の場所に@samp{GMT}
+を使用します．
+
+@item -r @var{file}
+@itemx --reference=@var{file}
+@opindex -r
+@opindex --reference
+現在の時間と日付の代わりに，@var{file}が最後に編集された時間を参照して，
+時間と日付を表示します．
+
+@item -s @var{datestr}
+@itemx --set=@var{datestr}
+@opindex -s
+@opindex --set
+時間と日付を@var{datestr}に設定します．上記の@samp{-d}を参照してください．
+
+@item -u
+@itemx --utc
+@itemx --universal
+@opindex -u
+@opindex --utc
+@opindex --universal
+@cindex coordinated universal time
+@cindex Greenwich Mean Time
+ローカル(壁時計の)時間の代わりに，世界標準時で時間と日付を表示または設定
+を行います．
+@end table
+
+
+@node Examples of date
+@subsection @code{date}の例
+
+@cindex examples of @code{date}
+
+ここにいくつかの例があります．上記セクションの@samp{-d}オプションに対す
+るドキュメントも参照してください．
+
+@itemize @bullet
+
+@item
+一昨日の日付を出力します．
+@example
+date --date='2 days ago'
+@end example
+
+@item
+これから3ヶ月と1日先の日付を出力します．
+@example
+date --date='3 months 1 day'
+@end example
+
+@item
+今年のクリスマスが年の何日目かを出力します．
+@example
+date --date='25 Dec' +%j
+@end example
+
+@item
+現在の月の完全な名前と日を出力します．
+@example
+date '+%B %d'
+@end example
+
+しかし，月の最初の9日の間，@samp{%d}はゼロパディングした2桁のフィールド
+に展開するため，これは期待するものでない可能性があり，例えば，@samp{date
+-d 1may '+%B %d'}は@samp{May 01}を出力します．
+
+@item
+1桁の日の前置されるゼロを日付に付けないで出力するため，パディングを完全
+に抑制する(GNU拡張)の@code{-}修飾子を使用可能です．
+@example
+date -d=1may '+%B %-d'
+@end example
+
+@item
+システム時計を設定するとき，@code{date}の多くの非GNUバージョンが要求する
+書式で，現在の日付と時間を出力します．
+@example
+date +%m%d%H%M%Y.%S
+@end example
+
+@item
+システム時計を2分進める設定です．
+@example
+date --set='+2 minutes'
+@end example
+
+@item
+RFC-822で指定される書式で日付を出力するため，@samp{date --rfc}を使用して
+ください．そうするとこのようになりました．
+
+@example
+Mon, 25 Mar 1996 23:34:17 -0600
+@end example
+
+@item
+日付文字を，エポック(1970-01-01 00:00:00 UTC)からの秒数に変換するため，
+@samp{%s}書式を用いた@samp{--date}オプションを使用してください．それは，
+日付毎の並べ替え，および/または，グラフ化，および/または，比較に役立つは
+ずです．以下のコマンドは，エポックより1秒以上後の時間に対し，エポックか
+らの秒数を出力しますが，タイムゾーンの5時間後(ケンブリッジ，マサチューセッ
+ツ) では，このように全体でエポックの5時間と1秒後となります．
+
+@example
+date --date='1970-01-01 00:00:01 UTC +5 hours' +%s
+18001
+@end example
+
+上記の例でタイムゾーン情報を指定@emph{していない}と仮定します．そのとき，
+文字列を解釈するとき，日付はコンピュータのタイムゾーンの考えを使用します．
+イングランドのグリニッジにいる場合，得るものはこのようになります．
+
+@example
+# local time zone used
+date --date='1970-01-01 00:00:01' +%s
+1
+@end example
+
+@item
+日付を並べ替えたりグラフ化したりしている場合，生の日付の値は，エポックか
+らの秒として表現可能です．しかし，ほとんどの人は，日付@samp{946684800}を
+見て，``ああ，それは2000年最初の秒だ''と簡単には気が付きません．
+
+@example
+date --date='2000-01-01 UTC' +%s
+946684800
+@end example
+
+そのような扱いにくい秒数を，より読みやすい形式に変換するため，このような
+コマンドを使用してください．
+
+@smallexample
+date -d '1970-01-01 946684800 sec' +"%Y-%m-%d %T %z"
+2000-01-01 00:00:00 +0000
+@end smallexample
+
+@end itemize
+
+
+@node uname invocation
+@section @code{uname}: システム情報の出力
+
+@pindex uname
+@cindex print system information
+@cindex system information, printing
+
+@code{uname}は，実行しているマシンとオペレーティングシステムの情報を出力
+します．オプションが与えられない場合，@code{uname}は@code{-s}オプション
+が与えられたかのように動作します．構文は以下のとおりです．
+
+@example
+uname [@var{option}]@dots{}
+@end example
+
+複数のオプションや@code{-a}が与えられた場合，選択された情報は，この順番
+で出力されます．
+
+@example
+@var{sysname} @var{nodename} @var{release} @var{osversion} @var{machine}
+@end example
+
+少なくとも，@var{osversion}は複数の単語となります．例えば，以下のように
+なります．
+
+@example
+uname -a
+@result{} Linux hayley 1.0.4 #3 Thu May 12 18:06:34 1994 i486
+@end example
+
+プログラムは，以下のオプションも受け入れます．@ref{Common options},も参
+照してください．
+
+@table @samp
+
+@item -a
+@itemx --all
+@opindex -a
+@opindex --all
+以下の情報すべてを出力します．
+
+@item -m
+@itemx --machine
+@opindex -m
+@opindex --machine
+@cindex machine type
+@cindex hardware type
+マシン(ハードウェア)タイプを出力します．
+
+@item -n
+@itemx --nodename
+@opindex -n
+@opindex --nodename
+@cindex hostname
+@cindex node name
+@cindex network node name
+マシンのネットワークノードのホスト名を出力します．
+
+@item -p
+@itemx --processor
+@opindex -p
+@opindex --processor
+@cindex host processor type
+マシンのプロセッサタイプを出力します．
+
+@item -r
+@itemx --release
+@opindex -r
+@opindex --release
+@cindex operating system release
+@cindex release of operating system
+オペレーティングシステムのリリースを出力します．
+
+@item -s
+@itemx --sysname
+@opindex -s
+@opindex --sysname
+@cindex operating system name
+@cindex name of operating system
+オペレーティングシステムの名前を出力します．
+
+@item -v
+@opindex -v
+@cindex operating system version
+@cindex version of operating system
+オペレーティングシステムのバージョンを出力します．
+
+@end table
+
+
+@node hostname invocation
+@section @code{hostname}: システム名の出力や設定
+
+@pindex hostname
+@cindex setting the hostname
+@cindex printing the hostname
+@cindex system name, printing
+@cindex appropriate privileges
+
+引数がない場合，@code{hostname}は現在のホストシステムの名前を出力します．
+1つの引数を用いた場合，それは現在のホスト名を指定された文字列に設定しま
+す．ホスト名の設定には適切な特権が必要です．構文は以下のとおりです．
+
+@example
+hostname [@var{name}]
+@end example
+
+オプションは，@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+
+@node Modified command invocation
+@chapter 変更されたコマンドの呼び出し
+
+@cindex modified command invocation
+@cindex invocation of commands, modified
+@cindex commands for invoking other commands
+
+このセクションは，現在と異なる状況で他のコマンドを実行するコマンドを記述
+します．異なるユーザとして環境を変更するなどです．
+
+@menu
+* chroot invocation::           Modify the root directory.
+* env invocation::              Modify environment variables.
+* nice invocation::             Modify scheduling priority.
+* nohup invocation::            Immunize to hangups.
+* su invocation::               Modify user and group id.
+@end menu
+
+
+@node chroot invocation
+@section @code{chroot}: 異なるルートディレクトリでコマンドを実行
+
+@pindex chroot
+@cindex running a program in a specified root directory
+@cindex root directory, running a program in a specified
+
+@code{chroot}は，指定されたルートディレクトリでコマンドを実行します．多
+くのシステムでは，スーパーユーザのみこれが可能です．構文は以下のとおりで
+す．
+
+@example
+chroot @var{newroot} [@var{command} [@var{args}]@dots{}]
+chroot @var{option}
+@end example
+
+通常，ファイル名は，ディレクトリ構造のルート，すなわち@file{/}を起点とし
+て調べられます．@code{chroot}は，ルートを@var{newroot}ディレクトリ(存在
+する必要があります)に変更し，オプションの@var{args}を用いて@var{command} 
+を実行します．@var{command}が指定されていない場合，デフォルトは，
+@env{SHELL} 環境変数や，設定されていない場合は@code{/bin/sh}の値が，
+@samp{-i}オプションで呼び出されますす．
+
+オプションは@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+
+@node env invocation
+@section @code{env}: 変更された環境でコマンドを実行
+
+@pindex env
+@cindex environment, running a program in a modified
+@cindex modified environment, running a program in a
+@cindex running a program in a modified environment
+
+@code{env}は，変更された環境でコマンドを実行します．構文は以下のとおりで
+す．
+
+@example
+env [@var{option}]@dots{} [@var{name}=@var{value}]@dots{} @c
+[@var{command} [@var{args}]@dots{}]
+env
+@end example
+
+@samp{@var{variable}=@var{value}}の形式の引数は，環境変数@var{variable} 
+を値@var{value}に設定します．@var{value}は空にもできます
+(@samp{@var{variable}=})．変数をからの値に設定することは，アンセットする
+こととは異なります．
+
+@vindex PATH
+残りの最初の引数は，呼び出すプログラム名を指定します．それは@env{PATH}環
+境変数によって検索されます．あらゆる残りの引数は，引数としてそのプログラ
+ムに渡されます．
+
+@cindex environment, printing
+
+環境指定に続いてコマンド名が指定されていない場合，結果となる環境が出力さ
+れます．これは，@code{printenv}のコマンド名を指定することに似ています．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -u @var{name}
+@itemx --unset=@var{name}
+@opindex -u
+@opindex -unset
+変数@var{name}が環境の場合，それを環境から削除します．
+
+@item -
+@itemx -i
+@itemx --ignore-environment
+@opindex -
+@opindex -i
+@opindex --ignore-environment
+継承された環境を無視して，空の環境を用いて開始します．
+
+@end table
+
+
+@node nice invocation
+@section @code{nice}: 変更されたスケジュール優先順位でコマンドを実行
+
+@pindex nice
+@cindex modifying scheduling priority
+@cindex scheduling priority, modifying
+@cindex priority, modifying
+@cindex appropriate privileges
+
+@code{nice}は，ジョブのスケジュールの優先順位を出力または変更します．構
+文は以下のとおりです．
+
+@example
+nice [@var{option}]@dots{} [@var{command} [@var{arg}]@dots{}]
+@end example
+
+引数が与えられていない場合，@code{nice}は現在のスケジュールの優先順位を
+出力し，それは継承されます．それ以外の場合，@code{nice}は，与えられたコ
+マンドをそのスケジュール優先順位を調整しながら実行します．
+@var{adjustment}が与えられていない場合，コマンドの優先順位は10増加します．
+負の調整を指定するためには適切な特権が必要です．@code{nice}が調整可能な
+優先順位は，-20(最優先)から19(最低)までです．
+
+@cindex conflicts with shell built-ins
+@cindex built-in shell commands, conflicts with
+ほとんどのシェルには同じ名前のシェル組み込みコマンドがあるので，装飾なし
+のスクリプトのコマンド名や対話的に使用すると，ここで記述されていない異な
+る機能を得る可能性があります．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -n @var{adjustment}
+@itemx -@var{adjustment}
+@itemx --adjustment=@var{adjustment}
+@opindex -n
+@opindex --adjustment
+@opindex -@var{adjustment}
+コマンドの優先順位に，10の代わりに@var{adjustment}を加えます．
+@end table
+
+
+@node nohup invocation
+@section @code{nohup}: ハングアップを免除したコマンドの実行
+
+@pindex nohup
+@cindex hangups, immunity to
+@cindex immunity to hangups
+@cindex logging out and continuing to run
+
+@flindex nohup.out
+@code{nohup}は，ログアウト後にバックグランドでコマンドを実行し続けること
+を可能にするため，ハングアップシグナルを無視して，与えられたコマンドを実
+行します．構文は以下のとおりです．
+
+@example
+nohup @var{command} [@var{arg}]@dots{}
+@end example
+
+@flindex nohup.out
+@code{nohup}は，@var{command}のスケジュールの優先順位を5増加するので，実
+行が若干小さく変更されます．標準出力が端末の場合，それとその標準エラーは，
+ファイル@file{nohup.out}に追加するようにリダイレクトされます．書き込み不
+可能な場合，それらはファイル@file{$HOME/nohup.out}に追加します．それも書
+き込み不可能な場合，コマンドは実行されません．
+
+@code{nohup}が@file{nohup.out}や@file{$HOME/nohup.out}を作成する場合，
+``group''や``other''のアクセス許可を用いてそれを作成しません．出力ファイ
+ルが既存の場合は，その許可を変更しません．
+
+@code{nohup}は，バックグランドで実行するようにするコマンドを，自動的に配
+置しません．コマンド行の終りに@samp{&}を用いて，明示する必要があります．
+
+オプションは@samp{--help}と@samp{--version}のみです．@xref{Common
+options}.
+
+
+@node su invocation
+@section @code{su}: 適切なユーザとグループidを用いてコマンドを実行
+
+@pindex su
+@cindex substitute user and group ids
+@cindex user id, switching
+@cindex super-user, becoming
+@cindex root, becoming
+
+@code{su}は，あるユーザが一時的に他のユーザになることを可能とします．そ
+れは実際の実効ユーザidと，与えられた@var{user}の追加グループでコマンドを
+(しばしば対話的シェルで)実行します．構文は以下のとおりです．
+
+@example
+su [@var{option}]@dots{} [@var{user} [@var{arg}]@dots{}]
+@end example
+
+@cindex passwd entry, and @code{su} shell
+@flindex /bin/sh
+@flindex /etc/passwd
+@var{user}が与えられない場合，デフォルトは@code{root}のスーパーユーザで
+す．使用するシェルは，@var{user}の@code{passwd}項目から得られたもの，ま
+たは，そこで指定されていない場合は@file{/bin/sh}を使用します．@var{user}
+にパスワードを持つ場合，実行ユーザidがゼロ(スーパーユーザ)の実行でなけれ
+ば，@code{su}はパスワードの入力を促します．
+
+@vindex HOME
+@vindex SHELL
+@vindex USER
+@vindex LOGNAME
+@cindex login shell
+デフォルトで，@code{su}はカレントディレクトリを変更しません．それは環境
+変数@env{HOME}と@env{SHELL}を@var{user}のパスワード項目から設定し，
+@var{user}がスーパーユーザでない場合，@env{USER}と@env{LOGNAME}を
+@var{user}に設定します．デフォルトでシェルはログインシェルではありません．
+
+追加の@var{arg}は，シェルの追加の引数として与えられます．
+
+@cindex @samp{-su}
+GNU @code{su}は，@file{/bin/sh}や他の特殊なものを扱いません(例えば，
+@code{argv[0]}を@samp{-su}に設定する，@code{-c}をあるシェルに渡す等で
+す．)．
+
+@findex syslog
+@code{su}は，@code{su}の試みに対し，オプションの失敗とオプションの成功を
+報告するために@code{syslog}を使用するようにコンパイル可能です．(システム
+が@code{syslog}をサポートしている場合です．)しかし，GNU @code{su}は，ユー
+ザが@code{wheel}グループのメンバーかどうか調査しません．以下を参照してく
+ださい．
+
+プログラムは，以下のオプションを受け入れます．@ref{Common options},も参
+照してください．
+
+@table @samp
+@item -c @var{command}
+@itemx --command=@var{command}
+@opindex -c
+@opindex --command
+単一のコマンドラインで実行する@var{command}を，対話的シェルを開始する代
+わりに，@code{-c}オプションを用いて渡します．
+
+@item -f
+@itemx --fast
+@opindex -f
+@opindex --fast
+@flindex .cshrc
+@cindex file name pattern expansion, disabled
+@cindex globbing, disabled
+シェルに@code{-f}オプションを渡します．これはおそらく，シェルの実行が
+@code{csh}や@code{tcsh}の場合にのみ意味があり，それらに対する@code{-f}オ
+プションは，スタートアップファイル(@file{.cshrc})の読み込みを妨げます．
+Bourneのようなシェルを用いた場合，@code{-f}オプションはファイル名のパター
+ン拡張(glob)を利用不可能にし，それは役に立つとは思えません．
+
+@item -
+@itemx -l
+@itemx --login
+@opindex -
+@opindex -l
+@opindex --login
+@c other variables already indexed above
+@vindex TERM
+@vindex PATH
+@cindex login shell, creating
+シェルをログインシェルにします．これは以下のことを意味します．@env{TERM}，
+@env{HOME}，そして@env{SHELL}(上記で記述されるように設定されている)，そ
+して@env{USER}と@env{LOGNAME}(スーパーユーザでも，上記で記述されるように
+設定されている)以外の，すべての環境変数をアンセットし，@env{PATH}をコン
+パイルされているデフォルト値に設定します．@var{user}のホームディレクトリ
+に変更します．ログインスタートアップファイルを読み込ませるために，
+@samp{-}をシェルの名前の前に前置してください．
+
+@item -m
+@itemx -p
+@itemx --preserve-environment
+@opindex -m
+@opindex -p
+@opindex --preserve-environment
+@cindex environment, preserving
+@flindex /etc/shells
+@cindex restricted shell
+環境変数@env{HOME}，@env{USER}，@env{LOGNAME}，または@env{SHELL}を変更し
+ません．@code{su}を実行しているユーザがスーパーユーザで，@var{user}のシェ
+ルが制限されていない場合は，@var{user}のパスワード項目から得られるシェル
+の代わりに，環境変数@env{SHELL}で与えられたシェルを実行します．@dfn{制限
+されているシェル}は，ファイル@file{/etc/shells}や，そのファイルが存在し
+ない場合はコンパイルされたリストにリストアップされていないものです．この
+オプションが行うことの一部は，@code{--login}と@code{--shell}で優先可能で
+す．
+
+@item -s @var{shell}
+@itemx --shell=@var{shell}
+@opindex -s
+@opindex --shell
+@code{su}を実行しているユーザがスーパーユーザで，@var{user}のシェルが限
+定されていない(真上の@samp{-m}を参照してください)場合は，@var{user}のパ
+スワード項目から得られるシェルの代わりに，@var{shell}を実行します．
+
+@end table
+
+@cindex wheel group, not supported
+@cindex group wheel, not supported
+@cindex fascism
+@heading GNU @code{su}が@samp{wheel}グループをサポートしない理由
+
+(このセクションは，Richard Stallmanが作成しました．)
+
+@cindex Twenex
+@cindex MIT AI lab
+数人のユーザが，残り全員以上の総合的な権力を持ちたいと思うときもあります．
+例えば，1984年に，MIT AI labの数人のユーザが，Twenexシステムのオペレータ
+パスワードを変更し，他の全員に秘密にし続けることで，権力を占有しようとし
+ました．(私は，このクーデターを妨害し，カーネルにパッチを行いユーザに力
+を取り戻させようとしましたが，Unixでそうする方法を知りませんでした．)
+
+しかし，支配者がだれかに告げることもあります．通常の@code{su}メカニズム
+では，一旦，普通のユーザに同情する誰かが，ルートのパスワードを知ると，彼
+または彼女は残りを伝えることができます．``wheel group''の特徴は，これを
+不可能にし，そのため支配者の権力は固まります．
+
+私は多数の味方で支配者の味方ではありません．ボスとシスアドのあらゆる作業
+をサポートすることに慣れている場合，最初にこの考えが奇妙だと分かることで
+しょう．
+
+
+@node Delaying
+@chapter 遅延
+
+@cindex delaying commands
+@cindex commands for delaying
+
+@c Perhaps @code{wait} or other commands should be described here also?
+
+@menu
+* sleep invocation::            Delay for a specified time.
+@end menu
+
+
+@node sleep invocation
+@section @code{sleep}: 指定した時間の遅延(Delay for a specified time)
+
+@pindex sleep
+@cindex delay for a specified time
+
+@code{sleep}は，コマンドライン引数の値の合計で指定された時間，一時停止し
+ます．構文は以下のとおりです．
+
+@example
+sleep [@var{number}[smhd]]@dots{}
+@end example
+
+@cindex time units
+それぞれの引数は，オプションの単位が続く数字です．デフォルトは秒です．単
+位は以下のとおりです．
+
+@table @samp
+@item s
+秒
+@item m
+分
+@item h
+時間
+@item d
+日
+@end table
+
+オプションは@samp{--help}と@samp{--version}だけです．@xref{Common
+options}.
+
+
+@node Numeric operations
+@chapter 数値処理
+
+@cindex numeric operations
+これらのプログラムは数値に関する処理を行います．
+
+@menu
+* factor invocation::              Show factors of numbers.
+* seq invocation::                 Print sequences of numbers.
+@end menu
+
+
+@node factor invocation
+@section @code{factor}: 素因数を出力
+
+@pindex factor
+@cindex prime factors
+
+@code{factor}は，素因数を出力します．構文は以下のとおりです．
+
+@example
+factor [@var{number}]@dots{}
+factor @var{option}
+@end example
+
+コマンドラインに@var{number}が指定されない場合，@code{factor}は標準入力
+から読み込み，それは，改行，タブ，またはスペースで区切られています．
+
+オプションは，@samp{--help}と@samp{--version}のみです．@xref{Common
+options}.
+
+
+@node seq invocation
+@section @code{seq}: 数列を出力
+
+@pindex seq
+@cindex numeric sequences
+@cindex sequence of numbers
+
+@code{seq}は，数字の列を標準出力に出力します．構文は以下のとおりです．
+
+@example
+seq [@var{option}]@dots{} [@var{first} [@var{step}]] @var{last}@dots{}
+@end example
+
+@code{seq}は，@var{first}から@var{last}まで@var{step}おきに，数字を出力
+します．デフォルトで，@var{first}と@var{step}は両方とも1で，それぞれの数
+字は単独行に出力されます．すべての数字は実数ですが，整数のみではありませ
+ん．
+
+プログラムは以下のオプションを受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -f @var{format}
+@itemx --format=@var{format}
+@opindex -f @var{format}
+@opindex --format=@var{format}
+@cindex formatting of numbers in @code{seq}
+すべての数字を@var{format}を使用して出力します．デフォルトは@samp{%g}で
+す．@var{format}は，標準的な浮動小数点出力書式の，@samp{%e}，@samp{%f}，
+または@samp{%g}の内，ただ1つだけを含む必要があります．
+
+@item -s @var{string}
+@itemx --separator=@var{string}
+@cindex separator for numbers in @code{seq}
+数字を@var{string}で分離します．デフォルトは改行です．出力は，常に改行で
+終了します．
+
+@item -w
+@itemx --equal-width
+すべての数字を同じ幅で出力し，ゼロを前置してパディングします．(他の種類
+のパディングをするため，@samp{--format}を使用してください)．
+
+@end table
+
+
+@node Index
+@unnumbered 索引
+
+@printindex cp
+
+@contents
+@bye
+
+@c Local variables:
+@c texinfo-column-for-description: 33
+@c End:

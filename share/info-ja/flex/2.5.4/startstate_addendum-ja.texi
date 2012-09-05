@@ -1,0 +1,194 @@
+@c Copyright (C) 1999 Kazuhisa Ichikawa
+@c This is part of the Flex manual, as published by ASCII
+@ignore
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission notice
+identical to this one except for the removal of this paragraph (this
+paragraph not being relevant to the printed manual).
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Free Software Foundation.
+@end ignore
+
+@c @node Start State Notes (Flex 2.5), Start State Example, Start State Notes, Start States
+@c @subsection スタート状態に関する注（Flex 2.5の補足情報）
+
+Flex 2.5では、
+以下の新機能を利用することができます。
+
+@itemize @bullet
+@item 
+@vindex @code{<*>}
+@b{ワイルド・カード}
+
+スタート状態@samp{<*>}には特殊な意味があり、
+すべてのスタート状態にマッチします。
+
+例えば、
+
+@example
+@group
+%x state1
+%%
+<state1>"one" printf("two");
+<*>"three"    printf("four");
+@end group
+@end example
+
+は、
+
+@example
+@group
+%s state1
+%%
+<state1>"one" printf("two");
+"three"	      printf("four");
+@end group
+@end example
+
+と同じ意味になります。
+
+@item 
+@vindex @code{YY_START}
+@b{カレントなスタート状態}
+
+マクロ@code{YY_START}により、
+カレントなスタート状態を参照することができます。
+
+前節（@ref{Start State Notes}）の「スタート状態の名前」に示した例では、
+カレントなスタート状態を配列@code{last_state}に格納する処理を、
+以下のように記述していますが、
+
+@example
+@group
+FOO        @{
+              last_state[state_count] = FOO;
+              @dots{}
+           @}
+@end group
+@end example
+
+この代入は、
+
+@example
+              last_state[state_count] = YY_START;
+@end example
+
+のように書き換えることができます。
+
+Lexとの互換性のために、
+@code{YYSTATE}が、
+@code{YY_START}の別名として定義されています。
+
+@item 
+@vindex スタート状態スコープ
+@b{スタート状態のスコープ}
+
+スタート状態のスコープを定義することができます。
+これにより、
+同じスタート状態において複数のルールが存在する時に、
+その個々のルールにスタート状態を指定する必要がなくなります。
+
+スタート状態のスコープの形式は、
+以下のとおりです。
+
+@example
+@group
+<@var{start_states}>@{
+@dots{}
+@}
+@end group
+@end example
+
+ここで、
+@var{start_states}は、
+単一のスタート状態、
+または、
+カンマで区切られたスタート状態のリストです。
+スタート状態のスコープの境界は、
+@samp{@{}と@samp{@}}によって指定されます。
+スタート状態のスコープを入れ子にすることも可能です。
+
+@ref{Activating States}に示した例を、
+スタート状態のスコープを使って書き直すと、
+以下のようになります。
+
+@example
+@group
+%x COMMENT
+%%
+"@{"            BEGIN(COMMENT);
+<COMMENT>@{
+    "$R"  
+    "$I"  
+    "$M"  
+    @dots{}  
+    "@}"        BEGIN(INITIAL);
+@}
+@end group
+@end example
+
+@item 
+@vindex スタート状態スタック
+@b{スタート状態スタック}
+
+スキャナ定義ファイルで@samp{%option stack}を指定すると、
+スタート状態スタックを利用できます。
+スタート状態スタックを操作するために、
+以下の関数が提供されています。
+
+@table @code
+@findex @code{yy_push_state()}@r{、詳細}
+@item void yy_push_state(int @var{new_state})
+カレントなスタート状態をスタート状態スタックにプッシュし、
+@var{new_state}状態に遷移します。
+
+@findex @code{yy_pop_state()}@r{、詳細}
+@item void yy_pop_state()
+スタート状態スタックからスタート状態をポップし、
+そのポップされたスタート状態に遷移します。
+
+@findex @code{yy_top_state()}@r{、詳細}
+@item int yy_top_state()
+スタート状態スタックの先頭にあるスタート状態を返します
+（スタート状態スタックの内容は変更されません）。
+@end table
+
+前節（@ref{Start State Notes}）の「スタート状態の名前」に示した例を、
+スタート状態スタックを使って書き直すと以下のようになります。
+
+@example
+@group
+%option stack
+%x FOO BAR baz
+%%
+FOO        @{
+              yy_push_state(baz);
+           @}
+@end group
+@group
+BAR        @{
+              yy_push_state(baz);
+           @}
+@end group
+@group
+<baz>@var{rule 1}
+     @dots{}  
+<baz>@var{rule n}
+<baz>END   @{
+              yy_pop_state();
+           @} 
+@end group
+@end example
+@end itemize

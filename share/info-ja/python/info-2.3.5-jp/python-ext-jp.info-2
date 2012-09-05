@@ -1,0 +1,1347 @@
+This is python-ext-jp.info, produced by makeinfo version 4.5 from
+python-ext-jp.texi.
+
+12 October 2005
+
+
+File: python-ext-jp.info,  Node: NULL ポインタ,  Prev: 薄氷,  Up: 参照カウント法
+
+NULL ポインタ
+-------------
+
+一般論として、オブジェクトへの参照を引数にとる関数はユーザが `NULL'
+ポインタを渡すとは予想しておらず、渡そうとすると コアダンプになる
+(か、あとでコアダンプを引き起こす) ことでしょう。
+一方、オブジェクトへの参照を返すような関数は一般に、例外の発生を
+示す場合にのみ `NULL' を返します。引数に対して `NULL' テストを
+行わない理由は、こうした関数群はしばしば受け取った関数を他の関数へと
+引き渡すからです -- 各々の関数が `NULL'テストを行えば、
+冗長なテストが大量に行われ、コードはより低速に動くことになります。
+
+従って、`NULL' のテストはオブジェクトの "発生源"、すなわち 値が `NULL'
+になるかもしれないポインタを受け取ったときだけに しましょう。`malloc()'
+や、例外を送出する可能性の ある関数がその例です。
+
+マクロ`Py_INCREF()' および `Py_DECREF()' は `NULL'
+ポインタのチェックを行いません -- しかし、これらの マクロの変化形である
+`Py_XINCREF()' および `Py_XDECREF()' は チェックを行います。
+
+特定のオブジェクト型について調べるマクロ (`PyTYPE_Check()') は `NULL'
+ポインタのチェックを行いません -- 繰り返しますが、
+様々な異なる型を想定してオブジェクトの型を調べる際には、こうした
+マクロを続けて呼び出す必要があるので、個別に `NULL' ポインタの
+チェックをすると冗長なテストになってしまうのです。
+型を調べるマクロには、`NULL' チェックを行う変化形はありません。
+
+Python から C 関数を呼び出す機構は、 C 関数に渡される引数リスト
+(例でいうところの `args') が決して `NULL' にならないよう 保証しています
+-- 実際には、常にタプル型になるよう保証しています。 (1)
+
+`NULL' ポインタを Python ユーザレベルに "逃がし" てしまうと、
+深刻なエラーを引き起こします。
+
+---------- Footnotes ----------
+
+(1) "旧式の" 呼び出し規約を使っている場合には、この保証は
+適用されません -- 既存のコードにはいまだに旧式の呼び出し規約が
+多々あります
+
+
+File: python-ext-jp.info,  Node: C++での拡張モジュール作成,  Next: 拡張モジュールに C API を提供する,  Prev: 参照カウント法,  Up: C や C++ による Python の拡張
+
+C++での拡張モジュール作成
+=========================
+
+C++でも拡張モジュールは作成できます。ただしいくつか制限があります。
+メインプログラム (Python インタプリタ) は C コンパイラでコンパイルされ
+リンクされているので、グローバル変数や静的オブジェクトをコンストラクタ
+で作成できません。メインプログラムが C++ コンパイラでリンクされて
+いるならこれは問題ではありません。 Python
+インタプリタから呼び出される関数 (特にモジュール初期化関数) は、`extern
+"C"' を使って宣言しなければなりません。 また、Python
+ヘッダファイルを`extern "C" {...}' に入れる必要 はありません--
+シンボル`__cplusplus' (最近の C++ コンパイラは
+全てこのシンボルを定義しています) が定義されているときに `extern "C"
+{...}' が行われるように、ヘッダファイル内に すでに書かれているからです。
+
+
+File: python-ext-jp.info,  Node: 拡張モジュールに C API を提供する,  Prev: C++での拡張モジュール作成,  Up: C や C++ による Python の拡張
+
+拡張モジュールに C API を提供する
+=================================
+
+多くの拡張モジュールは単に Python から使える新たな関数や型を
+提供するだけですが、時に拡張モジュール内のコードが他の拡張
+モジュールでも便利なことがあります。例えば、あるモジュールでは
+順序概念のないリストのように動作する "コレクション (collection)"
+クラスを実装しているかもしれません。
+ちょうどリストを生成したり操作したりできる C API を備えた標準の Python
+リスト型のように、この新たなコレクション型も他の
+拡張モジュールから直接操作できるようにするには一連の C 関数を
+持っていなければなりません。
+
+一見するとこれは簡単なこと: 単に関数を (もちろん`static'
+などとは宣言せずに) 書いて、適切なヘッダファイルを提供し、C API
+を書けばよいだけ、に思えます。そして実際のところ、全ての
+拡張モジュールが Python インタプリタに常に静的にリンクされている
+場合にはうまく動作します。
+ところがモジュールが共有ライブラリの場合には、一つのモジュールで
+定義されているシンボルが他のモジュールから不可視なことがあります。
+可視性の詳細はオペレーティングシステムによります; あるシステムは Python
+インタプリタと全ての拡張モジュール用に単一のグローバルな
+名前空間を用意しています (例えば Windows)。別のシステムはモジュールの
+リンク時に取り込まれるシンボルを明示的に指定する必要があります (AIX
+がその一例です)、また別のシステム (ほとんどの UNIX) では、
+違った戦略を選択肢として提供しています。
+そして、たとえシンボルがグローバル変数として可視であっても、
+呼び出したい関数の入ったモジュールがまだロードされていないこと
+だってあります!
+
+従って、可搬性の点からシンボルの可視性には何ら仮定をしてはならない
+ことになります。つまり拡張モジュール中の全てのシンボルは `static'
+と宣言せねばなりません。例外はモジュールの初期化関数 で、これは (*Note
+モジュールのメソッドテーブルと初期化関数:: で述べたように)
+他の拡張モジュールとの間で 名前が衝突するのを避けるためです。
+また、他の拡張モジュールからアクセスを_受けるべきではない_
+シンボルは別のやり方で公開せねばなりません。
+
+Python はある拡張モジュールの C レベルの情報 (ポインタ) を別の
+モジュールに渡すための特殊な機構: CObject を提供しています。 CObject
+はポインタ (`void*') を記憶する Python のデータ型です。 CObject は C
+API を介してのみ生成したりアクセスしたりできますが、 他の Python
+オブジェクトと同じように受け渡しできます。 とりわけ、CObject
+は拡張モジュールの名前空間内にある名前に代入
+できます。他の拡張モジュールはこのモジュールを import でき、次に名前を
+取得し、最後にCObject へのポインタを取得します。
+
+拡張モジュールの C API を公開するために、様々な方法で CObject が
+使われます。エクスポートされているそれぞれの名前を使うと、CObject
+自体や、CObject が公表しているアドレスで示される配列内に収められた
+全ての C API ポインタを得られます。
+そして、ポインタに対する保存や取得といった様々な作業は、コードを
+提供しているモジュールとクライアントモジュールとの間では異なる
+方法で分散できます。
+
+以下の例では、名前を公開するモジュールの作者にほとんどの負荷が
+掛かりますが、よく使われるライブラリを作る際に適切なアプローチを
+実演します。 このアプローチでは、全ての C API ポインタ
+(例中では一つだけですが!) を、 CObject の値となる`void'
+ポインタの配列に保存します。
+拡張モジュールに対応するヘッダファイルは、モジュールの import と C API
+ポインタを取得するよう手配するマクロを提供します;
+クライアントモジュールは、C API にアクセスする前にこの
+マクロを呼ぶだけです。
+
+名前を公開する側のモジュールは、*Note 簡単な例:: 節の`spam'
+モジュールを修正したものです。関数`spam.system()' は C
+ライブラリ関数`system()' を直接呼び出さず、 `PySpam_System()'
+を呼び出します。この関数はもちろん、 実際には (全てのコマンドに "spam"
+を付けるといったような) より込み入った処理を行います。 この関数
+`PySpam_System()' はまた、他の拡張モジュール にも公開されます。
+
+関数`PySpam_System()' は、他の全ての関数と同様に `static'
+で宣言された通常の C 関数です。
+
+     static int
+     PySpam_System(char *command)
+     {
+         return system(command);
+     }
+
+`spam_system()' には取るに足らない変更が施されています:
+
+     static PyObject *
+     spam_system(PyObject *self, PyObject *args)
+     {
+         char *command;
+         int sts;
+     
+         if (!PyArg_ParseTuple(args, "s", &command))
+             return NULL;
+         sts = PySpam_System(command);
+         return Py_BuildValue("i", sts);
+     }
+
+モジュールの先頭にある以下の行
+
+     #include "Python.h"
+
+の直後に、以下の二行:
+
+     #define SPAM_MODULE
+     #include "spammodule.h"
+
+を必ず追加してください。
+
+`#define' は、ファイル`spammodule.h' をインクルードして
+いるのが名前を公開する側のモジュールであって、クライアントモジュール
+ではないことをヘッダファイルに教えるために使われます。
+最後に、モジュールの初期化関数は C API のポインタ配列を初期化するよう
+手配しなければなりません:
+
+     PyMODINIT_FUNC
+     initspam(void)
+     {
+         PyObject *m;
+         static void *PySpam_API[PySpam_API_pointers];
+         PyObject *c_api_object;
+     
+         m = Py_InitModule("spam", SpamMethods);
+     
+         /* C API ポインタ配列を初期化する */
+         PySpam_API[PySpam_System_NUM] = (void *)PySpam_System;
+     
+         /* API ポインタ配列のアドレスが入った CObject を生成する */
+         c_api_object = PyCObject_FromVoidPtr((void *)PySpam_API, NULL);
+     
+         if (c_api_object != NULL)
+             PyModule_AddObject(m, "_C_API", c_api_object);
+     }
+
+`PySpam_API' が`static' と宣言されていることに注意して ください;
+そうしなければ、`initspam()' が終了したときに
+ポインタアレイは消滅してしまいます!
+
+からくりの大部分はヘッダファイル `spammodule.h' 内にあり、
+以下のようになっています:
+
+     #ifndef Py_SPAMMODULE_H
+     #define Py_SPAMMODULE_H
+     #ifdef __cplusplus
+     extern "C" {
+     #endif
+     
+     /* spammodule のヘッダファイル */
+     
+     /* C API 関数 */
+     #define PySpam_System_NUM 0
+     #define PySpam_System_RETURN int
+     #define PySpam_System_PROTO (char *command)
+     
+     /* C API ポインタの総数 */
+     #define PySpam_API_pointers 1
+     
+     #ifdef SPAM_MODULE
+     /* この部分は spammodule.c をコンパイルする際に使われる */
+     
+     static PySpam_System_RETURN PySpam_System PySpam_System_PROTO;
+     
+     #else
+     /* この部分は spammodule の API を使うモジュール側で使われる */
+     
+     static void **PySpam_API;
+     
+     #define PySpam_System \
+      (*(PySpam_System_RETURN (*)PySpam_System_PROTO) PySpam_API[PySpam_System_NUM])
+     
+     /* エラーによる例外の場合には -1 を、成功すると 0 を返す */
+     static int
+     import_spam(void)
+     {
+         PyObject *module = PyImport_ImportModule("spam");
+     
+         if (module != NULL) {
+             PyObject *c_api_object = PyObject_GetAttrString(module, "_C_API");
+             if (c_api_object == NULL)
+                 return -1;
+             if (PyCObject_Check(c_api_object))
+                 PySpam_API = (void **)PyCObject_AsVoidPtr(c_api_object);
+             Py_DECREF(c_api_object);
+         }
+         return 0;
+     }
+     
+     #endif
+     
+     #ifdef __cplusplus
+     }
+     #endif
+     
+     #endif /* !defined(Py_SPAMMODULE_H) */
+
+`PySpam_System()' へのアクセス手段を得るために
+クライアントモジュール側がしなければならないことは、初期化関数内
+での`import_spam()' 関数 (またはマクロ) の呼び出しです:
+
+     PyMODINIT_FUNC
+     initclient(void)
+     {
+         PyObject *m;
+     
+         Py_InitModule("client", ClientMethods);
+         if (import_spam() < 0)
+             return;
+         /* さらなる初期化処理はここに置ける */
+     }
+
+このアプローチの主要な欠点は、`spammodule.h' がやや難解に
+なるということです。とはいえ、各関数の基本的な構成は公開される
+ものと同じなので、書き方を一度だけ学べばすみます。
+
+最後に、CObject は、自身に保存されているポインタをメモリ確保したり
+解放したりする際に特に便利な、もう一つの機能を提供しているという
+ことに触れておかねばなりません。詳細は
+
+の "CObjects " の節、および CObjects の実装部分 (Python
+ソースコード配布物中のファイル `Include/cobject.h'
+および`Objects/cobject.c' に述べられています。
+
+
+File: python-ext-jp.info,  Node: 新しい型を定義する,  Next: distutils による C および C++ 拡張モジュールのビルド,  Prev: C や C++ による Python の拡張,  Up: Top
+
+新しい型を定義する
+******************
+
+前の章でふれたように、Python では拡張モジュールを書くプログラマが
+Python のコードから操作できる、新しい型を定義できるようになっています。
+ちょうど Python の中核にある文字列やリストをつくれるようなものです。
+
+これはそんなにむずかしくはありません。拡張型のためのコードにはすべて、
+一定のパターンが存在しています。しかし始める前に、いくつか細かいことを
+理解しておく必要があるでしょう。
+
+_Notice:_ Python 2.2 から、新しい型を定義する方法がかなり変わって
+(よくなって) います。この文書は Python 2.2 およびそれ以降で
+新しい型をどうやって定義するかについて述べています。古いバージョンの
+Python
+をサポートする必要がある場合は、この文書の古い版を参照してください。
+
+* Menu:
+
+* 基本的なこと::
+* タイプメソッド::
+
+
+File: python-ext-jp.info,  Node: 基本的なこと,  Next: タイプメソッド,  Prev: 新しい型を定義する,  Up: 新しい型を定義する
+
+基本的なこと
+============
+
+Python ランタイムでは、すべての Python オブジェクトは `PyObject*'
+型の変数として扱います。`PyObject' は
+さほど大仰なオブジェクトではなく、単にオブジェクトに対する参照回数と、
+そのオブジェクトの「タイプオブジェクト (type object)」へのポインタを
+格納しているだけです。
+重要な役割を果たしているのはこのタイプオブジェクトです。
+つまりタイプオブジェクトは、例えばあるオブジェクトのある属性が参照される
+とか、あるいは別のオブジェクトとの間で乗算を行うといったときに、 どの
+(C の) 関数を呼び出すかを決定しているのです。 これらの C
+関数は「タイプメソッド (type method)」と呼ばれ、 `[].append'
+のようなもの (いわゆる「オブジェクトメソッド (object method)」)
+とは区別しています。
+
+なので、新しいオブジェクトの型を定義したいときは、
+新しいタイプオブジェクトを作成すればよいわけです。
+
+この手のことは例を見たほうが早いでしょうから、
+ここに最小限の、しかし完全な、新しい型を定義するモジュールをあげておきます:
+
+`noddy.c'
+
+さしあたって覚えておくことは以上ですが、これで前の章からすこしは
+説明がわかりやすくなっていることと思います。
+
+最初に習うのは、つぎのようなものです:
+
+     typedef struct {
+         PyObject_HEAD
+     } noddy_NoddyObject;
+
+これが Noddy オブジェクトの内容です -- このケースでは、 ほかの Python
+オブジェクトが持っているものと何ら変わりはありません。
+つまり参照カウントと型オブジェクトへのポインタですね。これらは
+`PyObject_HEAD' マクロによって
+展開されるメンバです。マクロを使う理由は、レイアウトを標準化するためと、
+デバッグ用ビルド時に特別なデバッグ用のメンバを定義できるようにするためです。
+この `PyObject_HEAD' マクロの後にはセミコロンがないことに
+注意してください。
+セミコロンはすでにマクロ内に含まれています。うっかり後にセミコロンを
+つけてしまわないように気をつけて。
+これはお使いの機種では何の問題も起こらないかもしれませんが、
+機種によっては、おそらく問題になるのです!  (Windows 上では、MS Visual C
+がこの手のエラーを出し、 コンパイルできないことが知られています)
+
+比較のため、以下に標準的な Python の整数型の定義を見てみましょう:
+
+     typedef struct {
+         PyObject_HEAD
+         long ob_ival;
+     } PyIntObject;
+
+では次にいってみます。かなめの部分、タイプオブジェクトです。
+
+     static PyTypeObject noddy_NoddyType = {
+         PyObject_HEAD_INIT(NULL)
+         0,                         /*ob_size*/
+         "noddy.Noddy",             /*tp_name*/
+         sizeof(noddy_NoddyObject), /*tp_basicsize*/
+         0,                         /*tp_itemsize*/
+         0,                         /*tp_dealloc*/
+         0,                         /*tp_print*/
+         0,                         /*tp_getattr*/
+         0,                         /*tp_setattr*/
+         0,                         /*tp_compare*/
+         0,                         /*tp_repr*/
+         0,                         /*tp_as_number*/
+         0,                         /*tp_as_sequence*/
+         0,                         /*tp_as_mapping*/
+         0,                         /*tp_hash */
+         0,                         /*tp_call*/
+         0,                         /*tp_str*/
+         0,                         /*tp_getattro*/
+         0,                         /*tp_setattro*/
+         0,                         /*tp_as_buffer*/
+         Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+         "Noddy objects",           /* tp_doc */
+     };
+
+`object.h' の中にある `PyTypeObject' の定義を見ると、
+実際にはここに挙げた以上の数のメンバがあるとわかるでしょう。
+これ以外のメンバは C コンパイラによってゼロに初期化されるので、
+必要な時を除いてふつうはそれらの値を明示的には指定せずにおきます。
+
+次のものは非常に重要なので、とくに最初の最初に見ておきましょう:
+
+         PyObject_HEAD_INIT(NULL)
+
+これはちょっとぶっきらぼうですね。実際に書きたかったのはこうです:
+
+         PyObject_HEAD_INIT(&PyType_Type)
+
+この場合、タイプオブジェクトの型は「type」という名前になりますが、
+これは厳密には C の基準に従っておらず、コンパイラによっては文句を
+言われます。 幸いにも、このメンバは `PyType_Ready()' が埋めてくれます。
+
+         0,                          /* ob_size */
+
+ヘッダ中の `ob_size' メンバは使われていません。
+これは歴史的な遺物であり、構造体中にこれが存在しているのは
+古いバージョンの Python 用にコンパイルされた拡張モジュールとの
+バイナリ上の互換性を保つためです。ここにはつねにゼロを指定してください。
+
+         "noddy.Noddy",              /* tp_name */
+
+これは型の名前です。この名前はオブジェクトのデフォルトの表現形式と、
+いくつかのエラーメッセージ中で使われます。たとえば:
+
+     >>> "" + noddy.new_noddy()
+     Traceback (most recent call last):
+       File "<stdin>", line 1, in ?
+     TypeError: cannot add type "noddy.Noddy" to string
+
+注意:
+この名前はドットで区切られた名前で、モジュール名と、そのモジュール内での
+型名を両方ふくんでいます。この場合のモジュールは `noddy' で、型の名前は
+`Noddy' ですから、ここでの型名としては `noddy.Noddy' を
+指定するわけです。
+
+         sizeof(noddy_NoddyObject),  /* tp_basicsize */
+
+これによって Python は `PyObject_New()' が呼ばれたときに
+どれくらいの量のメモリを割り当てればよいのか知ることができます。
+
+         0,                          /* tp_itemsize */
+
+これはリストや文字列などの可変長オブジェクトのためのものです。
+今のところ無視しましょう。
+
+このあとのいくつかのメソッドは使わないのでとばして、 クラスのフラグ
+(flags) には `Py_TPFLAGS_DEFAULT' を入れます。
+
+         Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+
+すべての型はフラグにこの定数を含めておく必要があります。
+これは現在のバージョンの Python で定義されているすべての
+メンバを許可します。
+
+この型の docstring は `tp_doc' に入れます。
+
+         "Noddy objects",           /* tp_doc */
+
+ここからタイプメソッドに入るわけですが。
+ここがあなたのオブジェクトが他と違うところです。
+でも今回のバージョンでは、これらはどれも実装しないでおき、
+あとでこの例をより面白いものに改造することにしましょう。
+
+とりあえずやりたいのは、この `Noddy' オブジェクトを新しく
+作れるようにすることです。オブジェクトの作成を許可するには、 `tp_new'
+の実装を提供する必要があります。今回は、 API
+関数によって提供されるデフォルトの実装 `PyType_GenericNew()' を
+使うだけにしましょう。これを単に `tp_new' スロットに代入すれば
+よいのですが、
+これは互換上の理由からできません。プラットフォームやコンパイラによっては、
+構造体メンバの初期化に別の場所で定義されている C の関数を代入することは
+できないのです。 なので、この `tp_new'
+の値はモジュール初期化用の関数で代入します。 `PyType_Ready()'
+を呼ぶ直前です:
+
+         noddy_NoddyType.tp_new = PyType_GenericNew;
+         if (PyType_Ready(&noddy_NoddyType) < 0)
+             return;
+
+これ以外のタイプメソッドはすべて `NULL'です。
+これらについては後ほどふれます。
+
+このファイル中にある他のものは、どれもおなじみでしょう。 `initnoddy()'
+のこれを除いて:
+
+         if (PyType_Ready(&noddy_NoddyType) < 0)
+             return;
+
+この関数は、上で `NULL'に指定していた  `ob_type' などの
+いくつものメンバを埋めて、`Noddy' 型を初期化します。
+
+         PyModule_AddObject(m, "Noddy", (PyObject *)&noddy_NoddyType);
+
+これはこの型をモジュール中の辞書に埋め込みます。これで、 `Noddy'
+クラスを呼べば `Noddy' インスタンスを作れるように なりました:
+
+     import noddy
+     mynoddy = noddy.Noddy()
+
+これだけです! 残るはこれをどうやってビルドするかということです。
+上のコードを `noddy.c' というファイルに入れて、 以下のものを `setup.py'
+というファイルに入れましょう。
+
+     from distutils.core import setup, Extension
+     setup(name="noddy", version="1.0",
+           ext_modules=[Extension("noddy", ["noddy.c"])])
+
+そして、シェルから以下のように入力します。
+
+     $ python setup.py build
+
+これでサブディレクトリの下にファイル `noddy.so' が作成されます。
+このディレクトリに移動して Python を起動しましょう。 `import noddy'
+して Noddy オブジェクトで遊べるようになっているはずです。
+
+そんなにむずかしくありません、よね?
+
+もちろん、現在の Noddy 型はまだおもしろみに欠けています。
+何もデータを持ってないし、何もしてはくれません。
+継承してサブクラスを作ることさえできないのです。
+
+* Menu:
+
+* 基本のサンプルにデータとメソッドを追加する::
+* データ属性をこまかく制御する::
+* 循環ガベージコレクションをサポートする::
+
+
+File: python-ext-jp.info,  Node: 基本のサンプルにデータとメソッドを追加する,  Next: データ属性をこまかく制御する,  Prev: 基本的なこと,  Up: 基本的なこと
+
+基本のサンプルにデータとメソッドを追加する
+------------------------------------------
+
+この基本のサンプルにデータとメソッドを追加してみましょう。
+ついでに、この型を基底クラスとしても利用できるようにします。
+ここでは新しいモジュール `noddy2' をつくり、以下の機能を追加します:
+
+`noddy2.c'
+
+このバージョンでは、いくつもの変更をおこないます。
+
+以下の include を追加します:
+
+     #include "structmember.h"
+
+すこしあとでふれますが、この include には属性を扱うための宣言が
+入っています。
+
+`Noddy' オブジェクトの構造体の名前は `Noddy' に縮めることにします。
+タイプオブジェクト名は `NoddyType' に縮めます。
+
+これから `Noddy' 型は 3つのデータ属性をもつようになります。
+FIRST、LAST、および NUMBER です。FIRST と LAST 属性は
+ファーストネームとラストネームを格納した Python 文字列で、 NUMBER
+属性は整数の値です。
+
+これにしたがうと、オブジェクトの構造体は次のようになります:
+
+     typedef struct {
+         PyObject_HEAD
+         PyObject *first;
+         PyObject *last;
+         int number;
+     } Noddy;
+
+いまや管理すべきデータができたので、オブジェクトの割り当てと解放に際しては
+より慎重になる必要があります。最低限、オブジェクトの解放メソッドが必要です:
+
+     static void
+     Noddy_dealloc(Noddy* self)
+     {
+         Py_XDECREF(self->first);
+         Py_XDECREF(self->last);
+         self->ob_type->tp_free((PyObject*)self);
+     }
+
+この関数は `tp_dealloc' メンバに代入されます。
+
+         (destructor)Noddy_dealloc, /*tp_dealloc*/
+
+このメソッドでやっているのは、ふたつの Python 属性の参照カウントを
+減らすことです。`first' メンバと `last' メンバが
+`NULL'かもしれないため、ここでは `Py_XDECREF()' を使いました。
+このあとそのオブジェクトのタイプメソッドである `tp_free' メンバを
+呼び出しています。 ここではオブジェクトの型が `NoddyType'
+とは限らないことに 注意してください。
+なぜなら、このオブジェクトはサブクラス化したインスタンスかもしれないからです。
+
+ファーストネームとラストネームを空文字列に初期化しておきたいので、
+新しいメソッドを追加することにしましょう:
+
+     static PyObject *
+     Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+     {
+         Noddy *self;
+     
+         self = (Noddy *)type->tp_alloc(type, 0);
+         if (self != NULL) {
+             self->first = PyString_FromString("");
+             if (self->first == NULL)
+               {
+                 Py_DECREF(self);
+                 return NULL;
+               }
+     
+             self->last = PyString_FromString("");
+             if (self->last == NULL)
+               {
+                 Py_DECREF(self);
+                 return NULL;
+               }
+     
+             self->number = 0;
+         }
+     
+         return (PyObject *)self;
+     }
+
+そしてこれを `tp_new' メンバとしてインストールします:
+
+         Noddy_new,                 /* tp_new */
+
+この新しいメンバはその型のオブジェクトを (初期化するのではなく) 作成する
+責任を負っています。Python ではこのメンバは `__new__()' メソッドと
+して見えています。`__new__()' メソッドについての詳しい議論は "Unifying
+types and classes in Python" という題名の論文を見てください。 new
+メソッドを実装する理由のひとつは、インスタンス変数の初期値を保証するためです。
+この例でやりたいのは new メソッドが `first' メンバと `last'
+メンバの値を `NULL'でないようにするということです。
+もしこれらの初期値が `NULL'でもよいのであれば、
+先の例でやったように、new メソッドとして `PyType_GenericNew()' を
+使うこともできたでしょう。`PyType_GenericNew()' はすべての
+インスタンス変数のメンバをNULL にします。
+
+この new メソッドは静的なメソッドで、インスタンスを生成するときに
+その型と、型が呼び出されたときの引数が渡され、新しいオブジェクトを作成して
+返します。new メソッドはつねに、あらかじめ固定引数 (positional
+argument) と
+キーワード引数を取りますが、これらのメソッドはしばしばそれらの
+引数は無視して初期化メソッドにそのまま渡します。new メソッドは
+メモリ割り当てのために `tp_alloc' メンバを呼び出します。`tp_alloc'
+をこちらで 初期化する必要はありません。これは `PyType_Ready()' が
+基底クラス (デフォルトでは `object') をもとに埋めるものです。
+ほとんどの型ではデフォルトのメモリ割り当てを使っています。
+
+つぎに初期化用の関数を見てみましょう:
+
+     static int
+     Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
+     {
+         PyObject *first=NULL, *last=NULL;
+     
+         static char *kwlist[] = {"first", "last", "number", NULL};
+     
+         if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist,
+                                           &first, &last,
+                                           &self->number))
+             return -1;
+     
+         if (first) {
+             Py_XDECREF(self->first);
+             Py_INCREF(first);
+             self->first = first;
+         }
+     
+         if (last) {
+             Py_XDECREF(self->last);
+             Py_INCREF(last);
+             self->last = last;
+         }
+     
+         return 0;
+     }
+
+これは `tp_init' メンバに代入されます。
+
+         (initproc)Noddy_init,         /* tp_init */
+
+Python では、`tp_init' メンバは `__init__()' メソッド
+として見えています。
+このメソッドは、オブジェクトが作成されたあとに、それを初期化する目的で
+使われます。 new
+メソッドとはちがって、初期化用のメソッドは必ず呼ばれるとは限りません。
+初期化用のメソッドは、インスタンスの初期値を提供するのに必要な引数を
+受けとります。
+このメソッドはつねに固定引数とキーワード引数を受けとります。
+
+ここではインスタンス変数を属性として見えるようにしたいのですが、
+これにはいくつもの方法があります。もっとも簡単な方法は、メンバの定義を
+与えることです:
+
+     static PyMemberDef Noddy_members[] = {
+         {"first", T_OBJECT_EX, offsetof(Noddy, first), 0,
+          "first name"},
+         {"last", T_OBJECT_EX, offsetof(Noddy, last), 0,
+          "last name"},
+         {"number", T_INT, offsetof(Noddy, number), 0,
+          "noddy number"},
+         {NULL}  /* Sentinel */
+     };
+
+そして、この定義を `tp_members' に入れましょう:
+
+         Noddy_members,             /* tp_members */
+
+各メンバの定義はそれぞれ、メンバの名前、型、オフセット、アクセスフラグ
+および docstring です。詳しくは後の "総称的な属性を管理する" の節を
+ご覧ください。
+
+この方法の欠点は、Python
+属性に代入できるオブジェクトの型を制限する方法が ないことです。
+ここではファーストネーム first とラストネーム last に、ともに文字列が
+入るよう期待していますが、今のやり方ではどんな Python オブジェクトも
+代入できてしまいます。 加えてこの属性は削除 (del)
+できてしまい、その場合、 C のポインタには
+`NULL'が設定されます。たとえもしメンバが
+`NULL'以外の値に初期化されるように
+してあったとしても、属性が削除されればメンバは
+`NULL'になってしまいます。
+
+ここでは `name' と呼ばれるメソッドを定義しましょう。
+これはファーストネーム first とラストネーム last を連結した文字列を
+そのオブジェクトの名前として返します。
+
+     static PyObject *
+     Noddy_name(Noddy* self)
+     {
+         static PyObject *format = NULL;
+         PyObject *args, *result;
+     
+         if (format == NULL) {
+             format = PyString_FromString("%s %s");
+             if (format == NULL)
+                 return NULL;
+         }
+     
+         if (self->first == NULL) {
+             PyErr_SetString(PyExc_AttributeError, "first");
+             return NULL;
+         }
+     
+         if (self->last == NULL) {
+             PyErr_SetString(PyExc_AttributeError, "last");
+             return NULL;
+         }
+     
+         args = Py_BuildValue("OO", self->first, self->last);
+         if (args == NULL)
+             return NULL;
+     
+         result = PyString_Format(format, args);
+         Py_DECREF(args);
+     
+         return result;
+     }
+
+このメソッドは C 関数として実装され、`Noddy' (あるいは `Noddy'
+のサブクラス)
+のインスタンスを第一引数として受けとります。メソッドはつねにその
+インスタンスを最初の引数として受けとらなければなりません。
+しばしば固定引数とキーワード引数も受けとりますが、
+今回はなにも必要ないので、固定引数のタプルもキーワード引数の辞書も
+取らないことにします。 このメソッドは Python の以下のメソッドと等価です:
+
+         def name(self):
+            return "%s %s" % (self.first, self.last)
+
+`first' メンバと `last' メンバがそれぞれ `NULL'かどうか
+チェックしなければならないことに注意してください。
+これらは削除される可能性があり、その場合値は `NULL'にセットされます。
+この属性の削除を禁止して、そこに入れられる値を文字列に限定できれば
+なおいいでしょう。次の節ではこれについて扱います。
+
+さて、メソッドを定義したので、ここでメソッド定義用の配列を作成する
+必要があります:
+
+     static PyMethodDef Noddy_methods[] = {
+         {"name", (PyCFunction)Noddy_name, METH_NOARGS,
+          "Return the name, combining the first and last name"
+         },
+         {NULL}  /* Sentinel */
+     };
+
+これを `tp_methods' スロットに入れましょう:
+
+         Noddy_methods,             /* tp_methods */
+
+ここでの `METH_NOARGS' フラグは、そのメソッドが引数を取らないことを
+宣言するのに使われています。
+
+最後に、この型を基底クラスとして利用可能にしましょう。
+上のメソッドは注意ぶかく書かれているので、これはそのオブジェクトの型が
+作成されたり利用される場合についてどんな仮定も置いていません。
+なので、ここですべきことは `Py_TPFLAGS_BASETYPE' を
+クラス定義のフラグに加えるだけです:
+
+         Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+
+`initnoddy()' の名前を `initnoddy2()' に変更し、 `Py_InitModule3()'
+に渡されるモジュール名を更新します。
+
+さいごに `setup.py' ファイルを更新して新しいモジュールをビルドします。
+
+     from distutils.core import setup, Extension
+     setup(name="noddy", version="1.0",
+           ext_modules=[
+              Extension("noddy", ["noddy.c"]),
+              Extension("noddy2", ["noddy2.c"]),
+              ])
+
+
+File: python-ext-jp.info,  Node: データ属性をこまかく制御する,  Next: 循環ガベージコレクションをサポートする,  Prev: 基本のサンプルにデータとメソッドを追加する,  Up: 基本的なこと
+
+データ属性をこまかく制御する
+----------------------------
+
+この節では、`Noddy' クラスの例にあった `first' と `last'
+の各属性にたいして、より精密な制御を提供します。
+以前のバージョンのモジュールでは、 インスタンス変数の `first' と `last'
+には文字列以外のものも 代入できてしまい、あまつさえ削除さえ可能でした。
+ここではこれらの属性が必ず文字列を保持しているようにしましょう。
+
+`noddy3.c'
+
+`first' 属性と `last' 属性をよりこまかく制御するためには、
+カスタムメイドの getter 関数と setter 関数を使います。以下は `first'
+属性から値を取得する関数 (getter) と、 この属性に値を格納する関数
+(setter) です:
+
+     Noddy_getfirst(Noddy *self, void *closure)
+     {
+         Py_INCREF(self->first);
+         return self->first;
+     }
+     
+     static int
+     Noddy_setfirst(Noddy *self, PyObject *value, void *closure)
+     {
+       if (value == NULL) {
+         PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
+         return -1;
+       }
+     
+       if (! PyString_Check(value)) {
+         PyErr_SetString(PyExc_TypeError,
+                         "The first attribute value must be a string");
+         return -1;
+       }
+     
+       Py_DECREF(self->first);
+       Py_INCREF(value);
+       self->first = value;
+     
+       return 0;
+     }
+
+getter 関数には `Noddy' オブジェクトと「閉包 (closure)」 (これは
+void型のポインタです) が渡されます。今回のケースでは閉包は無視します。
+(閉包とは定義データが渡される setter や getter
+の高度な利用をサポートするためのもので、 これを使うとたとえば getter と
+setter をひとまとめにした関数に、 閉包のデータにもとづいて属性を get
+するか set するか決めさせる、 といったことができます。)
+
+setter 関数には `Noddy' オブジェクトと新しい値、そして閉包が渡されます。
+新しい値は `NULL'かもしれず、その場合はこの属性が削除されます。ここでは
+属性が削除されたり、その値が文字列でないときにはエラーを発生させるように
+します。
+
+ここでは `PyGetSetDef' 構造体の配列をつくります:
+
+     static PyGetSetDef Noddy_getseters[] = {
+         {"first",
+          (getter)Noddy_getfirst, (setter)Noddy_setfirst,
+          "first name",
+          NULL},
+         {"last",
+          (getter)Noddy_getlast, (setter)Noddy_setlast,
+          "last name",
+          NULL},
+         {NULL}  /* Sentinel */
+     };
+
+そしてこれを `tp_getset' スロットに登録します:
+
+         Noddy_getseters,           /* tp_getset */
+
+これで属性の getter と setter が登録できました。
+
+`PyGetSetDef' 構造体の最後の要素が上で説明した閉包です。
+今回は閉包は使わないので、たんに `NULL'を渡しています。
+
+また、メンバ定義からはこれらの属性を除いておきましょう:
+
+     static PyMemberDef Noddy_members[] = {
+         {"number", T_INT, offsetof(Noddy, number), 0,
+          "noddy number"},
+         {NULL}  /* Sentinel */
+     };
+
+これらの変更によって、 `first' メンバと `last' メンバが 決して NULL
+にならないと保証できました。これでほとんどすべてのケースから
+`NULL'値のチェックを除けます。これは `Py_XDECREF()' 呼び出しを
+`Py_DECREF()' 呼び出しに変えられることを意味します。
+唯一これを変えられないのはオブジェクト解放メソッド (deallocator) で、
+なぜならここではコンストラクタによるメンバ初期化が失敗している
+可能性があるからです。
+
+さて、先ほどもしたように、このモジュール初期化関数と
+初期化関数内にあるモジュール名を変更しましょう。 そして `setup.py'
+ファイルに追加の定義をくわえます。
+
+
+File: python-ext-jp.info,  Node: 循環ガベージコレクションをサポートする,  Prev: データ属性をこまかく制御する,  Up: 基本的なこと
+
+循環ガベージコレクションをサポートする
+--------------------------------------
+
+Python
+は循環ガベージコレクション機能をもっており、これは不要なオブジェクトを、
+たとえ参照カウントがゼロでなくても、発見することができます。
+これはオブジェクトの参照が循環しているときに起こりえます。
+たとえば以下の例を考えてください:
+
+     >>> l = []
+     >>> l.append(l)
+     >>> del l
+
+この例では、自分自身をふくむリストをつくりました。たとえこのリストを
+del
+しても、それは自分自身への参照をまだ持ちつづけますから、参照カウントは
+ゼロにはなりません。嬉しいことに Python
+には循環ガベージコレクション機能が
+ありますから、最終的にはこのリストが不要であることを検出し、解放できます。
+
+`Noddy' クラスの 2番目の例では、`first' 属性と `last'
+属性にどんなオブジェクトでも格納できるようになっていました。つまり、
+`Noddy' オブジェクトの参照は循環しうるのです:
+
+     >>> import noddy2
+     >>> n = noddy2.Noddy()
+     >>> l = [n]
+     >>> n.first = l
+
+これは実にばかげた例ですが、すくなくとも `Noddy' クラスに
+循環ガベージコレクション機能のサポートを加える口実を与えてくれます。
+循環ガベージコレクションをサポートするには 2つのタイプスロットを埋め、
+これらのスロットを許可するようにクラス定義のフラグを設定する必要があります:
+
+`noddy4.c'
+
+traversal メソッドは循環した参照に含まれる可能性のある
+内部オブジェクトへのアクセスを提供します:
+
+     static int
+     Noddy_traverse(Noddy *self, visitproc visit, void *arg)
+     {
+         if (self->first && visit(self->first, arg) < 0)
+             return -1;
+         if (self->last && visit(self->last, arg) < 0)
+             return -1;
+     
+         return 0;
+     }
+
+循環した参照に含まれるかもしれない各内部オブジェクトに対して、
+traversal メソッドに渡された `visit()' 関数を呼びます。 `visit()'
+関数は内部オブジェクトと、traversal メソッドに渡された 追加の引数 ARG
+を引数としてとります。
+
+また、循環した参照に含まれた内部オブジェクトを消去するためのメソッドも
+提供する必要があります。オブジェクト解放用のメソッドを再実装して、
+このメッソドに使いましょう:
+
+     static int
+     Noddy_clear(Noddy *self)
+     {
+         Py_XDECREF(self->first);
+         self->first = NULL;
+         Py_XDECREF(self->last);
+         self->last = NULL;
+     
+         return 0;
+     }
+     
+     static void
+     Noddy_dealloc(Noddy* self)
+     {
+         Noddy_clear(self);
+         self->ob_type->tp_free((PyObject*)self);
+     }
+
+さいごに、`Py_TPFLAGS_HAVE_GC' フラグを クラス定義のフラグに加えます:
+
+         Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+
+これで完了です。`tp_alloc' スロットまたは `tp_free' スロットが
+書かれていれば、それらを循環ガベージコレクションに使えるよう修正すれば
+よいのです。
+ほとんどの拡張機能は自動的に提供されるバージョンを使うでしょう。
+
+
+File: python-ext-jp.info,  Node: タイプメソッド,  Prev: 基本的なこと,  Up: 新しい型を定義する
+
+タイプメソッド
+==============
+
+この節ではさまざまな実装可能なタイプメソッドと、
+それらが何をするものであるかについて、ざっと説明します。
+
+以下は `PyTypeObject' の定義です。デバッグビルドでしか使われない
+いくつかのメンバは省いてあります:
+
+`typestruct.h'
+
+_たくさんの_メソッドがありますね。でもそんなに心配する必要はありません。
+定義したい型があるなら、実装するのはこのうちのごくわずかですむことが
+ほとんどです。
+
+すでに予想されているでしょうが、これらの多様なハンドラについて、
+これからより詳しい情報を提供します。しかしこれらのメンバが構造体中で
+定義されている順番は無視します。というのは、これらのメンバの現れる
+順序は歴史的な遺産によるものだからです。型を初期化するさいに、これらの
+メンバを正しい順序で並べるよう、くれぐれも注意してください。
+ふつういちばん簡単なのは、必要なメンバがすべて含まれている
+(たとえそれらが `0' に初期化されていても) 例をとってきて、
+自分の型に合わせるよう変更をくわえることです。
+
+         char *tp_name; /* 表示用 */
+
+これは型の名前です。前節で説明したように、これはいろいろな場面で
+現れ、ほとんどは診断用の目的で使われるものです。
+なので、そのような場面で役に立つであろう名前を選んでください。
+
+         int tp_basicsize, tp_itemsize; /* 割り当て用 */
+
+これらのメンバは、この型のオブジェクトが作成されるときにどれだけのメモリを
+割り当てればよいのかをランタイムに指示します。Python には可変長の構造体
+(文字列やリストなどを想像してください) に対する組み込みのサポートが
+ある程度あり、ここで `tp_itemsize' メンバが使われます。
+これらについてはあとでふれます。
+
+         char *tp_doc;
+
+ここには Python スクリプトリファレンス `obj.__doc__' が docstring を
+返すときの文字列 (あるいはそのアドレス) を入れます。
+
+では次に、ほとんどの拡張型が実装するであろう基本的な
+タイプメソッドに入っていきます。
+
+* Menu:
+
+* 最終化 finalization と解放::
+* Object Presentation::
+* 属性を管理する::
+* オブジェクトの比較::
+* 抽象的なプロトコルのサポート::
+* その他いろいろ::
+
+
+File: python-ext-jp.info,  Node: 最終化 finalization と解放,  Next: Object Presentation,  Prev: タイプメソッド,  Up: タイプメソッド
+
+最終化 (finalization) と解放
+----------------------------
+
+         destructor tp_dealloc;
+
+型のインスタンスの参照カウントがゼロになり、 Python
+インタプリタがそれを潰して再利用したくなると、
+この関数が呼ばれます。解放すべきメモリをその型が保持していたり、
+それ以外にも実行すべき後処理がある場合は、それらをここに入れます。
+オブジェクトそれ自体もここで解放される必要があります。
+この関数の例は、以下のようなものです:
+
+     static void
+     newdatatype_dealloc(newdatatypeobject * obj)
+     {
+         free(obj->obj_UnderlyingDatatypePtr);
+         obj->ob_type->tp_free(obj);
+     }
+
+解放用関数でひとつ重要なのは、処理待ちの例外にいっさい手をつけないことです。
+なぜなら、解放用の関数は Python
+インタプリタがスタックを元の状態に戻すときに
+呼ばれることが多いからです。そして (通常の関数からの復帰でなく)
+例外のために
+スタックが巻き戻されるときは、すでに発生している例外から解放用関数を
+守るものはありません。解放用の関数がおこなう動作が追加の Python
+のコードを
+実行してしまうと、それらは例外が発生していることを検知するかもしれません。
+これはインタプリタが誤解させるエラーを発生させることにつながります。
+これを防ぐ正しい方法は、安全でない操作を実行する前に処理待ちの例外を
+保存しておき、終わったらそれを元に戻すことです。これは `PyErr_Fetch()'
+および `PyErr_Restore()'  関数を使うことによって 可能になります:
+
+     static void
+     my_dealloc(PyObject *obj)
+     {
+         MyObject *self = (MyObject *) obj;
+         PyObject *cbresult;
+     
+         if (self->my_callback != NULL) {
+             PyObject *err_type, *err_value, *err_traceback;
+             int have_error = PyErr_Occurred() ? 1 : 0;
+     
+             if (have_error)
+                 PyErr_Fetch(&err_type, &err_value, &err_traceback);
+     
+             cbresult = PyObject_CallObject(self->my_callback, NULL);
+             if (cbresult == NULL)
+                 PyErr_WriteUnraisable();
+             else
+                 Py_DECREF(cbresult);
+     
+             if (have_error)
+                 PyErr_Restore(err_type, err_value, err_traceback);
+     
+             Py_DECREF(self->my_callback);
+         }
+         obj->ob_type->tp_free((PyObject*)self);
+     }
+
+
+File: python-ext-jp.info,  Node: Object Presentation,  Next: 属性を管理する,  Prev: 最終化 finalization と解放,  Up: タイプメソッド
+
+Object Presentation
+-------------------
+
+Python では、オブジェクトの文字列表現を生成するのに
+3つのやり方があります: `repr()'  関数 (あるいはそれと等価な
+バッククォートを用いた表現) を使う方法、`str()'
+
+関数を使う方法、そして `print' 文を使う方法です。
+ほとんどのオブジェクトで `print' 文は `str()' 関数と 同じですが、
+必要な場合には特殊なケースとして `FILE*' にも表示できます。 `FILE*'
+への表示は、効率が問題となっている場合で、一時的な
+文字列オブジェクトを作成してファイルに書き込むのでは効率が悪すぎることが
+プロファイリングからも明らかな場合にのみ使うべきです。
+
+これらのハンドラはどれも必須ではありません。 ほとんどの型ではせいぜい
+`tp_str' ハンドラと `tp_repr' ハンドラを実装するだけですみます。
+
+         reprfunc tp_repr;
+         reprfunc tp_str;
+         printfunc tp_print;
+
+`tp_repr' ハンドラは呼び出されたインスタンスの文字列表現を
+格納した文字列オブジェクトを返す必要があります。簡単な例は以下のようなものです:
+
+     static PyObject *
+     newdatatype_repr(newdatatypeobject * obj)
+     {
+         return PyString_FromFormat("Repr-ified_newdatatype{{size:\%d}}",
+                                    obj->obj_UnderlyingDatatypePtr->size);
+     }
+
+`tp_repr' ハンドラが指定されていなければ、インタプリタは その型の
+`tp_name' とそのオブジェクトの一意な識別値をもちいて
+文字列表現を作成します。
+
+`tp_str' ハンドラと `str()' の関係は、上の `tp_repr' ハンドラと
+`repr()' の関係に相当します。 つまり、これは Python
+のコードがオブジェクトのインスタンスに対して `str()'
+を呼び出したときに呼ばれます。この関数の実装は `tp_repr'
+ハンドラのそれと非常に似ていますが、得られる文字列表現は
+人間が読むことを意図されています。`tp_str' が指定されていない場合、
+かわりに `tp_repr' ハンドラが使われます。
+
+以下は簡単な例です:
+
+     static PyObject *
+     newdatatype_str(newdatatypeobject * obj)
+     {
+         return PyString_FromFormat("Stringified_newdatatype{{size:\%d}}",
+                                    obj->obj_UnderlyingDatatypePtr->size);
+     }
+
+print ハンドラは Python がその型のインスタンスを「print する」必要の
+あるときに毎回呼ばれます。たとえば 'node' が TreeNode
+型のインスタンスだと すると、print ハンドラは Python
+が以下を実行したときに呼ばれます:
+
+     print node
+
+flags 引数には `Py_PRINT_RAW' というフラグがあり、
+これはその文字列をクォートやおそらくはエスケープシーケンスの解釈もなしで
+表示することを指示します。
+
+この print 関数は `FILE*' オブジェクトを引数としてとります。
+たぶん、ここに出力することになるでしょう。
+
+print 関数の例は以下のようになります:
+
+     static int
+     newdatatype_print(newdatatypeobject *obj, FILE *fp, int flags)
+     {
+         if (flags & Py_PRINT_RAW) {
+             fprintf(fp, "<{newdatatype object--size: %d}>",
+                     obj->obj_UnderlyingDatatypePtr->size);
+         }
+         else {
+             fprintf(fp, "\"<{newdatatype object--size: %d}>\"",
+                     obj->obj_UnderlyingDatatypePtr->size);
+         }
+         return 0;
+     }
+
+
+File: python-ext-jp.info,  Node: 属性を管理する,  Next: オブジェクトの比較,  Prev: Object Presentation,  Up: タイプメソッド
+
+属性を管理する
+--------------
+
+属性をもつどのオブジェクトに対しても、その型は、
+それらオブジェクトの属性をどのように解決するか制御する関数を提供する
+必要があります。必要な関数としては、属性を (それが定義されていれば)
+取り出すものと、もうひとつは属性に (それが許可されていれば) 値を
+設定するものです。属性を削除するのは特殊なケースで、この場合は
+新しい値としてハンドラに `NULL'が渡されます。
+
+Python は 2つの属性ハンドラの組をサポートしています。
+属性をもつ型はどちらか一組を実装するだけでよく、それらの違いは
+一方の組が属性の名前を `char*' として受け取るのに対して
+もう一方の組は属性の名前を `PyObject*' として受け取る、というものです。
+それぞれの型はその実装にとって都合がよい方を使えます。
+
+         getattrfunc  tp_getattr;        /* char * バージョン */
+         setattrfunc  tp_setattr;
+         /* ... */
+         getattrofunc tp_getattrofunc;   /* PyObject * バージョン */
+         setattrofunc tp_setattrofunc;
+
+オブジェクトの属性へのアクセスがつねに (すぐあとで説明する)
+単純な操作だけならば、`PyObject*' を使って属性を管理する
+関数として、総称的 (generic) な実装を使えます。
+特定の型に特化した属性ハンドラの必要性は Python 2.2 からほとんど完全に
+なくなりました。しかし、多くの例はまだ、この新しく使えるようになった
+総称的なメカニズムを使うよう更新されてはいません。
+
+* Menu:
+
+* 総称的な属性を管理する::
+* 特定の型に特化した属性の管理::
+
+
+File: python-ext-jp.info,  Node: 総称的な属性を管理する,  Next: 特定の型に特化した属性の管理,  Prev: 属性を管理する,  Up: 属性を管理する
+
+総称的な属性を管理する
+......................
+
+_Added in Python version 2.2_
+
+ほとんどの型は_単純な_属性を使うだけです。では、
+どのような属性が単純だといえるのでしょうか?
+それが満たすべき条件はごくわずかです:
+
+  1. `PyType_Ready()' が呼ばれたとき、すでに
+     属性の名前がわかっていること。
+
+  2. 属性を参照したり設定したりするときに、特別な
+     記録のための処理が必要でなく、また参照したり設定した値に対して
+     どんな操作も実行する必要がないこと。
+
+これらの条件は、属性の値や、値が計算されるタイミング、
+または格納されたデータがどの程度妥当なものであるかといったことに
+なんら制約を課すものではないことに注意してください。
+
+`PyType_Ready()' が呼ばれると、これはそのタイプオブジェクトに
+参照されている 3つのテーブルを使って、そのタイプオブジェクトの辞書中に
+_デスクリプタ_
+を作成します。各デスクリプタは、インスタンスオブジェクトの属性に
+対するアクセスを制御します。それぞれのテーブルはなくてもかまいません。
+もしこれら 3つがすべて `NULL'だと、その型のインスタンスはその基底型から
+継承した属性だけを持つことになります。また、`tp_getattro' および
+`tp_setattro' が `NULL' のままだった場合も、
+基底型にこれらの属性の操作がまかせられます。
+
+テーブルはタイプオブジェクト中の 3つのメンバとして宣言されています:
+
+         struct PyMethodDef *tp_methods;
+         struct PyMemberDef *tp_members;
+         struct PyGetSetDef *tp_getset;
+
+`tp_methods' が `NULL'でない場合、 これは `PyMethodDef'
+構造体への配列を指している必要があります。
+テーブル中の各エントリは、つぎのような構造体のインスタンスです:
+
+     typedef struct PyMethodDef {
+         char        *ml_name;       /* メソッド名 */
+         PyCFunction  ml_meth;       /* 実装する関数 */
+         int	         ml_flags;      /* フラグ */
+         char        *ml_doc;        /* docstring */
+     } PyMethodDef;
+
+その型が提供する各メソッドについてひとつのエントリを定義する必要があります。
+基底型から継承してきたメソッドについてはエントリは必要ありません。
+これの最後には、配列の終わりを示すための見張り番 (sentinel) として
+追加のエントリがひとつ必要です。この場合、`ml_name' メンバが sentinel
+として使われ、 その値は `NULL'でなければなりません。
+
+2番目のテーブルは、インスタンス中に格納されるデータと直接対応づけられた属性を
+定義するのに使います。いくつもの C の原始的な型がサポートされており、
+アクセスを読み込み専用にも読み書き可能にもできます。
+このテーブルで使われる構造体は次のように定義されています:
+
+     typedef struct PyMemberDef {
+         char *name;
+         int   type;
+         int   offset;
+         int   flags;
+         char *doc;
+     } PyMemberDef;
+
+このテーブルの各エントリに対してデスクリプタが作成され、
+値をインスタンスの構造体から抽出しうる型に対してそれらが追加されます。
+`type' メンバは `structmember.h' ヘッダで定義された
+型のコードをひとつ含んでいる必要があります。この値は Python における
+値と C における値をどのように変換しあうかを定めるものです。 `flags'
+メンバはこの属性がどのようにアクセスされるかを制御する
+フラグを格納するのに使われます。
+
+以下のフラグ用定数は `structmember.h' で定義されており、
+これらはビットごとの OR を取って組み合わせられます。
+
+Constant                             Meaning
+------                               -----
+READONLY                             絶対に変更できない。
+RO                                   `READONLY' の短縮形。
+READ_RESTRICTED                      制限モード (restricted mode)
+                                     では参照できない。
+WRITE_RESTRICTED                     制限モード (restricted mode)
+                                     では変更できない。
+RESTRICTED                           制限モード (restricted mode)
+                                     では参照も変更もできない。
+
+`tp_members' を使ったひとつの面白い利用法は、実行時に使われる
+デスクリプタを作成しておき、単にテーブル中にテキストを置いておくことによって、
+この方法で定義されるどの属性は対応した docstring
+を持つことができるように することです。
+アプリケーションはこのイントロスペクション用 API を使って、
+クラスオブジェクトからデスクリプタを取り出し、その `__doc__' 属性を
+使って docstring を得られます。
+
+`tp_methods' テーブルと同じように、ここでも `name' メンバの値を `NULL'
+にした見張り用エントリが必要です。
+

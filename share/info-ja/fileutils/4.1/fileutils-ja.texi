@@ -1,0 +1,3462 @@
+\input texinfo
+@c %**start of header
+@setfilename fileutils-ja.info
+@settitle @sc{gnu} file utilities
+@c %**end of header
+
+@c @documentlanguage ja
+
+@include fileutils-v.texi
+
+@c Define new indices for file names and options.
+@c @defcodeindex fl
+@defcodeindex op
+
+@c Put everything in one index (arbitrarily chosen to be the concept index).
+@c @syncodeindex fl cp
+@syncodeindex fn cp
+@syncodeindex ky cp
+@syncodeindex op cp
+@syncodeindex pg cp
+@syncodeindex vr cp
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* File utilities(ja): (fileutils-ja).  GNU file utilities.
+* chgrp(ja): (fileutils-ja)chgrp invocation.         Change file groups.
+* chown(ja): (fileutils-ja)chown invocation.         Change file owners/groups.
+* chmod(ja): (fileutils-ja)chmod invocation.         Change file permissions.
+* cp(ja): (fileutils-ja)cp invocation.               Copy files.
+* dd(ja): (fileutils-ja)dd invocation.               Copy and convert a file.
+* df(ja): (fileutils-ja)df invocation.               Report filesystem disk usage.
+* dir(ja): (fileutils-ja)dir invocation.             List directories briefly.
+* dircolors(ja): (fileutils-ja)dircolors invocation. Color setup for ls.
+* du(ja): (fileutils-ja)du invocation.               Report on disk usage.
+* install(ja): (fileutils-ja)install invocation.     Copy and change attributes.
+* ln(ja): (fileutils-ja)ln invocation.               Make links between files.
+* ls(ja): (fileutils-ja)ls invocation.               List directory contents.
+* mkdir(ja): (fileutils-ja)mkdir invocation.         Create directories.
+* mkfifo(ja): (fileutils-ja)mkfifo invocation.       Create FIFOs (named pipes).
+* mknod(ja): (fileutils-ja)mknod invocation.         Create special files.
+* mv(ja): (fileutils-ja)mv invocation.               Rename files.
+* rm(ja): (fileutils-ja)rm invocation.               Remove files.
+* rmdir(ja): (fileutils-ja)rmdir invocation.         Remove empty directories.
+* shred(ja): (fileutils-ja)shred invocation.         Remove files more securely.
+* sync(ja): (fileutils-ja)sync invocation.           Synchronize memory and disk.
+* touch(ja): (fileutils-ja)touch invocation.         Change file timestamps.
+* vdir(ja): (fileutils-ja)vdir invocation.           List directories verbosely.
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@ifinfo
+This file documents the GNU set of file utilities.
+
+Copyright 1994, 95, 96, 1999, 2001 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no
+Front-Cover Texts, and with no Back-Cover Texts.
+A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+
+@end ifinfo
+
+@titlepage
+@title @sc{gnu} @code{fileutils}
+@subtitle A set of file utilities
+@subtitle for version @value{VERSION}, @value{UPDATED}
+@author David MacKenzie et al.
+@c 翻訳：西尾 太
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1994, 95, 96, 1999 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no
+Front-Cover Texts, and with no Back-Cover Texts.
+A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+@end titlepage
+
+
+@ifnottex
+
+@node Top
+@top GNU file utilities
+
+@cindex file utilities
+@cindex utilities for file handling
+
+このマニュアルは，@sc{gnu}ファイルユーティリティのバージョン
+@value{VERSION}を説明します．
+
+@menu
+* Introduction::                Caveats, overview, and authors.
+* Common options::              Common options.
+* File permissions::            Access modes.
+* Date input formats::          Specifying date strings.
+* Directory listing::           ls dir vdir d v dircolors
+* Basic operations::            cp dd install mv rm shred
+* Special file types::          ln mkdir rmdir mkfifo mknod
+* Changing file attributes::    chgrp chmod chown touch
+* Disk usage::                  df du sync
+* Index::                       General index.
+@end menu
+@end ifnottex
+
+@node Introduction
+@chapter はじめに
+
+@cindex introduction
+
+このマニュアルは不完全です．初心者に対して適切な方法でファイルの基本的な
+概念を説明する試みがなされていません．このため，興味があれば，このマニュ
+アルの改善に参加してください．@sc{gnu}コミュニティ全体が利益を得るでしょ
+う．
+
+@cindex POSIX.2
+@sc{gnu}ファイルユーティリティは，@sc{posix.2}標準とほとんど互換性があり
+ます．
+
+@c This paragraph appears in all of fileutils.texi, textutils.texi, and
+@c sh-utils.texi too -- so be sure to keep them consistent.
+@cindex bugs, reporting
+@email{bug-fileutils@@gnu.org}にバグを報告してください．バージョンナン
+バー，マシンアーキテクチャ，そしてバグの報告に必要なあらゆる情報，例えば
+入力，期待したもの，得たもの，そして何が間違っているのかという情報を含め
+ることを忘れないでください．差分は歓迎しますが，推測することが難しいとき
+もあるので，問題の記述も含めてください．@xref{Bugs, , , gcc, GNU CC}.
+
+@cindex history
+このマニュアルは，元々Unix配布物のmanページから得られ，それはDavid
+MacKenzieによって書かれ，Jim Meyeringによって更新されました．現在読んで
+いるものは，これらのユーティリティに対する正式なドキュメントです．manペー
+ジはもはや保守されてません．Fran@,{c}ois Pinardは，最初にTexinfo書式に変
+換しました．Karl Berryは，索引，いくつかの再構成，そして結果の編集を行い
+ました．Richard Stallmanは全体的な処理に，彼のいつもの貴重な洞察を寄与し
+ました．
+
+
+@node Common options
+@chapter 共通のオプション
+
+@cindex common options
+
+ある特定のオプションはこれらのプログラムの全てで利用可能です(実際，全て
+の@sc{gnu}プログラムはそれらを受け入れるべきです)．それぞれのプログラム
+の個別の記述で書くのではなく，ここで記述します．
+
+@table @samp
+@item --help
+@opindex --help
+@cindex help, online
+全ての利用可能なオプションをリストアップする使用方法のメッセージを出力し，
+正しく終了します．
+
+@item --version
+@opindex --version
+@cindex version number, finding
+バージョンナンバーを出力し，正しく終了します．
+@end table
+
+@menu
+* Backup options::              -b -S -V, in some programs.
+* Block size::                  BLOCK_SIZE and --block-size, in some programs.
+* Target directory::            --target-directory, in some programs.
+* Trailing slashes::            --strip-trailing-slashes, in some programs.
+@end menu
+
+
+@node Backup options
+@section バックアップオプション
+
+@cindex backup options
+
+@sc{gnu}プログラムには(少なくとも，@code{cp}，@code{install}，@code{ln}
+と@code{mv}は)追加で，新しいバージョンを書く前に，ファイルのバックアップ
+を作成するものもあります．これらのオプションは，これらのバックアップを詳
+細に制御します．オプションは，特定のプログラムでも簡単に記述します．
+
+@table @samp
+
+@item -b
+@itemx @w{@kbd{--backup}[=@var{method}]}
+@opindex -b
+@opindex --backup
+@vindex VERSION_CONTROL
+@cindex backups, making
+バックアップを作成しない場合，上書きされたり削除されたりするそれぞれのファ
+イルのバックアップを作成します．このオプションを使用しない場合，元のバー
+ジョンは破壊されます．このオプションが使用され，@var{method}が指定されて
+いないときは，@env{VERSION_CONTROL}環境変数の値が使用されます．そして
+@env{VERSION_CONTROL}が設定されていない場合は，デフォルトのバックアップ
+形式は@samp{existing}になります．
+
+
+このオプションの短い形式@samp{-b}は，引数を全く受け入れないことに注意し
+てください．@samp{-b}の使用は，@samp{--backup=existing}の使用と等価です．
+
+@vindex version-control @r{Emacs variable}
+このオプションは，Emacs変数の@samp{version-control}に対応します．
+@var{method}に対する値は，Emacsで使用されるものと同じです．このオプショ
+ンも，より記述的な名前を受け入れます．有効な@var{method}は以下の通りです
+(ユニークに識別できる省略も受け入れます)．
+
+@table @samp
+@item none
+@itemx off
+@opindex none @r{backup method}
+バックアップを作成しません．
+
+@item numbered
+@itemx t
+@opindex numbered @r{backup method}
+常に番号付のバックアップを作成します．
+
+@item existing
+@itemx nil
+@opindex existing @r{backup method}
+既に番号付のバックアップファイルがある場合，番号付のバックアップを作成し，
+それ以外では単純にバックアップします．
+
+@item simple
+@itemx never
+@opindex simple @r{backup method}
+常に単純なバックアップを作成します．@samp{never}と@samp{none}を混同しな
+いように注意してください．
+@end table
+
+@item -S @var{suffix}
+@itemx --suffix=@var{suffix}
+@opindex -S
+@opindex --suffix
+@cindex backup suffix
+@vindex SIMPLE_BACKUP_SUFFIX
+@samp{-b}で作成されるそれぞれのバックアップファイルに@var{suffix}を追加
+します．このオプションが指定されない場合，@code{SIMPLE_BACKUP_SUFFIX}環
+境変数の値が使用されます．また，@code{SIMPLE_BACKUP_SUFFIX}が設定されて
+いない場合，デフォルトで@samp{~}となり，それはちょうどEmacsと同じです．
+
+@itemx --version-control=@var{method}
+@opindex --version-control
+@c FIXME: remove this block one or two releases after the actual
+@c removal from the code.
+このオプションは時代遅れで，将来のリリースで削除されるでしょう．それは，
+@w{@kbd{--backup}}で置換されました．
+
+@end table
+
+
+@node Block size
+@section ブロックサイズ
+
+@cindex block size
+
+@sc{gnu}プログラム(少なくとも，@code{df}，@code{du}と，@code{ls})には，
+ファイルサイズを``ブロック''で表示するものもあります．ファイルサイズをよ
+り読みやすくするため，ブロックサイズを調整できます．表示で使用するブロッ
+クサイズは，あらゆるファイルシステムのブロックサイズから独立しています．
+
+通常，ディスク使用のサイズは切り上げ，ディスクフリーサイズは切り捨て，そ
+して，それ以外は，偶数に丸めたときの最も近いブロックで丸められます．
+
+@opindex --block-size=@var{size}
+@vindex BLOCK_SIZE
+@vindex DF_BLOCK_SIZE
+@vindex DU_BLOCK_SIZE
+@vindex LS_BLOCK_SIZE
+@vindex POSIXLY_CORRECT@r{, and block size}
+
+デフォルトブロックサイズは，以下の環境変数を順番に調べることで選択されま
+す．最初のものはブロックサイズを決定します．
+
+@table @code
+
+@item DF_BLOCK_SIZE
+これは，@code{df}コマンドに対するデフォルトのブロックサイズを指定します．
+同様に，@env{DU_BLOCK_SIZE}は@code{du}に対するデフォルト，
+@env{LS_BLOCK_SIZE}は@code{ls}に対するデフォルトを指定します．
+
+@item BLOCK_SIZE
+上記のコマンド指定の環境変数が設定されていない場合，これは，三つのコマン
+ド全てに対するデフォルトブロックサイズを指定します．
+
+@item POSIXLY_CORRECT
+@env{@var{command}_BLOCK_SIZE}も@env{BLOCK_SIZE}変数も設定されていなく
+て，この変数が設定されている場合，ブロックサイズのデフォルトは512になり
+ます．
+
+@end table
+
+上記の環境変数がどれも設定されていない場合，ブロックサイズは現在のデフォ
+ルトの1024バイトですが，この数は将来変更されるかもしれません．
+
+@cindex human-readable output
+@cindex SI output
+
+ブロックサイズの指定は，ブロック毎のバイト数を指定することで，正の整数に
+したり，人間が可読な書式を選択することで，@code{human-readable}や
+@code{si}にしたりできます．
+
+人間が可読な書式を用いた場合，出力サイズは，メガバイトに対する@samp{M}の
+ような大きさを示す文字が続きます．@code{BLOCK_SIZE=human-readable}は1024 
+乗を使用します．@samp{M}は1,048,576バイトを意味します．
+@code{BLOCK_SIZE=si}は似ていますが，1000乗を使用します．@samp{M}は
+1,000,000を意味します．(SI，国際単位系は，これらの1000乗の前置を定義しま
+す．)
+
+整数のブロックサイズは，そのサイズの倍数を指定する大きさを示す文字を続け
+ることができます．この注釈が用いられた場合，大きさを示す文字は，通常1024 
+倍を意味し，オプションで``バイト''に対する@samp{B}を続けることができます．
+しかし，(``10進バイト''に対する)@samp{D}が続く場合，それらは1000倍を意味
+します．例えば，@code{BLOCK_SIZE=4MB}は@code{BLOCK_SIZE=4194304}と同じで，
+@code{BLOCK_SIZE=4MD}は@code{BLOCK_SIZE=4000000}と同じです．
+
+以下の大きさを示す文字は定義されています．@code{1Y}のような大きなサイズ
+は，その計算の限界のためコンピュータで拒絶されるかもしれません．
+
+@table @samp
+@item k
+キロ：@code{human-readable}に対する@math{2^10 = 1024}，または，@code{si}
+に対する@math{10^3 = 1000}．
+@item M
+メガ：@math{2^20 = 1,048,576}，または，@math{10^6 = 1,000,000}．
+@item G
+ギガ：@math{2^30 = 1,073,741,824}，または，@math{10^9 = 1,000,000,000}．
+@item T
+テラ：@math{2^40 = 1,099,511,627,776}，または，@math{10^12 =
+1,000,000,000,000}．
+
+@item P
+ペタ：@math{2^50 = 1,125,899,906,842,624}，または，@math{10^15 =
+1,000,000,000,000,000}．
+
+@item E
+エクサ：@math{2^60 = 1,152,921,504,606,846,976}，または，@math{10^18 =
+1,000,000,000,000,000,000}．
+
+@item Z
+ゼータ：@math{2^70 = 1,180,591,620,717,411,303,424}，または，@math{10^21
+= 1,000,000,000,000,000,000,000}．
+
+@item Y
+ヨット：@math{2^80 = 1,208,925,819,614,629,174,706,176}，または，
+@math{10^24 = 1,000,000,000,000,000,000,000,000}．
+@end table
+
+@opindex -k
+@opindex --kilobytes
+@opindex -h
+@opindex --human-readable
+@opindex --si
+
+ブロックサイズのデフォルトは，@samp{--block-size=@var{size}}オプションを
+明示することで優先できます．@samp{-k}や@samp{--kilobytes}オプションは，
+@samp{--block-size=1k}と同じで，それは@env{POSIXLY_CORRECT}環境変数が指
+定されていない場合デフォルトです．@samp{-h}や@samp{--human-readable}オプ
+ションは，@samp{--block-size=human-readable}と同じです．@samp{--si}オプ
+ションは，@samp{--block-size=si}と同じです．
+
+
+@node Target directory
+@section ターゲットディレクトリ
+
+@cindex target directory
+
+@sc{gnu}プログラム(少なくとも@code{cp}，@code{install}，@code{ln}，そし
+て@code{mv})には，このオプションによってターゲットディレクトリを指定する
+ことが可能なものもあります．
+
+@table @samp
+
+@itemx @w{@kbd{--target-directory}=@var{directory}}
+@opindex --target-directory
+@cindex target directory
+@cindex destination directory
+対象となる@var{directory}を指定します．
+
+ほとんどのプログラムに対するインターフェースは，オプションと，有限(おそ
+らくゼロの)数の固定した位置の引数を処理した後，残りの引数リストは空であ
+ることを期待される，または，同じように扱われる(通常ファイルとなる)項目の
+リストとなります．@code{xargs}プログラムは，この慣習を用いてより良く動作
+するように設計されています．
+
+@emph{終り}に特例で様々な数の引数(すなわち，ターゲットディレクトリ)を持
+つため，@code{mv}の類のコマンドは普通ではありません．これは@code{mv *
+../d/}が引数の空間を使い果たし，@code{ls | xargs ...}は，それぞれの従属
+するコマンドの呼び出しのために，特別な最終的な引数を指定するための明確な
+方法ではないため，例えば``全てのファイルをここから../d/に移動する'' のよ
+うないくつかの処理を実行するときに，これは明確ではなくなります．(それは，
+シェルコマンドを通じて動作可能ですが，それはそうするより人間の労働と能力
+を必要とします．)
+
+@w{@kbd{--target-directory}}オプションは，@code{cp}，@code{install}，
+@code{ln}，そして@code{mv}プログラムが，@code{xargs}を用いて便利に使用す
+ることを可能にします．例えば，現在のディレクトリから同胞のディレクトリ，
+ここでは@code{d}にファイルを移動することが可能です．(しかし，これは
+@samp{.}で始まる名前のファイルを移動しません．)
+
+@smallexample
+ls |xargs mv --target-directory=../d
+@end smallexample
+
+@sc{gnu} @code{find}プログラムを使用している場合，このコマンドで@emph{全
+ての}ファイルを移動できます．
+
+@example
+find . -mindepth 1 -maxdepth 1 \
+  | xargs mv --target-directory=../d
+@end example
+
+しかし，現在のディレクトリにファイルがない場合や，改行文字を含む名前を持
+つファイルがある場合，それは失敗するでしょう．以下の例は，これらの制限を
+取り除き，@sc{gnu} @code{find}と@sc{gnu} @code{xargs}の両方を必要としま
+す．
+
+@example
+find . -mindepth 1 -maxdepth 1 -print0 \
+  | xargs --null --no-run-if-empty \
+      mv --target-directory=../d
+@end example
+
+@end table
+
+
+@node Trailing slashes
+@section 末尾のスラッシュ
+
+@cindex trailing slashes
+
+@sc{gnu}プログラム(少なくとも@code{cp}と@code{mv})には，それぞれの
+@var{source}引数を処理する前に末尾のスラッシュを取り除くことを可能にする
+ものもあります．@w{@kbd{--strip-trailing-slashes}}オプションはこの動作を
+可能にします．
+
+@var{source}引数が末尾にスラッシュがあり，ディレクトリへのシンボリックリ
+ンクを指定しているとき，これは役に立ちます．シェルには，シンボリックリン
+クのようなものに対してファイル名の補完を実行しているとき，末尾のスラッシュ
+を自動的に追加することができるものもあるので，このシナリオ筋書きは現実と
+なります．このオプションがない場合，例えば(システムの名前変更機能のため
+の)@code{mv}は，末尾のスラッシュをシンボリックリンク先を参照しないように
+要求するよう解釈する必要があり，そして，そのためシンボリックリンクではな
+く，間接的に参照される@emph{ディレクトリ}の名前を変更するはずです．その
+ような動作がデフォルトということにびっくりするかもしれませんが，それは
+@sc{posix.2}で要求されていて，その標準のそれ以外の部分と一貫しています．
+
+
+@node File permissions
+@chapter ファイルのパーミッション
+
+@cindex file permissions
+@cindex permissions of files
+
+@include perm-ja.texi
+
+@include getdate-ja.texi
+
+
+@node Directory listing
+@chapter ディレクトリのリストアップ
+
+この章では，@code{ls}コマンドとその変形の@code{dir}と@code{vdir}を記述し，
+それはファイルに関する情報をリストアップします．
+
+@menu
+* ls invocation::               List directory contents.
+* dir invocation::              Briefly ls.
+* vdir invocation::             Verbosely ls.
+* dircolors invocation::        Color setup for ls, etc.
+@end menu
+
+
+@node ls invocation
+@section @code{ls}: ディレクトリの内容をリストアップ
+
+@pindex ls
+@cindex directory listing
+
+@code{ls}プログラムは，ファイル(の形式で，ディレクトリを含む)に関する情
+報をリストアップします．オプションとファイル引数は，通常のものと同様，任
+意に混ぜることができます．
+
+オプションの無いコマンドラインのディレクトリ引数に対し，@code{ls}はデフォ
+ルトで，ディレクトリの内容をリストアップし，それは再帰的ではなく，
+@samp{.}で始まる名前を持つファイルは除きます．他のオプションの無い引数に
+対し，@code{ls}はデフォルトで，そのファイル名のみをリストアップします．
+オプションではない引数が指定されない場合，@code{ls}は現在のディレクトリ
+の内容をリストアップします．
+
+デフォルトで，出力はアルファベット順に出力されます．標準出力が端末の場合，
+出力は(垂直方向にソートされた)列になり，制御文字は疑問符として出力されま
+す．それ以外の場合，出力は1行毎にリストアップされ，制御文字は同様になり
+ます．
+
+@code{ls}はこのような基本的なプログラムなので，それは数年かけて多くのオ
+プションを蓄積してきました．それらは以下のサブセクションで記述します．そ
+れぞれのセクションで，オプションはアルファベット順に(大文字小文字を無視
+して)リストアップされています．オプションをサブセクションに分けることは
+絶対ではなく，それは，1つ以上の@code{ls}の処理の局面で影響するためです．
+
+@opindex -g @r{(ignored)}
+@samp{-g}オプションは受け入れられますが無視され，それはUnixの移植性のた
+めです．@ref{Common options},も参照してください．
+
+@menu
+* Which files are listed::
+* What information is listed::
+* Sorting the output::
+* More details about version sort::
+* General output formatting::
+* Formatting the file names::
+@end menu
+
+
+@node Which files are listed
+@subsection リストアップされるファイル
+
+これらのオプションは，@code{ls}がリストアップするファイルの情報を決定し
+ます．デフォルトで，コマンドラインのあらゆるファイルとディレクトリの内容
+が表示されます．
+
+@table @samp
+
+@item -a
+@itemx --all
+@opindex -a
+@opindex --all
+@samp{.}で始まるファイルを含め，ディレクトリの全てのファイルをリストアッ
+プします．
+
+@item -A
+@itemx --almost-all
+@opindex -A
+@opindex --almost-all
+@file{.}と@file{..}以外の，ディレクトリの全てのファイルをリストアップし
+ます．
+
+@item -B
+@itemx --ignore-backups
+@opindex -B
+@opindex --ignore-backups
+@cindex backup files, ignoring
+コマンドラインで与えられない限り，@samp{~}で終るファイルをリストアップし
+ません．
+
+@item -d
+@itemx --directory
+@opindex -d
+@opindex --directory
+ディレクトリの名前のみリストアップし，それはファイルの他の形式と同様で，
+その内容をリストアップしません．
+
+@item -I PATTERN
+@itemx --ignore=PATTERN
+@opindex -I
+@opindex --ignore=@var{pattern}
+それらがコマンドラインで与えられていない限り，シェルパターン(正規表現で
+はありません)@var{pattern}に一致する名前のファイルをリストアップしません．
+シェルと同様に，ファイル名の最初の@samp{.}は，@var{pattern}の最初のワイ
+ルドカードに一致しません．このオプションを複数回与えると便利なときもあり
+ます．例えば，以下のようにします．
+
+@smallexample
+$ ls --ignore='.??*' --ignore='.[^.]' --ignore='#*'
+@end smallexample
+
+最初のオプションは，@samp{.}で始まる長さが3文字以上の名前を無視し，2番目
+は@samp{..}以外の@samp{.}で始まる全ての2文字の名前を無視し，3番目は
+@samp{#}で始まる名前を無視します．
+
+@item -L
+@itemx --dereference
+@opindex -L
+@opindex --dereference
+@cindex symbolic links, dereferencing
+長いリストで，シンボリックリンク自身ではなくシンボリックリンクの参照のファ
+イル情報(例えば，時間や許可)を表示します．
+
+@item -R
+@itemx --recursive
+@opindex -R
+@opindex --recursive
+@cindex recursive directory listing
+@cindex directory listing, recursive
+全てのディレクトリの内容を，再帰的にリストアップします．
+
+@end table
+
+
+@node What information is listed
+@subsection リストアップされる情報
+
+これらのオプションは，@code{ls}が表示する情報に影響します．デフォルトで，
+ファイル名のみ表示されます．
+
+@table @samp
+
+@item -D
+@itemx --dired
+@opindex -D
+@opindex --dired
+@cindex dired Emacs mode support
+長いリスト(@samp{-l})の書式を用いた場合，主な出力の後に追加して以下を出
+力します．
+
+@example
+//DIRED// @var{beg1 end1 beg2 end2 @dots{}}
+@end example
+
+@noindent
+@var{begN}と@var{endN}は，出力のそれぞれのファイル名の始めと終りのバイト
+位置を記録する符号無し整数です．これで，たとえスペースや改行といった通常
+用いない文字を含むときも，異常な検索をすること無く，Emacsは簡単に名前を
+見つけるようになります．
+
+ディレクトリが再帰的(@code{-R})にリストアップされる場合，出力はそれぞれ
+のサブディレクトリの後に，良く似た行を出力します．
+@example
+//SUBDIRED// @var{format} @var{beg1 end1 @dots{}}
+@end example
+
+最終的に以下の形式の行を出力します．
+@example
+//DIRED-OPTIONS// --quoting-style=@var{word}
+@end example
+@var{word}は引用形式です(@pxref{Formatting the file names})．
+
+@item -G
+@itemx --no-group
+@opindex -G
+@opindex --no-group
+長い書式のディレクトリのリスト表示で，グループ情報の表示を禁止します．
+(これは@sc{gnu}ではないバージョンの@code{ls}ではデフォルトで，我々は互換
+性のためにこのオプションを提供します．)
+
+@item -h
+@itemx --human-readable
+@opindex -h
+@opindex --human-readable
+@cindex human-readable output
+それぞれの大きさに，メガバイトに対する@samp{M}のようなサイズ文字を追加し
+ます．1000倍ではなく1024倍が使用されます．@samp{M}は1,048,576バイトを意
+味します．1000倍を望む場合，@samp{--si}オプションを使用してください．
+
+@item -H
+@itemx --si
+@opindex -H
+@opindex --si
+@cindex SI output
+それぞれの大きさに，メガバイトに対する@samp{M}のようなサイズ文字を追加し
+ます．(SIは国際単位系で，それはこれらの文字を接頭辞として定義しています．
+1024倍ではなく1000倍が使用されます．@samp{M}は1,000,000バイトを意味しま
+す．1024倍を望む場合，@samp{-h}または@samp{--human-readable}オプションを
+使用してください．
+
+警告：@option{-H}の意味は，将来@sc{posix}に従い変更されます．古い意味に
+対しては@option{--si}を使用してください．
+
+@item -i
+@itemx --inode
+@opindex -i
+@opindex --inode
+@cindex inode number, printing
+それぞれのファイルのinode番号(ファイルシリアル番号とインデックス番号と
+も呼ばれています)を，ファイル名の左に出力します．(この番号は，特定のファ
+イルシステム内の，それぞれのファイルを単一のものとして識別します．)
+
+@item -l
+@itemx --format=long
+@itemx --format=verbose
+@opindex -l
+@opindex --format
+@opindex long ls @r{format}
+@opindex verbose ls @r{format}
+それぞれのファイル名に加えて，ファイル形式，許可，ハードリンク数，所有者
+名，バイトのサイズ，そしてタイムスタンプ(デフォルトで編集した時間)を出力
+します．6ヵ月以上前の時間や，未来のファイルについては，タイムスタンプは
+日付の時間の代わりに年を含みます．タイムスタンプが日付ではなく，年と今日
+の日付を含む場合，ファイルの時間は未来で，それはおそらく，ファイルの時間
+に依存する@command{make}のようなプログラムを破壊する可能性のある，時刻の
+ずれの問題があることを意味します．
+
+リストアップされたそれぞれのディレクトリに対し，@samp{total
+@var{blocks}}という行をファイルに前置し，そこでの@var{blocks}は，そのディ
+レクトリの全てのファイルが占めるディスク全体です．ブロックサイズは，現在
+デフォルトで1024バイトですが，これに優先可能です(@pxref{Block size})．
+@var{blocks}は，それぞれのハードリンクを別々に数えて計算します．これはお
+そらく欠陥です．
+
+@cindex permissions, output by @code{ls}
+リストアップされる許可は，象徴的なモードでの指定に似ています
+(@pxref{Symbolic Modes})．しかし，@code{ls}は，それぞれの許可の設定を複
+数のビットを3番目の文字に組み合わせ，以下のようにします．
+@table @samp
+@item s
+setuidやsetgidビットと対応する実行可能ビットが，両方設定されている場合．
+
+@item S
+setuidやsetgidビットは設定されているが，対応する実行可能ビットが設定され
+ていない場合．
+
+@item t
+stickyビットとotherの実行可能ビットが両方設定されている場合．
+
+@item T
+stickyビットは設定されているが，otherの実行可能ビットが設定されていない
+場合．
+
+@item x
+実行可能ビットが設定されていて，上記は何も適応されない場合．
+
+@item -
+それ以外．
+@end table
+
+許可ビットに続くものは，ファイルに適用するアクセス手法の変更を指定する単
+一の文字です．文字がスペースのとき，アクセス手法の変更はありません．印刷
+可能な文字(例えば@samp{+})のとき，そのような手法があります．
+
+@item -o
+@opindex -o
+長いディレクトリのリストの書式を生成しますが，グループ情報は表示しません．
+それは，@samp{--no-group}を用いた@samp{--format=long}の使用と同じです．
+このオプションは，@code{ls}の他のバージョンとの互換性のために供給されて
+います．
+
+@item -s
+@itemx --size
+@opindex -s
+@opindex --size
+@cindex disk allocation
+@cindex size of files, reporting
+ファイル名の左側に，それぞれのファイルのディスク占有量を出力します．これ
+は，ファイルが使用しているディスクスペースの総量で，それは通常ファイルサ
+イズよりわずかに多くなりますが，ファイルに欠陥がある場合は，より小さくな
+るはずです．
+
+通常ディスクの占有量は1024バイト単位で出力されますが，これに優先すること
+は可能です(@pxref{Block size})．
+
+@cindex NFS mounts from BSD to HP-UX
+HP-UXシステムからBSDシステムに，NFSでマウントされているファイルに対し，
+このオプションは，正しい値の半分のサイズを報告します．HP-UXシステムでは，
+BSDシステムからNFSでマウントされているファイルに対し，正しい値の2倍のサ
+イズを報告します．これは，HP-UXの欠点のためです．それはHP-UXの@code{ls}
+プログラムにも影響します．
+
+@end table
+
+
+@node Sorting the output
+@subsection 出力の並べ替え
+
+@cindex sorting @code{ls} output
+これらのオプションは，@code{ls}が並べ替える出力の情報の順序を変更します．
+デフォルトで，並べ替えは文字コードによって行われます(例えば，ASCIIの順番
+です)．
+
+@table @samp
+
+@item -c
+@itemx --time=ctime
+@itemx --time=status
+@itemx --time=use
+@opindex -c
+@opindex --time
+@opindex ctime@r{, printing or sorting by}
+@opindex status time@r{, printing or sorting by}
+@opindex use time@r{, printing or sorting files by}
+長いリスト書式(例えば，@samp{-l}，@samp{-o})が使用されている場合，編集時
+間の代わりにステータス変更時間(inodeの@samp{ctime})が出力されます．時間
+(@samp{--sort=time}または@samp{-t})で明示的に並べ替えをしたり，長いリス
+トの書式を使用しないとき，ステータスの変更時間によって並べ替えます．
+
+@item -f
+@opindex -f
+@cindex unsorted directory listing
+@cindex directory order, listing by
+主に，@samp{-U}に似ています---並べ替えしません．ディレクトリに保存されて
+いるファイルの順番に，それらをリストアップします．しかし，@samp{-a}(すべ
+てのファイルをリストアップ)も利用可能で，(前に@samp{-f}が指定されている
+場合)@samp{-l}，@samp{--color}，そして@samp{-s}は利用不可能です．
+
+@item -r
+@itemx --reverse
+@opindex -r
+@opindex --reverse
+@cindex reverse sorting
+並べ替えのあらゆる手法を反転します---例えば，アルファベットの逆順，新し
+いものを最初，小さいものを最初，またはすべて逆順にリストアップします．
+
+@item -S
+@itemx --sort=size
+@opindex -S
+@opindex --sort
+@opindex size of files@r{, sorting files by}
+ファイルサイズで，大きいものを最初にして並べ替えます．
+
+@item -t
+@itemx --sort=time
+@opindex -t
+@opindex --sort
+@opindex modification time@r{, sorting files by}
+編集時間(inodeの@samp{mtime})で，新しいものを最初にして並べ替えます．
+
+@item -u
+@itemx --time=atime
+@itemx --time=access
+@opindex -u
+@opindex --time
+@opindex use time@r{, printing or sorting files by}
+@opindex atime@r{, printing or sorting files by}
+@opindex access time@r{, printing or sorting files by}
+長いリスト書式(例えば，@samp{--format=long})が使用されている場合，最後に
+アクセスした時間(inodeの@samp{atime})が出力されます．時間
+(@samp{--sort=time}または@samp{-t})で明示的に並べ替えをしたり，長いリス
+トの書式を使用しないとき，アクセスした時間によって並べ替えます．
+
+@item -U
+@itemx --sort=none
+@opindex -U
+@opindex --sort
+@opindex none@r{, sorting option for @code{ls}}
+並べ替えしません．ディレクトリに保存されている順番にファイルをリストアッ
+プします．(@samp{-f}が行う，他と関連することは何もしません．) 並べ替えを
+行わないことで，目立って速くすることが可能なので，非常に大きなディレクト
+リをリストアップするとき，これは特に便利です．
+
+@item -v
+@itemx --sort=version
+@opindex -v
+@opindex --sort
+@opindex version@r{, sorting option for @code{ls}}
+バージョン名と数字で，小さいものを最初にして並べ替えます．それはデフォル
+トの並べ替えに似ている動作で，それぞれの10進数の並びが，索引/バージョン
+番号として数値的に扱われることが期待されます．(@xref{More details about
+version sort}.)
+
+@item -X
+@itemx --sort=extension
+@opindex -X
+@opindex --sort
+@opindex extension@r{, sorting files by}
+ディレクトリの内容を，ファイルの拡張子(最後の@samp{.}の後の文字)で，アル
+ファベット順に並べ替えます．ファイルの拡張子がないものが最初になります．
+@end table
+
+
+@node More details about version sort
+@subsection バージョンの並べ替えの詳細
+
+バージョンの並べ替えは，ファイル名が索引やバージョン番号を含むことが多い
+という事実を考慮にいれています．標準的な並べ替え機能は，1文字づつを基本
+に比較するため，通常，人々が期待する順序を生成しません．バージョンの並べ
+替えは，この問題を提出し，その名前に索引/バージョン番号を伴うファイルを
+多く含むディレクトリを眺めるとき特に役に立ちます．
+
+@example
+      > ls -1            > ls -1v
+      foo.zml-1.gz       foo.zml-1.gz
+      foo.zml-100.gz     foo.zml-2.gz
+      foo.zml-12.gz      foo.zml-6.gz
+      foo.zml-13.gz      foo.zml-12.gz
+      foo.zml-2.gz       foo.zml-13.gz
+      foo.zml-25.gz      foo.zml-25.gz
+      foo.zml-6.gz       foo.zml-100.gz
+@end example
+
+数字の部分にゼロが前置されていても，分数として考慮されることに注意して下
+さい．
+
+@example
+      > ls -1            > ls -1v
+      abc-1.007.tgz      abc-1.007.tgz
+      abc-1.012b.tgz     abc-1.01a.tgz
+      abc-1.01a.tgz      abc-1.012b.tgz
+@end example
+
+
+@node General output formatting
+@subsection 一般的な出力書式
+
+これらのオプションは，出力の外観に影響します．
+
+@table @samp
+
+@item -1
+@itemx --format=single-column
+@opindex -1
+@opindex --format
+@opindex single-column @r{output of files}
+ファイルを1行毎にリストアップします．これは，標準出力が端末でないときの
+デフォルトです．
+
+@item -C
+@itemx --format=vertical
+@opindex -C
+@opindex --format
+@opindex vertical @r{sorted files in columns}
+列で縦方向に並べ替えされてリストアップされます．標準出力が端末の場合，こ
+れはデフォルトです．@code{dir}と@code{d}プログラムに対し，それは常にデフォ
+ルトです．@sc{gnu} @code{ls}は，最も少ない行で可能な限り多くのファイルを
+表示できるように，列の幅を変更して使用します．
+
+@item --color [=@var{when}]
+@opindex --color
+@cindex color, distinguishing file types with
+ファイル形式を区別するため使用する色を指定します．@var{when}は省略される，
+または以下の一つになります．
+@itemize @bullet
+@item none
+@vindex none @r{color option}
+- 色を全く使用しません．これはデフォルトです．
+@item auto
+@vindex auto @r{color option}
+@cindex terminal, using color iff
+- 標準出力が端末の場合のみ色を使用します．
+@item always
+@vindex always @r{color option}
+- 常に色を使用します．
+@end itemize
+@samp{--color}を指定し@var{when}が無いことは，@samp{--color=always}と同
+じです．色付きのリストを@code{more}や@code{less}の様なページャにパイプで
+渡すと，通常読むことができない結果を生成します．しかし，@code{more -f}を
+使用すると動作するでしょう．
+
+@item -F
+@itemx --classify
+@itemx --indicator-style=classify
+@opindex -F
+@opindex --classify
+@opindex --indicator-style
+@cindex file type and executables, marking
+@cindex executables and file type, marking
+ファイル形式を示す文字を，それぞれのファイル名に追加します．また，実行可
+能な標準ファイルに対し，@samp{*}を加えます．ファイル形式表示子は，ディレ
+クトリに対する@samp{/}，シンボリックリンクに対する@samp{@@}，FIFOに対す
+る@samp{|}，ソケットに対する@samp{=}で，標準ファイルは何もありません．
+
+@item --full-time
+@opindex --full-time
+標準的な省略の経験則を用いるのではなく，完全な時間をリストアップします．
+書式は現在，@code{date}に似ていますが，これは将来のリリースで変更される
+予定で，それは近代的なファイルタイムスタンプが，部分的により正確なためで
+す．これを変更することは不可能ですが，@code{cut}で日付文字列を抽出して，
+結果を@code{date -d}に渡すことができます．@xref{date invocation,
+@code{date} invocation, , sh-utils, Shell utilities}.
+
+これは，時間出力が秒を出力するので，最も役に立ちます．(Unix ファイルシス
+テムは，最も近い秒でファイルのタイムスタンプを記録し，そのため，このオプ
+ションは存在するすべての情報を表示します．)例えば，正しくファイルを再生
+させていないMakefileがあるとき，これは役に立つはずです．
+
+@item --indicator-style=@var{word}
+@opindex --indicator-style
+エントリー名にスタイル@var{word}文字表示子を以下のように追加します．
+@table @samp
+@item none
+あらゆる文字表示子を追加しません．これはデフォルトです．
+@item file-type
+ディレクトリに対し@samp{/}，シンボリックリンクに対し@samp{@@}，FIFOに対
+し@samp{|}，ソケットに対し@samp{=}を追加し，標準ファイルには何も追加しま
+せん．これは@samp{-p}や@samp{--file-type}オプションと同じです．
+@item classify
+実行可能な標準ファイルに@samp{*}を加え，それ以外は@samp{file-type}として
+動作します．これは，@samp{-F}や@samp{--classify}オプションと同じです．
+@end table
+
+@item -k
+@itemx --kilobytes
+@opindex -k
+@opindex --kilobytes
+ファイルの大きさを1024バイトブロックで出力し，デフォルトのブロックサイズ
+(@pxref{Block size})に優先します．
+
+@item -m
+@itemx --format=commas
+@opindex -m
+@opindex --format
+@opindex commas@r{, outputting between files}
+それぞれの行にできるだけ多くフィットするように，@samp{, } (カンマとスペー
+ス)で分けて，水平方向にリストアップします．
+
+@item -n
+@itemx --numeric-uid-gid
+@opindex -n
+@opindex --numeric-uid-gid
+@cindex numeric uid and gid
+名前の代わりに，数値のUIDとGIDをリストアップします．
+
+@item -p
+@itemx --file-type
+@itemx --indicator-style=file-type
+@opindex --file-type
+@opindex --indicator-style
+@cindex file type, marking
+それぞれのファイル名にファイル形式を示す文字を追加します．これは
+@samp{-F}に似ていますが，実行可能なものは印を付けません．
+
+@item -x @var{format}
+@itemx --format=across
+@itemx --format=horizontal
+@opindex -x
+@opindex --format
+@opindex across@r{, listing files}
+@opindex horizontal@r{, listing files}
+ファイルを列に，水平にソートしてリストアップします．
+
+@item -T @var{cols}
+@itemx --tabsize=@var{cols}
+@opindex -T
+@opindex --tabsize
+それぞれのタブストップが@var{cols}列の幅だと考えます．デフォルトは8です．
+@code{ls}は，効率のために出力可能なところではタブを使用します．
+@var{cols}が0の場合はタブを全く使用しません．
+
+@item -w
+@itemx --width=@var{cols}
+@opindex -w
+@opindex --width
+@vindex COLUMNS
+画面が@var{cols}列の幅だと考えます．可能な場合，デフォルトは端末の設定で
+与えられます．それ以外で，環境変数@env{COLUMNS}が設定されている場合，そ
+れが使用されます．それ以外の場合，デフォルトの80です．
+
+@end table
+
+
+@node Formatting the file names
+@subsection ファイル名の書式化
+
+これらのオプションは，ファイル名自身を出力する方法を変更します．
+
+@table @samp
+
+@item -b
+@itemx --escape
+@itemx --quoting-style=escape
+@opindex -b
+@opindex --escape
+@opindex --quoting-style
+@cindex backslash sequences for file names
+ファイル名の表示不可能な文字を，Cで使用されるような，アルファベットと8進
+数のバックスラッシュシーケンスを用いて引用符で囲みます．
+
+@item -N
+@itemx --literal
+@opindex -N
+@opindex --literal
+ファイル名を引用符で囲みません．
+
+@item -q
+@itemx --hide-control-chars
+@opindex -q
+@opindex --hide-control-chars
+ファイル名の表示不能な文字の代わりに疑問符を出力します．出力が端末の場合
+と，プログラムが@code{ls}の場合，これはデフォルトです．
+
+@item -Q
+@itemx --quote-name
+@itemx --quoting-style=c
+@opindex -Q
+@opindex --quote-name
+@opindex --quoting-style
+2重引用符でファイル名を囲み，表示不可能な文字をCのように引用符で囲みます．
+
+@item --quoting-style=@var{word}
+@opindex --quoting-style
+@cindex quoting style
+出力名の引用符に形式@var{word}を使用します．@var{word}は以下の一つになり
+ます．
+@table @samp
+@item literal
+現状のまま名前を出力します．
+@item shell
+名前にシェルメタ文字を含んでいたり，不明瞭な出力を生じる場合，引用符で囲
+みます．
+@item shell-always
+シェルのため，通常は引用符が不要な場合でも名前を引用符で囲みます．
+@item c
+C言語の文字列で名前を引用符で囲みます．これは@samp{-Q}や
+@samp{--quote-name}オプションと同じです．
+@item escape
+周囲の二重引用符を省略した@samp{c}を引用符として用います．これは，
+@samp{-b}や@samp{--escape}オプションと同じです．
+@item clocale
+ロケールに適切な引用符を使用する以外は，@samp{c}を用いたように引用符で囲
+みます．
+@item locale
+@c Use @t instead of @samp to avoid duplicate quoting in some output styles.
+@samp{clocale}に似ていますが，デフォルトのCロケール@t{"like this"}の代わ
+りに，@t{`like this'}で囲みます．これは多くのディスプレイでより良く見え
+ます．
+@end table
+
+@samp{--quoting-style}オプションのデフォルト値を，環境変数
+@env{QUOTING_STYLE}で指定することが可能です．環境変数が設定されていない
+場合，デフォルト値は@samp{literal}ですが，このデフォルトは，このパッケー
+ジの将来のバージョンで@samp{shell}に変更されるかもしれません．
+
+@item --show-control-chars
+@opindex --show-control-chars
+ファイル名の出力不可能な文字をそのまま出力します．出力が端末の場合やプロ
+グラムが@code{ls}の場合以外では，これがデフォルトです．
+@end table
+
+
+@node dir invocation
+@section @code{dir}: ディレクトリの内容の短いリスト
+
+@pindex dir
+@cindex directory listing, brief
+
+@code{dir}(と@code{d}としてインストールされるもの)は， @code{ls -C -b}と
+同じです．すなわち，デフォルトでファイルは列にリストアップされ，縦方向に
+並べ替えされ，そして特殊文字はバックスペースエスケープシーケンスで再表現
+されます．
+
+@xref{ls invocation, @code{ls}}.
+
+
+@node vdir invocation
+@section @code{vdir}: ディレクトリの内容の冗長なリスト
+
+@pindex vdir
+@cindex directory listing, verbose
+
+@code{vdir}は(@code{v}としてインストールされるものも)，@code{ls -l -b}と
+同じです．すなわち，デフォルトでファイルは長い書式でリストアップされ，特
+殊文字はバックスペースエスケープシーケンスで再表現されます．
+
+
+@node dircolors invocation
+@section @code{dircolors}: @code{ls}の色をセットアップ
+
+@pindex dircolors
+@cindex color setup
+@cindex setup for color
+
+@code{dircolors}は，@code{ls} (と@code{dir}等)から出力する色のために端末
+を設定するシェルコマンドの順番を出力します．典型的な使用方法は以下の通り
+です．
+
+@example
+eval `dircolors [@var{option}]@dots{} [@var{file}]`
+@end example
+
+@var{file}が指定された場合，@code{dircolors}は，ファイル形式と拡張子に対
+して使用する色を決定するために，それを読み込みます．それ以外の場合，前もっ
+てコンパイルされたデータベースが使用されます．これらのファイルの書式の詳
+細のため，@samp{dircolors --print-database}を実行してください．
+
+@vindex LS_COLORS
+@vindex SHELL @r{environment variable, and color}
+出力は，@env{LS_COLORS}環境変数を設定するためのシェルコマンドです．コマ
+ンドラインで使用するシェル構文を指定することが可能で，そうでなければ
+@code{dircolors}は@code{SHELL}環境変数の値から判別します．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -b
+@itemx --sh
+@itemx --bourne-shell
+@opindex -b
+@opindex --sh
+@opindex --bourne-shell
+@cindex Bourne shell syntax for color setup
+@cindex @code{sh} syntax for color setup
+Bourneシェルコマンドを出力します．@env{SHELL}環境変数が設定されていて，
+@samp{csh}や@samp{tcsh}で終わらない場合，これはデフォルトです．
+
+@item -c
+@itemx --csh
+@itemx --c-shell
+@opindex -c
+@opindex --csh
+@opindex --c-shell
+@cindex C shell syntax for color setup
+@cindex @code{csh} syntax for color setup
+Cシェルコマンドを出力します．@env{SHELL}が@samp{csh}や@samp{tcsh}で終わ
+る場合，これがデフォルトです．
+
+@item -p
+@itemx --print-database
+@opindex -p
+@opindex --print-database
+@cindex color database, printing
+@cindex database for color setup, printing
+@cindex printing color database
+組み込みデフォルトカラー設定データベースを出力します．この出力は，それ自
+身有効な設定ファイルで，可能性をかなり記述しています．
+@end table
+
+
+@node Basic operations
+@chapter 基本処理
+
+@cindex manipulating files
+
+この章は，基本的なファイル操作に対するコマンドを記述します．コピー，移動
+(名前の変更)，そして削除(リムーブ)です．
+
+@menu
+* cp invocation::               Copy files.
+* dd invocation::               Convert and copy a file.
+* install invocation::          Copy files and set attributes.
+* mv invocation::               Move (rename) files.
+* rm invocation::               Remove files or directories.
+* shred invocation::            Remove files more securely.
+@end menu
+
+
+@node cp invocation
+@section @code{cp}: ファイルとディレクトリのコピー
+
+@pindex cp
+@cindex copying files and directories
+@cindex files, copying
+@cindex directories, copying
+
+@code{cp}は，ファイル(または追加でディレクトリ)をコピーします．コピーは
+オリジナルから完全に独立しています．一つのファイルをもう一つにコピーする，
+または，任意の多くのファイルをコピー先のディレクトリにコピーすることのい
+ずれかが可能です．構文は以下の通りです．
+
+@example
+cp [@var{option}]@dots{} @var{source} @var{dest}
+cp [@var{option}]@dots{} @var{source}@dots{} @var{directory}
+@end example
+
+最後の引数が既存のディレクトリを指す場合，@code{cp}はそれぞれの
+@var{source}ファイルをそのディレクトリに(同じ名前のままで)コピーします．
+それ以外で，2つのファイルが与えられた場合，最初のものを2番目のものにコピー
+します．最後の引数がディレクトリでなく，2つ以上のオプションでない引数が
+与えられた場合エラーとなります．
+
+一般的に，ファイルは読み込まれたとおりに書き込まれます．例外は，以下の
+@samp{--sparse}オプションを参照してください．
+
+デフォルトで，@code{cp}はディレクトリをコピーしません．しかし，
+@option{-R}，@option{-a}，そして@option{-r}オプションでは，@command{cp} 
+は元のディレクトリを下り，対応するコピー先のディレクトリにファイルをコピー
+することで，再帰的にコピーします．
+
+デフォルトで，@command{cp}は再帰的にコピーしないときのみ，シンボリックリ
+ンクをたどります．このデフォルトは，@option{--no-dereference}
+(@option{-d})，@option{--dereference} (@option{-L})，そして@option{-H}オ
+プションで優先することが可能です．これらのオプションの一つ以上が指定され
+ている場合，最後のものが他のものに対して，そのまま優先します．
+
+@cindex self-backups
+@cindex backups, making only
+@code{cp}は一般的に，以下の例外はありますが，ファイルの自分自身へのコピー
+を拒絶します．@samp{--force --backup}が同一の@var{source}と@var{dest}で
+指定して，通常のファイルを参照する場合，@code{cp}は，通常の方法
+(@pxref{Backup options})で指定されたように，通常または番号付きのバックアッ
+プファイルを作成します．これは，変更前に既存のファイルのバックアップを単
+に作成したいとき役に立ちます．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+@item -a
+@itemx --archive
+@opindex -a
+@opindex --archive
+コピー時に元のファイルの構造と属性を可能な限り保持します(しかし，ディレ
+クトリ構造の保持は試みません．すなわち，@samp{ls -U}はコピーされているディ
+レクトリの項目を，異なる順序でリストアップすることが可能です)．
+@samp{-dpR}と同じです．
+
+@item -b
+@itemx @w{@kbd{--backup}[=@var{method}]}
+@opindex -b
+@opindex --backup
+@vindex VERSION_CONTROL
+@cindex backups, making
+@xref{Backup options}.  上書きされたり削除されたりするそれぞれのファイル
+のバックアップを作成します．特殊な場合として，強制とバックアップのオプショ
+ンが指定され，@var{source}と@var{dest}が同じ名前で存在しているとき，通常
+のファイルとして，@code{cp}は@var{source}のバックアップを作成します．こ
+のオプションの組合わせの役に立つ応用の一つは，以下の小さなBourneシェルス
+クリプトです．
+
+@example
+#!/bin/sh
+# Usage: backup FILE...
+# Create a @sc{gnu}-style backup of each listed FILE.
+for i in "$@"; do
+  cp --backup --force "$i" "$i"
+done
+@end example
+
+@item -d
+@itemx --no-dereference
+@opindex -d
+@opindex --no-dereference
+@cindex symbolic links, copying
+@cindex hard links, preserving
+シンボリックリンクを，それが示すファイルをコピーするのではなく，シンボリッ
+クリンクとしてコピーし，コピーのソースファイル間のハードリンクを保持しま
+す．
+
+@item -f
+@itemx --force
+@opindex -f
+@opindex --force
+このオプションを使用せずコピーし，コピー先のファイルが存在し書き込みで開
+くことができないとき，コピーは失敗します．しかし，@samp{--force}を用いた
+場合，コピー先のファイルが開けないとき，@code{cp}はそれをアンリンクし，
+もう一度開こうとします．この動作と@samp{--link}と@samp{--symbolic-link} 
+でそれを可能にすることと異なり，それによってコピー先ファイルは開かれるこ
+となく，無条件にアンリンクされます．@samp{--remove-destination}の記述も
+参照してください．
+
+@item -H
+@opindex -H
+コマンドライン引数がシンボリックリンクを指定している場合，シンボリックリ
+ンクではなく，ファイルをその位置にコピーします．しかし，再帰的な横断で遭
+遇するあらゆるシンボリックリンクを(その元を保存して)コピーします．
+
+@item -i
+@itemx --interactive
+@opindex -i
+@opindex --interactive
+既存の通常のコピー先のファイルを上書きするかどうか，プロンプトを表示しま
+す．
+
+@item -l
+@itemx --link
+@opindex -l
+@opindex --link
+ディレクトリ以外はコピーの代わりにハードリンクを作成します．
+
+@item -L
+@itemx --dereference
+@opindex -L
+@opindex --dereference
+常にシンボリックリンクをたどります．
+
+@item -p
+@itemx --preserve
+@opindex -p
+@opindex --preserve
+@cindex file information, preserving
+元のファイルの所有者，グループ，許可，そしてタイムスタンプを保持します．
+このオプションがないとき，それぞれのコピー先のファイルは，元のファイルに
+対応するパーミッションで作成され，umaskで設定されているビットがなくなり
+ます．@xref{File permissions}.
+
+@item -P
+@itemx --parents
+@opindex -P
+@opindex --parents
+@cindex parent directories and @code{cp}
+ターゲットディレクトリに，スラッシュと指定されたソースファイルの名前を追
+加した，それぞれのコピー先のファイル名を作成します．@code{cp}に与える最
+後の引数は，既存のディレクトリ名にする必要があります．例えば，以下のよう
+なコマンドを入力します．
+
+@example
+cp --parents a/b/c existing_dir
+@end example
+
+@noindent
+これはファイル@file{a/b/c}を@file{existing_dir/a/b/c}にコピーし，存在し
+ないあらゆる中間ディレクトリを作成します．
+
+警告：@option{-P}の意味は@sc{posix}に従うため，将来変更されるでしょう．
+古い意味に対しては@option{--parents}を使用し，新しい意味に対しては
+@option{--no-dereference}を使用してください．
+
+@item -r
+@cindex directories, copying recursively
+@cindex copying directories recursively
+@cindex recursively copying directories
+@cindex non-directories, copying as special files
+再帰的にディレクトリをコピーし，ディレクトリでないものと特殊なファイル
+(例えば，シンボリックリン，FIFO，そしてデバイスファイル)を，通常のファイ
+ルのようにコピーします．これは，それぞれのソースファイルでデータを読み込
+み，コピー先のものにそれを書き出すということを意味します．FIFOのような特
+殊ファイルと，特に@file{/dev}で見つかるディレクトリに@code{cp -r}を適用
+すると通常失敗します．ほとんどの場合，@code{cp -r}はFIFOと
+@file{/dev/console} のような特殊ファイルからいつまでも読み込むことで待ち
+続け，@file{/dev/zero}をコピーする場合，それはコピー先のディスクをいっぱ
+いにします．特殊ファイルをコピーしたい場合，その内容をコピーするためそれ
+らを読み込む代わりに，特殊な性質を妨げるため，@samp{--recursive}
+(@samp{-R}) を使用してください．
+
+@item -R
+@itemx --recursive
+@opindex -R
+@opindex --recursive
+ディレクトリ以外のものを避けながら，再帰的にディレクトリをコピーします
+(真上の@samp{-r}とは異なります)．
+
+@item --remove-destination
+@opindex --remove-destination
+それぞれの既存のコピー先ファイルを，それを開く前に削除します(上記の
+@option{-f}とは異なります)．
+
+@item --sparse=@var{when}
+@opindex --sparse=@var{when}
+@cindex sparse files, copying
+@cindex holes, copying files with
+@findex read @r{system call, and holes}
+@dfn{まばらなファイル}は@dfn{穴}---物理的なディスクブロックで発生しない
+ゼロバイトの列---を含みます．@samp{read}システムコールはこれらをゼロとし
+て読み込みます．多くのバイナリファイルは多くのゼロバイトの連続を含むので，
+ディスクスペースの保存と速度を増加の両方が，これでかなり可能となります．
+デフォルトで@code{cp}は，情報の発見的手法を用い，入力ソースファイルで穴
+を見付け，対応する出力ファイルに同様にまばらにします．
+
+@var{when}の値は以下の一つになります．
+@table @samp
+@item auto
+デフォルトの動作:入力ファイルがまばらの場合，出力ファイルはまばらになり
+ます．
+
+@item always
+常に，出力ファイルをまばらにします．まばらなファイルをサポートしないファ
+イルシステム(最も顕著な例は，SGI IRIX 5.3とそれ以前の@samp{efs}ファイル
+システム)に存在する入力ファイルで，出力ファイルはそれ以外のファイルシス
+テムのときこれは役に立ちます．
+
+@item never
+出力ファイルをまばらにしません．@code{mkswap}コマンドを用いてファイルを
+作成するとき，そのようなファイルには穴があってはならないので，これが役に
+立ちます．
+@end table
+
+@itemx @w{@kbd{--strip-trailing-slashes}}
+@opindex --strip-trailing-slashes
+@cindex stripping trailing slashes
+それぞれの@var{source}引数から，後置されるスラッシュを削除します．
+@xref{Trailing slashes}.
+
+@item -s
+@itemx --symbolic-link
+@opindex -s
+@opindex --symbolic-link
+@cindex symbolic links, copying with
+ディレクトリでないものをコピーする代わりにシンボリックリンクを作成します．
+すべてのソースファイル名は，リンク先のファイルが現在のディレクトリにある
+場合以外，絶対的である(@samp{/}で始まる)必要があります．シンボリックリン
+クをサポートしないシステムでは，このオプションは結果としてエラーメッセー
+ジを返すだけです．
+
+@item -S @var{suffix}
+@itemx --suffix=@var{suffix}
+@opindex -S
+@opindex --suffix
+それぞれの@samp{-b}でのバックアップファイルに@var{suffix}を追加します．
+@xref{Backup options}.
+
+@itemx @w{@kbd{--target-directory}=@var{directory}}
+@opindex --target-directory
+@cindex target directory
+@cindex destination directory
+コピー先の@var{directory}を指定します．@xref{Target directory}.
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+コピーする前にそれぞれのファイル名を出力します．
+
+@item -V @var{method}
+@itemx --version-control=@var{method}
+@opindex -V
+@opindex --version-control
+@samp{-b}で作成するバックアップの形式を変更します．@var{method}引数は，
+@samp{none} (または@samp{off})，@samp{numbered} (または@samp{t})，
+@samp{existing} (または@samp{nil})，または@samp{never} (または
+@samp{simple})が可能です．@xref{Backup options}.
+
+@item -x
+@itemx --one-file-system
+@opindex -x
+@opindex --one-file-system
+@cindex filesystems, omitting copying to different
+コピーを開始したファイルシステムと異なるサブディレクトリを省略します．し
+かし，マウントポイントのディレクトリはコピー@emph{されます}．
+
+@end table
+
+
+@node dd invocation
+@section @code{dd}: ファイルの変換とコピー
+
+@pindex dd
+@cindex converting while copying a file
+
+@code{dd}は，変更可能なI/Oブロックサイズを用いて，(デフォルトで，標準入
+力から標準出力に)ファイルをコピーし，オプションの動作でそれを変更します．
+構文は以下のとおりです．
+
+@example
+dd [@var{option}]@dots{}
+@end example
+
+プログラムは，以下のオプションも受け入れます．@ref{Common options},も参
+照してください．
+
+@cindex multipliers after numbers
+以下(@var{bytes}と@var{blocks})の数値的な値のオプションは，乗算を続ける
+ことができます．それは，@samp{b}=512，@samp{c}=1，@samp{w}=2，
+@samp{x@var{m}}=@var{m}や，@samp{k}=1024のようなあらゆるブロックサイズ接
+尾子です(@pxref{Block size})．
+
+スキップとI/Oに対し，異なるブロックサイズを使用するために，異なる
+@command{dd}の呼び出しを使用してください．例えば，以下のシェルコマンドは
+ディスクとテープの間で，512 kBブロックでデータをコピーしますが，ディスク
+の最初の4 kBのラベルは，保存されたり復元されたりしません．
+
+@example
+disk=/dev/rdsk/c0t1d0s2
+tape=/dev/rmt/0
+
+# Copy all but the label from disk to tape.
+(dd bs=4k skip=1 count=0 && dd bs=512k) <$disk >$tape
+
+# Copy from tape back to disk, but leave the disk label alone.
+(dd bs=4k seek=1 count=0 && dd bs=512k) <$tape >$disk
+@end example
+
+@table @samp
+
+@item if=@var{file}
+@opindex if
+標準入力の代わりに@var{file}から読み込みます．
+
+@item of=@var{file}
+@opindex of
+標準出力の代わりに@var{file}に書き出します．@samp{conv=notrunc}が与えら
+れていない場合，@code{dd}は@var{file}をゼロバイト(または，@samp{seek=}で
+指定されたサイズ)に切り詰めます．
+
+@item ibs=@var{bytes}
+@opindex ibs
+@cindex block size of input
+@cindex input block size
+一度に@var{bytes}バイト読み込みます．
+
+@item obs=@var{bytes}
+@opindex obs
+@cindex block size of output
+@cindex output block size
+一度に@var{bytes}バイト書き出します．
+
+@item bs=@var{bytes}
+@opindex bs
+@cindex block size
+一度に@var{bytes}バイト読み書きします．これは@samp{ibs}と@samp{obs}に優
+先します．
+
+@item cbs=@var{bytes}
+@opindex cbs
+@cindex block size of conversion
+@cindex conversion block size
+一度に@var{bytes}バイト変換します．
+
+@item skip=@var{blocks}
+@opindex skip
+コピーする前に入力ファイルで，@var{blocks} @samp{ibs}バイトブロックを省
+略します．
+
+@item seek=@var{blocks}
+@opindex seek
+コピーする前に出力ファイルで，@var{blocks} @samp{ibs}バイトブロックを省
+略します．
+
+@item count=@var{blocks}
+@opindex count
+ファイルの終りまでのすべての代わりに，入力ファイルから@var{blocks}
+@samp{ibs}バイトブロックコピーします．
+
+@item conv=@var{conversion}[,@var{conversion}]@dots{}
+@opindex conv
+@var{conversion}引数で指定されたようにファイルを変換します．(カンマの回
+りにスペースはありません．)
+
+以下の変換です．
+
+@table @samp
+
+@item ascii
+@opindex ascii@r{, converting to}
+EBCDICをASCIIに変換します．
+
+@item ebcdic
+@opindex ebcdic@r{, converting to}
+ASCIIをEBCDICに変換します．
+
+@item ibm
+@opindex alternate ebcdic@r{, converting to}
+ASCIIを別のEBCDICに変換します．
+
+@item block
+@opindex block @r{(space-padding)}
+入力のそれぞれの行に対し，入力の改行をスペースに置換し，必要なスペースを
+埋め込みながら，@samp{cbs}バイト出力します．
+
+@item unblock
+@opindex unblock
+それぞれの@samp{cbs}の大きさの入力ブロックで，末尾のスペースを改行に置換
+します．
+
+@item lcase
+@opindex lcase@r{, converting to}
+大文字を小文字に変換します．
+
+@item ucase
+@opindex ucase@r{, converting to}
+小文字を大文字に変換します．
+
+@item swab
+@opindex swab @r{(byte-swapping)}
+@cindex byte-swapping
+入力バイトのすべての組を入れ替えます．@sc{gnu} @code{dd}は他と異なり，偶
+数バイトを読み込んだとき働きます---最後のバイトは，単にコピーされます．
+(入れ替えるバイトがないからです)．
+
+@item noerror
+@opindex noerror
+@cindex read errors, ignoring
+読み込みエラー後も続けます．
+
+@item notrunc
+@opindex notrunc
+@cindex truncating output file, avoiding
+出力ファイルを切り詰めません．
+
+@item sync
+@opindex sync @r{(padding with nulls)}
+すべての入力ブロックを，後置するゼロバイトを埋め込み@samp{ibs}サイズにし
+ます．@samp{block}や@samp{unblock}を使用するとき，ゼロバイトの代わりにス
+ペースで埋め込みます．
+@end table
+
+@end table
+
+
+@node install invocation
+@section @code{install}: ファイルのコピーと属性の設定
+
+@pindex install
+@cindex copying files and setting attributes
+
+@code{install}は，許可モードと，可能な場合は所有者とグループ設定しながら
+ファイルをコピーします．構文は以下のとおりです．
+
+@example
+install [@var{option}]@dots{} @var{source} @var{dest}
+install [@var{option}]@dots{} @var{source}@dots{} @var{directory}
+install -d [@var{option}]@dots{} @var{directory}@dots{}
+@end example
+
+これらの最初のものは，@var{source}ファイルは@var{dest}ターゲットファイル
+にコピーされます．２番目では，それぞれの@var{source}ファイルはコピー先の
+@var{directory}にコピーされます．最後では，それぞれの@var{directory}(と
+足りない親ディレクトリ)がコピーされます．
+
+@cindex Makefiles, installing programs in
+@code{install}は@code{cp}に似ていますが，コピー先のファイルの属性を制御
+することが可能です．それは，プログラムをコピー先のディレクトリにコピーす
+るとき，Makefileで一般的に使用されます．それ自身にファイルをコピーするこ
+とは拒否されます．
+
+プログラムは，以下のオプションも受け入れます．@ref{Common options},も参
+照してください．
+
+@table @samp
+
+@item -b
+@itemx @w{@kbd{--backup}[=@var{method}]}
+@opindex -b
+@opindex --backup
+@vindex VERSION_CONTROL
+@cindex backups, making
+@xref{Backup options}. 上書きされたり削除されたりするファイルのバックアッ
+プを作成します．
+
+@item -c
+@opindex -c
+無視されます．古いUnixバージョンの@code{install}の互換性のためです．
+
+@item -d
+@itemx --directory
+@opindex -d
+@opindex --directory
+@cindex directories, creating with given attributes
+@cindex parent directories, creating missing
+@cindex leading directories, creating missing
+与えられたそれぞれのディレクトリと足りない親ディレクトリを，コマンドライ
+ンで与えられたやデフォルトの所有者，グループとモードに設定しながら作成し
+ます．親ディレクトリも与えられた属性で作成されます．(これはSunOS 4.x
+@code{install}と異なり，そこではディレクトリはデフォルトの属性が与えられ
+ます．)
+
+@item -g @var{group}
+@itemx --group=@var{group}
+@opindex -g
+@opindex --group
+@cindex group ownership of installed files, setting
+インストールされるファイルやディレクトリのグループ所有権を，@var{group} 
+に設定します．デフォルトは，プロセスの現在のグループです．@var{group}は，
+グループ名や数値的なグループIDが可能です．
+
+@item -m @var{mode}
+@itemx --mode=@var{mode}
+@opindex -m
+@opindex --mode
+@cindex permissions of installed files, setting
+インストールされるファイルやディレクトリの許可を@var{mode}に設定し，それ
+は8進数や@code{chmod}の象徴的なモードが可能で，0が出発点となります
+(@pxref{File permissions})．デフォルトモードは@samp{u=rwx,go=rx}です---
+所有者の読み書き実行，グループとそれ以外は読み込みと実行です．
+
+@item -o @var{owner}
+@itemx --owner=@var{owner}
+@opindex -o
+@opindex --owner
+@cindex ownership of installed files, setting
+@cindex appropriate privileges
+@vindex root @r{as default owner}
+@code{install}が適切な特権(ルートとして実行)を持つ場合，インストールされ
+るファイルやディレクトリの所有権は@var{owner}に設定されます．デフォルト
+は@code{root}です．@var{owner}は，ユーザ名または，数値のユーザIDが可能で
+す．
+
+@item -p
+@itemx --preserve-timestamps
+@opindex -p
+@opindex --preserve-timestamps
+@cindex timestamps of installed files, preserving
+インストールされたそれぞれのファイルの，最後にアクセスした時間と最後に編
+集した時間を，対応するそれぞれの元ファイルに一致させます．このオプション
+なしでファイルがインストールされたとき，最後にアクセスした時間と最後に編
+集した時間は，どちらもインストールされた時間に設定されます．このオプショ
+ンは，最後にインストールされた時ではなく，最後にビルドされた時を追跡し続
+けるため，インストールされたファイルの最後に編集された時間を使用する場合，
+役に立ちます．
+
+@item -s
+@itemx --strip
+@opindex -s
+@opindex --strip
+@cindex symbol table information, stripping
+@cindex stripping symbol table information
+インストールされたバイナリ実行形式から，シンボルテーブルを取り除きます．
+
+@item -S @var{suffix}
+@itemx --suffix=@var{suffix}
+@opindex -S
+@opindex --suffix
+@samp{-b}で作成されるそれぞれのバックアップファイルに，@var{suffix}を追
+加します．@xref{Backup options}.
+
+@itemx @w{@kbd{--target-directory}=@var{directory}}
+@opindex --target-directory
+@cindex target directory
+@cindex destination directory
+コピー先の@var{directory}を指定します．@xref{Target directory}.
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+コピーする前に，それぞれのファイル名を出力します．
+
+@item -V @var{method}
+@itemx --version-control=@var{method}
+@opindex -V
+@opindex --version-control
+@samp{-b}で作成されるバックアップの形式を変更します．@var{method}引数は，
+@samp{none} (または@samp{off})，@samp{numbered} (または@samp{t})，
+@samp{existing} (または@samp{nil})，または，@samp{never} (または
+@samp{simple})が可能です．@xref{Backup options}.
+
+@end table
+
+
+@node mv invocation
+@section @code{mv}: ファイルの移動(名前の変更)
+
+@pindex mv
+
+@code{mv}は，ファイル(やディレクトリ)を移動したり名前を変更したりします．
+構文は以下のとおりです．
+
+@example
+mv [@var{option}]@dots{} @var{source} @var{dest}
+mv [@var{option}]@dots{} @var{source}@dots{} @var{directory}
+@end example
+
+最後の引数が，既存のディレクトリを示す場合，@code{mv}は，それ以外の与え
+られたそれぞれのファイルを，同じファイル名で，そのディレクトリに移動しま
+す．それ以外では，2つのファイルが与えられた場合，1番目の名前を2番目に変
+更します．最後の引数がディレクトリではなく，2つ以上のファイルが与えられ
+た場合，エラーとなります．
+
+@code{mv}は，一つのファイルシステムから別のものへ，あらゆる形式のファイ
+ル移動が可能です．fileutilsのバージョン@code{4.0}以前では，@code{mv}は通
+常のファイルのみファイルシステム間で移動が可能でした．例えば，現在の
+@code{mv}は，一つのパーティションから別のものへ，特殊なデバイスファイル
+を含むディレクトリ階層全体を移動可能です．それは最初に，要求されたディレ
+クトリとファイルをコピーする@code{cp -a}で使用されているものと同じコード
+を使用し，それから(コピーが成功したと仮定して)それは元を削除します．コピー
+が失敗した場合，コピー先のパーティションにコピーされた部分が削除されます．
+一つのパーティションから3つのディレクトリを別のものにコピーし，最初のディ
+レクトリが成功し，2番目が失敗した場合，最初のものはコピー先のパーティショ
+ンにのこり，2番目と3番目は元のパーティションに残ります．
+
+@cindex prompting, and @code{mv}
+コピー先のファイルが存在し通常の書き込みが不可で，標準入力が端末で，
+@samp{-f}や@samp{--force}オプションが与えられていない場合，@code{mv}はファ
+イルを置換するかどうか，ユーザにプロンプトを表示します．(自分が所有する
+ファイル，または，そのディレクトリに書き込み許可がある必要があります．) 
+応答が@samp{y}または@samp{Y}で始まらない場合，ファイルはスキップされます．
+
+@emph{警告}：ディレクトリを示すシンボリックリンクを移動しようとし，スラッ
+シュを後置したシンボリックリンクを指定した場合，@code{mv}はシンボリック
+リンクを移動しませんが，その代わりにシンボリックリンクが参照するディレク
+トリを移動します．@xref{Trailing slashes}.
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -b
+@itemx @w{@kbd{--backup}[=@var{method}]}
+@opindex -b
+@opindex --backup
+@vindex VERSION_CONTROL
+@cindex backups, making
+@xref{Backup options}. 上書きされたり削除されたりするファイルのバックアッ
+プを作成します．
+
+@item -f
+@itemx --force
+@opindex -f
+@opindex --force
+@cindex prompts, omitting
+コピー先のファイルを削除したり上書きしたりする前に，ユーザにプロンプトを
+表示しません．
+
+@item -i
+@itemx --interactive
+@opindex -i
+@opindex --interactive
+@cindex prompts, forcing
+許可に因らず，それぞれの既存のコピー先のファイルを上書きするかどうかプロ
+ンプトを表示します．@samp{y}や@samp{Y}で始まらない返答の場合，ファイルは
+省略されます．
+
+@item -u
+@itemx --update
+@opindex -u
+@opindex --update
+@cindex newer files, moving only
+同じまたは新しい編集時間を持つ既存のコピー先にディレクトリ以外のものを移
+動しません．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+移動する前にそれぞれのファイル名を出力します．
+
+@itemx @w{@kbd{--strip-trailing-slashes}}
+@opindex --strip-trailing-slashes
+@cindex stripping trailing slashes
+それぞれの@var{source}引数から後置されるスラッシュを削除します．
+@xref{Trailing slashes}.
+
+@item -S @var{suffix}
+@itemx --suffix=@var{suffix}
+@opindex -S
+@opindex --suffix
+@samp{-b}で作成されるそれぞれのバックアップファイルに，@var{suffix}を追
+加します．@xref{Backup options}.
+
+@itemx @w{@kbd{--target-directory}=@var{directory}}
+@opindex --target-directory
+@cindex target directory
+@cindex destination directory
+コピー先の@var{directory}を指定します．@xref{Target directory}.
+
+@item -V @var{method}
+@itemx --version-control=@var{method}
+@opindex -V
+@opindex --version-control
+@samp{-b}で作成されるバックアップの形式を変更します．@var{method}引数は，
+@samp{none} (または@samp{off})，@samp{numbered} (または@samp{t})，
+@samp{existing} (または@samp{nil})，または，@samp{never} (または
+@samp{simple})が可能です．@xref{Backup options}.
+
+@end table
+
+
+@node rm invocation
+@section @code{rm}: ファイルやディレクトリの削除
+
+@pindex rm
+@cindex removing files or directories
+
+@code{rm}は与えられた@var{file}を削除します．デフォルトでそれはディレク
+トリを削除しません．構文は以下のとおりです．
+
+@example
+rm [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+@cindex prompting, and @code{rm}
+ファイルに書き込みができない，標準入力が端末，そして@samp{-f}または
+@samp{--force}オプションが与えられていない場合，または，@samp{-i}または
+@samp{--interactive}オプションが与えられて@emph{いる}場合，@code{rm}はユー
+ザにファイルを削除するかどうかを促すプロンプトを表示します．@samp{y} や
+@samp{Y}で始まらない返答の場合，ファイルは省略されます．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -d
+@itemx --directory
+@opindex -d
+@opindex --directory
+@cindex directories, removing with @code{unlink}
+@findex unlink
+@pindex fsck
+@code{rmdir}の代わりに@code{unlink}を用いてディレクトリの削除を試み，ア
+ンリンクを試みる前にディレクトリが空である必要はありません．適切な特権を
+持ち，オペレーティングシステムがディレクトリに対する@code{unlink}をサポー
+トしている場合のみ，これは動作します．ディレクトリのアンリンクはディレク
+トリ内のあらゆるファイルを参照できなくするため，この後でファイルシステム
+に@code{fsck} した方が賢明です．
+
+@item -f
+@itemx --force
+@opindex -f
+@opindex --force
+存在しないファイルを無視し，ユーザにプロンプトを表示しません．前にある
+@samp{--interactive} (@samp{-i})オプションを無視します．
+
+@item -i
+@itemx --interactive
+@opindex -i
+@opindex --interactive
+それぞれのファイルを削除するかどうかプロンプトを表示します．@samp{y}や
+@samp{Y}で始まらない返答の場合，ファイルは省略されます．前にある
+@samp{--force} (@samp{-f})オプションを無視します．
+
+@item -r
+@itemx -R
+@itemx --recursive
+@opindex -r
+@opindex -R
+@opindex --recursive
+@cindex directories, removing (recursively)
+ディレクトリの内容を再帰的に削除します．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+削除する前にそれぞれのファイル名を出力します．
+
+@end table
+
+@cindex files beginning with @samp{-}, removing
+@cindex @samp{-}, removing files beginning with
+よくある問題の一つは，@samp{-}で始まる名前を持つファイルの削除の方法です．
+@sc{gnu} @code{rm}では，引数を解析する@code{getopt}関数を使用するすべて
+のプログラムに似て，以下のすべての引数はオプションでないことを示す
+@samp{--}オプションを使用します．現在のディレクトリの@file{-f}というファ
+イル名を削除するため，以下のどちらかを入力できます．
+
+@example
+rm -- -f
+@end example
+
+@noindent
+または，
+
+@example
+rm ./-f
+@end example
+
+@opindex - @r{and Unix @code{rm}}
+この目的に対する，Unix @code{rm}プログラムの単一の@samp{-}の使用は，
+getoptの標準構文の開発以前のものです．
+
+
+@node shred invocation
+@section @code{shred}: より安全なファイルの削除
+
+@pindex shred
+@cindex data, erasing
+@cindex erasing data
+
+@code{shred}は，非常に高価なハードディスクでのデータの回復を妨げを助ける
+ため，デバイスやファイルを上書きします．
+
+通常，ファイルを削除するとき(@pxref{rm invocation})，データは実際には破
+壊されません．ファイルが保存されている場所をリストアップしている索引のみ
+破壊し，記憶装置は再利用可能になります．索引の再構築を試み，その部分が再
+利用されていない場合，ファイルを元に戻すことが可能な，アンデリートユーティ
+リティがあります．
+
+ほとんど満タンのドライブを使用している忙しいシステムでは，スペースは数秒
+で再利用可能になります．しかし，それが確かであることを知る方法はありませ
+ん．機密データがあり，機密でないデータでファイルを実際に上書きすることで
+リカバリが不可能だということを確かめたいかもしれません．
+
+しかし，そうした後でも，研究所へディスクを持っていき，上書きされたデータ
+の下の元データのかすかな``残響''を探すために感度の高い(そして高価な)多く
+の機器を使用することが可能です．データが一度上書きされただけでは，それは
+さほど難しくありません．
+
+取り返しができないように何かを削除する最前の方法は，メディアに酸をかけて
+破壊する，溶かしてしまう，またはそれに似たことをすることです．フロッピー
+ディスクのような，安い着脱可能なメディアに対しては，これは好ましい方法で
+す．しかし，ハードドライブは高価で，溶かすのが難しいため，@code{shred}ユー
+ティリティは破壊することなく類似の効果を達成しようとします．
+
+これは，古いデータに対するダメージを最大にするように選ばれたデータパター
+ンで，上書き動作を何回も使用します．これがフロッピーディスクで動作してい
+る間，パターンはハードドライブで最適な効果があるよう設計されています．詳
+細は，ソースコードと，Sixth USENIX Security Symposium (San Jose,
+California, 22--25 July, 1996)の予稿から，Peter Gutmannの論文
+@cite{Secure Deletion of Data from Magnetic and Solid-State Memory}を参
+照してください．論文は
+@url{http://www.cs.auckland.ac.nz/~pgut001/pubs/secure_del.html}で，オン
+ラインでも利用可能です．
+
+@code{shred}は非常に重要な仮定に依存していることに@strong{注意してくださ
+い}．それは，ファイルシステムがその場所のデータを上書きするということで
+す．これはそうするための伝統的な方法ですが，現代の多くのファイルシステム
+はこの仮定を満足するように設計されていません．例外は以下を含みます．
+
+@itemize @bullet
+
+@item
+AIXとSolarisが提供するような，Log-structureまたはjournalファイルシステム．
+
+@item
+RAIDベースのファイルシステムのように，重複したデータを書き込み，書き込み
+で失敗した場合でも続けるファイルシステム．
+
+@item
+Network ApplianceのNFSサーバのような，スナップショットを作成するファイル
+システム．
+
+@item
+NFSのバージョン３のクライアントのような，一時的な位置にキャッシュを作成
+するファイルシステム．
+
+@item
+圧縮されているファイルシステム．
+@end itemize
+
+ファイルシステムがどのように動作しているかよく分からない場合，その場所に
+上書きされないと仮定すべきで，それは，そのファイルシステムの通常のファイ
+ルで，@code{shred}が信頼できる動作を行うことができないことを意味します．
+
+一般的にいって，これは，上記の意味で設計されたファイルシステムの問題をバ
+イパスするため，ファイルではなくデバイスに@code{shred}することはより信頼
+できます．しかし，デバイスを@code{shred}してさえ，常に完全に信頼すること
+はできません．例えば，ほとんどのディスクは，不良セクタがアプリケーション
+に見えないようにをマッピングします．不良セクタが機密データを含む場合，
+@code{shred}はそれを破壊することは不可能です．
+
+@code{shred}は，バックアップについて何もしないように，これらの問題の検出
+も報告も試みません．しかし，ファイルではなくデバイスに@code{shred}する方
+がより信頼できるので，@code{shred}はデフォルトで出力ファイルを切り詰めた
+り削除したりしません．このデフォルトはデバイスに対しより適していて，それ
+は通常切り詰めもできませんし，削除もすべきではありません．
+
+@example
+shred [@var{option}]@dots{} @var{file}[@dots{}]
+@end example
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -f
+@itemx --force
+@opindex -f
+@opindex --force
+@cindex force deletion
+上書き可能が必要な場合，ファイルの許可に優先させます．
+
+@item -@var{NUMBER}
+@itemx -n @var{NUMBER}
+@itemx --iterations=@var{NUMBER}
+@opindex -n @var{NUMBER}
+@opindex --iterations=@var{NUMBER}
+@cindex iterations, selecting the number of
+デフォルトで，@code{shred}は25回の上書きを使用します．これで，少なくとも
+1回の使用で使用される有用な上書きパターンの全てに対して十分になります．
+時間の節約のため減らしたり，時間の無駄遣いをする場合に増やすことが可能で
+す．
+
+@item -s @var{BYTES}
+@itemx --size=@var{BYTES}
+@opindex -s @var{BYTES}
+@opindex --size=@var{BYTES}
+@cindex size of file to shred
+ファイルの最初の@var{BYTES}バイトを@code{shred}します．デフォルトはファ
+イル全体を@code{shred}します．@var{BYTES}は乗数を指定するために，
+@samp{k}，@samp{M}，または@samp{G}のようなサイズ指定を続けることができま
+す．@xref{Block size}.
+
+@item -u
+@itemx --remove
+@opindex -u
+@opindex --remove
+@cindex removing files after shredding
+ファイルを@code{shred}した後，(可能な場合は)それを切り詰め，そして削除し
+ます．ファイルが複数のリンクを持つ場合，指名されたリンクのみ削除されます．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+バイ菌の増殖のようにステータスの表示を更新します．
+
+@item -x
+@itemx --exact
+@opindex -x
+@opindex --exact
+通常，@code{shred}は，ファイルの最後のブロックまで完全に消去するため，ファ
+イルのサイズを，ファイルシステムのブロックサイズの次の乗数まで増加します．
+このオプションは，その動作を抑制します．このため，デフォルトでは，512バ
+イトのブロックを持つファイルシステム上の，10バイトのファイルを
+@code{shred}する場合，結果としてファイルは512バイトになります．このオプ
+ションを用いると，@code{shred}はファイルのサイズを増加させません．
+
+@item -z
+@itemx --zero
+@opindex -z
+@opindex --zero
+通常，@code{shred}の書き込みの最終動作は，ランダムデータの作成です．これ
+が(例えば，暗号化されたデータのように見えるため)ハードディスク上で目立つ
+場合や，より整然としたいと考える場合，@samp{--zero}オプションは全てをゼ
+ロビットを用いる上書き動作を追加します．これは，@samp{--iterations}オプ
+ションで指定した動作の数に追加します．
+
+@item -
+@opindex -
+標準出力を@code{shred}します．
+
+この引数はオプションと見なされます．一般的な@samp{--}オプションはコマン
+ドラインのオプションの終りを示すために使用されますが，@samp{-}は普通のファ
+イルとして解釈されます．
+
+この使用目的は，削除された一時ファイルを@code{shred}することです．
+例です．
+
+@example
+i=`tempfile -m 0600`
+exec 3<>"$i"
+rm -- "$i"
+echo "Hello, world" >&3
+shred - >&3
+exec 3>-
+@end example
+
+シェルコマンド@samp{shred - >file}は，@code{shred}の呼び出しの前に，それ
+が@var{file}を切り詰めるため，@var{file}の内容を@samp{shred}しないことに
+注意してください．コマンド@samp{shred file}，または(Bourne互換シェルを使
+用している場合は)コマンド@samp{shred - 1<>file}を代わりに使用してくださ
+い．
+
+@end table
+
+最初のドライブのフロッピーディスクに作成されたファイルシステムの，全ての
+記録を消去するために，以下のコマンドを使用するかもしれません．そのコマン
+ドは，1.44MBフロッピーを消去するために，約20分かかります．
+
+@example
+shred --verbose /dev/fd0
+@end example
+
+同様に，ハードディスクの選択されたパーティションの全てのデータを消去する
+ために，以下のようなコマンドを与えることが可能です．
+
+@example
+shred --verbose /dev/sda5
+@end example
+
+
+@node Special file types
+@chapter 特殊ファイルの形式
+
+@cindex special file types
+@cindex file types, special
+
+この章は，特殊な形式のファイルを作成する方法(と，特殊なファイル形式の
+一つのディレクトリを削除する@code{rmdir}方法)を記述します．
+
+@cindex special file types
+@cindex file types
+Unixのようなオペレーティングシステムには，特殊なファイル形式は，他より
+著しく少ないのですが，@emph{すべて}が@dfn{通常のファイル}と差のないバ
+イトストリームのみとして扱うことはできません．例えば，ファイルを作成し
+たり削除したりするとき，システムはこの情報を記録する必要があり，それは
+@dfn{ディレクトリ}---特殊な形式のファイル---で行います．ディレクトリを
+通常のファイルとして読み込むこともできますが，気になる場合は，システム
+がその仕事を行うために，ファイルのバイト上で構造，特定の順序を強制する
+必要があります．このためそれは``特殊な''形式のファイルとなります．
+
+ディレクトリ以外では，特殊なファイル形式は，名前付きパイプ(FIFO)，シンボ
+リックリンク，ソケット，そして@dfn{特殊ファイル}と呼ばれるものを含みます．
+
+@menu
+* ln invocation::               Make links between files.
+* mkdir invocation::            Make directories.
+* mkfifo invocation::           Make FIFOs (named pipes).
+* mknod invocation::            Make block or character special files.
+* rmdir invocation::            Remove empty directories.
+@end menu
+
+
+@node ln invocation
+@section @code{ln}: ファイル間にリンクを作成
+
+@pindex ln
+@cindex links, creating
+@cindex hard links, creating
+@cindex symbolic (soft) links, creating
+@cindex creating links (hard or soft)
+
+@cindex filesystems and hard links
+@code{ln}は，ファイル間のリンクを作成します．デフォルトで，それはハード
+リンクを作成します．@samp{-s}を用いると，シンボリック(または@dfn{ソフト}) 
+リンクを作成します．構文は以下のとおりです．
+
+@example
+ln [@var{option}]@dots{} @var{target} [@var{linkname}]
+ln [@var{option}]@dots{} @var{target}@dots{} @var{directory}
+@end example
+
+@itemize @bullet
+
+@item 最後の引数が既存のディレクトリを示す場合，@code{ln}はそのディレクト
+リ内のそれぞれの@var{target}ファイルに，@var{target}の名前を使用しながら
+リンクを作成します．(しかし，以下の@samp{--no-dereference}オプションの記
+述を参照してください．)
+
+@item 2つのファイル名が与えられた場合，@code{ln}は2番目から1番目へのリンク
+を作成します．
+
+@item 一つの@var{target}が与えられた場合，@code{ln}は，現在のディレクトリ
+のそのファイルにリンクを作成します．
+
+@item 最後の引数がディレクトリでなく，2つ以上のファイルが与えられた場合
+はエラーとなります．@samp{-f}や@samp{-i} (以下を参照)を用いない場合,
+@code{ln}は既存のファイルを削除しません．@code{ln}に既存のファイルの名前
+を変えさせるために，@samp{--backup}オプションを使用してください．
+
+@end itemize
+
+@cindex hard link, defined
+@cindex inode, and hard links
+@dfn{ハードリンク}は，既存のファイルの別名です．リンクとオリジナルは区別
+できません．技術的には，それらは同じinodeを共有し，inodeはファイルに関す
+る必要な情報をすべて含みます---実際，inodeがファイル@emph{である}と言っ
+ても間違いではありません．既存のすべての実装では，ディレクトリにハードリ
+ンクを作成できず，ハードリンクはファイルシステム間をまたぐことができませ
+ん．(しかしながら，これらの制限は@sc{posix}と一致しません．)
+
+@cindex dereferencing symbolic links
+@cindex symbolic link, defined
+一方，@dfn{シンボリックリンク} (短く言うと@dfn{symlinks})は，リンクファ
+イルが実際には名前の異なるファイルを参照する特殊なファイル形式です(すべ
+てのカーネルがサポートしているわけではありません．System V release 3(と
+それより古いもの)はsymlinkがありません)．ほとんどの処理(開く，読み込む，
+書き出す等)は，シンボリックリンクを通じて行われ，カーネルは自動的にリン
+クを@dfn{dereferences}し，リンク先を処理します．しかし，リンク先ではなく
+リンクファイル自身に作用する(例えば削除)処理もあります．@xref{Symbolic
+Links,,, library, The GNU C Library Reference Manual}.
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -b
+@itemx @w{@kbd{--backup}[=@var{method}]}
+@opindex -b
+@opindex --backup
+@vindex VERSION_CONTROL
+@cindex backups, making
+@xref{Backup options}. 上書きされたり削除されたりするそれぞれのファイル
+のバックアップを作成します．
+
+@item -d
+@itemx -F
+@itemx --directory
+@opindex -d
+@opindex -F
+@opindex --directory
+@cindex hard links to directories
+スーパーユーザがディレクトリのハードリンクを作成できるようにします．
+
+@item -f
+@itemx --force
+@opindex -f
+@opindex --force
+既存のリンク先ファイルを削除します．
+
+@item -i
+@itemx --interactive
+@opindex -i
+@opindex --interactive
+@cindex prompting, and @code{ln}
+既存リンク先ファイルを削除するかどうか，プロンプトを表示します．
+
+@item -n
+@itemx --no-dereference
+@opindex -n
+@opindex --no-dereference
+明示的な，ディレクトリへのシンボリックリンクとなるリンク先が与えられたと
+き，リンク先を通常のファイルとして扱います．
+
+リンク先が(シンボリックリンクではない)実際のディレクトリのとき，不明瞭な
+ものはありません．しかし，指定されたリンク先がディレクトリへのシンボリッ
+クリンクの時，ユーザの要求の扱い方は，二通りあります．@code{ln}は，リン
+ク先を通常のディレクトリとして扱い，それに対するリンクを作成することがで
+きます．一方，リンク先を非ディレクトリ---シンボリックリンク---として見る
+こともできます．その場合，@code{ln}は，新しいリンクを作成する前に，その
+シンボリックリンクを削除またはバックアップする必要があります．デフォルト
+では，ディレクトリへのシンボリックリンクであるリンク先を，ディレクトリと
+同様に扱います．
+
+@item -s
+@itemx --symbolic
+@opindex -s
+@opindex --symbolic
+ハードリンクの代わりにシンボリックリンクを作成します．このオプションは，
+シンボリックリンクをサポートしていないシステムでは，単にエラーメッセージ
+を生成します．
+
+@item -S @var{suffix}
+@itemx --suffix=@var{suffix}
+@opindex -S
+@opindex --suffix
+@samp{-b}を用いて生成されるそれぞれのバックアップファイルに@var{suffix}
+を追加します．@xref{Backup options}.
+
+@itemx @w{@kbd{--target-directory}=@var{directory}}
+@opindex --target-directory
+@cindex target directory
+@cindex destination directory
+リンク先@var{directory}を指定します．@xref{Target directory}.
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+リンクする前にそれぞれのファイル名を出力します．
+
+@item -V @var{method}
+@itemx --version-control=@var{method}
+@opindex -V
+@opindex --version-control
+@samp{-b}で作成されるバックアップの形式を変更します．@var{method}引数は，
+@samp{none} (または@samp{off})，@samp{numbered} (または@samp{t})，
+@samp{existing} (または@samp{nil})，または，@samp{never} (または
+@samp{simple})が可能です．@xref{Backup options}.
+
+@end table
+
+以下は例です．
+
+@smallexample
+ln -s /some/name  # creates link ./name pointing to /some/name
+ln -s /some/name myname  # creates link ./myname pointing to /some/name
+ln -s a b ..      # creates links ../a and ../b pointing to ./a and ./b
+@end smallexample
+
+
+@node mkdir invocation
+@section @code{mkdir}: ディレクトリの作成
+
+@pindex mkdir
+@cindex directories, creating
+@cindex creating directories
+
+@code{mkdir}は指定された名前でディレクトリを作成します．構文は以下のとお
+りです．
+
+@example
+mkdir [@var{option}]@dots{} @var{name}@dots{}
+@end example
+
+@var{name}が既存のファイルでディレクトリではない場合，@code{mkdir}は標準
+エラー出力に警告メッセージを出力し，残っている@var{name}を処理した後，1 
+のステータスで終了します．@var{name}が既存のディレクトリで，-p オプショ
+ンが与えられていないときも同じです．@var{name}が既存のディレクトリで，-p 
+オプションが与えられている場合，@code{mkdir}はそれを無視します．すなわち，
+@code{mkdir}は警告の出力も，エラーの発生も，(-m オプションが与えられてい
+ても)ディレクトリのモードの変更もせず，残りの@var{name}の処理を続けます．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -m @var{mode}
+@itemx --mode=@var{mode}
+@opindex -m
+@opindex --mode
+@cindex modes of created directories, setting
+作成されるディレクトリのモードを@var{mode}で設定し，それは@code{chmod}で
+設定する抽象的なもので，(読み書きと実行を全員に許可する)@samp{a=rwx}から
+目的のポイントのためにumaskのビットセットを引いたものを使用します．
+@xref{File permissions}.
+
+@item -p
+@itemx --parents
+@opindex -p
+@opindex --parents
+@cindex parent directories, creating
+それぞれの引数に対し，足りない親ディレクトリを作成します．親ディレクトリ
+のモードは@samp{u+wx}で編集されたumaskに設定します．既存のディレクトリに
+対する引数は無視します．
+
+@item -v
+@item --verbose
+@opindex -v
+@opindex --verbose
+作成されるそれぞれのディレクトリに対しメッセージを出力します．これは
+@samp{--parents}とともに用いると最も便利です．
+@end table
+
+
+@node mkfifo invocation
+@section @code{mkfifo}: FIFO(名前付きパイプ)の作成
+
+@pindex mkfifo
+@cindex FIFOs, creating
+@cindex named pipes, creating
+@cindex creating FIFOs (named pipes)
+
+@code{mkfifo}はFIFO(@dfn{名前付きパイプ}とも呼ばれる)を指定された名前で作成しま
+す．構文は以下のとおりです．
+
+@example
+mkfifo [@var{option}] @var{name}@dots{}
+@end example
+
+@dfn{FIFO}は，通信に依存するプロセスを可能にする特殊なファイル形式です．
+一つのプロセスは書き込みで，もう一つは読み込みでFIFOを開き，データは，シェ
+ルやその他の通常の名前なしパイプのように流れます．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -m @var{mode}
+@itemx --mode=@var{mode}
+@opindex -m
+@opindex --mode
+@cindex modes of created FIFOs, setting
+作成されるFIFOのモードを@var{mode}に設定し，それは@code{chmod}で設定する
+抽象的なもので，(読み込みと書き出しを全員に許可する)@samp{a=rw}から目的
+のポイントのためにumaskのビットセットを引いたものを使用します．
+@xref{File permissions}.
+
+@end table
+
+
+@node mknod invocation
+@section @code{mknod}: ブロックやキャラクタ特殊ファイルの作成
+
+@pindex mknod
+@cindex block special files, creating
+@cindex character special files, creating
+
+@code{mknod}は，FIFO，キャラクタ特殊ファイルや，ブロック特殊ファイルを指
+定された名前で作成します．構文は以下のとおりです．
+
+@example
+mknod [@var{option}]@dots{} @var{name} @var{type} [@var{major} @var{minor}]
+@end example
+
+@cindex special files
+@cindex block special files
+@cindex character special files
+上記の``特殊ファイル形式''と異なり，@dfn{特殊ファイル}という用語は，Unix 
+上で技術的な意味があります．それはデータを生成または受信するものです．こ
+れは通常，ハードウェアの物理的な部分に対応します．(これらのファイルは通
+常システム設定時に作成されます．) @code{mknod}コマンドは，この形式のファ
+イルを作成するものです．そのようなデバイスは，一度に一文字または一度に一
+``ブロック''(多くの文字)読み込むことができ，そのため，@dfn{ブロック特殊} 
+ファイルと@dfn{キャラクタ特殊}ファイルがあると言っているのです．
+
+@var{name}の後の引数は作成するファイルの形式を指定します．
+
+@table @samp
+
+@item p
+@opindex p @r{for FIFO file}
+FIFOに対応します．
+
+@item b
+@opindex b @r{for block special file}
+ブロック特殊ファイルに対応します．
+
+@item c
+@c Don't document the `u' option -- it's just a synonym for `c'.
+@c Do *any* versions of mknod still use it?
+@c @itemx u
+@opindex c @r{for character special file}
+@c @opindex u @r{for character special file}
+キャラクタ特殊ファイルに対応します．
+
+@end table
+
+ブロックやキャラクタ特殊ファイルを作成しているとき，メジャーとマイナーデ
+バイス番号をファイル形式の後に与える必要があります．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+
+@table @samp
+
+@item -m @var{mode}
+@itemx --mode=@var{mode}
+@opindex -m
+@opindex --mode
+作成されるファイルのモードを@var{mode}に設定し，それは@code{chmod}で設定
+する抽象的なもので，@samp{a=rw}から目的のポイントのためにumaskのビットセッ
+トを引いたものを使用します．@xref{File permissions}.
+
+@end table
+
+
+@node rmdir invocation
+@section @code{rmdir}: 空のディレクトリの削除
+
+@pindex rmdir
+@cindex removing empty directories
+@cindex directories, removing empty
+
+@code{rmdir}は空のディレクトリを削除します．構文は以下のとおりです．
+
+@example
+rmdir [@var{option}]@dots{} @var{directory}@dots{}
+@end example
+
+@var{directory}引数が既存の空のディレクトリを参照していない場合，エラー
+となります．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item --ignore-fail-on-non-empty
+@opindex --ignore-fail-on-non-empty
+@cindex directory deletion, ignoring failures
+ディレクトリが空でないため，それぞれ単独であるディレクトリ削除の失敗を無
+視します．
+
+@item -p
+@itemx --parents
+@opindex -p
+@opindex --parents
+@cindex parent directories, removing
+@var{directory}を削除し，それぞれの@var{directory}の構成要素の削除を試み
+ます．そのため，例えば，@samp{rmdir -p a/b/c}は@samp{rmdir a/b/c a/b a} 
+ににています．同様に，これらのディレクトリが空でないと判明した場合は失敗
+します．そのような失敗で，診断を引き起こし，@code{rmdir}を失敗で終了させ
+ないため，@samp{--ignore-fail-on-non-empty}オプションを使用してください．
+
+@item -v
+@item --verbose
+@opindex -v
+@opindex --verbose
+@cindex directory deletion, reporting
+削除に成功したそれぞれの診断を与えます．@var{directory}は削除されます．
+
+@end table
+
+空でないディレクトリの(再帰的な)削除方法は，@xref{rm invocation}.
+
+
+@node Changing file attributes
+@chapter ファイル属性の変更
+
+@cindex changing file attributes
+@cindex file attributes, changing
+@cindex attributes, file
+
+ファイルは，その内容，名前，そしてファイル形式(@pxref{Special file
+types})のみではありません．ファイルには，所有者(ユーザID)，グループ(グルー
+プID)，許可(所有者がファイルに行えること，グループの人ができること，そし
+て，その他誰でもできること)，様々なタイムスタンプ，そしてその他の情報が
+あります．まとめて，これらをファイルの@dfn{属性}と呼びます．
+
+これらのコマンドはファイルの属性を変更します．
+
+@menu
+* chown invocation::            Change file owners and groups.
+* chgrp invocation::            Change file groups.
+* chmod invocation::            Change access permissions.
+* touch invocation::            Change file timestamps.
+@end menu
+
+
+@node chown invocation
+@section @code{chown}: ファイルの所有者とグループの変更
+
+@pindex chown
+@cindex file ownership, changing
+@cindex group ownership, changing
+@cindex changing file ownership
+@cindex changing group ownership
+
+@code{chown}は，与えられたそれぞれの@var{file}のユーザと/やグループの所
+有権を，@var{new-owner}や，既存の参照ファイルのユーザとグループに変更し
+ます，構文は以下のとおりです．
+
+@example
+chown [@var{option}]@dots{} @{@var{new-owner} | --reference=@var{ref_file}@} @var{file}@dots{}
+@end example
+
+@var{new-owner}が使用された場合，新しい所有者と/やグループを以下のように
+指定します(空白は含みません)．
+
+@example
+[@var{owner}] [ [:] [@var{group}] ]
+@end example
+
+具体例です．
+
+@table @var
+@item owner
+@var{owner} (ユーザ名または数値的なユーザID)のみ与えられた場合，そのユー
+ザが与えられたそれぞれのファイルの所有者になり，ファイルのグループは変更
+されません．
+
+@itemx owner@samp{:}group
+@var{owner}にコロンと@var{group} (グループ名または数値的なグループID)が，
+それら間にスペースを置かずに続く場合，ファイルのグループ所有権を
+(@var{group}に)同様に変更します．
+
+@itemx owner@samp{:}
+コロンはあるが，グループ名が@var{owner}に続かない場合，ユーザがファイル
+の所有者になり，ファイルのグループは@var{owner}のログイングループに変更
+されます．
+
+@itemx @samp{:}group
+コロンとそれに続く@var{group}が与えられているが所有者が省略された場合，
+ファイルのグループのみ変更されます．この場合，@code{chown}は@code{chgrp}
+と同じ機能を果たします．
+
+@end table
+
+@samp{:}セパレータの場所に@samp{.}を使用することが可能です．これは古いス
+クリプトへの互換性のための@sc{gnu}の拡張です．@sc{gnu} @code{chown}は，
+@var{owner}が@samp{.}文字を含む場合は失敗する可能性があるので，新しいス
+クリプトでは@samp{.}の使用を避けるべきです．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -c
+@itemx --changes
+@opindex -c
+@opindex --changes
+@cindex changed owners, verbosely describing
+所有権が実際に変更されるそれぞれの@var{file}に対する動作を，冗長に記述し
+ます．
+
+@item -f
+@itemx --silent
+@itemx --quiet
+@opindex -f
+@opindex --silent
+@opindex --quiet
+@cindex error messages, omitting
+所有権を変更できないファイルについてのエラーメッセージを出力しません．
+
+@itemx @w{@kbd{--from}=@var{old-owner}}
+@opindex --from
+@cindex symbolic links, changing owner
+@var{old-owner}で指定されている現在の属性がある場合，@var{file}の所有権
+を変更します．@var{old-owner}は，上記の@var{new-owner}の記述と同じ形式で
+す．このオプションは，潜在的な悪習の窓をかなり狭めるという点で，セキュリ
+ティの立場から主に役に立ちます．例えば，以下のように，このオプションを使
+用しないで，ユーザのファイルに対してUIDの変更を反映させるために，
+@code{root}が実行したとします．
+
+@smallexample
+find / -owner OLDUSER -print0 | xargs -0 chown NEWUSER
+@end smallexample
+
+しかし，@code{find}が既存のファイルの所有者をテストしたときと，
+@code{chown}が実際に事項したときの間が非常に長い可能性があるので，それは
+危険です．ギャップを小さくするひとつの方法は，それぞれのファイルに対し見
+つかったときに@code{chown}を呼び出すことです．
+
+@example
+find / -owner OLDUSER -exec chown NEWUSER @{@} \;
+@end example
+
+しかし，影響されるファイルが多い場合は，それは非常に遅くなります．このオ
+プションを用いると，(ギャップを狭めたままで)完全ではありませんが，それは
+安全になります．
+
+@example
+chown -R --from=OLDUSER NEWUSER /
+@end example
+
+@item --dereference
+@opindex --dereference
+@cindex symbolic links, changing owner
+@findex lchown
+シンボリックリンク自身に動作せず，それが示すものに動作します．
+
+@item -h
+@itemx --no-dereference
+@opindex -h
+@opindex --no-dereference
+@cindex symbolic links, changing owner
+@findex lchown
+シンボリックリンクが示すものではなく，それ自身に動作します．これはデフォ
+ルトです．このモードは@code{lchown}システムコールに依存します．
+@code{lchown}システムコールが提供されていないシステムでは，コマンドライ
+ンで指定されるファイルがシンボリックリンクの時，@code{chown}は失敗します．
+デフォルトで，再帰的な処理の間に発見されるシンボリックリンクに対する診断
+結果は発行されませんが，それについては@samp{--verbose}は参照してください．
+
+@item --reference=@var{ref_file}
+@opindex --reference
+それぞれの@var{file}のユーザとグループを，@var{ref_file}と同じになるよう
+に変更します．@var{ref_file}がシンボリックリンクの場合，シンボリックリン
+クのユーザとグループではなく，それが参照するファイルのものを使用します．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+処理された全てのファイルに対し，診断結果を出力します．@code{lchown}シス
+テムコールがないシステムで，再帰的な処理の間にシンボリックリンクが見つか
+り，@samp{--no-dereference}の影響がある場合，シンボリックリンクもその参
+照先も変更されないことを告げる診断結果を発行します．
+
+@item -R
+@itemx --recursive
+@opindex -R
+@opindex --recursive
+@cindex recursively changing file ownership
+ディレクトリとその内容の所有権を再帰的に変更します．
+
+@end table
+
+
+@node chgrp invocation
+@section @code{chgrp}: グループの所有権の変更
+
+@pindex chgrp
+@cindex group ownership, changing
+@cindex changing group ownership
+
+@code{chgrp}は，それぞれの与えられた@var{file}のグループ所有権を
+@var{group}(グループ名またはグループIDのどちらかで与えられるはずです)，
+または，既存の参照ファイルのグループに変更します．構文は以下のとおりです．
+
+@example
+chgrp [@var{option}]@dots{} @{@var{group} | --reference=@var{ref_file}@} @var{file}@dots{}
+@end example
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -c
+@itemx --changes
+@opindex -c
+@opindex --changes
+@cindex changed files, verbosely describing
+グループが実際に変更されているそれぞれの@var{file}に対し，動作を冗長に記
+述します．
+
+@item -f
+@itemx --silent
+@itemx --quiet
+@opindex -f
+@opindex --silent
+@opindex --quiet
+@cindex error messages, omitting
+グループを変更できなかったファイルに関するエラーメッセージを出力しません．
+
+@item --dereference
+@opindex --dereference
+@cindex symbolic links, changing owner
+@findex lchown
+シンボリックリンク自身に作用するのではなく，それが指し示すものに作用しま
+す．
+
+@item -h
+@itemx --no-dereference
+@opindex -h
+@opindex --no-dereference
+@cindex symbolic links, changing group
+@findex lchown
+シンボリックリンクを，それが指し示すものの代わりにそれ自身に動作します．
+これはデフォルトです．このモードは@code{lchown}システムコールに依存しま
+す．コマンドラインで指定されているファイルがシンボリックリンクの時，
+@code{chgrp}は失敗します．デフォルトで，再帰的な変換の間に見つかったシン
+ボリックリンクに対し診断結果は発行されませんが，それについては
+@samp{--verbose}を参照してください．
+
+@item --reference=@var{ref_file}
+@opindex --reference
+それぞれの@var{file}のグループを，@var{ref_file}と同じになるように変更し
+ます．@var{ref_file}がシンボリックリンクの場合，シンボリックリンクのグルー
+プではなく，それが参照するファイルのものを使用します．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+処理した全てのファイルに対し，診断結果を出力します．@code{lchown}システ
+ムコールがないシステムで，再帰的な変換の間にシンボリックリンクが見つかり，
+@samp{--no-dereference}が有効でない場合，シンボリックリンクも参照するも
+のも変更されないことを告げる診断結果を発行します．
+
+@item -R
+@itemx --recursive
+@opindex -R
+@opindex --recursive
+@cindex recursively changing group ownership
+ディレクトリとその内容のグループ所有権を再帰的に変更します．
+
+@end table
+
+
+@node chmod invocation
+@section @code{chmod}: アクセス許可の変更
+
+@pindex chmod
+@cindex changing access permissions
+@cindex access permissions, changing
+@cindex permissions, changing access
+
+@code{chmod}は指名されたファイルのアクセス許可を変更します．構文は以下の
+とおりです．
+
+@example
+chmod [@var{option}]@dots{} @{@var{mode} | --reference=@var{ref_file}@} @var{file}@dots{}
+@end example
+
+@cindex symbolic links, permissions of
+@code{chmod}システムコールはシンボリックリンクの許可を変更できないため，
+@code{chmod}はそれらのの許可を決して変更しません．シンボリックリンクの許
+可は決して使用されないので，これは問題ではありません．しかし，コマンドラ
+インでリストアップされたそれぞれのシンボリックリンクに対し，@code{chmod} 
+は指し示されたファイルの許可を変更します．そのかわり，再帰的にディレクト
+リを横断している間，@code{chmod}は，遭遇したシンボリックリンクを無視しま
+す．
+
+@var{mode}が使用された場合，それは新しい許可を指定します．詳細は
+@ref{File permissions},のセクションを参照してください．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -c
+@itemx --changes
+@opindex -c
+@opindex --changes
+許可が実際に変更されているそれぞれの@var{file}に対し，動作を冗長に記述し
+ます．
+
+@item -f
+@itemx --silent
+@itemx --quiet
+@opindex -f
+@opindex --silent
+@opindex --quiet
+@cindex error messages, omitting
+許可を変更できなかったファイルに関するエラーメッセージを出力しません．
+
+@item -v
+@itemx --verbose
+@opindex -v
+@opindex --verbose
+与えられたすべての@var{file}に対し，動作，非動作の冗長な記述を行います．
+
+@item --reference=@var{ref_file}
+@opindex --reference
+それぞれの@var{file}のモードを，@var{ref_file}と同じになるように変更しま
+す．@xref{File permissions}. @var{ref_file}がシンボリックリンクの場合，
+シンボリックリンクのモードではなく，それが参照するファイルのものを使用し
+ます．
+
+@item -R
+@itemx --recursive
+@opindex -R
+@opindex --recursive
+@cindex recursively changing access permissions
+ディレクトリとその内容の許可を再帰的に変更します．
+
+@end table
+
+
+@node touch invocation
+@section @code{touch}: ファイルのタイプスタンプの変更
+
+@pindex touch
+@cindex changing file timestamps
+@cindex file timestamps, changing
+@cindex timestamps, changing file
+
+@code{touch}は，指定されたファイルのアクセスと/や編集された時間を変更し
+ます．構文は以下のとおりです．
+
+@example
+touch [@var{option}]@dots{} @var{file}@dots{}
+@end example
+
+最初の@var{file}が@samp{-t}オプションの有効な引数で，タイムスタンプが
+@samp{-d}，@samp{-r}や，@samp{-t}オプションで全く与えられておらず，
+@samp{--}引数が与えられていない場合，その引数はその他のファイルに対する
+ファイル名としてではなく，時間として解釈されます．警告：この使用方法は時
+代遅れで，@sc{posix}の将来のバージョンではそれを取り消したサポートが要求
+されるでしょう．代わりに@option{-t}を使用してください．
+
+@cindex empty files, creating
+存在しない@var{file}はすべて空として作成されます．
+
+@cindex permissions, for changing file timestamps
+アクセスと編集の時間の両方を現在の時間に変更するとき，@code{touch}は実行
+しているユーザがファイルの所有者で無いが，書き込み許可があるもののタイム
+スタンプを変更することができます．それ以外では，ユーザはそのファイルの所
+有者である必要があります．
+
+@code{touch}は，ファイルの２つの時間 -- 最後のアクセスと編集 -- を変更す
+るオプションを提供しますが，実際には3番目のinodeの変更時間も同じです．こ
+れはファイルの@code{ctime}としてよく参照されます．inodeの変更時間は，ファ
+イルのメタ情報を最後に変更された時間を表現します．一般的な例の一つは，ファ
+イルの許可を変更したときです．許可の変更はファイルにアクセスしないので，
+atimeを変更しませんし，ファイルも編集しないので，mtimeも変更しません．依
+然としてファイル自身の何かは変っていますが，これはどこかに記録する必要が
+あります．これはctimeフィールドの仕事です．例えば，バックアッププログラ
+ムが新しい許可値まで含めてファイルの新しいコピーを作成することを可能にす
+るために，これは必要です．他に影響しないようにファイルのctimeを編集する
+もう一つの処理は，名前の変更です．通常の処理では，ユーザがctimeフィール
+ドをユーザが指定した値に変更することは，いかなる場合でも不可能です．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+して下さい．
+
+@table @samp
+
+@item -a
+@itemx --time=atime
+@itemx --time=access
+@itemx --time=use
+@opindex -a
+@opindex --time
+@opindex atime@r{, changing}
+@opindex access @r{time, changing}
+@opindex use @r{time, changing}
+アクセス時間のみ変更します．
+
+@item -c
+@itemx --no-create
+@opindex -c
+@opindex --no-create
+存在していないファイルを作成しません．
+
+@item -d
+@itemx --date=time
+@opindex -d
+@opindex --date
+@opindex time
+現在の時間の代わりに@var{time}を指定します．それは，月名，タイムゾーン，
+@samp{am}と@samp{pm}等を含むことができます．@xref{Date input formats}.
+
+@item -f
+@opindex -f
+@cindex BSD @code{touch} compatibility
+無視されます．BSD版の@code{touch}の互換性のためです．
+
+@item -m
+@itemx --time=mtime
+@itemx --time=modify
+@opindex -m
+@opindex --time
+@opindex mtime@r{, changing}
+@opindex modify @r{time, changing}
+編集時間のみ変更します．
+
+@item -r @var{file}
+@itemx --reference=@var{file}
+@opindex -r
+@opindex --reference
+現在の時間の代わりに参照@var{file}の時間を使用します．
+
+@item -t [[CC]YY]MMDDhhmm[.ss]
+現在の時間の代わりに引数(オプションの4桁または2桁の年，月，日，時間，分，
+オプションの秒)を使用します．年が2桁のみで指定された場合，@var{CC}は，0
+@dots{} 68に対し20，69 @dots{} 99に対し19になります．年の数字が指定され
+ない場合，今年の日付として解釈されます．
+
+@end table
+
+
+@node Disk usage
+@chapter ディクスの使用
+
+@cindex disk usage
+
+無限の量のデータを保てるディスクはありません．これらのコマンドは，ディス
+クストレージの使用や利用可能な量を報告します．(これは@emph{メインメモリ}，
+すなわち，プログラムが実行時に使用するRAMの量に対しては重要なことはしま
+せん．そのため，@code{ps}や@code{pstat}や@code{swap}やそのようなコマンド
+が必要です．)
+
+@menu
+* df invocation::               Report filesystem disk space usage.
+* du invocation::               Estimate file space usage.
+* sync invocation::             Synchronize memory and disk.
+@end menu
+
+
+@node df invocation
+@section @code{df}: ファイルシステムのディスクスペースの使用の報告
+
+@pindex df
+@cindex filesystem disk usage
+@cindex disk usage by filesystem
+
+@code{df}は，ファイルシステムの使用されているディスクスペースと利用可能
+なディスクスペースの量を報告します．構文は以下のとおりです．
+
+@example
+df [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+引数を用いない場合，@code{df}は現在マウントされている(すべての形式の)す
+べてのファイルシステムの使用されている，そして利用可能な空間を報告します．
+それ以外では，@code{df}はそれぞれの引数の@var{file}を含むファイルシステ
+ム上の内容を報告します．
+
+通常ディスクスペースは1024単位で出力されますが，これに優先することもでき
+ます(@pxref{Block size})．
+
+@cindex disk device file
+@cindex device file, disk
+引数の@var{file}がマウントされているファイルシステムを含むディスクデバイ
+スファイルの場合，@code{df}はデバイスノードを含むファイルシステム(すなわ
+ちルートファイルシステム)ではなく，そのファイルシステムの利用可能な空間
+を表示します．@sc{gnu} @code{df}は，マウントしていないファイルシステムの
+ディスクの使用を決定することは，ほとんどのシステムでファイルシステム構造
+の極めて移植性のない緻密な知識を必要とするため，そうしようとしません．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -a
+@itemx --all
+@opindex -a
+@opindex --all
+@cindex automounter filesystems
+@cindex ignore filesystems
+0ブロックの大きさのファイルシステムをリストに含め，それはデフォルトでは
+省略されます．そのようなファイルシステムは，通常は自動マウントエントリー
+のような，特定の目的の疑似ファイルシステムです．また，サポートされている
+システムもある``ignore''や``auto''形式のファイルシステムは，このオプショ
+ンが指定されたときのみ含まれます．
+
+@item -h
+@itemx --human-readable
+@opindex -h
+@opindex --human-readable
+@cindex human-readable output
+それぞれのサイズに，メガバイトに対する@samp{M}のようなサイズ文字を追加し
+ます．1024倍が使用され，1000ではありません．@samp{M}は1,048,576バイトを
+意味します．1000倍を好む場合は@samp{-H}や@samp{--si}オプションを使用して
+ください．
+
+@item -H
+@itemx --si
+@opindex -H
+@opindex --si
+@cindex SI output
+それぞれのサイズに，メガバイトに対する@samp{M}のようなサイズ文字を追加し
+ます．(SIは国際単位系で，それはこれらの文字をの接頭辞として定義していま
+す．)1000倍が使用され，1024ではありません．@samp{M}は1,000,000バイトを意
+味します．1024倍を好む場合は@samp{-h}や@samp{--human-readable}オプション
+を使用してください．
+
+@item -i
+@itemx --inodes
+@opindex -i
+@opindex --inodes
+@cindex inode usage
+ブロックの使用の代わりに，inode使用の情報をリストアップします．
+inode(index nodeの省略)は，ファイルに関する，所有者，許可，タイムスタン
+プ，そしてディスクの位置のような情報を含みます．
+
+@item -k
+@itemx --kilobytes
+@opindex -k
+@opindex --kilobytes
+@cindex kilobytes for filesystem sizes
+1024バイトブロックで出力し，デフォルトのブロックサイズに優先します
+(@pxref{Block size})．
+
+@item -l
+@itemx --local
+@opindex -l
+@opindex --local
+@cindex filesystem types, limiting output to certain
+ローカルファイルシステムのリストに制限します．デフォルトではリモートファ
+イルシステムもリストアップされます．
+
+@item -m
+@itemx --megabytes
+@opindex -m
+@opindex --megabytes
+@cindex megabytes for filesystem sizes
+メガバイト(すなわち1,048,576バイト)ブロックでサイズを出力します．
+
+@item --no-sync
+@opindex --no-sync
+@cindex filesystem space, retrieving old data more quickly
+あらゆる使用データの取得前に@code{sync}システムコールを呼び出しません．
+これは多くのディスクを持つシステム上で@code{df}の実行をかなり速くするか
+もしれませんが，システム(特にSunOS)によっては，結果がわずかに時代遅れに
+なるかもしれません．これはデフォルトです．
+
+@item -P
+@itemx --portability
+@opindex -P
+@opindex --portability
+@cindex one-line output format
+@cindex POSIX output format
+@cindex portable output format
+@cindex output format, portable
+@sc{posix}出力形式を使用します．これは，以下を除いてデフォルトの書式に似
+ています．
+
+@enumerate
+@item
+それぞれのファイルシステムの情報は常に正確に1行で出力されます．マウント
+デバイスはその行に置かれません．これはマウントデバイスの名前が20文字以上
+(例えば，いくつかのネットワークマウント)の場合，列がきちんと並ばないこと
+を意味します．
+
+@item
+整数でない値は，切り捨てや，最も近い整数にされるのではなく，切り上げられ
+ます．
+
+@item
+ヘッダ出力行のラベルは，@sc{posix}に従い変更されます．
+@end enumerate
+
+@item --sync
+@opindex --sync
+@cindex filesystem space, retrieving current data more slowly
+あらゆる使用データの取得前に@code{sync}システムコールを呼び出します．シ
+ステム(特にSunOS)によっては，こうすることで結果がより最新のものになりま
+すが，一般的に言って，特に多くのまたは非常に忙しいファイルシステムがある
+とき，このオプションで@code{df}はかなり遅くなります．
+
+@item -t @var{fstype}
+@itemx --type=@var{fstype}
+@opindex -t
+@opindex --type
+@cindex filesystem types, limiting output to certain
+@var{fstype}形式のファイルシステムのリストに制限します．複数のファイルシ
+ステム形式は，複数の@samp{-t}オプションを与えることで指定できます．デフォ
+ルトでは何も省略されません．
+
+@item -T
+@itemx --print-type
+@opindex -T
+@opindex --print-type
+@cindex filesystem types, printing
+それぞれのファイルシステムの形式を出力します．ここで出力される形式は，
+@samp{-t}と@samp{-x}オプションで含めたり除外したりできるものと同じです．
+出力される特定の形式は，システムでサポートしているものすべてです．ここに
+共通の名前がいくつかあります(このリストはもちろん網羅的なものではありま
+せん)．
+
+@table @samp
+
+@item nfs
+@cindex NFS filesystem type
+NFSファイルシステム，すなわち，他のマシンからネットワークでマウントされ
+たものです．これは，すべてのシステムで同じように使用されると思われる，一
+つの形式の名前です．
+
+@item 4.2@r{, }ufs@r{, }efs@dots{}
+@cindex Linux filesystem types
+@cindex local filesystem types
+@opindex 4.2 @r{filesystem type}
+@opindex ufs @r{filesystem type}
+@opindex efs @r{filesystem type}
+ローカルにマウントされたハードディスクのファイルシステムです．(システム
+はこれらの一つ以上のものをサポートするかもしれません．Linuxはそうです．)
+
+@item hsfs@r{, }cdfs
+@cindex CD-ROM filesystem type
+@cindex High Sierra filesystem
+@opindex hsfs @r{filesystem type}
+@opindex cdfs @r{filesystem type}
+CD-ROMドライブのファイルシステムです．HP-UXは@samp{cdfs}を使用し，その他
+のほとんどのシステムは@samp{hsfs} (@samp{hs}は``High Sierra''です)を使用
+します．
+
+@item pcfs
+@cindex PC filesystem
+@cindex DOS filesystem
+@cindex MS-DOS filesystem
+@cindex diskette filesystem
+@opindex pcfs
+MS-DOSのファイルシステムで，通常ディスケット上です．
+
+@end table
+
+@item -x @var{fstype}
+@itemx --exclude-type=@var{fstype}
+@opindex -x
+@opindex --exclude-type
+@var{fstype}形式でないファイルシステムにリストを制限します．複数のファイ
+ルシステムの形式は，複数の@samp{-x}オプションを使用することで排除できま
+す．デフォルトでは省略されるファイルシステム形式はありません．
+
+@item -v
+無視されます．System V版の@code{df}への互換性のためです．
+
+@end table
+
+
+@node du invocation
+@section @code{du}: ファイルスペースの使用を推定
+
+@pindex du
+@cindex file space usage
+@cindex disk usage for files
+
+@code{du}は，指定されたファイルとそれぞれの(ディレクトリ引数の)サブディ
+レクトリが使用しているディスクスペースの量を報告します．構文は以下のとお
+りです．
+
+@example
+du [@var{option}]@dots{} [@var{file}]@dots{}
+@end example
+
+引数を用いない場合，@code{du}は現在のディレクトリのディスクスペースを報
+告します．通常，ディスクスペースは1024バイト単位で出力されますが，これに
+優先することもできます(@pxref{Block size})．
+
+プログラムは以下のオプションも受け入れます．@ref{Common options},も参照
+してください．
+
+@table @samp
+
+@item -a
+@itemx --all
+@opindex -a
+@opindex --all
+ディレクトリだけでなく，すべてのファイルを数えたものを表示します．
+
+@item -b
+@itemx --bytes
+@opindex -b
+@opindex --bytes
+バイトで大きさを出力し，それはデフォルトのブロックサイズに優先します
+(@pxref{Block size})．
+
+@item -c
+@itemx --total
+@opindex -c
+@opindex --total
+@cindex grand total of disk space
+すべての引数を処理した後，すべての引数の合計を出力します．これは，与えら
+れたファイルやディレクトリの集合の，ディスク使用の合計を知るために使用可
+能です．
+
+@item -D
+@itemx --dereference-args
+@opindex -D
+@opindex --dereference-args
+コマンドライン引数のシンボリックリンク自身を参照しません．その他のシンボ
+リックリンクには影響しません．これは，@file{/usr/tmp}のようにシンボリッ
+クリンクにされることが多いディレクトリのディスク使用を知りたいとき，役に
+立ちます．
+
+@item -h
+@itemx --human-readable
+@opindex -h
+@opindex --human-readable
+@cindex human-readable output
+それぞれのサイズに，メガバイトに対する@samp{M}のようなサイズ文字を追加し
+ます．1024倍が使用され，1000ではありません．@samp{M}は1,048,576バイトを
+意味します．1000倍を好む場合は@samp{-H}や@samp{--si}オプションを使用して
+ください．
+
+@item -H
+@itemx --si
+@opindex -H
+@opindex --si
+@cindex SI output
+それぞれのサイズに，メガバイトに対する@samp{M}のようなサイズ文字を追加し
+ます．(SIは国際単位系で，それはこれらの文字をの接頭辞として定義していま
+す．)1000倍が使用され，1024ではありません．@samp{M}は1,000,000バイトを意
+味します．1024倍を好む場合は@samp{-h}や@samp{--human-readable}オプション
+を使用してください．
+
+@item -k
+@itemx --kilobytes
+@opindex -k
+@opindex --kilobytes
+1024バイトブロックで出力し，デフォルトのブロックサイズに優先します
+(@pxref{Block size})．
+
+@item -l
+@itemx --count-links
+@opindex -l
+@opindex --count-links
+@cindex hard links, counting in @code{du}
+すでに(ハードリンクとして)現れていた場合でも，すべてのファイルのサイズを
+計算します．
+
+@item -L
+@itemx --dereference
+@opindex -L
+@opindex --dereference
+@cindex symbolic links, dereferencing in @code{du}
+シンボリックリンク自身を参照しません(リンクで使用しているスペースの代わ
+りに，リンクが示すファイルやディレクトリが使用しているディスクスペースを
+表示します)．
+
+@item --max-depth=@var{DEPTH}
+@opindex --max-depth=@var{DEPTH}
+@cindex limiting output of @code{du}
+階層のルートから最大MAX_DEPTHレベルまで降りて，それぞれのディレクトリ(と--
+allの場合はファイル)の合計を表示します．ルートはレベル０なので，@code{du
+--max-depth=0}は@code{du -s}と同じです．
+
+@item -m
+@itemx --megabytes
+@opindex -m
+@opindex --megabytes
+@cindex megabytes for filesystem sizes
+メガバイト(すなわち1,048,576バイト)ブロックでサイズを出力します．
+
+@item -s
+@itemx --summarize
+@opindex -s
+@opindex --summarize
+それぞれの引数の合計のみ表示します．
+
+@item -S
+@itemx --separate-dirs
+@opindex -S
+@opindex --separate-dirs
+サブディレクトリのサイズを含めず，それぞれのディレクトリのサイズを別々に
+報告します．
+
+@item -x
+@itemx --one-file-system
+@opindex -x
+@opindex --one-file-system
+@cindex one filesystem, restricting @code{du} to
+処理を開始した引数のディレクトリと異なるファイルシステムを省略します．
+
+@item --exclude=@var{PAT}
+@opindex --exclude=@var{PAT}
+@cindex excluding files from @code{du}
+循環しているとき，@var{PAT}に一致するサブディレクトリやファイルを省略し
+ます．例えば，@code{du --exclude='*.o'}は@samp{.o}で終わる名前のファイル
+を除外します．
+
+@item -X @var{FILE}
+@itemx --exclude-from=@var{FILE}
+@opindex -X @var{FILE}
+@opindex --exclude-from=@var{FILE}
+@cindex excluding files from @code{du}
+除外するパターンを@var{FILE}から受け取る以外，@samp{--exclude}に似ていま
+す．@var{FILE}が@samp{-}の場合，標準入力からパターンを受け取ります．
+
+@end table
+
+@cindex NFS mounts from BSD to HP-UX
+BSDシステムでは，HP-UXシステムからのNFSマウントされているファイルの正し
+い値の半分のサイズを，@code{du}は報告します．HP-UXシステムでは，BSDシス
+テムからのNFSマウントされているファイルの正しい値の２倍のサイズを報告し
+ます．これはHP-UXの欠陥です．それはHP-UX @code{du}プログラムにも影響しま
+す．
+
+
+@node sync invocation
+@section @code{sync}: ディスクのデータとメモリの同期
+
+@pindex sync
+@cindex synchronize disk and memory
+
+@cindex superblock, writing
+@cindex inodes, written buffered
+@code{sync}は，メモリに蓄えられたあらゆるデータをディスクに書き出します．
+これは，(制限はあるものの)編集されたスーパーブロック，編集されたinode，
+そして遅延された読み書きを含むはずです．これはカーネルで実装されている必
+要があります．@code{sync}プログラムは，@code{sync}システムコールの行使以
+外，何もしません．
+
+@cindex crashes and corruption
+カーネルは，(相対的に遅い)ディクスの読み書きを避けるため，メモリのデータ
+をそのままにします．これはパフォーマンスを改善しますが，コンピュータが壊
+れた場合，結果としてデータが失われたり，ファイルシステムが壊れるかもしれ
+ません．@code{sync}は，メモリにあるものすべてがディスクに書かれることを
+確実にします．
+
+単独の@samp{--help}や@samp{--version} (@pxref{Common options})以外のあら
+ゆるオプションは無視されます．
+
+
+@node Index
+@unnumbered 索引
+
+@printindex cp
+
+@contents
+@bye
+
+@c Local variables:
+@c texinfo-column-for-description: 32
+@c End:

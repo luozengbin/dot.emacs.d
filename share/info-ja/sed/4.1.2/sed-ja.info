@@ -1,0 +1,2428 @@
+-*- coding: utf-8 -*-
+これは sed-ja.info、sed-ja.texi より makeinfo バージョン 4.8
+によって作成されました。
+
+INFO-DIR-SECTION Text creation and manipulation
+START-INFO-DIR-ENTRY
+* sed(ja): (sed-ja).                   Stream EDitor.
+
+END-INFO-DIR-ENTRY
+
+   This file documents version 4.1.2 of GNU `sed', a stream editor.
+
+   Copyright (C) 1998, 1999, 2001, 2002, 2003, 2004 Free Software
+Foundation, Inc.
+
+   This document is released under the terms of the GNU Free
+Documentation License as published by the Free Software Foundation;
+either version 1.1, or (at your option) any later version.
+
+   You should have received a copy of the GNU Free Documentation
+License along with GNU `sed'; see the file `COPYING.DOC'.  If not,
+write to the Free Software Foundation, 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
+
+   There are no Cover Texts and no Invariant Sections; this text, along
+with its equivalent in the printed manual, constitutes the Title Page.
+
+
+File: sed-ja.info,  Node: Top,  Next: Introduction,  Up: (dir)
+
+sed, a stream editor
+********************
+
+This file documents version 4.1.2 of GNU `sed', a stream editor.
+
+   Copyright (C) 1998, 1999, 2001, 2002, 2003, 2004 Free Software
+Foundation, Inc.
+
+   This document is released under the terms of the GNU Free
+Documentation License as published by the Free Software Foundation;
+either version 1.1, or (at your option) any later version.
+
+   You should have received a copy of the GNU Free Documentation
+License along with GNU `sed'; see the file `COPYING.DOC'.  If not,
+write to the Free Software Foundation, 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
+
+   There are no Cover Texts and no Invariant Sections; this text, along
+with its equivalent in the printed manual, constitutes the Title Page.
+
+* Menu:
+
+* Introduction::               Introduction
+* Invoking sed::               Invocation
+* sed Programs::               `sed' programs
+* Examples::                   Some sample scripts
+* Limitations::                Limitations and (non-)limitations of GNU `sed'
+* Other Resources::            Other resources for learning about `sed'
+* Reporting Bugs::             Reporting bugs
+
+* Extended regexps::           `egrep'-style regular expressions
+
+* Concept Index::              A menu with all the topics in this manual.
+* Command and Option Index::   A menu with all `sed' commands and
+                               command-line options.
+
+--- 詳細なノードリスト ---
+
+sed プログラム:
+* Execution Cycle::                 How `sed' works
+* Addresses::                       Selecting lines with `sed'
+* Regular Expressions::             Overview of regular expression syntax
+* Common Commands::                 Often used commands
+* The "s" Command::                 `sed''s Swiss Army Knife
+* Other Commands::                  Less frequently used commands
+* Programming Commands::            Commands for `sed' gurus
+* Extended Commands::               Commands specific of GNU `sed'
+* Escapes::                         Specifying special characters
+
+例:
+* Centering lines::
+* Increment a number::
+* Rename files to lower case::
+* Print bash environment::
+* Reverse chars of lines::
+* tac::                             Reverse lines of files
+* cat -n::                          Numbering lines
+* cat -b::                          Numbering non-blank lines
+* wc -c::                           Counting chars
+* wc -w::                           Counting words
+* wc -l::                           Counting lines
+* head::                            Printing the first lines
+* tail::                            Printing the last lines
+* uniq::                            Make duplicate lines unique
+* uniq -d::                         Print duplicated lines of input
+* uniq -u::                         Remove all duplicated lines
+* cat -s::                          Squeezing blank lines
+
+
+File: sed-ja.info,  Node: Introduction,  Next: Invoking sed,  Prev: Top,  Up: Top
+
+1 はじめに
+**********
+
+`sed'はストリームエディタです．ストリームエディタとは，入力スト
+リーム(ファイルやパイプラインからの入力)で，基本的なテキスト変換を実行
+するために使用されます．(`ed'のように)スクリプトで編集可能なエ
+ディタに似たところもありますが，`sed'は入力を一回のみ通過ながら
+動作し，結果としてより効率的になっています．しかし，他の形式のエディタ
+と特に区別される点として，パイプラインでテキストにフィルタをかける能力
+が`sed'にあることがあげられます．
+
+
+File: sed-ja.info,  Node: Invoking sed,  Next: sed Programs,  Prev: Introduction,  Up: Top
+
+2 呼び出し
+**********
+
+通常`sed'は以下のように呼び出されます．
+
+     sed SCRIPT INPUTFILE...
+
+   `sed'の呼び出し全体の書式は以下のようになります．
+
+     sed OPTIONS... [SCRIPT] [INPUTFILE...]
+
+   INPUTFILEを指定していない場合，またはINPUTFILEが`-'の
+場合，`sed'は標準入力の内容をフィルタリングします．
+SCRIPTは，実際にはオプションではない最初のパラメータで，それは
+`sed'にとってスクリプトと思われるもの，かつ，入力ファイルではな
+いものです．それ以外のOPTIONS，つまり`-e'と`-f'オプ
+ションで実行スクリプトとして指定されている場合(そしてその場合だけ)はそ
+れがスクリプトになります．
+
+   `sed'は，以下のコマンドラインオプションを用いて呼び出してもかま
+いません．
+
+`--version'
+     実行している`sed'のバージョンと著作権の注意を出力し終了します．
+
+`--help'
+     これらのコマンドラインオプションを要約した，短い使用方法のメッセージと
+     バグを報告するアドレスを出力し終了します．
+
+`-n'
+`--quiet'
+`--silent'
+     デフォルトで`sed'は，スクリプトのサイクルごとの終了時にパターン
+     空間を出力します．これらのオプションで，この自動的な出力を使用不可能に
+     し，`sed'は`p'コマンドで明示的に告げるときだけ出力を生成し ます．
+
+`-i[SUFFIX]'
+`--in-place[=SUFFIX]'
+     このオプションは，その場でファイルを編集することを指定します． GNU
+     `sed'は一時的なファイルを作成し，標準出力の代わりにこのファイル
+     に出力を送ります(1)．
+
+     このオプションは`-s'を暗黙に指定します．
+
+     ファイルの終りに到達したとき，一時ファイルの名前を出力ファイルの元の名
+     前に変更します．拡張子が与えられている場合，一時ファイル(それによってバッ
+     クアップのコピー(2)が作成されます)の名前を変える前に古いファイルの名前を編集する
+     ために，以下の規則を使用します．
+
+     拡張子が`*'を含まない場合，それはファイル名の接尾子として現在のファ
+     イル名の終りに後置されます．拡張子が一つ以上の`*'文字を含む場合，
+     _それぞれの_アスタリスクは現在のファイル名で置換されます．これで，
+     バックアップファイルに接尾子の代わりに(または接尾子に追加で)接頭辞を追
+     加することや，オリジナルのファイルのバックアップのコピーを(既存のディレ
+     クトリを提供することで)他のディレクトリに配置することさえ可能になります．
+
+     拡張子が与えられていない場合，本埜ファイルはバックアップを使用せず上書
+     きされます．
+
+`-l N'
+`--line-length=N'
+     `l'コマンドに対するデフォルトの行を丸める長さを指定します．0 (ゼ
+     ロ)の長さは，長い行を決して丸めないことを意味します．指定されていない場
+     合，それは70になります．
+
+`--posix'
+     GNU `sed'は，POSIXの`sed'への拡張がいくつかありま
+     す．単純に移植性の高いスクリプトを書くために，このマニュアルで説明して
+     いる拡張や追加コマンドを，このオプションで利用不可能にします．
+
+     `sed'プログラムは，POSIXで必須とされている構文以外の
+     ほとんどの拡張を受け入れるますが，(*note Reporting
+     Bugs::で記述されてい
+     る`N'コマンドの動作のように)実際に標準を逸脱しているものもあり
+     ます．後者のような拡張だけを利用不可能にしたい場合，
+     `POSIXLY_CORRECT'変数を空ではない値に設定することで可能となります．
+
+`-r'
+`--regexp-extended'
+     基本正規表現ではなく拡張正規表現を使用します．拡張正規表現とは，
+     `egrep'が受け入れるものです．それらは，バックスラッシュが少ない
+     ためよりわかりやすくなりますが，それはGNUの拡張なので，それを
+     使用しているスクリプトは移植性が無くなります．*Note Extended
+     regular expressions: Extended regexps.
+
+`-s'
+`--separate'
+     デフォルトで，`sed'はコマンドラインで指定されているファイルが単
+     一の長いストリームだと考えます．このGNU `sed'の拡張で，ユーザがそれ
+     らを別々のファイルだと考えることを可能にします．(`/abc/,/def/'のよ
+     うな)範囲指定のアドレスは，複数のファイルを跨ぐことができず，ファイルの
+     行番号はそれぞれのファイルの開始位置から相対的なものになり，`$'は
+     それぞれのファイルの最後の行を参照し，`R'コマンドから呼び出された
+     ファイルはそれぞれのファイルの最初に巻き戻されます．
+
+`-u'
+`--unbuffered'
+     実用として最小限，入力と出力の両方をバッファリングします．(入力が
+     `tail -f'のようなものからのときと，できるだけ速く出力を変換して見
+     たいとき，特に役に立ちます．)
+
+`-e SCRIPT'
+`--expression=SCRIPT'
+     SCRIPTのコマンドを，入力を処理している間に実行するコマンドの組に
+     追加します．
+
+`-f SCRIPT-FILE'
+`--file=SCRIPT-FILE'
+     ファイルSCRIPT-FILEに含まれているコマンドを，入力を処理している間
+     に実行するコマンドの組に追加します．
+
+   `-e'，`-f'，`--expression'，または`--file'
+オプションがコマンドラインで全く与えられていない場合，コマンドライン上
+の最初のオプションではない引数が実行するスクリプトとして渡されます．
+
+コマンドラインのパラメータが上記のものを処理した後に残っている場合，こ
+れらのパラメータは，処理する入力ファイルの名前として解釈されます．
+
+   `-'のファイル名は標準入力を参照します．ファイル名が指定されていな
+い場合，標準入力が処理されます．
+
+   ---------- Footnotes ----------
+
+   (1) これは，`='，`a'，`c'，
+`i'，`l'，`p'のようなコマンドに適用されます． `/dev/stdout'の特殊ファイルを用いて`w'や`W'コマンドを使
+用することで，標準出力にも書き出すことが可能です
+
+   (2) GNU `sed'は，出力ファイルが実際に変更され
+ているかどうかに依存せずバックアップファイルを作成することに注意してく
+ださい．
+
+
+File: sed-ja.info,  Node: sed Programs,  Next: Examples,  Prev: Invoking sed,  Up: Top
+
+3 SEDプログラム
+***************
+
+`sed'プログラムは，一つ以上の`sed'コマンド，一つ以上の
+`-e'，`-f'，`--expression'，そして`--file'
+オプション，またはこれらのオプションが使用されていない場合は最初のオプ
+ションではない引数で渡されるものから成り立っています．このドキュメント
+は"その" `sed'スクリプトを記述します．渡されるSCRIPTと
+SCRIPT-FILEを全て連結したものの意味はこれで理解できるでしょう．
+
+   それぞれの`sed'コマンドは，オプションのアドレスやアドレスの範囲
+から成り立っていて，それには一文字のコマンド名とさらにコマンド特有のコー
+ドが続きます．
+
+* Menu:
+
+* Execution Cycle::          How `sed' works
+* Addresses::                Selecting lines with `sed'
+* Regular Expressions::      Overview of regular expression syntax
+* Common Commands::          Often used commands
+* The "s" Command::          `sed''s Swiss Army Knife
+* Other Commands::           Less frequently used commands
+* Programming Commands::     Commands for `sed' gurus
+* Extended Commands::        Commands specific of GNU `sed'
+* Escapes::                  Specifying special characters
+
+
+File: sed-ja.info,  Node: Execution Cycle,  Next: Addresses,  Up: sed Programs
+
+3.1 `sed'が動作する様子
+=======================
+
+`sed'は二つのデータバッファを管理しています．アクティブな
+_パターン_空間と補助的な_ホールド_空間です．両方とも最初は空 です．
+
+   `sed'は，入力行単位で以下のサイクルを実行することで処理を実行し
+ます．最初に`sed'は入力ストリームから一行読み込み，くっついてい
+る改行を削除し，そしてそれをパターン空間に配置します．そして，コマンド
+が実行されます．それぞれのコマンドには実行するものに関連付けされたアド
+レスがあります．アドレスとは条件コードの一種で，コマンドが実行される前
+に条件が合致している場合のみコマンドは実行されます．
+
+   スクリプトが終わると，`-n'オプションが使用されていないかぎり，パ
+ターン空間の内容が出力ストリームに出力され，削除されないかぎり改行が最
+後に追加されます．(1)そして，次のサイクルでは次の入力行から開始します．
+
+   (`D'のような)特殊コマンドが使用されていないかぎり，パターン空間は
+二つのサイクルの間に削除されます．一方，ホールド空間はサイクル間でデー
+タを保持します(両方のバッファ間でデータを移動するコマンド`h'，
+`H'，`x'，`g'，`G'を参照してください)．
+
+   ---------- Footnotes ----------
+
+   (1) 実際，`sed'は最後に改行を付けずに行
+を出力する場合，それ以降のテキストが同じ出力ストリームに送られるとすぐ
+に足りない改行を出力するので，`cat'とまったく同じ`sed -n
+p'のようなコマンドではそうならないので，"予想外の驚き"になることでしょ
+う．
+
+
+File: sed-ja.info,  Node: Addresses,  Next: Regular Expressions,  Prev: Execution Cycle,  Up: sed Programs
+
+3.2 `sed'で行を選択する
+=======================
+
+`sed'スクリプトのアドレスは，以下の形式のいずれかになります．
+
+`NUMBER'
+     行番号の指定は，入力のその行だけにマッチします．(`sed'は，
+     `-i'や`-s'オプションが指定されていない限り，入力ファイル
+     全体に渡って，連続して行を数えることに注意してください．)
+
+`FIRST~STEP'
+     このGNUの拡張は，行FIRSTで始まりSTEP番目ごとの行
+     にマッチします．特に，負ではないNが存在するとき，現在の行番号が
+     FIRST + (N * STEP)になる行が選択されます．このため，
+     偶数行を選択するには，`1~2'を使用することになるでしょう．二行目か
+     ら始まり三行ごとに取り上げるには，`2~3'を使用することになるでしょ
+     う．十行目から始まり五行ごとに取り上げるには，`10~5'を使用すること
+     になるでしょう．そして，`50~0'は`50'とする分かりにくい方法に
+     すぎません．
+
+`$'
+     このアドレスは，入力の最後のファイルの最後の行や，`-i'や
+     `-s'オプションが指定されているときは，それぞれのファイルの最後の
+     行にマッチします．
+
+`/REGEXP/'
+     正規表現REGEXPにマッチする全ての行を選択します．REGEXP自身
+     に`/'文字が含まれる場合，それぞれバックスラッシュ(`\')でエス
+     ケープする必要があります．
+
+     空の正規表現`//'は，前回の正規表現に繰り返しマッチします(それは，
+     空の正規表現が`s'コマンドに渡されても同じです)．正規表現を編集する
+     と，正規表現がコンパイルされるときに評価されるので，空の正規表現ととも
+     にそれらを指定することは不正な処理になることに注意してください．
+
+`\%REGEXP%'
+     (`%'は他の任意の単一の文字で置換してもかまいません．)
+
+     これは正規表現REGEXPにもマッチしますが，これで`/'以外の分離
+     文字を使用することが可能になります．REGEXP自身が大量の`/'を
+     含んでいる場合，個々の`/'をエスケープするのも退屈なので，それを避
+     けるとき特に役に立ちます．REGEXP自身が分離文字を含んでいる場合，
+     それぞれをバックスラッシュ(`\')でエスケープする必要があります．
+
+`/REGEXP/I'
+`\%REGEXP%I'
+     正規表現のマッチに対する`I'指示語はGNUの拡張で，それによ
+     りREGEXPは大文字小文字を無視してマッチします．
+
+`/REGEXP/M'
+`\%REGEXP%M'
+     正規表現のマッチに対する`M'指示語は，GNU `sed'の拡張で，
+     `^'と`$'を(通常の動作に加え)それぞれ改行後の空の文字列と改行
+     前の空の文字列にマッチさせます．これらは特殊文字のならびです．
+
+     (`\`'と`\'') それは，バッファの最初と最後にマッチします．`M'は
+     `multi-line'を意味します．
+
+
+アドレスが与えられていない場合，全ての行がマッチします．一つのアドレス
+が与えられている場合，マッチする行はアドレスがマッチしたものだけになり
+ます．
+
+   アドレスの範囲はカンマ(`,')で分けられている二つのアドレスで指定す
+ることで指定することが可能です．アドレスの範囲は最初のアドレスにマッチ
+している行から始まり，二番目のアドレス(これは含まれます)にマッチするま
+で続きます．
+
+   二番目のアドレスがREGEXPの場合，マッチの終りの調査は，最初のアド
+レスにマッチした行の_次の_行から開始されます．範囲は常に少なくとも
+二行になります(入力ストリームが終わる場合はもちろん例外です)．
+
+   二番目のアドレスがNUMBERで，最初にマッチした行のアドレスより小さ
+い(または同じ)場合，一行のみマッチします．
+
+   GNU `sed'も特殊な二つのアドレス形式をサポートしています．これらはす
+べてGNUの拡張です．
+`0,/REGEXP/'
+     `sed'が最初の入力行でもREGEXPへのマッチを試みるように，
+     `0,/REGEXP/'のように，アドレス指定で行番号の`0'を使用す
+     ることが可能です．言い替えると，`0,/REGEXP/'は
+     `1,/REGEXP/'に似ていますが，ADDR2が入力の最初の行にマッ
+     チする場合，`0,/REGEXP/'の形式では範囲の終わりだと考慮されま
+     すが，一方`1,/REGEXP/'の形式ではその範囲の最初にマッチするの
+     で，正規表現が_二番目に_マッチするのが見つかるまで範囲が広げられま
+     す．
+
+     これは，`0'のアドレスに意味がある場所だけだということに注意してく
+     ださい．0番目の行はなく，それ以外の方法では，`0'のアドレスに該当す
+     るコマンドはエラーとなります．
+
+`ADDR1,+N'
+     ADDR1とADDR1に続くN行にマッチします．
+
+`ADDR1,~N'
+     ADDR1と，入力の行番号がNの倍数になるまでのADDR1に続く
+     行にマッチします．
+
+   アドレス指定の終りに`!'文字を後置すると，マッチの意味が否定されま
+す．すなわち，`!'がアドレスの範囲に続いている場合，選択されたアド
+レスの範囲にマッチ_しない_行だけが選択されます．これは一つのアドレ
+スに対しても動作し，おそらくひねくれているだけでしょうが，何もないアド
+レスに対しても動作します．
+
+
+File: sed-ja.info,  Node: Regular Expressions,  Next: Common Commands,  Prev: Addresses,  Up: sed Programs
+
+3.3 正規表現の構文の概要
+========================
+
+`sed'の使用方法を知るため，正規表現(短くすると"regexp")を理
+解すべきです．正規表現とは，右から左へならぶ対象文字列に対してマッチす
+るパターンです．ほとんどの文字は"普通(ordinary)"のもので，それらは
+パターン内ではその文字自身を意味し，対象内の対応する文字にマッチします．
+ちょっとした例として以下のパターンを考えます．
+
+          The quick brown fox
+
+それは，それと全く同一な対象の文字列の一部にマッチします．正規表現の威
+力は，パターン内に代入と繰り返しを含めるという能力にあります．それらは
+"特殊文字(special characters)"を使用してパターン内にエンコードされ，
+その文字自身を意味せず，代わりに特殊な方法で解釈されます．
+`sed'で使用される正規表現の構文の短い記述は以下のようになります．
+
+`CHAR'
+     単一文字で，特殊なものでない場合はテキストにマッチします．
+
+`*'
+     直前の正規表現のゼロ回以上の繰り返しにマッチし，それは普通の文字，
+     `\'が前置されている特殊な文字，`.'，正規表現のグループ(以下を
+     参照)，括弧でくくられた表現です．GNUの拡張として，正規表現の
+     語尾に`*'を続けることも可能です．例えば，`a**'は`a*'と等
+     価です．POSIX 1003.1-2001では，`*'が正規表現やサブ正規表
+     現の先頭にある場合には，その文字自身を意味するとされていますが，
+     GNU以外での実装では，ほとんどもものがこれをサポートしていない
+     ので，移植性の高いスクリプトでは，このときには代わりに`\*'を使用し
+     てください．
+
+`\+'
+     `*'に似ていますが，一つ以上にマッチします．それはGNUの拡 張です．
+
+`\?'
+     `*'に似ていますが，ゼロまたは一つだけにマッチします．これは
+     GNUの拡張です．
+
+`\{I\}'
+     `*'に似ていますが，正確にI個連続したものにマッチします
+     (Iは10進数の整数です．移植性のために0から255の間にしてください)．
+
+`\{I,J\}'
+     I個以上J個以下の連続にマッチします．
+
+`\{I,\}'
+     I個以上の連続にマッチします．
+
+`\(REGEXP\)'
+     全体としてREGEXPの内部グループにします．以下のように使用されます．
+
+        * `\(abcd\)*'のような，後置されるオペレータを適用します．これは，ゼ
+          ロ以上の`abcd'全体の連続を検索しますが，`abcd*'は`abc'に
+          ゼロ以上の`d'が続くものを検索します．`\(abcd\)*'は， POSIX
+          1003.1-2001で要求されているためサポートされていますが，
+          GNU以外での実装では，ほとんどもものがこれをサポートしていない
+          ので，一般的に移植性の高くありません．
+
+        * 後方参照を使用します(以下を参照してください)．
+
+`.'
+     改行を含む，あらゆる文字にマッチします．
+
+`^'
+     行の最初のヌル文字にマッチし，すなわちサーカムフレクスの後にあるものは
+     行の先頭にある必要があります．`^#include'は，"#include"が行の最初
+     にあるところだけにマッチします --
+     その前に一つか二つのスペースがある場
+     合，マッチは失敗します．`^'は，正規表現や部分正規表現の最初(すなわ
+     ち，`\('や`\|'の後)にある場合のみ特殊文字として動作します．移
+     植性の高いスクリプトでは，部分正規表現の最初で`^'を使用するのは避
+     けるべきで，それはPOSIXでは，`^'を文章内の通常の文字とし
+     て扱う実装も許可しているためです．
+
+`$'
+     `^'と同じですが，行の終りを参照します．`$'も，正規表現や部分
+     正規表現の最後(すなわち，`\)'や`\|'の後)にある場合のみ特殊文
+     字として動作し，部分正規表現の最後での利用には移植性がありません．
+
+`[LIST]'
+`[^LIST]'
+     LIST内の単一文字にマッチします．例えば，`[aeiou]'はすべての
+     母音にマッチします．リストには`CHAR1-CHAR2'のような並
+     びを含めてもかまわず，それは，CHAR1とCHAR2の間(それぞれ含ま
+     れます)のあらゆる文字にマッチします．
+
+     前置される`^'は正規表現の意味を反転するので，LISTに_な
+     い_単一文字にマッチします．リストに`]'を含めるため，それを(必要な
+     `^'の後の)最初の文字にし，`-'をリストに含めるため，それを最初
+     または最後にしてください．`^'を含めるため，最初の文字より後に書い
+     てください．
+
+     文字`$'，`*'，`.'，`['，そして`\'は，通常は
+     LIST内で特殊文字にはなりません．例えば`[\*]'は，この状況では
+     `\'が特殊文字ではないので，`\'にも`*'にもマッチします．
+     しかし，`[.ch.]'，`[=a=]'，そして`[:space:]'のような文字
+     列はLIST内で特殊扱いされ，対応するシンボル，等価のクラス，そして
+     文字クラスにそれぞれ対応するので，後に`.'，`='，または
+     `:'が続く`['はLIST内で特殊扱いされます．
+     `POSIXLY_CORRECT'モードでないときも，`\n'と`\t'のような特
+     殊なエスケープはLIST内で認識されます．*Note Escapes::.
+
+`REGEXP1\|REGEXP2'
+     REGEXP1またはREGEXP2にマッチします．複雑な選択的正規表現を
+     使用するためカッコを使用してください．マッチの処理は，それぞれの選択物
+     を左から右へ順番に試し，最初に成功したものが使用されます．それは
+     GNUの拡張です．
+
+`REGEXP1REGEXP2'
+     REGEXP1とREGEXP2が連結しているものにマッチします．結合具合
+     は`\|'，`^'，そして`$'より綿密になりますが，それ以外の正
+     規表現オペレータよりは弱くなります．
+
+`\DIGIT'
+     正規表現のDIGIT番目の`\(...\)'の括弧付き部分正規表現にマッ
+     チします．これは，"後方参照(back reference)"と呼ばれています．部分
+     正規表現は，左から右の出現順に数えた番号が暗黙に指定されます．
+
+`\n'
+     改行文字にマッチします．
+
+`\CHAR'
+     CHARにマッチし，ここでCHARは，`$'，`*'，`.'，
+     `['，`\'，または`^'の一つです．移植性があると仮定可能な
+     Cのようなバックスラッシュシーケンスは，改行に対する`\n'と
+     `\\'だということに注意してください．特に`\t'は移植性がなく，
+     ほとんどの`sed'実装でタブ文字ではなく`t'にマッチします．
+
+
+正規表現のマッチは欲張りで，つまりマッチは左から右に試みられ，二つ以上
+のマッチが同じ文字から開始される場合は，その最も長いものを選択すること
+に注意してください．
+
+例です．
+`abcdef'
+     `abcdef'にマッチします．
+
+`a*b'
+     ゼロ個以上の`a'に単一の`b'が続くものにマッチします．例えば，
+     `b'や`aaaaab'です．
+
+`a\?b'
+     `b'や`ab'にマッチします．
+
+`a\+b\+'
+     一つ以上の`a'に一つ以上の`b'が続くものにマッチします．
+     `ab'はマッチの可能性がある最も短いものですが，それ以外の例として，
+     `aaaab'や`abbbbb'や`aaaaaabbbbbbb'があります．
+
+`.*'
+`.\+'
+     これらの二つは両方とも，行のすべての文字にマッチします．しかし，最初の
+     ものはすべての行(空の文字列も含む)にマッチしますが，二番目のものは少な
+     くとも一文字含まれている行のみにマッチします．
+
+`^main.*(.*)'
+     これは，行の最初が`main'で，開カッコと閉カッコが続く行を探します．
+     `n'，`('，そして`)'が隣接している必要はありません．
+
+`^#'
+     これは，`#'始まる文字列にマッチします．
+
+`\\$'
+     これは単一のバックスラッシュで終る行にマッチします．その正規表現は，エ
+     スケープのために二つのバックスラッシュが含まれます．
+
+`\$'
+     代わりに，これは単一のドル記号にマッチし，それはエスケープされているた
+     めです．
+
+`[a-zA-Z0-9]'
+     Cロカールでは，これはあらゆるASCII文字と数字にマッチします．
+
+`[^ tab]\+'
+     (ここでの`tab'は単一のタブ文字を意味します．) これは，スペースとタ
+     ブ以外のあらゆる文字が一つ以上連続しているものにマッチします．通常，こ
+     れは単語を意味します．
+
+`^\(.*\)\n\1$'
+     これは，改行で分離されている二つの同じ部分文字列から成り立つ文字列にマッ
+     チします．
+
+`.\{9\}A$'
+     これは，`A'が後置されている九文字にマッチします．
+
+`^.\{15\}A'
+     これは16文字含まれている文字列ではじまり，最後が`A'のものみマッチ
+     します．
+
+
+
+File: sed-ja.info,  Node: Common Commands,  Next: The "s" Command,  Prev: Regular Expressions,  Up: sed Programs
+
+3.4 よく使用されるコマンド
+==========================
+
+本当に`sed'を使用するのなら，きっとこれらのコマンドを知りたいと
+思うでしょう．
+
+`#'
+     [アドレスは利用不可能です．]
+
+     `#'文字ははコメントを開始します．コメントは次の改行まで続きます．
+
+     移植性を心配している場合，`sed' (POSIXに準拠していないも
+     の)の実装によっては，単一の一行のコメントのみサポートしていて，スクリプ
+     トの最初の文字が`#'のときだけサポートしている可能性があることを覚
+     えておいてください．
+
+     警告：`sed'スクリプトの最初の二文字が`#n'の場合， `-n'
+     (自動的に出力しない)オプションが強制的に使用されます．スク
+     リプトの最初の行にコメントを書き，そしてコメントを文字`n'で開始し
+     たい場合で，このように動作して欲しくない場合は，大文字の`N'を使用
+     するか，`n'の前に少なくとも一つのスペースを書いてください．
+
+`q [EXIT-CODE]'
+     このコマンドは一つのアドレスだけ受け入れます．
+
+     それ以上のコマンドも入力も処理せず`sed'を終了します．自動的な出
+     力が`-n'スイッチで利用不可能になっていない場合，現在のパターン空
+     間が出力されることに注意してください．`sed'スクリプトが終了コー
+     ドを返す能力は，GNU `sed'の拡張です．
+
+`d'
+     パターン空間を削除します．すぐに次のサイクルを開始します．
+
+`p'
+     パターン空間を(標準出力に)出力します．通常このコマンドは，`-n'コ
+     マンドラインオプションと組み合わせて使用します．
+
+`n'
+     自動的な出力が利用不可能ではない場合，パターン空間を出力し，何も考えず，
+     パターン空間を入力の次の行で置換します．それ以上入力がない場合，
+     `sed'はそれ以上のコマンドを処理せずに終了します．
+
+`{ COMMANDS }'
+     コマンドのグループは，`{'文字と`}'文字で囲んでもかまいませ
+     ん．コマンドのグループを，単一のアドレス(またはアドレスの範囲)にマッチ
+     したところで開始したいとき，これは特に役に立ちます．
+
+
+
+File: sed-ja.info,  Node: The "s" Command,  Next: Other Commands,  Prev: Common Commands,  Up: sed Programs
+
+3.5 `s'コマンド
+===============
+
+(置換での)`s'コマンドの構文は，
+`s/REGEXP/REPLACEMENT/FLAGS'です．`/'文字は，
+他の単一文字を`s'コマンドで与えることで一様に置換してもかまいませ
+ん．`/'文字(または，それの代わりの使用されているその他の文字)は，
+`\'文字を前置した場合だけREGEXPやREPLACEMENTに書くこと が可能です．
+
+   `s'コマンドは，おそらく`sed'で最も重要で，様々なオプション
+が多くあります．基本的な概念は単純です．`s'コマンドは，提供されて
+いるREGEXPに対しパターン空間のマッチを試みます．マッチが成功する
+場合．マッチしたパターン空間の位置がREPLACEMENTで置換されます．
+
+   REPLACEMENTに`\N'(Nは1から9までの数字で，1と9も
+含まれます)での参照を含めることが可能で，それはN番目の`\('と
+そのマッチと`\)'に含まれているマッチの位置を参照します．また，
+REPLACEMENTに，パターン空間のマッチ位置全体を参照する，エスケープ
+されていない`&'文字を含めることも可能です．
+
+   最後に(これはGNU `sed'の拡張です)，特別なバックスラッシュのシーケン
+スと文字`L'，`l'，`U'，`u'，または`E'の一つを
+含めることが可能です．それぞれの意味は以下のとおりです．
+
+`\L'
+     `\U'や`\E'が見つかるまで小文字に置換します．
+
+`\l'
+     次の文字を小文字に置換します．
+
+`\U'
+     `\L'や`\E'が見つかるまで大文字に置換します．
+
+`\u'
+     次の文字を大文字に置換します．
+
+`\E'
+     `\L'や`\U'で開始した大文字小文字の変換を停止します．
+
+   `\'，`&'，または改行そのものを最終的な置換物に含めるため，
+REPLACEMENT内の`\'，`&'，または改行に必要な`\'を確
+実に前置してください．
+
+   `s'コマンドにはゼロ以上の下記のFLAGSを続けることが可能です．
+
+`g'
+     最初のものだけでなく_すべての_REGEXPへのマッチを置換します．
+
+`NUMBER'
+     REGEXPのNUMBER番目のマッチのみ置換します．
+
+     注意：POSIXの標準は，`g'とNUMBER指示語を混ぜたときに生
+     じることを指定しておらず，現在は`sed'の実装上で幅広い同意はあり
+     ません．GNU `sed'では，相互作用を以下のように定義しています．
+     NUMBER番目までのマッチを無視し，NUMBER番目からマッチしした
+     すべてのマッチを置換します．
+
+`p'
+     置換が行なわれた場合，新しいパターン空間を出力します．
+
+     注意：`p'と`e'オプションの両方が指定されているとき，二つの順
+     序に関連して，全く異なる結果を生成します．一般的に，`ep'(評価して
+     出力)では期待したものになるでしょうが，もう一方の順番はデバッグで役に立
+     つものになります．この理由は，現在のバージョンのGNU `sed'が，
+     `e'前後の`p'オプションの存在を特別なものとして解釈しますが，
+     `s'コマンドに対する一般的なフラグはその効果を一度だけ表示するため
+     です．この動作は，ドキュメントには書かれていますが，将来のバージョンで
+     は変更するかもしれません．
+
+`w FILE-NAME'
+     置換が行なわれた場合，結果を指名されたファイルに書き出します． GNU
+     `sed'の拡張として，FILE-NAMEの特殊な値をサポートします．結
+     果を標準エラー出力に書き出す`/dev/stderr'，そして標準出力に書き出
+     す`/dev/stdout'です．(1)
+
+`e'
+     このコマンドで，シェルコマンドからの入力をパターン空間へのパイプで渡す
+     ことが可能になります．代入が行なわれた場合，パターン空間で見つかったコ
+     マンドが実行され，パターン空間はその出力で置換されます．後置される改行
+     は抑制されます．実行されたコマンドにNUL文字が含まれる場合，結果は
+     定義されていません．これはGNU `sed'の拡張です．
+
+`I'
+`i'
+     正規表現にマッチさせる`I'指示語はGNUの拡張で，大文字小文
+     字を無視する方法で，`sed'にREGEXPにマッチさせます．
+
+`M'
+`m'
+     正規表現のマッチに対する`M'指示語は，GNU `sed'の拡張で，
+     `^'と`$'を(通常の動作に加え)，それぞれ改行後の空の文字列と改
+     行前の空の文字列にマッチさせます．特殊な文字の並びがあります．
+
+     (`\`'と`\'')
+     これらは常にバッファの最初または最後にマッチします．`M'は
+     `multi-line'を意味します．
+
+
+   ---------- Footnotes ----------
+
+   (1) これは，`-i'スイッチが使用され ていない限り，`p'と等価です．
+
+
+File: sed-ja.info,  Node: Other Commands,  Next: Programming Commands,  Prev: The "s" Command,  Up: sed Programs
+
+3.6 あまり使用されないコマンド
+==============================
+
+前のセクションのものより使用されることはおそらく少ないでしょうが，非常
+にわずかな有用な`sed'スクリプトには，以下のコマンドを組み込むこ
+とも可能です．
+
+`y/SOURCE-CHARS/DEST-CHARS/'
+     (`/'文字は，`y'コマンドで与えられるその他の単一文字で一律に置
+     換してもかまいません．)
+
+     SOURCE-CHARSにマッチしたパターン空間のすべての文字を，対応する
+     DEST-CHARSの文字に変換します．
+
+     `/'(またはそのかわりに使用されている文字)，`\'，または改行の
+     インスタンスは，それぞれのインスタンスに`\'でエスケープを提供する
+     ことでSOURCE-CHARSやDEST-CHARSのリストに書くことが可能です．
+     SOURCE-CHARSとDEST-CHARSのリストには，(エスケープを取り除く
+     と)同じ数の文字を含める_必要があります_．
+
+`a\'
+`TEXT'
+     GNUの拡張として，このコマンドは二つのアドレスを受け入れます．
+
+     このコマンドに続いているテキストの行(最後が`\'で終っているものは，
+     出力から取り除かれます)を，現在のサイクルの終りや，次の入力行が読み込ま
+     れるときに出力されるキューに保存します．
+
+     TEXTのエスケープシーケンスは処理されるので，単一のバックスラッシュ
+     を出力するため，TEXTで`\\'を使用してください．
+
+     GNUの拡張として，`a'と改行の間に連続した空白と`\'が
+     ある場合，`a'の後に最初の空白文字以外で始まるこの行のテキストは，
+     TEXTブロックの最初の行として受けとられます．(これで，単純に一行の
+     スクリプトを追加するだけで可能になります．)この拡張は，`i'と
+     `c'コマンドを用いても動作します．
+
+`i\'
+`TEXT'
+     GNUの拡張として，このコマンドは二つのアドレスを受け入れます．
+
+     このコマンドに続いている行(最後が`\'で終っているものは，出力から取
+     り除かれます)をすぐに出力します．
+
+`c\'
+`TEXT'
+     マッチしたアドレスやアドレスの範囲の行を削除し，このコマンドに続いてい
+     る行(最後が`\'で終っているものは，出力から取り除かれます)を，最後
+     の行の位置(または，アドレスが指定されていない場合はそれぞれの行の位置)
+     に出力します．新しいサイクルは，パターン空間が削除されてから，このコマ
+     ンド終了後に開始されます．
+
+`='
+     GNUの拡張として，このコマンドは二つのアドレスを受け入れます．
+
+     現在の入力行の行数を(改行を追加して)出力します．
+
+`l N'
+     明確な様式でパターン空間を出力します．出力不可能な文字(と`\'文字)
+     は，Cの形式でエスケープされた様式で出力されます．長い行は分割を示す
+     `\'を後置して分割されます．それぞれの行の終りには`$'で印が付
+     きます．
+
+     Nは，要求される行を丸める長さを指定します．0(ゼロ)の長さは長い行
+     を丸めないことを意味します．省略されている場合，コマンドラインで指定さ
+     れているものがデフォルトとして使用されます．Nパラメータは GNU
+     `sed'の拡張です．
+
+`r FILENAME'
+     GNUの拡張として，このコマンドは二つのアドレスを受け入れます．
+
+     FILENAMEの内容を読み込み，現在のサイクルの終りや次の入力行が読み
+     込まれたときに出力ストリームに挿入するためキューに保存します．
+     FILENAMEが読み込み不可能な場合，エラーを示すことなく空のファイル
+     が読み込まれているかのように扱われることに注意してください．
+
+     GNU `sed'の拡張として，特殊な値`/dev/stdin'がファイル名としてサ
+     ポートされていて，それは標準入力の内容を読み込みます．
+
+`w FILENAME'
+     パターン空間をFILENAMEに書き出します．GNU `sed'の拡張として，
+     FILE-NAMEとして二つの特殊な値がサポートされています．
+     `/dev/stderr'は結果を標準エラー出力に書き出し，`/dev/stdout'
+     は標準出力に書き出します．(1)
+
+     最初の入力行が読み込まれる前に，ファイルは作成され(または切り詰められ)
+     ます．同じFILENAMEを参照するすべての`w'コマンドは(`s'コ
+     マンド成功時の`w'フラグのインスタンスを含めて)，ファイルを閉じ再び
+     開くこと無く出力されます．
+
+`D'
+     パターン空間のテキストを最初の改行まで削除します．テキストが残っている
+     場合，(入力の新しい行を読み込むことなく)結果として生じているパターンス
+     ペースでサイクルを再び開始し，それ以外では通常通り新しいサイクルを開始
+     します．
+
+`N'
+     パターン空間に改行を追加し，入力の次の行をパターン空間に後置します．入
+     力がそれ以上ない場合，`sed'は終了し，それ以上のコマンドを処理し
+     ません．
+
+`P'
+     パターン空間の位置を最初の改行まで出力します．
+
+`h'
+     ホールド空間の内容をパターン空間の内容で置換します．
+
+`H'
+     ホールド空間の内容に改行を後置した後，パターン空間の内容をホールド空間
+     に後置します．
+
+`g'
+     パターン空間の内容をホールド空間の内容で置換します．
+
+`G'
+     パターン空間の内容に改行を後置した後，ホールド空間の内容をパターン空間
+     に後置します．
+
+`x'
+     ホールド空間とパターン空間の内容を入れ換えます．
+
+
+   ---------- Footnotes ----------
+
+   (1) `-i'スイッチが使用されていない 限り，これは`p'と等価です．
+
+
+File: sed-ja.info,  Node: Programming Commands,  Next: Extended Commands,  Prev: Other Commands,  Up: sed Programs
+
+3.7 `sed'のベテランプログラマのためのコマンド
+=============================================
+
+ほとんどの状況で，これらのコマンドを使用するよりは，おそらく`awk'
+やPerlのようなものでプログラムをした方が良いでしょう．しかし，時には
+`sed'に執念を燃やす人もいて，これらのコマンドで全く複雑なスクリ
+プトを書くことも可能になります．
+
+`: LABEL'
+     [アドレスは利用不可能です．]
+
+     条件分岐コマンドに対するLABELの位置を指定します．それ以外では何も
+     しません．
+
+`b LABEL'
+     無条件でLABELに分岐します．LABELは省略可能で，その場合は次
+     のサイクルが開始されます．
+
+`t LABEL'
+     前回の入力行の読み込みや条件分岐が行なわれてから，`s'の置換で成功
+     したしたものがある場合だけ，LABELに分岐します．LABELは省略
+     可能で，その場合は次のサイクルが開始されます．
+
+
+
+File: sed-ja.info,  Node: Extended Commands,  Next: Escapes,  Prev: Programming Commands,  Up: sed Programs
+
+3.8 GNU `sed'特有のコマンド
+===========================
+
+以下のコマンドはGNU `sed'特有なので，注意して使用する必要があり，移
+植性の邪魔が問題ないことが分かっているときだけ使用してください．それで
+GNU `sed'の拡張を調査したり，標準的な`sed'ではまだサポートさ
+れていないが，よく要求される作業を行なうことが可能になります．
+
+`e [COMMAND]'
+     このコマンドで，シェルコマンドからの入力をパターン空間へパイプで渡すこ
+     とが可能になります．パラメータを用いていない場合，`e'コマンドはパ
+     ターン空間で見つかったコマンドを実行し，パターン空間を出力で置換します．
+     後置される改行は抑制されます．
+
+     パラメータが指定されている場合は，代わりに`e'コマンドがそれをコマ
+     ンドとして解釈し，(`r'が行なうように)それを出力ストリームに送りま
+     す．そのコマンドは，最後の終りがバックスラッシュでない限り，複数の行を
+     跨って実行することが可能です．
+
+     いずれの場合でも，実行されたコマンドにNUL文字が含まれる場合，結果
+     は定義されていません．
+
+`L N'
+     このGNU `sed'の拡張は，`fmt'が行なうように，(最大)N文字の
+     行の出力を生成するため，パターン空間の行を補充しつなげます．Nが省
+     略されている場合，コマンドラインで指定されているデフォルトを使用します．
+     このコマンドの試みは失敗だと思っていて，要求が無ければ(きっと無いでしょ
+     うけど)将来のバージョンでは削除する予定です．
+
+`Q [EXIT-CODE]'
+     このコマンドは，単一のアドレスだけを受け入れます．
+
+     このコマンドは`q'と同じですが，パターン空間の内容を出力しません．
+     `q'に似ていて，呼び出し側に終了コードを返す能力を提供しています．
+
+     この一見些細な機能を達成する唯一の別の方法は，`-n'オプションを使用
+     する方法(スクリプトが不必要に複雑になります)や，見た目に影響しないよう
+     にファイル全体を読み込むと時間が無駄になるような以下の断片を利用する方
+     法なので，役に立つはずです．
+
+          :eat
+          $d       Quit silently on the last line
+          N        Read another line, silently
+          g        Overwrite pattern space each time to save memory
+          b eat
+
+`R FILENAME'
+     FILENAMEの行を読み込み，現在のサイクルの終りや次の入力行が読み込
+     まれたときに出力ストリームに挿入するためキューに保存します．
+     FILENAMEが読み込み不可能，またはファイルの終りに達した場合，エラー
+     を示すことなく，行が追加されないことに注意してください．
+
+     `r'コマンド同様，特殊な値`/dev/stdin'がファイル名としてサポー
+     トされていて，それは標準入力の内容を読み込みます．
+
+`T LABEL'
+     前回の入力行の読み込みや条件分岐が行なわれてから，`s'の置換で成功
+     しなかったものがある場合だけLABELに分岐します．LABELは省略
+     可能で，その場合は次のサイクルが開始されます．
+
+`v VERSION'
+     このコマンドは何もしませんが，GNU `sed'の拡張がサポートされていない
+     場合は`sed'は異常終了し，それはその他の`sed'の実装では
+     それを実装していないためです．さらに，`4.0.5'の様に，スクリプトが
+     要求する`sed'のバージョンを指定することもかのうです．デフォルト
+     は`4.0'で，それは，このコマンドが実装された最初のバージョンだから
+     です．
+
+     このコマンドは，`POSIXLY_CORRECT'が環境変数で設定されている場合でも，
+     すべてのGNU extensionsを利用可能にします．
+
+`W FILENAME'
+     最初の改行までのパターン空間の位置を，与えられたFILENAMEに書き出
+     します．ここでのファイル処理は`w'コマンドですべて述べています．
+
+
+File: sed-ja.info,  Node: Escapes,  Prev: Extended Commands,  Up: sed Programs
+
+3.9 正規表現でのエスケープに関するGNUの拡張
+===========================================
+
+この章まで，`sed'にキャレットを特殊文字でなく文字通りに解釈する
+ように伝える`\^'の形式のエスケープだけを見てきました．例えば， `\*'
+はゼロ以上のバックスラッシュでは無く単一のアスタリスクにマッ チします．
+
+   この章では，他の種類のエスケープを紹介します(1) --
+すなわち，通常の文字や文字の連続に適用さ
+れるエスケープは文字通りに受けとられ，`sed'は特殊文字で置換しま
+す．これは，パターン空間の印刷不可能な文字を目に見える方法でエンコード
+する方法を提供します．`sed'スクリプト内での印刷不可能な文字の存
+在に制限はありませんが，スクリプトがシェルやテキストの編集で準備される
+とき，バイナリ文字で表現するより，以下のエスケープシーケンスの一つを使
+用する方が通常は簡単です．
+
+   以下は、これらのエスケープのリストです．
+
+`\a'
+     BEL文字を生成またはそれにマッチし，それは"アラート"(ASCII 7)です．
+
+`\f'
+     フォームフィードを生成またはそれにマッチします(ASCII 12)．
+
+`\n'
+     改行を生成またはそれにマッチします(ASCII 10)．
+
+`\r'
+     キャリッジリターンを生成またはそれにマッチします(ASCII 13)．
+
+`\t'
+     水平タブを生成またはそれにマッチします(ASCII 9)．
+
+`\v'
+     "垂直タブ"と呼ばれるものを生成またはそれにマッチします(ASCII 11)．
+
+`\cX'
+     `CONTROL-X'を生成，またはそれにマッチし，Xは任意の
+     文字です．`\cX'の明確な効果は以下のようになります．Xが
+     小文字の場合，それは大文字に変換されます．文字のビットの6(16進数の40)が
+     反転します．このため，`\cz'は16進数の1Aになりますが，`\c{'は
+     16進数の3Bになり，`\c;'は16進数の7Bになります．
+
+`\dXXX'
+     十進数のASCII値がXXXの文字を生成またはそれにマッチします．
+
+`\oXXX'
+     八進数のASCII値がXXXの文字を生成またはそれにマッチします．
+
+`\xXX'
+     16進数のASCII値がXXの文字を生成またはそれにマッチします．
+
+   `\b'(バックスラッシュ)は，既存の"単語の境界"の意味と衝突するので削
+除されています．
+
+それ以外のエスケープは特定の文字集合にマッチし，正規表現内だけで有効で
+す．
+
+`\w'
+     あらゆる"単語"文字にマッチします．"単語"文字とはすべての文字と数字
+     とアンダースコアです．
+
+`\W'
+     "単語以外"の文字にマッチします．
+
+`\b'
+     単語の境界にマッチします．つまり，左が"単語"の文字になっている文字と，
+     右が"単語以外"の文字になっている文字，またはその逆にマッチします．
+
+`\B'
+     単語の境界ならどこにでもマッチします．つまり，文字の左と文字の右の両方
+     が"単語"または"単語以外"のいずれかの場合にマッチします．
+
+`\`'
+     パターンスペースの最初だけにマッチします．これは，複数行モードの
+     `^'とは異なります．
+
+`\''
+     パターンスペースの最後だけにマッチします．これは，複数行モードの
+     `$'とは異なります．
+
+
+   ---------- Footnotes ----------
+
+   (1) この章で紹介する
+すべてのエスケープは，`\n'以外GNUの拡張です．基本正規表
+現モードでは，`POSIXLY_CORRECT'を設定することで，それらを利用する
+ことができなくなります．
+
+
+File: sed-ja.info,  Node: Examples,  Next: Limitations,  Prev: sed Programs,  Up: Top
+
+4 いくつかの見本スクリプト
+**************************
+
+以下は，`sed'をマスターするためのガイドとなる`sed'スク リプトです．
+
+* Menu:
+
+Some exotic examples:
+* Centering lines::
+* Increment a number::
+* Rename files to lower case::
+* Print bash environment::
+* Reverse chars of lines::
+
+Emulating standard utilities:
+* tac::                             Reverse lines of files
+* cat -n::                          Numbering lines
+* cat -b::                          Numbering non-blank lines
+* wc -c::                           Counting chars
+* wc -w::                           Counting words
+* wc -l::                           Counting lines
+* head::                            Printing the first lines
+* tail::                            Printing the last lines
+* uniq::                            Make duplicate lines unique
+* uniq -d::                         Print duplicated lines of input
+* uniq -u::                         Remove all duplicated lines
+* cat -s::                          Squeezing blank lines
+
+
+File: sed-ja.info,  Node: Centering lines,  Next: Increment a number,  Up: Examples
+
+4.1 行の中央揃え
+================
+
+以下のスクリプトは，ファイルのすべての行を80桁の幅でセンタリングします．
+幅を変更するため，`\{...\}'の数値を変更する必要があり，追加
+されるスペースも変更する必要があります．
+
+マッチさせる正規表現の部分を分離するため，バッファコマンドが使用されて
+いる方法に注意してください -- これは一般的なテクニックです．
+
+     #!/usr/bin/sed -f
+
+     # Put 80 spaces in the buffer
+     1 {
+       x
+       s/^$/          /
+       s/^.*$/&&&&&&&&/
+       x
+     }
+
+     # del leading and trailing spaces
+     y/tab/ /
+     s/^ *//
+     s/ *$//
+
+     # add a newline and 80 spaces to end of line
+     G
+
+     # keep first 81 chars (80 + a newline)
+     s/^\(.\{81\}\).*$/\1/
+
+     # \2 matches half of the spaces, which are moved to the beginning
+     s/^\(.*\)\n\(.*\)\2/\2\1/
+
+
+File: sed-ja.info,  Node: Increment a number,  Next: Rename files to lower case,  Prev: Centering lines,  Up: Examples
+
+4.2 数字を増加させる
+====================
+
+以下のスクリプトは，`sed'で算数を行なう方法を説明するものの一つ
+です．これは実際には可能ですが(1)，手動で行なうべきでしょう．
+
+数値を一つ増加させるには，最後の桁に1を追加し，それ以降の桁を置換するだ
+けです．例外が一つあります．その桁の前の数値が9のとき，9が無くなるまで
+増加させる必要もあります．
+
+   このBruno
+Haibleによる解決方法は，単一のバッファを使用しているので非常
+に賢く知的です．この制限がない場合，*Note Numbering lines: cat -n.で使用
+されているアルゴリズムの方がより速いでしょう．それは後置される9をアンダー
+スコアで置換し，複数の`s'コマンドを最後の桁を増加させるために使用
+し，そして，再びアンダースコアをゼロで置換することで動作します．
+
+     #!/usr/bin/sed -f
+
+     /[^0-9]/ d
+
+     # replace all leading 9s by _ (any other character except digits, could
+     # be used)
+     :d
+     s/9\(_*\)$/_\1/
+     td
+
+     # incr last digit only.  The first line adds a most-significant
+     # digit of 1 if we have to add a digit.
+     #
+     # The `tn' commands are not necessary, but make the thing
+     # faster
+
+     s/^\(_*\)$/1\1/; tn
+     s/8\(_*\)$/9\1/; tn
+     s/7\(_*\)$/8\1/; tn
+     s/6\(_*\)$/7\1/; tn
+     s/5\(_*\)$/6\1/; tn
+     s/4\(_*\)$/5\1/; tn
+     s/3\(_*\)$/4\1/; tn
+     s/2\(_*\)$/3\1/; tn
+     s/1\(_*\)$/2\1/; tn
+     s/0\(_*\)$/1\1/; tn
+
+     :n
+     y/_/0/
+
+   ---------- Footnotes ----------
+
+   (1) `sed'のベテランGreg Ubbenは，`dc'
+RPNの計算機の実装を書いています！それはsedとと もに配布されています．
+
+
+File: sed-ja.info,  Node: Rename files to lower case,  Next: Print bash environment,  Prev: Increment a number,  Up: Examples
+
+4.3 ファイル名を小文字に変更する
+================================
+
+以下はちょっと変わった`sed'の使用方法です．我々はテキストを変換
+し，それをシェルコマンドに変換し，そして，それらをそのままシェルに与え
+ます．`sed'を使用するとき，更に悪いことになっても気にしないでく
+ださい．`date'の出力を`bc'プログラムに変換するスクリプトを見
+たことだってあります！
+
+   これのメインの本体は`sed'スクリプトで，名前を小文字から大文字
+(またはその逆に)に置き換え，置き換えられた名前がオリジナルの名前と同じ
+場合でも適用します．スクリプトがシェル変数を使用して媒介している方法と，
+適切に引用符で囲んでいる方法に注意してください．
+
+     #! /bin/sh
+     # rename files to lower/upper case...
+     #
+     # usage:
+     #    move-to-lower *
+     #    move-to-upper *
+     # or
+     #    move-to-lower -R .
+     #    move-to-upper -R .
+     #
+
+     help()
+     {
+     	cat << eof
+     Usage: $0 [-n] [-r] [-h] files...
+
+     -n      do nothing, only see what would be done
+     -R      recursive (use find)
+     -h      this message
+     files   files to remap to lower case
+
+     Examples:
+            $0 -n *        (see if everything is ok, then...)
+            $0 *
+
+            $0 -R .
+
+     eof
+     }
+
+     apply_cmd='sh'
+     finder='echo "$@" | tr " " "\n"'
+     files_only=
+
+     while :
+     do
+         case "$1" in
+             -n) apply_cmd='cat' ;;
+             -R) finder='find "$@" -type f';;
+             -h) help ; exit 1 ;;
+             *) break ;;
+         esac
+         shift
+     done
+
+     if [ -z "$1" ]; then
+             echo Usage: $0 [-h] [-n] [-r] files...
+             exit 1
+     fi
+
+     LOWER='abcdefghijklmnopqrstuvwxyz'
+     UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+     case `basename $0` in
+             *upper*) TO=$UPPER; FROM=$LOWER ;;
+             *)       FROM=$UPPER; TO=$LOWER ;;
+     esac
+
+     eval $finder | sed -n '
+
+     # remove all trailing slashes
+     s/\/*$//
+
+     # add ./ if there is no path, only a filename
+     /\//! s/^/.\//
+
+     # save path+filename
+     h
+
+     # remove path
+     s/.*\///
+
+     # do conversion only on filename
+     y/'$FROM'/'$TO'/
+
+     # now line contains original path+file, while
+     # hold space contains the new filename
+     x
+
+     # add converted file name to line, which now contains
+     # path/file-name\nconverted-file-name
+     G
+
+     # check if converted file name is equal to original file name,
+     # if it is, do not print nothing
+     /^.*\/\(.*\)\n\1/b
+
+     # now, transform path/fromfile\n, into
+     # mv path/fromfile path/tofile and print it
+     s/^\(.*\/\)\(.*\)\n\(.*\)$/mv \1\2 \1\3/p
+
+     ' | $apply_cmd
+
+
+File: sed-ja.info,  Node: Print bash environment,  Next: Reverse chars of lines,  Prev: Rename files to lower case,  Up: Examples
+
+4.4 `bash'の環境変数の出力
+==========================
+
+以下のスクリプトは，`set' Bourneシェルコマンドの出力から，シェル関
+数の定義を取り除きます．
+
+     #!/bin/sh
+
+     set | sed -n '
+     :x
+
+     # if no occurrence of "=()" print and load next line
+     /=()/! { p; b; }
+     / () $/! { p; b; }
+
+     # possible start of functions section
+     # save the line in case this is a var like FOO="() "
+     h
+
+     # if the next line has a brace, we quit because
+     # nothing comes after functions
+     n
+     /^{/ q
+
+     # print the old line
+     x; p
+
+     # work on the new line now
+     x; bx
+     '
+
+
+File: sed-ja.info,  Node: Reverse chars of lines,  Next: tac,  Prev: Print bash environment,  Up: Examples
+
+4.5 行の文字を反転する
+======================
+
+以下のスクリプトは，行の文字の位置を反転するために使用することが可能で
+す．二つの文字を同時に移動するテクニックで，直観的な実装より高速になり
+ます．
+
+   ラベル定義の前の`tx'コマンドに注意してください．これは`t'コマ
+ンドでテストされるフラグをリセットするために必要になることがよくありま
+す．
+
+   想像力豊かな読者は，このスクリプトの使い方が分かるでしょう．例えば，
+`banner'の出力を反転させることです(1)
+
+     #!/usr/bin/sed -f
+
+     /../! b
+
+     # Reverse a line.  Begin embedding the line between two newlines
+     s/^.*$/\
+     &\
+     /
+
+     # Move first character at the end.  The regexp matches until
+     # there are zero or one characters between the markers
+     tx
+     :x
+     s/\(\n.\)\(.*\)\(.\n\)/\3\2\1/
+     tx
+
+     # Remove the newline markers
+     s/\n//g
+
+   ---------- Footnotes ----------
+
+   (1) これは，`banner'
+の出力を埋める他のスクリプトが必要です．例えば以下のようにします．
+
+     #! /bin/sh
+
+     banner -w $1 $2 $3 $4 |
+       sed -e :a -e '/^.\{0,'$1'\}$/ { s/$/ /; ba; }' |
+       ~/sedscripts/reverseline.sed
+
+
+File: sed-ja.info,  Node: tac,  Next: cat -n,  Prev: Reverse chars of lines,  Up: Examples
+
+4.6 ファイルの行を反転する
+==========================
+
+以下のものは，様々なUnixコマンドをエミュレートする全く意味がない(面白い
+けどね)スクリプトです．これは特に`tac'と同等の動作をします．
+
+   GNU `sed'とGNU `sed'以外の実装では，
+このスクリプトは簡単に内部バッファでオーバーフローする可能性があること
+に注意してください．
+
+     #!/usr/bin/sed -nf
+
+     # reverse all lines of input, i.e. first line became last, ...
+
+     # from the second line, the buffer (which contains all previous lines)
+     # is *appended* to current line, so, the order will be reversed
+     1! G
+
+     # on the last line we're done -- print everything
+     $ p
+
+     # store everything on the buffer again
+     h
+
+
+File: sed-ja.info,  Node: cat -n,  Next: cat -b,  Prev: tac,  Up: Examples
+
+4.7 行の番号付け
+================
+
+以下のスクリプトは`cat -n'の置換えです．実際それは，出力を GNU
+`cat'のように正確に書式化します．
+
+もちろん，これは二つの理由から全く意味がありません．まず始めに他のもの
+はCで行ないます．二番目に以下のBourneシェルスクリプトは同じ目的で使用さ
+れ，はるかに速くなります．
+
+     #! /bin/sh
+     sed -e "=" $@ | sed -e '
+       s/^/      /
+       N
+       s/^ *\(......\)\n/\1  /
+     '
+
+   それは行番号を出力するために`sed'を使用し，二つの`N'で行を
+二つにまとめます．もちろん，このスクリプトは以下で提示するものほど教わ
+るものはありません．
+
+増加で使用しているアルゴリズムを両方のバッファで使用しているので，行は
+可能な限り速く出力され，そして破棄されます．数値は変更した桁がバッファ
+に入り，変更されないものがもう一方に行くように分離されています．変更さ
+れる桁は単一のステップ(`y'コマンドを使用して)修正されます．次の行
+の行番号は，次の繰り返しで使用されるように，作成されホールド空間に保存
+されます．
+
+     #!/usr/bin/sed -nf
+
+     # Prime the pump on the first line
+     x
+     /^$/ s/^.*$/1/
+
+     # Add the correct line number before the pattern
+     G
+     h
+
+     # Format it and print it
+     s/^/      /
+     s/^ *\(......\)\n/\1  /p
+
+     # Get the line number from hold space; add a zero
+     # if we're going to add a digit on the next line
+     g
+     s/\n.*$//
+     /^9*$/ s/^/0/
+
+     # separate changing/unchanged digits with an x
+     s/.9*$/x&/
+
+     # keep changing digits in hold space
+     h
+     s/^.*x//
+     y/0123456789/1234567890/
+     x
+
+     # keep unchanged digits in pattern space
+     s/x.*$//
+
+     # compose the new number, remove the newline implicitly added by G
+     G
+     s/\n//
+     h
+
+
+File: sed-ja.info,  Node: cat -b,  Next: wc -c,  Prev: cat -n,  Up: Examples
+
+4.8 空白行以外に番号を付ける
+============================
+
+`cat -b'のエミュレートは，ほとんど`cat -n'と同じです -- 我々
+は，番号を付ける行と付けない行を選択する必要があっただけです．
+
+   このスクリプトの前回ものとの共通部分には，適切な`sed'スクリプト
+へのコメントがいかに重要かを表示するコメントを付けていません....
+
+     #!/usr/bin/sed -nf
+
+     /^$/ {
+       p
+       b
+     }
+
+     # Same as cat -n from now
+     x
+     /^$/ s/^.*$/1/
+     G
+     h
+     s/^/      /
+     s/^ *\(......\)\n/\1  /p
+     x
+     s/\n.*$//
+     /^9*$/ s/^/0/
+     s/.9*$/x&/
+     h
+     s/^.*x//
+     y/0123456789/1234567890/
+     x
+     s/x.*$//
+     G
+     s/\n//
+     h
+
+
+File: sed-ja.info,  Node: wc -c,  Next: wc -w,  Prev: cat -b,  Up: Examples
+
+4.9 文字を数える
+================
+
+以下のスクリプトは，`sed'で算数を行なうもう一つの方法を提示して
+います．この状況では，我々は可能な限り大きな数を追加する必要があるので，
+これを正しく増加するように実装することは不可能でしょう(そして，おそらく
+このスクリプトより計算がより複雑になるでしょう)．
+
+   数字を文字に割り当てるアプローチは，`sed'を用いたソロバンの実装
+の一種です．`a'は一の位，`b'は十の位などになっています．我々
+は，一の位として現在の行に文字の数を単純に追加し，十の位，百の位などに
+繰り上げ伝搬させています．
+
+   通常通り，実行時の総数はホールド空間に保持されます．
+
+最後の行で，ソロバンを十進数の形式に戻しています．多様性のため，これは
+80の`s'コマンドではなく，ループを用いて行なっています(1)．最初
+に一の位を変換し，`a'を数値から削除します．そして十の位が`a'
+になるように文字を回転させ，残っている文字が無くなるまでそれを続けます．
+
+     #!/usr/bin/sed -nf
+
+     # Add n+1 a's to hold space (+1 is for the newline)
+     s/./a/g
+     H
+     x
+     s/\n/a/
+
+     # Do the carry.  The t's and b's are not necessary,
+     # but they do speed up the thing
+     t a
+     : a;  s/aaaaaaaaaa/b/g; t b; b done
+     : b;  s/bbbbbbbbbb/c/g; t c; b done
+     : c;  s/cccccccccc/d/g; t d; b done
+     : d;  s/dddddddddd/e/g; t e; b done
+     : e;  s/eeeeeeeeee/f/g; t f; b done
+     : f;  s/ffffffffff/g/g; t g; b done
+     : g;  s/gggggggggg/h/g; t h; b done
+     : h;  s/hhhhhhhhhh//g
+
+     : done
+     $! {
+       h
+       b
+     }
+
+     # On the last line, convert back to decimal
+
+     : loop
+     /a/! s/[b-h]*/&0/
+     s/aaaaaaaaa/9/
+     s/aaaaaaaa/8/
+     s/aaaaaaa/7/
+     s/aaaaaa/6/
+     s/aaaaa/5/
+     s/aaaa/4/
+     s/aaa/3/
+     s/aa/2/
+     s/a/1/
+
+     : next
+     y/bcdefgh/abcdefg/
+     /[a-h]/ b loop
+     p
+
+   ---------- Footnotes ----------
+
+   (1) 実
+装によっては，スクリプトごとのコマンドが199に制限されています．
+
+
+File: sed-ja.info,  Node: wc -w,  Next: wc -l,  Prev: wc -c,  Up: Examples
+
+4.10 単語を数える
+=================
+
+このスクリプトは，前回のものとほとんど同じで，行にあるそれぞれの単語を
+単一の`a'に一度変換します(前回のスクリプトでは，それぞれの文字を
+`a'に変更しています)．
+
+   本物の`wc'プログラムは`wc -c'に対しループが最適化されているの
+で，文字を数えるより単語を数える方がはるかに遅くなります．これらのスク
+リプトのボトルネックは，どちらかというと算数にあり，このため，単語を数
+えるものはより速くなります(より小さい数を管理する必要があります)．
+
+   前回同様，共通部分には`sed'スクリプトへのコメントの重要性を示す
+コメントがありません．
+
+     #!/usr/bin/sed -nf
+
+     # Convert words to a's
+     s/[ tab][ tab]*/ /g
+     s/^/ /
+     s/ [^ ][^ ]*/a /g
+     s/ //g
+
+     # Append them to hold space
+     H
+     x
+     s/\n//
+
+     # From here on it is the same as in wc -c.
+     /aaaaaaaaaa/! bx;   s/aaaaaaaaaa/b/g
+     /bbbbbbbbbb/! bx;   s/bbbbbbbbbb/c/g
+     /cccccccccc/! bx;   s/cccccccccc/d/g
+     /dddddddddd/! bx;   s/dddddddddd/e/g
+     /eeeeeeeeee/! bx;   s/eeeeeeeeee/f/g
+     /ffffffffff/! bx;   s/ffffffffff/g/g
+     /gggggggggg/! bx;   s/gggggggggg/h/g
+     s/hhhhhhhhhh//g
+     :x
+     $! { h; b; }
+     :y
+     /a/! s/[b-h]*/&0/
+     s/aaaaaaaaa/9/
+     s/aaaaaaaa/8/
+     s/aaaaaaa/7/
+     s/aaaaaa/6/
+     s/aaaaa/5/
+     s/aaaa/4/
+     s/aaa/3/
+     s/aa/2/
+     s/a/1/
+     y/bcdefgh/abcdefg/
+     /[a-h]/ by
+     p
+
+
+File: sed-ja.info,  Node: wc -l,  Next: head,  Prev: wc -w,  Up: Examples
+
+4.11 行を数える
+===============
+
+`sed'はに`wc -l'の機能があるので，今回はおかしなことを何も
+しません！！！ まあ見てください．
+
+     #!/usr/bin/sed -nf
+     $=
+
+
+File: sed-ja.info,  Node: head,  Next: tail,  Prev: wc -l,  Up: Examples
+
+4.12 最初の行を出力する
+=======================
+
+以下のスクリプトは，おそらく最も単純で役に立つ`sed'スクリプトで
+す．それは入力の最初の十行を表示します．表示される行の数は，`q'コ
+マンドの前と同じです．
+
+     #!/usr/bin/sed -f
+     10q
+
+
+File: sed-ja.info,  Node: tail,  Next: uniq,  Prev: head,  Up: Examples
+
+4.13 最後の行を出力する
+=======================
+
+最初ではなく最後のN行出力することはより複雑ですが実現可能です．
+Nは，文字を駄目にする前に二行目でエンコードされます．
+
+   このスクリプトは，最終的な出力をホールド空間に保持し，最後に出力する
+`tac'スクリプトに似ています．
+
+     #!/usr/bin/sed -nf
+
+     1! {; H; g; }
+     1,10 !s/[^\n]*\n//
+     $p
+     h
+
+そのスクリプトの中心では，10行のウィンドウを保持し，行を追加し最も古い
+行を削除しながらスライドしていきます(二行目の置換コマンドは`D'コマ
+ンドのように動作しますがループを再開しません)．
+
+   "スライドウィンドウ"のテクニックは，効率的で複雑な`sed'を書く
+強力な方法で，それは，`P'のようなコマンドを手動で実装する場合は多
+くの作業が必要になるためです．
+
+   この章の残りで十分に説明している，`N'，`P'，そして`D'コ
+マンドを基本としているテクニックを導入するため，単純な`スライドウィンド
+ウ' を使用している`tail'の実装を以下に上げます．
+
+これは複雑に見えますが，実際最後のスクリプトと同じように動作します．し
+かし，適切な行数を捨てた後で，内部の行の場所を保持するためのホールドス
+ペースを使用するために停止し，パターン空間を一行スライドするために
+`N'と`D'を代わりに使用しています．
+
+     #!/usr/bin/sed -f
+
+     1h
+     2,10 {; H; g; }
+     $q
+     1,9d
+     N
+     D
+
+
+File: sed-ja.info,  Node: uniq,  Next: uniq -d,  Prev: tail,  Up: Examples
+
+4.14 重複した行を一行にする
+===========================
+
+以下は，`N'，`P'，そして`D'コマンドを使用した，おそらく
+マスターするのが最も難しい芸術的な例です．
+
+     #!/usr/bin/sed -f
+     h
+
+     :b
+     # On the last line, print and exit
+     $b
+     N
+     /^\(.*\)\n\1$/ {
+         # The two lines are identical.  Undo the effect of
+         # the n command.
+         g
+         bb
+     }
+
+     # If the `N' command had added the last line, print and exit
+     $b
+
+     # The lines are different; print the first and go
+     # back working on the second.
+     P
+     D
+
+   御覧のように，`P'と`D'を使用して二行のウィンドウを管理してい
+ます．このテクニックは，高度な`sed'スクリプトでよく使用されます．
+
+
+File: sed-ja.info,  Node: uniq -d,  Next: uniq -u,  Prev: uniq,  Up: Examples
+
+4.15 入力の重複している行を出力する．
+=====================================
+
+以下のスクリプトは，`uniq -d'のように重複している行だけを出力しま す．
+
+     #!/usr/bin/sed -nf
+
+     $b
+     N
+     /^\(.*\)\n\1$/ {
+         # Print the first of the duplicated lines
+         s/.*\n//
+         p
+
+         # Loop until we get a different line
+         :b
+         $b
+         N
+         /^\(.*\)\n\1$/ {
+             s/.*\n//
+             bb
+         }
+     }
+
+     # The last line cannot be followed by duplicates
+     $b
+
+     # Found a different one.  Leave it alone in the pattern space
+     # and go back to the top, hunting its duplicates
+     D
+
+
+File: sed-ja.info,  Node: uniq -u,  Next: cat -s,  Prev: uniq -d,  Up: Examples
+
+4.16 すべての重複行を削除する
+=============================
+
+以下のスクリプトは，`uniq -u'のようにユニークな行だけを出力します．
+
+     #!/usr/bin/sed -f
+
+     # Search for a duplicate line --- until that, print what you find.
+     $b
+     N
+     /^\(.*\)\n\1$/ ! {
+         P
+         D
+     }
+
+     :c
+     # Got two equal lines in pattern space.  At the
+     # end of the file we simply exit
+     $d
+
+     # Else, we keep reading lines with `N' until we
+     # find a different one
+     s/.*\n//
+     N
+     /^\(.*\)\n\1$/ {
+         bc
+     }
+
+     # Remove the last instance of the duplicate line
+     # and go back to the top
+     D
+
+
+File: sed-ja.info,  Node: cat -s,  Prev: uniq -u,  Up: Examples
+
+4.17 空白行をまとめる
+=====================
+
+最後の例として，空白行をまとめる`cat -s'と同じ機能を実装している，
+複雑さと速度を上げていく三つのスクリプトを以下に書きます．
+
+最初のものは，最初に空白行を取り去り，まだ残っていれば最後に取り去りま
+す．
+
+     #!/usr/bin/sed -f
+
+     # on empty lines, join with next
+     # Note there is a star in the regexp
+     :x
+     /^\n*$/ {
+     N
+     bx
+     }
+
+     # now, squeeze all '\n', this can be also done by:
+     # s/^\(\n\)*/\1/
+     s/\n*/\
+     /
+
+以下のものはより複雑で，最初にすべての空の行を取り除きます．まだ残って
+いる場合，最後に単一の空白行を取り去ります．
+
+     #!/usr/bin/sed -f
+
+     # delete all leading empty lines
+     1,/^./{
+     /./!d
+     }
+
+     # on an empty line we remove it and all the following
+     # empty lines, but one
+     :x
+     /./!{
+     N
+     s/^\n$//
+     tx
+     }
+
+以下は，前置および後置されている空白行を取り除きます．それは最も速いも
+のです．`sed'が行の終りで自動的にスクリプトの最初のサイクルに戻
+るという事実を利用することなく，`n'と`b'を用いて複雑なループ
+を実行していることに注意してください．
+
+     #!/usr/bin/sed -nf
+
+     # delete all (leading) blanks
+     /./!d
+
+     # get here: so there is a non empty
+     :x
+     # print it
+     p
+     # get next
+     n
+     # got chars? print it again, etc...
+     /./bx
+
+     # no, don't have chars: got an empty line
+     :z
+     # get next, if last line we finish here so no trailing
+     # empty lines are written
+     n
+     # also empty? then ignore it, and get next... this will
+     # remove ALL empty lines
+     /./!bz
+
+     # all empty lines were deleted/ignored, but we have a non empty.  As
+     # what we want to do is to squeeze, insert a blank line artificially
+     i\
+
+     bx
+
+
+File: sed-ja.info,  Node: Limitations,  Next: Other Resources,  Prev: Examples,  Up: Top
+
+5 GNU `sed'の制限と制限されていないこと
+***************************************
+
+移植性の高い`sed'スクリプトを書こうとしている人々は，実装形式に
+よっては，(パターン空間とホールド空間の)行の長さに，最大でも4000バイト
+までという既知の制限が有ることを覚えておいてください．POSIXの標準
+では，それに準じている`sed'の実装を少なくとも8192バイトの行の長
+さをサポートするように指定しています．GNU `sed'には行の長さに組み込
+まれている制限はありません．(仮想)メモリ上でmalloc()することが可能な限
+り，心配するほど長い行を，与えたり構成したりすることが可能です．
+
+しかし，再帰はサブパターンの処理と不定回の反復で使用されます．これで，
+利用可能なスタック空間は，特定のパターンで処理されるバッファのサイズを
+制限するかもしれません．
+
+
+File: sed-ja.info,  Node: Other Resources,  Next: Reporting Bugs,  Prev: Limitations,  Up: Top
+
+6 `sed'を学ぶ際のその他の情報源
+*******************************
+
+`sed'に関して書かれているいくつかの本(または，シェルプログラミ
+ングについて論じている本の特定の章)に加えて，`sed'について(数冊
+の本の示唆を含めて)以下で利用可能な`sed-users'のメーリングリストの
+FAQで見つけることが可能です．
+
+      `http://www.student.northpark.edu/pemente/sed/sedfaq.html'
+      `http://sed.sf.net/grabbag/tutorials/sedfaq.html'
+
+   また興味あるものとして，`sed'のチュートリアルとその他の
+`sed'関連グッズが含まれているものは，
+`http://www.student.northpark.edu/pemente/sed/index.htm'と
+`http://sed.sf.net/grabbag'です．
+
+   Sven Guckesが管理している非公式の"sed-users"のメーリングリストがあり
+ます．購読するためには，`http://groups.yahoo.com'を訪問し，
+`sed-users'メーリングリストを検索してください．
+
+
+File: sed-ja.info,  Node: Reporting Bugs,  Next: Extended regexps,  Prev: Other Resources,  Up: Top
+
+7 バグの報告
+************
+
+バグの報告は<bug-gnu-utils@gnu.org>に電子メールを送ってください．
+`Subject:'フィールドのどこかに，単語"sed"を含めてください．また，
+可能であれば，報告の内容に`sed --version'の出力も含めてください．
+
+   以下のようなバグの報告を送らないでください．
+
+     while building frobme-1.3.4
+     $ configure
+     error--> sed: file sedscr line 1: Unknown option to 's'
+
+   GNU `sed'でお気に入りのパッケージをコンフィグレーションできない場合，
+特定の問題を確認するために時間をかけ，スタンドアローンのテストケースを
+作成してください．Cコンパイラのようなその他のプログラムとは異なり，
+`sed'に対してそのようなテストケースを作成することはまったく単純 です．
+
+スタンドアローンのテストケースには，テストを実行するために必要なすべて
+のデータと，問題を生じた`sed'の呼び出しで指定したものを含めてく
+ださい．スタンドアローンのテストケースは小さい方が良いでしょう．テスト
+ケースは，"frobme-1.3.4のコンフィグレーションを試みた"というような，
+`sed' からかけ離れているものを必要とすべきではありません．そう
+です，それはバグを探す情報として原則的には十分ですが，見通しはあまり現
+実的ではありません．
+
+   以下は一般的なバグやバグではないもので報告されているものです．
+
+最後の行の`N'コマンド
+     `sed'のほとんどのバージョンは，`N'コマンドがファイルの
+     リストの最後に出力されるとき，何も出力せずに終了します．GNU `sed'は
+     `-n'コマンドスイッチが指定されていない限り，終了前にパターンス
+     ペースを出力します．この選択は設計されたものです．
+
+     例えば，以下の動作を考えます．
+          sed N foo bar
+     これは，fooが偶数または奇数の行があるかどうかに依存します(1)．または，パターンにマッチした後
+     に続く数行を読み込むスクリプトを書いているとき，伝統的な`sed'の
+     実装では，以下のように書くことが強制されます．
+
+          /foo/{ $!N; $!N; $!N; $!N; $!N; $!N; $!N; $!N; $!N }
+     以下の代わりです．
+          /foo/{ N;N;N;N;N;N;N;N;N; }
+
+     いずれにせよ，もっとも単純な回避方法は，伝統的な動作に依存するスクリプ
+     トで`$d;N'を使用すること，または，`POSIXLY_CORRECT'変数を空で
+     はない値に設定することです．
+
+正規表現の構文の破壊
+     `sed'は，POSIXの基本正規表現の構文を使用しています．標準に
+     よると，エスケープシーケンスの意味はこの構文では未定義です．
+     `sed'で有名なものは，`\|'，`\+'，`\?'，
+     `\`'，`\''，`\<'，`\>'，`\b'，`\B'， `\w'，そして`\W'です．
+
+     POSIXの基本正規表現を使用しているすべてのGNUプログラムでは，
+     `sed'はこれらのエスケープシーケンスを特殊文字として解釈します．
+     そのため，`x\+'は一つ以上の`x'の出現にマッチします．
+     `abc\|def'は`abc'または`def'にマッチします．
+
+     この構文は，他の`sed'に対して書かれたスクリプトを実行するとき問
+     題になるかもしれません．`sed'プログラムには，`\|'と
+     `\+'がリテラル文字の`|'と`+'にマッチするという仮定を用い
+     て書かれているものもあります．そのようなスクリプトを， GNU
+     `sed'のような近代的な`sed'を実装している
+     ものを用いて使用する場合，偽のバックスラッシュを削除して修正する必要が
+     あります．
+
+     更に，このバージョンの`sed'は，印刷不可能な文字(マルチバイト文
+     字を含む)をスクリプトに挿入するため，いくつかのエスケープ文字
+     (`\a'，`\c'，`\d'，`\o'，`\r'，`\t'，
+     `\v'，`\x')をサポートしています．これらは，他の`sed'
+     に対して書かれているスクリプトで同様な問題を生じるでしょう．
+
+`-i'で読み込み専用のファイルを破壊する
+     手短に言うと，`sed d -i'では読み取り専用のファイルの内容を削除し，
+     一般的に`-i'オプション((*note Invocation: Invoking sed.)では保
+     護されたファイルを破壊します．これはバグではありませんが，Unixファイル
+     システムで動作する方法に影響します．
+
+     ファイルへの許可はファイルのデータに生じる可能性があることを告げていま
+     すが，ディレクトリの許可はディレクトリのファイルのリストに生じる可能性
+     があることを告げています．`sed -i'は書き込み属性でディスクに存在し
+     ているファイルを開きませんが，最終的にはオリジナルファイル名に名前を変
+     更する一時的なファイルで作業します．ファイルの名前を変更したり削除した
+     りする場合，実際にはディレクトリの内容を編集していることになるので，そ
+     の処理はファイルではなくディレクトリの許可に依存します．同じ理由で，
+     `sed'は読み込み専用のディレクトリの書き込み可能なファイルで
+     `-i'を使用しません(しかし，信じられないことにバグとして報告して
+     きた人はいません...)．
+
+`0a'は動作しません(エラーになります)
+     行0はありません．0は特殊なアドレスで，スクリプトの開始時にアクティブに
+     するため，`0,/RE/'のように処理するためだけに使用されます．
+     `1,/abc/d' と書き，最初の行に単語`abc'が含まれている場合，ア
+     ドレス範囲は(ファイルの終わりでなければ)少なくとも二行必要なので，マッ
+     チは無視されます．しかし，期待することは，`abc'を含んでいる行が最
+     初に見つかるまで，すべての行を削除することなので，これは
+     `0,/abc/d'で実行されます．
+
+   ---------- Footnotes ----------
+
+   (1) 実際 には，動作の変更をうながす"bug"です
+
+
+File: sed-ja.info,  Node: Extended regexps,  Next: Concept Index,  Prev: Reporting Bugs,  Up: Top
+
+Appendix A 拡張正規表現
+***********************
+
+正規表現の基本と拡張の差は，いくつかの文字の動作だけです．それは
+`?'，`+'，丸カッコ，そして弓カッコ(`{}')です．基本正規
+表現では，それらを特殊文字として動作させたい場合，これらをエスケープす
+る必要がありますが，拡張正規表現を使用しているとき，_文字そのもの
+にマッチさせたい場合_エスケープする必要があります．
+
+例えば以下のようになります．
+`abc?'
+     拡張正規表現を使用しているとき`abc\?'になります．それは文字列
+     `abc?'そのものにマッチします．
+
+`c\+'
+     拡張正規表現を使用しているとき`c+'になります．それは一つ以上の
+     `c'にマッチします．
+
+`a\{3,\}'
+     拡張正規表現を使用しているとき`a{3,}'になります．それは三つ以上
+     の`a'にマッチします．
+
+`\(abc\)\{2,3\}'
+     拡張正規表現を使用しているとき`(abc){2,3}'になります．それは
+     `abcabc'または`abcabcabc'のいずれかにマッチします．
+
+`\(abc*\)\1'
+     拡張正規表現を使用しているとき`(abc*)\1'になります．後方参照は拡張
+     正規表現を使用しているときもエスケープする必要があります．
+
+
+File: sed-ja.info,  Node: Concept Index,  Next: Command and Option Index,  Prev: Extended regexps,  Up: Top
+
+概念の索引
+**********
+
+以下は，このマニュアルで議論してきたすべての問題の，`sed'コマン
+ドとコマンドラインオプション以外の一般的な索引です．
+
+ [index ]
+* Menu:
+
+* Additional reading about sed:          Other Resources.     (line   6)
+* ADDR1,+N:                              Addresses.           (line  78)
+* ADDR1,~N:                              Addresses.           (line  78)
+* Address, as a regular expression:      Addresses.           (line  29)
+* Address, last line:                    Addresses.           (line  24)
+* Address, numeric:                      Addresses.           (line   9)
+* Addresses, in sed scripts:             Addresses.           (line   6)
+* Append hold space to pattern space:    Other Commands.      (line 118)
+* Append next input line to pattern space: Other Commands.    (line 100)
+* Append pattern space to hold space:    Other Commands.      (line 111)
+* Appending text after a line:           Other Commands.      (line  27)
+* Backreferences, in regular expressions: The "s" Command.    (line  17)
+* Branch to a label, if s/// failed:     Extended Commands.   (line  59)
+* Branch to a label, if s/// succeeded:  Programming Commands.
+                                                              (line  22)
+* Branch to a label, unconditionally:    Programming Commands.
+                                                              (line  18)
+* Buffer spaces, pattern and hold:       Execution Cycle.     (line   6)
+* Bugs, reporting:                       Reporting Bugs.      (line   6)
+* Case-insensitive matching:             The "s" Command.     (line  87)
+* Caveat -- #n on first line:            Common Commands.     (line  19)
+* Command groups:                        Common Commands.     (line  46)
+* Comments, in scripts:                  Common Commands.     (line  12)
+* Conditional branch <1>:                Extended Commands.   (line  59)
+* Conditional branch:                    Programming Commands.
+                                                              (line  22)
+* Copy hold space into pattern space:    Other Commands.      (line 115)
+* Copy pattern space into hold space:    Other Commands.      (line 108)
+* Delete first line from pattern space:  Other Commands.      (line  94)
+* Disabling autoprint, from command line: Invoking sed.       (line  35)
+* empty regular expression:              Addresses.           (line  33)
+* Evaluate Bourne-shell commands:        Extended Commands.   (line  12)
+* Evaluate Bourne-shell commands, after substitution: The "s" Command.
+                                                              (line  79)
+* Exchange hold space with pattern space: Other Commands.     (line 122)
+* Excluding lines:                       Addresses.           (line 101)
+* Extended regular expressions, choosing: Invoking sed.       (line  82)
+* Extended regular expressions, syntax:  Extended regexps.    (line   6)
+* Files to be processed as input:        Invoking sed.        (line 118)
+* Flow of control in scripts:            Programming Commands.
+                                                              (line  11)
+* Global substitution:                   The "s" Command.     (line  49)
+* GNU extensions, /dev/stderr file <1>:  The "s" Command.     (line  73)
+* GNU extensions, /dev/stderr file:      Other Commands.      (line  83)
+* GNU extensions, /dev/stdin file <1>:   Other Commands.      (line  74)
+* GNU extensions, /dev/stdin file:       Extended Commands.   (line  50)
+* GNU extensions, /dev/stdout file <1>:  Invoking sed.        (line 127)
+* GNU extensions, /dev/stdout file <2>:  The "s" Command.     (line  73)
+* GNU extensions, /dev/stdout file:      Other Commands.      (line  83)
+* GNU extensions, 0 address:             Addresses.           (line  78)
+* GNU extensions, 0,ADDR2 addressing:    Addresses.           (line  78)
+* GNU extensions, ADDR1,+N addressing:   Addresses.           (line  78)
+* GNU extensions, ADDR1,~N addressing:   Addresses.           (line  78)
+* GNU extensions, branch if s/// failed: Extended Commands.   (line  59)
+* GNU extensions, case modifiers in s commands: The "s" Command.
+                                                              (line  23)
+* GNU extensions, checking for their presence: Extended Commands.
+                                                              (line  64)
+* GNU extensions, disabling:             Invoking sed.        (line  69)
+* GNU extensions, evaluating Bourne-shell commands <1>: Extended Commands.
+                                                              (line  12)
+* GNU extensions, evaluating Bourne-shell commands: The "s" Command.
+                                                              (line  79)
+* GNU extensions, extended regular expressions: Invoking sed. (line  82)
+* GNU extensions, g and NUMBER modifier interaction in s command: The "s" Command.
+                                                              (line  54)
+* GNU extensions, I modifier <1>:        Addresses.           (line  49)
+* GNU extensions, I modifier:            The "s" Command.     (line  87)
+* GNU extensions, in-place editing <1>:  Reporting Bugs.      (line  77)
+* GNU extensions, in-place editing:      Invoking sed.        (line  41)
+* GNU extensions, L command:             Extended Commands.   (line  26)
+* GNU extensions, M modifier:            The "s" Command.     (line  92)
+* GNU extensions, modifiers and the empty regular expression: Addresses.
+                                                              (line  33)
+* GNU extensions, N~M addresses:         Addresses.           (line  14)
+* GNU extensions, quitting silently:     Extended Commands.   (line  35)
+* GNU extensions, R command:             Extended Commands.   (line  50)
+* GNU extensions, reading a file a line at a time: Extended Commands.
+                                                              (line  50)
+* GNU extensions, reformatting paragraphs: Extended Commands. (line  26)
+* GNU extensions, returning an exit code <1>: Common Commands.
+                                                              (line  28)
+* GNU extensions, returning an exit code: Extended Commands.  (line  35)
+* GNU extensions, setting line length:   Other Commands.      (line  61)
+* GNU extensions, special escapes <1>:   Reporting Bugs.      (line  70)
+* GNU extensions, special escapes:       Escapes.             (line   6)
+* GNU extensions, special two-address forms: Addresses.       (line  78)
+* GNU extensions, subprocesses <1>:      The "s" Command.     (line  79)
+* GNU extensions, subprocesses:          Extended Commands.   (line  12)
+* GNU extensions, to basic regular expressions <1>: Reporting Bugs.
+                                                              (line  52)
+* GNU extensions, to basic regular expressions: Regular Expressions.
+                                                              (line 106)
+* GNU extensions, two addresses supported by most commands: Other Commands.
+                                                              (line  42)
+* GNU extensions, unlimited line length: Limitations.         (line   6)
+* GNU extensions, writing first line to a file: Extended Commands.
+                                                              (line  75)
+* Goto, in scripts:                      Programming Commands.
+                                                              (line  18)
+* Greedy regular expression matching:    Regular Expressions. (line 132)
+* Grouping commands:                     Common Commands.     (line  46)
+* Hold space, appending from pattern space: Other Commands.   (line 111)
+* Hold space, appending to pattern space: Other Commands.     (line 118)
+* Hold space, copy into pattern space:   Other Commands.      (line 115)
+* Hold space, copying pattern space into: Other Commands.     (line 108)
+* Hold space, definition:                Execution Cycle.     (line   6)
+* Hold space, exchange with pattern space: Other Commands.    (line 122)
+* In-place editing:                      Reporting Bugs.      (line  77)
+* In-place editing, activating:          Invoking sed.        (line  41)
+* In-place editing, Perl-style backup file names: Invoking sed.
+                                                              (line  52)
+* Inserting text before a line:          Other Commands.      (line  44)
+* Labels, in scripts:                    Programming Commands.
+                                                              (line  14)
+* Last line, selecting:                  Addresses.           (line  24)
+* Line length, setting <1>:              Invoking sed.        (line  64)
+* Line length, setting:                  Other Commands.      (line  61)
+* Line number, printing:                 Other Commands.      (line  58)
+* Line selection:                        Addresses.           (line   6)
+* Line, selecting by number:             Addresses.           (line   9)
+* Line, selecting by regular expression match: Addresses.     (line  29)
+* Line, selecting last:                  Addresses.           (line  24)
+* List pattern space:                    Other Commands.      (line  61)
+* Mixing g and NUMBER modifiers in the s command: The "s" Command.
+                                                              (line  54)
+* Next input line, append to pattern space: Other Commands.   (line 100)
+* Next input line, replace pattern space with: Common Commands.
+                                                              (line  41)
+* Non-bugs, in-place editing:            Reporting Bugs.      (line  77)
+* Non-bugs, N command on the last line:  Reporting Bugs.      (line  32)
+* Non-bugs, regex syntax clashes:        Reporting Bugs.      (line  52)
+* Parenthesized substrings:              The "s" Command.     (line  17)
+* Pattern space, definition:             Execution Cycle.     (line   6)
+* Perl-style regular expressions, multiline: Addresses.       (line  54)
+* Portability, comments:                 Common Commands.     (line  14)
+* Portability, line length limitations:  Limitations.         (line   6)
+* Portability, N command on the last line: Reporting Bugs.    (line  32)
+* POSIXLY_CORRECT behavior, bracket expressions: Regular Expressions.
+                                                              (line  95)
+* POSIXLY_CORRECT behavior, enabling:    Invoking sed.        (line  73)
+* POSIXLY_CORRECT behavior, escapes:     Escapes.             (line  10)
+* POSIXLY_CORRECT behavior, N command:   Reporting Bugs.      (line  47)
+* Print first line from pattern space:   Other Commands.      (line 105)
+* Printing line number:                  Other Commands.      (line  58)
+* Printing text unambiguously:           Other Commands.      (line  61)
+* Quitting <1>:                          Extended Commands.   (line  35)
+* Quitting:                              Common Commands.     (line  28)
+* Range of lines:                        Addresses.           (line  66)
+* Range with start address of zero:      Addresses.           (line  78)
+* Read next input line:                  Common Commands.     (line  41)
+* Read text from a file <1>:             Extended Commands.   (line  50)
+* Read text from a file:                 Other Commands.      (line  74)
+* Reformat pattern space:                Extended Commands.   (line  26)
+* Reformatting paragraphs:               Extended Commands.   (line  26)
+* Replace hold space with copy of pattern space: Other Commands.
+                                                              (line 108)
+* Replace pattern space with copy of hold space: Other Commands.
+                                                              (line 115)
+* Replacing all text matching regexp in a line: The "s" Command.
+                                                              (line  49)
+* Replacing only Nth match of regexp in a line: The "s" Command.
+                                                              (line  52)
+* Replacing selected lines with other text: Other Commands.   (line  49)
+* Requiring GNU sed:                     Extended Commands.   (line  64)
+* Script structure:                      sed Programs.        (line   6)
+* Script, from a file:                   Invoking sed.        (line 111)
+* Script, from command line:             Invoking sed.        (line 106)
+* sed program structure:                 sed Programs.        (line   6)
+* Selecting lines to process:            Addresses.           (line   6)
+* Selecting non-matching lines:          Addresses.           (line 101)
+* Several lines, selecting:              Addresses.           (line  66)
+* Slash character, in regular expressions: Addresses.         (line  41)
+* Spaces, pattern and hold:              Execution Cycle.     (line   6)
+* Special addressing forms:              Addresses.           (line  78)
+* Standard input, processing as input:   Invoking sed.        (line 121)
+* Stream editor:                         Introduction.        (line   6)
+* Subprocesses <1>:                      Extended Commands.   (line  12)
+* Subprocesses:                          The "s" Command.     (line  79)
+* Substitution of text, options:         The "s" Command.     (line  46)
+* Text, appending:                       Other Commands.      (line  27)
+* Text, deleting:                        Common Commands.     (line  34)
+* Text, insertion:                       Other Commands.      (line  44)
+* Text, printing:                        Common Commands.     (line  37)
+* Text, printing after substitution:     The "s" Command.     (line  61)
+* Text, writing to a file after substitution: The "s" Command.
+                                                              (line  73)
+* Transliteration:                       Other Commands.      (line  14)
+* Unbuffered I/O, choosing:              Invoking sed.        (line 100)
+* Usage summary, printing:               Invoking sed.        (line  29)
+* Version, printing:                     Invoking sed.        (line  26)
+* Working on separate files:             Invoking sed.        (line  90)
+* Write first line to a file:            Extended Commands.   (line  75)
+* Write to a file:                       Other Commands.      (line  83)
+* Zero, as range start address:          Addresses.           (line  78)
+
+
+File: sed-ja.info,  Node: Command and Option Index,  Prev: Concept Index,  Up: Top
+
+コマンドとオプションの索引
+**************************
+
+以下は，すべての`sed'コマンドとコマンドラインオプションのアルファ
+ベット順のリストです．
+
+ [index ]
+* Menu:
+
+* # (comments):                          Common Commands.     (line  12)
+* --expression:                          Invoking sed.        (line 106)
+* --file:                                Invoking sed.        (line 111)
+* --help:                                Invoking sed.        (line  29)
+* --in-place:                            Invoking sed.        (line  41)
+* --line-length:                         Invoking sed.        (line  64)
+* --quiet:                               Invoking sed.        (line  35)
+* --regexp-extended:                     Invoking sed.        (line  82)
+* --silent:                              Invoking sed.        (line  35)
+* --unbuffered:                          Invoking sed.        (line 100)
+* --version:                             Invoking sed.        (line  26)
+* -e:                                    Invoking sed.        (line 106)
+* -f:                                    Invoking sed.        (line 111)
+* -i:                                    Invoking sed.        (line  41)
+* -l:                                    Invoking sed.        (line  64)
+* -n:                                    Invoking sed.        (line  35)
+* -n, forcing from within a script:      Common Commands.     (line  19)
+* -r:                                    Invoking sed.        (line  82)
+* -u:                                    Invoking sed.        (line 100)
+* : (label) command:                     Programming Commands.
+                                                              (line  14)
+* = (print line number) command:         Other Commands.      (line  58)
+* a (append text lines) command:         Other Commands.      (line  27)
+* b (branch) command:                    Programming Commands.
+                                                              (line  18)
+* c (change to text lines) command:      Other Commands.      (line  49)
+* D (delete first line) command:         Other Commands.      (line  94)
+* d (delete) command:                    Common Commands.     (line  34)
+* e (evaluate) command:                  Extended Commands.   (line  12)
+* G (appending Get) command:             Other Commands.      (line 118)
+* g (get) command:                       Other Commands.      (line 115)
+* H (append Hold) command:               Other Commands.      (line 111)
+* h (hold) command:                      Other Commands.      (line 108)
+* i (insert text lines) command:         Other Commands.      (line  44)
+* L (fLow paragraphs) command:           Extended Commands.   (line  26)
+* l (list unambiguously) command:        Other Commands.      (line  61)
+* N (append Next line) command:          Other Commands.      (line 100)
+* n (next-line) command:                 Common Commands.     (line  41)
+* P (print first line) command:          Other Commands.      (line 105)
+* p (print) command:                     Common Commands.     (line  37)
+* q (quit) command:                      Common Commands.     (line  28)
+* Q (silent Quit) command:               Extended Commands.   (line  35)
+* r (read file) command:                 Other Commands.      (line  74)
+* R (read line) command:                 Extended Commands.   (line  50)
+* s command, option flags:               The "s" Command.     (line  46)
+* T (test and branch if failed) command: Extended Commands.   (line  59)
+* t (test and branch if successful) command: Programming Commands.
+                                                              (line  22)
+* v (version) command:                   Extended Commands.   (line  64)
+* w (write file) command:                Other Commands.      (line  83)
+* W (write first line) command:          Extended Commands.   (line  75)
+* x (eXchange) command:                  Other Commands.      (line 122)
+* y (transliterate) command:             Other Commands.      (line  14)
+* {} command grouping:                   Common Commands.     (line  46)
+
+
+
+Tag Table:
+Node: Top969
+Node: Introduction3884
+Node: Invoking sed4431
+Ref: Invoking sed-Footnote-19261
+Ref: Invoking sed-Footnote-29444
+Node: sed Programs9574
+Node: Execution Cycle10726
+Ref: Execution Cycle-Footnote-111874
+Node: Addresses12122
+Node: Regular Expressions16409
+Node: Common Commands23462
+Node: The "s" Command25335
+Ref: The "s" Command-Footnote-129048
+Node: Other Commands29117
+Ref: Other Commands-Footnote-133692
+Node: Programming Commands33759
+Node: Extended Commands34642
+Node: Escapes37976
+Ref: Escapes-Footnote-140666
+Node: Examples40838
+Node: Centering lines41943
+Node: Increment a number42828
+Ref: Increment a number-Footnote-144323
+Node: Rename files to lower case44435
+Node: Print bash environment47156
+Node: Reverse chars of lines47894
+Ref: Reverse chars of lines-Footnote-148863
+Node: tac49094
+Node: cat -n49877
+Node: cat -b51610
+Node: wc -c52345
+Ref: wc -c-Footnote-154192
+Node: wc -w54267
+Node: wc -l55706
+Node: head55943
+Node: tail56255
+Node: uniq57547
+Node: uniq -d58326
+Node: uniq -u59055
+Node: cat -s59777
+Node: Limitations61575
+Node: Other Resources62386
+Node: Reporting Bugs63268
+Ref: Reporting Bugs-Footnote-168112
+Node: Extended regexps68161
+Node: Concept Index69259
+Node: Command and Option Index83605
+
+End Tag Table

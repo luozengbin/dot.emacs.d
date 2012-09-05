@@ -1,0 +1,1261 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: Message オブジェクト 2,  Next: AddressList オブジェクト,  Prev: rfc822,  Up: rfc822
+
+Message オブジェクト
+--------------------
+
+`Message' インスタンスは以下のメソッドを持っています:
+
+`rewindbody()'
+     メッセージ本体の先頭を seek
+     します。このメソッドはファイルオブジェクト が seek
+     可能である場合にのみ動作します。
+
+`isheader(line)'
+     ある行が正しい RFC 2822 ヘッダである場合、その行の正規化された
+     フィールド名 (インデクス指定の際に使われる辞書キー) を返します;
+     そうでない場合 `None' を返します (解析をここで一度中断し、
+     行データを入力ストリームに押し戻すことを意味します)。
+     このメソッドをサブクラスで上書きすると便利なことがあります。
+
+`islast(line)'
+     与えられた line が Message の区切りとなるデリミタであった場合に真を
+     返します。このデリミタ行は消費され、ファイルオブジェクトの読み位置は
+     その直後になります。標準ではこのメソッドは単にその行が空行かどうか
+     をチェックしますが、サブクラスで上書きすることもできます。
+
+`iscomment(line)'
+     与えられた行全体を無視し、単に読み飛ばすときに真を返します。
+     標準では、これは控えメソッド (stub) であり、常に `False' を返し
+     ますが、サブクラスで上書きすることもできます。
+
+`getallmatchingheaders(name)'
+     NAME に一致するヘッダからなる行のリストがあれば、それらを
+     全て返します。各物理行は連続した行内容であるか否かに関わらず
+     別々のリスト要素になります。NAME に一致するヘッダがない場合、
+     空のリストを返します。
+
+`getfirstmatchingheader(name)'
+     NAME に一致する最初のヘッダと、その行に連続する (複数)
+     行からなる行データのリストを返します。 NAME
+     に一致するヘッダがない場合 `None' を返します。
+
+`getrawheader(name)'
+     NAME に一致する最初のヘッダにおけるコロン以降のテキストが入った
+     単一の文字列を返します。このテキストには、先頭の空白、末尾の改行、
+     また後続の行がある場合には途中の改行と空白が含まれます。 NAME
+     に一致するヘッダが存在しない場合には `None' を返します。
+
+`getheader(name[, default])'
+     `getrawheader(NAME)' に似ていますが、先頭および末尾の
+     空白を剥ぎ取ります。途中にある空白は剥ぎ取られません。
+     オプションの DEFAULT 引数は、NAME に一致する
+     ヘッダが存在しない場合に、別のデフォルト値を返すように指定する
+     ために使われます。
+
+`get(name[, default])'
+     正規の辞書との互換性をより高めるための `getheader()' の別名
+     (alias) です。
+
+`getaddr(name)'
+     `getheader(NAME)' が返した文字列を解析して、 `(FULL NAME, EMAIL
+     ADDRESS)' からなるペアを返します。 NAME
+     に一致するヘッダが無い場合、`(None, None)' が返され ます;
+     そうでない場合、FULL NAME および ADDRESS は (空文字列をとりうる)
+     文字列になります。
+
+     例: M に最初の `From' ヘッダに文字列 `'jack@cwi.nl (Jack Jansen)''
+     が入っている場合、 `m.getaddr('From')' はペア `('Jack Jansen',
+     'jack@cwi.nl')' になります。 また、`'Jack Jansen <jack@cwi.nl>''
+     であっても、全く同じ結果に なります。
+
+`getaddrlist(name)'
+     `getaddr(LIST)' に似ていますが、複数のメイルアドレス
+     からなるリストが入ったヘッダ (例えば `To' ヘッダ) を 解析し、
+     `(FULL NAME, EMAIL ADDRESS)' のペア からなるリストを
+     (たとえヘッダには一つしかアドレスが入っていなかった としても)
+     返します。NAME に一致するヘッダが無かった場合、
+     空のリストを返します。
+
+     指定された名前に一致する複数のヘッダが存在する場合 (例えば、
+     複数の `Cc' ヘッダが存在する場合)、全てのアドレスを
+     解析します。指定されたヘッダが連続する行に収められている場合も
+     解析されます。
+
+`getdate(name)'
+     `getheader()' を使ってヘッダを取得して解析し、 `time.mktime()'
+     と互換な 9 要素のタプルにします; フィールド 6、7、および 8
+     は有用な値ではないので注意して下さい。 NAME
+     に一致するヘッダが存在しなかったり、ヘッダが解析不能
+     であった場合、`None' を返します。
+
+     日付の解析は妖術のようなものであり、全てのヘッダが標準に従って
+     いるとは限りません。このメソッドは多くの発信源から集められた
+     膨大な数の電子メールでテストされており、正しく動作することが
+     分かっていますが、間違った結果を出力してしまう可能性はまだ
+     あります。
+
+`getdate_tz(name)'
+     `getheader()' を使ってヘッダを取得して解析し、10 要素の
+     タプルにします; 最初の 9 要素は `time.mktime()' と
+     互換性のあるタプルを形成し、10
+     番目の要素はその日におけるタイムゾーン の UTC
+     からのオフセットを与える数字になります。`getdate()' と同様に、NAME
+     に一致するヘッダがなかったり、解析不能であった 場合、`None'
+     を返します。
+
+`Message' インスタンスはまた、限定的なマップ型のインタフェースを
+持っています。 すなわち: `M[name]' は `M.getheader(name)' に似て
+いますが、一致するヘッダがない場合 `KeyError' を送出します; `len(M)'、
+`M.get(NAME[, DEFAULT])'、 `M.has_key(NAME)', `M.keys()'、 `M.values()'
+`M.items()'、および `M.setdefault(NAME[, DEFAULT])'
+は期待通りに動作します。ただし `setdefault()' は標準の設定値
+として空文字列をとります。 `Message' インスタンスはまた、
+マップ型への書き込みを行えるインタフェース `M[name] = value' および
+`del M[name]' をサポートしています。 `Message' オブジェクトでは、
+`clear()'、 `copy()'、 `popitem()'、あるいは `update()' といったマップ型
+インタフェースのメソッドはサポートしていません。 (`get()' および
+`setdefault()' のサポートは Python 2.2 でしか追加されていません。)
+
+最後に、`Message' インスタンスはいくつかの public なインスタンス
+変数を持っています:
+
+`headers'
+     ヘッダ行のセット全体が、(setitem を呼び出して変更されない限り)
+     読み出された順番に入れられたリストです。各行は末尾の改行を
+     含んでいます。ヘッダを終端する空行はリストに含まれません。
+
+`fp'
+     インスタンス化の際に渡されたファイルまたはファイル類似オブジェクトです。
+     この値はメッセージ本体を読み出すために使うことができます。
+
+`unixfrom'
+     メッセージに UNIX `From~' 行がある場合はその行、そうでなければ
+     空文字列になります。この値は例えば `mbox' 形式のメイルボックス
+     ファイルのような、あるコンテキスト中のメッセージを再生成するために
+     必要です。
+
+
+File: python-lib-jp.info,  Node: AddressList オブジェクト,  Prev: Message オブジェクト 2,  Up: rfc822
+
+AddressList オブジェクト
+------------------------
+
+`AddressList' インスタンスは以下のメソッドを持ちます:
+
+`__len__()'
+     アドレスリスト中のアドレスの数を返します。
+
+`__str__()'
+     アドレスリストの正規化 (canonicalize) された文字列表現を返します。
+     アドレスはカンマで分割された "name" <host@domain> 形式になります。
+
+`__add__(alist)'
+     二つの `AddressList' 被演算子中の双方に含まれるアドレスに
+     ついて、重複を除いた (集合和の) 全てのアドレスを含む新たな
+     `AddressList' インスタンスを返します。
+
+`__iadd__(alist)'
+     `__add__()' のインプレース演算版です; `AddressList'
+     インスタンスと右側値 ALIST との集合和をとり、その結果を
+     インスタンス自体と置き換えます。
+
+`__sub__(alist)'
+     左側値の`AddressList' インスタンスのアドレスのうち、
+     右側値中に含まれていないもの全てを含む (集合差分の) 新たな
+     `AddressList' インスタンスを返します。
+
+`__isub__(alist)'
+     `__sub__()' のインプレース演算版で、ALIST にも
+     含まれているアドレスを削除します。
+
+最後に、`AddressList' インスタンスは public なインスタンス変数
+を一つ持ちます:
+
+`addresslist'
+     アドレスあたり一つの文字列ペアで構成されるタプルからなるリストです。
+     各メンバ中では、最初の要素は正規化された名前部分で、二つ目は
+     実際の配送アドレス (`@' で分割されたユーザ名 と
+     ホスト.ドメインからなるペア) です。
+
+
+File: python-lib-jp.info,  Node: base64,  Next: binascii,  Prev: rfc822,  Up: インターネット上のデータの操作
+
+MIME base64 形式データのエンコードおよびデコード
+================================================
+
+MIMEのbase64形式のエンコード、デコードを行う。
+
+このモジュールは任意のバイナリ文字列を(eメールやHTTPのPOSTリクエストの一
+部としてで安全に送ることのできるテキスト文字列に変換する)base64形式へエンコー
+ドおよびデコードする機能を提供します。 エンコードの概要はRFC 1521
+(_MIME(Multipurpose Internet Mail Extensions)Part One: Mechanisms for
+Specifying and Describing the Format of Internet Message Bodies_,
+section 5.2, "Base64 Content-Transfer-Encoding")で定義されていて、
+MIME形式のeメールやインターネットのさまざまな場面で利用されています。
+この形式は`uuencode'プログラムによる出力とは違うものです。
+たとえば、`'www.python.org''は、
+`'d3d3LnB5dGhvbi5vcmc=\n''とエンコードされます。
+
+`decode(input, output)'
+     INPUTの中身をデコードした結果をOUTPUTに出力します。
+     INPUT、OUTPUTともにファイルオブジェクトか、ファイルオブジェ
+     クトと同じインターフェースを持ったオブジェクトである必要があります。
+     INPUTは`INPUT.read()'が空文字列を返すまで読まれます。
+
+`decodestring(s)'
+     文字列Sをデコードして結果のバイナリデータを返します。
+     Sには一行以上のbase64形式でエンコードされたデータが含まれている必
+     要があります。
+
+`encode(input, output)'
+     INPUTの中身をbase64形式でエンコードした結果をOUTPUTに出力します。
+     INPUT、OUTPUTともにファイルオブジェクトか、ファイルオブジェ
+     クトと同じインターフェースを持ったオブジェクトである必要があります。
+     INPUTは`INPUT.read()'が空文字列を返すまで読まれます。
+     `encode()'はエンコードされたデータと改行文字(`'\n'')を出 力します。
+
+`encodestring(s)'
+     文字列S(任意のバイナリデータを含むことができます)を
+     base64形式でエンコードした結果の(1行以上の文字列)データを返します。
+     `encodestring()'はエンコードされた一行以上のデータと改行文字
+     (`'\n'')を出力します。
+
+See also:
+     *Note binascii:: ASCII からバイナリへ、バイナリからASCIIへの
+     変換をサポートするモジュール。
+
+    *RFC1521 MIME (Multipurpose Internet Mail Extensions) Part One: Mechanisms for Specifying and Describing the Format of Internet Message Bodies*
+          Section 5.2, "Base64 Content-Transfer-Encoding," provides the
+          definition of the base64 encoding.
+
+
+
+File: python-lib-jp.info,  Node: binascii,  Next: binhex,  Prev: base64,  Up: インターネット上のデータの操作
+
+バイナリデータと ASCIIデータとの間での変換
+==========================================
+
+バイナリと各種 ASCIIコード化バイナリ表現との間の 変換を行うツール群。
+
+`binascii' モジュールにはバイナリと ASCIIコード化された
+バイナリ表現との間の変換を行うための多数のメソッドが含まれています。
+通常、これらの関数を直接使う必要はなく、 `uu'  や `binhex'
+といった、ラッパ(wrapper)
+モジュールを使うことになるでしょう。このモジュールが独立して存在
+するのは、Python において大量のデータに対するビット操作が低速
+であるという理由からです。
+
+`binascii' モジュールでは以下の関数を定義します:
+
+`a2b_uu(string)'
+     uuencode された 1 行のデータ をバイナリに変換し、変換後のバイナリ
+     データを返します。最後の行を除いて、通常 1 行には(バイナリデータで)
+     45 バイトが含まれます。入力データの先頭には空白文字が連続していても
+     かまいません。
+
+`b2a_uu(data)'
+     バイナリデータを uuencode して 1 行の ASCII 文字列に変換します。
+     戻り値は変換後の 1 行の文字列で、改行を含みます。DATA の長さは 45
+     バイト以下でなければなりません。
+
+`a2b_base64(string)'
+     base64 でエンコードされたデータのブロックをバイナリに変換し、
+     変換後のバイナリデータを返します。一度に 1 行以上のデータを
+     与えてもかまいません。
+
+`b2a_base64(data)'
+     バイナリデータを base64 でエンコードして 1 行の ASCII 文字列に
+     変換します。戻り値は変換後の 1 行の文字列で、改行文字を含みます。
+     base64 標準を遵守するためには、DATA の長さは 57 バイト以下で
+     なくてはなりません。
+
+`a2b_qp(string[, header])'
+     quoted-printable 形式のデータをバイナリに変換し、バイナリデータを
+     返します。一度に 1 行以上のデータを渡すことができます。
+     オプション引数 HEADER が与えられており、かつその値が真であれば、
+     アンダースコアは空白文字にデコードされます。
+
+`b2a_qp(data[, quotetabs, istext, header])'
+     バイナリデータを quoted-printable 形式でエンコードして 1
+     行から複数行の ASCII 文字列に変換します。変換後の文字列を返します。
+     オプション引数 QUPTETABS が存在し、かつその値が真であれば、
+     全てのタブおよび空白文字もエンコードされます。オプション引数
+     HEADER が存在し、かつその値が真であれば、空白文字は RFC1522
+     に従ってアンダースコアにエンコードされます。オプション引数 HEADER
+     が存在し、かつその値が偽である場合、改行文字も同様にエンコードされます。
+     そうでない場合、復帰 (linefeed) 文字の変換によってバイナリデータ
+     ストリームが破損してしまうかもしれません。
+
+`a2b_hqx(string)'
+     binhex4 形式の ASCII 文字列データを RLE 展開を行わないでバイナリに
+     変換します。文字列はバイナリのバイトデータを完全に含むような長さか、
+     または (binhex4 データの最後の部分の場合)
+     余白のビットがゼロになって いなければなりません。
+
+`rledecode_hqx(data)'
+     DATA に対し、binhex4 標準に従って RLE 展開を行います。
+     このアルゴリズムでは、あるバイトの後ろに `0x90' がきた場合、
+     そのバイトの反復を指示しており、さらにその後ろに反復カウントが
+     続きます。カウントが `0' の場合 `0x90' 自体を示します。
+     このルーチンは入力データの末端における反復指定が不完全でない
+     かぎり解凍されたデータを返しますが、不完全な場合、例外
+     `Incomplete' が送出されます。
+
+`rlecode_hqx(data)'
+     binhex4 方式の RLE 圧縮を DATA に対して行い、その結果を 返します。
+
+`b2a_hqx(data)'
+     バイナリを hexbin4 エンコードして ASCII 文字列に変換し、変換後の
+     文字列を返します。引数の DATA はすでに RLE エンコードされて
+     いなければならず、その長さは (最後のフラグメントを除いて) 3 で
+     割り切れなければなりません。
+
+`crc_hqx(data, crc)'
+     DATA の binhex4 CRC 値を計算します。初期値は CRC で、計算
+     結果を返します。
+
+`crc32(data[, crc])'
+     32 ビットチェックサムである CRC-32 を DATA に対して計算します。
+     初期値は CRC です。これは ZIP ファイルのチェックサムと同じです。
+     このアルゴリズムはチェックサムアルゴリズムとして設計されたもので、
+     一般的なハッシュアルゴリズムには向きません。以下のようにして使います:
+              print binascii.crc32("hello world")
+              # Or, in two pieces:
+              crc = binascii.crc32("hello")
+              crc = binascii.crc32(" world", crc)
+              print crc
+
+
+`b2a_hex(data)'
+
+`hexlify data'
+     バイナリデータ DATA の16進数表現を返します。DATA の各
+     バイトは対応する 2 桁の16進数表現に変換されます。従って、変換結果の
+     文字列はDATA の 2 倍の長さになります。
+
+`a2b_hex(hexstr)'
+
+`unhexlify hexstr'
+     16 進数表記の文字列 HEXSTR の表すバイナリデータを返します。
+     この関数は `b2a_hex()' の逆です。HEXSTR は 16進数字
+     (大文字でも小文字でもかまいません) を偶数個含んでいなければ
+     なりません。そうでないばあい、例外 `TypeError' が送出 されます。
+
+`Error'
+     エラーが発生した際に送出される例外です。通常はプログラムのエラーです。
+
+`Incomplete'
+     変換するデータが不完全な場合に送出される例外です。通常はプログラムの
+     エラーではなく、多少追加読み込みを行って再度変換
+     を試みることで対処できます。
+
+See also:
+     *Note base64:: MIME 電子メールメッセージで使われる base64
+     エンコードのサポート。
+
+     *Note binhex:: Machintosh で使われる binhex
+     フォーマットのサポート。
+
+     *Note uu:: UNIXで使われる UU エンコードのサポート。
+
+     *Note quopri:: MIME 電子メールメッセージで使われる
+     quoted-printable エンコードのサポート。
+
+
+File: python-lib-jp.info,  Node: binhex,  Next: quopri,  Prev: binascii,  Up: インターネット上のデータの操作
+
+binhex4 形式ファイルのエンコードおよびデコード
+==============================================
+
+binhex4 形式ファイルのエンコードおよびデコード。
+
+このモジュールは binhex4 形式のファイルに対するエンコードやデコード
+を行います。binhex4 は Macintosh のファイルを ASCIIで表現できる
+ようにしたものです。Macintosh 上では、ファイルと finder 情報の両方
+のフォークがエンコード (またはデコード) されます。他のプラットフォーム
+ではデータフォークだけが処理されます。
+
+`binhex' モジュールでは以下の関数を定義しています:
+
+`binhex(input, output)'
+     ファイル名 INPUT のバイナリファイルをファイル名 OUTPUT の binhex
+     形式ファイルに変換します。OUTPUT パラメタはファイル名 でも
+     (`write()' および `close()' メソッドをサポートする
+     ような)ファイル様オブジェクトでもかまいません。
+
+`hexbin(input[, output])'
+     binhex 形式のファイル INPUT をデコードします。INPUT は
+     ファイル名でも、`write()' および `close()' メソッドを
+     サポートするようなファイル様オブジェクトでもかまいません。変換結果
+     のファイルはファイル名 OUTPUT になります。この引数が省略された
+     場合、出力ファイルは binhex ファイルの中から復元されます。
+
+以下の例外も定義されています:
+
+`Error'
+     binhex 形式を使ってエンコードできなかった場合 (例えば、ファイル名
+     が filename フィールドに収まらないくらい長かった場合など) や、入力
+     が正しくエンコードされた binhex 形式のデータでなかった場合に送出
+     される例外です。
+
+See also:
+     *Note binascii:: ASCIIからバイナリ、およびバイナリからASCII
+     への変換をサポートするモジュール。
+
+* Menu:
+
+* 注記::
+
+
+File: python-lib-jp.info,  Node: 注記,  Prev: binhex,  Up: binhex
+
+注記
+----
+
+別のより強力なエンコーダおよびデコーダへのインタフェースが存在します。
+詳しくはソースを参照してください。
+
+非 Macintosh プラットフォームでテキストファイルをエンコードしたり
+デコードしたりする場合でも、Macintosh の改行文字変換 (行末をキヤリッジ
+リターンとする) が行われます。
+
+このドキュメントを書いている時点では、`hexbin()' はいつも正しく
+動作するわけではないようです。
+
+
+File: python-lib-jp.info,  Node: quopri,  Next: uu,  Prev: binhex,  Up: インターネット上のデータの操作
+
+MIME quoted-printable 形式データのエンコードおよびデコード
+==========================================================
+
+MIME quoted-printable 形式ファイルのエンコードおよびデコード。
+
+このモジュールは RFC 1521 : "MIME (Multipurpose Internet Mail
+Extensions) Part One: Mechanisms for Specifying and Describing the
+Format of Internet Message Bodies" で定義されている quoted-printable
+による伝送のエンコードおよびデコードを行います。 quoted-printable
+円コーディングは比較的印字不可能な文字の少ないデータのために設計
+されています;
+画像ファイルを送るときのように印字不可能な文字がたくさんある
+場合には、`base64' モジュールで利用できる base64
+エンコーディングのほうがよりコンパクトになります。
+
+`decode(input, output[,header])'
+     ファイル INPUT の内容をデコードして、デコードされたバイナリ
+     データを ファイル OUTPUT に書き出します。 INPUT および OUTPUT
+     はファイルか、ファイルオブジェクトの
+     インタフェースを真似たオブジェクトでなければなりません。 INPUT は
+     `INPUT.readline()' が空文字列を返すまで
+     読みつづけられます。オプション引数 HEADER が存在し、かつその
+     値が真である場合、アンダースコアは空白文字にデコードされます。
+     これは RFC 1522 : "MIME (Multipurpose Internet Mail Extensions)
+     Part Two: Message Header Extensions for Non-ASCII Text"
+     で記述されているところの "Q"-エンコードされたヘッダをデコードするの
+     に使われます。
+
+`encode(input, output, quotetabs)'
+     ファイル INPUT の内容をエンコードして、quoted-printable 形式に
+     エンコードされたデータをファイル OUTPUT に書き出します。 INPUT
+     および OUTPUT はファイルか、ファイルオブジェクトの
+     インタフェースを真似たオブジェクトでなければなりません。 INPUT は
+     `INPUT.readline()' が空文字列を返すまで 読みつづけられます。
+     QUOTETABS はデータ中に埋め込まれた空白文字やタブを変換するか
+     どうか制御するフラグです; この値が真なら、それらの空白をエンコード
+     します。偽ならエンコードせずそのままにしておきます。行末のスペースや
+     タブは RFC 1521 に従って常に変換されるので注意してください。
+
+`decodestring(s[,header])'
+     `decode()' に似ていますが、文字列を入力として受け取り、
+     デコードされた文字列を返します。
+
+`encodestring(s[, quotetabs])'
+     `encode()' に似ていますが、文字列を入力として受け取り、
+     エンコードされた文字列を返します。QUOTETABS はオプション
+     (デフォルトは 0 です) で、この値はそのまま`encode()' に
+     渡されます。
+
+See also:
+     *Note mimify:: MIME メッセージを処理するための汎用ユーティリティ。
+     *Note base64:: MIME base64 形式データのエンコードおよびデコード
+
+
+File: python-lib-jp.info,  Node: uu,  Next: xdrlib,  Prev: quopri,  Up: インターネット上のデータの操作
+
+uuencode形式のエンコードとデコード
+==================================
+
+uuencode形式のエンコードとデコードを行う。
+
+このモジュールではファイルをuuencode形式(任意のバイナリデータをASCII文字列
+に変換したもの)にエンコード、デコードする機能を提供します。
+引数としてファイルが仮定されている所では、ファイルのようなオブジェクトが
+利用できます。後方互換性のために、パス名を含む文字列も利用できるようにし
+ていて、対応するファイルを開いて読み書きします。しかし、このインターフェー
+スは利用しないでください。呼び出し側でファイルを開いて(Windowsでは
+`'rb''か`'wb''のモードで)利用する方法が推奨されます。
+
+このコードはLance Ellinghouseによって提供され、Jack Jansenによって更新さ
+れました。
+
+`uu'モジュールでは以下の関数を定義しています。
+
+`encode(in_file, out_file[, name[, mode]])'
+     IN_FILEをOUT_FILEにエンコードします。
+     エンコードされたファイルには、デフォルトでデコード時に利用される
+     NAMEとMODEを含んだヘッダがつきます。省略された場合には、
+     IN_FILEから取得された名前か`'-'' という文字と、`0666'
+     がそれぞれデフォルト値として与えられます。
+
+`decode(in_file[, out_file[, mode]])'
+     uuencode形式でエンコードされたIN_FILEをデコードして
+     var{out_file}に書き出します。もしOUT_FILEがパス名でかつファイルを
+     作る必要があるときには、 MODEがパーミッションの設定に使われます。
+     OUT_FILEとMODEのデフォルト値はIN_FILEのヘッダから取得
+     されます。しかし、ヘッダで指定されたファイルが既に存在していた場合は、
+     `uu.Error'が起きます。
+
+`Error()'
+     `Exception'のサブクラスで、`uu.decode()'によって、さ
+     まざまな状況で起きる可能性があります。上で紹介された場合以外にも、ヘッダ
+     のフォーマットが間違っている場合や、入力ファイルが途中で区切れた場合に
+     も起きます。
+
+See also:
+     *Note binascii:: ASCII からバイナリへ、バイナリからASCIIへの
+     変換をサポートするモジュール。
+
+
+File: python-lib-jp.info,  Node: xdrlib,  Next: netrc,  Prev: uu,  Up: インターネット上のデータの操作
+
+XDR データのエンコードおよびデコード
+====================================
+
+外部データ表現 (XDR, External Data Representation)
+データのエンコードおよびデコード。
+
+`xdrlib' モジュールは外部データ表現標準 (External Data Representation
+Standard) のサポートを実現します。この標準は 1987 年に Sun
+Microsystems, Inc. によって書かれ、 RFC 1014
+
+で定義されています。このモジュールでは RFC で記述されている
+ほとんどのデータ型をサポートしています。
+
+`xdrlib' モジュールでは 2 つのクラスが定義されています。 一つは変数を
+XDR 表現にパックするためのクラスで、もう一方は XDR
+表現からアンパックするためのものです。2 つの例外クラスが
+同様にして定義されています。
+
+`Packer()'
+     `Packer' はデータを XDR 表現にパックするためのクラスです。
+     `Packer' クラスのインスタンス生成は引数なしで行われます。
+
+`Unpacker(data)'
+     `Unpacker' は Packer と対をなしていて、文字列バッファから XDR
+     をアンパックするためのクラスです。入力バッファ DATA
+     を引数に与えてインスタンスを生成します。
+
+See also:
+    *RFC1014 XDR: External Data Representation Standard*
+          この RFC が、かつてこのモジュールが最初に書かれた当時に XDR
+          標準でであったデータのエンコード方法を定義していました。
+          現在は RFC 1832 に更新されているようです。
+
+    *RFC1832 XDR: External Data Representation Standard*
+          こちらが 新しい方のRFCで、XDR の改訂版が定義されています。
+
+
+* Menu:
+
+* Packer オブジェクト::
+* Unpacker オブジェクト::
+* 例外::
+
+
+File: python-lib-jp.info,  Node: Packer オブジェクト,  Next: Unpacker オブジェクト,  Prev: xdrlib,  Up: xdrlib
+
+Packer オブジェクト
+-------------------
+
+`Packer' インスタンスには以下のメソッドがあります:
+
+`get_buffer()'
+     現在のパック処理用バッファを文字列で返します。
+
+`reset()'
+     パック処理用バッファをリセットして、空文字にします。
+
+一般的には、適切な `pack_TYPE()' メソッドを使えば、
+一般に用いられているほとんどの XDR データをパックすることができます。
+各々のメソッドは一つの引数をとり、パックしたい値を与えます。
+単純なデータ型をパックするメソッドとして、以下のメソッド: `pack_uint()'
+、`pack_int()' 、 `pack_enum()' 、 `pack_bool()' 、`pack_uhyper()'
+そして `pack_hyper()' がサポートされています。
+
+`pack_float(value)'
+     単精度 (single-precision) の浮動小数点数 VALUE をパックします。
+
+`pack_double(value)'
+     倍精度 (double-precision) の浮動小数点数 VALUE をパックします。
+
+以下のメソッドは文字列、バイト列、不透明データ (opaque data) のパック
+処理をサポートします:
+
+`pack_fstring(n, s)'
+     固定長の文字列、S をパックします。 N は文字列の長さ
+     ですが、この値自体はデータバッファにはパック _されません_ 。 4
+     バイトのアラインメントを保証するために、文字列は必要に応じて null
+     バイト列でパディングされます。
+
+`pack_fopaque(n, data)'
+     `pack_fstring()' と同じく、固定長の不透明データストリームを
+     パックします。
+
+`pack_string(s)'
+     可変長の文字列 S をパックします。文字列の長さが最初に符号なし
+     整数でパックされ、続いて `pack_fstring()' を使って文字列データが
+     パックされます。
+
+`pack_opaque(data)'
+     `pack_string()'
+     と同じく、可変長の不透明データ文字列をパックします。
+
+`pack_bytes(bytes)'
+     `pack_string()' と同じく、可変長のバイトストリームをパックします。
+
+以下のメソッドはアレイやリストのパック処理をサポートします:
+
+`pack_list(list, pack_item)'
+     一様な項目からなる LIST をパックします。このメソッドは
+     サイズ不定、すなわち、全てのリスト内容を網羅するまでサイズが
+     分からないリストに対して有用です。リストのすべての項目に対し、
+     最初に符号無し整数 `1' がパックされ、続いてリスト中の
+     データがパックされます。PACK_ITEM は個々の項目をパック
+     するために呼び出される関数です。リストの末端に到達すると、
+     符号無し整数 `0' がパックされます。
+
+     例えば、整数のリストをパックするには、コードは以下のようになるはず
+     です:
+
+          import xdrlib
+          p = xdrlib.Packer()
+          p.pack_list([1, 2, 3], p.pack_int)
+
+
+`pack_farray(n, array, pack_item)'
+     一様な項目からなる固定長のリスト (ARRAY) をパックします。 N
+     はリストの長さです。この値はデータバッファにパック _されません_
+     が、`len(ARRAY)' が N と 等しくない場合、例外 `ValueError'
+     が送出されます。 上と同様に、PACK_ITEM
+     は個々の要素をパック処理するための 関数です。
+
+`pack_array(list, pack_item)'
+     一様の項目からなる可変長の LIST をパックします。
+     まず、リストの長さが符号無し整数でパックされ、つづいて各
+     要素が上の `pack_farray()' と同じやり方でパックされます。
+
+
+File: python-lib-jp.info,  Node: Unpacker オブジェクト,  Next: 例外,  Prev: Packer オブジェクト,  Up: xdrlib
+
+Unpacker オブジェクト
+---------------------
+
+`Unpacker' クラスは以下のメソッドを提供します:
+
+`reset(data)'
+     文字列バッファを DATA でリセットします。
+
+`get_position()'
+     データバッファ中の現在のアンパック処理位置を返します。
+
+`set_position(position)'
+     データバッファ中のアンパック処理位置を POSITION に設定します。
+     `get_position()' および `set_position()' は注意して
+     使わなければなりません。
+
+`get_buffer()'
+     現在のアンパック処理用データバッファを文字列で返します。
+
+`done()'
+     アンパック処理を終了させます。全てのデータがまだアンパックされて
+     いなければ、例外 `Error' が送出されます。
+
+上のメソッドに加えて、`Packer' でパック処理できるデータ型はいずれも
+`Unpacker' でアンパック処理できます。アンパック処理メソッドは
+`unpack_TYPE()' の形式をとり、引数をとりません。
+これらのメソッドはアンパックされたデータオブジェクトを返します。
+
+`unpack_float()'
+     単精度の浮動小数点数をアンパックします。
+
+`unpack_double()'
+     `unpack_float()' と同様に、倍精度の浮動小数点数をアンパックします。
+
+上のメソッドに加えて、文字列、バイト列、不透明データをアンパックする
+以下のメソッドが提供されています:
+
+`unpack_fstring(n)'
+     固定長の文字列をアンパックして返します。N は予想される文字列の
+     長さです。4 バイトのアラインメントを保証するために null
+     バイトによる パディングが行われているものと仮定して処理を行います。
+
+`unpack_fopaque(n)'
+     `unpack_fstring()' と同様に、固定長の不透明データストリームを
+     アンパックして返します。
+
+`unpack_string()'
+     可変長の文字列をアンパックして返します。最初に文字列の長さが符号無し
+     整数としてアンパックされ、次に `unpack_fstring()' を使って
+     文字列データがアンパックされます。
+
+`unpack_opaque()'
+     `unpack_string()' と同様に、可変長の不透明データ文字列をアンパック
+     して返します。
+
+`unpack_bytes()'
+     `unpack_string()' と同様に、可変長のバイトストリームをアンパック
+     して返します。
+
+以下メソッドはアレイおよびリストのアンパック処理をサポートします。
+
+`unpack_list(unpack_item)'
+     一様な項目からなるリストをアンパック処理してかえします。リストは
+     一度に 1
+     要素づつアンパック処理されます、まず符号無し整数によるフラグ
+     がアンパックされます。もしフラグが `1' なら、要素はアンパックされ、
+     返り値のリストに追加されます。フラグが `0' であれば、リストの終端
+     を示します。 UNPACK_ITEM は個々の項目をアンパック処理するために
+     呼び出される関数です。
+
+`unpack_farray(n, unpack_item)'
+     一様な項目からなる固定長のアレイをアンパックして（リストとして）返します。
+     N はバッファ内に存在すると期待されるリストの要素数です。
+     上と同様に、 UNPACK_ITEM は各要素をアンパックするために使われる
+     関数です。
+
+`unpack_array(unpack_item)'
+     一様な項目からなる可変長の LIST をアンパックして返します。
+     まず、リストの長さが符号無し整数としてアンパックされ、続いて各要素が
+     上の `unpack_farray()' のようにしてアンパック処理されます。
+
+
+File: python-lib-jp.info,  Node: 例外,  Prev: Unpacker オブジェクト,  Up: xdrlib
+
+例外
+----
+
+このモジュールでの例外はクラスインスタンスとしてコード されています:
+
+`Error'
+     ベースとなる例外クラスです。`Error' public なデータメンバ として
+     `msg' を持ち、エラーの詳細が収められています。
+
+`ConversionError'
+     `Error' から導出されたクラスです。インスタンス変数は塚されて
+     いません。
+
+これらの例外を補足する方法を以下の例に示します:
+
+     import xdrlib
+     p = xdrlib.Packer()
+     try:
+         p.pack_double(8.01)
+     except xdrlib.ConversionError, instance:
+         print 'packing the double failed:', instance.msg
+
+
+File: python-lib-jp.info,  Node: netrc,  Next: robotparser,  Prev: xdrlib,  Up: インターネット上のデータの操作
+
+netrc ファイルの処理
+====================
+
+`.netrc' ファイル群の読み出し。
+
+_Added in Python version 1.5.2_
+
+`netrc' クラスは、UNIX `ftp' プログラムや他の FTP
+クライアントで用いられる netrc ファイル形式を解析し、カプセル化
+(encapsulate) します。
+
+`netrc([file])'
+     `netrc' のインスタンスやサブクラスのインスタンスは netrc
+     ファイルのデータをカプセル化します。初期化の際の引数が存在する
+     場合、解析対象となるファイルの指定になります。引数がない場合、
+     ユーザのホームディレクトリ下にある `.netrc' が読み出されます。
+     解析エラーが発生した場合、ファイル名、行番号、解析を中断したトークン
+     に関する情報の入った `NetrcParseError' を送出します。
+
+`NetrcParseError'
+     ソースファイルのテキスト中で文法エラーに遭遇した場合に `netrc'
+     クラスによって送出される例外です。この例外のインスタンスは 3 つの
+     インスタンス変数を持っています: `msg' はテキストによる
+     エラーの説明で、`filename' はソースファイルの名前、 そして
+     `lineno' はエラーが発見された行番号です。
+
+* Menu:
+
+* netrc オブジェクト::
+
+
+File: python-lib-jp.info,  Node: netrc オブジェクト,  Prev: netrc,  Up: netrc
+
+netrc オブジェクト
+------------------
+
+`netrc' インスタンスは以下のメソッドを持っています:
+
+`authenticators(host)'
+     HOST の認証情報として、三要素のタプル `(LOGIN, ACCOUNT, PASSWORD)'
+     を返します。 与えられた host に対するエントリが netrc
+     ファイルにない場合、 `default'
+     エントリに関連付けられたタプルが返されます。 host
+     に対応するエントリがなく、default エントリもない場合、 `None'
+     を返します。
+
+`__repr__()'
+     クラスの持っているデータを netrc ファイルの書式に従った文字列で
+     出力します。(コメントは無視され、エントリが並べ替えられる可能性
+     があります。)
+
+`netrc' のインスタンスは以下の公開されたインスタンス変数 を持っています:
+
+`hosts'
+     ホスト名を `(LOGIN, ACCOUNT, PASSWORD)' から
+     なるタプルに対応づけている辞書です。`default' エントリがある場合、
+     その名前の擬似ホスト名として表現されます。
+
+`macros'
+     マクロ名を文字列のリストに対応付けている辞書です。
+
++ _Note:_ Passwords are limited to a subset of the ASCII character set.
++ Versions of this module prior to 2.3 were extremely limited.
+Starting with + 2.3, all ASCII punctuation is allowed in passwords.
+However, note that + whitespace and non-printable characters are not
+allowed in passwords.  This + is a limitation of the way the .netrc
+file is parsed and may be removed in + the future.  _Note:_
+利用可能なパスワードの文字セットは、ASCIIのサブセットのみです。2.3より前の
+バージョンでは厳しく制限されていましたが、2.3以降ではASCIIの記号を使用することが
+できます。しかし、空白文字と印刷不可文字を使用することはできません。この制限は
+.netrcファイルの解析方法によるものであり、将来解除されます。
+
+
+File: python-lib-jp.info,  Node: robotparser,  Next: csv,  Prev: netrc,  Up: インターネット上のデータの操作
+
+robots.txt のためのパーザ
+=========================
+
+`robots.txt' ファイルを読み出し、 他の URL
+に対する取得可能性の質問に答えるクラス。
+
+このモジュールでは単一のクラス、`RobotFileParser' を提供します。
+このクラスは、特定のユーザエージェントが `robots.txt' ファイルを
+公開している Web サイトのある URL を取得可能かどうかの質問に答えます。
+`robots.txt' ファイルの構造に関する詳細は
+<http://www.robotstxt.org/wc/norobots.html> を参照してください。
+
+`RobotFileParser()'
+     このクラスでは単一の `robots.txt' ファイルを読み出し、解釈し、
+     ファイルの内容に関する質問の回答を得るためのメソッドを定義しています。
+
+    `set_url(url)'
+          `robots.txt' ファイルを参照するための URL を設定します。
+
+    `read()'
+          `robots.txt' URL を読み出し、パーザに入力します。
+
+    `parse(lines)'
+          引数 LINES の内容を解釈します。
+
+    `can_fetch(useragent, url)'
+          解釈された `robots.txt'
+          ファイル中に記載された規則に従ったとき、 USERAGENT が URL
+          を取得してもよい場合には `True' を 返します。
+
+    `mtime()'
+          `robots.txt' ファイルを最後に取得した時刻を返します。この
+          値は、定期的に新たな `robots.txt' をチェックする必要がある、
+          長時間動作する Web
+          スパイダープログラムを実装する際に便利です。
+
+    `modified()'
+          `robots.txt'
+          ファイルを最後に取得した時刻を現在の時刻に設定します。
+
+
+以下にRobotFileParser クラスの利用例を示します。
+
+     >>> import robotparser
+     >>> rp = robotparser.RobotFileParser()
+     >>> rp.set_url("http://www.musi-cal.com/robots.txt")
+     >>> rp.read()
+     >>> rp.can_fetch("*", "http://www.musi-cal.com/cgi-bin/search?city=San+Francisco")
+     False
+     >>> rp.can_fetch("*", "http://www.musi-cal.com/")
+     True
+
+
+File: python-lib-jp.info,  Node: csv,  Prev: robotparser,  Up: インターネット上のデータの操作
+
+CSV ファイルの読み書き
+======================
+
+デリミタで区切られた形式のファイルに対するテーブル状データ読み書き。
+
+_Added in Python version 2.3_
+
+CSV (Comma Separated Values、カンマ区切り値列) と呼ばれる形式は、
+スプレッドシートやデータベース間でのデータのインポートやエクスポート
+における最も一般的な形式です。"CSV 標準" は存在しないため、 CSV
+形式はデータを読み書きする多くのアプリケーション上の操作に応じて
+定義されているにすぎません。標準がないということは、異なるアプリケーション
+によって生成されたり取り込まれたりするデータ間では、しばしば微妙な
+違いが発生するということを意味します。こうした違いのために、複数の
+データ源から得られた CSV ファイルを処理する作業が鬱陶しいものになる
+ことがあります。とはいえ、デリミタ (delimiter) やクオート文字の
+相違はあっても、全体的な形式は十分似通っているため、こうしたデータを
+効率的に操作し、データの読み書きにおける細々としたことをプログラマ
+から隠蔽するような単一のモジュールを書くことは可能です。
+
+`csv' モジュールでは、CSV 形式で書かれたテーブル状の
+データを読み書きするためのクラスを実装しています。
+このモジュールを使うことで、プログラマは Excel で使われている CSV
+形式に関して詳しい知識をもっていなくても、 "このデータを Excel で
+推奨されている形式で書いてください" とか、 "データを Excel で
+作成されたこのファイルから読み出してください" と言うことができます。
+プログラマはまた、他のアプリケーションが解釈できる CSV
+形式を記述したり、 独自の特殊な目的をもった CSV
+形式を定義することができます。
+
+`csv' モジュールの `reader' および `writer'
+オブジェクトはシーケンス型を読み書きします。プログラマは `DictReader'
+や `DictWriter' クラスを使うことで、
+データを辞書形式で読み書きすることもできます。
+
+_Notice:_ このバージョンの `csv' モジュールは Unicode 入力をサポート
+していません。また、現在のところ、 ASCII NUL 文字に関連したいくつかの
+問題があります。従って、安全を期すには、全ての入力を一般的には印字可能な
+ASCII にしなければなりません。これらの制限は将来取り去られる
+ことになっています。
+
+See also:
+    *PEP305 CSV File API*
+          Python へのこのモジュールの追加を提案している Python 改良案
+          (PEP: Python Enhancement Proposal)
+
+
+* Menu:
+
+* モジュールの内容 3::
+* Dialect クラスと書式化パラメタ::
+* reader オブジェクト::
+* writer オブジェクト::
+* 使用例 7::
+
+
+File: python-lib-jp.info,  Node: モジュールの内容 3,  Next: Dialect クラスと書式化パラメタ,  Prev: csv,  Up: csv
+
+モジュールの内容
+----------------
+
+`csv' モジュールでは以下の関数を定義しています:
+
+`reader(csvfile[, dialect=`'excel''[, fmtparam]])'
+     与えられた {}CSVFILE 内の行を反復処理するような reader
+     オブジェクトを返します。CSVFILE はイテレータプロトコル
+     をサポートし、`next' メソッドが呼ばれた際に常に文字列を
+     返すような任意のオブジェクトにすることができます。 CSVFILE
+     がファイルオブジェクトの場合、ファイルオブジェクトの
+     形式に違いがあるようなプラットフォームでは 'b' フラグを付けて
+     開かなければなりません。 オプションとして DIALECT
+     パラメタを与えることができ、 特定の CSV 表現形式 (dialect)
+     特有のパラメタの集合を定義するために 使われます。DIALECT
+     パラメタは `Dialect' クラスのサブクラス
+     のインスタンスか、`list_dialects' 関数が返す文字列
+     の一つにすることができます。別のオプションである {}FMTPARAM
+     キーワード引数は、現在の表現形式における個々の書式パラメタを上書きする
+     ために与えることができます。表現形式および書式化パラメタの詳細
+     については、~*Note 使用例 7:: 節、 "Dialect クラスと書式化パラメタ"
+     を参照してください。
+
+     読み出されたデータは全て文字列として返されます。データ型の変換が
+     自動的に行われることはありません。
+
+`writer(csvfile[, dialect=`'excel''[, fmtparam]])'
+     ユーザが与えたデータをデリミタで区切られた文字列に変換し、与えられた
+     ファイルオブジェクトにするための writer オブジェクトを返します。
+     CSVFILE は `write' メソッドを持つ任意のオブジェクトで
+     かまいません。 CSVFILE
+     がファイルオブジェクトの場合、ファイルオブジェクトの
+     形式に違いがあるようなプラットフォームでは 'b' フラグを付けて
+     開かなければなりません。 オプションとして DIALECT
+     パラメタを与えることができ、 特定の CSV 表現形式 (dialect)
+     特有のパラメタの集合を定義するために 使われます。DIALECT
+     パラメタは `Dialect' クラスのサブクラス
+     のインスタンスか、`list_dialects' 関数が返す文字列
+     の一つにすることができます。別のオプションである {}FMTPARAM
+     キーワード引数は、現在の表現形式における個々の書式パラメタを上書きする
+     ために与えることができます。表現形式および書式化パラメタの詳細
+     については、~*Note 使用例 7:: 節、 "Dialect クラスと書式化パラメタ"
+     を参照してください。 DB API
+     を実装するモジュールとのインタフェースを可能な限り容易に
+     するために、`None' は空文字列として書き込まれます。
+     この処理は可逆な変換ではありませんが、SQL で NULL データ値を CSV
+     にダンプする処理を、`cursor.fetch*()' 呼び出しによって
+     返されたデータを前処理することなく簡単に行うことができます。
+     他の非文字データは、書き出される前に `str()' を使って
+     文字列に変換されます。
+
+`register_dialect(name, dialect)'
+     DIALECT を NAME と関連付けます。 DIALECT は `csv.Dialect'
+     のサブクラスでなければなりません。 NAME は文字列か Unicode
+     オブジェクトでなければなりません。
+
+`unregister_dialect(name)'
+     NAME に関連づけられた表現形式を表現形式レジストリから削除します。
+     NAME が表現形式名でない場合には `Error' を送出します。
+
+`get_dialect(name)'
+     NAME に関連づけられた表現形式を返します。 NAME
+     が表現形式名でない場合には `Error' を送出します。
+
+`list_dialects()'
+     登録されている全ての表現形式を返します。
+
+`csv' モジュールでは以下のクラスを定義しています:
+
+`DictReader(csvfile, fieldnames[, restkey=`None'[, restval=`None'[, dialect=`'excel''[, fmtparam]]]])'
+     FIELDNAMES パラメタで与えられたキーを読み出された情報に対応付ける
+     他は正規の reader のように動作するオブジェクトを生成します。
+     読み出された行が FIELDNAMES の配列よりも多くのフィールドを
+     持っていた場合、残りのフィールドデータは RESTKEY の値をキーと
+     する配列に追加されます。読み出された行が FIELDNAMES の配列
+     よりも少ないフィールドしか持たない場合、残りのキーはオプションの
+     RESTVAL パラメタに指定された値を取ります。その他のパラメタは
+     `reader' オブジェクトの場合と同様に解釈されます。
+
+`DictWriter(csvfile, fieldnames[, restval=""[, extrasaction=`'raise''[, dialect=`'excel''[, fmtparam]]]])'
+     辞書を出力行に対応付ける他は正規の writer のように動作する
+     オブジェクトを生成します。FIELDNAMES パラメタには、 辞書中の
+     `writerow()' メソッドに渡される値がどの順番で CSVFILE
+     に書き出されるかを指定します。 オプションの RESTVAL
+     パラメタは、FIELDNAMES 内の
+     キーが辞書中にない場合に書き出される値を指定します。 `writerow()'
+     メソッドに渡された辞書に、 FIELDNAMES 内には
+     存在しないキーが入っている場合、オプションの EXTRAACTION
+     パラメタでどのような動作を行うかを指定します。この値が `'raise''
+     に設定されている場合 `ValueError' が送出されます。 `'ignore''
+     に設定されている場合、辞書の余分の値は無視されます。
+     その他のパラメタは `writer'
+     オブジェクトの場合と同様に解釈されます。
+
+`Dialect'
+     {} `Dialect' クラスはコンテナクラスで、基本的な用途としては、
+     その属性を特定の `reader' や `writer' インスタンスの
+     パラメタを定義するために用います。
+
+`Sniffer([sample=16384])'
+     `Sniffer' クラスは CSV ファイルの書式を推理するために用いられる
+     クラスです。
+
+`Sniffer' クラスではメソッドを一つ提供しています:
+
+`sniff(fileobj)'
+     与えられた SAMPLE を解析し、発見されたパラメタを 反映した
+     `Dialect' サブクラスを返します。 オプションの DELIMITERS
+     パラメタを与えた場合、
+     有効なデリミタ文字を含んでいるはずの文字列として解釈されます。
+
+`has_header(sample)'
+     (CSV 形式と仮定される) サンプルテキストを解析して、
+     最初の行がカラムヘッダの羅列のように推察される場合 `True'
+     を返します。
+
+`csv' モジュールでは以下の定数を定義しています:
+
+`QUOTE_ALL'
+     `writer' オブジェクトに対し、全てのフィールドをクオートするように
+     指示します。
+
+`QUOTE_MINIMAL'
+     `writer' オブジェクトに対し、現在の DELIMITER を含む か、あるいは
+     QUOTECHAR で始まるフィールドだけをクオートするように 指示します。
+
+`QUOTE_NONNUMERIC'
+     `writer' オブジェクトに対し、全ての非数値フィールドをクオート
+     するように指示します。
+
+`QUOTE_NONE'
+     `writer' オブジェクトに対し、フィールドを決してクオートしない
+     ように指示します。現在の DELIMITER が出力データ中に現れた
+     場合、現在設定されている EXCAPECHAR 文字が前に付けられます。
+     `QUOTE_NONE' の効果下にある時には、1 文字からなる文字列 ESCAPECHAR
+     が定義されていないと、たとえ書き出されるデータ 中に DELIMITER
+     文字が入っていなくてもエラーになります。
+
+`csv' モジュールでは以下の例外を定義しています:
+
+`Error'
+     全ての関数において、エラーが検出された際に送出される例外です。
+
+
+File: python-lib-jp.info,  Node: Dialect クラスと書式化パラメタ,  Next: reader オブジェクト,  Prev: モジュールの内容 3,  Up: csv
+
+Dialect クラスと書式化パラメタ
+------------------------------
+
+レコードに対する入出力形式の指定をより簡単にするために、
+特定の書式化パラメタは表現形式 (dialect) にまとめてグループ化されます。
+表現形式は `Dialect' クラスのサブクラスで、様々なクラス特有の
+メソッドと、`validate()' メソッドを一つ持っています。 `reader' または
+`writer' オブジェクトを生成するとき、 プログラマは文字列または
+`Dialect' クラスのサブクラスを表現形式
+パラメタとして渡さなければなりません。さらに、DIALECT パラメタ
+の代りに、プログラマは上で定義されている属性と同じ名前を持つ
+個々の書式化パラメタを `Dialect' クラスに指定することができます。
+
+Dialect は以下の属性をサポートしています:
+
+`delimiter'
+     フィールド間を分割するのに用いられる 1 文字からなる文字列です。
+     デフォルトでは `','' です。
+
+`doublequote'
+     フィールド内に現れた QUOTECHAR のインスタンスで、クオートではない
+     その文字自身でなければならない文字をどのようにクオートするかを制御します。
+     `True' の場合、この文字は二重化されます。 `False' の場合、
+     ESCAPECHAR は 1 文字からなる文字列で なければならず、QUOTECHAR
+     の前に置かれます。デフォルトでは `True' です。
+
+`escapechar'
+     QUOTING が `QUOTE_NONE' に設定されている場合に、 DELIMITER
+     をエスケープするために用いられる、 1 文字からなる文字列です。
+     デフォルトでは `None' です。
+
+`lineterminator'
+     CSV ファイルの各行を終端する際に用いられる文字列です。
+     デフォルトでは `'\r\n'' です。
+
+`quotechar'
+     DELIMITER を含むか、QUOTECHAR から始まる要素をクオートする際に
+     用いられる 1 文字からなる文字列です。デフォルトでは `'"'' です。
+
+`quoting'
+     writer によってクオートがいつ生成されるかを制御します。 `QUOTE_*'
+     定数のいずれか (*Note モジュールの内容 3:: 節参照) を
+     とることができ、デフォルトでは`QUOTE_MINIMAL' です。
+
+`skipinitialspace'
+     `True' の場合、DELIMITER の直後に続く空白は無視されます。
+     デフォルトでは `False' です。
+
+
+File: python-lib-jp.info,  Node: reader オブジェクト,  Next: writer オブジェクト,  Prev: Dialect クラスと書式化パラメタ,  Up: csv
+
+reader オブジェクト
+-------------------
+
+reader オブジェクト(`DictReader' インスタンス、および `reader()'
+関数によって返されたオブジェクト) は、以下の public
+なメソッドを持っています:
+
+`next()'
+     reader の反復可能なオブジェクトから、現在の表現形式に基づいて
+     次の行を解析して返します。
+
+
+File: python-lib-jp.info,  Node: writer オブジェクト,  Next: 使用例 7,  Prev: reader オブジェクト,  Up: csv
+
+writer オブジェクト
+-------------------
+
+`Writer' オブジェクト(`DictWriter' インスタンス、および `writer()'
+関数によって返されたオブジェクト) は、以下の public
+なメソッドを持っています:
+
+`Writer' オブジェクト(`writer()' で生成される `DictWriter'
+クラスのインスタンス）は、以下の公開メソッドを持っています。 {}ROW
+には、`Writer' オブジェクトの場合には文字列か数値のシーケンスを
+指定し、{}`DictWriter'
+オブジェクトの場合はフィールド名をキーとして対応する
+文字列か数値を格納した辞書オブジェクトを指定します(数値は `str()'で変換
+されます)。
+複素数を出力する場合、値をかっこで囲んで出力します。このため、CSV
+ファイルを読み込むアプリケーションで（そのアプリケーションが複素数をサポートして
+いたとしても）問題が発生する場合があります。
+
+`writerow(row)'
+     ROW パラメタを現在の表現形式に基づいて書式化し、 writer のファイル
+     オブジェクトに書き込みます。
+
+`writerows(rows)'
+     ROWS パラメタ(上記 ROW
+     のリスト)全てを現在の表現形式に基づいて書式化し、 writer
+     のファイルオブジェクトに書き込みます。
+
+
+File: python-lib-jp.info,  Node: 使用例 7,  Prev: writer オブジェクト,  Up: csv
+
+使用例
+------
+
+csv 読み出しの "Hello, world" プログラムは以下のようになります。
+
+     import csv
+     reader = csv.reader(file("some.csv"))
+     for row in reader:
+         print row
+
+上に対して、単純な書き込みのプログラム例は以下のようになります。
+
+     import csv
+     writer = csv.writer(file("some.csv", "w"))
+     for row in someiterable:
+         writer.writerow(row)
+
+
+File: python-lib-jp.info,  Node: 構造化マークアップツール,  Next: マルチメディアサービス,  Prev: インターネット上のデータの操作,  Up: Top
+
+構造化マークアップツール
+************************
+
+Python は様々な構造化データマークアップ形式を扱うための、様々な
+モジュールをサポートしています。これらは 標準化一般マークアップ言語
+(SGML) およびハイパーテキストマークアップ 言語
+(HTML)、そして可拡張性マークアップ言語 (XML) を扱うための
+いくつかのインタフェースからなります。
+
+注意すべき重要な点として、`xml' パッケージは少なくとも一つの SAX
+に対応した XML パーザが利用可能でなければなりません。 Python 2.3 からは
+Expat パーザが Python に取り込まれているので、 `xml.parsers.expat'
+モジュールは常に利用できます。 また、PyXML 追加パッケージ
+についても知りたいと思うかもしれません; このパッケージは Python
+用の拡張された XML ライブラリセットを提供します。
+
+`xml.dom' および `xml.sax' パッケージのドキュメントは Python による DOM
+および SAX インタフェースへのバインディングに 関する定義です。
+
+See also:
+     `Python/XML ライブラリ' {Python にバンドルされてくる `xml'
+     パッケージへの 拡張である PyXML パッケージのホームページです。}
+
+* Menu:
+
+* HTMLParser::
+* sgmllib::
+* htmllib::
+* htmlentitydefs::
+* xmlparsersexpat::
+* xmldom::
+* xmldomminidom::
+* xmldompulldom::
+* xmlsax::
+* xmlsaxhandler::
+* xmlsaxsaxutils::
+* xmlsaxxmlreader::
+* xmllib::
+

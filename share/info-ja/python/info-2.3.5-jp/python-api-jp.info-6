@@ -1,0 +1,942 @@
+This is python-api-jp.info, produced by makeinfo version 4.5 from
+python-api-jp.texi.
+
+12 October 2005
+
+
+File: python-api-jp.info,  Node: スレッド状態 thread state とグローバルインタプリタロック global interpreter lock,  Next: プロファイルとトレース profiling and tracing,  Prev: 初期化 initialization、終了処理 finalization、スレッド,  Up: 初期化 initialization、終了処理 finalization、スレッド
+
+スレッド状態 (thread state) とグローバルインタプリタロック (global interpreter lock)
+====================================================================================
+
+Python インタプリタは完全にスレッド安全 (thread safe) ではありません。
+マルチスレッドの Python プログラムをサポートするために、グローバルな
+ロックが存在していて、現在のスレッドが Python オブジェクトに安全に
+アクセスする前に必ずロックを獲得しなければならなくなっています。
+ロック機構がなければ、単純な操作でさえ、マルチスレッドプログラムの
+実行に問題を引き起こす可能性があります: たとえば、二つのスレッドが
+同じオブジェクトの参照カウントを同時にインクリメントすると、
+結果的に参照カウントは二回でなく一回だけしかインクリメントされない
+かもしれません。
+
+このため、グローバルインタプリタロックを獲得したスレッドだけが Python
+オブジェクトを操作したり、 Python/C API 関数を呼び出したり
+できるというルールがあります。マルチスレッドの Python プログラムを
+サポートするため、インタプリタは定期的に -- デフォルトの設定では
+バイトコード 100 命令ごとに (この値は `sys.setcheckinterval()' で
+変更できます) -- ロックを解放したり獲得したりします。
+このロックはブロックが起こりうる I/O 操作の付近でも解放・獲得 され、I/O
+を要求するスレッドが I/O 操作の完了を待つ間、他の
+スレッドが動作できるようにしています。
+
+Python インタプリタはスレッドごとに何らかの予約情報を持っておかねば
+なりません -- このため、Python は `PyThreadState'  と呼ばれるデータ構造
+を用います。これは Python 1.5 からの仕様です; 以前のバージョンでは、
+スレッド状態はグローバル変数内に保存されていて、スレッドを切り替えると
+問題を起こすことがありました。特に、アプリケーションが `sys.exc_info()'
+を使って、現在のスレッドで送出された
+最新の例外にアクセスする際の例外処理は、いまやスレッド安全になりました。
+とはいえ、グローバル変数はまだ一つだけ残っています: それは現在の
+`PyThreadState'  構造体を指すポインタです。
+ほとんどのスレッドパッケージが "スレッドごとのグローバルデータ"
+を保存する手段を持っている一方で、Python の内部的なプラットフォーム
+非依存のスレッド抽象層はこれをサポートしていません。従って、
+現在のスレッド状態を明示的に操作するようにしなければなりません。
+
+ほとんどのケースで、このような操作は十分簡単にできます。
+グローバルインタプリタロックを操作数ほとんどのコードは、以下のような
+単純な構造を持ちます:
+
+     スレッド状態をローカル変数に保存する。
+     インタプリタロックを解放する。
+     ...ブロックが起きるような何らかの I/O 操作...
+     インタプリタロックを獲得する。
+     ローカル変数からスレッド状態を回復する。
+
+このやりかたは非常に一般的なので、作業を単純にするために二つの
+マクロが用意されています:
+
+     Py_BEGIN_ALLOW_THREADS
+     ...ブロックが起きるような何らかの I/O 操作...
+     Py_END_ALLOW_THREADS
+
+`Py_BEGIN_ALLOW_THREADS'
+マクロは新たなブロック文を開始し、隠しローカル変数を宣言します;
+`Py_END_ALLOW_THREADS'
+はブロック文を終了します。これらの二つのマクロを使うもうひとつの
+利点は、Python をスレッドサポートなしでコンパイルしたとき、
+マクロの内容、すなわちスレッド状態の退避とロック操作が空になると
+いう点です。
+
+スレッドサポートが有効になっている場合、上記のブロックは
+以下のようなコードに展開されます:
+
+         PyThreadState *_save;
+     
+         _save = PyEval_SaveThread();
+         ...ブロックが起きるような何らかの I/O 操作...
+         PyEval_RestoreThread(_save);
+
+より低水準のプリミティブを使うと、以下のようにしてほぼ同じ効果を
+得られます:
+
+         PyThreadState *_save;
+     
+         _save = PyThreadState_Swap(NULL);
+         PyEval_ReleaseLock();
+         ...ブロックが起きるような何らかの I/O 操作...
+         PyEval_AcquireLock();
+         PyThreadState_Swap(_save);
+
+上の二つには微妙な違いがあります; とりわけ、 `PyEval_RestoreThread()'
+
+はグローバル変数 `errno'  の値を保存しておいて
+元に戻す点が異なります。というのは、ロック操作が `errno' に
+何もしないという保証がないからです。また、スレッドサポートが無効化
+されている場合、 `PyEval_SaveThread()'  および `PyEval_RestoreThread()'
+はロックを操作しません; この場合、 `PyEval_ReleaseLock()'  および
+`PyEval_AcquireLock()'  は
+利用できません。この仕様は、スレッドサポートを無効化してコンパイル
+されているインタプリタが、スレッドサポートが有効化された状態で
+コンパイルされている動的ロード拡張モジュールをロードできる
+ようにするためのものです。
+
+グローバルインタプリタロックは、現在のスレッド状態を指すポインタを
+保護するために使われます。ロックを解放してスレッド状態を退避する際、
+ロックを解放する前に現在のスレッド状態ポインタを取得しておかなければ
+なりません (他のスレッドがすぐさまロックを獲得して、自らの
+スレッド状態をグローバル変数に保存してしまうかもしれないからです)。
+逆に、ロックを獲得してスレッド状態を復帰する際には、
+グローバル変数にスレッド状態ポインタを保存する前にロックを獲得して
+おかなければなりません。
+
+なぜここまで詳しく説明しようとするかおわかりでしょうか? それは、 C
+でスレッドを生成した場合、そのスレッドにはグローバルインタプリタ
+ロックがなく、スレッド状態データ構造体もないからです。このような
+スレッドが Python/C API を利用するには、まずスレッド状態データ構造体を
+生成し、次にロックを獲得し、そしてスレッド状態ポインタを保存すると
+いったように、自分自身をブートストラップして生成しなければ
+なりません。スレッドが作業を終えたら、スレッド状態ポインタを
+リセットして、ロックを解放し、最後にスレッド状態データ構造体を
+メモリ解放しなければなりません。
+
+スレッドデータ構造体を生成する際には、インタプリタ状態データ構造体を
+指定する必要があります。インタプリタ状態データ構造体は、
+インタプリタ内の全てのスレッド間で共有されているグローバルなデータ、
+例えばモジュール管理データ (code{sys.modules}) を保持しています。
+必要に応じて、新たなインタプリタ状態データ構造体を作成するなり、 Python
+メインスレッドが使っているインタプリタ状態データ構造体
+を共有するなりできます (後者のデータにアクセスするためには、
+スレッド状態データ構造体を獲得して、その `interp' メンバ
+にアクセスしなければなりません; この処理は、Python が作成した
+スレッドから行うか、Python を初期化した後で主スレッドから行わねば
+なりません)。
+
+インタプリタオブジェクトにアクセスできるという仮定の下では、C の
+スレッドから Python を呼び出す際の典型的な常套句は以下のようになります。
+
+         PyThreadState *tstate;
+         PyObject *result;
+     
+         /* interp is your reference to an interpreter object. */
+         tstate = PyThreadState_New(interp);
+         PyEval_AcquireThread(tstate);
+     
+         /* Perform Python actions here.  */
+         result = CallSomeFunction();
+         /* evaluate result */
+     
+         /* Release the thread. No Python API allowed beyond this point. */
+         PyEval_ReleaseThread(tstate);
+     
+         /* You can either delete the thread state, or save it
+            until you need it the next time. */
+         PyThreadState_Delete(tstate);
+
+`PyInterpreterState'
+     このデータ構造体は、協調動作する多数のスレッド間で共有されている
+     状態 (state) を表現します。同じインタプリタに属するスレッドは
+     モジュール管理情報やその他いくつかの内部的な情報を共有しています。
+     この構造体には公開 (public) のメンバはありません。
+
+     異なるインタプリタに属するスレッド間では、利用可能なメモリ、
+     開かれているファイルデスクリプタなどといったプロセス状態を除き、
+     初期状態では何も共有されていません。グローバルインタプリタロック
+     もまた、スレッドがどのインタプリタに属しているかに関わらず
+     すべてのスレッドで共有されています。
+
+`PyThreadState'
+     単一のスレッドの状態を表現する表現するデータ構造体です。
+     データメンバ `PyInterpreterState *'`interp'
+     だけが公開されていて、スレッドのインタプリタ状態を指すポインタに
+     なっています。
+
+`void PyEval_InitThreads()'
+     グローバルインタプリタロックを初期化し、獲得します。
+     この関数は、主スレッドが第二のスレッドを生成する以前や、
+     `PyEval_ReleaseLock()'  や `PyEval_ReleaseThread(TSTATE)'
+     といった他のスレッド操作に入るよりも前に呼び出されるようにして
+     おかなければなりません。
+
+     二度目に呼び出すと何も行いません。この関数を `Py_Initialize()'
+     の前に呼び出しても 安全です。
+
+     主スレッドしか存在しないのであれば、ロック操作は必要ありません。
+     これはよくある状況ですし (ほとんどの Python プログラムはスレッドを
+     使いません)、ロック操作はインタプリタをごくわずかに低速化します。
+     従って、初期状態ではロックは生成されません。ロックを使わない状況は、
+     すでにロックを獲得している状況と同じです: 単一のスレッドしか
+     なければ、オブジェクトへのアクセスは全て安全です。従って、
+     この関数がロックを初期化すると、同時にロックを獲得するようになって
+     います。Python の `thread'  モジュールは、
+     新たなスレッドを作成する前に、ロックが存在するか、あるいはまだ
+     作成されていないかを調べ、`PyEval_InitThreads()' を
+     呼び出します。この関数から処理が戻った場合、ロックの作成と獲得が
+     保証されています。
+
+     どのスレッドが現在グローバルインタプリタロックを (存在する場合)
+     持っているか分からない時にこの関数を使うのは安全では *ありません*
+     。
+
+     この関数はコンパイル時にスレッドサポートを無効化すると利用できません。
+
+`void PyEval_AcquireLock()'
+     グローバルインタプリタロックを獲得します。
+     ロックは前もって作成されていなければなりません。
+     この関数を呼び出したスレッドがすでにロックを獲得している場合、
+     デッドロックに陥ります。
+     この関数はコンパイル時にスレッドサポートを無効化すると利用できません。
+
+`void PyEval_ReleaseLock()'
+     グローバルインタプリタロックを解放します。
+     ロックは前もって作成されていなければなりません。
+     この関数はコンパイル時にスレッドサポートを無効化すると利用できません。
+
+`void PyEval_AcquireThread(PyThreadState *tstate)'
+     グローバルインタプリタロックを獲得し、現在のスレッド状態を TSTATE
+     に設定します。TSTATE は `NULL'であっては
+     なりません。ロックはあらかじめ作成されていなければなりません。
+     この関数を呼び出したスレッドがすでにロックを獲得している場合、
+     デッドロックに陥ります。
+     この関数はコンパイル時にスレッドサポートを無効化すると利用できません。
+
+`void PyEval_ReleaseThread(PyThreadState *tstate)'
+     現在のスレッド状態をリセットして `NULL'
+     にし、グローバルインタプリタ
+     ロックを解放します。ロックはあらかじめ作成されていなければならず、
+     かつ現在のスレッドが保持していなければなりません。TSTATE は
+     `NULL'であってはなりませんが、その値が現在のスレッド状態を
+     表現しているかどうかを調べるためにだけ使われます -- もしそうで
+     なければ、致命的エラーが報告されます。
+     この関数はコンパイル時にスレッドサポートを無効化すると利用できません。
+
+`PyThreadState* PyEval_SaveThread()'
+     (インタプリタロックが生成されていて、スレッドサポートが有効の
+     場合) インタプリタロックを解放して、スレッド状態を `NULL'にし、
+     以前のスレッド状態 (`NULL'にはなりません) を返します。
+     ロックがすでに生成されている場合、現在のスレッドがロックを獲得
+     していなければなりません。
+
+`void PyEval_RestoreThread(PyThreadState *tstate)'
+     (インタプリタロックが生成されていて、スレッドサポートが有効の
+     場合) インタプリタロックを獲得して、現在のスレッド状態を TSTATE
+     に設定します。TSTATE は `NULL'であっては なりません。
+     この関数を呼び出したスレッドがすでにロックを獲得している場合、
+     デッドロックに陥ります。
+     (この関数はコンパイル時にスレッドサポートを無効化すると利用できません。)
+
+以下のマクロは、通常末尾にセミコロンを付けずに使います; Python
+ソース配布物内の使用例を見てください。
+
+`Py_BEGIN_ALLOW_THREADS'
+     このマクロを展開すると `{ PyThreadState *_save; _save =
+     PyEval_SaveThread();' になります。
+     マクロに開き波括弧が入っていることに注意してください; この波括弧は
+     後で `Py_END_ALLOW_THREADS' マクロと対応させなければ なりません。
+     マクロについての詳しい議論は上記を参照してください。
+     コンパイル時にスレッドサポートが無効化されていると何も行いません。
+
+`Py_END_ALLOW_THREADS'
+     このマクロを展開すると `PyEval_RestoreThread(_save); }'
+     になります。 マクロに開き波括弧が入っていることに注意してください;
+     この波括弧は 事前の `Py_BEGIN_ALLOW_THREADS' マクロと対応して
+     いなければなりません。
+     マクロについての詳しい議論は上記を参照してください。
+     コンパイル時にスレッドサポートが無効化されていると何も行いません。
+
+`Py_BLOCK_THREADS'
+     このマクロを展開すると `PyEval_RestoreThread(_save);' になります:
+     閉じ波括弧のない`Py_END_ALLOW_THREADS' と同じです。
+     コンパイル時にスレッドサポートが無効化されていると何も行いません。
+
+`Py_UNBLOCK_THREADS'
+     このマクロを展開すると `_save = PyEval_SaveThread();' になります:
+     閉じ波括弧のない`Py_BEGIN_ALLOW_THREADS' と同じです。
+     コンパイル時にスレッドサポートが無効化されていると何も行いません。
+
+以下の全ての関数はコンパイル時にスレッドサポートが有効になっている
+時だけ利用でき、呼び出すのはインタプリタロックがすでに作成されている
+場合だけにしなくてはなりません。
+
+`PyInterpreterState* PyInterpreterState_New()'
+     新しいインタプリタ状態オブジェクトを生成します。
+     インタプリタロックを保持しておく必要はありませんが、この関数を次々に
+     呼び出す必要がある場合には保持しておいたほうがよいでしょう。
+
+`void PyInterpreterState_Clear(PyInterpreterState *interp)'
+     インタプリタ状態オブジェクト内の全ての情報をリセットします。
+     インタプリタロックを保持していなければなりません。
+
+`void PyInterpreterState_Delete(PyInterpreterState *interp)'
+     インタプリタ状態オブジェクトを破壊します。
+     インタプリタロックを保持しておく必要はありません。
+     インタプリタ状態は`PyInterpreterState_Clear()' であらかじめ
+     リセットしておかなければなりません。
+
+`PyThreadState* PyThreadState_New(PyInterpreterState *interp)'
+     指定したインタプリタオブジェクトに属する新たなスレッド状態オブジェクトを
+     生成します。
+     インタプリタロックを保持しておく必要はありませんが、この関数を次々に
+     呼び出す必要がある場合には保持しておいたほうがよいでしょう。
+
+`void PyThreadState_Clear(PyThreadState *tstate)'
+     スレッド状態オブジェクト内の全ての情報をリセットします。
+     インタプリタロックを保持していなければなりません。
+
+`void PyThreadState_Delete(PyThreadState *tstate)'
+     スレッド状態オブジェクトを破壊します。
+     インタプリタロックを保持していなければなりません。
+     スレッド状態は`PyThreadState_Clear()' であらかじめ
+     リセットしておかなければなりません。
+
+`PyThreadState* PyThreadState_Get()'
+     現在のスレッド状態を返します。
+     インタプリタロックを保持していなければなりません。
+     現在のスレッド状態が `NULL'なら、(呼び出し側が `NULL'チェックを
+     しなくてすむように)
+     この関数は致命的エラーを起こすようになっています。
+
+`PyThreadState* PyThreadState_Swap(PyThreadState *tstate)'
+     現在のスレッド状態を TSTATE に指定したスレッド状態と入れ変えます。
+     TSTATE は`NULL'であってはなりません。
+     インタプリタロックを保持していなければなりません。
+
+`PyObject* PyThreadState_GetDict()'
+     拡張モジュールがスレッド固有の状態情報を保存できるような辞書を返します。
+     各々の拡張モジュールが辞書に状態情報を保存するためには唯一のキーを
+     使わねばなりません。
+     現在のスレッド状態がない時にこの関数を呼び出してもかまいません。
+     この関数が `NULL'を返す場合、例外はまったく送出されず、呼び出し側は
+     現在のスレッド状態が利用できないと考えねばなりません。 _Changed in
+     Python version 2.3_
+
+`int PyThreadState_SetAsyncExc(long id, PyObject *exc)'
+     スレッド内で非同期的に例外を送出します。 ID
+     引数はターゲットとなるスレッドのスレッド id です; EXC
+     は送出する例外オブジェクトです。 この関数は EXC
+     に対する参照を一切盗み取りません。
+     素朴な間違いを防ぐため、この関数を呼び出すには独自に C
+     拡張モジュール を書かねばなりません。
+     グローバルインタプリタロックを保持した状態で呼び出さなければなりません。
+     変更を受けたスレッド状態の数を返します; 1
+     よりも大きな数を返した場合、
+     何らかのトラブルに巻き込まれていることになり、EXC を `NULL'
+     にして再度呼び出すことで効果を打ち消さねばなりません。
+     この関数自体は例外を送出しません。 _Added in Python version 2.3_
+
+
+File: python-api-jp.info,  Node: プロファイルとトレース profiling and tracing,  Next: 高度なデバッガサポート advanced debugger support,  Prev: スレッド状態 thread state とグローバルインタプリタロック global interpreter lock,  Up: 初期化 initialization、終了処理 finalization、スレッド
+
+プロファイルとトレース (profiling and tracing)
+==============================================
+
+Python インタプリタは、プロファイル: 分析 (profile) や実行の トレース:
+追跡 (trace) といった機能を組み込むために低水準の
+サポートを提供しています。このサポートは、プロファイルや
+デバッグ、適用範囲分析 (coverage analysis) ツールなどに使われます。
+
+Python 2.2 になってから、この機能の実装は実質的に作り直され、 C
+から呼び出すためのインタフェースが追加されました。 この C
+インタフェースは、プロファイルやトレース作業時に、 Python
+レベルの呼び出し可能オブジェクトが呼び出されることによる
+オーバヘッドを避け、直接 C 関数呼び出しが行えるようにしています。
+プロファイルやトレース機能の本質的な特性は変わっていません;
+インタフェースではとレース関数をスレッドごとにインストールでき、
+トレース関数に報告される基本イベント (basic event) は以前の
+バージョンにおいて Python レベルのトレース関数で報告されていた
+ものと同じです。
+
+`int (*Py_tracefunc)(PyObject *obj, PyFrameObject *frame, int what, PyObject *arg)'
+     `PyEval_SetProfile()' および `PyEval_SetTrace()'
+     を使って登録できるトレース関数の形式です。最初のパラメタは
+     オブジェクトで、登録関数に OBJ として渡されます。 FRAME
+     はイベントが属している実行フレームオブジェクトで、 WHAT は定数
+     `PyTrace_CALL', `PyTrace_EXCEPT', `PyTrace_LINE' あるいは
+     `PyTrace_RETURN' のいずれかで、ARG は WHAT の値によって以下のように
+     異なります:
+
+     WHAT の値                          ARG の意味
+     ------                             -----
+     PyTrace_CALL                       常に `NULL'です。
+     PyTrace_EXCEPT                     `sys.exc_info()'
+                                        の返す例外情報です。
+     PyTrace_LINE                       常に `NULL'です。
+     PyTrace_RETURN                     呼び出し側に返される予定の値です。
+
+
+`int PyTrace_CALL'
+     関数やメソッドが新たに呼び出されたり、ジェネレータが新たなエントリの
+     処理に入ったことを報告する際の、`Py_tracefunc' のWHAT の
+     値です。イテレータやジェネレータ関数の生成は、対応するフレーム内の
+     Python バイトコードに制御の委譲 (control transfer) が起こらない
+     ため報告されないので注意してください。
+
+`int PyTrace_EXCEPT'
+     例外が送出された際の`Py_tracefunc' のWHAT の値です。
+     現在実行されているフレームで例外がセットされ、何らかのバイトコードが
+     処理された後に、WHAT にこの値がセットされた状態でコールバック
+     関数が呼び出されます。
+
+     この結果、例外の伝播によって Python が呼び出しスタックを逆戻りする
+     際に、各フレームから処理が戻るごとにコールバック関数が呼び出されます。
+     トレース関数だけがこれらのイベントを受け取ります; プロファイラは
+     この種のイベントを必要としません。
+
+`int PyTrace_LINE'
+     行番号イベントを報告するときに (プロファイル関数ではなく)
+     トレース関数のWHAT パラメタとして渡す値です。
+
+`int PyTrace_RETURN'
+     関数呼び出しが例外の伝播なしに返るときに `Py_tracefunc' 関数WHAT
+     パラメタとして渡す値です。
+
+`void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)'
+     プロファイル関数を FUNC に設定します。OBJ パラメタは
+     関数の第一パラメタとして渡され、何らかの Python
+     オブジェクトかまたは
+     `NULL'になります。プロファイル関数がスレッド状態を維持する必要が
+     あるなら、各々のスレッドに異なる OBJ を使うことで、状態を
+     記憶しておく便利でスレッドセーフな場所を提供できます。プロファイル
+     関数は、モニタされているイベントのうち、行番号イベントを除く全ての
+     イベントに対して呼び出されます。
+
+`void PyEval_SetTrace(Py_tracefunc func, PyObject *obj)'
+     トレース関数を FUNC にセットします。 `PyEval_SetProfile()'
+     に似ていますが、トレース関数は
+     行番号イベントを受け取る点が違います。
+
+
+File: python-api-jp.info,  Node: 高度なデバッガサポート advanced debugger support,  Prev: プロファイルとトレース profiling and tracing,  Up: 初期化 initialization、終了処理 finalization、スレッド
+
+高度なデバッガサポート (advanced debugger support)
+==================================================
+
+以下の関数は高度なデバッグツールでの使用のためだけのものです。
+
+`PyInterpreterState* PyInterpreterState_Head()'
+     インタプリタ状態オブジェクトからなるリストのうち、先頭にあるもの
+     を返します。 _Added in Python version 2.2_
+
+`PyInterpreterState* PyInterpreterState_Next(PyInterpreterState *interp)'
+     インタプリタ状態オブジェクトからなるリストのうち、INTERP の
+     次にあるものを返します。 _Added in Python version 2.2_
+
+`PyThreadState * PyInterpreterState_ThreadHead(PyInterpreterState *interp)'
+     インタプリタ INTERP に関連付けられているスレッドからなるリストの
+     うち、先頭にある `PyThreadState' オブジェクトを返します。 _Added
+     in Python version 2.2_
+
+`PyThreadState* PyThreadState_Next(PyThreadState *tstate)'
+     TSTATE と同じ`PyInterpreterState' オブジェクトに属している
+     スレッド状態オブジェクトのうち、TSTATE の次にあるものを返します。
+     _Added in Python version 2.2_
+
+
+File: python-api-jp.info,  Node: メモリ管理,  Next: オブジェクト実装サポート object implementation support,  Prev: 初期化 initialization、終了処理 finalization、スレッド,  Up: Top
+
+メモリ管理
+**********
+
+* Menu:
+
+* 概要::
+* メモリインタフェース::
+* 例::
+
+
+File: python-api-jp.info,  Node: 概要,  Next: メモリインタフェース,  Prev: メモリ管理,  Up: メモリ管理
+
+概要
+====
+
+Python におけるメモリ管理には、全ての Python オブジェクトとデータ構造が
+入ったプライベートヒープ (private heap) が必須です。プライベートヒープ
+の管理は、内部的には _Python メモリマネージャ (Python memory manager)_
+が確実に行います。Python メモリマネージャには、共有 (sharing)、
+セグメント分割 (segmentation)、事前割り当て (preallocation)、
+キャッシュ化 (caching) といった、様々な動的記憶管理の側面を
+扱うために、個別のコンポーネントがあります。
+
+最低水準層では、素のメモリ操作関数 (raw memory allocator) が
+オペレーティングシステムのメモリ管理機構とやりとりして、
+プライベートヒープ内にPython 関連の全てのデータを記憶するのに
+十分な空きがあるかどうか確認します。
+素のメモリ操作関数の上には、いくつかのオブジェクト固有の
+メモリ操作関数があります。これらは同じヒープを操作し、
+各オブジェクト型固有の事情に合ったメモリ管理ポリシを実装しています。
+例えば、整数オブジェクトは文字列やタプル、辞書とは違ったやり方で
+ヒープ内で管理されます。というのも、整数には値を記憶する上で
+特別な要件があり、速度/容量のトレードオフが存在するからです。
+このように、 Python メモリマネジャは作業のいくつかをオブジェクト
+固有のメモリ操作関数に委譲しますが、これらの関数が
+プライベートヒープからはみ出してメモリ管理を行わないように しています。
+
+重要なのは、たとえユーザがいつもヒープ内のメモリブロックを指すような
+オブジェクトポインタを操作しているとしても、Python 用ヒープの管理は
+インタプリタ自体が行うもので、ユーザがそれを制御する余地はないと理解
+することです。Python オブジェクトや内部使用されるバッファを入れるための
+ヒープ空間のメモリ確保は、必要に応じて、Python メモリマネージャがこの
+ドキュメント内で列挙しているPython/C API 関数群を介して行います。
+
+メモリ管理の崩壊を避けるため、拡張モジュールの作者は決して Python
+オブジェクトを C ライブラリが公開している関数: `malloc()' 、 `calloc()'
+、 `realloc()'  および `free()'  で操作しようとしては
+なりません。こうした関数を使うと、C のメモリ操作関数と Python
+メモリマネージャとの間で関数呼び出しが交錯します。 C
+のメモリ操作関数とPython メモリマネージャは異なる
+アルゴリズムで実装されていて、異なるヒープを操作するため、
+呼び出しの交錯は致命的な結果を招きます。
+とはいえ、個別の目的のためなら、 C ライブラリのメモリ操作関数を
+使って安全にメモリを確保したり解放したりできます。
+例えば、以下がそのような例です:
+
+         PyObject *res;
+         char *buf = (char *) malloc(BUFSIZ); /* for I/O */
+     
+         if (buf == NULL)
+             return PyErr_NoMemory();
+         ...Do some I/O operation involving buf...
+         res = PyString_FromString(buf);
+         free(buf); /* malloc'ed */
+         return res;
+
+この例では、I/O バッファに対するメモリ要求は C ライブラリのメモリ
+操作関数を使っています。 Python メモリマネジャは戻り値として
+返される文字列オブジェクトを確保する時にだけ必要です。
+
+とはいえ、ほとんどの状況では、メモリの操作は Python ヒープに
+固定して行うよう勧めます。なぜなら、Python ヒープは Python
+メモリマネジャの管理下にあるからです。 例えば、インタプリタを C
+で書かれた新たなオブジェクト型で拡張
+する際には、ヒープでのメモリ管理が必要です。 Python
+ヒープを使った方がよいもう一つの理由として、拡張モジュールが
+必要としているメモリについて Python メモリマネージャに _情報を提供_
+してほしいということがあります。
+たとえ必要なメモリが内部的かつ非常に特化した用途に対して排他的に
+用いられるものだとしても、全てのメモリ操作要求を Python メモリマネージャ
+に委譲すれば、インタプリタはより正確なメモリフットプリント (memory
+footprint) の全体像を把握できます。その結果、特定の状況では、 Python
+メモリマネージャがガベージコレクションやメモリのコンパクト化、
+その他何らかの予防措置といった、適切な動作をトリガできることが
+あります。上の例で示したように C ライブラリのメモリ操作関数 を使うと、
+I/O バッファ用に確保したメモリは Python メモリマネージャ
+の管理から完全に外れることに注意してください。
+
+
+File: python-api-jp.info,  Node: メモリインタフェース,  Next: 例,  Prev: 概要,  Up: メモリ管理
+
+メモリインタフェース
+====================
+
+Python ヒープに対してメモリを確保したり解放したりするために、
+以下の関数セットが利用できます。これらの関数は ANSI C 標準に
+従ってモデル化されていますが、0 バイトの領域を要求した際の
+動作についても定義しています:
+
+`void* PyMem_Malloc(size_t n)'
+     N バイトをメモリ確保し、確保されたメモリを指す `void*'
+     型のポインタを返します。確保要求に失敗した場合には `NULL' を
+     返します。 0 バイトをリクエストすると、可能ならば独立した非`NULL'
+     の ポインタを返します。このポインタは  `PyMem_Malloc(1)'
+     を代わりに呼んだときのようなメモリ領域を指しています。
+     確保されたメモリ領域はいかなる初期化も行われていません。
+
+`void* PyMem_Realloc(void *p, size_t n)'
+     P が指しているメモリブロックを N バイトにサイズ変更
+     します。メモリの内容のうち、新旧のサイズのうち小さい方までの
+     領域は変更されません。P が `NULL'ならば、この関数は
+     `PyMem_Malloc(N)' と等価になります; それ以外の場合で、N
+     がゼロに等しければ、
+     メモリブロックはサイズ変更されますが、解放されず、非 `NULL'の
+     ポインタを返します。P の値を`NULL'にしないのなら、 以前呼び出した
+     `PyMem_Malloc()' や `PyMem_Realloc()'
+     の返した値でなければなりません。
+
+`void PyMem_Free(void *p)'
+     P が指すメモリブロックを解放します。P は 以前呼び出した
+     `PyMem_Malloc()' や `PyMem_Realloc()'
+     の返した値でなければなりません。 それ以外の場合や、すでに
+     `PyMem_Free(p)' を 呼び出した後だった場合、未定義の動作になります。
+     P が `NULL'なら、何も行いません。
+
+以下に挙げる型対象のマクロは利便性のために提供されているものです。 TYPE
+は任意の C の型を表します。
+
+`TYPE* PyMem_New(TYPE, size_t n)'
+     `PyMem_Malloc()' と同じですが、 `(N * sizeof(TYPE))'
+     バイトのメモリを確保します。 `TYPE*'
+     に型キャストされたポインタを返します。
+     メモリには何の初期化も行われていません。
+
+`TYPE* PyMem_Resize(void *p, TYPE, size_t n)'
+     `PyMem_Realloc()' と同じですが、 `(N * sizeof(TYPE))'
+     バイトにサイズ変更されたメモリを 確保します。 `TYPE*'
+     に型キャストされたポインタを返します。
+
+`void PyMem_Del(void *p)'
+     `PyMem_Free()' と同じです。
+
+上記に加えて、C API 関数を介することなく Python メモリ操作関数を
+直接呼び出すための以下のマクロセットが提供されています。
+ただし、これらのマクロは Python バージョン間でのバイナリ互換性を
+保てず、それゆえに拡張モジュールでは撤廃されているので注意してください。
+
+`PyMem_MALLOC()'、 `PyMem_REALLOC()'、 `PyMem_FREE()'。
+
+`PyMem_NEW()'、 `PyMem_RESIZE()'、 `PyMem_DEL()'。
+
+
+File: python-api-jp.info,  Node: 例,  Prev: メモリインタフェース,  Up: メモリ管理
+
+例
+==
+
+最初に述べた関数セットを使って、*Note 概要:: 節の例を Python ヒープに
+I/O バッファをメモリ確保するように書き換えたものを 以下に示します:
+
+         PyObject *res;
+         char *buf = (char *) PyMem_Malloc(BUFSIZ); /* for I/O */
+     
+         if (buf == NULL)
+             return PyErr_NoMemory();
+         /* ...Do some I/O operation involving buf... */
+         res = PyString_FromString(buf);
+         PyMem_Free(buf); /* allocated with PyMem_Malloc */
+         return res;
+
+同じコードを型対象の関数セットで書いたものを以下に示します:
+
+         PyObject *res;
+         char *buf = PyMem_New(char, BUFSIZ); /* for I/O */
+     
+         if (buf == NULL)
+             return PyErr_NoMemory();
+         /* ...Do some I/O operation involving buf... */
+         res = PyString_FromString(buf);
+         PyMem_Del(buf); /* allocated with PyMem_New */
+         return res;
+
+上の二つの例では、バッファを常に同じ関数セットに属する関数で
+操作していることに注意してください。
+実際、あるメモリブロックに対する操作は、異なるメモリ操作機構を
+混用する危険を減らすために、同じメモリ API ファミリを使って行うことが
+必要です。以下のコードには二つのエラーがあり、そのうちの一つには
+異なるヒープを操作する別のメモリ操作関数を混用しているので _致命的
+(Fatal)_ とラベルづけをしています。
+
+     char *buf1 = PyMem_New(char, BUFSIZ);
+     char *buf2 = (char *) malloc(BUFSIZ);
+     char *buf3 = (char *) PyMem_Malloc(BUFSIZ);
+     ...
+     PyMem_Del(buf3);  /* Wrong -- should be PyMem_Free() */
+     free(buf2);       /* Right -- allocated via malloc() */
+     free(buf1);       /* Fatal -- should be PyMem_Del()  */
+
+素のメモリブロックを Python ヒープ上で操作する関数に加え、
+`PyObject_New()'、 `PyObject_NewVar()'、および `PyObject_Del()'
+を使うと、 Python におけるオブジェクトを
+メモリ確保したり解放したりできます。またこれらの関数には マクロ
+`PyObject_NEW()'、 `PyObject_NEW_VAR()'、 および `PyObject_DEL()'
+が対応します。
+
+これらの関数については、次章の C による新しいオブジェクト型の定義や
+実装に関する記述の中で説明します。
+
+
+File: python-api-jp.info,  Node: オブジェクト実装サポート object implementation support,  Next: バグ報告,  Prev: メモリ管理,  Up: Top
+
+オブジェクト実装サポート (object implementation support)
+********************************************************
+
+この章では、新しいオブジェクト型 (new object type) を定義する際に
+使われる関数、型、およびマクロについて説明します。
+
+* Menu:
+
+* オブジェクトをヒープ上にメモリ確保する::
+* 共通のオブジェクト構造体 common object structure::
+* 型オブジェクト::
+* マップ型オブジェクト構造体 mapping object structure::
+* 数値オブジェクト構造体 number object structure::
+* 配列オブジェクト構造体 sequence object structure::
+* バッファオブジェクト構造体 buffer object structure::
+* イテレータプロトコルをサポートする::
+* 循環参照ガベージコレクションをサポートする::
+
+
+File: python-api-jp.info,  Node: オブジェクトをヒープ上にメモリ確保する,  Next: 共通のオブジェクト構造体 common object structure,  Prev: オブジェクト実装サポート object implementation support,  Up: オブジェクト実装サポート object implementation support
+
+オブジェクトをヒープ上にメモリ確保する
+======================================
+
+`PyObject* _PyObject_New(PyTypeObject *type)'
+
+`PyVarObject* _PyObject_NewVar(PyTypeObject *type, int size)'
+
+`void _PyObject_Del(PyObject *op)'
+
+`PyObject* PyObject_Init(PyObject *op, PyTypeObject *type)'
+     新たにメモリ確保されたオブジェクト OP に対し、型と初期状態での
+     参照 (initial reference) を初期化します。
+     初期化されたオブジェクトを返します。TYPE からそのオブジェクトが
+     循環参照ガベージ検出の機能を有する場合、検出機構が監視対象とする
+     オブジェクトのセットに追加されます。
+     オブジェクトの他のフィールドには影響を及ぼしません。
+
+`PyVarObject* PyObject_InitVar(PyVarObject *op, PyTypeObject *type, int size)'
+     `PyObject_Init()' の全ての処理を行い、可変サイズオブジェクト
+     の場合には長さ情報も初期化します。
+
+`TYPE* PyObject_New(TYPE, PyTypeObject *type)'
+     C 構造体型 TYPE と Python 型オブジェクト TYPE を使って 新たな
+     Python オブジェクトをメモリ確保します。 Python
+     オブジェクトヘッダで定義されていないフィールドは初期化されません;
+     オブジェクトの参照カウントは 1 になります。メモリ確保のサイズは
+     型オブジェクトの `tp_basicsize' で決定します。
+
+`TYPE* PyObject_NewVar(TYPE, PyTypeObject *type, int size)'
+     C 構造体型 TYPE と Python 型オブジェクト TYPE を使って 新たな
+     Python オブジェクトをメモリ確保します。 Python
+     オブジェクトヘッダで定義されていないフィールドは初期化されません。
+     確保されたメモリは、TYPE 構造体に加え、var{type} の `tp_itemsize'
+     フィールドで指定されているサイズ中の SIZE フィールドを
+     収容できます。この関数は、例えばタプルのように生成時にサイズを決定
+     できるオブジェクトを実装する際に便利です。一連の複数のフィールドに
+     対するアロケーション操作を一つにして埋め込むと、アロケーション回数
+     が減り、メモリ管理の処理効率が向上します。
+
+`void PyObject_Del(PyObject *op)'
+     `PyObject_New()' や `PyObject_NewVar()' で
+     確保されたメモリを解放します。この関数は、通常オブジェクトの型に
+     指定されている `tp_dealloc' ハンドラ内で呼び出します。
+     この関数を呼び出した後では、オブジェクトのメモリ領域はもはや有効な
+     Python オブジェクトを表現してはいないので、オブジェクトのフィールド
+     に対してアクセスしてはなりません。
+
+`TYPE* PyObject_NEW(TYPE, PyTypeObject *type)'
+     安全性と引き換えにパフォーマンスを高めるための`PyObject_New()'
+     のマクロ版です。 TYPE が `NULL' かどうかチェックしません。
+
+`TYPE* PyObject_NEW_VAR(TYPE, PyTypeObject *type, int size)'
+     安全性と引き換えにパフォーマンスを高めるための`PyObject_NewVar()'
+     のマクロ版です。 TYPE が `NULL' かどうかチェックしません。
+
+`void PyObject_DEL(PyObject *op)'
+     `PyObject_Del()'のマクロ版です。
+
+`PyObject* Py_InitModule(char *name, PyMethodDef *methods)'
+     NAME と関数のテーブルに基づいて新たなモジュールオブジェクトを
+     生成し、生成されたモジュールオブジェクトを返します。 _Changed in
+     Python version 2.3_
+
+`PyObject* Py_InitModule3(char *name, PyMethodDef *methods, char *doc)'
+     NAME と関数のテーブルに基づいて新たなモジュールオブジェクトを
+     生成し、生成されたモジュールオブジェクトを返します。 DOC が
+     `NULL'でない場合、モジュールの docstring として 使われます。
+     _Changed in Python version 2.3_
+
+`PyObject* Py_InitModule4(char *name, PyMethodDef *methods, char *doc, PyObject *self, int apiver)'
+     NAME と関数のテーブルに基づいて新たなモジュールオブジェクトを
+     生成し、生成されたモジュールオブジェクトを返します。 DOC が
+     `NULL'でない場合、モジュールの docstring として 使われます。SELF
+     が`NULL'でない場合、モジュール内の各関数
+     の第一引数として渡されます (`NULL'の時には第一引数も
+     `NULL'になります)。
+     (この関数は実験的な機能のために追加されたもので、現在の Python の
+     バージョンで使われてはいないはずです。) APIVER に渡してよい値は、
+     `PYTHON_API_VERSION' で定義されている定数だけです。
+
+     _Note:_ この関数のほとんどの用途は、代わりに`Py_InitModule3()'
+     を使えるはずです;
+     本当にこの関数を使いたいときにだけ利用してください _Changed in
+     Python version 2.3_
+
+DL_IMPORT
+
+`PyObject _Py_NoneStruct'
+     Python からは `None' に見えるオブジェクトです。この値への
+     アクセスは、このオブジェクトへのポインタを評価する`Py_None'
+     マクロを使わねばなりません。
+
+
+File: python-api-jp.info,  Node: 共通のオブジェクト構造体 common object structure,  Next: 型オブジェクト,  Prev: オブジェクトをヒープ上にメモリ確保する,  Up: オブジェクト実装サポート object implementation support
+
+共通のオブジェクト構造体 (common object structure)
+==================================================
+
+Python では、オブジェクト型を定義する上で数多くの構造体が使われます。
+この節では三つの構造体とその利用方法について説明します。
+
+全ての Python オブジェクトは、オブジェクトのメモリ内表現の先頭部分に
+ある少数のフィールドを完全に共有しています。このフィールドは `PyObject'
+および `PyVarObject' 型で表現されます。 `PyObject' 型や `PyVarObject'
+型もまた、他の全ての Python
+オブジェクトを定義する上で直接的・間接的に使われているマクロを
+使って定義されています。
+
+`PyObject'
+     全てのオブジェクト型はこの型を拡張したものです。
+     この型には、あるオブジェクトに対するオブジェクトとしてのポインタを
+     Python から扱う必要がある際に必要な情報が入っています。 通常に
+     "リリースされている" ビルドでは、この構造体にはオブジェクトの
+     参照カウントと、オブジェクトに対応する型オブジェクトだけが入っています。
+
+     `PyObject_HEAD' マクロ展開で定義されているフィールドに対応します。
+
+`PyVarObject'
+     `PyObject' を拡張して、`ob_size' フィールドを追加した
+     ものです。この構造体は、_長さ (length)_ の概念を持つオブジェクト
+     だけに対して使います。この型が Python/C API で使われることは
+     ほとんどありません。 `PyObject_VAR_HEAD'
+     マクロ展開で定義されているフィールドに対応します。
+
+`PyObject' および `PyVarObject' の定義には以下のマクロが 使われています:
+
+`PyObject_HEAD'
+     `PyObject' 型のフィールド宣言に展開されるマクロです;
+     可変でない長さを持つオブジェクトを表現する新たな型を宣言する
+     場合に使います。展開によってどのフィールドが宣言されるかは、
+     `Py_TRACE_REFS' の定義に依存します。
+     デフォルトでは、`Py_TRACE_REFS' は定義されておらず、
+     `PyObject_HEAD' は以下のコードに展開されます:
+              int ob_refcnt;
+              PyTypeObject *ob_type;
+
+     `Py_TRACE_REFS' が定義されている場合、以下のように展開 されます:
+              PyObject *_ob_next, *_ob_prev;
+              int ob_refcnt;
+              PyTypeObject *ob_type;
+
+
+`PyObject_VAR_HEAD'
+     マクロです。`PyVarObject' 型のフィールド宣言に展開されるマクロです;
+     インスタンスによって可変の長さを持つオブジェクトを表現する新たな型を
+     宣言する場合に使います。マクロは常に以下のように展開されます:
+              PyObject_HEAD
+              int ob_size;
+
+     マクロ展開結果の一部に`PyObject_HEAD' が含まれており、
+     `PyObject_HEAD' の展開結果は`Py_TRACE_REFS' の定義に依存します。
+
+`PyObject_HEAD_INIT'
+
+`PyCFunction'
+     ほとんどの Python の呼び出し可能オブジェクトを C で実装する際に
+     用いられている関数の型です。 この型の関数は二つの `PyObject*'
+     型パラメタをとり、 `PyObject*' 型の値を返します。戻り値を
+     `NULL'にする場合、
+     例外をセットしておかなければなりません。`NULL'でない値を返す場合、
+     戻り値は Python
+     に関数の戻り値として公開される値として解釈されます。
+     この型の関数は新たな参照を返さなければなりません。
+
+`PyMethodDef'
+     拡張型のメソッドを記述する際に用いる構造体です。この構造体には 4
+     つのフィールドがあります:
+
+     フィールド             C データ型             意味
+     ------                 -----                  -----
+     ml_name                char *                 メソッド名
+     ml_meth                PyCFunction            C 実装へのポインタ
+     ml_flags               int                    呼び出しをどのように行うかを示すフラグビット
+     ml_doc                 char *                 docstring
+                                                   の内容を指すポインタ
+
+
+`ml_meth' は C の関数ポインタです。関数は別の型で定義
+されていてもかまいませんが、常に  `PyObject*' を返します。 関数が
+`PyFunction' でない場合、メソッドテーブル内でキャスト
+を行うようコンパイラが要求することになるでしょう。 `PyCFunction'
+では最初のパラメタが`PyObject*' 型で あると定義していますが、固有の C
+型を SELF オブジェクトに 使う実装はよく行われています。
+
+`ml_flags' フィールドはビットフィールドで、以下のフラグが入ります。
+個々のフラグは呼び出し規約 (calling convention) や束縛規約 (binding
+convention) を表します。 呼び出し規約フラグでは、`METH_VARARGS' および
+`METH_KEYWORDS' を組み合わせられます (ただし、 `METH_KEYWORDS'
+単体の指定を行っても ``METH_VARARGS' | `METH_KEYWORDS'' と
+同じなので注意してください)。
+呼び出し規約フラグは束縛フラグと組み合わせられます。
+
+`METH_VARARGS'
+     `PyCFunction' 型のメソッドで典型的に使われる呼び出し規約です。
+     関数は`PyObject*' 型の引数値を二つ要求します。最初の引数は
+     メソッドの SELF オブジェクトです; モジュール関数の場合、
+     `Py_InitModule4()' に与えることになる値が入ります (`NULL'
+     にすると`Py_InitModule()' が使われます)。 第二のパラメタ (よく
+     ARGS と呼ばれます) は、全ての引数を
+     表現するタプルオブジェクトです。パラメタは通常、
+     `PyArg_ParseTuple()' や `PyArg_UnpackTuple' で処理されます。
+
+`METH_KEYWORDS'
+     このフラグを持つメソッドは`PyCFunctionWithKeywords'
+     型でなければなりません。`PyCFunctionWithKeywords' は
+     三つのパラメタ:SELF、 ARGS、 およびキーワード引数
+     全てからなる辞書、を要求します。このフラグは通常 `METH_VARARGS'
+     と組み合わされ、パラメタは `PyArg_ParseTupleAndKeywords()'
+     で処理されます。
+
+`METH_NOARGS'
+     引数のないメソッドは、`METH_NOARGS' フラグをつけた場合、
+     必要な引数が指定されているかをチェックしなくなります。
+     こうしたメソッドは `PyCFunction' 型でなくてはなりません。
+     オブジェクトのメソッドに使った場合、第一のパラメタは `self'
+     になり、オブジェクトインスタンスへの参照を保持することになります。
+     いずれにせよ、第二のパラメタは `NULL'になります。
+
+`METH_O'
+     単一のオブジェクト引数だけをとるメソッドは、 `PyArg_ParseTuple()'
+     を引数 `"O"' にして呼び出す代わりに、 `METH_O'
+     フラグつきで指定できます。メソッドは `PyCFunction' 型で、SELF
+     パラメタと単一の引数を表現する `PyObject*' パラメタを伴います。
+
+`METH_OLDARGS'
+     この呼び出し規約は撤廃されました。メソッドは`PyCFunction' 型で
+     なければなりません。第二引数は、引数がない場合には `NULL'、単一の
+     引数の場合にはその引数オブジェクト、複数個の引数の場合には引数
+     オブジェクトからなるタプルです。この呼び出し規約を使うと、複数個の
+     引数の場合と、単一のタプルが唯一引数の場合を区別できなくなってしまいます。
+
+以下の二つの定数は、呼び出し規約を示すものではなく、
+クラスのメソッドとして使う際の束縛方式を示すものです。
+モジュールに対して定義された関数で用いてはなりません。
+メソッドに対しては、最大で一つしかこのフラグをセットできません。
+
+`METH_CLASS'
+     メソッドの最初の引数には、型のインスタンスではなく型オブジェクト
+     が渡されます。このフラグは 組み込み関数 `classmethod()'
+     を使って生成するのと同じ_クラスメソッド (class method)_
+     を生成するために使われます。 _Added in Python version 2.3_
+
+`METH_STATIC'
+     メソッドの最初の引数んは、型のインスタンスではなく `NULL' が
+     渡されます。このフラグは、 `staticmethod()'
+
+     を使って生成するのと同じ_静的メソッド (static method)_
+     を生成するために使われます。 _Added in Python version 2.3_
+
+`PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)'
+     C で実装された拡張型の束縛メソッドオブジェクトを返します。
+     `PyObject_GenericGetAttr()' 関数を使わない `tp_getattro' や
+     `tp_getattr' ハンドラを実装する際に 便利です。
+

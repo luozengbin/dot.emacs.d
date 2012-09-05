@@ -1,0 +1,200 @@
+@ignore
+This file is completely identical to hsuser.texinfo, except that it has the
+reference to the programming manual removed.  There are definately better ways
+to do this!
+
+This file documents the user interface to the GNU History library.
+
+Copyright (C) 1988, 1991 Free Software Foundation, Inc.
+Authored by Brian Fox.
+
+Permission is granted to make and distribute verbatim copies of this manual
+provided the copyright notice and this permission notice are preserved on
+all copies.
+
+Permission is granted to process this file through Tex and print the
+results, provided the printed document carries copying permission notice
+identical to this one except for the removal of this paragraph (this
+paragraph not being relevant to the printed manual).
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+GNU Copyright statement is available to the distributee, and provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+@end ignore
+
+@ignore
+Japanese translation by Kazuhisa Ichikawa
+
+(Please send your comments on this Japanese version to ki@home.email.ne.jp)
+@end ignore
+
+@node Using History Interactively
+@appendix ヒストリの対話的な使用
+
+ここでは、
+ユーザの見地に立って、
+GNUヒストリ・ライブラリの対話的な使い方を説明します。
+
+@menu
+* History Interaction::		ユーザから見たヒストリ機能の使い心地
+@end menu
+
+@node History Interaction
+@section ヒストリの操作
+@cindex expansion
+@cindex 展開[てんかい]
+
+ヒストリ・ライブラリは、
+@code{csh}のヒストリ展開機能に似た機能を提供します。
+以下において、
+ヒストリ情報を操作するための構文を説明します。
+
+ヒストリ展開は2つの部分から構成されます。
+第1の部分で、
+過去のヒストリのどの行が代替処理に使用されるかが決まります。
+この行を@dfn{イベント}と呼びます。
+第2の部分で、
+この行のうちどの部分がカレント行に挿入されるかが決まります。
+この部分のことを@dfn{ワード}と呼びます。
+@value{GDBN}は、
+Bashシェルと同様の方法によって行をワードに分割します。
+したがって、
+引用符によって囲まれた複数の英単語（あるいはUNIX用語）は1つのワードとみなされます。
+
+@menu
+* Event Designators::	使用するヒストリ行の指定方法
+* Word Designators::	関心のあるワードの指定
+* Modifiers::		代替結果の変更
+@end menu
+
+@node Event Designators
+@subsection イベント指定子
+@cindex event designators
+@cindex イベント指定子[イベントしていし]
+
+@dfn{イベント指定子}とは、
+ヒストリ・リスト内のコマンド行エントリへの参照です。
+
+@table @asis
+
+@item @code{!}
+ヒストリ代替を開始します。
+ただし次に続く文字が、
+空白、
+タブ、
+行末、
+@key{=}、
+@key{(}である場合は例外です。
+
+@item @code{!!}
+1つ前のコマンドを参照します。
+これは、
+@code{!-1}と同義です。
+
+@item @code{!n}
+コマンド行番号@var{n}のコマンド行を参照します。
+
+@item @code{!-n}
+@var{n}行前のコマンド行を参照します。
+
+@item @code{!string}
+コマンドの最初の部分が文字列@var{string}で始まるコマンドのうち、
+最後に実行されたものを参照します。
+
+@item @code{!?string}[@code{?}]
+文字列@var{string}を含むコマンドのうち、
+最後に実行されたものを参照します。
+
+@end table
+
+@node Word Designators
+@subsection ワード指定子
+
+コロン（@key{:}）が、
+イベント指定子と@dfn{ワード指定子}の区切り文字になります。
+ワード指定子が@key{^}、
+@key{$}、
+@key{*}、
+@key{%}で始まる場合は、
+この区切り文字は省略することができます。
+ワードは行の先頭から番号が付与され、
+最初のワードは0（ゼロ）番になります。
+
+@table @code
+
+@item 0 (zero)
+ゼロ番目のワードです。
+多くのアプリケーションにおいて、
+これはコマンド・ワードです。
+
+@item n
+@var{n}番目のワードです。
+
+@item ^
+最初の引数、
+すなわち1番目のワードです。
+
+@item $
+最後の引数です。
+
+@item %
+最後に実行された@code{?string?}検索にマッチしたワードです。
+
+@item x-y
+ある範囲のワードを指します。
+@code{-@var{y}}は、
+@code{0-@var{y}}の省略形です。
+
+@item *
+ゼロ番目のワードを除く、
+すべてのワードです。
+これは、
+@code{1-$}と同義です。
+イベントの内部にワードが1つしかなくても、
+@key{*}の使用はエラーにはなりません。
+この場合には、
+空の文字列が返されます。
+
+@end table
+
+@node Modifiers
+@subsection 修飾子
+
+必須ではないワード指定子に続けて、
+以下の@dfn{修飾子}を1つ以上連続して追加することができます。
+個々の修飾子の前にコロン（@key{:}）を付けます。
+
+@table @code
+
+@item #
+それまで入力されたコマンド行全体です。
+これは、
+1つ前のコマンドではなく、
+カレントなコマンドを意味します。
+@c
+@c  FIXME:  If it doesn't belong here, let's put it where it does. 
+@c
+@c  so it technically isn't a word designator and doesn't belong in 
+@c  this section.
+
+@item h
+パス名の末尾の部分を削除したヘッド部です。
+
+@item r
+@samp{.}@var{suffix}形式の拡張子を削除したベース名です。
+
+@item e
+拡張子以外のすべての部分を削除します。
+
+@item t
+パス名の末尾の部分を残し、
+それより前にある部分をすべて削除します。
+
+@item p
+新しいコマンドを表示するだけで実行しません。
+@end table

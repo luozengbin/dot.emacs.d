@@ -1,0 +1,2059 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Glyphs, Next: Beeping, Prev: Active Display Table, Up: Display Tables
+
+字形
+----
+
+"字形"（glyph）は, 文字を一般化したものです.  スクリーン上で1文字を占
+める像を表します.  文字と同様に, 字形はLispでは整数で表現します.
+
+字形としての各整数の意味は, 字形テーブルで定義されます.  これは変数
+`glyph-table'の値です.
+
+ -- Variable: glyph-table
+     この変数の値は, 現在の字形テーブルである.  これはベクトルであるこ
+     と.  G番目の要素は, 字形コードGを定義する.  値がベクトルではなく
+     `nil'であると, すべての字形は単純（下記参照）である.
+
+字形テーブルの要素として可能な型はつぎのとおりです.
+
+STRING
+     この字形を出力するために端末へSTRINGの文字群を送出する.  これは文
+     字端末では使えるがウィンドウシステムでは使えない.
+
+INTEGER
+     この字形コードを字形コードINTEGERの別称として定義する.  字形に対
+     してフェイスコードを指定するために別称を使うことができる.  下記参
+     照.
+
+`nil'
+     この字形は単純である.  通常の端末では, 字形コード mod 524288 は出
+     力すべき文字である.  ウィンドウシステムでは, 字形コード mod
+     524288 は出力すべき文字あり, 字形コードを524288で除した値は出力中
+     に使用すべきフェイス番号（*Note Face Functions::）である. 
+     （524288は2**19. ）*Note Faces::.
+
+字形コードが字形テーブルの長さに等しいか大きいと, そのコードは自動的に
+単純とします.
+
+
+
+File: elisp-ja, Node: Beeping, Next: Window Systems, Prev: Display Tables, Up: Display
+
+ベルを鳴らす
+============
+
+本節では, ユーザーの注意を引くためにEmacsにベルを鳴らせる（あるいはス
+クリーンを点滅させる）方法について述べます.  ベルを鳴らす頻度はなるべ
+く控えめにしてください.  頻繁にベルが鳴るとわずらわしいものです.  エラー
+を通知するほうがふさわしいときには, 単にベルを鳴らさないように注意して
+ください.  （*Note Errors::. ）
+
+ -- Function: ding &optional DO-NOT-TERMINATE
+     この関数は, ベルを鳴らすかスクリーンを点滅する（下記の
+     `visible-bell'を参照）.  また, DO-NOT-TERMINATEが`nil'であると現
+     在実行中のキーボードマクロを終了する.
+
+ -- Function: beep &optional DO-NOT-TERMINATE
+     `ding'の同義語.
+
+ -- User Option: visible-bell
+     この変数は, ベルを鳴らすかわりにスクリーンを点滅させるかどうかを
+     決定する.  `nil'以外であると点滅するを意味し, `nil'であると点滅し
+     ないを意味する.  これは, ウィンドウシステムを用いている場合か, 端
+     末のtermcapの定義にビジュアルベル機能（`vb'）がある文字端末で有効
+     である.
+
+ -- Variable: ring-bell-function
+     これが`nil'以外であると, Emacsに『ベルを鳴らす』方法を指定する. 
+     この値は, 引数なしの関数であること.
+
+
+
+File: elisp-ja, Node: Window Systems, Next: Calendar, Prev: Beeping, Up: Display
+
+ウィンドウシステム
+==================
+
+Emacsはいくつかのウィンドウシステムで, 特にXウィンドウシステムで動作し
+ます.  EmacsもXも用語『ウィンドウ』を使いますが, 用法は異なります.
+Emacsの1つのフレームは, Xでは1つのウィンドウです.  Emacsの個々のウィン
+ドウについては, Xはまったくわかりません.
+
+ -- Variable: window-system
+     この変数は, Emacsが動作しているウィンドウシステムの種類をLispプロ
+     グラムに伝える.  可能な値はつぎのとおりである.
+
+     `x'
+          Xを用いて表示している.
+     `pc'
+          MSDOSを用いて表示している.
+     `w32'
+          Windows NTかWindows 95を用いて表示している.
+     `nil'
+          文字ベースの端末を用いて表示している.
+
+ -- Variable: window-setup-hook
+     この変数は, Emacsが初期化ファイルを処理したあとに実行するノーマル
+     フックである.  読者のファイル`.emacs', （あれば）デフォルトの初期
+     化ファイル, 端末固有のLispコードをすべてロードし, フック
+     `term-setup-hook'を実行し終えてから, このフック実行する.
+
+     このフックは内部目的用であり, ウィンドウシステムとの通信を設定し, 
+     最初のウィンドウを作成する.  ユーザーが干渉すべきではない.
+
+
+File: elisp-ja, Node: Calendar, Next: System Interface, Prev: Display, Up: Top
+
+カレンダーと日誌のカスタマイズ
+******************************
+
+カレンダーや日誌を個人の好みに合わせるためのカスタマイズ項目がたくさん
+あります.
+
+* Menu:
+
+* Calendar Customizing::   Defaults you can set.
+* Holiday Customizing::    Defining your own holidays.
+* Date Display Format::    Changing the format.
+* Time Display Format::    Changing the format.
+* Daylight Savings::       Changing the default.
+* Diary Customizing::      Defaults you can set.
+* Hebrew/Islamic Entries:: How to obtain them.
+* Fancy Diary Display::    Enhancing the diary display, sorting entries, 
+                             using included diary files.
+* Sexp Diary Entries::     Fancy things you can do.
+* Appt Customizing::	   Customizing appointment reminders.
+
+
+
+File: elisp-ja, Node: Calendar Customizing, Next: Holiday Customizing, Prev: Calendar, Up: Calendar
+
+カレンダーのカスタマイズ
+========================
+
+変数`view-diary-entries-initially'に`t'を設定しておくと, カレンダーを
+呼び出すと現在の日に対する日誌記録を自動的に表示できます.  その日がウィ
+ンドウで見える場合に限って日誌記録が表示されます.  つぎの行,
+
+     (setq view-diary-entries-initially t)
+     (calendar)
+
+を個人のファイル`.emacs'に入れておくと, Emacsを起動するたびに, カレン
+ダーと日誌の両者のウィンドウを表示します.
+
+同様に, 変数`view-calendar-holidays-initially'に`t'を設定しておくと, 
+カレンダーに入ると自動的に3か月分の祝祭日一覧を表示します.  祝祭日一覧
+は別のウィンドウに現れます.
+
+変数`mark-diary-entries-in-calendar'に`t'を設定すると, 日誌に入れてあ
+る日付に印を付けられます.  カレンダーのウィンドウ内容を再計算するとき
+にこの効果が現れます.  これらの日付に印を付ける方法は2つあります.  ディ
+スプレイで使えるならばフェイス（*Note Faces::）を変更するか, 日付にプ
+ラス記号（`+'）を付加します.
+
+同様に, 変数`mark-holidays-in-calendar'に`t'を設定すると, フェイスを変
+えるかアスタリスク（`*'）を付加することで祝祭日に印を付けられます.
+
+変数`calendar-holiday-marker'は, 祝祭日の日付にどのように印を付けるか
+を指定します.  その値は, 日付に付加する文字か日付の表示に使うフェイス
+名です.  同様に, 変数`diary-entry-marker'は, 日誌に入っている日付にど
+のように印を付けるかを指定します.  カレンダー（calendar）モードは, こ
+のような目的のために`holiday-face'と`diary-face'という名前のフェイスを
+作成します.  Emacsが端末で複数のフェイスを扱える場合には, これらの変数
+のデフォルト値はこれらのシンボルです.
+
+変数`calendar-load-hook'は, （カレンダーを実際に表示し始めるまえに）カ
+レンダーパッケージを初めてロードしたときに実行されるノーマルフックです.
+
+カレンダーを開始するとノーマルフック`initial-calendar-window-hook'を実
+行します.  カレンダーの表示を再計算してもこのフックは実行されません. 
+しかし, コマンド`q'でカレンダーを抜けてから再度カレンダーに入るとこの
+フックを再度実行します.
+
+変数`today-visible-calendar-hook'は, 今日の日付がウィンドウで見えると
+きにカレンダーバッファにカレンダーの準備を終えてから実行されるノーマル
+フックです.  このフックの1つの用途は, 今日の日付をアスタリスクで置き換
+えることです.  それにはフック関数`calendar-star-date'を使います.
+
+     (add-hook 'today-visible-calendar-hook 'calendar-star-date)
+
+他の標準的なフック関数は, フェイスを変更するかアスタリスクを付加するこ
+とで現在の日付に印を付けます.  つぎのように使います.
+
+     (add-hook 'today-visible-calendar-hook 'calendar-mark-today)
+
+変数`calendar-today-marker'は, 今日の日付の印の付け方を指定します.  そ
+の値は, 日付に付加する文字か日付の表示に使うフェイス名です.  この目的
+のために`calendar-today-face'という名前のフェイスがあります.  Emacsが
+端末で複数のフェイスを扱える場合には, この変数のデフォルト値はこのシン
+ボルです.
+
+同様なノーマルフック`today-invisible-calendar-hook'は, 現在の日付がウィ
+ンドウで見え*ない*ときに実行されます.
+
+
+
+File: elisp-ja, Node: Holiday Customizing, Next: Date Display Format, Prev: Calendar Customizing, Up: Calendar
+
+祝祭日のカスタマイズ
+====================
+
+Emacsは, 複数のリストの中の1つのリストに入っている項目群で定義される祝
+祭日を把握しています.  これらの祝祭日のリストに祝祭日を追加したり削除
+して個人の目的に合うようにカスタマイズできます.  Emacsが使用する祝祭日
+のリストは, 一般祝祭日（`general-holidays'）, 地域祝祭日
+（`local-holidays'）, キリスト教祝祭日（`christian-holidays'）, ヘブラ
+イ（ユダヤ教）祝祭日（`hebrew-holidays'）, イスラム（回教徒）祝祭日
+（`islamic-holidays'）, その他の祝祭日（`other-holidays'）です.
+
+一般祝祭日は, デフォルトでは, 合州国に共通の祝祭日です.  これらの祝祭
+日を削除するには, `general-holidays'に`nil'を設定します.
+
+デフォルトの地域祝祭日はありません（サイトによってはある）.  以下に述
+べるように, 変数`local-holidays'に祝祭日の任意のリストを設定できます.
+
+デフォルトでは, Emacsが承知している宗教のすべての祝祭日がEmacsに入って
+いるのではなく, 世俗的なカレンダーに共通するものだけです.  宗教上の祝
+祭日を網羅的に入れるには, `all-christian-calendar-holidays',
+`all-hebrew-calendar-holidays', `all-islamic-calendar-holidays'の変数
+のいずれか（あるいは, すべて）に`t'を設定します.  宗教上の祝祭日を削除
+するには, 対応する`christian-holidays', `hebrew-holidays',
+`islamic-holidays'の変数のいずれか（あるいは, すべて）に`nil'を設定し
+ます.
+
+変数`other-holidays'には, 祝祭日の任意のリストを設定できます.  このリ
+ストは, 普通は空ですが, 個人的な使用を意図しています.
+
+リスト（`general-holidays', `local-holidays', `christian-holidays',
+`hebrew-holidays', `islamic-holidays', `other-holidays'）のおのおのは, 
+祝祭日（あるいは祝祭日のリスト）を記述する"祝祭日形式"（holiday form）
+から成るリストです.
+
+可能な祝祭日形式の一覧をつぎに示します.  月と日は1から数えますが, 『曜
+日』は日曜日を0と数えます.  要素STRINGは, 文字列で表した祝祭日の名称で
+す.
+
+`(holiday-fixed MONTH DAY STRING)'
+     グレゴリオ暦の固定した日付.
+
+`(holiday-float MONTH DAYNAME K STRING)'
+     グレゴリオ暦のMONTH月のK番目の曜日DAYNAME.  （日曜日はDAYNAME=0, 
+     …. ）Kが負であると, 月末から数える.
+
+`(holiday-hebrew MONTH DAY STRING)'
+     ヘブライ暦の固定した日付.
+
+`(holiday-islamic MONTH DAY STRING)'
+     イスラム暦の固定した日付.
+
+`(holiday-julian MONTH DAY STRING)'
+     ユリウス暦の固定した日付.
+
+`(holiday-sexp SEXP STRING)'
+     Lisp式SEXPで計算される日付.  計算式では, 年として変数`year'を使い, 
+     祝祭日の日付を返す.  あるいは, その年に該当する祝祭日がなければ
+     `nil'を返す.  SEXPの値は, `(MONTH DAY YEAR)'の形のリストで表した
+     日付であること.
+
+`(if CONDITION HOLIDAY-FORM)'
+     条件CONDITIONが真である場合にのみ祝祭日になる.
+
+`(FUNCTION [ARGS])'
+     引数ARGSで関数FUNCTIONを呼び出して計算される日付のリスト.
+
+たとえば, フランスで7月14日に祝われる革命記念日（Bastille Day）を扱え
+るようにするにはつぎのようにします.
+
+     (setq other-holidays '((holiday-fixed 7 14 "Bastille Day")))
+
+祝祭日形式 `(holiday-fixed 7 14 "Bastille Day")'は, 7の月（7月）の14日
+目を指定します.
+
+多くの祝祭日は, 特定の月の特定の週にあります.  バージン諸島で4月の第4
+月曜日に祝われるハリケーン祈願日（Hurricane Supplication Day）を記述す
+る祝祭日形式はつぎのようになります.
+
+     (holiday-float 8 1 4 "Hurricane Supplication Day")
+
+ここで, 8は8月, 1は月曜日（日曜日は0, 火曜日は2といった具合）, 4はその
+月の4回目（1は最初, 2は2回目, -1は最後, -2は最後の1つまえといった具合）
+を意味します.
+
+ヘブライ暦, イスラム暦, ユリウス暦の固定した日付の祝祭日も指定できます. 
+たとえば,
+
+     (setq other-holidays
+           '((holiday-hebrew 10 2 "Last day of Hanukkah")
+             (holiday-islamic 3 12 "Mohammed's Birthday")
+             (holiday-julian 4 2 "Jefferson's Birthday")))
+
+は, ハヌカー祭の最終日（ヘブライ暦の月はニサンNisanを1と数える）, イス
+ラムが祝うモハメッドの誕生日（イスラム暦の月はムハラMuharramを1と数え
+る）, ユリウス暦の1743年4月2日のトーマスジェファーソンの誕生日を追加し
+ます.
+
+条件付きの祝祭日を含めるには, Emacs Lispの`if'や`holiday-sexp'を使いま
+す.  たとえば, アメリカ大統領選挙は, 4で割り切れる年の11月の第1月曜日
+のあとの最初の火曜日に行われます.
+
+     (holiday-sexp (if (= 0 (% year 4))
+                        (calendar-gregorian-from-absolute
+                         (1+ (calendar-dayname-on-or-before
+                               1 (+ 6 (calendar-absolute-from-gregorian
+                                       (list 11 1 year))))))
+                   "US Presidential Election"))
+
+あるいは,
+
+     (if (= 0 (% displayed-year 4))
+         (fixed 11
+                (extract-calendar-day
+                  (calendar-gregorian-from-absolute
+                    (1+ (calendar-dayname-on-or-before
+                          1 (+ 6 (calendar-absolute-from-gregorian
+                                   (list 11 1 displayed-year)))))))
+                "US Presidential Election"))
+
+特別な計算を必要とする祝祭日は, これまでの形式にあてはまりません.  そ
+のような場合, 計算を行うLisp関数を書く必要があります.  たとえば, 日食
+月食を含めるには, `other-holidays'に`(eclipses)'を追加して, 以下のよう
+な形でカレンダーウィンドウの見えている範囲の期間内の対応するグレゴリオ
+暦の日付の（空である可能性もある）リストを返すEmacs Lisp関数
+`(eclipses)'を書きます.
+
+     (((6 27 1991) "Lunar Eclipse") ((7 11 1991) "Solar Eclipse") ... )
+
+
+
+File: elisp-ja, Node: Date Display Format, Next: Time Display Format, Prev: Holiday Customizing, Up: Calendar
+
+日付表示書式
+============
+
+日誌, モード行, メッセージに現れる日付の表示方法は,
+`calendar-date-display-form'を設定することでカスタマイズできます.  こ
+の変数は, 文字列で表した数字が入った`month', `day', `year'の各変数と, 
+英字の文字列が入った`monthname'と`dayname'の各変数を用いた式のリストを
+保持しています.  アメリカスタイルでは, このリストのデフォルト値はつぎ
+のようになります.
+
+     ((if dayname (concat dayname ", ")) monthname " " day ", " year)
+
+一方, ヨーロッパスタイルでは, この値のデフォルトはつぎのようになります.
+
+     ((if dayname (concat dayname ", ")) day " " monthname " " year)
+
+ISO規格の日付の表記法はつぎのとおりです.
+
+     (year "-" month "-" day)
+
+典型的なアメリカの書式はつぎのとおりです.
+
+     (month "/" day "/" (substring year -2))
+
+
+
+File: elisp-ja, Node: Time Display Format, Next: Daylight Savings, Prev: Date Display Format, Up: Calendar
+
+時刻表示書式
+============
+
+カレンダーと日誌はデフォルトではアメリカスタイル, つまり, 12時制で時刻
+を表示します.  ヨーロッパスタイルやアメリカ軍の24時制を好むならば, 変
+数`calendar-time-display-form'を変更します.  この変数は, 文字列で表し
+た数字が入った`12-hours', `24-hours', `minutes'の各変数と, 英字の文字
+列が入った`am-pm'と`time-zone'の各変数を用いた式のリストを保持していま
+す.  `calendar-time-display-form'のデフォルト値はつぎのとおりです.
+
+     (12-hours ":" minutes am-pm
+               (if time-zone " (") time-zone (if time-zone ")"))
+
+つぎの値では, ヨーロッパスタイルの時刻になります.
+
+     (24-hours ":" minutes
+               (if time-zone " (") time-zone (if time-zone ")"))
+
+
+
+File: elisp-ja, Node: Daylight Savings, Next: Diary Customizing, Prev: Time Display Format, Up: Calendar
+
+夏時間
+======
+
+Emacsは, 標準時間と夏時間の違いを理解しています.  つまり, 日出入時刻, 
+夏至冬至, 春分秋分, 朔弦望ではその違いを考慮します.  夏時間の規則は, 
+地域ごと, 年ごとに変わりえます.  正しく扱うためには, どの規則が適用さ
+れるかをEmacsが知っている必要があります.
+
+読者の居住地域に適用される規則を記録しているオペレーティングシステムも
+あります.  これらのシステム上では, Emacsは自動的にシステムから必要な情
+報を得られます.  この情報の一部やすべてが欠落していると, GNU世界の中心
+であるマサチューセッツ州ケンブリッジで現在使用している規則で補います.
+
+
+デフォルトで選んだ規則が読者の地域に適切でないときには, 変数
+`calendar-daylight-savings-starts'と`calendar-daylight-savings-ends'に
+設定してEmacsに伝えます.  これらの値は, 変数`year'を使ったLisp式である
+必要があります.  これらの式を評価すると, 夏時間を開始／終了するグレゴ
+リオ暦の日付を表す`(MONTH DAY YEAR)'の形のリストになる必要があります. 
+夏時間をとらない場合には, 値は`nil'であるべきです.
+
+Emacsは, これらの式を用いて夏時間の開始と終了を判定し, 祝祭日や太陽／
+月に関する時刻を補正します.
+
+マサチューセッツ州ケンブリッジに対する値は, つぎのとおりです.
+
+     (calendar-nth-named-day 1 0 4 year)
+     (calendar-nth-named-day -1 0 10 year)
+
+つまり, 指定された`year'年の4月の最初の日曜日とその年の10月の最後の日
+曜日です.  10月1日に夏時間を始めると変更したとすると, 変数
+`calendar-daylight-savings-starts'につぎのように設定します.
+
+     (list 10 1 year)
+
+より複雑な例として, ヘブライ暦のニサンの初日に夏時間が始まるとしましょ
+う.  `calendar-daylight-savings-starts'には, つぎの値を設定します.
+
+     (calendar-gregorian-from-absolute
+       (calendar-absolute-from-hebrew
+         (list 1 1 (+ year 3760))))
+
+これは, ニサンはヘブライ暦の最初の月であり, ヘブライ暦年とグレゴリオ暦
+年はニサンで3760年違うからです.
+
+読者の地域で夏時間をとっていなかったり, つねに標準時間を望む場合には,
+`calendar-daylight-savings-starts'と`calendar-daylight-savings-ends'に
+`nil'を設定します.
+
+変数`calendar-daylight-time-offset'は, 夏時間と標準時間の分で計った差
+を指定します.  ケンブリッジに対する値は60です.
+
+変数`calendar-daylight-savings-starts-time'と
+`calendar-daylight-savings-ends-time'は, 夏時間と標準時間との移行が行
+われる地方時の真夜中の0時からの経過分を指定します.  ケンブリッジでは, 
+どちらの変数の値も120です.
+
+
+
+File: elisp-ja, Node: Diary Customizing, Next: Hebrew/Islamic Entries, Prev: Daylight Savings, Up: Calendar
+
+日誌のカスタマイズ
+==================
+
+通常, 日誌用バッファのウィンドウのモード行には, 日誌記録の日付に一致す
+る祝祭日があれば表示されます.  祝祭日を検査する処理には数秒を要するの
+で, 祝祭日情報を含めると日誌用バッファの表示に遅れが生じます.  祝祭日
+情報をなくして日誌用バッファの表示を速くしたい場合には, 変数
+`holidays-in-diary-buffer'に`nil'を設定します.
+
+変数`number-of-diary-entries'は, 一度に表示する日誌記録の日数を制御し
+ます.  これは, `view-diary-entries-initially'が`t'であるときの最初の表
+示に影響します.  たとえば, デフォルト値は1で, 現在の日付の日誌記録のみ
+を表示します.  値が2であると, 現在とつぎの日付の日誌記録を表示します. 
+この値は7要素のベクトルでもかまいません.  たとえば, 値が`[0 2 2 2 2 4
+1]'であると, 日曜日には日誌記録をなにも表示せず, 月曜日から木曜日には
+現在とつぎの日付の日誌記録を表示し, 金曜日には金曜日から月曜日の日誌記
+録を表示し, 土曜日にはその日だけの日誌記録を表示します.
+
+変数`print-diary-entries-hook'は, 日誌用バッファで現在見えている日誌記
+録のみを収めた一時的なバッファの準備ができると実行されるノーマルフック
+です.  （他の関係ない日誌記録は一時的なバッファには入っていない.  日誌
+用バッファではそれらは隠されている. ）このフックのデフォルト値は, コマ
+ンド`lpr-buffer'で印刷します.  別のコマンドで印刷したい場合には, 単に
+このフックの値を変更します.  別の用途は, たとえば, 行を日付と時刻で並
+び替えることです.
+
+`diary-date-forms'に設定すれば, 目的に合うように個人の日誌ファイル内の
+日付の書式をアメリカスタイルやヨーロッパスタイルにカスタマイズできます. 
+この変数は, 日付を認識するパターンのリストです.  各パターンは, 正規表
+現（*Note Regular Expressions::）や`month', `day', `year',
+`monthname', `dayname'のシンボルを要素とするリストです.  これらの要素
+すべては, 日誌ファイル内の特定種類のテキストに一致するパターンとして働
+きます.  全体として日付パターンとして一致するには, すべての要素が順に
+一致する必要があります.
+
+日付パターンの正規表現は, `*'を単語構成文字に変更した標準の構文テーブ
+ルを用いて通常どおりに一致をとります.
+
+`month', `day', `year', `monthname', `dayname'のシンボルは, 対象にして
+いる月, 日, 年, 月の名前, 曜日です.  数に一致するシンボルは, 数の先頭
+にある0を許します.  名前に一致するシンボルは, 3文字の省略形や大文字で
+始まることを許します.  日誌記録では`*'は『任意の日』『任意に月』などを
+表し, 対象とする日付に関係なく一致するべきなので, すべてのシンボルは
+`*'に一致できます.
+
+アメリカスタイルの`diary-date-forms'のデフォルト値はつぎのとおりです.
+
+     ((month "/" day "[^/0-9]")
+      (month "/" day "/" year "[^0-9]")
+      (monthname " *" day "[^,0-9]")
+      (monthname " *" day ", *" year "[^0-9]")
+      (dayname "\\W"))
+
+リスト内の日付パターンは, *互いに排他的*であり, 日誌記録の日付と1つの
+白文字以外には他の部分に一致してはいけません.  互いに排他的であるため
+には, パターンは日付を終える白文字を越えて日誌記録本文に一致する必要が
+あります.  それには, 日付パターンの最初の要素は`backup'である必要があ
+ります.  これにより, 日付を認識する処理では, 一致し終えてから日誌記録
+の現在の単語の先頭に戻ります.  たとえ`backup'を使ったとしても, 日付パ
+ターンは日誌本体の最初の単語を越えて一致してはいけません.  ヨーロッパ
+スタイルの`diary-date-forms'のデフォルト値は, つぎのとおりです.
+
+     ((day "/" month "[^/0-9]")
+      (day "/" month "/" year "[^0-9]")
+      (backup day " *" monthname "\\W+\\<[^*0-9]")
+      (day " *" monthname " *" year "[^0-9]")
+      (dayname "\\W"))
+
+ここでは, 3番目のパターンで`backup'を使っています.  4番目のパターンと
+区別するために, 日付のつぎの単語の一部と一致する必要があるからです.
+
+
+
+File: elisp-ja, Node: Hebrew/Islamic Entries, Next: Fancy Diary Display, Prev: Diary Customizing, Up: Calendar
+
+ヘブライ暦日付やイスラム暦日付の日誌記録
+========================================
+
+日誌ファイルには, 世界標準のグレゴリオ暦日付に加えて, ヘブライ暦日付や
+イスラム暦日付を入れることもできます.  しかし, そのような記録の認識に
+は時間がかかり, ほとんどの人はそれらを使わないので, それらは明示的にオ
+ンにする必要があります.  日誌でヘブライ暦日付の日誌記録を認識できるよ
+うに望むなら, たとえば, つぎのようにする必要があります.
+
+     (add-hook 'nongregorian-diary-listing-hook 'list-hebrew-diary-entries)
+     (add-hook 'nongregorian-diary-marking-hook 'mark-hebrew-diary-entries)
+
+イスラム暦日付の日誌記録を望むなら, つぎのようにします.
+
+     (add-hook 'nongregorian-diary-listing-hook 'list-islamic-diary-entries)
+     (add-hook 'nongregorian-diary-marking-hook 'mark-islamic-diary-entries)
+
+ヘブライ暦日付やイスラム暦日付の日誌記録は, グレゴリオ暦日付と同じ形式
+ですが, ヘブライ暦日付のまえには`H', イスラム暦日付のまえには`I'がある
+点が異なります.  さらに, ヘブライ暦やイスラム暦の月は, 最初の3文字で一
+意に決まらないため, 月の省略形は使えません.  たとえば, ヘブライ暦日付
+Heshvan 25の日誌記録はつぎのようになります.
+
+     HHeshvan 25 Happy Hebrew birthday!
+
+これはヘブライ暦日付Heshvan 25に対する任意の日誌に現れます.  イスラム
+暦日付Dhu al-Qada 25に一致する日誌記録はつぎのようになります.
+
+     IDhu al-Qada 25 Happy Islamic birthday!
+
+グレゴリオ暦日付の日誌記録では, ヘブライ暦日付とイスラム暦日付の記録は, 
+それらの前にアンパサンド（`&'）があると印付けされません.
+
+ヘブライ暦やイスラム暦において指定した日付や似た日付に一致する日誌記録
+を作成するためのカレンダーのコマンド一覧をつぎに示します.
+
+`i h d'
+     選択した日付に対応するヘブライ暦日付に日誌記録を追加する
+     （`insert-hebrew-diary-entry'）.
+`i h m'
+     選択した日付に対応するヘブライ暦月の日に日誌記録を追加する
+     （`insert-monthly-hebrew-diary-entry'）.  この日誌記録は, 選択し
+     た日付のヘブライ暦の月内の日と同じ任意の日付に一致する.
+`i h y'
+     選択した日付のヘブライ暦年の日に日誌記録を追加する
+     （`insert-yearly-hebrew-diary-entry'）.  この日誌記録は, 選択した
+     日付のヘブライ暦の月とその月内の日と同じ任意の日付に一致する.
+`i i d'
+     選択した日付に対応するイスラム暦日付に日誌記録を追加する
+     （`insert-islamic-diary-entry'）.
+`i i m'
+     選択した日付に対応するイスラム暦の月内の日に日誌記録を追加する
+     （`insert-monthly-islamic-diary-entry'）.
+`i i y'
+     選択した日付のイスラム暦年の日に日誌記録を追加する
+     （`insert-yearly-islamic-diary-entry'）.
+
+これらのコマンドは, 日誌記録の対応する普通のコマンドと同様に働きます. 
+カレンダーウィンドウにおいてポイントがある日付に作用し, 日誌記録の日付
+に関する部分のみを挿入します.  日誌記録の本文は自分で入力する必要があ
+ります.
+
+
+
+File: elisp-ja, Node: Fancy Diary Display, Next: Sexp Diary Entries, Prev: Hebrew/Islamic Entries, Up: Calendar
+
+装飾日誌表示
+============
+
+日誌表示は, 日誌用バッファを準備してからフック`diary-display-hook'を実
+行することで動作します.  このフックのデフォルト値
+（`simple-diary-display'）は, 関係ない日誌記録を隠してからバッファを表
+示します.  しかし, つぎのようにフックを指定すると
+
+     (add-hook 'diary-display-hook 'fancy-diary-display)
+
+装飾日誌表示を行えます.  日誌記録と祝祭日を表示専用の特別なバッファに
+コピーして表示します.  別のバッファにコピーするので, 表示テキストが綺
+麗になるように変更できます.  たとえば, 日付順に記録をソートするなどで
+す.
+
+単純な日誌表示では, `print-diary-entries'でバッファ内容を印刷できます.
+1週間分の毎日の日誌を印刷するには, その週の日曜日にポイントを置いて`7
+d'と打ってから`M-x print-diary-entries'を行います.  祝祭日が入っている
+と表示が遅くなりますが, 変数`holidays-in-diary-buffer'に`nil'を設定す
+ると速くできます.
+
+通常, 装飾日誌用バッファでは, たとえ祝祭日であっても日誌記録がない日は
+表示しません.  そのような日を装飾日誌用バッファに表示するには, 変数
+`diary-list-include-blanks'に`t'を設定します.
+
+装飾日誌表示を使うときには, ノーマルフック`list-diary-entries-hook'を
+使って各日誌記録を時刻でソートできます.  つぎのようにします.
+
+     (add-hook 'list-diary-entries-hook 'sort-diary-entries t)
+
+これは, 各日ごとに認識できる時刻で始まる日誌記録をソートします.  各日
+の先頭には時刻のついていない日誌項目がきます.
+
+装飾日誌表示には, 取り込んだ日誌ファイルを処理する能力もあります.  こ
+れにより, グループのメンバは, グループに共通な行事を記述した日誌ファイ
+ルを共有できます.  つぎのような行を日誌ファイルに書きます.
+
+     #include "FILENAME"
+
+そうすると, ファイルFILENAMEから日誌記録を装飾日誌用バッファに取り込み
+ます.  取り込み機構は再帰的ですから, 取り込んだファイル内で別のファイ
+ルを取り込むことができます.  もちろん, 取り込みが循環しないように注意
+してください.  取り込み機能をオンにするにはつぎのようにします.
+
+     (add-hook 'list-diary-entries-hook 'include-other-diary-files)
+     (add-hook 'mark-diary-entries-hook 'mark-included-diary-files)
+
+通常の日誌表示は個人の日誌ファイルの記録を直接表示するため, 取り込み機
+構は装飾日誌表示でのみ動作します.
+
+
+
+File: elisp-ja, Node: Sexp Diary Entries, Next: Appt Customizing, Prev: Fancy Diary Display, Up: Calendar
+
+S式項目と装飾日誌表示
+=====================
+
+S式を使った日誌記録は, 複雑な条件で適用される日誌記録を作る以上のこと
+ができます.  装飾日誌表示を使っている場合には, S式日誌項目は, 日付に依
+存した記録テキストを生成できます.  たとえば, 記念日の記録では, テキス
+トに何回目の記念日であるかを入れられます.  したがって, つぎの日誌記録
+の`%d'は年齢で置き換えられます.
+
+     %%(diary-anniversary 10 31 1948) Arthur's birthday (%d years old)
+
+つまり, 装飾日誌用バッファでは, 1990年10月31日の項目はつぎのようになり
+ます.
+
+     Arthur's birthday (42 years old)
+
+日誌ファイルにつぎの項目が入っていると,
+
+     %%(diary-anniversary 10 31 1948) Arthur's %d%s birthday
+
+装飾日誌用バッファでは, 1990年10月31日の項目はつぎのようになります.
+
+     Arthur's 42nd birthday
+
+同様に, 周期的な日誌項目では繰り返し回数を計算できます.
+
+     %%(diary-cyclic 50 1 1 1990) Renew medication (%d%s time)
+
+は, 1990年9月8日の装飾日誌表示ではつぎのようになります.
+
+     Renew medication (5th time)
+
+@noindent
+
+当日の日誌項目としてだけでなく, それよりまえの日の日誌項目にも含めるた
+めのS式日誌項目があります.  たとえば, 記念日の1週間前に督促がほしいと
+きには, つぎのようにします.
+
+     %%(diary-remind '(diary-anniversary 12 22 1968) 7) Ed's anniversary
+
+すると, 装飾日誌には, 12月15日と12月22日にRuth & Ed's anniversary と表
+示されます.
+
+関数`diary-date'は, 整数や整数のリストや`t'で指定した月, 日, 年の組み
+合わせで表される日付に適用されます.  たとえば,
+
+     %%(diary-date '(10 11 12) 22 t) Rake leaves
+
+により, 装飾日誌には, 各年の10月22日, 11月22日, 12月22日には
+
+     Rake leaves
+
+と表示されます.
+
+関数`diary-float'により, 11月の第3金曜日とか4月の最後の火曜日といった
+日付に適用する日誌記録を記述できます.  パラメータは, 月MONTH, 曜日
+DAYNAME, 添字Nです.  日曜日をDAYNAME=0, 月曜日をDAYNAME=1, …として,
+MONTH月のN番目の曜日DAYNAMEに項目が現れます.  Nが負であると, MONTH月の
+月末から数えます.  MONTHは, 月のリストでも, 1つの月でも, 全部の月を指
+定する`t'でもかまいません.  省略可能なパラメータDAYを指定して, MONTH月
+のN番目の曜日DAYNAMEの前後のDAY日を指定できます.  Nが正だとDAYのデフォ
+ルトは1であり, Nが負だとDAYのデフォルトはMONTH月の月末です.  たとえば,
+
+     %%(diary-float t 1 -1) Pay rent
+
+は, 装飾日誌に各月の最後の月曜日に
+
+     Pay rent
+
+を表示します.
+
+S式日誌項目の一般性により, アルゴリズムで日誌項目を指定できます.  S式
+日誌項目には, 項目を当該日に適用するどうかを計算する式を含められます. 
+その値が`nil'以外であると, その項目を当該日に適用します.  その式では, 
+対象とする日付を知るために変数`date'を使えます.  この変数の値は, グレ
+ゴリオ暦で表したリスト`(MONTH DAY YEAR)'です.
+
+毎月のウィークデイである21日か, 21日が週末の場合にはそのまえの金曜日に
+給料を支払われるとしましょう.  そのような日付に一致するS式日誌項目はつ
+ぎのように書けます.
+
+     &%%(let ((dayname (calendar-day-of-week date))
+              (day (car (cdr date))))
+           (or (and (= day 21) (memq dayname '(1 2 3 4 5)))
+               (and (memq day '(19 20)) (= dayname 5)))
+              ) Pay check deposited
+
+以下のS式日誌項目は, 日付に依存して変わるテキストを日誌項目に入れる機
+能を（装飾日誌表示で）利用できます.
+
+`%%(diary-sunrise-sunset)'
+     今日の地方時での日出入時刻に対する日誌項目を作る.
+`%%(diary-phases-of-moon)'
+     月に朔弦望に対する日誌項目を作る.
+`%%(diary-day-of-year)'
+     年内の通算日数と残り日数で今日の日誌項目を作る.
+`%%(diary-iso-date)'
+     今日に対応するISO商用暦の日誌項目を作る.
+`%%(diary-julian-date)'
+     今日に対応するユリウス暦の日誌項目を作る.
+`%%(diary-astro-day-number)'
+     今日に対応する天文通算日（ユリウス日）の日誌項目を作る.
+`%%(diary-hebrew-date)'
+     今日に対応するヘブライ暦の日誌項目を作る.
+`%%(diary-islamic-date)'
+     今日に対応するイスラム暦の日誌項目を作る.
+`%%(diary-french-date)'
+     今日に対応するフランス革命暦の日誌項目を作る.
+`%%(diary-mayan-date)'
+     今日に対応するマヤ暦の日誌項目を作る.
+
+したがって,
+
+     &%%(diary-hebrew-date)
+
+を含んだ日誌項目は, 装飾日誌表示を使っていると, 毎日の日誌表示に対応す
+るヘブライ暦の日付を含めることになります.  （単純な日誌表示では, 行
+`&%%(diary-hebrew-date)'はすべての日付の日誌に現れるが, 特別なことはな
+にもしない. ）
+
+つぎの関数は, ある標準的な方法でヘブライ暦に基づくS式日誌項目を構成す
+るために使えます.
+
+`%%(diary-rosh-hodesh)'
+     各ヘブライ月の礼拝の始まりと終りを教える日誌項目を作る.
+`%%(diary-parasha)'
+     毎週のシナゴーグ朗読会を教える土曜日の日誌項目を作る.
+`%%(diary-sabbath-candles)'
+     安息日のたそがれの*地方時*を教える金曜日の日誌項目を作る.
+`%%(diary-omer)'
+     適切ならばオーメル (1) (*Note Sexp Diary Entries-Footnotes::) の
+     回数を与える日誌項目を作る.
+`%%(diary-yahrzeit MONTH DAY YEAR) NAME'
+     命日に対応した日誌項目を作る.  命日の日付は*グレゴリオ暦*で指定す
+     る.  正しいヘブライ暦の追悼日とその前日に日誌項目が現れる.  （ヨー
+     ロッパスタイルでは, パラメータの順序をDAY, MONTH, YEARと変え
+     る. ）
+
+
+File: elisp-ja  Node: Sexp Diary Entries-Footnotes, Up: Sexp Diary Entries
+
+(1) omer：過ぎ越しの祝い（Passover）の二日目から七週の祭
+（Shabuoth）の前日までの49日間
+
+
+
+File: elisp-ja, Node: Appt Customizing, Next: Tips, Prev: Sexp Diary Entries, Up: Calendar
+
+約束の警告表示のカスタマイズ
+============================
+
+Emacsにどのように約束の警告表示を行わせ, どの程度前から行わせるかは, 
+つぎの変数に設定することで正確に指定できます.
+
+`appt-message-warning-time'
+     約束の警告表示を開始する時間を分で表したもの.  デフォルトは10分で
+     ある.
+`appt-audible'
+     これが`nil'以外であると, Emacsは約束の警告表示として端末のベルを
+     鳴らす.  デフォルトは`t'.
+`appt-visible'
+     これが`nil'以外であると, Emacsは約束のメッセージをエコー領域に表
+     示する.  デフォルトは`t'.
+`appt-display-mode-line'
+     これが`nil'以外であると, Emacsは約束までの残り分数をモード行に表
+     示する.  デフォルトは`t'.
+`appt-msg-window'
+     これが`nil'以外であると, Emacsは約束のメッセージを別のウィンドウ
+     に表示する.  デフォルトは`t'.
+`appt-disp-window-function'
+     この変数は, 約束のメッセージを表示するウィンドウを作るための関数
+     を保持する.
+`appt-delete-window-function'
+     この変数は, 時間が過ぎたら約束のメッセージを表示したウィンドウを
+     削除するための関数を保持する.
+`appt-display-duration'
+     約束のメッセージを表示する秒数.  デフォルトは5秒である.
+
+
+
+
+
+
+File: elisp-ja, Node: Tips, Next: GNU Emacs Internals, Prev: System Interface, Up: Top
+
+ヒントと慣習
+************
+
+本章では, Emacs Lispの機能についてさらに述べることはしません.  かわり
+に, 前章までに述べてきた機能を効率よく使うための助言やEmacs Lispプログ
+ラマが従うべき慣習について述べます.
+
+* Menu:
+
+* Coding Conventions::        Conventions for clean and robust programs.
+* Compilation Tips::          Making compiled code run fast.
+* Documentation Tips::        Writing readable documentation strings.
+* Comment Tips::	      Conventions for writing comments.
+* Library Headers::           Standard headers for library packages.
+
+
+
+File: elisp-ja, Node: Coding Conventions, Next: Compilation Tips, Prev: Tips, Up: Tips
+
+Emacs Lispのコーディングの慣習
+==============================
+
+ここでは, 読者が広く使われることを意図したEmacs Lispコードを書く場合に
+従うべき慣習について述べます.
+
+   * すべてのグローバル変数は同じ名前空間を共有し, すべての関数も別の
+     名前空間を共有するため, 読者のプログラムを別のLispプログラムと区
+     別するための短い単語を選ぶべきである.  そして, すべてのグローバル
+     変数, 定数, 関数の名前を選んでおいた接頭辞で始めるように注意する.
+
+     Emacs Lispでは基本関数ではないがLispの伝統的な基本関数の名前にさ
+     えもこの勧告は適用される.  たとえ`copy-list'にさえもである.  信じ
+     るかどうかは別にして, `copy-list'のもっともらしい定義方法は複数あ
+     る.  安全であるためには, 読者の接頭辞を付けて`foo-copy-list'や
+     `mylib-copy-list'のような名前にする.
+
+     読者が, `twiddle-files'のような特定の名前でEmacsに追加すべき関数
+     を書いた場合には, 読者のプログラムではその名前で呼ばないようにす
+     る.  読者のプログラムでは`mylib-twiddle-files'としておき, Emacsに
+     名前を追加するように提案するメイルを`bug-gnu-emacs@gnu.org'へ送る. 
+     われわれがそのようにすることを決定したときには, 名前をとても簡単
+     に変更できる.
+
+     1つの接頭辞では不十分な場合には, 意味がある限りは, 2つか3つの共通
+     する別の接頭辞を読者のパッケージで使ってもよい.
+
+     接頭辞とシンボル名の残りの部分とはハイフン`-'で分ける.  これは
+     Emacs自身やほとんどのEmacs Lispプログラムと一貫性がある.
+
+   * プログラムに少なくとも複数の入り口がある場合には, 各ライブラリプ
+     ログラムに`provide'の呼び出しがあるとしばしば有用である.
+
+   * 別のライブラリプログラムをあらかじめロードしておく必要があるファ
+     イルでは, ファイルの先頭のコマンドにそのように記述しておくこと. 
+     さらに, 必要なものが確実にロードされておくように`require'を使う.
+
+   * 別のファイルBARで定義されるマクロをファイルFOOで使っている場合に
+     は, FOOでそのマクロを始めて使うまえにFOOにつぎの式があること.
+
+          (eval-when-compile (require 'BAR))
+
+     （さらに, `require'が働くように, ライブラリBARには`(provide
+     'BAR)'があること. ）この式により, FOOをバイトコンパイルするときに
+     BARをロードすることになる.  さもないと, 必要なマクロをロードせず
+     にFOOをコンパイルする危険を侵し, 正しく動作しないコンパイル済みコー
+     ドを生成することになる.  *Note Compiling Macros::.
+
+     `eval-when-compile'を使うことで, FOOのコンパイル済みの版を*使う*
+     ときにはBARをロードしない.
+
+   * メジャーモードを定義するときには, メジャーモードの慣習に従うこと.
+     *Note Major Mode Conventions::.
+
+   * マイナモードを定義するときには, マイナモードの慣習に従うこと.
+     *Note Minor Mode Conventions::.
+
+   * 関数の目的が特定の条件を満たすかどうかを報告するのであれば, その
+     関数には`p'で終る名前を付ける.  名前が1単語である場合には`p'だけ
+     を付加する.  複数の単語であれば`-p'を付加する.  たとえば,
+     `framep'や`frame-live-p'である.
+
+   * 真偽の条件を記録するユーザーオプション変数には, `-flag'で終る名前
+     を付ける.
+
+   * 読者のメジャーモードでは, `C-c LETTER'をキーとして定義しないこと. 
+     これらのキー列はユーザー向けに予約済みである.  それら*だけ*がユー
+     ザー向けに予約されたキー列であり, それらを禁止しないこと.
+
+     かわりに, `C-c'のあとにコントロール文字か数字文字か特定の句読点文
+     字が続くキー列を定義する.  これらのキー列は, メジャーモード用に予
+     約してある.
+
+     Emacsのすべてのモードをこの慣習に従うように変換するのはたいへんな
+     作業量であった.  この慣習を捨てさるとその作業をむだにしてしまい, 
+     ユーザーにも不便である.
+
+   * `C-c'のあとに`{', `}', `<', `>', `:', `;'のいずれかが続くキー列も
+     メジャーモード用に予約してある.
+
+   * `C-c'のあとにこれら以外の句読点文字が続くキー列は, マイナモード用
+     に割り当ててある.  これらをメジャーモードで使うことは絶対禁止では
+     ないが, これらを使うと, メジャーモードのバインディングがマイナモー
+     ドでときどき隠されてしまう.
+
+   * 修飾キーを使わないファンクションキーF5からF9は, ユーザーが定義す
+     るように予約してある.
+
+   * （`C-c'を含む）任意のプレフィックス文字に続く`C-h'をバインドしな
+     いこと.  `C-h'をバインドしなければ, これは自動的にプレフィックス
+     文字のサブコマンド一覧を表示するヘルプ文字になる.
+
+   * ESCに続くESC以外には, ESCで終るキー列をバインドしないこと.  （つ
+     まり, `ESC ESC'で終るキー列をバインドするのはよい. ）
+
+     この規則の理由は, 任意の文脈においてESCに対するプレフィックスでな
+     いバインディングがあることで, エスケープシーケンスをその文脈にお
+     けるファンクションキーと認識することを防げる.
+
+   * ユーザーが出入りできる一時的なモードや状態のように働くものでは, 
+     脱出手段として`ESC ESC'や`ESC ESC ESC'を定義する.
+
+     Emacsの普通のコマンドを受け付ける状態, , あるいは, より一般的には
+     ESCに続けてファンクションキーや矢印キーが意味を持つ可能性がある任
+     意の状態では, ESCに続くエスケープシーケンスの認識を妨げる`ESC
+     ESC'を定義するべきではない.  そのような状態では, 脱出手段として
+     `ESC ESC ESC'を定義する.  さもなければ脱出手段として`ESC ESC'を定
+     義する.
+
+   * アプリケーションでは, シフトキーを押し下げたボタン1関連のマウスイ
+     ベントをバインドすべきではない.  これらのイベントには,
+     `S-mouse-1', `M-S-mouse-1', `C-S-mouse-1'などが含まれる.  これら
+     はユーザー向けに予約してある.
+
+   * 読み出し専用のテキスト向けの特別なメジャーモードでは, 普通,
+     `mouse-2'とRETをテキスト内のある種の参照を辿るように再定義するべ
+     きである.  dired, info, コンパイル（compilation）, 出現（occur）
+     などのモードはこのように再定義している.
+
+   * Emacsの普通のふるまいを変更するようなパッケージでは, その機能をオ
+     ン／オフするコマンドを含めるとよい.  その機能をオン／オフする
+     `WHATEVER-mode'という名前のコマンドを用意し, 自動ロード（*Note
+     Autoload::）するようにする.  パッケージをロードしただけでは見ため
+     には効果がない, つまり, その機能をオンにしないようにパッケージを
+     設計すること.  ユーザーはコマンドを起動してその機能をオンにする.
+
+   * Emacsの基本関数の別名を定義することは悪い考えである.  そのかわり
+     に標準の名前を使う.
+
+   * Emacsの基本関数を再定義（あるいはアドバイス）することは謹むべきで
+     ある.  特定のプログラムに対しては正しく動作するであろうが, 他のプ
+     ログラムがその結果どうなるかはわからない.
+
+   * Emacsの標準の関数やライブラリプログラムを置き換えるようなファイル
+     では, そのファイルの先頭の目立つコメントにどの関数を置き換え元の
+     ふるまいとの相違点を記述すること.
+
+   * 読者のEmacs Lispのソースファイルの名前は13文字以下にすること.  こ
+     うすると, ファイルをコンパイルしても, コンパイル済みのファイル名
+     は14文字以下になり, どんな種類のUNIXシステムにも収まるだけの短さ
+     である.
+
+   * プログラムでは`next-line'や`previous-line'を使わないこと.  ほとん
+     どの場合, `forward-line'のほうがより便利であり, 予測可能で堅牢で
+     もある.  *Note Text Lines::.
+
+   * マークを設定することが読者のプログラムの意図した機能の一部でなけ
+     れば, マークを設定する関数は呼び出さないこと.  マークはユーザーレ
+     ベルの機能であり, ユーザーの便宜のために値を指定する以外には, マー
+     クを変更するのは正しくない.  *Note The Mark::.
+
+     特に, 以下のいずれの関数も使わないこと.
+
+        * `beginning-of-buffer', `end-of-buffer'
+        * `replace-string', `replace-regexp'
+
+     対話的なユーザー向けの他の機能を必要とせずに単にポイントを移動し
+     たり特定の文字列を置換するには, これらの関数は1行か2行の単純な
+     Lispコードで置き換えられる.
+
+   * ベクトルを使う特別な理由がない限りは, ベクトルではなくリストを使
+     う.  Lispには, ベクトルに対するよりもリストを操作する機能のほうが
+     多くあり, リストを扱うほうが普通はより簡便である.
+
+     （リストだけが許す）要素を挿入したり削除する必要がないのであれば, 
+     ある程度のサイズがあり（先頭から末尾に向けての探索ではなく）ラン
+     ダムに参照する表にはベクトルのほうが適している.
+
+   * エコー領域にメッセージを表示する推奨方法は, `princ'ではなく関数
+     `message'を使うことである.  *Note The Echo Area::.
+
+   * エラー条件に出会ったときには, 関数`error'（あるいは`signal'）を呼
+     び出す.  関数`error'は戻ってこない.  *Note Signaling Errors::.
+
+     エラーを報告するために, `message', `throw', `sleep-for', `beep'は
+     使わないこと.
+
+   * エラーメッセージは大英文字で始め, ピリオドで終えないこと.
+
+   * 実行に時間を要する多くのコマンドでは, 開始時には`Operating...'の
+     メッセージを表示し, 終了時にはそれを`Operating...done'と変える. 
+     これらのメッセージの形を同じにしておくこと.  `...'の周りに空白は*
+     なく*, 末尾にピリオドも*ない*.
+
+   * 再帰編集の使用は避けるように努めること.  そのかわりにrmailのコマ
+     ンド`e'のようにする.  つまり, 古いローカルキーマップに戻るための
+     コマンドを収めた新しいローカルキーマップを使う.  あるいは, コマン
+     ド`edit-options'のようにする.  別のバッファに切り替え, 戻るのはユー
+     ザーに任せる.  *Note Recursive Editing::.
+
+   * 変数名を`*'で始めたり終える慣習があるシステムもある.  Emacs Lisp
+     ではこの慣習を使わないので, 読者のプログラムでも使わないこと. 
+     （Emacsでは, 特別な目的のバッファにのみそのような名前を使う. ）す
+     べてのライブラリで同じ慣習を使うと, ユーザーにはEmacsがより整合し
+     て見える.
+
+   * 自由変数には`defvar'の定義を追加して, コンパイル時の未定義な自由
+     変数に対する警告を避けるように努めること.
+
+     ある関数で変数を束縛しその変数を別の関数で使ったり設定すると, そ
+     の変数を定義しない限りコンパイラは後者の関数について警告を出す. 
+     しかし, しばしばこれらの変数は短い名前で, Lispパッケージでそのよ
+     うな変数名を定義すべきかどうか明らかでない.  したがって, そのよう
+     な変数の名前は, 読者のパッケージの他の関数や変数に使っている接頭
+     辞で始まる名前に改名すべきである.
+
+   * デフォルトの字下げパラメータを使って, 各関数を`C-M-q'
+     （`indent-sexp'）で字下げすること.
+
+   * 閉じ括弧だけの行にする癖をつけないこと.  Lispプログラマはこれに当
+     惑する.  たまには, 閉じ括弧が多数個連続するときにそれらを1つか2つ
+     の塊に分けることは意味がある.
+
+   * コピーを配布する場合には, ファイルに著作権表示を入れること.  つぎ
+     のような文面を使う.
+
+          ;; Copyright (C) YEAR NAME
+
+          ;; This program is free software; you can redistribute it and/or
+          ;; modify it under the terms of the GNU General Public License as
+          ;; published by the Free Software Foundation; either version 2 of
+          ;; the License, or (at your option) any later version.
+
+          ;; This program is distributed in the hope that it will be
+          ;; useful, but WITHOUT ANY WARRANTY; without even the implied
+          ;; warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+          ;; PURPOSE.  See the GNU General Public License for more details.
+
+          ;; You should have received a copy of the GNU General Public
+          ;; License along with this program; if not, write to the Free
+          ;; Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+          ;; MA 02111-1307 USA
+
+     読者がフリーソフトウェアファウンデーションに著作権を委譲する契約
+     を結んでいるときには, NAMEとして`Free Software Foundation, Inc.'
+     を使う.  さもなければ読者自身の名前を使う.
+
+
+
+File: elisp-ja, Node: Compilation Tips, Next: Documentation Tips, Prev: Coding Conventions, Up: Tips
+
+コンパイル済みコードを速くするヒント
+====================================
+
+バイトコンパイルしたLispプログラムの実行速度を改良する方法を示します.
+
+   * ライブラリ`profile'やライブラリ`elp'で, 読者のプログラムを計測す
+     る.  操作方法についてはファイル`profile.el'と`elp.el'を参照.
+
+   * 可能な場合には再帰ではなく繰り返しを使う.  コンパイル済みの関数が
+     別のコンパイル済み関数を呼び出す場合であってもEmacs Lispでは関数
+     呼び出しは遅い.
+
+   * `memq', `member', `assq', `assoc'のリスト探索基本関数を使うほうが
+     明示的な繰り返しよりも速い.  これらの探索基本関数の1つを使えるよ
+     うにデータ構造を変更する価値はある.
+
+   * ある種の組み込み関数は, バイトコンパイル済みのコードでは普通の関
+     数呼び出しを避けるように特別に扱われる.  これらの関数を使うのはよ
+     いことである.  コンパイラが関数を特別に扱うかどうかを調べるには, 
+     その属性`byte-compile'を調べる.  属性が`nil'以外であれば, その関
+     数は特別に扱われる.
+
+     たとえば, つぎの入力は, `aref'が特別にコンパイルされることを示す
+     （*Note Array Functions::）.
+
+          (get 'aref 'byte-compile)
+               => byte-compile-two-args
+
+   * 読者のプログラムの実行時間のかなりの部分を小さな関数の呼び出しが
+     占めるときには, その関数をインラインにする.  これにより関数呼び出
+     しのオーバヘッドを削除できる.  関数をインラインにするとプログラム
+     変更の柔軟性を減じるので, ユーザーが速度を気にするほど遅い部分の
+     十分な速度向上が得られない限り, このようにしないこと.  *Note
+     Inline Functions::.
+
+
+
+File: elisp-ja, Node: Documentation Tips, Next: Comment Tips, Prev: Compilation Tips, Up: Tips
+
+説明文字列に関するヒント
+========================
+
+説明文字列を書くうえでのヒントや慣習を述べます.  コマンド`M-x
+checkdoc-minor-mode'を実行して, これらの慣習の多くを確認できます.
+
+   * ユーザーが知っておくことを意図した各コマンド, 関数, 変数には, 説
+     明文字列を付けること.
+
+   * Lispプログラムの内部変数やサブルーティンにも説明文字列を付ける.
+     Emacsの初期の版では, 説明文字列のかわりにコメントを使うと容量を節
+     約できたが, 今はこれはあてはまらない.
+
+   * 説明文字列の最初の行は, 1つか2つの完全な文であり, それだけで概要
+     を表していること.  `M-x apropos'は説明文字列の最初の行だけを表示
+     するため, それだけで十分に表せないと表示結果が悪くなる.  特に, 最
+     初の行は大文字で始め, ピリオドで終えること.
+
+     説明文字列には, 関数や変数の使い方の詳細を述べる追加の行があって
+     よい.  それらの行も完全な文から成るべきであるが, 見ためをよくする
+     ために適当に詰めてよい.
+
+   * 一貫性があるように, 関数の説明文字列の最初の文の動詞は『to』を省
+     いた不定詞にする.  たとえば, 『Returns the cons of A and B.』では
+     なく『Return the cons of A and B.』とする.  最初の行の残りの文に
+     ついても同様にするとよい.  以降の文節では適切な主語があるほうが一
+     般にはよい.
+
+   * 説明文字列は受動態ではなく能動態で書き, 未来形ではなく現在形で書
+     く.  たとえば, 『A list containing A and B will be returned.』で
+     はなく『Return a list containing A and B.』と書く.
+
+   * 不必要に単語『cause』（および同義語）を使わないこと.  『Cause
+     Emacs to display text in boldface,』ではなく単に『Display text in
+     boldface.』と書く.
+
+   * 説明文字列は, 白文字で始めたり終えないこと.
+
+   * 80コラムのスクリーン上のEmacsのウィンドウに収まるように説明文字列
+     を整形する.  ほとんどの行を60文字を越えないようにするとよい.  必
+     要な情報を入れるためならば最初の行が長くなってもよい.
+
+     しかし, 説明文字列全体を単純に整形するよりは, 注意深く行分けする
+     と読みやすくなる.  説明文字列が長い場合には, 話題ごとに空行で区切
+     る.
+ 
+   * ソースコード上で説明文字列の最初の行に揃えるために説明文字列の残
+     りの行を字下げ*しないこと*.  ソースコード上では見ためがよくても, 
+     ユーザーが説明文字を見るときには奇妙に見える.  文字列を始めるダブ
+     ルクォートのまえにある字下げは文字列の一部ではないことに注意！
+
+   * ユーザーが禁止コマンドを実行しようとすると, Emacsは当該コマンドの
+     説明文字列の最初の文節, つまり, 最初の空行までを表示する.  必要な
+     らば, 最初の空行のまえに入れるべき情報を選んで, このような表示が
+     有用であるようにする.
+
+   * ユーザーが対話的に設定したがるような変数では, その変数の説明文字
+     列は`*'で始める.  変数の値が, 長いリストや関数であるとき, あるい
+     は, 初期化ファイルでのみ設定するような変数であるときには, その説
+     明文字列を`*'で始めないこと.  *Note Defining Variables::.
+
+   * yes/noのフラグを表す変数の説明文字列は『Non-nil means...』のよう
+     な単語で始めて, `nil'以外の値はすべて同値であることを明らかにし,
+     `nil'と`nil'以外の意味を明確に示すこと.
+
+   * 関数の説明文字列でその引数について述べるときには, その引数の値を
+     表す名前には大文字で書いた引数名を使う.  したがって, 関数`/'の説
+     明文字列では, その第2引数の名前は`divisor'なので, `DIVISOR'と表す.
+
+     また, リストやベクトルを（その一部が変化するかもしれない）構成部
+     分に分解したものを示すときなどのメタ変数には, すべて大文字を使う.
+
+   * 説明文字列でLispシンボルを参照するときには, それが表示されるとき
+     （つまり普通はすべて小文字）のようにシングルクォートで囲って書く. 
+     たとえば, `lambda'である.  これには2つ例外があり, tとnilはシング
+     ルクォートで囲まずに書く.  （本書では, すべてのシンボルをシングル
+     クォートで囲む別の慣習を用いている. ）
+
+     ヘルプモードでは, 説明文字列でシングルクォートで囲ったシンボルを
+     使うと, そのシンボルに関数定義や変数定義があるときには自動的にハ
+     イパーリンクを作成する.  この機能を利用するために特別なことをする
+     必要はない.  しかし, シンボルに関数定義と変数定義の両方があり, ど
+     ちらか一方のみを参照したい場合には, シンボルの名前のまえに
+     `variable', `option', `function', `command'のいずれかの単語を書く
+     だけでどちらであるかを指定できる.  （これらの単語を認識するときに
+     は大文字小文字は区別しない. ）たとえばつぎのように書くと,
+
+          This function sets the variable `buffer-file-name'.
+
+     ハイパーリンクは, 変数`buffer-file-name'の説明文字列を指し, その
+     関数の説明文字列は指さない.
+
+     シンボルに関数定義や変数定義があっても, 説明文字列でのシンボルの
+     使い方には無関係な場合には, シンボルの名前のまえに単語`symbol'を
+     書けば, ハイパーリンクを作らないようにできる.  たとえば, つぎのよ
+     うにすると,
+
+          If the argument KIND-OF-RESULT is the symbol `list',
+          this function returns a list of all the objects
+          that satisfy the criterion.
+
+     ここでは`list'の関数／変数定義は無関係なので, 関数`list'の説明文
+     字列を指すハイパーリンクは作られない.
+
+   * 説明文字列に直接キー列を書き込まないこと.  そのかわりに, それの標
+     準的なキー列を作成する`\\[...]'の書き方を使う.  たとえば, `C-f'と
+     書くかわりに, `\\[forward-char]'と書く.  Emacsが説明文字列を表示
+     するときに, `forward-char'に現在バインドされているキーにEmacsが置
+     き換える.  （普通は`C-f'であるが, ユーザーがキーバインディングを
+     変更していれば, 別の文字になる. ）*Note Keys in Documentation::.
+
+   * メジャーモードの説明文字列では, グローバルなキーマップではなくそ
+     のモードのローカルなキーマップでのキーバインディングを参照したい
+     だろう.  それには, 使用するキーマップを指定する構文`\\<...>'を説
+     明文字列の中に書く.  最初に`\\[...]'を使うまえにこうしておくこと.
+     `\\<...>'の内側のテキストは, メジャーモード向けのローカルキーマッ
+     プを保持する変数の名前であること.
+
+     説明文字列の表示を遅くしてしまうので, `\\[...]'を何回も使うのは実
+     用的ではない.  したがって, 読者のメジャーモードのもっとも重要なコ
+     マンドの記述にこれを使い, モードのキーマップの残りを表示するには
+     `\\{...}'を使う.
+
+
+
+File: elisp-ja, Node: Comment Tips, Next: Library Headers, Prev: Documentation Tips, Up: Tips
+
+コメントの書き方のヒント
+========================
+
+コメントを置く場所とそれらの字下げ方法については以下のような慣習を推奨
+します.
+
+`;'
+     1つのセミコロン`;'で始まるコメントは, ソースコードの右側で同じコ
+     ラム位置に揃えること.  そのようなコメントは, その行のコードの動作
+     を説明する.  lispモードやその関連するモードでは, コマンド`M-;'
+     （`indent-for-comment'）で自動的に右側の正しい位置に`;'を挿入した
+     り, そのようなコメントが既存ならば整列できる.
+
+     つぎとその下の例は, Emacsのソースから持ってきたものである.
+
+          (setq base-version-list                 ; there was a base
+                (assoc (substring fn 0 start-vn)  ; version to which
+                       file-version-assoc-list))  ; this looks like
+                                                  ; a subversion
+
+`;;'
+     2つのセミコロン`;;'で始まるコメントは, その部分のコードの字下げに
+     揃えること.  そのようなコメントは, その後続の行の目的やその箇所で
+     のプログラムの状態を記述する.
+
+          (prog1 (setq auto-fill-function
+                       ...
+                       ...
+            ;; update mode line
+            (force-mode-line-update)))
+
+     説明文字列を持たない各関数（所属するパッケージで内部向けにのみ使
+     用される関数）では, 関数が行うことと正しい呼び出し方を記述した2つ
+     のセミコロンで始まるコメントを関数のまえに書くこと.  各引数の意味
+     とその可能な値を関数がどのように解釈するかを正確に説明すること.
+
+`;;;'
+     3つのセミコロン`;;;'で始まるコメントは, 左端に揃えること.  そのよ
+     うなコメントは, 関数定義の外側で使い, プログラムの設計原理を説明
+     する一般的な表明である.  たとえばつぎのとおり.
+
+          ;;; This Lisp code is run in Emacs
+          ;;; when it is to operate as a server
+          ;;; for other processes.
+
+     3つのセミコロンで始まるコメントの別の使い方は, 関数内の行をコメン
+     トにする場合である.  そのような行が左端に留まるように3つのセミコ
+     ロンを使うのである.
+
+          (defun foo (a)
+          ;;; This is no longer necessary.
+          ;;;  (force-mode-line-update)
+            (message "Finished with %s" a))
+
+`;;;;'
+     4つのセミコロン`;;;;'で始まるコメントは, 左端に揃えて, プログラム
+     の主要な部分のヘッダに使う.  たとえばつぎのとおり.
+
+          ;;;; The kill ring
+
+`M-;'（`indent-for-comment'）やTAB（`lisp-indent-line'）などのEmacsの
+lispモードの字下げコマンドは, これらの慣習にしたがって自動的にコメント
+を字下げします.  *Note コメントの操作: (emacs-ja)Comments.
+
+
+
+File: elisp-ja, Node: Library Headers, Next: GNU Emacs Internals, Prev: Comment Tips, Up: Tips
+
+Emacsライブラリのヘッダの慣習
+=============================
+
+Emacsには, コメントをいくつかの部分に分けて作者などの情報を与えるため
+に, Lispライブラリの特別なコメントに対する慣習があります.  本節ではそ
+れらの慣習について述べます.  まず, 例を示します.
+
+     ;;; lisp-mnt.el -- minor mode for Emacs Lisp maintainers
+
+     ;; Copyright (C) 1992 Free Software Foundation, Inc.
+
+     ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
+     ;; Maintainer: Eric S. Raymond <esr@snark.thyrsus.com>
+     ;; Created: 14 Jul 1992
+     ;; Version: 1.2
+     ;; Keywords: docs
+
+     ;; This file is part of GNU Emacs.
+     ...
+     ;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+     ;; Boston, MA 02111-1307, USA.
+
+最初の行はつぎの形式であるべきです.
+
+     ;;; FILENAME -- DESCRIPTION
+
+この記述は1行で完全になるようにします.
+
+著作権表示のあとには, `;; HEADER-NAME:'で始まるいくつかの"ヘッダコメン
+ト"（header comment）行が続きます.  HEADER-NAMEに使う可能性のある慣習
+の一覧を以下に示します.
+
+`Author'
+     この行では, 少なくともライブラリの主作者の氏名とネットワークアド
+     レスを明記する.
+
+     複数の作者がいる場合には, 以下のように, `;;'とタブ文字で始めた継
+     続行にその人達を列挙する.
+
+          ;; Author: Ashwin Ram <Ram-Ashwin@cs.yale.edu>
+          ;;      Dave Sill <de5@ornl.gov>
+          ;;      Dave Brennan <brennan@hal.com>
+          ;;      Eric Raymond <esr@snark.thyrsus.com>
+
+`Maintainer'
+     この行には, 作者行（`Author'）のように1人の氏名とアドレス, アドレ
+     スのみ, 文字列`FSF'のいずれかを書く.  保守者行（`Maintainer'）が
+     ない場合には, 作者行の人達が保守していると仮定する.  上の例は, 保
+     守者行が冗長であり, 少々いんちきである.
+
+     作者行（`Author'）と保守者行（`Maintainer'）の考えは, 手作業で名
+     前を探さずに『保守者にメイルを送る』ようなLisp関数を作れるように
+     するためである.
+
+     ネットワークアドレスに加えて人の氏名も書く場合には, ネットワーク
+     アドレスを`<...>'で必ず囲むこと.
+
+`Created'
+     この行は省略できるが, ファイルの作成日時を書く.  歴史的な意味だけ
+     である.
+
+`Version'
+     各Lispプログラムの版番号を記録しておきたい場合に, この行に版番号
+     を書く.
+
+`Adapted-By'
+     このヘッダ行では, （たとえば, スタイルの慣習に適合するように変更
+     したなどの）インストールのためにライブラリを受理した人の名前を書
+     く.
+
+`Keywords'
+     この行には, ヘルプコマンド`finder-by-keyword'向けのキーワードを書
+     く.  意味のあるキーワードを理解するためにこのコマンドを試してほし
+     い.
+
+     この部分は重要である.  人々が特定の話題で探して読者のパッケージを
+     みつけるであろう.  キーワードは空白やカンマで区切る.
+
+ほとんどのLispライブラリには, `Author'と`Keywords'のヘッダコメント行が
+必要です.  残りのものは必要に応じて使います.  別の名前のヘッダ行があっ
+てもかまいません.  それらには標準的な意味はありませんが, 害になること
+もありません.
+
+ライブラリファイルの内容を分割するために形式を定めたコメントも使います. 
+それらを以下に示します.
+
+`;;; Commentary:'
+     ライブラリの動作を説明する入門的なコメントを始める.  著作権表示の
+     直後にきて, `Change Log', `History', `Code'のいずれかのコメント行
+     で終る.  このテキストはパッケージfinderが使うので, その文脈で意味
+     があるようにすること.
+
+`;;; Documentation'
+     `;;; Commentary:'のかわりに使っているファイルもあるが, `;;;
+     Commentary:'のほうが好ましい.
+
+`;;; Change Log:'
+     （変更履歴をライブラリに収める場合の）ライブラリファイルに収めた
+     変更記録情報を始める.  Emacsで配布されるほとんどのLispファイルで
+     は, 変更履歴はファイル`ChangeLog'に収めてあり, ソースファイルには
+     収めない.  それらのファイルには`;;; Change Log:'行はない.
+
+`;;; Code:'
+     プログラムの実際のコードを始める.
+
+`;;; FILENAME ends here'
+     これは"最終行"（footer line）であり, ファイルの末尾に現れる.  そ
+     の目的は, 最終行が欠如していることでファイルが切り詰められている
+     ことがわかるようにするのである.
+
+
+File: elisp-ja, Node: GNU Emacs Internals, Next: Standard Errors, Prev: Tips, Up: Top
+
+GNU Emacsの内部
+***************
+
+本章では, Lispライブラリをあらかじめロードした実用的なEmacsの実行形式
+のダンプ方法, メモリ領域の割り当て方, Cプログラマに興味があるようなGNU
+Emacsの内部について述べます.
+
+* Menu:
+
+* Building Emacs::      How to the dumped Emacs is made.
+* Pure Storage::        A kludge to make preloaded Lisp functions sharable.
+* Garbage Collection::  Reclaiming space for Lisp objects no longer used.
+* Memory Usage::        Info about total size of Lisp objects made so far.
+* Writing Emacs Primitives::   Writing C code for Emacs.
+* Object Internals::    Data formats of buffers, windows, processes.
+
+
+
+File: elisp-ja, Node: Building Emacs, Next: Pure Storage, Prev: GNU Emacs Internals, Up: GNU Emacs Internals
+
+Emacsの構築方法
+===============
+
+本節では, Emacsの実行形式を構築する手順を説明します.  メイクファイルが
+自動的にこれらすべてを行うので, Emacsを構築してインストールするために
+本節のことがらを読者が知っている必要はありません.  本節の内容は, Emacs
+の保守者向けです.
+
+ディレクトリ`src'のCソースファイル群をコンパイルすると, `temacs'と呼ば
+れる実行形式ファイルが作られます.  これは"裸のインピュアEmacs"（bare
+impure Emacs）とも呼びます.  これには, Emacs Lispインタープリタと入出
+力ルーティンが含まれますが, 編集コマンドは入っていません.
+
+コマンド`temacs -l loadup'で, 
+実用的なEmacsの実行形式を作るために`temacs'を使います. 
+これらの引数は, `temacs'に対して
+ファイル`loadup.el'で指定したLispファイル群を評価するように指示します. 
+これらのファイルはEmacsの通常の編集環境を作り上げ, 
+その結果, Emacsは裸ではありませんがまだインピュアです. 
+
+標準のLispファイル群をロードするにはかなり時間が必要です.  しかし, 読
+者がEmacsを実行するたびにこれを行う必要はありません.  `temacs'は, 必要
+なファイルをあらかじめロードした`emacs'という実行形式プログラムとして
+ダンプできます.  `emacs'はファイル群をロードする必要がないので素早く起
+動します.  これが通常インストールされるEmacsの実行形式です.
+
+`emacs'を作るにはコマンド`temacs -batch -l loadup dump'を使います.  こ
+こでの`-batch'の目的は, `temacs'が端末に関するデータを初期化しないよう
+にするためです.  これにより, ダンプしたEmacsでは端末情報の表が空である
+ことを保証できます.  引数`dump'は, `emacs'という名前の新たな実行形式を
+ダンプするように`loadup.el'に指示します.
+
+ダンプできないオペレーティングシステムもあります.  そのようなシステム
+では, Emacsを使うたびにコマンド`temacs -l loadup'でEmacsを起動する必要
+があります.  これにはかなり時間がかかりますが, 多くても1日に1回, ある
+いは, ログアウトしなのであれば週に1回Emacsを起動する必要があるだけでしょ
+うから, 余分な時間は重大問題にはならないでしょう.
+
+あらかじめロードしておく追加のファイルは, それらをロードする
+`site-load.el'という名前のライブラリを書くことで指定できます.  追加デー
+タのための領域を確保するために`src/puresize.h'の`PURESIZE'の値を増やす
+必要があるかもしれません.  （十分な大きさになるまで20000ずつ増やして試
+すこと. ）しかし, マシンが速くなればなるほど, あらかじめロードしておく
+ファイルを追加することの利点は減少します.  最近のマシンでは, このよう
+にする必要はないでしょう.
+
+`loadup.el'が`site-load.el'を読み終えると, `Snarf-documentation'
+（*Note Accessing Documentation::）を呼び出して, 基本関数やあらかじめ
+ロードした関数（および変数）の説明文字列をそれらの説明文字列を格納した
+ファイル`etc/DOC'から探します.
+
+ダンプする直前に実行すべきList式を指定するには, `site-init.el'という名
+前のライブラリにそれらのLisp式を入れておきます.  このファイルは, 説明
+文字列を探し終えてから実行されます.
+
+関数定義や変数定義をあらかじめロードしたいときには, それを行ってあとで
+Emacsを実行したときにそれらの説明文字列を参照できるようにする方法が3つ
+あります.
+
+   * ファイル`etc/DOC'を作成するときにそれらのファイルが走査されるよう
+     にしておき, `site-load.el'でそれらのファイルをロードする.
+
+   * `site-init.el'でファイルをロードし, Emacsをインストールするときに
+     それらのファイルをLispファイル向けのインストールディレクトリへコ
+     ピーする.
+
+   * それらの各ファイルでローカル変数として
+     `byte-compile-dynamic-docstrings'の値に`nil'以外を指定し,
+     `site-load.el'か`site-init.el'でそれらのファイルをロードする. 
+     （これには, それらの説明文字列がつねにEmacsの領域を占めてしまう欠
+     点がある. ）
+
+無変更の普通のEmacsにユーザーが期待する機能を変更するようなものを
+`site-load.el'や`site-init.el'に入れることは勧められません.  読者のサ
+イトでは普通の機能に優先させるべきであると思うときには, `default.el'で
+それを行います.  そうすれば, ユーザーは好みに応じて読者が行った変更を
+無効にできます.  *Note Start-up Summary::.
+
+ -- Function: dump-emacs TO-FILE FROM-FILE
+     この関数は, Emacsの現在の状態を実行形式ファイルTO-FILEへダンプす
+     る.  FROM-FILE（これは普通は実行形式ファイル`temacs'）からシンボ
+     ルを取り出す.
+
+     すでにダンプしたEmacsでこの関数を使うときには, `-batch'を指定して
+     Emacsを実行すること.
+
+
+
+File: elisp-ja, Node: Pure Storage, Next: Garbage Collection, Prev: Building Emacs, Up: GNU Emacs Internals
+
+ピュアメモリ
+============
+
+Emacs Lispでは, ユーザーが作成したLispオブジェクト向けに2種類のメモリ,
+"普通メモリ"（normal storage）と"ピュアメモリ"（pure storage）を使いま
+す.  普通メモリは, Emacsセッション中に新たに作成されるすべてのデータを
+置く場所です.  普通メモリに関する情報は以下の節を参照してください.  ピュ
+アメモリは, あらかじめロードした標準Lispファイル群の特定のデータ, つま
+り, Emacsの実行中にけっして変化しないデータを収めるために使います.
+
+ピュアメモリは, `temacs'があらかじめロードする標準Lispライブラリをロー
+ドしている最中にのみ割り当てられます.  ファイル`emacs'では読み出し専用
+（これができるオペレーティングシステムでは）と印が付けられ, 当該マシン
+で同時に実行されているすべてのEmacsのジョブでメモリ領域を共有できるよ
+うにします.  ピュアメモリは拡張できません.  Emacsをコンパイルしたとき
+に固定サイズが割り当てられ, あらかじめロードするライブラリに対して十分
+な大きさがないと`temacs'はクラッシュします.  その場合には, ファイル
+`src/puresize.h'のコンパイルパラメータ`PURESIZE'を増やす必要があります. 
+あらかじめロードするライブラリを追加したり標準機能に機能を追加しなけれ
+ば, そのようなことは普通は起こらないはずです.
+
+ -- Function: purecopy OBJECT
+     この関数は, ピュアメモリ内にOBJECTをコピーしそれを返す.  文字列の
+     コピーでは, ピュアメモリ内に同じ文字の新たな文字列を単純に作る. 
+     ベクトルやコンスセルの内容は再帰的にコピーする.  シンボルなどの他
+     のオブジェクトはコピーせずに無変更でそれらを返す.  マーカをコピー
+     しようとするとエラーを通知する.
+
+     この関数は, Emacsを構築してダンプするとき以外ではなにもしない. 
+     普通はファイル`emacs/lisp/loaddefs.el'でのみ呼び出されるが, あら
+     かじめロードするとこれを呼び出すようなパッケージも少数だがある.
+
+ -- Variable: pure-bytes-used
+     この変数の値は, 割り当て済みのピュアメモリのバイト数である.  典型
+     的には, ダンプしたEmacsではこの値は利用可能なピュアメモリの総量に
+     とても近い.  そうでない場合には, あらかじめロードしたライブラリが
+     少ないのであろう.
+
+ -- Variable: purify-flag
+     この変数は, `defun'が関数定義をピュアメモリにコピーすべきかどうか
+     を決定する.  `nil'以外であると, 関数定義をピュアメモリにコピーす
+     る.
+
+     Emacsを構築中の初期段階ですべての基本的な関数をロード中には（これ
+     らの関数を共有してガベッジコレクションの対象にしないように）, こ
+     のフラグは`t'である.  実行形式としてEmacsをダンプするときには, ダ
+     ンプ前後の実際の値には関係なくこの変数には`nil'を書く.
+
+     実行中のEmacsでこのフラグを変更するべきではない.
+
+
+
+File: elisp-ja, Node: Garbage Collection, Next: Memory Usage, Prev: Pure Storage, Up: GNU Emacs Internals
+
+ガベッジコレクション
+====================
+
+プログラムがリストを作成したり, （ライブラリをロードするなどして）ユー
+ザーが新たに関数を定義すると, それらのデータは普通メモリへ置かれます. 
+普通メモリが足りなくなると, Emacsはオペレーティングシステムに1kバイト
+の倍数のブロックでメモリ割り当てを要求します.  各ブロックは1つの種類の
+Lispオブジェクトに使いますから, シンボル, コンスセル, マーカなどはメモ
+リの異なるブロックに分離されます.  （ベクトル, 長い文字列, バッファ, 
+特定の編集向けデータ型などの比較的大きなものは各オブジェクトごとに独立
+のブロックを割り当てるが, 短い文字列は8kバイトのブロックに詰め込む. ）
+
+あるメモリ部分をしばらく使ってから, （たとえば）バッファを削除したりオ
+ブジェクトに対する最後の参照を削除するなどして当該メモリを解放すること
+はよくあることです.  Emacsには, このような放置されたメモリを回収する"
+ガベッジコレクタ"（garbage collector）があります.  （この名前は伝統的
+だが, 『ガベッジリサイクル』のほうがこの機能を直観的に表すかもしれない. 
+）
+
+ガベッジコレクタは, Lispプログラムから現時点で参照可能なすべてのLispオ
+ブジェクトを探して印を付けることで動作します.  まず, すべてのシンボル, 
+それらの値, それらに関連付けられた関数定義, および, スタック上の任意の
+データは参照可能であると仮定します.  参照可能なオブジェクトから間接的
+に辿れる任意のオブジェクトも参照可能です.
+
+印付けが終ったときには, 無印であるすべてのオブジェクトはゴミ（ガベッジ）
+です.  Lispプログラムやユーザーがなにをしようと, 無印のオブジェクトに
+辿り着く方法はないのでそれらを参照することは不可能です.  無印のオブジェ
+クトを使っているものはいないので, それらのメモリ領域は再利用できます. 
+ガベッジコレクタの2段目の動作（『掃く』（sweep））は, 無印のオブジェク
+トのメモリ領域を再利用できるようにすることです.
+
+掃き作業では, 未使用のコンスセルを"自由リスト"（free list）に入れて, 
+将来の割り当てに備えます.  シンボルやマーカについても同様です.  参照可
+能な文字列は8kバイトのブロックより小さな領域を占めるように詰め込み, 不
+要になった8kバイトのブロックは解放します.  ベクトル, バッファ, ウィン
+ドウ, 他の大きなオブジェクトは, `malloc'や`free'を使って個別に割り当て
+たり解放します.
+
+     Common Lispに関した注意：` ' 他のLispと異なり, GNU Emacs Lispでは, 
+     自由リストが空になってもガベッジコレクタを呼び出さない.  そのかわ
+     りに, オペレーティングシステムにメモリ割り当てを単純に要求し,
+     `gc-cons-threshold'バイトを使い尽くすまでは処理を継続する.
+
+     つまり, ガベッジコレクタを明示的に呼び出した直後のLispプログラム
+     の部分では, （プログラムのその部分で2度目にガベッジコレクタを呼び
+     出すほど多くのメモリを使わないと仮定すれば）その部分を実行中には
+     ガベッジコレクタが呼ばれないことを保証できるのである.
+
+ -- コマンド: garbage-collect
+     このコマンドはガベッジコレクタを実行し, 使用中のメモリ量に関する
+     情報を返す.  （まえのガベッジコレクタの起動後に
+     `gc-cons-threshold'バイト以上のLispデータを使うと自発的なガベッジ
+     コレクタの起動を引き起こす. ）
+
+     `garbage-collect'が返すリストにはつぎの情報が含まれる.
+
+          ((USED-CONSES . FREE-CONSES)
+           (USED-SYMS . FREE-SYMS)
+           (USED-MISCS . FREE-MISCS)
+           USED-STRING-CHARS 
+           USED-VECTOR-SLOTS
+           (USED-FLOATS . FREE-FLOATS)
+           (USED-INTERVALS . FREE-INTERVALS))
+
+     例を示す.
+
+          (garbage-collect)
+               => ((106886 . 13184) (9769 . 0)
+                          (7731 . 4651) 347543 121628
+                          (31 . 94) (1273 . 168))
+
+     各要素の意味はつぎのとおりである.
+
+     USED-CONSES
+          使用中のコンスセルの個数.
+
+     FREE-CONSES
+          オペレーティングシステムから得たメモリであるが現在未使用なコ
+          ンスセルの個数.
+
+     USED-SYMS
+          使用中のシンボルの個数.
+
+     FREE-SYMS
+          オペレーティングシステムから得たメモリであるが現在未使用なシ
+          ンボルの個数.
+
+     USED-MISCS
+          その他の使用中のオブジェクトの個数.  マーカ, オーバレイ, ユー
+          ザーに見えないある種のオブジェクトを含む.
+
+     FREE-MISCS
+          オペレーティングシステムから得たメモリであるが現在未使用なそ
+          の他のオブジェクトの個数.
+
+     USED-STRING-CHARS
+          使用中の文字列の総文字数.
+
+     USED-VECTOR-SLOTS
+          存在するベクトルの要素の総個数.
+
+     USED-FLOATS
+          使用中の浮動小数点数の個数.
+
+     FREE-FLOATS
+          オペレーティングシステムから得たメモリであるが現在未使用な浮
+          動小数点数の個数.
+
+     USED-INTERVALS
+          使用中のインターバルの個数.  インターバルとはテキスト属性を
+          表現するために使う内部データ構造である.
+
+     FREE-INTERVALS
+          オペレーティングシステムから得たメモリであるが現在未使用なイ
+          ンターバルの個数.
+
+ -- User Option: garbage-collection-messages
+     この変数が`nil'以外であると, Emacsはガベッジコレクションの始まり
+     と終りにメッセージを表示する.  デフォルト値は`nil'であり, そのよ
+     うなメッセージを表示しない.
+
+ -- User Option: gc-cons-threshold
+     この変数の値は, ガベッジコレクションのあとでつぎにガベッジコレク
+     ションを起こすまでにLispオブジェクトに割り当てるべきメモリバイト
+     数である.  コンスセルは8バイト, 文字列は1文字1バイトと数バイトの
+     オーバヘッドといった具合である.  バッファの内容に割り当てたメモリ
+     量は数えない.  この閾値を越えてもただちにつぎのガベッジコレクショ
+     ンは起こらず, つぎにLispのエバリュエータが呼ばれときに起きる.
+
+     最初の閾値は400,000である.  より大きな値を指定すると, ガベッジコ
+     レクションの起動回数が少なくなる.  ガベッジコレクションに費す時間
+     を減少できるが, 全体のメモリ使用量を増加させる.  大量のLispデータ
+     を作成するようなプログラムを実行するときに設定する.
+
+     10,000までの小さな値を指定すると, ガベッジコレクションの回数を増
+     やせる.  10,000未満の値が意味を持つのはつぎにガベッジコレクション
+     が起きるまでである.  `garbage-collect'は閾値を10,000に戻す.
+
+`garbage-collect'が返す値は, データ型ごとのLispデータのメモリ使用量で
+す.  対照的に, 関数`memory-limit'は, Emacsが現在使用中のメモリ総量に関
+する情報を与えます.
+
+ -- Function: memory-limit
+     この関数は, Emacsが最後に割り当てた最終バイトのアドレスを1024で割っ
+     たものを返す.  値を1024で割るのは, Lispの整数に収めるためである.
+
+     読者の操作がメモリ使用量にどのように影響するかを調べるのに使える.
+
+
+
+File: elisp-ja, Node: Memory Usage, Next: Writing Emacs Primitives, Prev: Garbage Collection, Up: GNU Emacs Internals
+
+メモリ使用量
+============
+
+これらの変数は, Emacsが割り当てたデータ型ごとのメモリ総量に関する情報
+を与えます.  これらと`(garbage-collect)'が返す値との違いに注意してくだ
+さい.  `(garbage-collect)'の値は現存するオブジェクトを数えますが, これ
+らの変数は, すでに解放したオブジェクトを含めて割り当てたオブジェクトの
+個数やサイズを数えます.
+
+ -- Variable: cons-cells-consed
+     このEmacsセッションでこれまでに割り当てたコンスセルの総数.
+
+ -- Variable: floats-consed
+     このEmacsセッションでこれまでに割り当てた浮動小数点数の総数.
+
+ -- Variable: vector-cells-consed
+     このEmacsセッションでこれまでに割り当てたベクトルセルの総数.
+
+ -- Variable: symbols-consed
+     このEmacsセッションでこれまでに割り当てたシンボルの総数.
+
+ -- Variable: string-chars-consed
+     このEmacsセッションでこれまでに割り当てた文字列の総文字数.
+
+ -- Variable: misc-objects-consed
+     このEmacsセッションでこれまでに割り当てたその他のオブジェクトの総
+     数.  マーカやオーバレイ, ユーザーに見えないある種のオブジェクトを
+     含む.
+
+ -- Variable: intervals-consed
+     このEmacsセッションでこれまでに割り当てたインターバルの総数.
+
+
+
+File: elisp-ja, Node: Writing Emacs Primitives, Next: Object Internals, Prev: Memory Usage, Up: GNU Emacs Internals
+
+Emacs基本関数の書き方
+=====================
+
+Lisp基本関数は, Cで実装したLisp関数です.  Lispから呼び出すためのCの関
+数とのインターフェイスの詳細は, 数個のCのマクロで処理しています.  新た
+にCのコードを書く方法をほんとうに理解する唯一の方法は, ソースを読むこ
+とですが, ここではその一部を説明します.
+
+スペシャルフォームの例は, `eval.c'から引用した`or'の定義です.  （普通
+の関数も同じように見える. ）
+
+     DEFUN ("or", For, Sor, 0, UNEVALLED, 0,
+       "Eval args until one of them yields non-nil; return that value.\n\
+     The remaining args are not evalled at all.\n\
+     If all args return nil, return nil.")
+       (args)
+          Lisp_Object args;
+     {
+       register Lisp_Object val;
+       Lisp_Object args_left;
+       struct gcpro gcpro1;
+
+       if (NULL (args))
+         return Qnil;
+
+       args_left = args;
+       GCPRO1 (args_left);
+
+       do
+         {
+           val = Feval (Fcar (args_left));
+           if (!NULL (val))
+             break;
+           args_left = Fcdr (args_left);
+         }
+       while (!NULL (args_left));
+
+       UNGCPRO;
+       return val;
+     }
+
+マクロ`DEFUN'の引数の詳しい説明から始めます.  その雛型はつぎのとおりで
+す.
+
+     DEFUN (LNAME, FNAME, SNAME, MIN, MAX, INTERACTIVE, DOC)
+
+LNAME
+     関数名として定義するLispシンボルの名前である.  上の例では, `or'で
+     ある.
+
+FNAME
+     この関数のCの関数としての名前である.  この関数をCのコードから呼び
+     出すときに使う名前である.  慣習により, Lispでの名前のまえに`F'を
+     付けるが, Lispでの名前のダッシュ（`-'）はすべて下線に置き換える. 
+     したがって, Cのコードからこの関数を呼び出すには, `For'を呼び出す. 
+     引数は`Lisp_Object'型である必要があることに注意してほしい.  ファ
+     イル`lisp.h'では, `Lisp_Object'型の値を作成するためのさまざまなマ
+     クロや関数を宣言してある.
+
+SNAME
+     これは, Lispでの関数を表現するsubrオブジェクト向けのデータを保持
+     する構造体に使うCの変数名である.  この構造体は, シンボルを作成し
+     その定義としてsubrオブジェクトを保存する初期化ルーティンへLispの
+     シンボル名を運ぶ構造体である.  慣習により, この名前はつねにFNAME
+     の`F'を`S'に置き換えたものである.
+
+MIN
+     関数が必要とする引数の最小の個数である.  関数`or'は最小0個の引数
+     を許す.
+
+MAX
+     関数が許す引数の最大の個数に制限があるときの引数の最大の個数であ
+     る.  あるいは, 評価していない引数を受け取るスペシャルフォームであ
+     ることを表す`UNEVALLED', 評価済みの引数を何個でも受け取ることを表
+     す`MANY' （`&rest'に等価）でもよい.  `UNEVALLED'も`MANY'もマクロ
+     である.  MAXが数であるときには, それはMINより小さくなく, かつ, 7
+     より大きくないこと.
+
+INTERACTIVE
+     この関数の対話指定であり, Lisp関数において`interactive'の引数に使
+     う文字列である.  `or'の場合には0（空ポインタ）であり, `or'は対話
+     的に呼び出せないことを表す.  値`""'は, 対話的に呼び出されるとこの
+     関数は引数を受け取らないことを表す.
+
+DOC
+     説明文字列である.  各行末に`\n\'と書く必要があることを除けば,
+     Lispで定義する関数の説明文字列のように書く.  特に, 最初の行は1つ
+     の文であること.
+
+マクロ`DEFUN'の呼び出しのあとには, 
+Cの関数に必須な引数名の並びを書き, 引数に対する普通のCの宣言を続けます. 
+引数の最大個数が固定されている関数では, 
+各Lisp引数向けにCの引数宣言を書き, 
+それらをすべて`Lisp_Object'型にします. 
+Lisp関数に引数の個数に上限がないとき, 
+それを実装するCの関数は実際には2つの引数を受け取ります. 
+第1引数はLisp引数の個数であり, 
+第2引数はそれらの値を収めたブロックのアドレスです. 
+引数の型は`int'と`Lisp_Object *'です. 
+
+関数`For'自身の内側では, マクロ`GCPRO1'と`UNGCPRO'を使っていることに注
+意してください.  `GCPRO1'は, ガベッジコレクションから変数を『保護』す
+るために使います.  つまり, ガベッジコレクタに対してこの変数を調べてそ
+の内容を参照可能なオブジェクトとみなすように指示します.  `Feval'や
+`Feval'を直接／間接的に呼び出すものを呼ぶときには, このようにする必要
+があります.  そのような場面では, 再度参照する意図がある任意のLispオブ
+ジェクトは保護する必要があります.  `UNGCPRO'は, この関数での変数の保護
+を取り消します.  これは明示的に行う必要があります.
+
+ほとんどのデータ型では, 少なくともそのオブジェクトへの1つのポインタを
+保護すれば十分であり, そのオブジェクトに循環がない限り, そのオブジェク
+トへのすべてのポインタは正しく保たれます.  文字列にはこれはあてはまり
+ません.  ガベッジコレクタがそれらを移動するからです.  ガベッジコレクタ
+が文字列を移動すると, それに対する既知のポインタをすべて再配置し, それ
+以外のポインタは不正になります.  したがって, ガベッジコレクタが動く可
+能性のある任意の部分では, 文字列へのすべてのポインタを保護する必要があ
+ります.
+
+マクロ`GCPRO1'は1つのローカル変数のみを保護します.  2つ保護したい場合
+にはかわりに`GCPRO2'を使います.  `GCPRO1'を繰り返しても働きません.
+`GCPRO3'や`GCPRO4'のマクロもあります.
+
+これらのマクロは`gcpro1'などのローカル変数を暗黙のうちに使いますが, 読
+者はこれらを型`struct gcpro'で明示的に宣言する必要があります.  したがっ
+て, `GCPRO2'を使う場合には, `gcpro1'と`gcpro2'を宣言する必要があります. 
+残念ですが, ここではすべての詳細は説明しきれません.
+
+Emacsをいったんダンプしたあとでも静的やグローバルな変数に書き込むので
+あれば, それらの変数にはCの初期化構文を使ってはいけません.  初期化構文
+を伴うそれらの変数は, Emacsをダンプすると（オペレーティングシステムに
+よっては）その結果として読み出し専用のメモリ領域に割り当てられます.
+*Note Pure Storage::.
+
+関数の内側では静的変数を使わずに, すべての静的変数はファイルのトップレ
+ベルに置きます.  オペレーティングシステムによってはEmacsはキーワード
+`static'を空のマクロと定義することもあるので, これは必要なことなのです. 
+（このような定義を使うのは, そのようなシステムは, 初期化構文があろうと
+なかろうと静的と宣言した変数をダンプ後には読み出し専用にしてしまうから
+である. ）
+
+Cの関数を定義しただけではLisp基本関数としては使えません.  基本関数に対
+するLispシンボルを作成し, その関数セルに適切なsubrオブジェクトを保存す
+る必要があります.  そのコードはつぎのようになります.
+
+     defsubr (&SUBR-STRUCTURE-NAME);
+
+ここで, SUBR-STRUCTURE-NAMEは`DEFUN'の第3引数に使った名前です.
+
+すでにLisp基本関数が定義されているファイルに新たな基本関数を追加すると
+きには, （ファイルの末尾近くで）`syms_of_SOMETHING'という名前の関数を
+探し, それに`defsubr'の呼び出しを追加します.  ファイルにこの関数がなかっ
+たり, 新たなファイルを作成した場合には, `syms_of_FILENAME'（たとえば
+`syms_of_myfile'）を追加します.  そして, ファイル`emacs.c'でこれらの関
+数を呼び出している箇所を探して, そこに`syms_of_FILENAME'の呼び出しを追
+加します.
+
+関数`syms_of_FILENAME'は, Lisp変数として見える任意のCの変数を定義する
+場所でもあります.  `DEFVAR_LISP'は, Lispから見える`Lisp_Object'型のCの
+変数を作ります.  `DEFVAR_INT'は, Lispからはつねに整数を値として見える
+`int'型のCの変数を作ります.  `DEFVAR_BOOL'は, Lispからは`t'か`nil'を値
+として見える`int'型のCの変数を作ります.
+
+ファイルだけに有効な`Lisp_Object'型のCの変数を定義した場合には, つぎの
+ようにして, `syms_of_FILENAME'の中で`staticpro'を呼び出してその変数を
+ガベッジコレクションから保護する必要があります.
+
+     staticpro (&VARIABLE);
+
+つぎは, 少々複雑な引数を取る別の関数の例です.  これは`window.c'から取っ
+たもので, マクロとLispオブジェクトを操作する関数の使い方を例示します.
+
+     DEFUN ("coordinates-in-window-p", Fcoordinates_in_window_p,
+       Scoordinates_in_window_p, 2, 2,
+       "xSpecify coordinate pair: \nXExpression which evals to window: ",
+       "Return non-nil if COORDINATES is in WINDOW.\n\  
+     COORDINATES is a cons of the form (X . Y), X and Y being distances\n\
+     ...
+     If they are on the border between WINDOW and its right sibling,\n\
+        `vertical-line' is returned.")
+       (coordinates, window)
+          register Lisp_Object coordinates, window;
+     {
+       int x, y;
+
+       CHECK_LIVE_WINDOW (window, 0);
+       CHECK_CONS (coordinates, 1);
+       x = XINT (Fcar (coordinates));
+       y = XINT (Fcdr (coordinates));
+
+       switch (coordinates_in_window (XWINDOW (window), &x, &y))
+         {
+         case 0:			/* NOT in window at all. */
+           return Qnil;
+
+         case 1:			/* In text part of window. */
+           return Fcons (make_number (x), make_number (y));
+
+         case 2:			/* In mode line of window. */
+           return Qmode_line;
+
+         case 3:			/* On right border of window.  */
+           return Qvertical_line;
+
+         default:
+           abort ();
+         }
+     }
+
+Cのコードでは, 関数がCで定義されていない限り, 関数をその名前で呼び出せ
+ないことに注意してください.  Lispで書かれた関数を呼び出す方法は, Lisp
+の関数`funcall'を内蔵する`Ffuncall'を使うことです.  Lisp関数`funcall'
+は任意個数の引数を受け付けるので, Cでは2つの引数, Lispレベルの引数の個
+数とそれらの値を収めた一次元の配列を受け取ります.  Lispレベルの最初の
+引数は呼び出すべきLisp関数であり, 残りはそれに渡す引数です.
+`Ffuncall'はエバリュエータを呼び出すので, `Ffuncall'を呼び出す周りでは, 
+ガベッジコレクションからポインタを保護する必要があります.
+
+Cの関数, `call0', `call1', `call2'などは, 固定個数の引数を受け取るLisp
+関数を簡便に呼び出す手軽な方法です.  これらは`Ffuncall'を呼び出して動
+作します.
+
+`eval.c'は例を調べるにはとてもよいファイルです.  `lisp.h'には重要なマ
+クロや関数の定義が入っています.
+
+
+

@@ -1,0 +1,1960 @@
+Info file: eintr-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `emacs-lisp-intro.texi.patched'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* ELisp-Intro-ja: (eintr-ja).       Emacs-Lisp入門ガイド
+END-INFO-DIR-ENTRY
+
+
+これはプログラマではない人のための `Emacs Lisp プログラミング' 解説書で
+ある．
+
+Edition 2.04, 2001 Dec 17
+
+Copyright (C) 1990, '91, '92, '93, '94, '95, '97, 2001 Free Software
+Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Section being the Preface, with the Front-Cover Texts being
+no Front-Cover Texts, and with the Back-Cover Texts being no
+Back-Cover Texts.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+File: eintr-ja, Node: progn, Prev: zap-to-char, Up: zap-to-char
+
+The `progn' Special Form
+------------------------
+
+スペシャルフォーム `progn'
+--------------------------
+
+`progn'は、個々の引数を順番に評価して最後のものの値を返すスペシャルフォー
+ムである。最後以外の式は、それらの副作用のためだけに評価される。それら
+が返す値は捨てられる。
+
+`progn'式の雛型はとても簡単である。
+
+     (progn
+       本体...)
+
+`zap-to-char'では、`progn'式は2つのことを行う。正しい位置にポイントを置
+くことと、`kill-region'がどこまでを削除するかがわかるようにポイントの位
+置を返すことである。
+
+`progn'の第1引数は`search-forward'である。`search-forward'は、文字列を
+探しあてると検索文字列の最後の文字の直後にポイントを置く（ここでは、検
+索文字列は1文字長である）。逆向きに検索した場合は、`search-forward'は検
+索文字列の最初の文字の直前にポイントを置く。ポイントの移動は副作用であ
+る。
+
+`progn'の2番目で最後の引数は、式`(point)'である。
+この式はポイントの値を返し、
+ここでは、`search-forward'が移動した位置である。
+`progn'式がこの値を返し、`kill-region'の第2引数として
+`kill-region'に渡される。
+
+
+
+File: eintr-ja, Node: Summing up zap-to-char, Prev: progn, Up: zap-to-char
+
+`zap-to-char'のまとめ
+---------------------
+
+`search-forward'と`progn'の動作がわかったので、関数`zap-to-char'全体と
+しての動作を理解しよう。
+
+`kill-region'の第1引数は、コマンド`zap-to-char'を与えたときのカーソルの
+位置、つまり、そのときのポイントの値である。`progn'の中で、探索関数が削
+除する文字の直後にポイントを移動し、`point'がその位置の値を返す。関数
+`kill-region'は、ポイントの2つの値を組み合わせて、最初のものをリージョ
+ンの始まり、あとのものをリージョンの終わりと解釈してリージョンを削除す
+る。
+
+式`search-forward'と`point'を2つ続けて余分な2つの引数として書くと、
+2つの引数を取るコマンド`kill-region'は失敗するので、
+スペシャルフォーム`progn'が必要なのである。
+`progn'式は、`kill-region'に対しては1つの引数となり、
+`kill-region'が第2引数に必要とする1つの値を返す。
+
+
+
+File: eintr-ja, Node: kill-region, Next: Digression into C, Prev: zap-to-char, Up: PrePreface
+
+`kill-region' *(2004/08/08)*
+============================
+
+関数 `zap-to-char' は関数 `kill-region' を使います．この関数はリージョ
+ンからテキストを切取り，テキストを後で利用できるようにキルリングへコピー
+します．
+
+Emacs 21 ではこの関数は `condition-case' と`copy-region-as-kill' を仕様
+しています．`condition-case' は重要なスペシャルフォームです．
+
+要するに，関数 `kill-region' は `condition-case' を呼び出します．この関
+数は3つの引数を取ります．この関数では，最初の引数は何もしません．2番目
+の引数は正常に終了した時の処理を含みます．3番目の引数はエラーが生じた時
+に呼ばれるコードを含みます．
+
+* Menu:
+
+* Complete kill-region::        The function definition.
+* condition-case::              Dealing with a problem.
+* delete-and-extract-region::   Doing the work.
+
+
+
+File: eintr-ja, Node: Complete kill-region, Next: condition-case, Prev: kill-region, Up: kill-region
+
+`kill-region' の定義
+--------------------
+
+すぐに `condition-case' を知ることになるでしょう．最初に，コメントを加
+えた `kill-region' の完全な定義を見ていきます．
+
+     (defun kill-region (beg end)
+       "Kill between point and mark.
+     The text is deleted but saved in the kill ring."
+       (interactive "r")
+
+       ;; 1. `condition-case' は3つの引数を取ります．
+       ;;    最初に引数がここにあるように nil であれば
+       ;;    エラーシグナルに関する情報は
+       ;;    他の関数で使用されるように保存することをしません．
+       (condition-case nil
+
+           ;; 2. 'condition-case' の2番目の引数は
+           ;;    正常に終了した時に何をするべきかを知らせます．
+
+           ;;    関数 `delete-and-extract-region' は大抵正常に機能します．
+           ;;    もしリージョンの最初と終わりが両方とも同じであれば，
+           ;;    変数 `string' は空か nil になるでしょう．
+           (let ((string (delete-and-extract-region beg end)))
+
+             ;; `when' は `else-part' を取らない `if' です．
+             ;; Emacs は通常 `last-command' の値を
+             ;; 前のコマンドの値にします．
+             ;; `kill-append' は新しいテキストを古いものに連結します．
+             ;; `kill-new' はテキストをキルリングの新しい要素として挿入します．
+             (when string
+               (if (eq last-command 'kill-region)
+                   ;; if true, prepend string
+                   (kill-append string (< end beg))
+                 (kill-new string)))
+             (setq this-command 'kill-region))
+
+         ;; 3. `condition-case' の3番目の引数はエラー時に
+         ;;    何をすべきかを指定します．
+         ;;    3番目の引数は条件部分と本体部分を含みます．
+         ;;    もし条件が合えば (この例では
+         ;;    テキストかバッファが読み出し専用であれば)
+         ;;    本体部分が実行されます．
+         ((buffer-read-only text-read-only) ;; 条件部分
+          ;; 一致すれば
+          (copy-region-as-kill beg end)
+          (if kill-read-only-ok            ;; 大抵この変数は nil である．
+              (message "Read only text copied to kill ring")
+            ;; そうでなければ，バッファが読み出し専用であるというエラーを
+            ;; 表示する
+            (barf-if-buffer-read-only)
+             ;; そして，どんな場合でもテキストが読み出し専用であることを知
+             ;; らせる．
+            (signal 'text-read-only (list (current-buffer)))))))
+
+
+
+File: eintr-ja, Node: condition-case, Next: delete-and-extract-region, Prev: kill-region, Up: kill-region
+
+`condition-case' *(2004/08/08)*
+-------------------------------
+
+以前見た (*Note Generate an Error Message: Making Errors.) ように，
+Emacs Lisp は式を評価して問題が生じた時に，ヘルプを与えます．専門的に言
+うと"エラーを知らせる"のです．大抵はコンピュータはプログラムを停止させ
+メッセージを表示します．
+
+しかし，いくつかのプログラムでは複雑な動作を保証します．単にエラーで停
+止すべきではないのです．関数 `kill-region' で，最もありそうなエラ
+ーは読み出し専用のテキストをキルしようとして削除できないことです．だか
+ら，関数 `kill-region' ではこの状況を処理するためのコードを含みま
+す．このコードは関数 `kill-region' の本体を構成し，
+`condition-case' の内部にあるのです．
+
+`condition-case' のテンプレートは以下のようになります．
+
+     (condition-case
+       VAR
+       BODYFORM
+       ERROR-HANDLER...)
+
+2番目の引数 BODYFORM は簡単です．スペシャルフォームである
+`condition-case' は BODYFORM のコードを評価させます．もしエラーが起これ
+ば，スペシャルフォームはコードの値を返し，もし何かあれば副作用を生じさ
+せます．
+
+簡単に言うと，`condition-case' の BODYFORM 部分はすべてが正常に機能した
+時に何が起きるかを決定するのです．
+
+しかし，もしエラーが起これば，その他の部分の途中で，1つかそれ以上のエラー
+シグナルを決定し，返します．
+
+`condition case' の3番目の引数はエラーを処理する部分です．エラーを処理
+する部分はCONDITION-NAME と BODY という2つの部分を持ちます．もし，エラー
+ハンドラーの CONDITION-NAME 部分がエラーによって生じた名前と一致すれば，
+エラーを処理する BODY 部分が実行されます．
+
+予期していると思いますが，エラーハンドラーの CONDITION-NAME 部分は1つか
+条件名のリストのどちらかになります．
+
+`condition-case' 式は1つ以上のエラーハンドラーを含むかもしれません．エ
+ラーが起こった時，最初に適用できるものが実行されます．
+
+最後に，`condition-case' の最初の引数，VAR は時々，エラーに
+関する情報を含む変数になっています．しかし，その引数が nil であれば，
+`kill-region' の場合のようにその情報は破棄されます．
+
+要するに関数 `kill-region' の `condition-case'部分は以下のように動作す
+るのです．
+
+     もしエラーが無ければ, このコードが実行される
+         しかし, エラーなら, このコードが実行される.
+
+
+
+File: eintr-ja, Node: delete-and-extract-region, Prev: condition-case, Up: kill-region
+
+`delete-and-extract-region' *(2004/08/08)*
+------------------------------------------
+
+`condition-case' 式は2つの部分を持ちます．1つ目は正常に動作すると期待さ
+れている部分です．しかし，エラーが生じると，もう一つの部分が評価されま
+す．
+
+最初に，`kill-region' のコードを正常に動作するものとして見てみよう．こ
+れは関数の核心である．このコードは下記のようになる．
+
+     (let ((string (delete-and-extract-region beg end)))
+       (when string
+         (if (eq last-command 'kill-region)
+             (kill-append string (< end beg))
+           (kill-new string)))
+       (setq this-command 'kill-region))
+
+新しい関数 `delete-and-extract-region'， `kill-append'，`kill-new'と新
+しい変数 `last-command' と `this-command' があるために複雑に思えます．
+
+関数 `delete-and-extract-region' は簡単です．これは組込み関数であり，リー
+ジョンのテキストを削除し，そのテキストを返します．これは実際にテキスト
+を削除する関数なのです．(そして，不可能であれば，エラーを返します)
+
+この `let' 式で `delete-and-extract-region' が返すテキストはローカル変
+数 `string' に保存されます．これはバッファから削除されたテキストです．
+(具体的には，変数はポイント位置から切り出されたテキストになります．要は
+変数とは単にテキストの略称なのです．)
+
+もし変数 `string' がテキストを含むのであれば，そのテキストはキル
+リングに追加されます．削除されたテキストが無ければ変数の値は
+`nil' になります．
+
+このコードでは変数 `string' がテキストを含むかどうかを`when' を用いて確
+認しています．`when' は単にプログラマの利便性のためだけにあります．
+`when' は else 部分のない `if' です．頭の中で，`when' を `if'に置き換え
+るとどうなるか理解できるでしょう．それは Lisp のインタープリタがしてい
+ることです．
+
+技術的に言うと，`when' は Lisp マクロです．Lisp "macro" は新しい制御や
+他の言語機能を実現できる．インタープリタに順に変数を処理する他の Lisp
+式をどのように処理するかを伝えます．この例では，"他の式"とは`if' 式です．
+Lisp マクロに関する詳細は*Note Macros: (elisp)Macros を参照ください．C
+言語でもマクロがあります．違いはありますが，両者とも便利なものです．
+*Note `delete-and-extract-region': Digressing into C: Digression into
+C でCマクロを簡単に見ることができます．
+
+文字列が内容を含んでいれば，他の条件式が実行されます．これは，then と
+else 部分を持つ `if' である．
+
+     (if (eq last-command 'kill-region)
+         (kill-append string (< end beg))
+       (kill-new string)))
+
+もし前のコマンドが `kill-region' であれば，then 部分が評価されます．も
+しそうでなければ，else 部分が評価されます．
+
+`last-command' はまだ紹介していないEmacsに標準の変数です．通常は，関数
+が実行されると，Emacsは変数 `last-command' に前のコマンドを設定します．
+
+この部分の定義では，`if' 式は前のコマンドが `kill-region' だったかどう
+かを確認しています．もしそうだったら，
+
+     (kill-append string (< end beg))
+
+すぐ前にキルリングに切り出されたテキストに新しく切り出されたテキストの
+コピーを連結します．(もし `(< end beg))' 式が真であれば，
+`kill-append' は文字列をすぐ前に切り出したテキストの先頭に追加し
+ます．詳細については*Note The `kill-append' function: kill-append functionを参照ください．)
+
+もしテキストをヤンクすれば，つまり貼り付けると，一度に両方を得る．こう
+して，2つの単語を連続して削除し，ヤンクすると，1度のヤンクを実行するこ
+とで，適当な順番で両方の単語を得ることができる．(`(< end
+beg))' 式は順序が正しくなるようにしているのです．)
+
+一方で，前のコマンドが `kill-region' でなければ，関数`kill-new' が呼ば
+れ，テキストをキルリングの最新の位置に追加します．そして，変数
+`kill-ring-yank-pointer' にその位置を保存します．
+
+
+
+File: eintr-ja, Node: Digression into C, Next: copy-region-as-kill, Prev: kill-region, Up: PrePreface
+
+`delete-and-extract-region': Cへ回り道 *(2004/08/08)*
+=====================================================
+
+コマンド`zap-to-char'は関数`kill-region'を使い、それはさらに
+`copy-region-as-kill'と`delete-region'という2つの関数を使っている。関数
+`copy-region-as-kill'はつぎの節で説明するが、リージョンのコピーをキルリ
+ングに保存して取り出せるようにする（*Note copy-region-as-kill::）。
+
+関数`delete-region'はリージョンの内容を削除するが、その内容を戻すことは
+できない。
+
+これまでに説明したコードと異なり、`delete-region'はEmacs Lispで書かかれ
+ていない。Cで書かかれており、GNU Emacsシステムの基本操作関数の1つである。
+とても簡単なので、Lispから回り道して、ここで説明することにする。
+
+Emacsのほとんどの基本操作関数と同様に、`delete-region'は、Cのマクロ、コー
+ドの雛型となるマクロを用いて書かれている。マクロの最初の部分はつぎのと
+おりである。
+
+     DEFUN ("delete-and-extract-region", Fdelete_and_extract_region,
+            Sdelete_and_extract_region, 2, 2, 0,
+       "Delete the text between START and END and return it.")
+       (start, end)
+          Lisp_Object start, end;
+     {
+       validate_region (&start, &end);
+       return del_range_1 (XINT (start), XINT (end), 1, 1);
+     }
+
+マクロを詳細に踏み込むようなことはしないが，このマクロは単語
+`DEFUN' で開始することが指摘しておこう．この単語 `DEFUN' は
+Lisp の `defun' と同じ目的で作られているため，選ばれたものです．
+`DEFUN' は括弧の中に7つの部分を取っています．
+
+   * 最初の部分はLispでの関数名であり、ここでは、
+     `delete-and-extract-region'である。
+
+   * The second part is the name of the function in C,
+     `Fdelete_and_extract_region'.  By convention, it starts with `F'.
+     Since C does not use hyphens in names, underscores are used
+     instead.  2番目の部分はCでの関数名であり、
+     `Fdelete_and_extract_region'である。慣習的に`F'で始める。Cでは名前
+     としてハイフンを使えないので、かわりに下線を使う。
+
+   * 3番目の部分は、この関数を内部で使用するための情報を記録したCの構造
+     体の定数の名前である。これはCでの関数名であるが、`F'のかわりに`S'
+     で始める。
+
+   * 4番目と5番目の部分は、関数が取りえる引数の最小個数と最大個数である。
+     この関数は必ず2つの引数を必要とする。
+
+   * 6番目の部分は、Lispで書いた関数の`interactive'の引数とほとんど同じ
+     であり、文字に続けてプロンプトがあってもよい。Lisp との唯一の違い
+     はマクロが引数無しで呼ばれた時である．つまり，このマクロで `0'
+     (null 文字) を書くような時だ．
+
+     もし引数を指定していたなら，それを引用符の間に置いたことだろう．
+     `goto-char' の C マクロはこの位置に関数が無引数の時のために，バッ
+     ファの位置を指定できるようプロンプトを表示するように `"NGoto
+     char: "' を置いてある．
+
+   * 7番目の部分は説明文字列であり、Emacs Lispで書いた関数と同じもので
+     あるが、各改行は、`\n'に続けてバックスラッシュと改行で書く必要があ
+     る。そうして，`goto-char' のドキュメントの最初の2行は下記のように
+     なる．
+
+            "Set point to POSITION, a number or marker.\n\
+          Beginning of buffer is position (point-min), end is (point-max).
+
+Cのマクロでは、オブジェクトの種類を指定する文とともに仮引数があり、
+さらに、マクロの「本体」とも呼ぶべきものが続く。
+`delete-and-extract-region'の本体はつぎの2行から成る。
+
+     validate_region (&start, &end);
+     return del_range_1 (XINT (start), XINT (end), 1, 1);
+
+最初の関数 `validate_region' はリージョンの開始と先頭を示す値が適
+当な値で範囲内にあるかどうかを確認しています．2番目の関数
+`del_range_1' は実際にテキストを削除する．
+
+`del_range_1' は複雑な関数であり，詳細は述べない．この関数はバッファを
+更新し，他のことはしない．
+
+しかし，`del_range' へ渡る2つの引数は見ておく価値がある．引数には
+`XINT (start)' と `XINT (end)' がある．
+
+C 言語に関する限り，`start' と `end' は削除される (1) (*Note
+Digression into C-Footnotes::) リージョンの最初と最後の位置を示す2つの
+整数である．
+
+Emacs の初期バージョンでは，これら2つの数は32ビット長でした．しかし，コー
+ドはゆっくりと他の長さを扱えるように書き直されてきました．利用できるビッ
+トの3番目は情報のタイプを特定できるように遣われます．そして，4ビット目
+はコンピュータのメモリを扱うために使われます．残ったビットは"内容" を示
+すために使われます．
+
+`XINT' は C マクロであり，ビットの長い部分から適当な部分を切り出すので
+す．つまり，4つ以外のビットは破棄される．
+
+`delete-and-extract-region' のコマンドは下記のようになります．
+
+     del_range_1 (XINT (start), XINT (end), 1, 1);
+
+これは リージョンの開始位置 `start' と終了位置 `end' の間を削除します．
+
+Lisp を書く人の視点だと，Emacs はとても単純です．しかし，正常に動作させ
+るために，たくさんの複雑な部分が隠れているのです．
+
+
+File: eintr-ja  Node: Digression into C-Footnotes, Up: Digression into C
+
+(1) より正確に，より深く理解できるように述べておくと，2つの引数は
+`Lisp_Object' タイプである．これは，Cの整数タイプの代わりとなることがで
+きる
+
+
+
+File: eintr-ja, Node: defvar, Next: copy-region-as-kill, Prev: Digression into C, Up: PrePreface
+
+`defvar'による変数の初期化 *(2004/08/08)*
+=========================================
+
+関数 `delete-and-extract-region' と異なり、関数`copy-region-as-kill'は
+Emacs Lispで書かれている。内部に含まれる2つの関数 `kill-append'
+と `kill-new' はバッファのリージョンのコピーを変数
+`kill-ring'にコピーする。
+本節では、変数 `kill-ring' の作成とスペシャルフォーム
+`defvar' を使った初期化の方法を説明する。
+
+（`kill-ring'はふさわしくない名称であることを再度指摘しておく。バッファ
+から切り取ったテキストは戻すことができる。キルリングは死体のリングでは
+なく、復活できるテキストのリングである。）
+
+Emacs Lispでは、`kill-ring'のような変数は、スペシャルフォーム`defvar'を
+用いて作成し初期化する。この名称は「define variable（変数を定義する）」
+からきている。
+
+スペシャルフォーム`defvar'は、変数の値を設定するという意味では`setq'に
+似ている。しかし、`setq'とは2つの点で異なる。まず、値を持っていない変数
+にのみ値を設定することである。変数にすでに値があれば、`defvar'は既存の
+値を書き換えない。第二に、`defvar'は説明文字列を有することである。
+
+他のスペシャルフォーム `defcustom' はカスタマイズできる変数のためにある．
+`defvar' よりも多くの機能を持つ．(*Note Setting Variables with
+`defcustom': defcustom.)
+
+* Menu:
+
+* See variable current value::
+* defvar and asterisk::         An old-time convention.
+
+
+
+File: eintr-ja, Node: See variable current value, Next: defvar and asterisk, Prev: Digression into C, Up: Digression into C
+
+変数の現在値を知る
+------------------
+
+任意の変数の現在の値は、関数`describe-variable'を使って調べることができ、
+普通、`C-h v'とタイプすれば起動できる。
+`C-h v'とタイプして問い合わせに`kill-ring'（に続けてRET）と
+タイプすれば、今のキルリングに何が入っているかがわかるが、とても多量であろう。
+一方、本書を読む以外の操作をEmacsで行っていなければ、キルリングには
+何もないであろう。
+`kill-ring' のドキュメントを見てみよう．
+
+     Documentation:
+     List of killed text sequences.
+     Since the kill ring is supposed to interact nicely with cut-and-paste
+     facilities offered by window systems, use of this variable should
+     interact nicely with `interprogram-cut-function' and
+     `interprogram-paste-function'.  The functions `kill-new',
+     `kill-append', and `current-kill' are supposed to implement this
+     interaction; you may want to use them instead of manipulating the kill
+     ring directly.
+
+キルリングはつぎのように`defvar'で定義してある。
+
+     (defvar kill-ring nil
+       "List of killed text sequences.
+     ...")
+
+この変数定義では、変数に初期値`nil'を設定している。何も保存していないと
+きには、コマンド`yank'で何も戻ってほしくないので、この値には意味がある。
+説明文字列は、`defun'の説明文字列と同じである。`apropos'のようなある種
+のコマンドは説明文の最初の1行しか表示しないので、`defun'の説明文字列と
+同様に説明文の最初の行は完全な文にしておく。また、`C-h
+v'（`describe-variable'）で表示したときに変にならないように、続く行は字
+下げしない。
+
+
+
+File: eintr-ja, Node: defvar and asterisk, Prev: Digression into C, Up: Digression into C
+
+`defvar' とアスタリスク *(2004/08/08)*
+--------------------------------------
+
+過去に Emacs はスペシャルフォーム `defvar' をユーザが変更しないような内
+部変数とユーザが変更する変数の両方を定義するために使っていました．今で
+も `defvar' をユーザがカスタマイズできる変数として利用できますが，代わ
+りに `defcustom' を使うようにしてください．このスペシャルフォームはカス
+タマイズで利用できるするためのスペシャルフォームです．(*Note Setting
+Variables with `defcustom': defcustom)．
+
+スペシャルフォーム `defvar' を使って変数を定義するとき，アスタリスク
+`*' をドキュメントの最初に入力しておくことで，すぐに設定できる変数であ
+ると区別できる．例えば，
+
+     (defvar shell-command-default-error-buffer nil
+       "*Buffer name for `shell-command' ... error output.
+     ... ")
+
+`shell-command-default-error-buffer' の値は、コマンド
+`edit-options'を使って一時的に変更できる(そして，今でもできる)ことを意味する。
+
+しかし，`edit-options' を使って設定した値は編集期間しか有効ではない．セッ
+ション間で新しい値は保存されない．そのため，`.emacs' ファイルで変更した
+り，`customize' を使って設定していなければ，Emacs を開始するたびに，元
+の値が読み込まれる．
+
+私にとって，コマンド `edit-options' の主な用法は `.emacs' ファイルで設
+定したい値を試してみることだ．私はそのリストを見てみることを強く勧める．
+(*Note Editing Variable Values: (emacs)Edit Options.)
+
+
+
+File: eintr-ja, Node: copy-region-as-kill, Next: search Exercises, Prev: Digression into C, Up: PrePreface
+
+`copy-region-as-kill' *(2004/08/08)*
+====================================
+
+関数`copy-region-as-kill'は、バッファからリージョンのテキストをコピーし
+(`kill-append' か `kill-new' を介して) 変数`kill-ring'に保存する。
+
+コマンド`kill-region'の直後に`copy-region-as-kill'を呼ぶと、Emacsは、新
+たにコピーしたテキストを直前にコピーしたテキストに追加する。つまり、そ
+のテキストを復元すると、そのテキストと直前のテキストをまとめて得ること
+になる。一方で、`copy-region-as-kill'のまえに別のコマンドを実行した場合
+には、この関数はテキストを独立した項目としてキルリングに保存する。
+
+* Menu:
+
+* Complete copy-region-as-kill::  The complete function definition.
+* copy-region-as-kill body::    The body of `copy-region-as-kill'.
+
+
+
+File: eintr-ja, Node: Complete copy-region-as-kill, Prev: copy-region-as-kill, Up: copy-region-as-kill
+
+関数 `copy-region-as-kill' の定義
+---------------------------------
+
+ここに第21版での関数 `copy-region-as-kill'の完全なテキストを示す．
+
+     (defun copy-region-as-kill (beg end)
+       "Save the region as if killed, but don't kill it.
+     In Transient Mark mode, deactivate the mark.
+     If `interprogram-cut-function' is non-nil, also save
+     the text for a window system cut and paste."
+       (interactive "r")
+       (if (eq last-command 'kill-region)
+           (kill-append (buffer-substring beg end) (< end beg))
+         (kill-new (buffer-substring beg end)))
+       (if transient-mark-mode
+           (setq deactivate-mark t))
+       nil)
+
+この関数も部分部分に分解できる。
+
+     (defun copy-region-as-kill (引数リスト)
+       "説明文..."
+       (interactive "r")
+       本体...)
+
+引数は`beg'と`end'であり、`"r"'が指定された対話的関数であるので、2つの
+引数はリージョンの始まりと終わりを参照する必要がある。本書を始めから読
+んでいる読者ならば、関数のこの部分を理解するのは簡単であろう。
+
+単語「kill」が通常の意味と異なることを思い出せば、説明文の内容に混乱す
+ることもないであろう。暫定マークとコメント `interprogram-cut-function'
+はある副作用を説明している．
+
+一度マークをセットすると，バッファにはいつもリージョンがあることになる．
+もし希望すれば，一時的にリージョンをハイライトするために暫定マークモー
+ドを利用できる．(いつでもリージョンをハイライトしたい人なんていないだろ
+う．だから，暫定モードマークは適当な時だけハイライトする．多くの人は暫
+定マークモードをオフにしているので，リージョンは決してハイライトされな
+い．)
+
+ウィンドウシステムでは，異なるプログラム間でコピーやカット，ペーストで
+きる．例えば Xウィンドウシステムでは関数`interprogram-cut-function' は
+`x-select-text' である．これは，Emacs のキルリングと同等ものである．
+
+関数 `copy-region-as-kill' の本体は `if' で始まる．ここでは，2つの異な
+る状況，コマンドが以前の `kill-region' の直後に実行されたかどうか，を区
+別するためにある．最初の例では，新しいリージョンは以前コピーされたテキ
+ストに追加される．そうでなければ，キルリングの先頭に前回のものとは別の
+テキストとして追加される．
+
+この関数の最後の2行は暫定マークモードがオンの時，リージョンがハイライト
+されないようにしている．
+
+`copy-region-as-kill'の本体は詳しく説明する価値がある。
+
+
+
+File: eintr-ja, Node: copy-region-as-kill body, Prev: copy-region-as-kill, Up: copy-region-as-kill
+
+`copy-region-as-kill'の本体 *(2004/08/08)*
+------------------------------------------
+
+関数`copy-region-as-kill'は、関数 `kill-region' (*Note `kill-region':
+kill-region.)とほとんど同じように動作する．両者とも連続してキルしたテキ
+ストは1つの断片にまとめるように書かれている。キルリングからテキストを取
+り出すと、1つの断片として得ることになる。さらに、カーソルの現在位置から
+終わりに向けたキルでは直前にコピーしたテキストの末尾に追加し、先頭向け
+のコピーでは直前にコピーしたテキストの先頭に追加する。このようにして、
+テキスト内の語順は正しく保たれる。
+
+`kill-region'と同様に，関数 `copy-region-as-kill' は変数
+`last-command' をEmacsが以前実行したコマンドを確認するために使う．
+
+* Menu:
+
+* last-command & this-command::
+* kill-append function::
+* kill-new function::
+
+
+
+
+File: eintr-ja, Node: last-command & this-command, Next: kill-append function, Prev: copy-region-as-kill, Up: copy-region-as-kill
+
+`last-command' and `this-command'
+.................................
+
+通常、関数が実行されると、Emacsは、`this-command'の値に実行する関数（こ
+こでは、`copy-region-as-kill'）を設定する。同時に、`this-command'の直前
+の値を`last-command'に設定する。
+
+関数`copy-region-as-kill'の本体の始めの部分では、`last-command'の値が
+`kill-region'かどうかを`if'式で調べている。そうならば、`if'式の真の場合
+の動作が評価される。そこでは、関数`kill-append'を使って、この呼び出しで
+コピーするテキストをキルリングの先頭要素（CAR）に連結する。一方、
+`last-command'の値が`kill-region'でなければ、関数`copy-region-as-kill'
+は新たな要素を関数 `kill-new' を使ってキルリングに追加する。
+
+まだ説明していない関数`eq'を用いているが、
+`if'式はつぎのように読める。
+
+       (if (eq last-command 'kill-region)
+           ;; 真の場合の動作
+           (kill-append (buffer-substring beg end) (< end beg))
+         ;; 偽の場合の動作
+         (kill-new (buffer-substring beg end)))
+
+関数`eq'は、第1引数が第2引数と同じLispオブジェクトかどうかを検査する。
+関数`eq'は、等しいかどうかを検査する関数`equal'に似ているが、
+2つの表現がコンピュータ内部で実際に同じオブジェクトかどうかを検査する。
+`equal'は、2つの式の構造と内容が同じかどうかを検査する。
+
+以前のコマンドが `kill-region' だったら Emacs Lisp インタープリタは関数
+`kill-append' を呼び出します．
+
+
+
+File: eintr-ja, Node: kill-append function, Next: kill-new function, Prev: last-command & this-command, Up: copy-region-as-kill
+
+関数`kill-append'
+.................
+
+関数`kill-append'はつぎのとおりである。
+
+     (defun kill-append (string before-p)
+       "Append STRING to the end of the latest kill in the kill ring.
+     If BEFORE-P is non-nil, prepend STRING to the kill.
+     If `interprogram-cut-function' is set, pass the resulting kill to
+     it."
+       (kill-new (if before-p
+                     (concat string (car kill-ring))
+                   (concat (car kill-ring) string))
+                 t))
+
+関数 `kill-append' はかなり単純である．この関数は関数
+`kill-new' を使用し，すぐに詳細が分かるだろう．
+
+最初に `kill-new' の2つの引数の1つである条件部分を見てみよう．
+関数`setcar'は、キルリングのCARに新たなテキストを連結するために
+`concat'を使っている。
+テキストを先頭に挿入するのか末尾に追加するのかは、
+`if'式の結果に依存する。
+
+     (if before-p                            ; 判定条件
+         (concat string (car kill-ring))     ; 真の場合の動作
+       (concat (car kill-ring) string))      ; 偽の場合の動作
+
+直前のコマンドでキルしたリージョンの直前のリージョンをキルしたときには、
+直前のキルで保存したテキストの先頭に挿入するべきである。逆に、直前にキ
+ルしたリージョンの直後に続くテキストをキルした場合には、直前のテキスト
+の末尾に追加するべきである。`if'式では、新たに保存するテキストを直前に
+保存したテキストの先頭に挿入するか末尾に追加するかを述語`before-p'を用
+いて決めている。
+
+シンボル`before-p'は、`kill-append'の引数の名前の1つである。関数
+`kill-append'が評価されると、実引数を評価した結果の値に束縛される。ここ
+では、式`(< end beg)'である。この式では、このコマンドでキルしたテキスト
+が直前のコマンドでキルしたテキストのまえにあるか、うしろにあるかを直接
+には決定しない。変数`end'の値が変数`beg'の値より小さいかどうかのみを決
+定する。そうであった場合には、バッファの先頭に向けてである可能性が高い。
+すると、述語式`(< end beg)'の評価結果は真となり、テキストは直前のテキス
+トの先頭に挿入される。一方、変数`end'の値が変数`beg'の値より大きければ、
+テキストは直前のテキストの末尾に追加される。
+
+新たに保存するテキストを先頭に挿入するときには、既存のテキストのまえに
+新たなテキストを連結する。
+
+     (concat string (car kill-ring))
+
+テキストを追加する場合には、既存のテキストのうしろに連結する。
+
+     (concat (car kill-ring) string))
+
+この動作を理解するには、まず、関数`concat'を復習しておく必要がある。関
+数`concat'は、2つの文字列を繋げる。結果も文字列である。たとえば、
+
+     (concat "abc" "def")
+          => "abcdef"
+
+     (concat "new "
+             (car '("first element" "second element")))
+          => "new first element"
+
+     (concat (car
+             '("first element" "second element")) " modified")
+          => "first element modified"
+
+これで`kill-append'の動作を理解でき、キルリングの内容を変更することが
+わかる。
+キルリングはリストであり、各要素は保存したテキストである。関数
+`kill-append' は関数 `setcar' を使う代わりに，
+`kill-new' を使っている．
+
+
+
+File: eintr-ja, Node: kill-new function, Prev: kill-append function, Up: copy-region-as-kill
+
+関数 `kill-new'
+...............
+
+関数 `kill-new' は以下のようになる．
+
+     (defun kill-new (string &optional replace)
+       "Make STRING the latest kill in the kill ring.
+     Set the kill-ring-yank pointer to point to it.
+     If `interprogram-cut-function' is non-nil, apply it to STRING.
+     Optional second argument REPLACE non-nil means that STRING will replace
+     the front of the kill ring, rather than being added to the list."
+       (and (fboundp 'menu-bar-update-yank-menu)
+            (menu-bar-update-yank-menu string (and replace (car kill-ring))))
+       (if (and replace kill-ring)
+           (setcar kill-ring string)
+         (setq kill-ring (cons string kill-ring))
+         (if (> (length kill-ring) kill-ring-max)
+             (setcdr (nthcdr (1- kill-ring-max) kill-ring) nil)))
+       (setq kill-ring-yank-pointer kill-ring)
+       (if interprogram-cut-function
+           (funcall interprogram-cut-function string (not replace))))
+
+いつものようにこの関数を部分に分けてみていこう．
+
+ドキュメントの最初の行には意味がある．
+
+     Make STRING the latest kill in the kill ring.
+
+しばらくドキュメントの残りは飛ばしていこう．
+
+コードの `menu-bar-update-yank-menu' を呼び出している最初の2行も飛ばそ
+う．そうすると，下記のように説明できる．
+
+重要な行は下記である：
+
+       (if (and replace kill-ring)
+           ;; 真の場合には
+           (setcar kill-ring string)
+         ;; 偽の場合には
+         (setq kill-ring (cons string kill-ring))
+         (if (> (length kill-ring) kill-ring-max)
+             ;; キルリングが溢れるのを避ける
+             (setcdr (nthcdr (1- kill-ring-max) kill-ring) nil)))
+       (setq kill-ring-yank-pointer kill-ring)
+       (if interprogram-cut-function
+           (funcall interprogram-cut-function string (not replace))))
+
+条件部分は `(and replace kill-ring)' である．これは，2つの条
+件が合致すれば真となる．つまり，キルリングが何かを含んでいて，変数
+`replace' が真の時，この条件は真となる．
+
+関数 `kill-append' は `replace' を真に設定する．そうして，キルリングが
+少なくとも1要素を含んでいれば `setcar' 式が実行される．
+
+     (setcar kill-ring string)
+
+関数 `setcar' は実際に `kill-ring' の最初の要素を
+`string'の値に変更する．この関数は最初の要素を置き換える．
+
+一方，キルリングが空であるか置換に失敗したなら，条件の偽の部分が実行さ
+れる：
+
+     (setq kill-ring (cons string kill-ring))
+     (if (> (length kill-ring) kill-ring-max)
+         (setcdr (nthcdr (1- kill-ring-max) kill-ring) nil))
+
+この式はまずキルリングに `string' を新しい要素として先頭に追加すること
+で新しいキルリングを構成する．そうして，2番目の `if' 文が実行される．こ
+の2番目の `if' 文はキルリングが長くなりすぎるのを防いでいる．
+
+これらの2つの式を順番に見ていこう．
+
+偽の場合の動作の`setq'の行では、キルした文字列をもとのキルリングに追加
+した結果をキルリングの新たな値に設定する。
+
+つぎの例からこの動作を理解できる。
+
+     (setq example-list '("here is a clause" "another clause"))
+
+`C-x C-e'でこの式を評価してから、`example-list'を評価するとつぎのような
+結果になる。
+
+     example-list
+          => ("here is a clause" "another clause")
+
+このリストに新たな要素を追加するには、つぎの式を評価すればよい。
+
+     (setq example-list (cons "a third clause" example-list))
+
+`example-list'を評価すると、その値はつぎのとおりである。
+
+     example-list
+          => ("a third clause" "here is a clause" "another clause")
+
+つまり、`cons'で「the third clause」をリストに追加したのである。
+
+以上は、関数内で`setq'と`cons'とが行うことと同じである．その行を改めて
+つぎに記しておく。
+
+     (setq kill-ring (cons string kill-ring))
+
+`if' 文の2番目へ進もう．この式はキルリングが長くなりすぎるのを防いでい
+る．この部分は下記のようになっている．
+
+     (if (> (length kill-ring) kill-ring-max)
+         (setcdr (nthcdr (1- kill-ring-max) kill-ring) nil))
+
+このコードでは、キルリングの長さが許された最大長よりも大きいかどうかを
+検査する。最大長は`kill-ring-max'の値である（デフォルトは60）。キルリン
+グの長さが長すぎる場合には、キルリングの最後の要素を`nil'に設定する。こ
+れには、2つの関数`nthcdr'と`setcdr'を使う。
+
+`setcdr'についてはすでに説明した（*Note setcdr::）。`setcar'がリストの
+CARを設定するように、`setcdr'はリストのCDRを設定する。しかし、ここでは
+`setcdr'はキルリング全体のCDRを設定するのではない。関数`nthcdr'が使われ
+ていて、キルリングの最後の要素の直前のCDRを設定するのである。つまり、最
+後の要素の直前のCDRはキルリングの最後の要素であるから、キルリングの最後
+の要素を設定することになる。
+
+関数`nthcdr'は、リストのCDRを繰り返し取るように動作する。
+つまり、CDRのCDRのCDRの...のCDRを取る。
+N回繰り返した結果を返す。
+
+したがって、たとえば、4要素リストを3要素リストにするには、最後の要素の
+直前のCDRを`nil'にしてリストを短くすればよい。
+
+つぎの3つの式を順に評価すれば、これを理解できるであろう。
+まず、`trees'の値として`(maple oak pine birch)'を設定する。
+つぎに、2つめのCDRのCDRを`nil'にしてから、
+`trees'の値を見てみる。
+
+     (setq trees '(maple oak pine birch))
+          => (maple oak pine birch)
+
+     (setcdr (nthcdr 2 trees) nil)
+          => nil
+
+     trees
+          => (maple oak pine)
+
+（`setcdr'式が返す値は、CDRを`nil'に設定したので、
+`nil'である。）
+
+`kill-new'では、関数`nthcdr'は、キルリングの許された最大長引く1回だけ
+CDRを取り、その要素（キルリングの残りの要素）のCDRに`nil'を設定する。こ
+れにより、キルリングが長くなり過ぎるのを防ぐ。
+
+関数`copy-region-as-kill'の最後の行の直前はつぎのとおりである。
+
+     (setq kill-ring-yank-pointer kill-ring)
+
+`kill-ring-yank-pointer' は `kill-ring' が設定されるグローバル変数であ
+る．
+
+`kill-ring-yank-pointer' は `pointer' と呼ばれるが，キルリングのような
+変数である．しかし，変数がどのように使われるか理解しやすいように変数名
+は選ばれた．この変数は `yank'や`yank-pop' (*Note Yanking Text Back:
+Yanking.) のような関数で使われる．
+
+関数の本体である最初の2行に話を戻そう．
+
+       (and (fboundp 'menu-bar-update-yank-menu)
+            (menu-bar-update-yank-menu string (and replace (car kill-ring))))
+
+これは最初の要素が関数 `and' である式である．
+
+スペシャルフォーム `and' は 1つの引数が `nil' を返し，`and' 式が `nil'
+を返すまで順番に引数を評価する．しかし，どの引数も `nil' を返さなければ，
+最後の引数を評価した時の値が返ることになる．(そのような値は `nil' では
+ないので，Emacs Lisp では真と考える)．言い換えると，`and'式はその引数が
+真であれば1つの真値だけを返すのである．．
+
+この例では，最初に `menu-bar-update-yank-menu' が関数として存在するかを
+確認する．もし存在すれば，それを呼ぶ．関数 `fboundp' はシンボルの関数定
+義が"ボイド(無)で無ければ"真を返す．もしシンボルの関数定義が無であった
+なら，わざとエラーを作成したように(*Note Generate an Error Message:
+Making Errors.)，エラーメッセージが表示される．
+
+要するに，`and' は以下のような `if' 式なのである．
+
+     if THE-MENU-BAR-FUNCTION-EXISTS
+       then EXECUTE-IT
+
+`menu-bar-update-yank-menu' はメニューの Edit にある `Select and
+Paste' を実現している関数の一つである．このメニューでは，マウスを使い，
+以前にコピーしたさまざまなテキストを見て，貼り付けるものを選択できる．
+
+最後に，関数 `kill-new' の最後の式はウィンドウシステム上の別のプログラ
+ムでコピーやペーストができるように，新しくコピーした文字を保存します．
+例えば，Xウィンドウシステムでは関数 `x-select-text' が文字列を取り，X
+で扱われるメモリに保存します．これで，Xtermのような他のプログラムでペー
+ストできる．
+
+この式は以下のようである．
+
+       (if interprogram-cut-function
+           (funcall interprogram-cut-function string (not replace))))
+
+`interprogram-cut-function' が存在すると，Emacs は `funcall' をある関数
+を第1引数，残りの引数を渡して実行します．(ついでに，私が見る限りでは，
+この `if' 式はこの関数の最初の部分と同様に `and' 式で置き換えることがで
+きる．)
+
+ここで，ウィンドウシステムや他のプログラムについて説明するつもりはない．
+ここでは単に，GNU Emacs が他のプログラムと簡単にうまく機能できるような
+仕組みであるとだけ覚えておいて欲しい．
+
+This code for placing text in the kill ring, either concatenated with
+an existing element or as a new element, leads us to the code for
+bringing back text that has been cut out of the buffer--the yank
+commands.  However, before discussing the yank commands, it is better
+to learn how lists are implemented in a computer.  This will make
+clear such mysteries as the use of the term `pointer'.  テキストをキル
+リングに，既存の要素に連結するか，新しい要素として，追加し、バッファか
+ら切り取ったテキストを復元するヤンクコマンドのコードの説明に進める。し
+かし、ヤンクコマンドを説明するまえに、コンピュータでのリストの実装方法
+を学んでおくのがよいであろう。そうすれば、「ポインタ」などの用語の不可
+解さが明らかになる。
+
+
+
+File: eintr-ja, Node: cons & search-fwd Review, Next: search Exercises, Prev: copy-region-as-kill, Up: PrePreface
+
+復　習 *(2004/08/08)*
+=====================
+
+これまでに説明した関数のいくつかを以下にまとめておく。
+
+`car'
+`cdr'
+     `car'はリストの先頭要素を返す。
+     `cdr'はリストの2番目以降の要素を返す。
+
+     たとえば、
+
+          (car '(1 2 3 4 5 6 7))
+               => 1
+          (cdr '(1 2 3 4 5 6 7))
+               => (2 3 4 5 6 7)
+
+`cons'
+     `cons'は、第1引数を第2引数のまえに置いたリストを作る。
+
+     たとえば、
+
+          (cons 1 '(2 3 4))
+               => (1 2 3 4)
+
+`nthcdr'
+     リストに`cdr'を「n」回適用した結果を返す。
+
+     たとえば、
+
+          (nthcdr 3 '(1 2 3 4 5 6 7))
+               => (4 5 6 7)
+
+`setcar'
+`setcdr'
+     `setcar'はリストの先頭要素を変更する。
+     `setcdr'はリストの2番目以降の要素を変更する。
+
+     たとえば、
+
+          (setq triple '(1 2 3))
+
+          (setcar triple '37)
+
+          triple
+               => (37 2 3)
+
+          (setcdr triple '("foo" "bar"))
+
+          triple
+               => (37 "foo" "bar")
+
+`progn'
+     引数を順番に評価し、最後のものの値を返す。
+
+     たとえば、
+
+          (progn 1 2 3 4)
+               => 4
+
+`save-restriction'
+     カレントバッファで有効になっているナロイングを記録し、引数を評価し
+     終えたら、もとのナロイングに戻す。
+
+`search-forward'
+     文字列を探し、それがみつかればポイントを移動する。
+
+     4つの引数を取る。
+
+       1. 探すべき文字列。
+
+       2. 探索範囲の制限。省略できる。
+
+       3. 探索に失敗した場合に`nil'を返すかエラーメッセージを返すか指定
+          する。省略できる。
+
+       4. 探索を何回行うかを指定する。省略できる。負の場合には、逆向き
+          に（先頭へ向けて）探索する。
+
+`kill-region'
+`delete-region'
+`copy-region-as-kill'
+
+     `kill-region'は、ポイントとマークのあいだのテキストをバッファから
+     切り取り、ヤンクで復元できるように、キルリングにそのテキストを保存
+     する。
+
+     `delete-and-extract-region' は、ポイントとマークのあいだのテキスト
+     をバッファから取りさり、破棄する。復元することはできない。
+
+     `copy-region-as-kill'はポイントとマークのあいだのテキストをキルリ
+     ングにコピーし、キルリングからそのテキストを復元できるようにする。
+     この関数は、バッファからテキストを取りさったりしない。
+
+
+
+File: eintr-ja, Node: search Exercises, Next: Symbols as Chest, Prev: copy-region-as-kill, Up: PrePreface
+
+探索の演習問題 *(2004/08/08)*
+=============================
+
+   * 文字列を探す対話的関数を書いてみよ。文字列を探しあてた場合には、そ
+     の直後にポイントを移動してメッセージ「Found!」を表示する（この関数
+     の名前には`search-forward'を使わないこと。さもないと、Emacsの既存
+     の`search-forward'を書き換えてしまう。かわりに、`test-search'のよ
+     うな名前を使う）。
+
+   * キルリングに第3要素があれば、それをエコー領域に表示する関数を書い
+     てみよ。キルリングに第3要素がなければ、適切なメッセージを表示せよ。
+
+
+
+File: eintr-ja, Node: List Implementation, Next: Counting Words, Prev: PrePreface, Up: Top
+
+リストの実装方法 *(2004/08/08)*
+*******************************
+
+Lispでは、アトムは単純な方法で記録されている。現実の実装が単純ではない
+としても、理論的には単純である。たとえば、アトム`rose'は、`r'、`o'、
+`s'、`e'の4つの連続した文字として記録されている。一方で、リストは異なっ
+た方法で記録されている。その機構は同様に単純であるが、その考え方に慣れ
+るには時間がかかる。リストは一連のポインタ対を用いて記録されている。ポ
+インタ対の最初のポインタはアトムやリストを指し、ポインタ対の2番目のポイ
+ンタはつぎの対やシンボル、あるいは、リストの終わりを表す`nil'を指す。
+
+ポインタ自身は、とても単純で、それが指すもののアドレスである。したがっ
+て、リストは一連のアドレス対として記録される。
+
+* Menu:
+
+* Lists diagrammed::
+* Symbols as Chest::            Exploring a powerful metaphor.
+* List Exercise::
+
+
+
+File: eintr-ja, Node: Lists diagrammed, Next: Symbols as Chest, Prev: search Exercises, Up: PrePreface
+
+リストの図解
+============
+
+たとえば、リスト`(rose violet buttercup)'には3つの要素、`rose'、
+`violet'、`buttercup'がある。コンピュータ内部では、`rose'のアドレスは、
+アトム`violet'の場所を示すアドレスを与えるアドレスとともにメモリに記録
+されている。（`violet'の場所を示す）アドレスは、アトム`buttercup'の場所
+を示すアドレスを与えるアドレスとともに記録されている。
+
+複雑に聞こえるであろうが、図で表せば簡単である。
+
+         ___ ___      ___ ___      ___ ___
+        |___|___|--> |___|___|--> |___|___|--> nil
+          |            |            |
+          |            |            |
+           --> rose     --> violet   --> buttercup
+
+
+
+図では、各箱は、メモリアドレス形式のLispオブジェクトを保持するコンピュー
+タのメモリを表す。箱、つまり、アドレスは対になっている。各矢印は、アト
+ムや他のアドレスの対のアドレスで表されるものを指す。最初の箱は`rose'の
+アドレスであり、矢印は`rose'を指す。2番目の箱は、つぎの箱の対のアドレス
+であり、その先頭部分は`violet'のアドレスであり、2番目の部分はつぎの対の
+アドレスである。最後の箱はシンボル`nil'を指し、リストの終わりを表す。
+
+`setq'などの関数で変数にリストを設定すると、変数には最初の箱のアドレス
+を設定する。つぎの式
+
+     (setq bouquet '(rose violet buttercup))
+
+を評価するとつぎのような状況になる。
+
+     bouquet
+          |
+          |     ___ ___      ___ ___      ___ ___
+           --> |___|___|--> |___|___|--> |___|___|--> nil
+                 |            |            |
+                 |            |            |
+                  --> rose     --> violet   --> buttercup
+
+
+
+この例では、シンボル`bouquet'は、最初の箱の対のアドレスを保持する。
+
+同じリストを異なる箱表記方法で示すこともできる。
+
+     bouquet
+      |
+      |    --------------       ---------------       ----------------
+      |   | car   | cdr  |     | car    | cdr  |     | car     | cdr  |
+       -->| rose  |   o------->| violet |   o------->| butter- |  nil |
+          |       |      |     |        |      |     | cup     |      |
+           --------------       ---------------       ----------------
+
+
+
+(リストであるようなシンボルは多くのアドレスのペアからなる．しかし，個々
+のシンボルの構造はアドレスである．シンボル `bouquet' はアドレスを入れた
+箱のグループからなり，1つは `bouquet' のアドレス，2つ目はシンボルに割り
+当てられた関数定義のアドレス，3番目はリスト `(rose violet buttercup)'
+の最初のペアのアドレスを入れた箱のアドレスなどとなっている．ここで，シ
+ンボルの3番目のアドレスはリストのアドレス箱の最初のペアを指している)
+
+シンボルにリストのCDRを設定しても、リスト自体は変わらない。シンボルはリ
+ストを辿ったアドレスを持つだけである（専門用語では、CARやCDRは「非破壊
+的」である）。したがって、つぎの式を評価すると
+
+     (setq flowers (cdr bouquet))
+
+つぎのようになる。
+
+
+     bouquet        flowers
+       |              |
+       |     ___ ___  |     ___ ___      ___ ___
+        --> |   |   |  --> |   |   |    |   |   |
+            |___|___|----> |___|___|--> |___|___|--> nil
+              |              |            |
+              |              |            |
+               --> rose       --> violet   --> buttercup
+
+
+
+
+`flowers'の値は`(violet buttercup)'であり、
+つまり、シンボル`flowers'は、`violet'のアドレスを最初の箱に、
+`buttercup'のアドレスを2番目の箱に持つような箱の対のアドレスを保持する。
+
+アドレスを収めた箱の対を"コンスセル（cons cell）"とか
+"ドットペアー（dotted pair）"と呼ぶ。
+コンスセルやドットペアーについて
+詳しくは、*Note Dotted Pair Notation: (elisp)Dotted Pair Notationや
+*Note List Type: (elisp)List Type。
+
+関数`cons'は、上に示した一連のアドレスのまえにアドレスの新たな対を加え
+る。たとえば、つぎの式
+
+     (setq bouquet (cons 'lily bouquet))
+
+を評価すると、つぎのようになる。
+
+
+     bouquet                       flowers
+       |                             |
+       |     ___ ___        ___ ___  |     ___ ___       ___ ___
+        --> |   |   |      |   |   |  --> |   |   |     |   |   |
+            |___|___|----> |___|___|----> |___|___|---->|___|___|--> nil
+              |              |              |             |
+              |              |              |             |
+               --> lily      --> rose       --> violet    --> buttercup
+
+
+
+
+しかし、つぎの式を評価するとわかるように、これによりシンボル`flowers'の
+値が変更されることはない。
+
+     (eq (cdr (cdr bouquet)) flowers)
+
+は、真を表す`t'を返す。
+
+再設定しない限り、`flowers'の値は`(violet buttercup)'である。つまり、
+`flowers'は、最初の部分に`violet'のアドレスを収めたコンスセルのアドレス
+を持つ。さらに、すでに存在するいかなるコンスセルも変更しない。それらは
+そのまま存続する。
+
+したがって、LispでリストのCDRを取り出すと、一連のコンスセルの中のつぎの
+コンスセルのアドレスを得るのである。リストのCARを取り出すと、リストの先
+頭要素のアドレスを得る。新たな要素をリストに`cons'すると、リストのまえ
+に新たなコンスセルを置くのである。以上がすべてである。Lispの根底にある
+構造は、とても単純なのである。
+
+一連のコンスセルの最後のアドレスは何を指すのであろう？　それは空リスト、
+つまり、`nil'のアドレスである。
+
+まとめると、Lispの変数に値を設定すると、変数が参照するリストのアドレス
+が設定される。
+
+
+
+File: eintr-ja, Node: Symbols as Chest, Next: List Exercise, Prev: search Exercises, Up: PrePreface
+
+箪笥の引き出しに見立てたシンボル *(2004/08/08)*
+===============================================
+
+始めの節では、シンボルを箪笥と考えればよいと述べた。関数定義はある引き
+出しに入れてあり、値は別の引き出しに入れてあるのである。関数定義を収め
+た引き出しの中身を変えることなく、値を収めた引き出しの中身を変更でき、
+その逆もそうである。
+
+実際、各引き出しに収められているのは、値や関数定義のアドレスである。屋
+根裏部屋でみつけた古い箪笥の引き出しから、宝物を埋めた場所を記した地図
+をみつけるようなものである。
+
+（シンボルには、名前、関数定義、値に加えて、その他の情報を記録するため
+の"属性リスト（property list）"を収める引き出しもある。ここでは属性リス
+トについては説明しないので、*Note Property Lists: (elisp)Property
+Listsを参照。）
+
+Here is a fanciful representation: 仮想的な表現をつぎに示す。
+
+
+                  箪笥の引き出し                 引き出しの中身
+
+                 __   o0O0o   __
+               /                 \
+              ---------------------
+             |    シンボル名の     |            [map to]
+             |       場所          |             bouquet
+             |                     |
+             +---------------------+
+             |     関数定義の      |
+             |       場所          |             なし
+             |                     |
+             +---------------------+
+             |      変数の値の     |            [map to]
+             |         場所        |             (rose violet buttercup)
+             |                     |
+             +---------------------+
+             |    属性リストの     |
+             |        場所         |             [本書では説明しない]
+             |                     |
+             +---------------------+
+             |/                   \|
+
+
+
+
+変数`kill-ring'と変数`kill-ring-yank-pointer'のどちらもポインタである。
+しかし、キルリング自体は、実際にその要素から構成されている。
+`kill-ring'は、リストを指すというよりは、リストそのもののようにいう。逆
+に、`kill-ring-yank-pointer'はリストを指すというようにいう。
+
+同じものを2つの異なる方式で呼ぶのは、最初は、混乱のもとであるが、熟考す
+ると意味のあることがわかる。キルリングは、Emacsバッファから切り取った情
+報を保持する完全なデータ構造を一般的に意味する。一方で、
+`kill-ring-yank-pointer'は、挿入される先頭要素（CAR）となるキルリングの
+部分を指すのである。
+
+関数`rotate-yank-pointer'は、
+`kill-ring-yank-pointer'が指すキルリングの要素を変更する。
+キルリングの最後の要素のつぎを指すようなときには、
+自動的にキルリングの先頭要素を指すようにする。
+このようにしてリストをリングに変換している。
+関数`rotate-yank-pointer'自体のコードは難しくはないが、
+こまごましたことを含む。
+この関数と、さらに簡単な関数`yank'と`yank-pop'は、付録で説明する。
+*Note Kill Ring::。
+
+
+
+File: eintr-ja, Node: yank nthcdr Exercises, Next: while, Prev: List Exercise, Up: PrePreface
+
+`yank'と`nthcdr'の演習問題
+==========================
+
+   * `C-h v'（`describe-variable'）を使って、読者のキルリングの内容を調
+     べてみよ。キルリングにいくつか項目を追加してから、その値を再度調べ
+     てみよ。`M-y'（`yank-pop'）を使って、キルリング全体を調べてみよ。
+     読者のキルリングには項目はいくつあるか？　`kill-ring-max'の値を調
+     べてみよ。読者のキルリングは満杯になっているか、あるいは、テキスト
+     断片をさらに保存できるかどうかを調べてみよ。
+
+   * `nthcdr'と`car'を使って、リストの先頭要素、第2要素、第3要素、第4要
+     素を返す一連の式を作ってみよ。
+
+
+
+File: eintr-ja, Node: Loops & Recursion, Next: Counting Words, Prev: PrePreface, Up: Top
+
+ループと再帰 *(2004/08/10)*
+***************************
+
+Emacs Lispには、式や一連の式を繰り返し評価する主要な方法が2つあり、
+`while'ループを使う方法と"再帰（recursion）"を使う方法である。
+
+繰り返しはとても重要である。たとえば、4つの文だけ先へ進むには、1つの文
+のみ先へ進むだけのプログラムを書き、それを4回繰り返せばよい。人間は繰り
+返し回数をまちがえたり処理を誤ったりするが、コンピュータが飽きたり疲れ
+たりすることはないので、繰り返し動作が有害な結果を生むことはない。
+
+問題を解決したりするのにとてもパワフルな再帰を使うことは可能だが (1)
+(*Note Loops & Recursion-Footnotes::)，ほとんどの人は `while' ループや
+同種の関数を使って Emacs Lisp 関数を書く．
+
+* Menu:
+
+* while::                       Causing a stretch of code to repeat.
+* dolist dotimes::
+* Recursion::                   Causing a function to call itself.
+* Looping exercise::
+
+
+File: eintr-ja  Node: Loops & Recursion-Footnotes, Up: Loops & Recursion
+
+(1) 精神的にもコンピュータのリソース的にも節約し無駄を省くために，再帰
+関数を書くことは可能である．たまたま，精神的に楽をするために，容易に思
+い付く方法を使うと，時にコンピュータのリソースを非常に多く使ってしまう
+ことがある．Emacs は今となっては古いマシンでも動作させるために，デフォ
+ルトの設定値で機能的に制限してある．`max-specpdl-size' や
+`max-lisp-eval-depth' を変更したくなるかもしれない．私の
+`.emacs' ファイルでは，デフォルト値の15〜30番の値に変更してある
+
+
+
+File: eintr-ja, Node: while, Next: Looping exercise, Prev: yank nthcdr Exercises, Up: PrePreface
+
+`while'
+=======
+
+スペシャルフォーム`while'は、第1引数を評価した結果が真か偽かを検査する。
+これは、Lispインタープリタが`if'に対して行うことに似ているが、その検査
+後にインタープリタが行うことは異なる。
+
+`while'式では、第1引数を評価した結果が偽ならば、Lispインタープリタは式
+の残りの部分（式の"本体"）を飛び越し、それらを評価しない。しかし、値が
+真ならば、Lispインタープリタは式の本体を評価し、再度、第1引数が真か偽か
+を検査する。第1引数を再度評価した結果が真ならば、Lispインタープリタは式
+の本体を再度評価する。
+
+`while'式の雛型はつぎのとおりである。
+
+     (while 判定条件
+       本体...)
+
+* Menu:
+
+* Looping with while::          Repeat so long as test returns true.
+* Loop Example::                A `while' loop that uses a list.
+* print-elements-of-list::      Uses `while', `car', `cdr'.
+* Incrementing Loop::           A loop with an incrementing counter.
+* Decrementing Loop::           A loop with a decrementing counter.
+
+
+
+File: eintr-ja, Node: Looping with while, Next: print-elements-of-list, Prev: while, Up: while
+
+`while' を使ったループ
+----------------------
+
+評価したときに`while'式の判定条件が真を返す限り、本体を繰り返し評価する。
+飛行機が旋回（ループ）するように、Lispインタープリタが同じことを何度も
+何度も繰り返すので、この処理をループと呼ぶ。判定条件の評価結果が偽なら
+ば、Lispインタープリタは`while'式の残りを評価せず「ループから出る」。
+
+明らかに、`while'の第1引数の評価結果がつねに真ならば、それに続く本体は
+何度も何度も...何度も...永久に評価される。逆に、評価結果がけっして真に
+ならなければ、本体の式はけっして評価されない。`while'ループを書く工程は、
+続く式を評価したい回数だけ真を返し、そのあとは偽を返すような判定条件を
+選ぶことである。
+
+`while'を評価した結果返される値は、判定条件の値である。この帰結として興
+味深いことは、エラーなしに評価される`while'ループは、1回繰り返そうが
+100回繰り返そうがまったく繰り返さなくても、`nil'、つまり、偽を返すこと
+である。正しく評価できた`while'式は、けっして真を返さない！　つまり、
+`while'はつねに副作用のために評価されるのであり、`while'ループの本体の
+式を評価した効果だけのためである。これは意味のあることである。ほしいの
+は単なる繰り返し動作ではなく、ループの式を繰り返し評価したときの効果が
+ほしいのである。
+
+
+
+File: eintr-ja, Node: Loop Example, Next: print-elements-of-list, Prev: while, Up: while
+
+A `while' ループとリスト
+------------------------
+
+`while'ループを制御する一般的な方法は、リストに要素があるかどうかを検査
+することである。要素があればループを繰り返すが、要素がなければ繰り返し
+を終える。これは重要な技法なので、例示のために短い例を作ることにする。
+
+リストに要素があるかどうかを検査する簡単な方法は、リストを評価すること
+である。要素がなければ、空リストであるから空リスト`()'が返され、これは
+偽を意味する`nil'の同義語である。一方、リストに要素があれば、評価すると
+これらの要素を返す。Emacs Lispインタープリタは、`nil'以外の値を真と解釈
+するので、要素を返すリストは`while'ループの検査では真になる。
+
+たとえば、つぎの`setq'式を評価すれば、変数`empty-list'に`nil'を設定でき
+る。
+
+     (setq empty-list ())
+
+`setq'式を評価しておけば、いつものようにシンボルの直後にカーソルを置い
+て`C-x C-e'とタイプすれば変数`empty-list'を評価できる。エコー領域には
+`nil'と表示される。
+
+     empty-list
+
+一方、つぎの2つの式を評価するとわかるように、要素を持つリストを変数に設
+定して、その変数を評価するとリストが表示される。
+
+     (setq animals '(gazelle giraffe lion tiger))
+
+     animals
+
+したがって、リスト`animals'に要素があるかどうかを検査する
+`while'ループを書くと、ループの始めの部分はつぎのようになる。
+
+     (while animals
+            ...
+
+`while'が第1引数を検査するとき、変数`animals'が評価される。これはリスト
+を返す。リストに要素がある限り、`while'は検査結果は真であると解釈する。
+しかし、リストが空になると検査結果は偽であると解釈する。
+
+`while'ループが永久に廻り続けるのを防ぐには、
+最終的にリストが空になるような機構を与える必要がある。
+しばしば使われる技法は、`while'式の中の式の1つで、
+リストの値にリストのCDRを設定することである。
+関数`cdr'を評価するたびに、リストは短くなり、最終的には空リストになる。
+その時点で`while'ループの検査は偽を返し、
+`while'の引数はそれ以上評価されなくなる。
+
+たとえば、つぎの式で、動物のリストを束縛した変数`animals'にもとのリスト
+のCDRを設定できる。
+
+     (setq animals (cdr animals))
+
+まえの式を評価してからこの式を評価すると、エコー領域に `(giraffe lion
+tiger)' と表示される。この式を再度評価すると、エコー領域に`(lion
+tiger)'と表示される。さらに評価すると`(tiger)'となり、さらに評価すると
+空リストになり`nil'と表示される。
+
+関数`cdr'を繰り返し使って最終的に判定条件が偽になるような
+`while'ループの雛型はつぎのようになる。
+
+     (while リストが空かどうか検査
+       本体...
+       リストのCDRをリストに設定)
+
+この検査と`cdr'の利用は、リスト全体を調べてリストの各要素を1行に表示す
+る関数で使える。
+
+
+
+File: eintr-ja, Node: print-elements-of-list, Next: Recursive Definition Parts, Prev: while, Up: while
+
+例：`print-elements-of-list'
+----------------------------
+
+関数`print-elements-of-list'はリストを用いた`while'ループの例である。
+
+この関数は、複数行出力する。Emacs 21 かそれ以上のバージョンでこのマニュ
+アルを読んでいるなら，いつものようにInfo 上で続く式を評価できる．
+
+もしEmacs の古いバージョンを使っているのであれば，必要な式を
+`*scratch*' バッファにコピーして，そこで評価する必要がある．これは古い
+バージョンのEmacsではエコー領域が1行しか無いためである．
+
+式をコピーするには、
+リージョンの始めを`C-SPC'（`set-mark-command'）で
+マークし、カーソルをリージョンの終わりに移動してから、
+`M-w'（`copy-region-as-kill'）を使ってリージョンをコピーする。
+つぎに、バッファ`*scratch*'にて、
+`C-y'（`yank'）とタイプすればその式を取り出せる。
+
+バッファ`*scratch*'に式をコピーしてから、各式を順番に評価する。最後の式
+`(print-elements-of-list animals)'は、必ず、`C-u C-x C-e'とタイプして、
+つまり、`eval-last-sexp'に引数を与えて評価すること。これにより、評価結
+果は、エコー領域ではなく、バッファ`*scratch*'に表示される（さもないと、
+エコー領域には、`^Jgiraffe^J^Jgazelle^J^Jlion^J^Jtiger^Jnil' のように表
+示される。ここで、`^J'は改行のことである．)
+
+もしEmacs 21以降を使っていれば，これらの式をInfoバッファで直接評価し，
+エコー領域で結果を見ることができる．
+
+     (setq animals '(gazelle giraffe lion tiger))
+
+     (defun print-elements-of-list (list)
+       "Print each element of LIST on a line of its own."
+       (while list
+         (print (car list))
+         (setq list (cdr list))))
+
+     (print-elements-of-list animals)
+
+When you evaluate the three expressions in sequence, you will see
+this: 3つの式を順番に評価すると、つぎのように表示される。
+
+     giraffe
+
+     gazelle
+
+     lion
+
+     tiger
+     nil
+
+リストの各要素が（関数`print'の動作により）1行に表示され、最後に関数が
+返した値が表示される。関数の最後の式は`while'ループであり、`while'ルー
+プはつねに`nil' を返すので、リストの最後の要素のあとに、`nil'が表示され
+る。
+
+
+
+File: eintr-ja, Node: Incrementing Loop, Next: Recursive Definition Parts, Prev: print-elements-of-list, Up: while
+
+増加カウンタによるループ
+------------------------
+
+終了すべきときに止まらないループは無意味である。ループをリストで制御す
+る以外に、ループを止める一般的な方法は、必要回数の繰り返しを完了したら
+偽を返すような第1引数を書くことである。つまり、ループにカウンタ、ループ
+の繰り返し回数を数える式を持たせるのである。
+
+`(< count desired-number)'のように判定条件を記述すれば、`count'の値が繰
+り返し回数`desired-number'より小さければ真を返し、`count'の値が
+`desired-number'に等しいか大きければ偽を返す。カウンタを増加させる式は
+`(setq count (1+ count))'のような簡単な`setq'でよく、`1+'は引数に1を加
+えるEmacs Lispの組み込み関数である（式`(1+ count)'は、`(+ count 1)'と同
+じ結果をもたらし、人間にも読みやすい）。
+
+カウンタを増加して制御する`while'ループの雛型はつぎのようになる。
+
+     SET-COUNT-TO-INITIAL-VALUE
+     (while (< count desired-number)         ; 判定条件
+       BODY...
+       (setq count (1+ count)))              ; 1増やす
+
+`count'の初期値を設定する必要があることに注意してほしい。普通は1に設定
+する。
+
+* Menu:
+
+* Incrementing Example::        Counting pebbles in a triangle.
+* Inc Example parts::           The parts of the function definition.
+* Inc Example altogether::      Putting the function definition together.
+
+
+
+File: eintr-ja, Node: Incrementing Example, Next: Inc Example parts, Prev: print-elements-of-list, Up: print-elements-of-list
+
+増加カウンタの例
+................
+
+浜辺で遊んでいるときに、つぎに示すように、最初の行には小石を1個、つぎの
+行には2個、そのつぎの行には3個というように、小石で三角形を作ろうと考え
+たとする。
+
+
+                    *
+                   * *
+                  * * *
+                 * * * *
+
+
+（約2500年前に、ピタゴラスや他の人達は、このような問題を考察して数論の
+始まりを築いた。）
+
+7行の三角形を作るには何個の小石が必要か知りたいとしよう。
+
+明らかに、必要なことは数1から7までを加算することである。これには2つの方
+法がある。最小数1から始めて、1、2、3、4のように加算する。あるいは、最大
+数から始めて、7、6、5、4のように加算する。いずれの方法も、`while'ループ
+を書く一般的な方法の例示になるので、増やしながらの加算と減らしながらの
+加算の2つの例を書くことにする。まずは、1、2、3、4と加算する例から始める。
+
+数個の数を加算するだけならば、もっとも簡単な方法は、それらをいっきに加
+算することである。しかし、あらかじめ何個の数を加算するかわかっていなかっ
+たり、非常に多くの数の加算にも対処したければ、複雑な処理をいっきに行う
+のではなく、単純な処理を繰り返すような加算にする必要がある。
+
+たとえば、小石の個数をいっきに加算するかわりに、最初は1行目の小石の個数
+1を2行目の個数2に加え、これらの総和を3行目の個数3に加える。つぎに、4行
+目の個数4を1行目から3行目までの総和に加えるということを繰り返す。
+
+処理の重要な点は、繰り返しの各段階の動作は単純であることである。この例
+では、各段階では、2つの数、つまり、その行の小石の個数とそれまでの総和を
+加算するだけである。最後の行をそれまでの総和に加算するまで、2つの数の加
+算処理を繰り返し繰り返し実行するのである。より複雑なループでは、各段階
+の動作は単純ではないかもしれないが、すべてをいっきに行うよりは簡単であ
+る。
+
+
+
+File: eintr-ja, Node: Inc Example parts, Next: Inc Example altogether, Prev: Incrementing Example, Up: print-elements-of-list
+
+関数定義の各部分
+................
+
+以上の分析により、関数定義の骨格がわかる。まず、小石の総数を保持する変
+数`total'が必要である。これは、関数が返す値である。
+
+つぎに、関数には引数が必要である。この引数は三角形の行数である。これを
+`number-of-rows'としよう。
+
+最後に、カウンタとして使う変数が必要である。この変数を`counter'と命名し
+てもよいが、より適した`row-number'を使おう。カウンタが数えるのは行数で
+あり、プログラムではできる限りわかりやすい名前を使うべきだからである。
+
+Lispインタープリタが関数内の式の評価を始めるときには、`total'には何も加
+算していないので、`total'の値は0になっているべきである。続いて、関数で
+は、1行目の小石の個数を総和に加算し、2行目の小石の個数を総和に加算し、
+3行目の小石の個数を総和に加算し、ということを、加算すべき行がなくなるま
+で行う。
+
+`total'と`row-number'のどちらも、関数の内部だけで使うので、`let'でロー
+カル変数として宣言し初期値を与える。明らかに、`total'の初期値は0である。
+また、第1行から始めるので、`row-number'の初期値は1である。つまり、
+`let'文はつぎのようになる。
+
+       (let ((total 0)
+             (row-number 1))
+         本体...)
+
+内部変数を宣言しそれらに初期値を束縛したら、`while'ループを始められる。
+判定条件の式は、`row-number'が`number-of-rows'より小さいか等しい限りは
+真を返す必要がある（行の番号が三角形の行数より小さい場合に限り真を返す
+判定条件だと、最後の行が総和に加算されない。したがって、行の番号は三角
+形の行数より小さいか等しい必要がある）。
+
+Lispには、第1引数が第2引数より小さいか等しいときに真を返し、それ以外の
+ときには偽を返す関数`<='がある。したがって、`while'が判定条件として評価
+する式はつぎのようになる。
+
+     (<= row-number number-of-rows)
+
+小石の総数は、すでにわかっている総数に行の小石の個数を加算することを繰
+り返して計算できる。行の小石の個数はその行の番号に等しいので、総数は、
+総数に行番号を加算すれば計算できる（より複雑な状況では、行の小石の個数
+は、より複雑な方法で行の番号に関係する。そのような場合には、行の番号を
+適当な式で置き換える）。
+
+     (setq total (+ total row-number))
+
+これにより、`total'の新たな値は、行の小石の個数をそれまでの総数に加えた
+ものになる。
+
+`total'の値を設定したあと、ループのつぎの繰り返しのための条件を確立する
+必要がある。これには、カウンタとして働く変数`row-number'の値を増やせば
+よい。変数`row-number'を増やしたあと、`while'ループの判定条件により、そ
+の値が`number-of-rows'より小さいか等しいかどうか検査する。もしそうなら
+ば、変数`row-number'の新たな値をループのまえの段階での`total'に加える。
+
+Emacs Lispの組み込み関数`1+'は数に1を加えるので、つぎの式で変数
+`row-number'を増加できる。
+
+     (setq row-number (1+ row-number))
+
+
+
+File: eintr-ja, Node: Inc Example altogether, Next: Decrementing Example, Prev: Inc Example parts, Up: print-elements-of-list
+
+関数定義をまとめる
+..................
+
+関数定義の各部分を作ったので、それらを1つにまとめよう。
+
+まず、`while'式の内容はつぎのとおりである。
+
+     (while (<= row-number number-of-rows)   ; 判定条件
+       (setq total (+ total row-number))
+       (setq row-number (1+ row-number)))    ; 1増やす
+
+`let'式の引数リストを加えれば、これで関数定義の本体はぼぼ完成する。しか
+し、その必要性は少々微妙ではあるが、最後の要素が必要である。
+
+つまり、`while'式のあとに、変数`total'だけを置いた行が必要である。さも
+ないと、関数全体としての戻り値は、最後の式の値、つまり、`let'の本体を評
+価した値、つまり、`while'が返す値であるが、これはつねに`nil'である。
+
+一見しただけでは、これは自明ではないかもしれない。関数全体としての最後
+の式は、増加する式であると思うだろう。しかし、その式はシンボル`while'で
+始まるリストの最後の要素であり、`while'の本体の一部である。さらに、
+`while'ループ全体も、`let'の本体の中にあるリストである。
+
+関数の概略はつぎのとおりである。
+
+     (defun 関数名 (引数リスト)
+       "説明文..."
+       (let (変数リスト)
+         (while (判定条件)
+           WHILEの本体... )
+           ... )                     ; 最後の式をここに置く
+
+`let'は、`defun'全体としてのリスト以外のリストの内側にはないので、
+`let'を評価した結果が`defun'が返す値となる。しかし、`while'が`let'式の
+最後の要素だったとすると、関数はつねに`nil'を返す。これは、われわれが望
+むことではない！　変数`total'の値を返したいのである。それには、`let'で
+始まるリストの最後の要素として、そのシンボルを書けばよい。これにより、
+リストのまえのものが評価されたあとに、正しい総数が設定されてから評価さ
+れる。
+
+このことは、`let'で始まるリストを1行に書くとわかりやすいであろう。変数
+リストと`while'式は、`let'で始まるリストの第2要素と第3要素であり、
+`total'は最後の要素であることがはっきりする。
+
+     (let (変数リスト) (while (判定条件) WHILEの本体... ) total)
+
+以上をまとめると、`triangle'の関数定義はつぎのとおりである。
+
+     (defun triangle (number-of-rows)    ; 増加カウンタを利用した版
+       "Add up the number of pebbles in a triangle.
+     The first row has one pebble, the second row two pebbles,
+     the third row three pebbles, and so on.
+     The argument is NUMBER-OF-ROWS."
+       (let ((total 0)
+             (row-number 1))
+         (while (<= row-number number-of-rows)
+           (setq total (+ total row-number))
+           (setq row-number (1+ row-number)))
+         total))
+
+関数を評価して`triangle'をインストールすれば、試すことができる。2つの例
+をあげておく。
+
+     (triangle 4)
+
+     (triangle 7)
+
+最初の4つの数を総和したものは10であり、最初の7つを総和したものは28であ
+る。
+
+
+
+File: eintr-ja, Node: Decrementing Loop, Next: Recursive Definition Parts, Prev: print-elements-of-list, Up: while
+
+減少カウンタによるループ
+------------------------
+
+`while'ループを書く一般的な別の方法は、カウンタが0より大きいかを調べる
+検査を使うことである。カウンタが0より大きい限り、ループを繰り返す。しか
+し、カウンタが0になるか0より小さくなったら、ループを止める。このように
+動作させるには、カウンタを0より大きく設定しておき、繰り返すたびにカウン
+タを小さくするのである。
+
+`counter'の値が0より大きければ真`t'を返し、`counter'の値が0に等しいか小
+さければ偽`nil'を返す`(> counter 0)'のような式を判定条件に使う。数を減
+らす式は、`(setq counter (1- counter))'のような単純な`setq' でよく、
+`1-'は引数から1を引くEmacs Lispの組み込み関数である。
+
+減算による`while'ループの雛型はつぎのようになります。
+
+     (while (> counter 0)                    ; 判定条件
+       本体...
+       (setq counter (1- counter)))          ; 1減少
+
+* Menu:
+
+* Decrementing Example::        More pebbles on the beach.
+* Dec Example parts::           The parts of the function definition.
+* Dec Example altogether::      Putting the function definition together.
+
+
+
+File: eintr-ja, Node: Decrementing Example, Next: Dec Example parts, Prev: Inc Example altogether, Up: print-elements-of-list
+
+減少カウンタの例
+................
+
+減少カウンタによるループの例として、カウンタを0まで減少させるように関数
+`triangle'を書き換える。
+
+これは、この関数の前版の逆である。つまり、3行の三角形を作るために必要な
+小石の個数は、3行目の小石の個数3をそのまえの個数2に加え、2つの行の総数
+をそのまえの個数1に加えて計算する。
+
+同様に、7行の三角形の小石の個数は、7行目の小石の個数7をまえの行の個数6
+に加え、2つの行の総数をそれらのまえの行の個数5に加え、と繰り返して計算
+する。まえの例と同様に、各加算では2つの数、すでに加算した行の総数と、加
+算すべき行の小石の個数を扱う。2つの数を加える処理を、加えるべき小石がな
+くなるまで繰り返す。
+
+始めの小石の個数はわかっている。最後の行の小石の個数は、その行の番号に
+等しい。7行の三角形の場合、最後の行の小石の個数は7である。同様に、1つま
+えの行の小石の個数もわかっていて、行の番号より1つ小さい。
+
+
+
+File: eintr-ja, Node: Dec Example parts, Next: Dec Example altogether, Prev: Decrementing Example, Up: print-elements-of-list
+
+関数の各部分
+............
+
+3つの変数が必要である。
+三角形の行の数、行の小石の個数、求めたい小石の総数である。
+これらの変数をそれぞれ、`number-of-rows'、
+`number-of-pebbles-in-row'、`total'としよう。
+
+`total'と`number-of-pebbles-in-row'のいずれも関数の内側だけで使うので、
+これらは`let'で宣言する。`total'の初期値は、当然、0である。しかし、もっ
+とも長い行から加算を始めるので、`number-of-pebbles-in-row'の初期値は、
+三角形の行数に等しい必要がある。
+
+つまり、`let'式の始めの部分はつぎのようになる。
+
+     (let ((total 0)
+           (number-of-pebbles-in-row number-of-rows))
+       本体...)
+
+小石の総数は、行の小石の個数をすでにわかっている総数に加算すればよく、
+つぎの式を繰り返し評価すればよい。
+
+     (setq total (+ total number-of-pebbles-in-row))
+
+`number-of-pebbles-in-row'を`total'に加算したあと、
+ループのつぎの繰り返しでは、まえの行を総和に加算するので、
+`number-of-pebbles-in-row'を1減らす必要がある。
+
+まえの行の小石の個数は、今の行の小石の個数より1小さいので、Emacs Lispの
+組み込み関数`1-'を使って、まえの行の小石の個数を計算できる。これはつぎ
+の式になる。
+
+     (setq number-of-pebbles-in-row
+           (1- number-of-pebbles-in-row))
+
+`while'ループは行の小石がなくなったら繰り返しを止める。したがって、
+`while'ループの判定条件は単純である。
+
+     (while (> number-of-pebbles-in-row 0)
+
+
+
+File: eintr-ja, Node: Dec Example altogether, Next: dolist, Prev: Dec Example parts, Up: print-elements-of-list
+
+関数定義をまとめる
+..................
+
+機能する関数定義を作成するためにこれらの式をまとめることができる．しか
+し，調べてみると，ローカル変数の1つは不要であることが分かる!
+
+関数定義は以下のようになる．
+
+     ;;; 最初の減算版
+     (defun triangle (number-of-rows)
+       "Add up the number of pebbles in a triangle."
+       (let ((total 0)
+             (number-of-pebbles-in-row number-of-rows))
+         (while (> number-of-pebbles-in-row 0)
+           (setq total (+ total number-of-pebbles-in-row))
+           (setq number-of-pebbles-in-row
+                 (1- number-of-pebbles-in-row)))
+         total))
+
+この関数は正しく動作する。
+
+しかし，`number-of-pebbles-in-row' は必要ではない．
+
+関数`triangle'を評価するとき、シンボル`number-of-rows'には数が束縛され、
+それが初期値になる。その数を変更しても関数の外側の変数の値に影響するこ
+とはなく、ローカル変数であるかのように関数の本体でその数を変更できる。
+これはLispのとても有用な特徴である。つまり、関数内部では、
+`number-of-pebbles-in-row'のかわりに変数`number-of-rows'を使えるのであ
+る。
+
+簡素に書き直した、この関数の第2版を示す。
+
+     (defun triangle (number)                ; 第2版
+       "Return sum of numbers 1 through NUMBER inclusive."
+       (let ((total 0))
+         (while (> number 0)
+           (setq total (+ total number))
+           (setq number (1- number)))
+         total))
+
+まとめると、正しく書かれた`while'ループは3つの部分から成る。
+
+  1. 必要回数だけループを繰り返したら偽を返す判定条件。
+
+  2. 繰り返し評価したあとに望みの値を返す式。
+
+  3. 必要回数だけループを繰り返したら判定条件が偽を返すように、判定条件
+     で使う値を変更する式。
+
+
+

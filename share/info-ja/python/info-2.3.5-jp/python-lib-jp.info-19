@@ -1,0 +1,1229 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: 用語,  Next: オプションはどう使うのでしょうか？,  Prev: オプション解析への道,  Up: オプション解析への道
+
+用語
+....
+
+まずは用語の定義を行う必要があります。
+
+"引数 (argument)"
+     コマンドラインでユーザが入力するテキストの塊で、シェルが `execl()'
+     や `execv()' に引き渡すものです。 Python では、引数は
+     `sys.argv[1:]' の要素となります。 (`sys.argv[0]'
+     は実行しようとしているプログラムの名前です。
+     引数解析に関しては、この要素はあまり重要ではありません。) UNIX
+     シェルでは、 "語 (word)" という用語も使います。
+
+     場合によっては `sys.argv[1:]' 以外の引数リストを代入する方が
+     望ましいことがあるので、"引数" は "`sys.argv[1:]' または
+     `sys.argv[1:]' の代替として提供される別のリストの要素"
+     と読解するべきでしょう。
+
+"オプション (option)"
+     追加的な情報を与えるための引数で、プログラムの実行に対する教示や
+     カスタマイズを行います。オプションには多様な文法が存在します;
+     伝統的な UNIX における書法は  `-' の後ろに一文字
+     が続くもので、例えば `-x' や `-F' です。 また、伝統的な UNIX
+     における書法では、複数のオプションを
+     一つの引数にまとめることができ、例えば `-x -F' は `-xF'
+     と等価です。 GNU プロジェクトでは `--' の後ろにハイフンで区切られた
+     語を続ける方法、例えば `--file' や `--dry-run'
+     を導入しています。`optparse' ではこれら二種類のオプション書法
+     だけを提供しています。
+
+     他に見られる他のオプション書法には以下のようなものがあります:
+
+        * ハイフンの後ろに数個の文字が続くもので、例えば `-pf' 。
+          (このオプションは複数のオプションを一つにまとめたものとは
+          *違います*。)
+
+        * ハイフンの後ろに語が続くもので、例えば `-file' 。
+          (これは技術的には上の書式と同じですが、通常同じプログラム上で一緒に
+          使われることはありません。)
+
+        *
+          プラス記号の後ろに一文字、数個の文字、または語を続けたもので、例えば
+          `+f' 、 `+rgb' 。
+
+        *
+          スラッシュ記号の後ろに一文字、数個の文字、または語を続けたもので、例えば
+          `/f' 、 `/file' 。
+
+     これらのオプション書法は `optparse' ではサポートされておらず、
+     将来にわたってサポートされることもありません。 (これらのオプション
+     書法のいずれかを本当に使いたいのなら、 OptionParser をサブクラス化
+     して、難解な部分を全て上書きしなければならないでしょう。しかし
+     できればやめてください！ `optparse' は熟慮の上で伝統的な UNIX/GNU
+     的書法を採っています; 最初の 3 つの書法は場所によっては非標準
+     ですし、最後の書法は MS-DOS/Windows かつ/または VMS をターゲットに
+     しているときしか意味をなしません。)
+
+"オプション引数 (option argument)"
+     あるオプションの後ろに続く引数で、そのオプションに密接な関連を
+     もち、オプションと同時に引数リストから取り出されます。
+     しばしば、オプション引数はオプションと一体の引数としてとりこまれる
+     ことがあります。例えば以下:
+
+              ["-f", "foo"]
+
+     は以下の引数:
+
+              ["-ffoo"]
+
+     と等価なことがあります。(`optparse' ではこの書法をサポート
+     しています)
+
+     あるオプションは引数をとることがなく、またあるオプションは
+     常に引数をとります。多くの人々が "オプションのオプション引数"
+     機能を欲しています。これ、あるオプションについては引数
+     が存在するときだけ引数をとり、そうでないときには引数をとらない
+     ようにするという機能です。この機能は引数解析をあいまいにするため、
+     議論の的となる点です: 例えば、もし `-a' がオプション引数を
+     とり、`-b' がまったく別のオプションだとしたら、 `-ab'
+     をどうやって解析すればいいのでしょうか？ `optparse'
+     は今のところこの機能をサポートしていません。
+
+"固定引数 (positional argument)"
+     他のオプションが解析される、すなわち他のオプションとその引数が
+     解析されて引数リストから除去された後に引数リストに置かれている
+     ものです。
+
+"必須のオプション (required option)"
+     コマンドラインで与えなければならないオプションです;
+     "必須なオプション"
+     という言葉は矛盾のある語法であり、通常は貧弱なユーザインタフェース
+     デザインと考えられています。 `optparse' では必須オプションの
+     実装を妨げはしませんが、とりたてて実装の役に立つようにもなっていません。
+     `optparse' で必須オプションを実装する方法については "拡張の例"
+     (*Note shutil:: 節) を参照してください。
+
+
+例えば、以下のような架空のコマンドラインを考えてみてください:
+
+       prog -v --report /tmp/report.txt foo bar
+
+`-v' と `--report' は両方ともオプションです。 `--report'
+が引数を一つとると仮定すると、 "/tmp/report.txt" はオプション引数です。
+"foo" および "bar" は固定引数です。
+
+
+File: python-lib-jp.info,  Node: オプションはどう使うのでしょうか？,  Next: 固定引数はどう使うのでしょうか？,  Prev: 用語,  Up: オプション解析への道
+
+オプションはどう使うのでしょうか？
+..................................
+
+オプションはプログラムの実行をチューニングしたり、カスタマイズ
+したりするための補足的な情報を与えるために使われます。
+補足すると、オプションは通常 _選択可能 (optional)_ となっています。
+プログラムはいかなるオプションが指定されていなくても、きちんと
+動作できなくてはなりません。(UNIX や GNU ツールセットから
+プログラムをランダムに取り出してみてください。プログラムは
+オプション無しで動作して、意味のある結果になるでしょう？
+私の知っている例外は `find' 、 `tar' 、 `dd' といったプログラムです --
+これらは全て
+変種のはみだし者で、インタフェースが非標準で混乱をまねくものだと
+批判されてきました。)
+
+大多数の人々が、プログラムに "必須オプション" を持たせたいと
+望んでいます。しかし考えてみてください。もしオプションが必須だと
+いうのなら、そのオプションは _オプション:選択可能項目 など
+ではありません_！ プログラムがうまく動作するために絶対的に必要とする
+情報があるとするなら、固定引数を使うべきです。(とはいえ、 どうしても
+"必須オプション" をプログラムに組み込みたいというのなら、 `optparse'
+を使った実装方法については "拡張の例" (~*Note shutil:: 節)
+を読んでください。
+
+ファイルをコピーする地味なユーティリティ `cp' について
+考えてみましょう。ファイルをコピーしようと試みるときに、コピー先
+や少なくとも一つのコピー元を指定しなければ、このコマンドは意味を
+なしません。従って、`cp' は引数無しで実行すると失敗します。
+しかしながら、このコマンドは、拡張性のある便利な書法を持っており、
+オプションに全然頼っていません:
+
+     $ cp SOURCE DEST
+     $ cp SOURCE ... DEST-DIR
+
+You can get pretty far with just that.  ほとんどの `cp'
+の実装では、ファイルをどのようにしてコピー
+するかを的確に微調整するためのオプション:
+例えばファイルモードや最終更新時刻を変更しないようにしたり、
+シンボリックリンクの追跡を避けたり、既存のファイルをぶちこわし
+(clobber) にする前に同意を求めたり、などを一そろい提供しています。
+しかし、これらのオプションはいずれも、
+ファイルを別のファイルにコピーしたり N 個のファイルを他のディレクトリ
+にコピーしたりするといった、`cp' の主要な役割を混乱
+させることはありません。
+
+
+File: python-lib-jp.info,  Node: 固定引数はどう使うのでしょうか？,  Prev: オプションはどう使うのでしょうか？,  Up: オプション解析への道
+
+固定引数はどう使うのでしょうか？
+................................
+
+上の例について補足します: 固定引数とは、プログラムを動作させる
+ために、絶対的にかつ明確に必要とされる情報の断片です。
+
+よいユーザインタフェースとは、可能な限り少ない固定引数をもつ
+べきです。プログラムを正しく動作させるために 17 個もの別個の情報が
+必要だとしたら、その情報をユーザからどうやって引き出そうかという
+ことはさほど問題にはなりません -- ほとんどの人はプログラム
+を正しく動作させられるようになる前にあきらめて立ち去るでしょう。
+これはユーザインタフェースがコマンドラインでも、設定ファイルでも GUI
+やその他のいずれであっても当てはまることがらです:
+多くの要求をユーザに押し付ければ、ほとんどのユーザはただ
+音をあげるだけなのです。
+
+要するに、ユーザが絶対に提供しなければならない情報だけに制限する --
+可能な限りよく練られたデフォルト設定を使うよう試みてください。
+もちろん、プログラムには適度な柔軟性を持たせたいとも望むはずですが、
+それこそがオプションの果たす役割です。繰り返しますが、
+設定ファイルのエントリであろうが、 GUI の "環境設定"
+ダイアログにあるチェックボックスであろうが、
+コマンドライン上のオプションであろうが関係ありません --
+より多くオプションを実装すればプログラムはより柔軟性を持ち、
+実装はより難解になります。高すぎる柔軟性でユーザ (あなた自身もですよ！)
+を閉口させるのは至って簡単なのです。
+
+
+File: python-lib-jp.info,  Node: 基本的な使い方,  Next: 進んだ使い方 2,  Prev: オプション解析への道,  Up: optparse
+
+基本的な使い方
+--------------
+
+`optparse' はとても柔軟性があって強力な一方、基本的なケースを
+動作させるために試練を受けたり大量のドキュメントを読む必要は
+ありません。
+このドキュメントでは、いくつかの単純な使用パターンを実演して、
+スクリプトで `optparse' を使えるようにすることを目的としています。
+
+コマンドラインを `optparse' で解析するためには、 `OptionParser'
+インスタンスを作成して populate する必要が
+あります。当然ながら、`optparse' を使うスクリプトはいずれも
+`OptionParser' クラスを import しなければなりません。
+     from optparse import OptionParser
+
+メインプログラムの冒頭で、パーザを作成してください:
+
+     parser = OptionParser()
+
+これで、パーザ内のオプションを移すことができます。各オプションは
+現実には同義のオプション文字列になります; ほとんどの場合、
+短いオプション文字列を一つと、長いオプション文字列を一つ -- 例えば `-f'
+and `--file' -- を持ちます:
+
+     parser.add_option("-f", "--file", ...)
+
+もちろん、最も知りたいことは、オプション文字列の後に続くキーワード
+引数が何かということです。このドキュメントでは、キーワード引数として
+指定できる内容について 4 種類: ACTION、TYPE、 DEST (destination:
+目的変数)、 およびHELP だけをカバーします。
+
+* Menu:
+
+* "store" アクション::
+* その他の "store_*" 操作::
+* デフォルト値を設定する::
+* ヘルプを作成する::
+* バージョン番号を出力する::
+* エラー処理::
+* 全てをつなぎ合わせる::
+
+
+File: python-lib-jp.info,  Node: "store" アクション,  Next: その他の "store_*" 操作,  Prev: 基本的な使い方,  Up: 基本的な使い方
+
+"store" アクション
+..................
+
+アクションは、ACTION が設定されているオプションがコマンド
+ライン内に見つかったときに `optparse' が行うべきことを
+教えます。例えば、 STORE はこういう意味です: 次の引数
+(または現在の引数の残りの部分) を取り上げ、正しい型であるか
+確認して、決められた目的変数に保存します。
+
+例として、先ほどのオプションの "..." を埋めてみましょう:
+
+     parser.add_option("-f", "--file",
+                       action="store", type="string", dest="filename")
+
+次に、架空のコマンドラインをでっち上げて、`optparse'
+に解析してもらいましょう:
+
+     args = ["-f", "foo.txt"]
+     (options, args) = parser.parse_args(args)
+
+(引数リストを `parse_args()' に渡さなければ、 自動的に `sys.argv[1:]'
+を使うので注意してください。)
+
+`optparse' が `-f' を見つけると、次の引数 -- "foo.txt" --
+を吸出し、特殊なオブジェクトの FILENAME
+属性に記憶します。このオブジェクトは `parse_args()' の
+戻り値の最初の値です。従って以下のコード:
+
+     print options.filename
+
+は "foo.txt" を出力します。
+
+`optparse' でサポートされている他のオプションの型は "int" と "float"
+です。以下に整数型の引数を要求するオプションの例を示し ます:
+
+     parser.add_option("-n", type="int", dest="num")
+
+長い文字列によるオプションを与えていないことに注意してください。
+これはまったく問題なく受理されます。 また、ACTIONを指定していません --
+これはアクションがデフォルト で "store" になるからです。
+
+架空のコマンドラインをもう一つ解析してみましょう。今度は、
+オプション引数をオプションの右側にぴったりくっつけて一緒くたに します
+-- `-n42' (一つの引数のみ) は `-n 42' (二つの引数からなる)
+と等価になります:
+
+     (options, args) = parser.parse_args(["-n42"])
+     print options.num
+
+は "42" を出力します。
+
+"float" 型を使った例は、読者のための練習課題として残しておきます。
+
+型を指定しない場合、 `optparse' は引数を "string" 型と
+仮定します。デフォルトのアクションが "store" であることも
+併せて考えると、最初の例はもっと短くなります:
+
+     parser.add_option("-f", "--file", dest="filename")
+
+目的変数名を与えなければ、`optparse' はオプション文字列
+から気の利いたデフォルト値を決めます: 最初の長い形式のオプション
+文字列が `--foo-bar' だったとすると、デフォルトの 目的変数は FOO_BAR
+となります。長い形式のオプションが ない場合、`optparse'
+は最初の短いオプションに注目します: `-f' に対するデフォルトの目的変数は
+F となります。
+
+型を追加するのはかなり簡単です;  ~*Note 新たな型を追加する:: 節、
+"新しい型を追加する" を参照してください。
+
+
+File: python-lib-jp.info,  Node: その他の "store_*" 操作,  Next: デフォルト値を設定する,  Prev: "store" アクション,  Up: 基本的な使い方
+
+その他の "store_*" 操作
+.......................
+
+フラグオプション -- 特定のオプションが見つかったときに、ある変数を
+真または偽にする -- は、とても一般的な機能です。`optparse'
+では、フラグオプションを二つの別個のアクション "store_true" と
+"store_false" でサポートします。例えば、 VERBOSE フラグが `-v'
+でオンにされ、 `-q' でオフにされると します:
+
+     parser.add_option("-v", action="store_true", dest="verbose")
+     parser.add_option("-q", action="store_false", dest="verbose")
+
+ここで二つのオプションを同じ目的変数に設定しましたが、これは全く
+問題ありません。 (ただし、デフォルト値を設定する際に少しだけ
+注意する必要があります -- 以下を参照してください。)
+
+`optparse' が `-v' をコマンドライン内に見つけると、 特殊な {option
+values} オブジェクトのVERBOSE 属性を 1 に 設定します; `-q'
+が見つかれば、 VERBOSE を 0 に 設定します。
+
+
+File: python-lib-jp.info,  Node: デフォルト値を設定する,  Next: ヘルプを作成する,  Prev: その他の "store_*" 操作,  Up: 基本的な使い方
+
+デフォルト値を設定する
+......................
+
+上で述べてきた例は全て、あるコマンドラインオプションが見つかった
+際に何らかの変数 ("destination: 目的変数") の設定を伴うもの
+でした。ではこれらのオプションがなければどうなるのでしょうか？
+デフォルト値を与えていないので、これらの値は全て None になります。
+これはこれでよいときもあります (デフォルトで None になるように
+しているのはこのためです) が、もっときちんと制御したい場合も
+あります。その要求を満たすために、`optparse' では各目的変数
+ごとにデフォルトの値を指定できるようにしており、デフォルト値は
+コマンドラインが解析される前に代入されます。
+
+まず、 verbose/quiet の例を考えてみましょう。`optparse' に 対して、`-q'
+がない限り VERBOSE を 1 に設定させたい なら、以下のようにします:
+
+     parser.add_option("-v", action="store_true", dest="verbose", default=1)
+     parser.add_option("-q", action="store_false", dest="verbose")
+
+奇妙なことに、上のコードは以下とまったく等価です: Oddly enough, this is
+exactly equivalent:
+
+     parser.add_option("-v", action="store_true", dest="verbose")
+     parser.add_option("-q", action="store_false", dest="verbose", default=1)
+
+これらのコードが等価なのは、オプションの _目的変数_ に対して
+デフォルト値を指定しており、各コードの二つのオプションは同じ 目的変数
+(VERBOSE 変数) を持っているからです。
+
+以下のコード:
+
+     parser.add_option("-v", action="store_true", dest="verbose", default=0)
+     parser.add_option("-q", action="store_false", dest="verbose", default=1)
+
+を考えてみましょう。繰り返しますが、VERBOSE のデフォルト値は 1 です:
+特定の目的変数に対するデフォルト値として有効なのは、最後に指定
+した値です。
+
+
+File: python-lib-jp.info,  Node: ヘルプを作成する,  Next: バージョン番号を出力する,  Prev: デフォルト値を設定する,  Up: 基本的な使い方
+
+ヘルプを作成する
+................
+
+どのスクリプトでも使うことになる機能の最後の一つは、`optparse'
+の機能を使ったヘルプメッセージの生成です。やらなければならないことは、
+オプションを追加する際に HELP 値を指定することだけです。
+新たなパーザを作成し、ユーザに優しい (ドキュメント付きになっている)
+オプションを追加していきましょう:
+
+     usage = "usage: %prog [options] arg1 arg2"
+     parser = OptionParser(usage=usage)
+     parser.add_option("-v", "--verbose",
+                       action="store_true", dest="verbose", default=1,
+                       help="make lots of noise [default]")
+     parser.add_option("-q", "--quiet",
+                       action="store_false", dest="verbose",
+                       help="be vewwy quiet (I'm hunting wabbits)")
+     parser.add_option("-f", "--file", dest="filename",
+                       metavar="FILE", help="write output to FILE"),
+     parser.add_option("-m", "--mode",
+                       default="intermediate",
+                       help="interaction mode: one of 'novice', "
+                            "'intermediate' [default], 'expert'")
+
+`optparse' がコマンドラインの解析中に `-h' か `----help'
+に遭遇するか、または単に `parser.print_help()'
+を呼び出すと、以下の内容を 標準出力に出力します:
+
+     usage: <yourscript> [options] arg1 arg2
+     
+     options:
+       -h, --help           show this help message and exit
+       -v, --verbose        make lots of noise [default]
+       -q, --quiet          be vewwy quiet (I'm hunting wabbits)
+       -fFILE, --file=FILE  write output to FILE
+       -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
+                            [default], 'expert'
+
+`optparse' に可能な限り親切なヘルプメッセージを出力させる
+上で役に立つと思われることを以下にざっと述べます:
+
+   * スクリプト自体の使用法メッセージ (usage) を以下のようにして定義
+     します:
+
+          usage = "usage: %prog [options] arg1 arg2"
+
+     `optparse' は、使用法メッセージ文字列中の "%prog" に
+     現在のスクリプト名、すなわち `os.path.basename(sys.argv[0])'
+     を展開します。展開された文字列は、詳細なオプションヘルプの前に
+     出力されます。
+
+     使用法メッセージ文字列を与えなければ、`optparse' は面白みの
+     ない、とはいえ気の利いたデフォルト値: "usage: %prog [options]"
+     を使います。スクリプトが固定引数を採っていなければ、この値で
+     かまわないでしょう。
+
+   * 各オプションはヘルプ文字列を定義していますが、行の折り返しに
+     ついて悩むことはありません -- `optparse' が行を折り返し、
+     ヘルプメッセージ出力の見栄えがよくなるよう気を配ります。
+
+   * 値をとるオプションについては、そのことを示す内容が
+     ヘルプメッセージ内に自動的に生成されます。例えば、"mode"
+     オプションは:
+
+          -mMODE, --mode=MODE
+
+     となります。ここで、"MODE" はメタ変数と呼ばれます: この値は
+     ユーザが `-m'/`--mode' に対して指定するよう
+     スクリプトが期待している引数を表します。デフォルトでは、 `optparse'
+     は目的変数の名前を大文字に変換して、メタ変数として使います。
+     時にこれは期待通りの値になりません -- 例えば、上の例の FILENAME
+     オプションでは明示的に `metavar="FILE"' を設定しており、その結果
+     自動生成されたオプション説明は以下のようになります:
+
+          -fFILE, --file=FILE
+
+     この機能は重要なもので、それは表示スペースを節約するといった理由
+     にとどまりません: 上の例では、手作業で書かれたヘルプテキストの
+     中では、メタ変数として "FILE" を使っています。その結果、
+     ユーザに対して、堅苦しく表現された書法 "-fFILE" とくだけた
+     意味付け説明 "write output to FILE" が対応しているという情報
+     を与えます。これは、ヘルプテキストをエンドユーザに対してより明快で
+     より有用にする上では、単純でありながら効果的な手法です。
+
+数多くのオプションを扱うときには、オプションをグループ化すると
+ヘルプメッセージ出力をよりよくする上で便利です。`OptionParser'
+は複数のオプショングループを収めることができ、各グループは
+複数のオプションを収めることができます。
+
+上で定義されたパーザに続けて `OptionGroup' を追加するのは 簡単です:
+
+     group = OptionGroup(parser, "Dangerous Options",
+                         "Caution: use these options at your own risk."
+                         "  It is believed that some of them bite.")
+     group.add_option("-g", action="store_true", help="Group option.")
+     parser.add_option_group(group)
+
+このコードは以下のヘルプ出力になります:
+
+     usage:  [options] arg1 arg2
+     
+     options:
+       -h, --help           show this help message and exit
+       -v, --verbose        make lots of noise [default]
+       -q, --quiet          be vewwy quiet (I'm hunting wabbits)
+       -fFILE, --file=FILE  write output to FILE
+       -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
+                            [default], 'expert'
+     
+       Dangerous Options:
+         Caution: use of these options is at your own risk.  It is believed that
+         some of them bite.
+         -g                 Group option.
+
+
+File: python-lib-jp.info,  Node: バージョン番号を出力する,  Next: エラー処理,  Prev: ヘルプを作成する,  Up: 基本的な使い方
+
+バージョン番号を出力する
+........................
+
+要約された使用法メッセージ文字列と同様に、`optparse' は
+プログラムのバージョン文字列を出力できます。これを行うには、 VERSION
+引数を `OptionParser' に文字列で渡さなければ なりません:
+
+     parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
+
+"%prog" が USAGE とまったく同じように展開されることに注意して
+ください。またこれとは別に、VERSION には何でも必要なものを
+入れることができます。VERSION を指定すると、`optparse' は自動的に
+`--version' オプションをパーザに追加します。
+コマンドライン上でこのオプションが見つかると、 VERSION 文字列を
+("%prog" を置換して) 展開し、標準出力に 出力してから終了します。
+
+例えば、スクリプトが /usr/bin/foo という名前なら、ユーザは以下のように
+するはずです:
+
+     $ /usr/bin/foo --version
+     foo 1.0
+     $
+
+
+File: python-lib-jp.info,  Node: エラー処理,  Next: 全てをつなぎ合わせる,  Prev: バージョン番号を出力する,  Up: 基本的な使い方
+
+エラー処理
+..........
+
+基本的な使い方をする上でもう一つ知っておかなければならないのは、
+`optparse' がコマンドライン上でエラーに遭遇した -- 例えば、`-n'
+が整数値のオプションの時に `-n4x' が指定された --
+ときに、どのように振舞うかということです。
+
+`optparse' は標準エラー出力に使用法メッセージを出力し、
+有用かつ人間が読めるエラーメッセージを続けます。その後、
+プログラムをゼロでない終了状態で終了し (`sys.exit()' を 呼び出し) ます。
+
+この動作が気に入らないなら、`OptionParser' をサブクラスして `error()'
+メソッドを上書きしてください。 ~*Note optparse を拡張する::
+節、"`optparse' を拡張する" を参照してください。
+
+
+File: python-lib-jp.info,  Node: 全てをつなぎ合わせる,  Prev: エラー処理,  Up: 基本的な使い方
+
+全てをつなぎ合わせる
+....................
+
+`optparse' を使った私のスクリプトがだいたいどのようになって
+いるかを以下に示します:
+
+     from optparse import OptionParser
+     
+     ...
+     
+     def main ():
+         usage = "usage: %prog [options] arg"
+         parser = OptionParser(usage)
+         parser.add_option("-f", "--file", type="string", dest="filename",
+                           help="read data from FILENAME")
+         parser.add_option("-v", "--verbose",
+                           action="store_true", dest="verbose")
+         parser.add_option("-q", "--quiet",
+                           action="store_false", dest="verbose")
+         # more options ...
+     
+         (options, args) = parser.parse_args()
+         if len(args) != 1:
+             parser.error("incorrect number of arguments")
+     
+         if options.verbose:
+             print "reading %s..." % options.filename
+     
+         # go to work ...
+     
+     if __name__ == "__main__":
+         main()
+
+
+File: python-lib-jp.info,  Node: 進んだ使い方 2,  Next: callback オプション,  Prev: 基本的な使い方,  Up: optparse
+
+進んだ使い方
+------------
+
+ここからはリファレンスのドキュメントです。まだ ~*Note 基本的な使い方::
+節の基本的なドキュメントを読んでいない なら、まず読んでください。
+
+* Menu:
+
+* パーザを生成してオプションを追加する::
+* オプションを定義する::
+* オプションに対するアクション::
+* オプションの型::
+* オプションパーザへのクエリと操作::
+* オプション間の衝突::
+
+
+File: python-lib-jp.info,  Node: パーザを生成してオプションを追加する,  Next: オプションを定義する,  Prev: 進んだ使い方 2,  Up: 進んだ使い方 2
+
+パーザを生成してオプションを追加する
+....................................
+
+パーザにオプションを加えていく方法はいくつかあります。一つ `Options'
+からなるリストを `OptionParser' のコンストラクタ に渡す方法です:
+
+     parser = OptionParser(option_list=[
+         make_option("-f", "--filename",
+                     action="store", type="string", dest="filename"),
+         make_option("-q", "--quiet",
+                     action="store_false", dest="verbose")])
+
+(`make_option()' は `Option' クラスの別名、 すなわち `Option'
+のコンストラクタを呼び出すだけです。 `optparse'
+の将来のバージョンでは、おそらく `Option' を 複数のクラスに分割し、
+`make_option()' は正しいクラスを
+取り出してインスタンス化するファクトリ関数になるはずです。)
+
+長い形式のオプションリストについては、リストを別に生成する方が
+しばしば便利です:
+
+     option_list = [make_option("-f", "--filename",
+                                action="store", type="string", dest="filename"),
+                    # 17 other options ...
+                    make_option("-q", "--quiet",
+                                action="store_false", dest="verbose")]
+     parser = OptionParser(option_list=option_list)
+
+また、`OptionParser'  の `add_option()' メソッドを
+使って、オプションを一つ一つ追加することもできます:
+
+     parser = OptionParser()
+     parser.add_option("-f", "--filename",
+                       action="store", type="string", dest="filename")
+     parser.add_option("-q", "--quiet",
+                       action="store_false", dest="verbose")
+
+このメソッドは `Option' コンストラクタが送出する例外を
+簡単に追跡できるようにします。例外が発生するのはよくあることで、
+これは数多くのキーワード引数間で複雑な相互依存関係が発生する ためです
+-- うまく指定がされていない場合、`optparse' は `OptionError'
+を送出します。
+
+`add_option()' は以下の二つの方法のいずれかで呼び出す ことができます:
+   * (`make_option()' が返すような) `Option' インスタンスを渡す 。
+
+   * `make_option()' (すなわち `Option' の コンストラクタ)
+     が受理できるような固定引数およびキーワード引数の
+     組み合わせを渡し、 `Option' インスタンスを生成する (上述)。
+
+
+File: python-lib-jp.info,  Node: オプションを定義する,  Next: オプションに対するアクション,  Prev: パーザを生成してオプションを追加する,  Up: 進んだ使い方 2
+
+オプションを定義する
+....................
+
+各 `Option' インスタンスは、同じ意味を持つ一群のコマンドライン
+オプション、すなわち同じ意味と効果をもつが、つづりが異なるような
+オプションを表します。任意の数の短いオプションと長いオプションを
+指定することができますが、少なくとも一つのオプション文字列を与え
+なければなりません。
+
+短い形式のオプション文字列を一つだけもつオプションを定義するには
+以下のようにします:
+
+     make_option("-f", ...)
+
+長い形式のオプション文字列を一つだけもつオプションを定義するには
+以下のようにします:
+
+     make_option("--foo", ...)
+
+"..." は、`Option' オブジェクトの属性を定義する一群の
+キーワード引数を表しています。ある `Option' に対してどのような
+キーワードを与えれば十分かという問題はかなり複雑です (信じられない
+というなら、`Option' の数々の `_check_*()' メソッド群を
+調べてみてください) が、だいたい _何がしか_ 指定しなければ
+なりません。うまく指定されていなければ、`optparse' は `OptionError'
+例外を送出し、犯した間違いを説明してくれます。
+
+オプションの中でもっとも重要な属性はアクション、すなわちコマンドライン
+中でそのオプションが見つかったときにどうするかを決める属性です。
+とりうるアクションを以下に挙げます:
+
+"store [default]"
+     このオプションに対する引数を値として保存します。
+
+"store_const"
+     定数値を保存します。
+
+"store_true"
+     真を表す値を保存します。
+
+"store_false"
+     偽を表す値を保存します。
+
+"append"
+     このオプションに対する引数をリストに追加します。
+
+"count"
+     カウンタを 1 増やします。
+
+"callback"
+     指定された関数を呼び出します。
+
+"help"
+     全てのオプションとそれに対するドキュメントを含めた、使用法メッセージ
+     を出力します。
+
+(アクションを指定しなければ、デフォルト値は "store" になります。
+このアクションでは、 TYPE と DEST キーワードを 与えることができます;
+以下を参照してください。)
+
+ご覧のとおり、ほとんどのアクションは何らかの値を保存したり
+更新したりする処理を含んでいます。`optparse' はこの処理の
+ために、常に特定のオブジェクト(`Values' クラスのインスタンス)
+を生成します。オプション引数 (とその他数々の値) は、
+`make_option()'/`add_option()' の引数 DEST (目的変数)
+に従って、このオブジェクトの属性として保存されます。
+
+例えば、以下の呼び出し:
+
+     parser.parse_args()
+
+を行うと、`optparse' は最初に行うことの一つとして、 VALUES
+オブジェクトを生成します:
+
+     values = Values()
+
+このパーザのオプションの一つが、以下:
+
+     make_option("-f", "--file", action="store", type="string", dest="filename")
+
+のように定義されており、解析しているコマンドライン中に以下:
+
+     -ffoo
+     -f foo
+     --file=foo
+     --file foo
+
+の文字列が含まれていれば、`optparse' は `-f' や `--file'
+オプションを見つけた際に、以下のコード:
+       values.filename = "foo"
+
+と同じ処理を行います。 明らかに、TYPE と DEST 引数は (大抵) ACTION と
+ほぼ同じくらい大事なものです。 ACTION は *全ての* オプションで
+意味をなす唯一の属性ですが、最も重要な属性でもあります。
+
+
+File: python-lib-jp.info,  Node: オプションに対するアクション,  Next: オプションの型,  Prev: オプションを定義する,  Up: 進んだ使い方 2
+
+オプションに対するアクション
+............................
+
+オプションに対する様々なアクションは全て、わずかに異なる要求事項と
+効果を持っています。 "help" アクションを除き、`Option'を
+生成する際には少なくとも一つの別のキーワード引数を指定する必要があります;
+各アクションに対する厳密な要求事項を以下に挙げます。
+
+"store [relevant: TYPE, DEST, NARGS, CHOICES]"
+     オプションの後には必ず引数が続き、TYPE に従った値に変換されて DEST
+     に保存されます。NARGS > 1 の場合、複数の引数が
+     コマンドラインから取り出されます; 引数は全て TYPE に従って
+     変換され、DEST にタプルとして保存されます。 以下の ~*Note
+     オプションの型:: 節、 "オプションの型" を 参照してください。
+
+     CHOICES を指定 (文字列のリストかタプル) していれば、
+     型のデフォルト値は "choice" になります。
+
+     TYPE が指定されなければ、デフォルト値は "string" になります。
+
+     DEST が指定されない場合、 `optparse' は目的変数
+     を最初の長い形式のオプション文字列から導出します (例えば、
+     `--foo-bar' -> FOO_BAR)。長い形式のオプション文字列
+     がない場合、`optparse' は最初の短い形式のオプションから
+     目的変数名を導出します (例えば `-f' -> F)。
+
+     例:
+
+          make_option("-f")
+          make_option("-p", type="float", nargs=3, dest="point")
+
+     以下のコマンド:
+
+          -f foo.txt -p 1 -3.5 4 -fbar.txt
+
+     を与えると、 `optparse' は以下のように変数を設定します:
+
+          values.f = "bar.txt"
+          values.point = (1.0, -3.5, 4.0)
+
+     (実際のところ、 `values.f' は二度値設定されますが、
+     最終的には二回目の設定値だけが読み取れます。)
+
+"store_const [required: CONST, DEST]"
+     `Option' コンストラクタに与えられた CONST 値が DEST
+     に保存されます。
+
+     例:
+
+          make_option("-q", "--quiet",
+                 action="store_const", const=0, dest="verbose"),
+          make_option("-v", "--verbose",
+                 action="store_const", const=1, dest="verbose"),
+          make_option(None, "--noisy",
+                 action="store_const", const=2, dest="verbose"),
+
+     `--noisy' がなければ、 `optparse' は以下のように 値を設定します:
+
+          values.verbose = 2
+
+"store_true [required: DEST]"
+     "store_const" の特殊なケースで、真値 (厳密には整数の 1) を DEST
+     に保存します。
+
+"store_false [required: DEST]"
+     "store_true" と同じですが、偽値 (整数の 0) を保存します。
+
+     例:
+
+          make_option(None, "--clobber", action="store_true", dest="clobber")
+          make_option(None, "--no-clobber", action="store_false", dest="clobber")
+
+"append [relevant: TYPE, DEST, NARGS, CHOICES]"
+     オプションの後ろには引数が一つ続かなければなりません。この引数は
+     DEST に入っているリストに追加されます。DEST のデフォルト値が
+     指定されていない (すなわち、デフォルト値が Noneである) 場合、
+     `optparse' が最初にコマンドライン中にこのオプションを見つけた際に
+     空のリストが自動的に生成されます。 `nargs > 1'
+     であれば、複数の引数が取り出され、長さ NARGS のタプルが DEST
+     に追加されます。
+
+     TYPE と DEST のデフォルト値は "store" アクションの値と 同じです。
+
+     例:
+
+          make_option("-t", "--tracks", action="append", type="int")
+
+     `-t3' がコマンドライン上で見つかると、`optparse'
+     は以下と等価な処理を行います:
+
+          values.tracks = []
+          values.tracks.append(int("3"))
+
+     その後で `--tracks=4' が見つかると、さらに以下の処理を行います:
+
+          values.tracks.append(int("4"))
+
+     `optparse' が `--tracks=x' のような指定をどのように
+     扱うかについての情報は、 "エラー処理" (~*Note エラー処理:: 節)
+     を参照してください。
+
+"count [required: DEST]"
+     DEST に保持されている整数値をインクリメント (1 増加) させます。
+     DEST は (デフォルトの値を指定しない限り) 最初にインクリメントを
+     行う前にゼロに設定されます。
+
+     例:
+
+          make_option("-v", action="count", dest="verbosity")
+
+     最初に `-v' がコマンドライン上で見つかった際、 `optparse'
+     は以下と等価な処理:
+
+          values.verbosity = 0
+          values.verbosity += 1
+
+     を行います。その後 `-v' が見つかると、さらに以下の処理:
+
+          values.verbosity += 1
+
+     を行います。
+
+"callback [required: 'CALLBACK';"
+     relevant: TYPE, NARGS, CALLBACK_ARGS, CALLBACK_KWARGS]
+
+     CALLBACK に指定された関数を呼び出します。この関数の
+     用法は以下のようになっています:
+
+          func(option : Option,
+               opt : string,
+               value : any,
+               parser : OptionParser,
+               *args, **kwargs)
+
+     callback オプションについての詳細は、~*Note callback オプション::
+     節、 "callback オプション" でカバーされています。
+
+"help [required: none]"
+     現在のオプションパーザ内にある全てのオプション対する完全な
+     ヘルプメッセージを出力します。ヘルプメッセージは `OptionParser'
+     のコンストラクタに渡された USAGE 文字列と、各オプションに 渡された
+     HELP 文字列から生成されます。
+
+     オプションに HELP 文字列が指定されていなくても、ヘルプメッセージ
+     中には列挙されます。オプションを完全に表示させないようにするには、
+     特殊な値 `optparse.SUPPRESS_HELP' を使います。
+
+     例:
+
+          from optparse import Option, OptionParser, SUPPRESS_HELP
+          
+          usage = "usage: %prog [options]"
+          parser = OptionParser(usage, option_list=[
+            make_option("-h", "--help", action="help"),
+            make_option("-v", action="store_true", dest="verbose",
+                        help="Be moderately verbose")
+            make_option("--file", dest="filename",
+                        help="Input file to read data from"),
+            make_option("--secret", help=SUPPRESS_HELP)
+
+     `optparse' がコマンドライン上に `---h' または `--help'
+     を見つけると、以下のようなヘルプメッセージを 標準出力に出力します:
+
+          usage: <yourscript> [options]
+          
+          options:
+            -h, --help        Show this help message and exit
+            -v                Be moderately verbose
+            --file=FILENAME   Input file to read data from
+
+     ヘルプメッセージの出力後、`optparse' は `sys.exit(0)'
+     でプロセスを終了します。
+
+"version [required: none]"
+     `OptionParser' に指定されているバージョン番号を標準出力に
+     出力して終了します。バージョン番号は、実際には `OptionParser'
+     の`print_version()' メソッドで書式化されてから出力されます。
+     通常、 `OptionParser' のコンストラクタに VERSION
+     が指定されたときのみ関係のあるアクションです。
+
+
+File: python-lib-jp.info,  Node: オプションの型,  Next: オプションパーザへのクエリと操作,  Prev: オプションに対するアクション,  Up: 進んだ使い方 2
+
+オプションの型
+..............
+
+`optparse' は 6 種類のすばらしいオプション型: "string" (文字列)、"int"
+(整数)、 "long" (長整数)、 "choice" (選択項目)、 "float" (浮動小数点数)
+および "complex" (複素数) をサポートしています。(この中で、string、
+int、 float、および choice が最もよく使われます - long と complex
+は主にオプション型を完全に そろえるするために存在しています。)
+新たなオプションの型は、`Option' クラスをサブクラス化することで
+簡単に追加できます; ~*Note optparse を拡張する:: 節、 "`optparse'
+を拡張する" を参照してください。
+
+文字列オプションの引数は、チェックしたり変換したりはしません:
+コマンドライン上のテキストが目的変数にそのまま保存されます (または
+コールバックに渡されます)。
+
+整数引数は `int()' に渡され、Python 整数に変換されます。 `int()'
+が失敗すると `optparse' も失敗に終わりますが、
+より役に立つエラーメッセージを伴います。 内部的には、`optparse' は
+`optparse.check_builtin()' で `OptionValueError' を送出します;
+より高水準 (`OptionParser' 内) では、この例外が捕捉され、 `optparse'
+はエラーメッセージを伴ってプログラムを停止させます。
+
+同様に、浮動小数点数引数は `float()' 、 長整数引数は `long()'
+、複素数引数は `complex()'
+に渡されて変換されます。それ以外では、値は整数引数の場合と同様に
+扱われます。
+
+選択項目オプションは文字列オプションのサブタイプです。
+マスタリストや選択項目のリスト (文字列) はオプションコンストラクタ
+(`make_option()' や `OptionParser.add_option()') に "choices"
+キーワード引数として渡されなければなりません。 選択項目オプション引数は
+`optparse.check_choice()'
+内でマスタリストと比較され、マスタリストにない文字列が指定された
+場合には `OptionValueError' が送出されます。
+
+
+File: python-lib-jp.info,  Node: オプションパーザへのクエリと操作,  Next: オプション間の衝突,  Prev: オプションの型,  Up: 進んだ使い方 2
+
+オプションパーザへのクエリと操作
+................................
+
+自前のオプションパーザをつつきまわして、何が起こるかを調べると便利
+なことがあります。`OptionParser' では便利な二つのメソッドを提供
+しています:
+
+`has_option(opt_str)'
+     `-q' や `--verbose' のようなオプション文字列
+     に対して、`OptionParser' がオプションに対応している場合に
+     真を返します。
+
+`get_option(opt_str)'
+     指定されたオプションを実装している `Option' インスタンスを
+     返します。実装されていなければ None を返します。
+
+`remove_option(opt_str)'
+     `OptionParser' が OPT_STR に対するオプションを持っている
+     場合、そのオプションは削除されます。そのオプションが他の文字列で
+     指定することができる場合、それらのオプション文字列もすべて無効に
+     なります。
+
+     OPT_STR がこの `OptionParser' オブジェクトのどのオプション
+     にも属さない場合、`ValueError' を送出します。
+
+
+File: python-lib-jp.info,  Node: オプション間の衝突,  Prev: オプションパーザへのクエリと操作,  Up: 進んだ使い方 2
+
+オプション間の衝突
+..................
+
+注意が足りないと、衝突するオプションを定義しやすくなります:
+
+     parser.add_option("-n", "--dry-run", ...)
+     ...
+     parser.add_option("-n", "--noisy", ...)
+
+(標準的なオプションを実装済みの `OptionParser' から自前の
+サブクラスを定義した場合にはさらによく起きます)
+
+`optparse' はこのような定義は通常間違いによるものだと仮定
+しており、デフォルトでは例外 (`OptionConflictError') を
+送出します。この誤りは簡単に修正できるプログラム上のエラーなので、
+例外を catch しようとしないほうがせず -- 間違いを直しておくべき です。
+
+時に、故意に新たなオプションで以前のオプションを置き換えたいこと
+があります。これは以下の呼び出し:
+
+     parser.set_conflict_handler("resolve")
+
+で行えます。この操作は `optparse' にオプションの衝突を
+賢く解決するよう指示します。
+
+からくりはこうなっています: オプションを追加するたびに、 `optparse'
+は以前に追加されたオプションとの衝突がないか
+調べます。何らかの衝突が見つかると、`OptionParser' の
+コンストラクタでの指定:
+
+     parser = OptionParser(..., conflict_handler="resolve")
+
+か、`set_conflict_handler()' で指定されたいずれかの衝突処理 機構
+(conflict-handling mechanism ) が起動されます。
+
+デフォルトの衝突処理メカニズムは "error" です。その他の唯一の 選択肢は
+"ignore" で、これはバージョン 1.1 またはそれ以前の `optparse' の
+(おそらく壊れている) 挙動を修正します。
+
+以下に例を示します: まず、衝突を解決するように設定された `OptionParser'
+を定義しましょう:
+
+     parser = OptionParser(conflict_handler="resolve")
+
+ここでオプションを全て定義します:
+
+     parser.add_option("-n", "--dry-run", ..., help="original dry-run option")
+     ...
+     parser.add_option("-n", "--noisy", ..., help="be noisy")
+
+この時点で、`optparse' は以前に追加されたオプションで すでに `-n'
+オプション文字列が使用されていることを 検出します。`conflict_handler ==
+"resolve"' であるため、 この状況は `-n'
+を以前のオプションにおけるオプション
+文字列リストから削除することによって解決します。こうして、
+以前のオプションを有効にする方法は `--dry-run' だけと
+なります。ユーザがヘルプメッセージを要求すると、ヘルプ文字列は
+上の結果を反映します。例えば以下のようになります:
+
+     options:
+       --dry-run     original dry-run option
+       ...
+       -n, --noisy   be noisy
+
+以前に追加されたオプション文字列を切り詰めていって何も残らない
+ようにすることは可能ですが、そのオプションをコマンドラインから
+起動する手段がなくなってしまうので注意してください。この場合、
+`optparse' はオプションを完全に除去してしまうので、
+こうしたオプションはヘルプテキストやその他のいずれにも表示
+されなくなります。例えば、現在の `OptionParser' で 続けると:
+
+     parser.add_option("--dry-run", ..., help="new dry-run option")
+
+この操作を行った時点で、最初の `-n'/`--dry-run'
+オプションはもはやアクセスできなくなり、`optparse' は
+最初のオプションを除去します。ユーザがヘルプを要求すると、
+以下のようなヘルプ:
+
+     options:
+       ...
+       -n, --noisy   be noisy
+       --dry-run     new dry-run option
+
+を読むことになるでしょう。
+
+
+File: python-lib-jp.info,  Node: callback オプション,  Next: optparse を拡張する,  Prev: 進んだ使い方 2,  Up: optparse
+
+callback オプション
+-------------------
+
+`optparse' の組み込みのアクションや型が望みにかなったもので
+なく、とはいえ `optparse' を拡張して独自のアクションや型を
+定義するほどではない場合、おそらく callback オプションを定義する
+必要があるでしょう。callback オプションの定義はきわめて簡単です;
+注意を要するのは、よいコールバック関数 (callback function、 `optparse'
+がオプションをコマンドライン上に見つけた際に 呼び出される関数)
+を書くところです。
+
+* Menu:
+
+* callback オプションを定義する::
+* コールバック関数はどのように呼び出されるか::
+* エラー処理 2::
+* 例 7::
+
+
+File: python-lib-jp.info,  Node: callback オプションを定義する,  Next: コールバック関数はどのように呼び出されるか,  Prev: callback オプション,  Up: callback オプション
+
+callback オプションを定義する
+.............................
+
+例によって、コールバックオプションの定義は、直接 `Option'
+クラスをインスタンス化するか、`OptionParser' オブジェクト の
+`add_option()' メソッドを使うことで定義できます。
+指定しなければならない属性は唯一 CALLBACK で、呼び出したい
+関数を指定します:
+
+     parser.add_option("-c", callback=my_callback)
+
+ここでは関数オブジェクトを与えなければならないことに注意して ください
+-- つまり、callback オプションを定義する時点で、 関数 `my_callback()'
+はすでに定義済みにしていなければ なりません。上の単純なケースでは、
+`optparse' は `-c' が必要とする引数について何の知識もありません。
+通常、これはオプションが何ら引数をとらない - コマンドライン上に `-c'
+が存在するかどうかだけが知りたいことの全てである -
+ことを意味します。しかし、状況によっては、コールバック関数
+が任意の数の引数をコマンドライン引数から取り出したいと思うかも
+しれません。 これがコールバック関数の記述を難しくしているところです;
+これについては本ドキュメントの後の方でカバーします。
+
+オプションの属性を定義する際に指定できる属性はいくつかあります:
+
+"type"
+     通常の意味を持ちます: "store" や "append" アクションのように、
+     `optparse' に対して引数を一つ消費するように指示します。 この引数は
+     TYPE に変換できなければなりません。 `optparse'
+     は値をどこかに保存する のではなく、TYPE
+     に変換してコールバック関数に渡します。
+
+"nargs"
+     これも通常の意味を持ちます: この属性が与えられ、`nargs > 1'
+     であるばあい、`optparse' は NARGS 個の引数を取り出します。 各値は
+     TYPE に変換可能でなくてはなりません。その後、
+     変換された値からなるタプルがコールバック関数に渡されます。
+
+"callback_args"
+     コールバックに渡す外部の固定引数からなるタプルです。
+
+"callback_kwargs"
+     コールバックに渡す外部のキーワード引数です。
+
+
+File: python-lib-jp.info,  Node: コールバック関数はどのように呼び出されるか,  Next: エラー処理 2,  Prev: callback オプションを定義する,  Up: callback オプション
+
+コールバック関数はどのように呼び出されるか
+..........................................
+
+コールバックは全て以下のようにして呼び出されます:
+
+     func(option, opt, value, parser, *args, **kwargs)
+
+ここで、
+
+"option"
+     は、このコールバックを呼び出している `Option' のインスタンス です。
+
+"opt"
+     は、コールバック呼び出しのきっかけとなったコマンドライン上の
+     オプション文字列です。(長形式のオプションに対する省略形が使われている
+     場合、OPT は完全な、正式な形のオプション文字列となります --
+     例えば、ユーザが `--foobar' の短縮形として `--foo'
+     をコマンドラインに入力した時には、OPT は `--foobar' となります。)
+
+"value"
+     は、このオプションの引数で、コマンドライン上に見つかったものです。
+     `optparse' は、TYPE が設定されている場合、
+     単一の引数しかとりません;VALUE の型はオプションの型 (~*Note
+     オプションの型::, "オプションの型" 参照) で示された
+     型になります。このオプションに対する TYPE が None である
+     (引数はない) 場合、VALUE は None になります。`nargs > 1' なら、
+     VALUE は適切な型をもつ値のタプルとなります。
+
+"parser"
+     は、現在のオプション解析の全てを駆動している `OptionParser'
+     インスタンスです。主に、この値を介して、インスタンス属性としていくつかの
+     興味深いデータにアクセスできるために便利です:
+
+    "parser.rargs"
+          現在未処理の引数からなるリスト、すなわち、OPT (と、あれば
+          VALUE ) が除去され、それ以降の引数だけが
+          残っているリストです。`parser.rargs' の変更、例えば
+          さらに引数を取り出すといった変更は、自由に行ってかまいません。
+
+    "parser.largs"
+          現在放置されている引数のセット、すなわち処理はされたが、
+          オプション (やオプションの引数) として取り出されてはいない
+          引数のセットです。`parser.largs' の変更、例えば
+          さらに引数を追加するといった変更は、自由に行ってかまいません。
+
+    "parser.values"
+          オプションの値がデフォルトで保存されるオブジェクトです。
+          この値は、コールバック関数がオプションの値を記憶するために、
+          他の`optparse' と同じ機構を使えるようにするので便利です;
+          これでグローバル変数や閉包 (closure)
+          を台無しにすることがありません。
+          コマンドライン上にすでに現れているオプションの値にアクセスすることも
+          できます。
+
+"args"
+     CALLBACK_ARGS オプション属性で与えられた任意の固定引数
+     からなるタプルです。
+
+"kwargs"
+     CALLBACK_ARGS オプション属性で与えられた任意のキーワード引数
+     からなるタプルです。
+
+ARGS と KWARGS は省略可能 (CALLBACK_ARGS や CALLBACK_KWARGS
+をコールバック定義の際に与えたときのみ 渡されます)
+なので、最小のコールバック関数定義は以下のようになります:
+
+     def my_callback (option, opt, value, parser):
+         pass
+
+
+File: python-lib-jp.info,  Node: エラー処理 2,  Next: 例 7,  Prev: コールバック関数はどのように呼び出されるか,  Up: callback オプション
+
+エラー処理
+..........
+
+オプションやその引数に関して問題が発生した場合、 コールバック関数は
+`OptionValueError' を送出しなければ なりません。`optparse'
+はこの例外を捕捉し、プログラムを終了
+します。このとき指定したエラーメッセージを標準出力に出力します。
+メッセージは明快、簡潔、正確で、問題がみつかったオプションについて
+触れなければなりません。そうでなければ、ユーザは指定したオプションの
+何が問題なのか解決するのに苦労するでしょう。
+

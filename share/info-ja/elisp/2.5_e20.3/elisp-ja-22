@@ -1,0 +1,1895 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Asynchronous Processes, Next: Deleting Processes, Prev: Synchronous Processes, Up: Processes
+
+非同期プロセスの作成
+====================
+
+"非同期プロセス"を作成すると, Emacsとサブプロセスの両者はただちに動作
+を継続します.  そしてプロセスはEmacsと並行に動作し, 両者は以下の節に述
+べる関数を用いて互いに通信できます.  しかし, 通信は部分的に非同期です. 
+特定の関数を呼び出したときにだけEmacsはプロセスへデータを送り, Emacsが
+入力待ちか時間待ちをしているときにだけプロセスからの出力を受け取れます.
+
+ここでは, 非同期プロセスの作成方法について述べます.
+
+ -- Function: start-process NAME BUFFER-OR-NAME PROGRAM &rest ARGS
+     この関数は, 新たな非同期サブプロセスを作成し, そのプロセスでプロ
+     グラムPROGRAMを走らせる.  Lispにおいて新たなサブプロセスを表すプ
+     ロセスオブジェクトを返す.  引数NAMEはプロセスオブジェクトの名前を
+     指定する.  その名前のプロセスがすでに存在すると, 名前を一意にする
+     ために（`<1>'などを付加して）NAMEを修正する.  バッファ
+     BUFFER-OR-NAMEは, そのプロセスに対応付けるバッファである.
+
+     残りの引数ARGSは, プログラムに対するコマンド行引数を指定する文字
+     列である.
+
+     つぎの例では, 最初のプロセスは動き始めると100秒間（休止ではなく）
+     動作する.  そのあいだに2番目のプロセスを動かし始めると, 一意であ
+     るためにそれには名前`my-process<1>'が与えられる.  2番目のプロセス
+     は, 最初のプロセスが終了するまえにバッファ`foo'にディレクトリ一覧
+     を挿入する.  2番目のプロセスが終了するとそれを表すメッセージがバッ
+     ファに挿入される.  しばらくして最初のプロセスが終了すると, 別のメッ
+     セージがバッファに挿入される.
+
+          (start-process "my-process" "foo" "sleep" "100")
+               => #<process my-process>
+
+          (start-process "my-process" "foo" "ls" "-l" "/user/lewis/bin")
+               => #<process my-process<1>>
+
+          ---------- Buffer: foo ----------
+          total 2
+          lrwxrwxrwx  1 lewis     14 Jul 22 10:12 gnuemacs --> /emacs
+          -rwxrwxrwx  1 lewis     19 Jul 30 21:02 lemon
+
+          Process my-process<1> finished
+
+          Process my-process finished
+          ---------- Buffer: foo ----------
+
+ -- Function: start-process-shell-command NAME BUFFER-OR-NAME COMMAND &rest COMMAND-ARGS
+     この関数は`start-process'と同様であるが, 指定したコマンドを実行す
+     るためにシェルを用いる点が異なる.  引数COMMANDはシェルコマンドの
+     名前であり, COMMAND-ARGSはそのシェルコマンドに対する引数である. 
+     変数`shell-file-name'は, 使用するシェルを指定する.
+
+     `start-process'で直接にではなくシェルを介してプログラムを実行する
+     と, 引数のワイルドカードなどのシェルの機能を利用できる.  つまり, 
+     ユーザー指定の任意のファイル名をコマンドに入れる場合には, まえもっ
+     て`shell-quote-argument'でクォートし, ファイル名内のシェルの特別
+     な文字がそのような特別な意味を持た*ない*ようにする.  *Note Shell
+     Arguments::.
+
+ -- Variable: process-connection-type
+     この変数は, 非同期サブプロセスとの通信に用いる装置の型を制御する. 
+     これが`nil'以外であると疑似端末PTYを利用できる場合にはそれを用る. 
+     さもなければパイプを用いる.
+
+     シェル（shell）モードなどのユーザーに見えるプロセス向けには, パイ
+     プでは不可能なプロセスとその子プロセスとのあいだでジョブ制御
+     （`C-c', `C-z'など）を許すので疑似端末PTYが望ましい.  プログラム
+     の内部目的向けに使われるサブプロセスでは, 効率的なパイプを用いる
+     ほうがよい.  また, 多くのシステムでは疑似端末PTYの総数には制約が
+     あり, それらを浪費しないほうがよい.
+
+     `process-connection-type'の値は`start-process'を呼び出したときに
+     使われる.  したがって, `start-process'の呼び出しの周りでこの変数
+     を束縛することで, 1つのサブプロセスに対する通信方法を指定できる.
+
+          (let ((process-connection-type nil))  ; パイプを使う
+            (start-process ...))
+
+     サブプロセスが実際にはパイプか疑似端末PTYのどちらを使っているかを
+     調べるには, 関数`process-tty-name'を使う（*Note Process
+     Information::）.
+
+
+
+File: elisp-ja, Node: Deleting Processes, Next: Process Information, Prev: Asynchronous Processes, Up: Processes
+
+プロセスの削除
+==============
+
+"プロセスを削除する"とは, サブプロセスからEmacsをただちに切り離し, サ
+ブプロセスを活性なプロセスリストから取り除くことです.  サブプロセスへ
+シグナルを送ってサブプロセスを終了させますが, ただちに終了するとは保証
+されません.  プロセスオブジェクトを指すLispオブジェクトがある限り, プ
+ロセスオブジェクトは存在し続けます.  プロセスマークは以前と同様に同じ
+場所（プロセスからの出力をバッファに挿入した箇所）を指し続けます.
+
+プロセスはいつでも明示的に削除できます.  プロセスは終了後に自動的に削
+除されますが, 終了後ただちにではありません.  終了したプロセスが自動的
+に削除されるまえに明示的に削除しても無害です.
+
+ -- User Option: delete-exited-processes
+     この変数は, （`exit'を呼び出すかシグナルのために）終了したプロセ
+     スの自動削除を制御する.  `nil'であると, ユーザーが
+     `list-processes'を実行するまで存在し続ける.  さもなければ, 終了後
+     にただちに削除する.
+
+ -- Function: delete-process NAME
+     この関数は, NAMEに対応付けられたプロセスをシグナル`SIGHUP'でキル
+     し削除する.  引数は, プロセス, プロセス名, バッファ, バッファ名の
+     いずれかである.
+
+          (delete-process "*shell*")
+               => nil
+
+ -- Function: process-kill-without-query PROCESS &optional DO-QUERY
+     この関数は, Emacsを終了するときにプロセスPROCESSが動作中であると, 
+     ユーザーに問い合わせるかどうかを指定する.  DO-QUERYが`nil'である
+     と, プロセスを黙って削除する.  さもなければ, Emacsはプロセスのキ
+     ルに関して問い合わせる.
+
+     問い合わせるようにしてあったプロセスであると戻り値は`t'であり, さ
+     もなければ戻り値は`nil'である.  新たに作成されたプロセスは, つね
+     に問い合わせ用になっている.
+
+          (process-kill-without-query (get-process "shell"))
+               => t
+
+
+
+File: elisp-ja, Node: Process Information, Next: Input to Processes, Prev: Deleting Processes, Up: Processes
+
+プロセス情報
+============
+
+プロセスに関する情報を返す関数がいくつかあります.  `list-processes'は
+対話的利用のためにあります.
+
+ -- コマンド: list-processes
+     このコマンドは, 活性なすべてのプロセスの一覧を表示する.  さらに,
+     `Exited'や`Signaled'である状態のプロセスをすべて削除する.  `nil'
+     を返す.
+
+ -- Function: process-list
+     この関数は, 削除されていないすべてのプロセスのリストを返す.
+
+          (process-list)
+               => (#<process display-time> #<process shell>)
+
+ -- Function: get-process NAME
+     この関数はNAMEという名前のプロセスを返す.  あるいは, そのようなプ
+     ロセスがなければ`nil'を返す.  NAMEが文字列でないとエラーを通知す
+     る.
+
+          (get-process "shell")
+               => #<process shell>
+
+ -- Function: process-command PROCESS
+     この関数は, プロセスPROCESSを始動するために実行したコマンドを返す. 
+     これは文字列のリストであり, 最初の文字列は実行されたプログラム, 
+     残りの文字列はそのプログラムに与えた引数である.
+
+          (process-command (get-process "shell"))
+               => ("/bin/csh" "-i")
+
+ -- Function: process-id PROCESS
+     この関数は, プロセスPROCESSのプロセス番号PIDを返す.  これは同じ計
+     算機上で動いている他のすべてのプロセスとプロセスPROCESSを区別する
+     ための整数である.  プロセスのPIDは, プロセスを始動したときにオペ
+     レーティングシステムのカーネルが選び, プロセスが終了するまで変わ
+     らない.
+
+ -- Function: process-name PROCESS
+     この関数はプロセスPROCESSの名前を返す.
+
+ -- Function: process-contact PROCESS
+     この関数は, 通常の子プロセスに対しては`t'を返し, ネットワーク接続
+     に対しては`(HOSTNAME SERVICE)'を返す（*Note Network::）.
+
+ -- Function: process-status PROCESS-NAME
+     この関数は, PROCESS-NAMEの状態をシンボルとして返す.  引数
+     PROCESS-NAMEは, プロセス, バッファ, プロセス名（文字列）, バッファ
+     名（文字列）のいずれかであること.
+
+     実際のサブプロセスに対して可能な値はつぎのとおり.
+
+     `run'
+          実行中のプロセスである.
+     `stop'
+          一時停止しているが継続可能である.
+     `exit'
+          終了したプロセス.
+     `signal'
+          致命的なシグナルを受け取ったプロセスである.
+     `open'
+          ネットワーク接続を開いている.
+     `closed'
+          ネットワーク接続は閉じている.  接続をいったん閉じるとそれを
+          再度開くことはできないが, 同じ接続先へ新たな接続を開くことは
+          できる.
+     `nil'
+          PROCESS-NAMEは既存プロセスの名前ではない.
+
+          (process-status "shell")
+               => run
+          (process-status (get-buffer "*shell*"))
+               => run
+          x
+               => #<process xx<1>>
+          (process-status x)
+               => exit
+
+     ネットワーク接続では, `process-status'はシンボル`open'か`closed'
+     のいずれかを返す.  後者は, 相手側が接続を閉じたかEmacsが
+     `delete-process'を行ったことを表す.
+
+ -- Function: process-exit-status PROCESS
+     この関数は, プロセスPROCESSの終了状態か, プロセスをキルしたシグナ
+     ル番号を返す.  （どちらであるかを判定するには, `process-status'の
+     結果を用いる. ）PROCESSが終了していないと値は0である.
+
+ -- Function: process-tty-name PROCESS
+     この関数は, プロセスPROCESSがEmacsとの通信に用いている端末名を返
+     す.  あるいは, 端末のかわりにパイプを用いていれば`nil'を返す
+     （*Note Asynchronous Processes::の`process-connection-type'を参照）.
+
+ -- Function: process-coding-system PROCESS
+     この関数は, プロセスPROCESSからの出力を復号化するために用いている
+     コーディングシステムと, PROCESSへの入力を符号化するために用いてい
+     るコーディングシステムを記述するコンスセルを返す.
+
+          (CODING-SYSTEM-FOR-DECODING . CODING-SYSTEM-FOR-ENCODING)
+
+ -- Function: set-process-coding-system PROCESS DECODING-SYSTEM ENCODING-SYSTEM
+     この関数は, プロセスPROCESSからの以降の出力および入力に用いるコー
+     ディングシステムを指定する.  サブプロセスから出力の復号化には
+     DECODING-SYSTEMを使い, サブプロセスの入力の符号化には
+     ENCODING-SYSTEMを使う.
+
+
+
+File: elisp-ja, Node: Input to Processes, Next: Signals to Processes, Prev: Process Information, Up: Processes
+
+プロセスへ入力を送る
+====================
+
+本節の関数を用いてEmacsが入力を送ると, 非同期プロセスは入力を受け取り
+ます.  入力の送先であるプロセスと, 送るべき入力データを指定する必要が
+あります.  そのデータは, サブプロセスの『標準入力』に現れます.
+
+疑似端末PTYのバッファ付き入力の容量に上限があるオペレーティングシステ
+ムもあります.  そのようなシステムでは, Emacsは他の文字に混ぜて定期的に
+EOFを送り, 文字が流れるように強制します.  ほとんどのプログラムでは, こ
+のようなEOFは無害なはずです.
+
+ファイルに書き込むテキストと同様に, サブプロセスの入力は, サブプロセス
+がそれを受け取るまえにコーディングシステムを用いて普通は符号化されます.
+`set-process-coding-system'で使用するコーディングシステムを指定できま
+す（*Note Process Information::）.  さもなければ,
+`coding-system-for-write'が`nil'以外であればこれを使います.  それ以外
+ではデフォルトの機構で決まるものを使います（*Note Default Coding
+Systems::）.
+
+ -- Function: process-send-string PROCESS-NAME STRING
+     この関数は, 文字列STRINGの内容を標準入力としてプロセス
+     PROCESS-NAMEに送る.  引数PROCESS-NAMEは, プロセスかプロセス名であ
+     ること.  これが`nil'であると, カレントバッファのプロセスを用いる.
+
+     関数は`nil'を返す.
+
+          (process-send-string "shell<1>" "ls\n")
+               => nil
+
+
+          ---------- Buffer: *shell* ----------
+          ...
+          introduction.texi               syntax-tables.texi~
+          introduction.texi~              text.texi
+          introduction.txt                text.texi~
+          ...
+          ---------- Buffer: *shell* ----------
+
+ -- コマンド: process-send-region PROCESS-NAME START END
+     この関数は, STARTとENDで定義される領域内のテキストを標準入力とし
+     てプロセスPROCESS-NAMEへ送る.  PROCESS-NAMEはプロセスかプロセス名
+     であること.  （`nil'であると, カレントバッファのプロセスを使
+     う. ）
+
+     STARTとENDのどちらかがカレントバッファ内の位置を表す整数でもマー
+     カでもないと, エラーを通知する.  （どちらが大きな数であるかは重要
+     ではない. ）
+
+ -- Function: process-send-eof &optional PROCESS-NAME
+     この関数は, プロセスPROCESS-NAMEが入力で「ファイルの終りEOF」を見
+     るようにする.  EOFはそれまでに送ったテキストのあとにある.
+
+     PROCESS-NAMEを指定しなかったり`nil'であると, この関数はカレントバッ
+     ファのプロセスにEOFを送る.  カレントバッファにプロセスがないとエ
+     ラーを通知する.
+
+     関数はPROCESS-NAMEを返す.
+
+          (process-send-eof "shell")
+               => "shell"
+
+
+
+File: elisp-ja, Node: Signals to Processes, Next: Output from Processes, Prev: Input to Processes, Up: Processes
+
+プロセスにシグナルを送る
+========================
+
+サブプロセスに"シグナルを送る"ことは, サブプロセスの動作に割り込む一方
+法です.  それぞれ独自の意味を持つ異なるシグナルがいくつかあります.  一
+連のシグナルとそれらの名前は, オペレーティングシステムが定義します. 
+たとえば, シグナル`SIGINT'は, ユーザーが`C-c'を打った, あるいは, それ
+と同様なことが起こったことを意味します.
+
+各シグナルには, サブプロセスに対する標準的な効果があります.  ほとんど
+のシグナルはサブプロセスをキルしますが, その実行を一時停止したり再開す
+るものもあります.  プログラムがシグナルを処理している場合には, シグナ
+ルの効果を一般的に述べることはできません.
+
+本節の関数を呼び出してシグナルを明示的に送ることができます.  また,
+Emacsは特定の場面で自動的にシグナルを送ります.  バッファを削除すると, 
+そのバッファに対応付けられているすべてのプロセスにシグナル`SIGHUP'を送
+ります.  Emacsを終了するときには, 動作しているすべてのサブプロセスにシ
+グナル`SIGHUP'を送ります.  （`SIGHUP'は, ユーザーが電話を切ったことを
+普通は表すシグナル. ）
+
+シグナルを送る各関数は, 省略可能な2つの引数, PROCESS-NAMEと
+CURRENT-GROUPを受け付けます.
+
+引数PROCESS-NAMEは, プロセス, プロセス名, `nil'のいずれかです.  これが
+`nil'であると, カレントバッファに対応付けられているプロセスがデフォル
+トになります.  PROCESS-NAMEがプロセスを指定しないとエラーを通知します.
+
+引数CURRENT-GROUPは, Emacsのサブプロセスとしてジョブ制御可能なシェルを
+実行しているときに違いが現れるフラグです.  これが`nil'以外であると,
+Emacsがサブプロセスとの通信に用いている端末の現在のプロセスグループに
+シグナルを送ります.  プロセスがジョブ制御可能なシェルであると, これは
+シェルの現在のサブジョブ (1) (*Note Signals to Processes-Footnotes::) 
+であることを意味します.  `nil'であると, Emacsのサブプロセスの直接のプ
+ロセスグループにシグナルを送ります.  プロセスがジョブ制御可能なシェル
+であると, これはシェルそのものです.
+
+オペレーティングシステムはパイプではプロセスグループを扱わないため, サ
+ブプロセスとの通信にパイプを用いている場合には, フラグCURRENT-GROUPに
+は効果はありません.  同じ理由で, パイプを用いている場合にはジョブ制御
+可能なシェル（のジョブ制御機能）は働きません.  *Note Asynchronous
+Processes::の`process-connection-type'を参照してください.
+
+ -- Function: interrupt-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は, プロセスPROCESS-NAMEにシグナル`SIGINT'を送って割り込
+     む.  Emacsの外側では, 『割り込み文字』（普通, `C-c'であるシステム
+     もあり, その他のシステムでは`DEL'）を打つとこのシグナルを送る. 
+     引数CURRENT-GROUPが`nil'以外であると, この関数は, Emacsがサブプロ
+     セスと通信している端末上で『`C-c'を打つ』と考えることができる.
+
+ -- Function: kill-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は, プロセスPROCESS-NAMEにシグナル`SIGKILL'を送ってキルす
+     る.  このシグナルはサブプロセスを即座にキルし, サブプロセスはこれ
+     を処理できない.
+
+ -- Function: quit-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は, プロセスPROCESS-NAMEにシグナル`SIGQUIT'を送る.  この
+     シグナルは, 『中断文字』（Emacsの外側では普通は`C-b'や`C-\'）が送
+     るシグナルと同じものである.
+
+ -- Function: stop-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は, プロセスPROCESS-NAMEにシグナル`SIGTSTP'を送って一時停
+     止させる.  その実行を再開させるには`continue-process'を使う.
+
+     Emacsの外側でジョブ制御可能なシステムでは, 『一時停止文字』（普通
+     は`C-z'）が普通はこのシグナルを送る.  CURRENT-GROUPが`nil'以外で
+     あると, この関数は, Emacsがサブプロセスと通信している端末上で
+     『`C-z'を打つ』と考えることができる.
+
+ -- Function: continue-process &optional PROCESS-NAME CURRENT-GROUP
+     この関数は, プロセスPROCESSにシグナル`SIGTCONT'を送って実行を再開
+     させる.  以前に一時停止させられたPROCESSを再開する.
+
+ -- Function: signal-process PID SIGNAL
+     この関数は, 必ずしもEmacsの子プロセスではないプロセスPIDにシグナ
+     ルを送る.  引数SIGNALは, 送るべきシグナルを整数で指定する.
+
+
+File: elisp-ja  Node: Signals to Processes-Footnotes, Up: Signals to Processes
+
+(1) 【訳注】シェルのもとで動いているプロセス群
+
+
+
+File: elisp-ja, Node: Output from Processes, Next: Sentinels, Prev: Signals to Processes, Up: Processes
+
+プロセスからの出力を受け取る
+============================
+
+サブプロセスが標準出力に書く出力を受け取る方法は2つあります.  プロセス
+に対応付けられたバッファに出力を挿入するか, あるいは, "フィルタ関数"
+（filter function）と呼ばれる関数を出力に対して作用させます.  プロセス
+にバッファもフィルタ関数もなければ, その出力は破棄します.
+
+サブプロセスからの出力は, Emacsが待っている, つまり, 端末入力を読んで
+いるとき, `sit-for'や`sleep-for'を実行中のとき（*Note Waiting::）,
+`accept-process-output'（*Note Accepting Output::）を実行中のときにだ
+け到着します.  これにより, 並行プログラムを普通は悩ますようなタイミン
+グエラーの問題を最小に抑えます.  たとえば, 安全にプロセスを作成してか
+ら, バッファかフィルタ関数を指定できます.  この処理の途中で待つような
+基本関数を呼び出さなければ, 出力は到着しません.
+
+ファイルから読むテキストと同様に, サブプロセスの出力は, バッファやフィ
+ルタ関数が受け取るまえにコーディングシステムを用いて普通は復号化します.
+`set-process-coding-system'で使用するコーディングシステムを指定できま
+す（*Note Process Information::）.  さもなければ,
+`coding-system-for-read'が`nil'以外であればこれを使います.  それ以外で
+はデフォルトの機構で決まるものを使います（*Note Default Coding
+Systems::）.
+
+*警告：*` ' データからコーディングシステムを決定する`undecided'のよう
+なコーディングシステムは, 非同期サブプロセスの出力に対しては完全に信頼
+性のある動作はできない.  これは, Emacsが非同期サブプロセスの出力が到着
+するたびに一塊で処理するからである.  Emacsは1つの塊から正しい変換を検
+出しようと試みるが, これがつねに動作するとは限らない.  したがって, 可
+能な限り文字コード変換と行末変換の両方を指定したコーディングシステムを
+使う.  つまり, `undecided'や`latin-1'などではなく, `latin-1-unix'のよ
+うなものを使う.
+
+* Menu:
+
+* Process Buffers::       If no filter, output is put in a buffer.
+* Filter Functions::      Filter functions accept output from the process.
+* Accepting Output::      Explicitly permitting subprocess output.
+                            Waiting for subprocess output.
+
+
+
+File: elisp-ja, Node: Process Buffers, Next: Filter Functions, Prev: Output from Processes, Up: Output from Processes
+
+プロセスバッファ
+----------------
+
+プロセスには"対応付けられたバッファ"が（普通は）あります.  そのバッファ
+はEmacsの普通のバッファであり, 2つの目的に使われます.  プロセスからの
+出力を保存することと, プロセスがキルされたことを判定するためです.  バッ
+ファを用いてそれを操作しているプロセスを識別することもできます.  普通
+は1つのバッファに1つのプロセスを対応付けるからです.  プロセスの多くの
+応用では, プロセスへ送る入力を編集するためにバッファを使いますが, これ
+はEmacs Lispに組み込まれたことではありません.
+
+プロセスにフィルタ関数（*Note Filter Functions::）がなければ, その出力
+は対応付けられたバッファに挿入されます.  出力の挿入位置は
+`process-mark'で決定され, `process-mark'は挿入したばかりのテキストの末
+尾を指すように更新されます.  `process-mark'は普通はバッファの末尾にあ
+りますが, つねにそうであるとは限りません.
+
+ -- Function: process-buffer PROCESS
+     この関数は, プロセスPROCESSに対応付けられているバッファを返す.
+
+          (process-buffer (get-process "shell"))
+               => #<buffer *shell*>
+
+ -- Function: process-mark PROCESS
+     この関数は, プロセスPROCESSからの出力を挿入する箇所を指定する
+     PROCESSのプロセスマーカを返す.
+
+     PROCESSにバッファがなければ, `process-mark'はどこも指していないマー
+     カである.
+
+     バッファにプロセス出力を挿入する際には, 挿入箇所を決定するために
+     このマーカを使用し, 挿入したテキストの末尾を指すようにこのマーカ
+     を更新する.  これにより, 出力の連続した塊を順に挿入できるのである.
+
+     バッファに出力を直接挿入する場合と同様に, フィルタ関数はこのマー
+     カを扱うべきである.  `process-mark'を用いたフィルタ関数の好例は, 
+     以下の節にある.
+
+     プロセスへ送るためにユーザーがプロセスバッファに入力することが予
+     想されるときは, プロセスマーカは新たな入力とそれ以前の出力を区切
+     る.
+
+ -- Function: set-process-buffer PROCESS BUFFER
+     この関数は, プロセスPROCESSにバッファBUFFERを対応付ける.  BUFFER
+     が`nil'であると, プロセスに対応付けられたバッファはない.
+
+ -- Function: get-buffer-process BUFFER-OR-NAME
+     この関数はBUFFER-OR-NAMEに対応付けられたプロセスを返す.  バッファ
+     に複数のプロセスが対応付けられている場合には, それらの1つを選ぶ. 
+     （現状では, もっとも最近に作られたプロセスを選ぶ. ）同じバッファ
+     に複数のプロセスを対応付けることは一般にはよくない.
+
+          (get-buffer-process "*shell*")
+               => #<process shell>
+
+     プロセスのバッファを削除すると, サブプロセスにシグナル`SIGHUP'を
+     送ってプロセスを削除する（*Note Signals to Processes::）.
+
+
+
+File: elisp-ja, Node: Filter Functions, Next: Accepting Output, Prev: Process Buffers, Up: Output from Processes
+
+プロセスフィルタ関数
+--------------------
+
+プロセスの"フィルタ関数"（filter function）は, 対応付けられたプロセス
+からの標準出力を受け取る関数です.  プロセスにフィルタがあると, そのプ
+ロセスからの*すべて*の出力はフィルタに渡されます.  プロセスにフィルタ
+がない場合に限って, プロセスからの出力向けにプロセスバッファを直接使い
+ます.
+
+フィルタ関数は, Emacsがなにかを待っているときにのみ呼ばれます.  そのよ
+うな期間にのみプロセスの出力が到着するからです.  Emacsが待つのは, 端末
+入力を読んでいるとき, `sit-for'や`sleep-for'を実行中のとき（*Note
+Waiting::）, `accept-process-output'（*Note Accepting Output::）を実行
+中のときです.
+
+フィルタ関数は2つの引数, 対応付けられたプロセスとそのプロセスから受け
+取ったばかりの出力である文字列を受け取ります.  関数は出力に対してなに
+を行ってもかまいません.
+
+フィルタ関数の内側では中断は普通は禁止されています.  さもないと, コマ
+ンドレベルで打った`C-g'の効果や, ユーザーコマンドを中断するために打っ
+た`C-g'の効果は予測できません.  フィルタ関数の内側で中断を行いたい場合
+には, `inhibit-quit'に`nil'を束縛します.  *Note Quitting::.
+
+フィルタ関数の実行中にエラーが発生するとそのエラーは自動的に捕捉され, 
+フィルタ関数を始動したときに動いていたプログラムの実行を停止しないよう
+にします.  しかし, `debug-on-error'が`nil'以外であると, エラーを捕捉し
+ません.  これにより, Lispデバッガでフィルタ関数をデバッグできます.
+*Note Debugger::.
+
+多くのフィルタ関数は, ときどきあるいはつねに, プロセスのバッファにテキ
+ストを挿入します.  これはフィルタ関数がないときのEmacsの動作を模倣する
+ものです.  そのようなフィルタ関数では, 対象のバッファに挿入するために
+`set-buffer'を使う必要があります.  カレントバッファをなかば恒久的に切
+り替えないように, これらのフィルタ関数はカレントバッファを記録／復元す
+る必要があります.  プロセスマーカを更新し, 必要に応じてポイントの値も
+更新します.  これらはつぎのように行います.
+
+     (defun ordinary-insertion-filter (proc string)
+       (with-current-buffer (process-buffer proc)
+         (let ((moving (= (point) (process-mark proc))))
+           (save-excursion
+             ;; テキストを挿入し, プロセスマーカを進める
+             (goto-char (process-mark proc))
+             (insert string)
+             (set-marker (process-mark proc) (point)))
+           (if moving (goto-char (process-mark proc))))))
+
+カレントバッファを記録／復元するために`save-excursion'ではなく
+`with-current-buffer'を使うのは, 2番目の`goto-char'の呼び出しで行うポ
+イントの移動効果を有効にするためです.
+
+新たにテキストが到着するたびにプロセスバッファが見えるようにフィルタ関
+数で強制するには, つぎのような行を`with-current-buffer'の直前に入れま
+す.
+
+     (display-buffer (process-buffer proc))
+
+ポイント位置に関わらずに新たな出力の末尾にポイントを移動するには, 変数
+`moving'を削除して, 無条件に`goto-char'を呼び出します.
+
+Emacsの初期の版では, 正規表現を探索したり一致処理するフィルタ関数では, 
+マッチデータを明示的に保存／復元する必要がありました.  今のEmacsは, フィ
+ルタ関数に対してはこれを自動的に行いますから, フィルタ関数で明示的に行
+う必要はありません.  *Note Match Data::.
+
+プロセスのバッファに出力を書き込むフィルタ関数は, そのバッファが有効で
+あるかどうかを検査するべきです.  無効なバッファに挿入しようとするとエ
+ラーになります.  バッファが無効であれば, 式`(buffer-name
+(process-buffer PROCESS))' を実行すると`nil'を返します.
+
+関数に渡される出力は任意のサイズの塊できます.  同じ出力を2回生成するプ
+ログラムは, あるときには一度に200文字の塊を1つ送る場合もあれば, 40文字
+の塊を5つ送る場合もあります.  サブプロセスの出力から特定のテキスト文字
+列を探すフィルタでは, そのような文字列が2つかそれ以上の出力の塊に分割
+される場合も扱えるようにします.
+
+ -- Function: set-process-filter PROCESS FILTER
+     この関数は, プロセスPROCESSにフィルタ関数FILTERを指定する.
+     FILTERが`nil'であると, プロセスにフィルタはない.
+
+ -- Function: process-filter PROCESS
+     この関数は, プロセスPROCESSのフィルタ関数を返す.  あるいは, フィ
+     ルタ関数がなければ`nil'を返す.
+
+フィルタ関数の使用例をつぎに示します.
+
+     (defun keep-output (process output)
+        (setq kept (cons output kept)))
+          => keep-output
+     (setq kept nil)
+          => nil
+     (set-process-filter (get-process "shell") 'keep-output)
+          => keep-output
+     (process-send-string "shell" "ls ~/other\n")
+          => nil
+     kept
+          => ("lewis@slug[8] % "
+     "FINAL-W87-SHORT.MSS    backup.otl              kolstad.mss~
+     address.txt             backup.psf              kolstad.psf
+     backup.bib~             david.mss               resume-Dec-86.mss~
+     backup.err              david.psf               resume-Dec.psf
+     backup.mss              dland                   syllabus.mss
+     "
+     "#backups.mss#          backup.mss~             kolstad.mss
+     ")
+
+
+
+
+File: elisp-ja, Node: Accepting Output, Next: Sentinels, Prev: Filter Functions, Up: Output from Processes
+
+プロセスからの出力を受け取る
+----------------------------
+
+非同期サブプロセスからの出力は, Emacsが時間待ちや端末入力などのなんら
+かの外部事象を待っているときにのみ到着します.  Lispプログラムから特定
+の場面で出力の到着を明示的に許したり, プロセスの出力が到着するのを待つ
+ことができると有用なことがあります.
+
+ -- Function: accept-process-output &optional PROCESS SECONDS MILLISEC
+     この関数は, Emacsにプロセスからの未処理の出力を読み取ることを許す. 
+     その出力は, 対応付けられたバッファに挿入されるか, フィルタ関数に
+     与えられる.  PROCESSが`nil'以外であると, この関数は, PROCESSから
+     なんらかの出力を得るまで戻らない.
+
+     引数SECONDSとMILLISECは, 時間切れを指定する.  前者は秒単位の時間, 
+     後者はミリ秒単位の時間を指定する.  指定された2つの時間は合計され, 
+     任意のサブプロセスの出力を受け取ったどうかに関わらず, その時間だ
+     け経過すると`accept-process-output'は戻ってくる.
+
+     引数SECONDSは整数である必要はない.  浮動小数点数であると, この関
+     数は秒未満の時間も待つ.  秒未満を扱えないシステムもある.  そのよ
+     うなシステムでは, SECONDSを切り下げる.
+
+     すべてのオペレーティングシステムで秒未満を扱えるわけではない.  扱
+     えないシステムでMILLISECにゼロ以外を指定するとエラーになる.
+
+     関数`accept-process-output'は, 出力を得ると`nil'以外を返す.  ある
+     いは, 出力が到着するまえに時間切れすると`nil'を返す.
+
+
+
+File: elisp-ja, Node: Sentinels, Next: Transaction Queues, Prev: Output from Processes, Up: Processes
+
+番兵：プロセスの状態変化の検出
+==============================
+
+"プロセスの番兵"（process sentinel）は, プロセスを終了／一時停止／継続
+させる（Emacsが送ったかプロセス自身の動作によって生起した）シグナルを
+含めて対応付けられたプロセスの状態が任意の理由で変化したときに呼び出さ
+れる関数です.  プロセスの番兵は, プロセスが終了しても呼び出されます. 
+番兵は2つの引数, 事象が発生したプロセスと事象の種類を記述する文字列を
+受け取ります.
+
+事象を記述する文字列はつぎのとおりです.
+
+   * `"finished\n"'.
+
+   * `"exited abnormally with code EXITCODE\n"'.
+
+   * `"NAME-OF-SIGNAL\n"'.
+
+   * `"NAME-OF-SIGNAL (core dumped)\n"'.
+
+番兵はEmacsが（たとえば, 端末入力や時間経過, プロセスの出力を）待って
+いるときにのみ実行されます.  他のLispプログラムの実行途中で無秩序に番
+兵を実行した場合に起こるタイミングエラーを回避するためです.  `sit-for'
+や`sleep-for'（*Note Waiting::）, あるいは, `accept-process-output'
+（*Note Accepting Output::）を呼び出すとプログラムは待ちに入り, 番兵が
+動けることになります.  Emacsは, コマンドループで入力を読むときにも番兵
+の実行を許します.
+
+番兵の内側では中断は普通は禁止されています.  さもないと, コマンドレベ
+ルで打った`C-g'の効果や, ユーザーコマンドを中断するために打った`C-g'の
+効果は予測できません.  番兵の内側で中断を行いたい場合には,
+`inhibit-quit'に`nil'を束縛します.  *Note Quitting::.
+
+プロセスのバッファに出力を書き込む番兵は, そのバッファが有効であるかど
+うかを検査するべきです.  無効なバッファに挿入しようとするとエラーにな
+ります.  バッファが無効であれば, 式`(buffer-name (process-buffer
+PROCESS))' を実行すると`nil'を返します.
+
+番兵の実行中にエラーが発生するとそのエラーは自動的に捕捉され, 番兵を始
+動したときに動いていたプログラムの実行を停止しないようにします.  しか
+し, `debug-on-error'が`nil'以外であると, エラーを捕捉しません.  これに
+より, Lispデバッガで番兵をデバッグできます.  *Note Debugger::.
+
+Emacsの初期の版では, 正規表現を探索したり一致処理する番兵では, マッチ
+データを明示的に保存／復元する必要がありました.  今のEmacsは, 番兵に対
+してはこれを自動的に行いますから, 番兵で明示的に行う必要はありません.
+*Note Match Data::.
+
+ -- Function: set-process-sentinel PROCESS SENTINEL
+     この関数は, プロセスPROCESSに番兵SENTINELを対応付ける.  SENTINEL
+     が`nil'であると, プロセスに番兵はない.  番兵がない場合のデフォル
+     トのふるまいは, プロセス状態が変化するとプロセスのバッファにメッ
+     セージを挿入する.
+
+          (defun msg-me (process event)
+             (princ
+               (format "Process: %s had the event `%s'" process event)))
+          (set-process-sentinel (get-process "shell") 'msg-me)
+               => msg-me
+          (kill-process (get-process "shell"))
+               -| Process: #<process shell> had the event `killed'
+               => #<process shell>
+
+ -- Function: process-sentinel PROCESS
+     この関数は, プロセスPROCESSの番兵を返すか, 番兵がなければ`nil'を
+     返す.
+
+ -- Function: waiting-for-user-input-p
+     番兵やフィルタ関数が動作中にこの関数を呼び出すと, 番兵やフィルタ
+     関数を呼び出したときにEmacsがユーザーからのキーボード入力を待って
+     ると`nil'以外を返し, それ以外では`nil'を返す.
+
+
+
+File: elisp-ja, Node: Transaction Queues, Next: Network, Prev: Sentinels, Up: Processes
+
+トランザクションキュー
+======================
+
+トランザクションを用いたサブプロセスとの通信に"トランザクションキュー"
+（transaction queue）を使えます.  まず`tq-create'を用いて, 指定したプ
+ロセスとの通信用トランザクションキューを作成します.  そして, トランザ
+クションを送るために`tq-enqueue'を呼び出します.
+
+ -- Function: tq-create PROCESS
+     この関数は, プロセスPROCESSとの通信用トランザクションキューを作成
+     して返す.  引数PROCESSは, バイトストリームを送受信できる機能を有
+     するサブプロセスであること.  つまり, 子プロセスであるか, 別のマシ
+     ン上の可能性もあるサーバーへのTCP接続である.
+
+ -- Function: tq-enqueue QUEUE QUESTION REGEXP CLOSURE FN
+     この関数はキューQUEUEにトランザクションを送る.  キューを指定する
+     ことは, 通信相手のサブプロセスを指定する効果がある.
+
+     引数QUESTIONは, トランザクションを始める送出メッセージである.  引
+     数FNは, 対応する応答が戻ってきたときに呼び出す関数である.  その関
+     数は2つの引数, CLOSUREと受け取った応答で呼び出される.
+
+     引数REGEXPは, 1つの応答だけに一致する正規表現である.
+     `tq-enqueue'が応答の末尾を判定するために使う.
+
+     `tq-enqueue'の戻り値そのものに意味はない.
+
+ -- Function: tq-close QUEUE
+     未処理のトランザクションすべてが完了するのを待ち, 接続や子プロセ
+     スを終了して, トランザクションキューQUEUEを終える.
+
+トランザクションキューはフィルタ関数を用いて実装してあります.  *Note
+Filter Functions::.
+
+
+
+File: elisp-ja, Node: Network, Next: System Interface, Prev: Transaction Queues, Up: Processes
+
+ネットワーク接続
+================
+
+Emacs Lispプログラムは, 同一マシンや別のマシン上の他のプロセスに対して
+TCPネットワーク接続を開くことができます.  ネットワーク接続は, サブプロ
+セスと同様にLispが扱い, プロセスオブジェクトとして表現されます.  しか
+し, 通信相手のプロセスはEmacsプロセスの子プロセスではありませんから, 
+キルしたりシグナルを送ることはできません.  データの送受信のみが可能で
+す.  `delete-process'は接続を閉じますが, もう一方の端のプロセスをキル
+しません.  そのプロセスは, 接続が閉じた場合の動作を判断する必要があり
+ます.
+
+ネットワーク接続を表すプロセスオブジェクトとサブプロセスを表すプロセス
+オブジェクトとは, 関数`process-status'を使って区別できます.  この関数
+は, ネットワーク接続に対しては`open'か`closed'をつねに返し, 本当のサブ
+プロセスに対してはこれらのいずれの値もけっして返しません.  *Note
+Process Information::.
+
+ -- Function: open-network-stream NAME BUFFER-OR-NAME HOST SERVICE
+     この関数は, ホストのサーバーに対するTCP接続を開く.  接続を表すプ
+     ロセスオブジェクトを返す.
+
+     引数NAMEは, プロセスオブジェクトに付ける名前を指定する.  必要に応
+     じて一意にするために修正される.
+
+     引数BUFFER-OR-NAMEは, 接続に対応付けるバッファである.  出力を扱う
+     フィルタ関数を指定しない限り, 接続からの出力はそのバッファに挿入
+     される.  BUFFER-OR-NAMEが`nil'であると, 接続にはバッファを対応付
+     けないことを意味する.
+
+     引数HOSTとSERVICEは, 接続先を指定する.  HOSTはホスト名（文字列）
+     であり, SERVICEは定義済みのネットワークサービス（文字列）かポート
+     番号（整数）である.
+
+
+
+File: elisp-ja, Node: System Interface, Next: Tips, Prev: Calendar, Up: Top
+
+オペレーティングシステムとのインターフェイス
+********************************************
+
+本章は, Emacsの起動と終了, オペレーティングシステムの環境に収められた
+値の参照方法, 端末入出力とフロー制御についてです.
+
+関連情報については*Note Building Emacs::.  また, 端末やスクリーンに関
+係するオペレーティングシステムの状態情報については, *Note Display::も
+参照してください.
+
+* Menu:
+
+* Starting Up::         Customizing Emacs start-up processing.
+* Getting Out::         How exiting works (permanent or temporary).
+* System Environment::  Distinguish the name and kind of system.
+* User Identification:: Finding the name and user id of the user.
+* Time of Day::		Getting the current time.
+* Time Conversion::     Converting a time from numeric form to a string, or
+                          to calendrical data (or vice versa).
+* Timers::		Setting a timer to call a function at a certain time.
+* Terminal Input::      Recording terminal input for debugging.
+* Terminal Output::     Recording terminal output for debugging.
+* Special Keysyms::     Defining system-specific key symbols for X windows.
+* Flow Control::        How to turn output flow control on or off.
+* Batch Mode::          Running Emacs without terminal interaction.
+
+
+
+File: elisp-ja, Node: Starting Up, Next: Getting Out, Prev: System Interface, Up: System Interface
+
+Emacsの始動
+===========
+
+本節では, Emacsが起動時になにを行うか, および, それらをカスタマイズす
+る方法について述べます.
+
+* Menu:
+
+* Start-up Summary::        Sequence of actions Emacs performs at start-up.
+* Init File::               Details on reading the init file (`.emacs').
+* Terminal-Specific::       How the terminal-specific Lisp file is read.
+* Command Line Arguments::  How command line arguments are processed,
+                              and how you can customize them.
+
+
+
+File: elisp-ja, Node: Start-up Summary, Next: Init File, Prev: Starting Up, Up: Starting Up
+
+概要：始動時の動作手順
+----------------------
+
+Emacsが始動したときに行う（`startup.el'での）処理の順序はつぎのとおり
+です.
+
+  1. `load-path'にある各ディレクトリファイルにおいて`subdirs.el'という
+     名前のファイルを実行することで`load-path'にサブディレクトリを追加
+     する.
+
+  2. `LANG'などの環境変数で要求されていれば, 言語環境と端末のコーディ
+     ングシステムを設定する.
+
+  3. ウィンドウシステムを使用している場合には, そのウィンドウシステム
+     向けの初期化ライブラリをロードする.  そのライブラリ名は
+     `term/WINDOWSYSTEM-win.el'である.
+
+  4. 初期化オプションを処理する.  （初期化オプションの一部は, これより
+     初期の段階で扱われる. ）
+
+  5. 必要ならば, ウィンドウフレームとフェイスを初期化する.
+
+  6. ノーマルフック`before-init-hook'を実行する.
+
+  7. オプション`-no-site-file'が指定されていなければ, ライブラリ
+     `site-start'をロードする.  このライブラリの名前は普通は
+     `site-start.el'である.
+
+  8. コマンド行で`-q'や`-batch'が指定されていなければ, ファイル
+     `~/.emacs'をロードする.  オプション`-u'で, `~'のかわりに用いるホー
+     ムディレクトリを持つ他のユーザー名を指定できる.
+
+  9. `inhibit-default-init'が`nil'以外でなければ, ライブラリ`default'
+     をロードする.  （コマンド行で`-q'を指定したり, `-batch'モードでは, 
+     これを行わない. ）ライブラリのファイル名は普通は`default.el'であ
+     る.
+
+ 10. ノーマルフック`after-init-hook'を実行する.
+
+ 11. バッファ`*scratch*'がカレントバッファであり基本（fundamental）モー
+     ドであるならば, `initial-major-mode'に従ってメジャーモードを設定
+     する.
+
+ 12. バッチモードやウィンドウシステムを用いていなければ, あれば端末固
+     有のLispファイルが存在するならロードする.
+
+ 13. `inhibit-startup-echo-area-message'で抑制していなければ, 初期メッ
+     セージをエコー領域に表示する.
+
+ 14. コマンド行の引数を処理する.
+
+ 15. `term-setup-hook'を実行する.
+
+ 16. 初期化ファイルの指定に従って選択されているフレームのパラメータを
+     修正する`frame-notice-user-settings'を呼び出す.
+
+ 17. `window-setup-hook'を実行する.  *Note Window Systems::.
+
+ 18. 未処理のコマンド行引数（上の数手順）がなく,
+     `inhibit-startup-message'の値が`nil'であり, バッファが空であれば, 
+     コピーレフト／無保証／基本的な利用情報を表示する.
+
+ -- User Option: inhibit-startup-message
+     この変数は, （無保証などの）初期の始動メッセージを禁止する.  これ
+     が`nil'以外であるとメッセージを表示しない.
+
+     始動メッセージの内容に十分慣れたら, 読者個人の初期化ファイルで設
+     定できるようにこの変数がある.  新規ユーザーが受け取るはずである情
+     報を隠してしまうため, 新規ユーザーの初期化ファイルや複数のユーザー
+     に影響するような方法でこの変数に設定しないこと.
+
+ -- User Option: inhibit-startup-echo-area-message
+     この変数は, エコー領域に表示する始動メッセージを制御する.  個人の
+     ファイル`.emacs'につぎのフォームを追加することでエコー領域の始動
+     メッセージを抑制できる.
+
+          (setq inhibit-startup-echo-area-message
+                "YOUR-LOGIN-NAME")
+
+     Emacsは, 読者のファイル`.emacs'で上に示した式を明示的に検査する. 
+     読者のログイン名はLisp文字列定数として式に現れる必要がある.
+     `inhibit-startup-echo-area-message'に同じ値を設定する別の方法では, 
+     始動メッセージを禁止できない.
+
+     このように, 望むならば自身のためにメッセージを簡単に禁止できるが, 
+     読者の`.emacs'をむやみにコピーしても, 他人に対してはメッセージを
+     禁止できない.
+
+
+
+File: elisp-ja, Node: Init File, Next: Terminal-Specific, Prev: Start-up Summary, Up: Starting Up
+
+初期化ファイル：`.emacs'
+------------------------
+
+読者がEmacsを始動すると, Emacsは読者のホームディレクトリからファイル
+`.emacs'を普通はロードしようとします.  このファイルが存在すれば, これ
+にはLispコードを入れておく必要があります.  コマンド行オプション`-q'と
+`-u'は, 初期化ファイルの使い方に影響します.  `-q'は初期化ファイルをロー
+ドしないように指示し, `-u'は読者の初期化ファイルのかわりに指定したユー
+ザーの初期化ファイルをロードするように指示します.  *Note Emacsの起動と
+終了: (emacs-ja)Entering Emacs.
+
+"デフォルトの初期化ファイル"をサイトごとに持てます.  これは
+`default.el'という名前のライブラリです.  Emacsは, ライブラリを探索する
+標準パスからファイル`default.el'を探します（*Note How Programs Do
+Loading::）.  Emacsの配布には, このファイルは付属していません.  ローカ
+ルなカスタマイズのためにサイトで用意します.  バッチモードや`-q'を指定
+してある場合を除いて, デフォルトの初期化ファイルが存在すると, 読者が
+Emacsを始動するたびにそれをロードします.  しかし, 存在するなら, 個人の
+初期化ファイルをさきにロードします.  そこで`inhibit-default-init'に
+`nil'以外の値を設定してあると, Emacsはそのあとファイル`default.el'をロー
+ドしません.
+
+サイトごとのカスタマイズ向けの別のファイルは`site-start.el'です.
+Emacsはユーザーの初期化ファイルをロードする*まえ*にこのファイルをロー
+ドします.  このファイルのロードを禁止するにはオプション`-no-site-file'
+を使います.
+
+ -- Variable: site-run-file
+     この変数は, ユーザーの初期化ファイルよりさきにロードするべきサイ
+     トごとのカスタマイズファイルを指定する.  普通の値は`"site-start"'
+     である.  実際に効果があるようにこれを変更する唯一の方法は, Emacs
+     をダンプするまえに行うことである.
+
+読者のファイル`.emacs'に大量のコードがある場合には, `SOMETHING.el'とい
+う名前の別のファイルへコピーして, それをバイトコンパイルし（*Note Byte
+Compilation::）, 読者のファイル`.emacs'では, `load'（*Note Loading::）
+でそのファイルをロードするようにします.
+
+読者のファイル`.emacs'でよく使われるであろうさまざまなカスタマイズを行
+う方法の例については, *Note 初期化ファイルの例: (emacs-ja)Init
+Examples.
+
+ -- User Option: inhibit-default-init
+     この変数は, 読者のEmacsセッションにおいては, デフォルトの初期化ラ
+     イブラリファイルをロードしないようにする.  その値が`nil'以外であ
+     るとデフォルトライブラリをロードしない.  デフォルト値は`nil'であ
+     る.
+
+ -- Variable: before-init-hook
+     すべての初期化ファイル（ユーザーの初期化ファイル, `default.el'と／
+     あるいは`site-start.el'）をロードする直前に一度だけ実行するノーマ
+     ルフック.  （実際の効果があるようにこれを変更する唯一の方法は,
+     Emacsをダンプするまえに行うことである. ）
+
+ -- Variable: after-init-hook
+     すべての初期化ファイル（ユーザーの初期化ファイル, `default.el'と／
+     あるいは`site-start.el'）をロード直後, 端末固有の初期化のまえに一
+     度だけ実行するノーマルフック.
+
+
+
+File: elisp-ja, Node: Terminal-Specific, Next: Command Line Arguments, Prev: Init File, Up: Starting Up
+
+端末固有の初期化
+----------------
+
+端末の各種類ごとに, Emacsがその種類の端末で動作するときにEmacsがロード
+する専用Lispライブラリを持てます.  ライブラリ名は, 変数
+`term-file-prefix'の値と端末種類を連結して作ります.  通常,
+`term-file-prefix'の値は`"term/"'であり, これを変更することは勧めませ
+ん.  Emacsは通常どおり, `load-path'のディレクトリ群において`.elc'と
+`.el'の接尾辞でファイルを探します.
+
+端末固有ライブラリの普通の機能は, Emacsが識別可能なキー列を送るように
+特別なキーを設定することです.  端末のすべてのファンクションキーが
+termcapに入っていない場合には, `function-key-map'を設定したり追加する
+必要もあります.
+
+端末種類の名前にハイフンが含まれる場合, ライブラリ名を選ぶうえでは, 最
+初のハイフンよりまえの名前の部分が有効です.  したがって, `aaa-48'と
+`aaa-30-rv'のどちらもライブラリ`term/aaa'を使います.  必要ならば, ライ
+ブラリでは`(getenv "TERM")'を評価することで端末種類の完全な名前を得る
+ことができます.
+
+読者のファイル`.emacs'で変数`term-file-prefix'に`nil'を設定すると, 端
+末固有ライブラリをロードしないようにできます.  この機能は, 読者独自の
+カスタマイズを試すときに有用です.
+
+変数`term-setup-hook'に設定すれば, 端末固有ライブラリの特定の動作に優
+先できます.  これは, 読者のファイル`.emacs'と端末固有ライブラリの両者
+をロードしたあとの初期化後にEmacsが実行するノーマルフックです.  端末専
+用ライブラリがない端末向けの初期化を定義するためにこの変数を使えます.
+*Note Hooks::.
+
+ -- Variable: term-file-prefix
+     変数`term-file-prefix'が`nil'以外であると, Emacsは, つぎのように
+     端末固有の初期化ファイルをロードする.
+
+          (load (concat term-file-prefix (getenv "TERM")))
+
+     端末固有の初期化ファイルをロードしたくない場合には, 読者のファイ
+     ル`.emacs'で変数`term-file-prefix'に`nil'を設定する.  それには, 
+     読者のファイル`.emacs'に`(setq term-file-prefix nil)'を入れる.
+
+ -- Variable: term-setup-hook
+     この変数は, 読者のファイル`.emacs', （あれば）デフォルトの初期化
+     ファイル, 端末固有のLispファイルをロードしたあとにEmacsが実行する
+     ノーマルフックである.
+
+     端末固有ファイルの定義に優先するために`term-setup-hook'を使える.
+
+関連する機能については, *Note Window Systems::の`window-setup-hook'を
+参照してください.
+
+
+
+File: elisp-ja, Node: Command Line Arguments, Next: Getting Out, Prev: Terminal-Specific, Up: Starting Up
+
+コマンド行引数
+--------------
+
+Emacsを始動するときにコマンド行引数を使ってさまざまな動作を要求できま
+す.  一日に一度より多くEmacsを始動する必要はないでしょうし, しばしば
+Emacsセッションをそれより長く動かし続けるでしょうから, コマンド行引数
+はほとんど使いません.  実際, コマンド行引数を使う癖は避けたほうがよい
+です.  そのような癖をつけると, Emacsを必要以上に終了したり再始動するか
+らです.  これらのオプションは2つの理由で存在します.  （別のプログラム
+から起動される）他のエディタと互換性があるようにするのと, シェルスクリ
+プトから特定のLispプログラムを実行できるようにするためです.
+
+本節では, Emacsがコマンド行引数を処理する方法と, それらをカスタマイズ
+する方法について述べます.
+
+
+ -- Function: command-line
+     この関数は, Emacsを呼び出すときに指定されたコマンド行引数を解析し
+     て処理し, ユーザーのファイル`.emacs'をロードし始動メッセージを表
+     示する.
+
+ -- Variable: command-line-processed
+     この変数の値は, コマンド行引数を一度処理し終えると`t'である.
+
+     `dump-emacs'を呼んでEmacsを再ダンプするときには, この変数に`nil'
+     を設定すれば, 新たにダンプしたEmacsでコマンド行引数を処理するよう
+     にできる.
+
+ -- Variable: command-switch-alist
+     この変数の値は, ユーザー定義のコマンド行オプションの連想リストで
+     ある.  この変数は, 読者が要素を追加できるように存在する.
+
+     "コマンド行オプション"（command line option）は, つぎの形のコマン
+     ド行の引数である.
+
+          -OPTION
+
+     `command-switch-alist'の要素はつぎの形である.
+
+          (OPTION . HANDLER-FUNCTION)
+
+     HANDLER-FUNCTIONは, オプションOPTIONを処理するために呼ばれ, オプ
+     ション名を唯一の引数として受け取る.
+
+     コマンド行のオプションには引数が続く場合もある.  そのような場合,
+     HANDLER-FUNCTIONは変数`command-line-args-left'からすべての残りの
+     コマンド行引数を調べることができる.  （コマンド行引数全体のリスト
+     は`command-line-args'にある. ）
+
+     コマンド行引数は, ファイル`startup.el'の関数`command-line-1'が解
+     析する.  *Note コマンド行引数: (emacs-ja)Command Arguments.も参照.
+
+ -- Variable: command-line-args
+     この変数の値は, Emacsに渡されたコマンド行引数のリストである.
+
+ -- Variable: command-line-functions
+     この変数の値は, 認識できないコマンド行引数を処理する関数のリスト
+     である.  つぎに処理する引数に特別な意味がないと, このリストの関数
+     を`nil'以外の値を返すまで現れる順に呼び出す.
+
+     これらの関数は引数なしで呼び出される.  これらの関数では, 呼び出し
+     時に束縛される変数`argi'を介して対象となるコマンド行引数を参照で
+     きる.  （いま対象となっている引数を除く）残りの引数は変数
+     `command-line-args-left'にある.
+
+     関数が`argi'を認識して処理したときには, その引数を処理したことを
+     表すために`nil'以外の値を返すこと.  後続の引数の一部も処理した場
+     合には, `command-line-args-left'からそれらを削除することで処理し
+     たことを示せる.
+
+     これらの関数すべてが`nil'を返すと, 訪問するファイル名として引数を
+     用いる.
+
+
+
+File: elisp-ja, Node: Getting Out, Next: System Environment, Prev: Starting Up, Up: System Interface
+
+Emacsから抜ける
+===============
+
+Emacsから抜けるには2つの方法があります.  Emacsを終了するためにEmacsジョ
+ブをキルするか, あとでEmacsを継続できるように休止します.  実用上は, ロ
+グアウトするとき以外にはEmacsをほとんど終了しないでしょう.  Emacsを休
+止するほうが一般的です.
+
+* Menu:
+
+* Killing Emacs::        Exiting Emacs irreversibly.
+* Suspending Emacs::     Exiting Emacs reversibly.
+
+
+
+File: elisp-ja, Node: Killing Emacs, Next: Suspending Emacs, Prev: Getting Out, Up: Getting Out
+
+Emacsの終了
+-----------
+
+Emacsを終了するとは, Emacsプロセスの実行を終らせることを意味します. 
+親プロセスが普通は制御を取り戻します.  Emacsを終了するための下位の基本
+関数は`kill-emacs'です.
+
+ -- Function: kill-emacs &optional EXIT-DATA
+     この関数は, Emacsプロセスを終了しEmacsを終える.
+
+     EXIT-DATAが整数であると, Emacsプロセスの終了状態として使われる. 
+     （これは主にバッチ処理で有用である.  *Note Batch Mode::を参照. ）
+
+     EXIT-DATAが文字列であると, その内容を端末入力バッファへ詰め込み, 
+     シェル（やつぎに入力を読むプログラム）がそれらを読み取れるように
+     する.
+
+保存済みのファイルを除くEmacsプロセス内のすべての情報は, Emacsを終了す
+ると失われます.  Emacsを不注意に終了すると多くの作業を失うことになるの
+で, 保存する必要があるバッファがあったり動作中のサブプロセスがあると,
+Emacsは確認を求めます.  これは関数`save-buffers-kill-emacs'が行います.
+
+ -- Variable: kill-emacs-query-functions
+     標準的な問い合わせをしたあとで, `save-buffers-kill-emacs'は, リス
+     ト`kill-emacs-query-functions'内の関数を現れる順に引数なしで呼び
+     出す.  これらの関数では, ユーザーにさらなる確認を求めることができ
+     る.  これらのどれかが`nil'を返すと, Emacsは終了しない.
+
+ -- Variable: kill-emacs-hook
+     この変数はノーマルフックである.  `save-buffers-kill-emacs'がファ
+     イルをすべて保存し確認し終えると, このフックの関数群を実行する.
+
+
+
+File: elisp-ja, Node: Suspending Emacs, Next: System Environment, Prev: Killing Emacs, Up: Getting Out
+
+Emacsの休止
+-----------
+
+"Emacsを休止する"とは, Emacsを一時的に停止し, 普通はシェルである親プロ
+セスに制御を戻すことです.  これにより, あとで同じEmacsプロセスで, つま
+り, 同じバッファ群, 同じキルリング, 同じアンドゥ履歴などで編集を再開で
+きます.  Emacsを再開するには, 親シェルにおいてほとんどの場合`fg'などの
+適切なコマンドを使います.
+
+ジョブの休止を扱えないオペレーティングシステムもあります.  そのような
+システムでは, 『休止』はEmacsのサブプロセスとして一時的に新たなシェル
+を実際には作成します.  そのシェルを終了するとEmacsに戻ります.
+
+ウィンドウシステムを使っている場合には, Emacsジョブを再開する親プロセ
+スがいないかもしれませんし, 別のウィンドウへ移動すれば別のジョブへ入力
+できますから, Emacsの休止は有用ではありません.  したがって, Emacsがウィ
+ンドウシステムを使っている場合には, 休止できません.
+
+ -- Function: suspend-emacs STRING
+     この関数は, Emacsを休止し, 親プロセスへ制御を戻す.  親プロセスが
+     Emacsを再開した場合にのみ, `suspend-emacs'はLisp内の呼び出し側へ
+     `nil'を返す.
+
+     STRINGが`nil'以外であると, Emacsの親シェルが端末入力として読める
+     ようにその文字群を送る.  親シェルはSTRINGの文字群を表示せず, その
+     結果のみが現れる.
+
+     休止するまえに, `suspend-emacs'はノーマルフック`suspend-hook'を実
+     行する.
+
+     ユーザーがEmacsを再開すると, `suspend-emacs'はノーマルフック
+     `suspend-resume-hook'を実行する.  *Note Hooks::.
+
+     再開後のつぎの再表示では, 変数`no-redraw-on-reenter'が`nil'ならば
+     スクリーン全体を再描画する.  （*Note Refresh Screen::）.
+
+     つぎの例では, Emacsを休止しても`pwd'は表示されないことに注意.  し
+     かし, シェルはそれを読み取って実行する.
+
+          (suspend-emacs)
+               => nil
+
+          (add-hook 'suspend-hook
+                    (function (lambda ()
+                                (or (y-or-n-p
+                                      "Really suspend? ")
+                                    (error "Suspend cancelled")))))
+               => (lambda nil
+                    (or (y-or-n-p "Really suspend? ")
+                        (error "Suspend cancelled")))
+          (add-hook 'suspend-resume-hook
+                    (function (lambda () (message "Resumed!"))))
+               => (lambda nil (message "Resumed!"))
+          (suspend-emacs "pwd")
+               => nil
+          ---------- Buffer: Minibuffer ----------
+          Really suspend? y
+          ---------- Buffer: Minibuffer ----------
+
+          ---------- Parent Shell ----------
+          lewis@slug[23] % /user/lewis/manual
+          lewis@slug[24] % fg
+
+          ---------- Echo Area ----------
+          Resumed!
+
+ -- Variable: suspend-hook
+     この変数は, 休止するまえに実行されるノーマルフックである.
+
+ -- Variable: suspend-resume-hook
+     この変数は, 再開後に実行されるノーマルフックである.
+
+
+
+File: elisp-ja, Node: System Environment, Next: User Identification, Prev: Getting Out, Up: System Interface
+
+オペレーティングシステム環境
+============================
+
+Emacsでは, さまざまな関数を介してオペレーティングシステム環境の変数を
+参照できます.  これらの変数には, システムの名前, ユーザーの識別番号UID
+などが含まれます.
+
+ -- Variable: system-configuration
+     この変数は, 読者のシステムのハードウェア／ソフトウェア構成に対す
+     るGNUの構成名を文字列で保持している.  この文字列の一部分を検査す
+     る簡便な方法は`string-match'を使うことである.
+
+ -- Variable: system-type
+     この変数の値は, Emacsが動作しているオペレーティングシステムの種類
+     を表すシンボルである.  つぎに可能な値の一覧を示す.
+
+     `alpha-vms'
+          Alphaマシン上のVMS.
+
+     `aix-v3'
+          AIX.
+
+     `berkeley-unix'
+          バークレーBSD.
+
+     `dgux'
+          データジェネラルDGUXオペレーティングシステム.
+
+     `gnu'
+          （HURDかMachから成るGNUカーネルを使っている）GNUシステム.
+
+     `gnu/linux'
+          GNU/Linuxシステム.  つまり, Linuxカーネルを用いたGNUシステム
+          の変種.  （これらのシステムは人々が『Linux』と呼ぶものの1つ
+          であるが, Linxuは実際にはカーネルのみであり, システム全体で
+          はない. ）
+
+     `hpux'
+          ヒューレットパッカードHPUXオペレーティングシステム.
+
+     `irix'
+          シリコングラフィックスIrixシステム.
+
+     `ms-dos'
+          マイクロソフトMS-DOS『オペレーティングシステム』.
+
+     `next-mach'
+          NeXTのMachベースのシステム.
+
+     `rtu'
+          マスコンプRTU, UCBユニバース.
+
+     `unisoft-unix'
+          ユニソフトUniPlus.
+
+     `usg-unix-v'
+          AT&T System V.
+
+     `vax-vms'
+          VAX VMS.
+
+     `windows-nt'
+          マイクロソフトWindows NT.
+
+     `xenix'
+          SCO Xenix 386.
+
+     絶対に必要でない限り, 細分類のために新たなシンボルを追加したくな
+     い！` ' 実際, 将来にはこれらのいくつかを削除することを願っている. 
+     オペレーティングシステムの違いを区別するには,
+     `system-configuration'を使うことを勧める.
+
+ -- Function: system-name
+     この関数は読者が使っているマシンの名前を返す.
+          (system-name)
+               => "www.gnu.org"
+
+シンボル`system-name'は, 関数としても変数としても使えます.  実際, 関数
+としては, 変数`system-name'が現在保持している値を返します.  したがって,
+Emacsが読者のシステム名に関して混乱している場合には, 変数`system-name'
+に設定できます.  変数はフレームタイトルの作成にも有用です（*Note Frame
+Titles::）.
+
+ -- Variable: mail-host-address
+     この変数が`nil'以外であると, `system-name'のかわりに電子メイルア
+     ドレスの生成に使われる.  たとえば, `user-mail-address'のデフォル
+     ト値の作成に使われる.  *Note User Identification::.  （これは
+     Emacsの始動時に行われるため, Emacsをダンプしたときの値が実際に使
+     われる値である.  *Note Building Emacs::）.
+
+ -- Function: getenv VAR
+     この関数は, 環境変数VARの値を文字列で返す.  Emacs内部では, 環境変
+     数の値はLisp変数`process-environment'に保持されている.
+
+          (getenv "USER")
+               => "lewis"
+
+          lewis@slug[10] % printenv
+          PATH=.:/user/lewis/bin:/usr/bin:/usr/local/bin
+          USER=lewis
+          TERM=ibmapa16
+          SHELL=/bin/csh
+          HOME=/user/lewis
+
+ -- コマンド: setenv VARIABLE VALUE
+     このコマンドは, 環境変数VARIABLEに値VALUEを設定する.  どちらの引
+     数も文字列である.  この関数は`process-environment'を修正すること
+     で動作する.  この変数を`let'で束縛しても十分に実用的である.
+
+ -- Variable: process-environment
+     この変数は, 各要素が1つの環境変数を記述する文字列のリストである. 
+     関数`getenv'と`setenv'は, この変数を用いて動作する.
+
+          process-environment
+          => ("l=/usr/stanford/lib/gnuemacs/lisp"
+              "PATH=.:/user/lewis/bin:/usr/class:/nfsusr/local/bin"
+              "USER=lewis" 
+              "TERM=ibmapa16" 
+              "SHELL=/bin/csh"
+              "HOME=/user/lewis")
+
+ -- Variable: path-separator
+     この変数は, （環境変数などで）探索パスを区切る文字を指定する文字
+     列を保持する.  UNIXとGNUシステムではその値は`":"'であり, MS-DOSと
+     Widows NTでは`";"'である.
+
+ -- Variable: invocation-name
+     この変数は, 起動したEmacsのプログラム名を保持する.  値は文字列で
+     あり, ディレクトリ名は含まない.
+
+ -- Variable: invocation-directory
+     この変数は, 起動したEmacsの実行形式のディレクトリを保持する.  ディ
+     レクトリを判別できない場合には`nil'である.
+
+ -- Variable: installation-directory
+     `nil'以外であると, サブディレクトリ`lib-src'と`etc'を探すためのディ
+     レクトリである.  Emacsがこれらのディレクトリを標準のインストール
+     ディレクトリでみつけられなくてもEmacsの実行形式になんらかの意味で
+     関連するディレクトリでみつけられれば, `nil'以外である.
+
+ -- Function: load-average &optional USE-FLOAT
+     この関数は, 1分間／5分間／15分間のロードアベレッジ（負荷平均）を
+     リストで返す.
+
+     デフォルトでは, これらの値は, 動作しようとしてるプロセスの平均個
+     数を表すシステムのロードアベレッジを100倍した整数である.
+     USE-FLOATが`nil'以外であると, 100倍しない浮動小数点数で返す.
+
+          (load-average)
+               => (169 48 36)
+          (load-average t)
+               => (1.69 0.48 0.36)
+
+          lewis@rocky[5] % uptime
+           11:55am  up 1 day, 19:37,  3 users,
+           load average: 1.69, 0.48, 0.36
+
+ -- Function: emacs-pid
+     この関数は, Emacsプロセスのプロセス番号IDを返す.
+
+ -- Variable: tty-erase-char
+     この変数は, Emacsが始動するまえにシステムの端末ドライバが選んでい
+     た消去文字を保持する.
+
+ -- Function: setprv PRIVILEGE-NAME &optional SETP GETPRV
+     この関数は, （UNIX上には存在しない）VMS基本操作を設定／再設定する. 
+     最初の引数は文字列で表した基本操作の名前である.  第2引数SETPは`t'
+     か`nil'であり, 基本操作をオンにするかオフにするかを表す.  デフォ
+     ルトは`nil'である.  関数は, 成功すれば`t'を返し, さもなければ
+     `nil'を返す.
+
+     第3引数GETPRVが`nil'以外であると, `setprv'は基本操作を変更しない
+     が, その基本操作が現在オンであるかオフであるかを表す`t'か`nil'を
+     返す.
+
+
+
+File: elisp-ja, Node: User Identification, Next: Time of Day, Prev: System Environment, Up: System Interface
+
+ユーザーの識別
+==============
+
+ -- Variable: init-file-user
+     この変数は, Emacsが使用すべきユーザー初期化ファイルを指定する. 
+     あるいは, そのようなものがなければ`nil'である.  この値は, `-q'や
+     `-u USER'のコマンド行オプションを反映する.
+
+     カスタマイズファイルや他の種類のユーザープロフィールをロードする
+     Lispパッケージは, それらを探す場所を判断するためにこの変数に従う
+     こと.  この変数のユーザー名のカスタマイズをロードするべきである.
+     `init-file-user'が`nil'であるとオプション`-q'が使われたことを意味
+     し, Lispパッケージはいかなるカスタマイズファイルやユーザープロフィー
+     ルもロードしないこと.
+
+ -- Variable: user-mail-address
+     これは, Emacsを使用しているユーザーの通常の電子メイルアドレスを保
+     持する.  Emacsは通常, 読者の初期化ファイルを読み取ったあと, この
+     変数が未設定であるとデフォルト値を設定する.  したがって, デフォル
+     ト値を使いたくない場合には, 読者のファイル`~/.emacs'で別の値に設
+     定できる.
+
+ -- Function: user-login-name &optional UID
+     UIDを指定しないと, この関数はログインしたユーザー名を返す.  環境
+     変数`LOGNAME'が設定されていればその値を使う.  さもなければ, 環境
+     変数`USER'が設定されていればその値を使う.  さもなければ, 実UIDで
+     はなく実効UIDに基づいた値である.
+
+     UIDを指定すると, 値は（整数である）UIDに対応するユーザー名である.
+
+          (user-login-name)
+               => "lewis"
+
+ -- Function: user-real-login-name
+     この関数は, Emacsの実UIDに対応するユーザー名を返す.  これは, 実効
+     UIDや環境変数`LOGNAME'と`USER'を無視する.
+
+ -- Function: user-full-name &optional UID
+     この関数は, ログインしたユーザーの氏名を返す.  あるいは, 環境変数
+     `NAME'が設定してあればその値を返す.
+
+          (user-full-name)
+               => "Bil Lewis"
+
+     UIDが`nil'以外であると, それは整数のユーザー番号か文字列のログイ
+     ン名であること.  すると, `user-full-name'は, そのユーザー番号かロ
+     グイン名に対応するユーザーの氏名を返す.
+
+シンボル`user-login-name', `user-real-login-name', `user-full-name'は, 
+関数でもある変数です.  関数としては, その変数が保持する値と同じ値を返
+します.  これらの変数により, 関数として返す値を指定しておくことでEmacs
+を『ごまかせ』ます.  これらの変数は, フレームタイトルの作成にも有用で
+す（*Note Frame Titles::）.
+
+ -- Function: user-real-uid
+     この関数は, ユーザーの実UIDを返す.
+
+          (user-real-uid)
+               => 19
+
+ -- Function: user-uid
+     この関数は, ユーザーの実効UIDを返す.
+
+
+
+File: elisp-ja, Node: Time of Day, Next: Time Conversion, Prev: User Identification, Up: System Interface
+
+時刻
+====
+
+本節では, 現在時刻と時刻帯（タイムゾーン）を調べる方法を説明します.
+
+ -- Function: current-time-string &optional TIME-VALUE
+     この関数は, 人間向けの文字列で現在時刻と日付を返す.  文字列の書式
+     は不変であり, 各部分の文字数はつねに同じなので, 各部分を取り出す
+     のに`substring'を使っても問題ない.  将来, 文字列の末尾に追加情報
+     を付加することもあるので, 文字列の末尾からではなく先頭から文字を
+     数えるほうがよい.
+
+     引数TIME-VALUEを指定すると, それは現在時刻のかわりに書式付けする
+     時刻を指定する.  引数は, 最初の2つの要素が整数であるリストである
+     こと.  したがって, `current-time'（下記参照）や`file-attributes'
+     （*Note File Attributes::）で得た時刻を使える.
+
+          (current-time-string)
+               => "Wed Oct 14 22:21:05 1987"
+
+ -- Function: current-time
+     この関数は, システムの時刻の値を3つの整数のリスト`(HIGH LOW
+     MICROSEC)'で返す.  整数HIGHとLOWを組み合わせると1970年1月1日0:00 
+     からの経過秒数を与える.  つまり, 経過秒数はHIGH * 2**16 + LOWであ
+     る.
+
+     第3要素MICROSECは, 現在の秒内のミリ秒を表す（返す時間精度が秒のシ
+     ステムでは0）.
+
+     最初の2つの要素は, 関数`file-attributes'で得られるファイルに関す
+     る時刻の値と比較できる.  *Note File Attributes::.
+
+ -- Function: current-time-zone &optional TIME-VALUE
+     この関数は, ユーザーの地域の時刻帯を記述するリストを返す.
+
+     値は, `(OFFSET NAME)'の形である.  ここで, OFFSETはUTC (1) (*Note
+     Time of Day-Footnotes::) に対して進んでいる（グリニッジの東）秒数
+     を与える整数である.  第2要素NAMEは, その時刻帯の名称を与える文字
+     列である.  夏時間制が始まったり終ると, どちらの要素も変わる.  時
+     刻帯には季節の時刻調整はないとユーザーが指定すると, どちらの値も
+     定数である.
+
+     値を計算するために必要な情報をオペレーティングシステムから得られ
+     ないとリストのどちらの要素も`nil'である.
+
+     引数TIME-VALUEを指定すると, 現在時刻のかわりに分析すべき時刻を指
+     定する.  引数は, 2つの整数を収めたコンスセルであるか, 最初の2つの
+     要素が整数であるリストであること.  したがって, `current-time'（上
+     記参照）や`file-attributes'（*Note File Attributes::）で得た時刻
+     を使える.
+
+
+File: elisp-ja  Node: Time of Day-Footnotes, Up: Time of Day
+
+(1) 【訳注】協定世界時. 旧グリニッジ標準時に相当.
+
+
+
+File: elisp-ja, Node: Time Conversion, Next: Timers, Prev: Time of Day, Up: System Interface
+
+時刻の変換
+==========
+
+これらの関数は, 時刻の値（2つか3つの整数から成るリスト）を文字列や日時
+情報に変換します.  日時情報を時刻の値に変換する関数もあります.  時刻の
+値は, 関数`current-time'（*Note Time of Day::）や`file-attributes'
+（*Note File Attributes::）で得られます.
+
+多くのオペレーティングシステムでは, 時刻の値を32ビットに制限しています. 
+これらのシステムでは, 典型的には協定世界時1901年12月13日20:45:52から
+2038年1月19日03:14:07までしか表現できません.  しかし, より大きな時刻の
+値を扱い, より広い範囲の過去から未来を表現できるシステムもあります.
+
+時刻変換関数は, グレゴリオ暦を導入するまえであってもつねにグレゴリオ暦
+を使います.  紀元前1年からの経過年数を数え, 通常のグレゴリオ暦のように
+0年を飛ばしません.  たとえば, -37年は, グレゴリオ暦紀元前38年を表しま
+す.
+
+ -- Function: format-time-string FORMAT-STRING TIME
+     この関数は, TIMEをFORMAT-STRINGに従って文字列に変換する.  引数
+     FORMAT-STRINGには, 時刻のさまざまな部分で置き換えられる`%'列を含
+     んでよい.  `%'列の意味を以下に示す.
+
+     `%a'
+          曜日の省略名を表す.
+     `%A'
+          曜日の（省略しない）名称を表す.
+     `%b'
+          月の省略名を表す.
+     `%B'
+          月の（省略しない）名称を表す.
+     `%c'
+          `%x %X'の同義語.
+     `%C'
+          これにはローケル固有の意味がある.  デフォルトのローケル（`C'）
+          では, `%A, %B %e, %Y'と等価.
+     `%d'
+          ゼロでパディングした月内の日.
+     `%D'
+          `%m/%d/%y'の同義語.
+     `%e'
+          空白でパディングした月内の日.
+     `%h'
+          `%b'の同義語.
+     `%H'
+          時（00-23）を表す.
+     `%I'
+          時（00-12）を表す.
+     `%j'
+          年内の日（001-366）を表す.
+     `%k'
+          空白でパディングした時（0-23）を表す.
+     `%l'
+          空白でパディングした時（0-12）を表す.
+     `%m'
+          月（01-12）を表す.
+     `%M'
+          分（00-59）を表す.
+     `%n'
+          改行を表す.
+     `%p'
+          `AM'か`PM'の適切なほうを表す.
+     `%r'
+          `%I:%M:%S %p'の同義語.
+     `%R'
+          `%H:%M'の同義語.
+     `%S'
+          秒（00-60）を表す.
+     `%t'
+          タブ文字を表す.
+     `%T'
+          `%H:%M:%S'の同義語.
+     `%U'
+          日曜日を週の始まりと仮定した年内の週（01-52）を表す.
+     `%w'
+          数字で表した曜日（0-6）.  日曜日を0とする.
+     `%W'
+          月曜日を週の始まりと仮定した年内の週（01-52）を表す.
+     `%x'
+          これにはローケル固有の意味がある.  デフォルトのローケル（`C'）
+          では, `%D'と等価.
+     `%X'
+          これにはローケル固有の意味がある.  デフォルトのローケル（`C'）
+          では, `%T'と等価.
+     `%y'
+          年の下2桁（00-99）を表す.
+     `%Y'
+          100年単位の年を表す.
+     `%Z'
+          時刻帯の省略名を表す.
+
+     これらの`%'列には, 桁数やパディングの種類も指定できる.  `printf'
+     と同様に動作し, `%'列のあいだに桁数を数字で指定する.  桁数を`0'で
+     始めるとゼロでパディングすることを意味する.  桁数を`_'で始めると
+     空白でパディングすることを意味する.
+
+     たとえば, `%S'は分内の秒数を指定し, `%03S'はゼロでパディングして3
+     桁にすることを意味し, `%_3S'は空白でパディングして3桁にすることを
+     意味する.  `%S'は普通はパディングして2桁にするため, `%3S'だけであ
+     るとゼロでパディングする.
+
+ -- Function: decode-time TIME
+     この関数は, 時刻の値を日時情報に変換する.  戻り値は, つぎの9要素
+     のリストである.
+
+          (SECONDS MINUTES HOUR DAY MONTH YEAR DOW DST ZONE)
+
+     各要素の意味はつぎのとおりである.
+
+     SEC
+          0から59の整数で表した分内の秒数.
+     MINUTE
+          0から59の整数で表した時内の分数.
+     HOUR
+          0から23の整数で表した日内の時.
+     DAY
+          1から31の整数で表した月内の日.
+     MONTH
+          1から12の整数で表した年内の月.
+     YEAR
+          年.  典型的には1900より大きい.
+     DOW
+          日曜日を0とした0から6の整数で表した曜日.
+     DST
+          夏時間制が有効であると`t', さもなければ`nil'.
+     ZONE
+          グリニッジから東周りではかった時刻帯を表す秒数.
+
+     Common Lispに関した注意：` ' Common Lispでは, DOWとZONEの意味が異
+     なる.
+
+ -- Function: encode-time SECONDS MINUTES HOUR DAY MONTH YEAR &optional ...ZONE
+     この関数は`decode-time'の逆である.  7項目から成る日時情報を時刻の
+     値に変換する.  引数の意味については, 上記`decode-time'の一覧を参
+     照.
+
+     100未満の年は普通の年として扱う.  それらを1900年代として扱いたい
+     場合には, `encode-time'を呼び出すまえに修正しておくこと.
+
+     省略可能な引数ZONEのデフォルトは, 現在の時刻帯とその夏時間制の規
+     則である.  指定する場合には, （`current-time-zone'で得られるよう
+     な）リストであるか, 環境変数`TZ'と同じ形式の文字列であるか, 
+     （`decode-time'で得られるような）整数であること.  指定した時刻帯
+     は, 夏時間の補正をせずに使われる.
+
+     `encode-time'に7引数より多く渡すと, 始めの6つをSECONDSからYEARま
+     でに, 最後の引数をZONEに使い, そのあいだの引数は無視する.  この機
+     能は, `decode-time'が返したリストの要素をつぎのようにして
+     `encode-time'の引数に使うことを可能にする.
+
+          (apply 'encode-time (decode-time ...))
+
+     引数SEC, MINUTE, HOUR, DAY, MONTHの値が範囲外になるようにすると単
+     純な日時演算を行える.  たとえば, 0日はその月のまえの日を意味する.
+
+     オペレーティングは可能な時刻の値の範囲を制限する.  その範囲を越え
+     る時刻を符号化しようとするとエラーになる.
+
+
+
+File: elisp-ja, Node: Timers, Next: Terminal Input, Prev: Time Conversion, Up: System Interface
+
+遅延実行のためのタイマ
+======================
+
+未来のある時刻に関数を呼び出したり, ある一定期間なにもしないでいたら関
+数を呼び出すために"タイマ"を設定できます.
+
+Emacsは, Lispプログラムの任意の箇所ではタイマを実行できません.  サブプ
+ロセスからの出力を受け取るときにだけタイマを実行できます.  つまり, 待
+つことが*可能*な`sit-for'や`read-event'などの基本関数の内側や（入力を）
+待っているあいだに実行できます.  したがって, Emacsが忙しいとタイマの実
+行が遅れることがあります.  しかし, Emacsが暇ならば, タイマの実行はとて
+も正確です.
+
+ -- Function: run-at-time TIME REPEAT FUNCTION &rest ARGS
+     この関数は, 時刻TIMEに引数ARGSで関数FUNCTIONを呼び出すように予約
+     する.  引数FUNCTIONはのちに呼び出される関数であり, 引数ARGSはそれ
+     を呼び出すときに与える引数である.  時刻TIMEは文字列で指定する.
+
+     絶対時刻をさまざまな書式で指定できる.  この関数は, よく使われる日
+     時の書式を受け付けるように努める.  正しい書式にはつぎの2つを含む.
+
+          YEAR-MONTH-DAY HOUR:MIN:SEC TIMEZONE
+
+          HOUR:MIN:SEC TIMEZONE MONTH/DAY/YEAR
+
+     ここで, どちらの例のフィールドもすべて数である.
+     `current-time-string'が返す書式, および, 他の書式も許される.
+
+     相対時刻を指定するには, 単位を伴った数字を使う.  たとえばつぎのと
+     おり.
+
+     `1 min'
+          今から1分後.
+     `1 min 5 sec'
+          今から65秒後.
+     `1 min 2 sec 3 hour 4 day 5 week 6 fortnight 7 month 8 year'
+          今からちょうど103ヵ月, 123日, 10862秒後. (1) (*Note
+          Timers-Footnotes::)
+
+     TIMEが数（整数か浮動小数点数）であれば, 秒単位の相対時刻を指定す
+     る.
+
+     引数REPEATは, 呼び出しをどの程度頻繁に繰り返すかを指定する.
+     REPEATが`nil'であると, 繰り返さずに時刻TIMEに関数FUNCTIONを一度だ
+     け呼び出す.  REPEATが数であると, 繰り返し間隔を秒単位で指定する.
+
+     ほとんどの場合, *最初*の呼び出しではREPEATの効果はなく, TIMEだけ
+     が時刻を指定する.  1つ例外があり, TIMEが`t'であると, 時刻がREPEAT
+     の整数倍であるとタイマを実行する.  これは`display-time'のような関
+     数に有用である.
+
+     関数`run-at-time'は, 予約した未来の特定の動作を識別するタイマを返
+     す.  この値は, `cancel-timer'（下記参照）の呼び出しに使える.
+
+ -- Macro: with-timeout (SECONDS TIMEOUT-FORMS...) BODY...
+     BODYを実行するが, SECONDS秒でその実行を諦める.  時間が切れるまえ
+     にBODYが終了すると`with-timeout'はBODYの最後のフォームの値を返す. 
+     しかし, 時間が切れるとBODYの実行を取り止め, `with-timeout'は
+     TIMEOUT-FORMSをすべて実行し, それらの最後の値を返す.
+
+     このマクロは, SECONDS秒後に動作するタイマを設定することで動作する. 
+     その時間内にBODYが終了すれば, タイマを取り消す.  タイマが実際に動
+     作するとBODYの実行を終了させてから, TIMEOUT-FORMSを実行する.
+
+     プログラムから待つことが可能な基本関数を呼び出したときにのみ, タ
+     イマはLispプログラム内で実行可能なため, `with-timeout'はBODYの計
+     算途中ではBODYの実行を停止できない.  それらが待つことが可能な基本
+     関数の1つを呼び出したときにのみ停止できる.  したがって, 長い計算
+     を行わない入力を待つようなBODYに`with-timeout'を使う.
+
+関数`y-or-n-p-with-timeout'は, 応答を長く待ちすぎないようにタイマを使っ
+た単純な例です.  *Note Yes-or-No Queries::.
+
+ -- Function: run-with-idle-timer SECS REPEAT FUNCTION &rest ARGS
+     EmacsがSECS秒間なにもしないときに実行するタイマを設定する.  SECS
+     の値は整数でも浮動小数点数でもよい.
+
+     REPEATが`nil'であると, これ以降にはじめてEmacsが十分長い期間なに
+     もしないでいると, タイマを一度だけ実行する.  しばしばREPEATは
+     `nil'以外であり, EmacsがSECS秒なにもしないでいる*たびに* タイマを
+     実行することを意味する.
+
+     関数`run-with-idle-timer'は, `cancel-timer'（下記参照）の呼び出し
+     に使えるタイマの値を返す.
+
+Emacsがユーザー入力を待ち始めると『アイドル状態』になり, なにか入力が
+くるまでアイドル状態のままです.  5秒間のアイドル状態で動作するタイマが
+あったとすると, Emacsがアイドルになってから約5秒後にそのタイマが実行さ
+れます.  しかしREPEATが真（`nil'以外）であったとしても, そのタイマは
+Emacsがアイドル状態であり続ける限りは再実行されません.  アイドル状態の
+期間は単調に増加するので, 再度5秒後には戻りません.
+
+Emacsがアイドル状態のときにはさまざまなことを行います.  ガベッジコレク
+ション, 自動保存, サブプロセスからのデータの処理です.  しかし, アイド
+ル状態中のこれらの動作はアイドルタイマに干渉しません.  アイドル状態の
+時間を0にしないからです.  600秒に設定されたアイドルタイマは, 最後のユー
+ザーコマンドを終了してから10分後に実行されます.  たとえその10分間に, 
+サブプロセスの出力を何千回も受け取ろうが, ガベッジコレクションや自動保
+存を行ったとしてもです.
+
+ユーザーが入力を与えると, その入力を実行中はEmacsは非アイドル状態です. 
+そして再度アイドル状態になり, 繰り返すように設定されたアイドルタイマを
+1つずつそれ以降に実行します.
+
+ -- Function: cancel-timer TIMER
+     タイマTIMERの予約を取り消す.  TIMERは, 以前に`run-at-time'や
+     `run-with-idle-timer'が返した値であること.  これは, `run-at-time'
+     の呼び出しの効果を取り消し, その時刻になってもなにも特別なことは
+     起こらない.
+
+

@@ -1,0 +1,370 @@
+【migemo 利用時の isearch 以外の lazy-highlight の挙動】
+の件について
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+[migemo] migemo 利用時の isearch 以外の lazy-highlight の挙動
+
+M.Fujii boochang at m4.kcn.ne.jp 
+Sun Jul 31 11:52:25 JST 2005
+
+藤井です。
+
+emacs CVS HEAD では、query-replace などでも lazy-highlight が可能になっ
+ているようですが、これに関連して migemo 利用時に lazy-highlight に一部
+不具合が生じます。
+
+再現手順は以下のとおりです。
+
+[case 1]
+1. emacs (CVS HEAD)を起動し migemo を有効にする。
+2. migemo が有効な状態で isearch を行なう。
+3. M-x query-replace を実行し、置換する文字列を指定する。
+   (ここで複数の文字列が置換されるようにすることがポイント)
+4. ここで、置換の対象となる部分がハイライトされるはずだが、
+   ハイライトされない。
+   (大抵その代わりに migemo で検索した文字列がハイライトされる)
+
+[case 2]
+1. emacs (CVS HEAD)を起動し migemo を有効にする。
+2. このメールに添付したサンプルファイルを hexl-mode で開く。
+3. isearch で "fg" で検索すると、"f" の直後で改行している箇所がハイライ
+   トされない。
+   (migemo をロードせずに起動した場合と比較すれば一目瞭然だと思います)
+
+私の環境(Meadow 3.00-dev, NTEmacs CVS HEAD)では確実に再現します。
+(case 1 はまれに再現しない場合もあるようです)
+
+isearch-lazy-highlight-search を migemo で差し替えていますが、これが悪
+さをしているようです。CVS HEAD では isearch 以外でも lazy-highlight を
+利用するようになっているので、差し替え部分の再検討が必要なのではないか
+と思います。
+
+CVS HEAD では isearch-search-fun-function によって、isearch が呼び出す
+検索関数を差し替えることが可能になっています。migemo は
+isearch-lazy-highlight-search をまるごと差し替えているので、この機構が
+利用されていない状態になっているので、これが問題の原因だと思います。
+
+また、isearch-search-fun-function が設定されているときには、その設定に
+よっては migemo を無効にした方が良いのかもしれません。
+
+具体的修正案を提案できてなくてすみませんが、対応宜しくお願いします。
+
+以上です。
+
+--
+藤井 正行 / Masayuki FUJII ( boochang at m4.kcn.ne.jp )
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+[migemo] Re: migemo 利用時の isearch 以外の lazy-highlight の挙動
+
+Hideyuki SHIRAI ( 白井秀行 ) shirai at meadowy.org 
+Fri Aug 5 18:29:41 JST 2005
+From: "M.Fujii" <boochang at m4.kcn.ne.jp> さん曰く
+Subject: [migemo] migemo 利用時の isearch 以外の lazy-highlight の挙動
+Message-ID: <20050731.115225.262176086.boochang at m4.kcn.ne.jp>
+Date: Sun, 31 Jul 2005 11:52:25 +0900 (JST)
+
+> [case 1]
+> 1. emacs (CVS HEAD)を起動し migemo を有効にする。
+> 2. migemo が有効な状態で isearch を行なう。
+> 3. M-x query-replace を実行し、置換する文字列を指定する。
+>    (ここで複数の文字列が置換されるようにすることがポイント)
+> 4. ここで、置換の対象となる部分がハイライトされるはずだが、
+>    ハイライトされない。
+>    (大抵その代わりに migemo で検索した文字列がハイライトされる)
+
+これは気付いていませんでした。うーむ。
+
+> [case 2]
+> 1. emacs (CVS HEAD)を起動し migemo を有効にする。
+> 2. このメールに添付したサンプルファイルを hexl-mode で開く。
+> 3. isearch で "fg" で検索すると、"f" の直後で改行している箇所がハイライ
+>    トされない。
+>    (migemo をロードせずに起動した場合と比較すれば一目瞭然だと思います)
+
+もっと強烈なので、『info で iseach するとエラーになる』というの
+もあります。これは困っちゃったので、手元では無理やり動くようにし
+ましたが。。。
+
+> CVS HEAD では isearch-search-fun-function によって、isearch が呼び出す
+> 検索関数を差し替えることが可能になっています。migemo は
+> isearch-lazy-highlight-search をまるごと差し替えているので、この機構が
+> 利用されていない状態になっているので、これが問題の原因だと思います。
+
+isearch-lazy-highlight-search に関してはその通りなのですが、、、
+
+> また、isearch-search-fun-function が設定されているときには、その設定に
+> よっては migemo を無効にした方が良いのかもしれません。
+
+hexl はそれでも良いと思うのですが、この対処だと info で migemo
+な isearch が出来なくて寂しいのですよねぇ。。。また、以前調べた
+ときは、isearch-search-fun-function を設定しているのは hexl と
+info だけだったのですが、これから増えるかもしれないし。。。
+
+現在、migemo な isearch をするときは、search-forward(),
+search-backward() の挙動を migemo-do-isearch の値によって変えて
+いますが、このあたりの「やり方」を変えて、半恒久的な対策をした方
+が良いと思っているのですが、まだうまい考えにはたどり着いていませ
+ん ^^;;;
+
+-- 
+白井秀行 (mailto:shirai at meadowy.org)
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+[migemo] Re: migemo 利用時の isearch 以外の lazy-highlight の挙動
+
+M.Fujii boochang ＠ m4.kcn.ne.jp 
+2007年 6月 22日 (金) 14:08:54 JST
+藤井です。
+
+# 2 年前のメールのリプライで恐縮です。
+
+From: Hideyuki SHIRAI (白井秀行) <shirai ＠ meadowy.org>
+Subject: [migemo] Re: migemo 利用時の isearch 以外の lazy-highlight の挙動
+Date: Fri, 05 Aug 2005 18:29:41 +0900 (JST)
+> 現在、migemo な isearch をするときは、search-forward(),
+> search-backward() の挙動を migemo-do-isearch の値によって変えて
+> いますが、このあたりの「やり方」を変えて、半恒久的な対策をした方
+> が良いと思っているのですが、まだうまい考えにはたどり着いていませ
+> ん ^^;;;
+
+Emacs 22.1 がリリースされたようなので対応を考えてみました。
+
+私としては、Emacs 22 以降では以下のようにするのが良いと思います。
+
+  1. search-forward() 等の挙動を変えるのを止めて
+     isearch-search-fun-function を設定することにする。
+
+  2. isearch-search-fun-function を設定するモードでは、
+     原則として migemo は使用されない。
+     そのようなモードで migemo を使用したい場合は個別対応する。
+
+     なお、Emacs 22.1 標準のモードのうち isearch-search-fun-function を
+     設定するモードは以下の 4 つのようです。
+       - hexl-mode
+       - info-mode
+       - longlines-mode
+       - reftex-isearch-minor-mode
+
+isearch-search-fun-function を設定するモードは isearch に特殊な振舞いを
+追加したいという要望がある訳ですが、この特殊な振舞いと migemo の振舞い
+をどう折合いを付けるかはそのモードによって異なるはずなので、個別対応し
+た方が良いのではないかと思います。
+
+個別対応の方針ですが、migemo.el で個別対応の枠組みを提供する必要はなく、
+各モードで isearch-search-fun-function に設定される関数に対して
+defadvice して振舞いを変えるというので十分ではないかと思います。
+
+検討よろしくお願いします。
+
+また、上記のように振舞いを変えるパッチを作成してみました。添付しますの
+で、試してみてください。
+
+パッチを適用することによって Emacs 22 以降では、migemo.el は以下のよう
+に変わります。(Emacs 21 以前では振舞いは変わりません)
+
+ユーザレベルでの変更:
+  - query-replace で置換される文字列が正しくハイライトされるようになり
+    ました。
+  - 以下の 4 つのモードでは migemo が無効になるようにしました。
+    - hexl-mode
+    - info-mode
+    - longlines-mode
+    - reftex-isearch-minor-mode
+
+実装レベルでの変更:
+  - 以下の関数の振舞いを変更しないようにしました。
+      search-forward, search-backward, isearch-search-and-update,
+      isearch-lazy-highlight-search
+  - migemo-isearch-search-function() を追加しました。
+    (この関数で isearch の振舞いを変えます)
+  - migemo-init() において isearch-search-fun-function に
+    migemo-isearch-search-function を設定するようにしました。
+  - 定数 migemo-emacs22p を導入しました。
+    上記の変更はすべてこの定数で条件分岐しています。
+
+--
+藤井 正行 / Masayuki FUJII
+-------------- next part --------------
+Index: migemo.el.in
+===================================================================
+RCS file: /cvsroot/migemo/migemo/migemo.el.in,v
+retrieving revision 1.8
+diff -u -r1.8 migemo.el.in
+--- migemo.el.in	22 Sep 2006 08:43:33 -0000	1.8
++++ migemo.el.in	22 Jun 2007 04:55:22 -0000
+@@ -155,6 +155,7 @@
+ (defvar migemo-pattern-alist nil)
+ (defvar migemo-frequent-pattern-alist nil)
+ (defconst migemo-emacs21p (and (> emacs-major-version 20) (not (featurep 'xemacs))))
++(defconst migemo-emacs22p (and (> emacs-major-version 21) (not (featurep 'xemacs))))
+ (defvar migemo-search-pattern-alist nil)
+ (defvar migemo-do-isearch nil)
+ 
+@@ -211,7 +212,9 @@
+ 	(setq migemo-process (migemo-start-process 
+ 			      "migemo" migemo-buffer migemo-command options))
+ 	(process-kill-without-query migemo-process)
+-	t)))
++	t))
++  (when migemo-emacs22p
++    (setq isearch-search-fun-function 'migemo-isearch-search-function)))
+ 
+ (defun migemo-replace-in-string (string from to)
+   (with-temp-buffer
+@@ -379,6 +382,19 @@
+       (delete-region (point) pos)
+       (insert jrpat))))
+ 
++(defun migemo-isearch-search-function ()
++  (if (and migemo-isearch-enable-p
++	   (not (or isearch-regexp isearch-word)))
++      (lambda (string &optional bound noerror count)
++	(funcall
++	 (if isearch-forward 're-search-forward 're-search-backward)
++	 (if (delq 'ascii (find-charset-string string))
++	     string
++	   (migemo-search-pattern-get string))
++	 bound noerror count))
++    (let ((isearch-search-fun-function nil))
++      (isearch-search-fun))))
++
+ (defun migemo-forward (word &optional bound noerror count)
+   (interactive "sSearch: \nP\nP")
+   (if (delq 'ascii (find-charset-string word))
+@@ -511,28 +527,29 @@
+       ad-do-it
+     (setq migemo-do-isearch nil)))
+ 
+-(defadvice isearch-search-and-update (around migemo-search-ad activate)
+-  "adviced by migemo."
+-  (let ((isearch-adjusted isearch-adjusted))
+-    (when (and migemo-isearch-enable-p
+-	       (not isearch-forward) (not isearch-regexp) (not isearch-word))
+-      ;; don't use 'looking-at'
+-      (setq isearch-adjusted t))
+-    ad-do-it))
++(unless migemo-emacs22p
++  (defadvice isearch-search-and-update (around migemo-search-ad activate)
++    "adviced by migemo."
++    (let ((isearch-adjusted isearch-adjusted))
++      (when (and migemo-isearch-enable-p
++		 (not isearch-forward) (not isearch-regexp) (not isearch-word))
++	;; don't use 'looking-at'
++	(setq isearch-adjusted t))
++      ad-do-it))
+ 
+-(defadvice search-forward (around migemo-search-ad activate)
+-  "adviced by migemo."
+-  (if migemo-do-isearch
+-      (setq ad-return-value
+-	    (migemo-forward (ad-get-arg 0) (ad-get-arg 1) (ad-get-arg 2) (ad-get-arg 3)))
+-    ad-do-it))
++  (defadvice search-forward (around migemo-search-ad activate)
++    "adviced by migemo."
++    (if migemo-do-isearch
++	(setq ad-return-value
++	      (migemo-forward (ad-get-arg 0) (ad-get-arg 1) (ad-get-arg 2) (ad-get-arg 3)))
++      ad-do-it))
+ 
+-(defadvice search-backward (around migemo-search-ad activate)
+-  "adviced by migemo."
+-  (if migemo-do-isearch
+-      (setq ad-return-value
+-	    (migemo-backward (ad-get-arg 0) (ad-get-arg 1) (ad-get-arg 2) (ad-get-arg 3)))
+-    ad-do-it))
++  (defadvice search-backward (around migemo-search-ad activate)
++    "adviced by migemo."
++    (if migemo-do-isearch
++	(setq ad-return-value
++	      (migemo-backward (ad-get-arg 0) (ad-get-arg 1) (ad-get-arg 2) (ad-get-arg 3)))
++      ad-do-it)))
+ 
+ ;; Turn off input-method automatically when C-s or C-r are typed.
+ (defadvice isearch-mode (before migemo-search-ad activate)
+@@ -572,6 +589,9 @@
+     (when migemo-emacs21p
+       (put-text-property 0 (length str) 'face migemo-message-prefix-face str))
+     (when (and migemo-isearch-enable-p
++	       (or (not migemo-emacs22p)
++		   (eq isearch-search-fun-function
++		       'migemo-isearch-search-function))
+ 	       (not (or isearch-regexp isearch-word)))
+       (setq ad-return-value (concat str " " ret)))))
+ 
+@@ -609,7 +629,8 @@
+                  (window-start)))
+              t)))
+ 
+-(when (fboundp 'isearch-lazy-highlight-search)
++(when (and (not migemo-emacs22p)
++	   (fboundp 'isearch-lazy-highlight-search))
+   (defalias 'isearch-lazy-highlight-search 'migemo-isearch-lazy-highlight-search))
+ 
+ ;;;; for isearch-highlightify-region (XEmacs 21)
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+[migemo] Re: migemo 利用時の isearch 以外の lazy-highlight の挙動
+
+Hideyuki SHIRAI ( 白井秀行 ) shirai ＠ meadowy.org 
+2007年 6月 26日 (火) 11:30:14 JST
+白井です。
+
+From: "M.Fujii" <boochang ＠ m4.kcn.ne.jp> さん曰く
+Subject: [migemo] Re: migemo 利用時の isearch 以外の lazy-highlight の挙動
+Message-ID: <20070622.140854.01369706.boochang ＠ m4.kcn.ne.jp>
+Date: Fri, 22 Jun 2007 14:08:54 +0900 (JST)
+
+> # 2 年前のメールのリプライで恐縮です。
+
+## とぉ～～～い目。。。
+
+> From: Hideyuki SHIRAI (白井秀行) <shirai ＠ meadowy.org>
+> Subject: [migemo] Re: migemo 利用時の isearch 以外の lazy-highlight の挙動
+> Date: Fri, 05 Aug 2005 18:29:41 +0900 (JST)
+
+> > 現在、migemo な isearch をするときは、search-forward(),
+> > search-backward() の挙動を migemo-do-isearch の値によって変えて
+> > いますが、このあたりの「やり方」を変えて、半恒久的な対策をした方
+> > が良いと思っているのですが、まだうまい考えにはたどり着いていませ
+> > ん ^^;;;
+> 
+> Emacs 22.1 がリリースされたようなので対応を考えてみました。
+> 
+> 私としては、Emacs 22 以降では以下のようにするのが良いと思います。
+> 
+>   1. search-forward() 等の挙動を変えるのを止めて
+>      isearch-search-fun-function を設定することにする。
+
+あぁ、これはまったく考え付きませんでした。素晴らしい。
+
+>   2. isearch-search-fun-function を設定するモードでは、
+>      原則として migemo は使用されない。
+>      そのようなモードで migemo を使用したい場合は個別対応する。
+> 
+>      なお、Emacs 22.1 標準のモードのうち isearch-search-fun-function を
+>      設定するモードは以下の 4 つのようです。
+>        - hexl-mode
+>        - info-mode
+>        - longlines-mode
+>        - reftex-isearch-minor-mode
+
+前に調べたときは hexl-mode と info-mode だけだったのですが、増え
+ましたね。
+
+> isearch-search-fun-function を設定するモードは isearch に特殊な振舞いを
+> 追加したいという要望がある訳ですが、この特殊な振舞いと migemo の振舞い
+> をどう折合いを付けるかはそのモードによって異なるはずなので、個別対応し
+> た方が良いのではないかと思います。
+> 
+> 個別対応の方針ですが、migemo.el で個別対応の枠組みを提供する必要はなく、
+> 各モードで isearch-search-fun-function に設定される関数に対して
+> defadvice して振舞いを変えるというので十分ではないかと思います。
+> 
+> 検討よろしくお願いします。
+> 
+> また、上記のように振舞いを変えるパッチを作成してみました。添付しますの
+> で、試してみてください。
+
+へい、もう一通のメールに書いてある理由でちょっと手間がかかるので
+すが、試してみて(藤井さんっていうぐらいで問題ないでしょうから)コ
+ミットするまでやってみます。
+
+-- 
+白井秀行 (mailto:shirai ＠ meadowy.org)

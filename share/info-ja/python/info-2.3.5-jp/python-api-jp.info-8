@@ -1,0 +1,650 @@
+This is python-api-jp.info, produced by makeinfo version 4.5 from
+python-api-jp.texi.
+
+12 October 2005
+
+
+File: python-api-jp.info,  Node: バッファオブジェクト構造体 buffer object structure,  Next: イテレータプロトコルをサポートする,  Prev: 配列オブジェクト構造体 sequence object structure,  Up: オブジェクト実装サポート object implementation support
+
+バッファオブジェクト構造体 (buffer object structure)
+====================================================
+
+バッファインタフェースは、あるオブジェクトの内部データを一連の
+データチャンク (chunk)
+として見せるモデルを外部から利用できるようにします。
+各チャンクはポインタ/データ長からなるペアで指定します。
+チャンクはセグメント("segment") と呼ばれ、
+メモリ内に不連続的に配置されるものと想定されています。
+
+バッファインタフェースを利用できるようにしたくないオブジェクト
+では、`PyTypeObject' 構造体の `tp_as_buffer' メンバを
+`NULL'にしなくてはなりません。利用できるようにする場合、 `tp_as_buffer'
+は`PyBufferProcs' 構造体を 指さねばなりません。
+
+_Note:_  `PyTypeObject' 構造体の `tp_flags' メンバ の値を `0' でなく
+`Py_TPFLAGS_DEFAULT' に しておくことがとても重要です。この設定は、
+`PyBufferProcs' 構造体に `bf_getcharbuffer'  スロットが入っていることを
+Python ランタイムに教えます。 Python の古いバージョンには
+`bf_getcharbuffer' メンバが
+存在しないので、古い拡張モジュールを使おうとしている新しいバージョンの
+Python インタプリタは、このメンバがあるかどうかテストしてから
+使えるようにする必要があるのです。
+
+`PyBufferProcs'
+     バッファプロトコルの実装を定義している関数群へのポインタを
+     保持するのに使われる構造体です。
+
+     最初のスロットは`bf_getreadbuffer' で、 `getreadbufferproc'
+     型です。 このスロットが `NULL'の場合、オブジェクトは内部データの
+     読み出しをサポートしません。そのような仕様には意味がないので、
+     実装を行う側はこのスロットに値を埋めるはずですが、呼び出し側では
+     非 `NULL' の値かどうかきちんと調べておくべきです。
+
+     次のスロットは `bf_getwritebuffer' で、 `getwritebufferproc'
+     型です。オブジェクトが返すバッファに
+     対して書き込みを許可しない場合はこのスロットを`NULL' にできます。
+
+     第三のスロットは `bf_getsegcount' で、 `getsegcountproc'
+     型です。このスロットは `NULL' であっては
+     ならず、オブジェクトにいくつセグメントが入っているかを呼び出し側に
+     教えるために使われます。`PyString_Type' や `PyBuffer_Type'
+     オブジェクトのような単純なオブジェクトには単一のセグメントしか入って
+     いません。
+
+     最後のスロットは `bf_getcharbuffer' で、 `getcharbufferproc'
+     です。オブジェクトの `PyTypeObject' 構造体における `tp_flags'
+     フィールドに、 `Py_TPFLAGS_HAVE_GETCHARBUFFER'
+     ビットフラグがセットされている
+     場合にのみ、このスロットが存在することになります。
+     このスロットの使用に先立って、呼び出し側は `PyType_HasFeature()'
+     を使ってスロットが存在するか調べねばなりません。
+     スロットが存在する場合、値は `NULL'のときもあり、`NULL'は
+     オブジェクトの内容を _8 ビット文字列_ として利用できない
+     ことを示します。 このスロットに入る関数も、オブジェクトの内容を 8
+     ビット文字列に
+     変換できない場合に例外を送出することがあります。例えば、
+     オブジェクトが浮動小数点数を保持するように設定されたアレイの場合、
+     呼び出し側が `bf_getcharbuffer' を使って 8 ビット文字列
+     としてデータを取り出そうとすると例外を送出するようにできます。
+     この、内部バッファを "テキスト" として取り出すという概念は、
+     本質的にはバイナリで、文字ベースの内容を持ったオブジェクト間の
+     区別に使われます。
+
+     _Note:_ 現在のポリシでは、文字 (character) はマルチバイト文字
+     でもかまわないと決めているように思われます。従って、 サイズ N
+     のバッファが N 個のキャラクタからなる
+     とはかぎらないことになります。
+
+`Py_TPFLAGS_HAVE_GETCHARBUFFER'
+     型構造体中のフラグビットで、`bf_getcharbuffer' スロットが
+     既知の値になっていることを示します。このフラグビットがセット
+     されていたとしても、オブジェクトがバッファインタフェースをサポート
+     していることや、`bf_getcharbuffer' スロットが `NULL'でない
+     ことを示すわけではありません。
+
+`int (*getreadbufferproc) (PyObject *self, int segment, void **ptrptr)'
+     読み出し可能なバッファセグメントへのポインタを返します。この関数は
+     例外を送出してもよく、送出する場合には `-1' を返さねばなりません。
+     SEGMENT に渡す値はゼロまたは正の値で、`bf_getsegcount'
+     スロット関数が返すセグメント数よりも必ず小さな値でなければなりません。
+     成功すると、バッファメモリのサイズを返し、 `*PTRPTR' を
+     バッファメモリを指すポインタ値にセットします。
+
+`int (*getwritebufferproc) (PyObject *self, int segment, void **ptrptr)'
+     読み出し可能なバッファセグメントへのポインタを `*PTRPTR' に
+     返し、セグメントの長さを関数の戻り値として返します。エラーによる例外の
+     場合には `-1' を`-1' を返さねばなりません。
+     オブジェクトが呼び出し専用バッファしかサポートしていない場合には
+     `TypeError' を、SEGMENT が存在しないセグメントを
+     指している場合には `SystemError' を送出しなければなりません。
+
+`int (*getsegcountproc) (PyObject *self, int *lenp)'
+     バッファを構成するメモリセグメントの数を返します。 LENP が
+     `NULL'でない場合、この関数の実装は全てのセグメント のサイズ
+     (バイト単位) の合計値を `*LENP' を介して
+     報告しなければなりません。この関数呼び出しは失敗させられません。
+
+`int (*getcharbufferproc) (PyObject *self, int segment, const char **ptrptr)'
+     セグメント SEGMENT のメモリバッファを PTRPTR に入れ、
+     メモリバッファのサイズを返します。`*PTRPTR' がメモリバッファ
+     を表す値になるようにセットされます。
+
+
+File: python-api-jp.info,  Node: イテレータプロトコルをサポートする,  Next: 循環参照ガベージコレクションをサポートする,  Prev: バッファオブジェクト構造体 buffer object structure,  Up: オブジェクト実装サポート object implementation support
+
+イテレータプロトコルをサポートする
+==================================
+
+
+File: python-api-jp.info,  Node: 循環参照ガベージコレクションをサポートする,  Prev: イテレータプロトコルをサポートする,  Up: オブジェクト実装サポート object implementation support
+
+循環参照ガベージコレクションをサポートする
+==========================================
+
+Python が循環参照を含むガベージの検出とコレクションをサポートする
+には、他のオブジェクトに対する "コンテナ" (他のオブジェクトには
+他のコンテナも含みます) となるオブジェクト型によるサポートが必要です。
+他のオブジェクトに対する参照を記憶しないオブジェクトや、
+(数値や文字列のような) アトム型 (atomic type) への参照だけを
+記憶するような型では、ガベージコレクションに際して特別これといった
+サポートを提供する必要はありません。
+
+ここで説明しているインタフェースの使い方を示した例は、  の
+"循環参照の収集をサポートする" にあります。
+コンテナ型を作るには、型オブジェクトの `tp_flags' フィールド
+に`Py_TPFLAGS_HAVE_GC' フラグがなくてはならず、 `tp_traverse'
+ハンドラの実装を提供しなければなりません。
+実装する型のインスタンスを変更可能なオブジェクトにするなら、 `tp_clear'
+の実装も提供しなければなりません。
+
+`Py_TPFLAGS_HAVE_GC'
+     このフラグをセットした型のオブジェクトは、この節に述べた規則に
+     適合しなければなりません。簡単のため、このフラグをセットした型の
+     オブジェクトをコンテナオブジェクトと呼びます。
+
+コンテナ型のコンストラクタは以下の二つの規則に適合しなければなりません:
+
+  1. オブジェクトのメモリは `PyObject_GC_New()' または
+     `PyObject_GC_VarNew()' で確保しなければなりません。
+
+  2. 一度他のコンテナへの参照が入るかもしれないフィールドが全て
+     初期化されたら、`PyObject_GC_Track()' を呼び出さねば なりません。
+
+`TYPE* PyObject_GC_New(TYPE, PyTypeObject *type)'
+     `PyObject_New()' に似ていますが、 `Py_TPFLAGS_HAVE_GC'
+     のセットされたコンテナオブジェクト 用です。
+
+`TYPE* PyObject_GC_NewVar(TYPE, PyTypeObject *type, int size)'
+     `PyObject_NewVar()' に似ていますが、 `Py_TPFLAGS_HAVE_GC'
+     のセットされたコンテナオブジェクト 用です。
+
+`PyVarObject * PyObject_GC_Resize(PyVarObject *op, int)'
+     `PyObject_NewVar()' が確保したオブジェクトのメモリを
+     リサイズします。リサイズされたオブジェクトを返します。 失敗すると
+     `NULL' を返します。
+
+`void PyObject_GC_Track(PyObject *op)'
+     ガベージコレクタが追跡しているコンテナオブジェクトの集合に
+     オブジェクト OP を追加します。ガベージコレクタの動作する
+     回数は予測不能なので、追加対象にするオブジェクトは追跡されている
+     間ずっと有効なオブジェクトでなければなりません。
+     この関数は、通常コンストラクタの最後付近で、`tp_traverse'
+     ハンドラ以降の全てのフィールドが有効な値になった時点で呼び出さねば
+     なりません。
+
+`void _PyObject_GC_TRACK(PyObject *op)'
+     `PyObject_GC_Track()' のマクロ版です。拡張モジュールに
+     使ってはなりません。
+
+同様に、オブジェクトのメモリ解放関数も以下の二つの規則に適合しなければ
+なりません:
+
+  1. 他のコンテナを参照しているフィールドを無効化する前に、
+     `PyObject_GC_UnTrack()' を呼び出さねばなりません。
+
+  2. オブジェクトのメモリは `PyObject_GC_Del()'
+     で解放しなければなりません。
+
+`void PyObject_GC_Del(PyObject *op)'
+     `PyObject_GC_New()' や `PyObject_GC_NewVar()'
+     を使って確保されたメモリを解放します。
+
+`void PyObject_GC_UnTrack(PyObject *op)'
+     ガベージコレクタが追跡しているコンテナオブジェクトの集合から
+     オブジェクト OP を除去します。`PyObject_GC_Track()'
+     を呼び出して、除去したオブジェクトを再度追跡対象セットに追加
+     できるので注意してください。メモリ解放関数 (deallocator,
+     `tp_dealloc' ハンドラ) は、`tp_traverse' ハンドラが
+     使用しているフィールドのいずれかが無効化されるよりも
+     以前にオブジェクトに対して呼び出されていなければなりません。
+
+`void _PyObject_GC_UNTRACK(PyObject *op)'
+     `PyObject_GC_UnTrack()' のマクロ版です。拡張モジュールに
+     使ってはなりません。
+
+`tp_traverse' ハンドラは以下の型を持つ関数を引数の一つとして とります:
+
+`int (*visitproc)(PyObject *object, void *arg)'
+     `tp_traverse' ハンドラに渡すビジタ関数 (visitor function)
+     の型です。この関数は追跡すべきオブジェクトを OBJECT に、
+     `tp_traverse' ハンドラの第三引数を ARG にして呼び出され ます。
+
+`tp_traverse' ハンドラは以下の型でなければなりません:
+
+`int (*traverseproc)(PyObject *self, visitproc visit, void *arg)'
+     コンテナオブジェクトのためのトラバーサル関数 (traversal function)
+     です。 実装では、SELF に直接入っている各オブジェクトに対してVISIT
+     関数を呼び出さねばなりません。このとき、VISIT へのパラメタは
+     コンテナに入っている各オブジェクトと、このハンドラに渡された ARG
+     の値です。VISIT が非ゼロの値を返す場合、
+     エラーが発生し、戻り値をそのまま返すようににしなければなりません。
+
+`tp_clear' ハンドラは `inquiry' 型にするか、
+オブジェクトが変更不能の場合には `NULL' にしなければなりません。 `NULL'
+if the object is immutable.
+
+`int (*inquiry)(PyObject *self)'
+     循環参照を形成しているとおぼしき参照群を放棄します。
+     変更不可能なオブジェクトは循環参照を直接形成することが決してない
+     ので、この関数を定義する必要はありません。
+     このメソッドを呼び出した後でもオブジェクトは有効なままでなければ
+     ならないので注意してください (参照に対して `Py_DECREF()'
+     を呼ぶだけにしないでください)。ガベージコレクタは、オブジェクトが
+     循環参照を形成していることを検出した際にこのメソッドを呼び出します。
+
+
+File: python-api-jp.info,  Node: バグ報告,  Next: 歴史とライセンス,  Prev: オブジェクト実装サポート object implementation support,  Up: Top
+
+バグ報告
+********
+
+Python is a mature programming language which has established a
+reputation for stability.  In order to maintain this reputation, the
+developers would like to know of any deficiencies you find in Python or
+its documentation.
+
+Before submitting a report, you will be required to log into
+SourceForge; this will make it possible for the developers to contact
+you for additional information if needed.  It is not possible to submit
+a bug report anonymously.
+
+All bug reports should be submitted via the Python Bug Tracker on
+SourceForge (<http://sourceforge.net/bugs/?group_id=5470>).  The bug
+tracker offers a Web form which allows pertinent information to be
+entered and submitted to the developers.
+
+The first step in filing a report is to determine whether the problem
+has already been reported.  The advantage in doing so, aside from
+saving the developers time, is that you learn what has been done to fix
+it; it may be that the problem has already been fixed for the next
+release, or additional information is needed (in which case you are
+welcome to provide it if you can!).  To do this, search the bug
+database using the search box near the left side of the page.
+
+If the problem you're reporting is not already in the bug tracker, go
+back to the Python Bug Tracker
+(<http://sourceforge.net/bugs/?group_id=5470>).  Select the "Submit a
+Bug" link at the top of the page to open the bug reporting form.
+
+The submission form has a number of fields.  The only fields that are
+required are the "Summary" and "Details" fields.  For the summary,
+enter a _very_ short description of the problem; less than ten words is
+good.  In the Details field, describe the problem in detail, including
+what you expected to happen and what did happen.  Be sure to include
+the version of Python you used, whether any extension modules were
+involved, and what hardware and software platform you were using
+(including version information as appropriate).
+
+The only other field that you may want to set is the "Category" field,
+which allows you to place the bug report into a broad category (such as
+"Documentation" or "Library").
+
+Each bug report will be assigned to a developer who will determine what
+needs to be done to correct the problem.  You will receive an update
+each time action is taken on the bug.
+
+See also:
+     `How to Report Bugs Effectively'{Article which goes into some
+     detail about how to create a useful bug report.  This describes
+     what kind of information is useful and why it is useful.}
+
+     `Bug Writing Guidelines'{Information about writing a good bug
+     report.  Some of this is specific to the Mozilla project, but
+     describes general good practices.}
+
+
+File: python-api-jp.info,  Node: 歴史とライセンス,  Next: 日本語訳について,  Prev: バグ報告,  Up: Top
+
+歴史とライセンス
+****************
+
+* Menu:
+
+* History of the software::
+* Terms and conditions for accessing or otherwise using Python::
+
+
+File: python-api-jp.info,  Node: History of the software,  Next: Terms and conditions for accessing or otherwise using Python,  Prev: 歴史とライセンス,  Up: 歴史とライセンス
+
+History of the software
+=======================
+
+Python was created in the early 1990s by Guido van Rossum at Stichting
+Mathematisch Centrum (CWI, see <http://www.cwi.nl/>) in the Netherlands
+as a successor of a language called ABC.  Guido remains Python's
+principal author, although it includes many contributions from others.
+
+In 1995, Guido continued his work on Python at the Corporation for
+National Research Initiatives (CNRI, see
+<http://www.cnri.reston.va.us/>) in Reston, Virginia where he released
+several versions of the software.
+
+In May 2000, Guido and the Python core development team moved to
+BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
+year, the PythonLabs team moved to Digital Creations (now Zope
+Corporation; see <http://www.zope.com/>).  In 2001, the Python Software
+Foundation (PSF, see <http://www.python.org/psf/>) was formed, a
+non-profit organization created specifically to own Python-related
+Intellectual Property.  Zope Corporation is a sponsoring member of the
+PSF.
+
+All Python releases are Open Source (see <http://www.opensource.org/>
+for the Open Source Definition).  Historically, most, but not all,
+Python releases have also been GPL-compatible; the table below
+summarizes the various releases.
+
+Release        Derived from   Year           Owner          GPL
+                                                            compatible?
+------         ------         ------         ------         ------
+0.9.0 thru     n/a            1991-1995      CWI            yes
+1.2                                                         
+1.3 thru       1.2            1995-1999      CNRI           yes
+1.5.2                                                       
+1.6            1.5.2          2000           CNRI           no
+2.0            1.6            2000           BeOpen.com     no
+1.6.1          1.6            2001           CNRI           no
+2.1            2.0+1.6.1      2001           PSF            no
+2.0.1          2.0+1.6.1      2001           PSF            yes
+2.1.1          2.1+2.0.1      2001           PSF            yes
+2.2            2.1.1          2001           PSF            yes
+2.1.2          2.1.1          2002           PSF            yes
+2.1.3          2.1.2          2002           PSF            yes
+2.2.1          2.2            2002           PSF            yes
+2.2.2          2.2.1          2002           PSF            yes
+2.2.3          2.2.2          2002-2003      PSF            yes
+2.3            2.2.2          2002-2003      PSF            yes
+2.3.1          2.3            2002-2003      PSF            yes
+2.3.3          2.3.2          2004           PSF            yes
+2.3.4          2.3.3          2004           PSF            yes
+2.3.5          2.3.4          2005           PSF            yes
+
+_Note:_ GPL-compatible doesn't mean that we're distributing Python
+under the GPL.  All Python licenses, unlike the GPL, let you distribute
+a modified version without making your changes open source. The
+GPL-compatible licenses make it possible to combine Python with other
+software that is released under the GPL; the others don't.
+
+Thanks to the many outside volunteers who have worked under Guido's
+direction to make these releases possible.
+
+
+File: python-api-jp.info,  Node: Terms and conditions for accessing or otherwise using Python,  Prev: History of the software,  Up: 歴史とライセンス
+
+Terms and conditions for accessing or otherwise using Python
+============================================================
+
+               *PSF LICENSE AGREEMENT FOR PYTHON 2.3.5*
+  1. This LICENSE AGREEMENT is between the Python Software Foundation
+     ("PSF"), and the Individual or Organization ("Licensee") accessing
+     and otherwise using Python 2.3.5 software in source or binary form
+     and its associated documentation.
+
+  2. Subject to the terms and conditions of this License Agreement, PSF
+     hereby grants Licensee a nonexclusive, royalty-free, world-wide
+     license to reproduce, analyze, test, perform and/or display
+     publicly, prepare derivative works, distribute, and otherwise use
+     Python 2.3.5 alone or in any derivative version, provided,
+     however, that PSF's License Agreement and PSF's notice of
+     copyright, i.e., "Copyright (C) 2001-2003 Python Software
+     Foundation; All Rights Reserved" are retained in Python 2.3.5
+     alone or in any derivative version prepared by Licensee.
+
+  3. In the event Licensee prepares a derivative work that is based on
+     or incorporates Python 2.3.5 or any part thereof, and wants to
+     make the derivative work available to others as provided herein,
+     then Licensee hereby agrees to include in any such work a brief
+     summary of the changes made to Python 2.3.5.
+
+  4. PSF is making Python 2.3.5 available to Licensee on an "AS IS"
+     basis.  PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND
+     DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 2.3.5
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+     2.3.5 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING
+     PYTHON 2.3.5, OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE
+     POSSIBILITY THEREOF.
+
+  6. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  7. Nothing in this License Agreement shall be deemed to create any
+     relationship of agency, partnership, or joint venture between PSF
+     and Licensee.  This License Agreement does not grant permission to
+     use PSF trademarks or trade name in a trademark sense to endorse
+     or promote products or services of Licensee, or any third party.
+
+  8. By copying, installing or otherwise using Python 2.3.5, Licensee
+     agrees to be bound by the terms and conditions of this License
+     Agreement.
+
+             *BEOPEN.COM LICENSE AGREEMENT FOR PYTHON 2.0*
+         *BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1*
+  1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
+     office at 160 Saratoga Avenue, Santa Clara, CA 95051, and the
+     Individual or Organization ("Licensee") accessing and otherwise
+     using this software in source or binary form and its associated
+     documentation ("the Software").
+
+  2. Subject to the terms and conditions of this BeOpen Python License
+     Agreement, BeOpen hereby grants Licensee a non-exclusive,
+     royalty-free, world-wide license to reproduce, analyze, test,
+     perform and/or display publicly, prepare derivative works,
+     distribute, and otherwise use the Software alone or in any
+     derivative version, provided, however, that the BeOpen Python
+     License is retained in the Software, alone or in any derivative
+     version prepared by Licensee.
+
+  3. BeOpen is making the Software available to Licensee on an "AS IS"
+     basis.  BEOPEN MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, BEOPEN MAKES NO
+     AND DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  4. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
+     SOFTWARE FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE,
+     OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY
+     THEREOF.
+
+  5. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  6. This License Agreement shall be governed by and interpreted in all
+     respects by the law of the State of California, excluding conflict
+     of law provisions.  Nothing in this License Agreement shall be
+     deemed to create any relationship of agency, partnership, or joint
+     venture between BeOpen and Licensee.  This License Agreement does
+     not grant permission to use BeOpen trademarks or trade names in a
+     trademark sense to endorse or promote products or services of
+     Licensee, or any third party.  As an exception, the "BeOpen
+     Python" logos available at http://www.pythonlabs.com/logos.html
+     may be used according to the permissions granted on that web page.
+
+  7. By copying, installing or otherwise using the software, Licensee
+     agrees to be bound by the terms and conditions of this License
+     Agreement.
+
+               *CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1*
+  1. This LICENSE AGREEMENT is between the Corporation for National
+     Research Initiatives, having an office at 1895 Preston White Drive,
+     Reston, VA 20191 ("CNRI"), and the Individual or Organization
+     ("Licensee") accessing and otherwise using Python 1.6.1 software in
+     source or binary form and its associated documentation.
+
+  2. Subject to the terms and conditions of this License Agreement, CNRI
+     hereby grants Licensee a nonexclusive, royalty-free, world-wide
+     license to reproduce, analyze, test, perform and/or display
+     publicly, prepare derivative works, distribute, and otherwise use
+     Python 1.6.1 alone or in any derivative version, provided,
+     however, that CNRI's License Agreement and CNRI's notice of
+     copyright, i.e., "Copyright (C) 1995-2001 Corporation for National
+     Research Initiatives; All Rights Reserved" are retained in Python
+     1.6.1 alone or in any derivative version prepared by Licensee.
+     Alternately, in lieu of CNRI's License Agreement, Licensee may
+     substitute the following text (omitting the quotes): "Python 1.6.1
+     is made available subject to the terms and conditions in CNRI's
+     License Agreement.  This Agreement together with Python 1.6.1 may
+     be located on the Internet using the following unique, persistent
+     identifier (known as a handle): 1895.22/1013.  This Agreement may
+     also be obtained from a proxy server on the Internet using the
+     following URL: <http://hdl.handle.net/1895.22/1013>."
+
+  3. In the event Licensee prepares a derivative work that is based on
+     or incorporates Python 1.6.1 or any part thereof, and wants to make
+     the derivative work available to others as provided herein, then
+     Licensee hereby agrees to include in any such work a brief summary
+     of the changes made to Python 1.6.1.
+
+  4. CNRI is making Python 1.6.1 available to Licensee on an "AS IS"
+     basis.  CNRI MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+     IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, CNRI MAKES NO AND
+     DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR
+     FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF PYTHON 1.6.1
+     WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+
+  5. CNRI SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
+     1.6.1 FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR
+     LOSS AS A RESULT OF MODIFYING, DISTRIBUTING, OR OTHERWISE USING
+     PYTHON 1.6.1, OR ANY DERIVATIVE THEREOF, EVEN IF ADVISED OF THE
+     POSSIBILITY THEREOF.
+
+  6. This License Agreement will automatically terminate upon a material
+     breach of its terms and conditions.
+
+  7. This License Agreement shall be governed by the federal
+     intellectual property law of the United States, including without
+     limitation the federal copyright law, and, to the extent such U.S.
+     federal law does not apply, by the law of the Commonwealth of
+     Virginia, excluding Virginia's conflict of law provisions.
+     Notwithstanding the foregoing, with regard to derivative works
+     based on Python 1.6.1 that incorporate non-separable material that
+     was previously distributed under the GNU General Public License
+     (GPL), the law of the Commonwealth of Virginia shall govern this
+     License Agreement only as to issues arising under or with respect
+     to Paragraphs 4, 5, and 7 of this License Agreement.  Nothing in
+     this License Agreement shall be deemed to create any relationship
+     of agency, partnership, or joint venture between CNRI and
+     Licensee.  This License Agreement does not grant permission to use
+     CNRI trademarks or trade name in a trademark sense to endorse or
+     promote products or services of Licensee, or any third party.
+
+  8. By clicking on the "ACCEPT" button where indicated, or by copying,
+     installing or otherwise using Python 1.6.1, Licensee agrees to be
+     bound by the terms and conditions of this License Agreement.
+
+                                ACCEPT
+          *CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2*
+ Copyright
+(C) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam, The
+Netherlands.  All rights reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the name of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE FOR
+ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+File: python-api-jp.info,  Node: 日本語訳について,  Next: Module Index,  Prev: 歴史とライセンス,  Up: Top
+
+日本語訳について
+****************
+
+* Menu:
+
+* このドキュメントについて::
+* 翻訳者一覧 敬称略::
+
+
+File: python-api-jp.info,  Node: このドキュメントについて,  Next: 翻訳者一覧 敬称略,  Prev: 日本語訳について,  Up: 日本語訳について
+
+このドキュメントについて
+========================
+
+この文書は、Pythonドキュメント翻訳プロジェクトによる Python C/API
+Reference Release 2.3の日本語訳版です。日本語訳に対する質問や提案などが
+ありましたら、Pythonドキュメント翻訳プロジェクトのメーリングリスト
+
+<http://www.python.jp/mailman/listinfo/python-doc-jp>
+
+または、プロジェクトのバグ管理ページ
+
+<http://sourceforge.jp/tracker/?atid=116&group_id=11&func=browse>
+
+までご報告ください。
+
+
+File: python-api-jp.info,  Node: 翻訳者一覧 敬称略,  Prev: このドキュメントについて,  Up: 日本語訳について
+
+翻訳者一覧 (敬称略)
+===================
+
+2.3.3 和訳 Minami Masanori, Yasushi Masuda (May 16, 2004)\ 2.3.4 差分
+Yasushi Masuda (September 20, 2004)\ 2.3.5 差分 Yasushi Masuda (April
+20, 2005)
+
+
+File: python-api-jp.info,  Node: Module Index,  Next: Class-Exception-Object Index,  Prev: 日本語訳について,  Up: Top
+
+Module Index
+************
+
+* Menu:
+
+* __builtin__ <1>:                       初期化 initialization、終了処理 finalization、スレッド.
+* __builtin__ <2>:                       Python の埋め込み.
+* __builtin__:                           初期化 initialization、終了処理 finalization、スレッド.
+* __main__ <1>:                          Python の埋め込み.
+* __main__:                              初期化 initialization、終了処理 finalization、スレッド.
+* exceptions:                            Python の埋め込み.
+* ihooks:                                モジュールの import.
+* rexec:                                 モジュールの import.
+* signal:                                例外処理.
+* sys <1>:                               Python の埋め込み.
+* sys:                                   初期化 initialization、終了処理 finalization、スレッド.
+* thread:                                スレッド状態 thread state とグローバルインタプリタロック global interpreter lock.
+
+
+File: python-api-jp.info,  Node: Class-Exception-Object Index,  Next: Function-Method-Variable Index,  Prev: Module Index,  Up: Top
+
+Class, Exception, and Object Index
+**********************************
+
+* Menu:
+
+* buffer:                                Buffer Objects.
+* CObject:                               Cオブジェクト CObject.
+* complex number:                        浮動小数点オブジェクト complex number object.
+* dictionary:                            辞書オブジェクト dictionary object.
+* file:                                  ファイルオブジェクト file object.
+* floating point:                        浮動小数点型オブジェクト floating point object.
+* instance:                              インスタンスオブジェクト instance object.
+* integer:                               通常整数型オブジェクト plain integer object.
+* list:                                  List Objects.
+* long integer:                          長整数型オブジェクト long integer object.
+* mapping:                               マップ型オブジェクト mapping object.
+* method:                                メソッドオブジェクト method object.
+* module:                                モジュールオブジェクト module object.
+* None:                                  None オブジェクト.
+* numeric:                               数値型オブジェクト numeric object.
+* sequence:                              配列オブジェクト sequence object.
+* string:                                文字列オブジェクト string object.
+* tuple:                                 タプルオブジェクト tuple object.
+* type <1>:                              型オブジェクト type object.
+* type:                                  オブジェクト、型および参照カウント.
+

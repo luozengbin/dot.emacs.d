@@ -1,0 +1,1922 @@
+Info file: gnus-ja.info,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `gnus-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
+2004, 2005, 2006 Free Software Foundation, Inc.
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU Free Documentation License,
+     Version 1.2 or any later version published by the Free Software
+     Foundation; with no Invariant Sections, with the Front-Cover
+     texts being "A GNU Manual", and with the Back-Cover Texts as in
+     (a) below.  A copy of the license is included in the section
+     entitled "GNU Free Documentation License" in the Emacs manual.
+
+     この文書を、フリーソフトウェア財団発行の GNU フリー文書利用許諾契
+     約書第 1.2 版またはそれ以降の版が定める条件の下で複製、配布、ある
+     いは変更することを許可します。変更不可部分は指定しません。“A GNU
+     Manual”は表表紙テキスト、以下の (a) は裏表紙テキストです。この利
+     用許諾契約書の複写は“Emacs manual”の「GNU フリー文書利用許諾契約
+     書」という章に含まれています。
+
+     (a) The FSF's Back-Cover Text is: "You have freedom to copy and
+     modify this GNU Manual, like GNU software.  Copies published by
+     the Free Software Foundation raise funds for GNU development."
+
+     (a) FSF の裏表紙テキスト:「あなたにはこの GNU Manual を GNU ソフト
+     ウェアのように複製したり変更する自由があります。複製はフリーソフト
+     ウェア財団によって出版されました。(フリーソフトウェア財団は) GNU
+     の開発のために必要な資金を集めています。」
+
+     This document is part of a collection distributed under the GNU
+     Free Documentation License.  If you want to distribute this
+     document separately from the collection, you can do so by adding
+     a copy of the license to the document, as described in section 6
+     of the license.
+
+     この文書は「GNU フリー文書利用許諾契約書」に基づいて配布された収集
+     著作物の一部です。もしあなたがこの文書を収集著作物から分離して配布
+     したいときは、契約書の第 6 章に記述されているように、文書に契約書
+     の複写を付加することによって、行なうことができます。
+
+
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Gnus-ja: (gnus-ja).           The newsreader Gnus (Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+
+
+File: gnus-ja.info, Node: Posting Styles, Next: Drafts, Prev: Archived Messages, Up: Composing Messages
+
+投稿様式
+========
+
+それらはすべて変数で、私の頭をくらくらさせます。
+
+投稿するグループによって違った `Organization' と署名を付けたいんですか?
+そして、家のマシンと職場のマシンの両方から投稿するけれども、違った
+`From' 行などを使いたいんですか?  そんなこと、どうでもいいじゃありませ
+んか。
+
+そのようなことをする方法の一つは、変更する必要のある変数を変更する賢い
+フックを書くことです。それは少し退屈なので、利用者にこれらのことを手軽
+な連想リストで指定するというすばらしい着想にたどり着いた人がいました。
+これが変数 `gnus-posting-styles' の例です:
+
+     ((".*"
+        (signature "Peace and happiness")
+        (organization "What me?"))
+      ("^comp"
+       (signature "Death to everybody"))
+      ("comp.emacs.i-love-it"
+       (organization "Emacs is it")))
+
+この例から推測されるように、この連想リストはいくつかの「様式」(style)
+からなっています。それぞれの様式は最初の要素が何らかの形で「合致」した
+ときに適用されます。連想リスト全体は最初から最後まで反復して実行され、
+それぞれの合致が適用されます。これは、後の様式の属性が前に合致した様式
+の属性よりも優先されるということです。ですから
+`comp.programming.literate' は、`Death to everybody' という署名と
+`What me?' という `Organization' ヘッダーを持ちます。
+
+それぞれの様式の最初の要素は `マッチ' (match) と言います。もしそれが文
+字列であれば、Gnus はそれを正規表現であるものとして、グループ名に合致す
+るかどうかを調べます。`(header 合致 正規表現)' という形式であれば、
+Gnus は元記事の中からその名前が 合致 であるヘッダーを探し、それを 正規
+表現 と比較します。合致 と 正規表現 は文字列です。(元記事とは、あなたが
+それに対して返信またはフォローアップしようとしている対象の記事です。返
+信あるいはフォローアップを作成していなければ、合致するものは何もありま
+せん。) もし `マッチ' が関数のシンボルであれば、その関数が引数無しで呼
+ばれます。それが変数のシンボルであれば、その変数が参照されます。それが
+リストであれば、そのリストが `評価' されます。どの場合でも、これが
+`nil' でない値を返せば、様式は `合致した' と言います。
+
+それぞれの様式は任意の量の「属性」を持つことができます。それぞれの属性
+は `(NAME VALUE)' の対により成り立っています。加えて `(NAME :file
+VALUE)' の形式か `(NAME :value VALUE)' の形式を使うこともできます。ここ
+で `:file' は VALUE がファイル名を表して、その内容が属性値として使用さ
+れるべきであることを示し、`:value' は VALUE がファイル名を表わさないこ
+とを明示的に示します。属性名 (NAME) は、以下のどれかであることができま
+す。
+
+   * `signature'
+   * `signature-file'
+   * `x-face-file'
+   * `address' (`user-mail-address' よりも優先されます)
+   * `name' (`(user-full-name)' よりも優先されます)
+   * `body'
+
+属性名は文字列またはシンボルであることもできます。その場合それはヘッダー
+名として使われ、その値が記事のヘッダーに挿入されます。もし属性名が
+`nil' だったら、そのヘッダー名は削除されます。もし属性名が `eval' だっ
+たらその様式が評価され、結果は捨てられます。
+
+属性値は文字列 (そのまま使われます)、引数の無い関数 (返り値が使われま
+す)、変数 (その値が使われます) またはリスト (それは `評価' されて、返り
+値が使われます) であることができます。関数と S式 (sexp) はセットアップ
+されつつあるメッセージバッファーで呼ばれるか評価されます。現在の記事の
+ヘッダー群は変数 `message-reply-headers' から得られます。これは number
+subject from date id references chars lines xref extra の各ヘッダーから
+成るベクトルです。
+
+作成しようとしているメッセージがニュース記事かメールメッセージであるか
+を調べたいときは、関数 `message-news-p' と `message-mail-p' の戻り値を
+調べて下さい。
+
+そして、これは例です:
+
+     (setq gnus-posting-styles
+           '((".*"
+              (signature-file "~/.signature")
+              (name "User Name")
+              (x-face-file "~/.xface")
+              (x-url (getenv "WWW_HOME"))
+              (organization "People's Front Against MWM"))
+             ("^rec.humor"
+              (signature my-funny-signature-randomizer))
+             ((equal (system-name) "gnarly")  ;; 様式
+              (signature my-quote-randomizer))
+             (message-news-p        ;; 関数シンボル
+              (signature my-news-signature))
+             (window-system         ;; 変数シンボル
+              ("X-Window-System" (format "%s" window-system)))
+             ;; Lars さんに返事をするときは
+             ;; Organization ヘッダーを付けよう。
+             ((header "to" "larsi.*org")
+              (Organization "Somewhere, Inc."))
+             ((posting-from-work-p) ;; 利用者が定義した関数
+              (signature-file "~/.work-signature")
+              (address "user@bar.foo")
+              (body "You are fired.\n\nSincerely, your boss.")
+              (organization "Important Work, Inc"))
+             ("nnml:.*"
+              (From (save-excursion
+                      (set-buffer gnus-article-buffer)
+                      (message-fetch-field "to"))))
+             ("^nn.+:"
+              (signature-file "~/.mail-signature"))))
+
+`nnml:.*' の規則は、あなたが出すすべての返事の `To' アドレスを `From'
+アドレスとして使うことを意味します。これは、あなたがたくさんのメーリン
+グリストに参加している場合に便利でしょう。
+
+
+
+File: gnus-ja.info, Node: Drafts, Next: Rejected Articles, Prev: Posting Styles, Up: Composing Messages
+
+下書き
+======
+
+メッセージ (メールもしくはニュース) を書いているときに、オーブンにステー
+キが入っている (もしくはあなたがとーってもすごい菜食主義者で、何かのペー
+ストがフードプロセッサーに入っている) ことを突然思い出したなら、書いて
+いるメッセージを保存する方法があれば良いと思うでしょう。いつか別の日に
+編集を続けることができ、それが完成したと思ったときに送ることができるよ
+うに。
+
+えぇ、心配しないで下さい。メールかニュースを送信するための Gnus の命令
+を使って何らかのメッセージを書き始めたときにあなたが手にするバッファー
+は、自動的に特別な "draft" グループに関連付けられます。普通の方法 (例え
+ば `C-x C-s') でバッファーを保存すれば、その記事はそこに保存されます。
+(自動保存 (auto-save) ファイルも下書きグループ (draft group) に行きま
+す。)
+
+下書きグループは `nndraft:drafts' と呼ばれる特別なグループです (あなた
+が絶対に知っていなければならないのであれば、それは `nndraft' グループと
+して実装されています)。変数 `nndraft-directory' は `nndraft' がそのファ
+イルをどこに保管するかを指定します。このグループを特別なものにしている
+のは、その中の記事に可視や既読の印を付けることができないことです--その
+グループのすべての記事は永久に未読です。
+
+もしグループが存在しないと、それは作成され、購読させられます。グループ
+バッファーからそれを消し去る唯一の方法は、それを購読しないようにするこ
+とです。下書きグループの特別の特性はグループの特性 (*Note Group
+Parameters::) によって生じ、それが失われてしまうと他のグループのように
+振る舞うようになります。これは (グループの特性を消してしまうことは) 以
+下のコマンドが使えないことを意味します。そのグループの特別の特性を復活
+させる最も簡単な方法は、`C-k' でそのグループを削除してから Gnus を再起
+動することです。そのグループの内容物は失われません。
+
+記事の編集を続けたいときは、下書きグループに入って `D e'
+(`gnus-draft-edit-message') を押すだけです。編集を中断したときの状態の
+バッファーに移動します。
+
+送信を拒否された記事も、この下書きグループに入れられます (*Note
+Rejected Articles::)。
+
+送信を拒否されたメッセージがたくさんあって、それ以上編集せずにそれらを
+送信したい場合は、`D s' 命令を使うことができます。この命令はプロセス/
+接頭引数の習慣を理解します (*Note Process/Prefix::)。`D S' 命令
+(`gnus-draft-send-all-messages') はバッファーのすべてのメッセージを送り
+出します。
+
+送りたくないメッセージがいくつかあるのであれば、`D t' 命令
+(`gnus-draft-toggle-sending') を使ってメッセージに送信不可の印を付ける
+ことができます。これは切り替え命令です。
+
+
+
+File: gnus-ja.info, Node: Rejected Articles, Next: Signing and encrypting, Prev: Drafts, Up: Composing Messages
+
+拒否された記事
+==============
+
+時々ニュースサーバーは記事を送信することを拒否します。おそらくサーバー
+はあなたの顔を好きではないのでしょう。おそらく落ち込んでいるのでしょう。
+おそらく *悪魔 (demon) がいるのでしょう*。おそらく引用文を入れすぎたの
+でしょう。おそらくディスクが一杯だったのでしょう。おそらくサーバーが落
+ちていたのでしょう。
+
+もちろんこれらの状況は完全に Gnus の扱える範囲外です。(もちろん Gnus は
+あなたの風貌を愛しているし、いつも機嫌が良いし、中を飛び回る天使がいて、
+どれくらい引用文が含まれていようと気にせず、一杯になったり、落っこちた
+りしません。) ですから Gnus はこれらの記事を後でサーバーの機嫌が良くな
+るまで保存します。
+
+拒否された記事は自動的に特別な下書きグループ (*Note Drafts::) に入れら
+れます。サーバーが復旧した暁には、普通あなたはそのグループに入って、す
+べての記事を送ることになるでしょう。
+
+
+
+File: gnus-ja.info, Node: Signing and encrypting, Prev: Rejected Articles, Up: Composing Messages
+
+署名と暗号化
+============
+
+素の PGP 形式、PGP/MIME または S/MIME を使って、Gnus はメッセージに電子
+署名したり暗号化することができます。そのようなメッセージのデコードに関
+しては、`mm-verify-option' オプションおよび `mm-decrypt-option' オプショ
+ン (*Note Security::) を参照して下さい。
+
+署名したメッセージを送ってきた人たちに、署名した返信を返したいことはし
+ばしばあります。さらに暗号化されたメッセージへの返信を暗号化したいこと
+は、もっとたびたびあるかもしれません。Gnus は前者のために
+`gnus-message-replysign' の機能を、後者のために
+`gnus-message-replyencrypt' の機能を提供します。さらに
+`gnus-message-replysignencrypted' を設定することによって (ディフォルト
+で on になっています)、暗号化したメッセージに自動的に署名もします。
+
+MIME パートに対してセキュリティーの操作を行なうための MML への指示は、
+以下のように署名の場合は `C-c C-m s' キーマップを使って、暗号化の場合は
+`C-c C-m c' キーマップを使って行ないます。
+
+`C-c C-m s s'
+
+     S/MIME を使って現在のメッセージに電子署名します。
+
+`C-c C-m s o'
+
+     PGP を使って現在のメッセージに電子署名します。
+
+`C-c C-m s p'
+
+     PGP/MIME を使って現在のメッセージに電子署名します。
+
+`C-c C-m c s'
+
+     S/MIME を使って現在のメッセージを電子暗号化します。
+
+`C-c C-m c o'
+
+     PGP を使って現在のメッセージを電子暗号化します。
+
+`C-c C-m c p'
+
+     PGP/MIME を使って現在のメッセージを電子暗号化します。
+
+`C-c C-m C-n'
+     メッセージから、セキュリティー関連の MML タグを外します。
+
+もっと詳しいことは *Note セキュリティー: (message-ja)Security, を参照し
+て下さい。
+
+
+
+File: gnus-ja.info, Node: Select Methods, Next: Scoring, Prev: Composing Messages, Up: Top
+
+選択方法
+********
+
+「外部グループ」(foreign group) とは、普通 (もしくはディフォルト) の方
+法で読まれないグループのことです。例えばそれは別の NNTP サーバーのグルー
+プであったり、仮想グループであったり、個人的なメールグループであったり
+するでしょう。
+
+外部グループ (あるいは実際にどんなグループでも) は「名前」と「選択方法」
+で指定されます。先に後者を例に出すと、選択方法はリストで、最初の要素が
+どのバックエンドを使うか (例えば `nntp', `nnspool', `nnml') を、二つめ
+の要素が「サーバー名」を表します。選択方法には、その当のバックエンドに
+とって特別の意味を持つ値である追加の要素があるかもしれません。
+
+選択方法とは「仮想サーバー」を定義することだ、と言うことができます--で
+すから私たちはまさにそれをしました (*Note Server Buffer::)。
+
+グループの「名前」は、バックエンドがそのグループを認識する名前です。
+
+例えば `some.where.edu' という NNTP サーバーにある `soc.motss' グループ
+は、名前 `soc.motss' と選択方法 `(nntp "some.where.edu")' を持ちます。
+`nntp' バックエンドはこのグループを `soc.motss' として知っているだけで
+すが、Gnus はこのグループを `nntp+some.where.edu:soc.motss' と呼びます。
+
+もちろん、違った方法はすべてそれ特有の要素を持っています。
+
+* Menu:
+
+* Server Buffer::               仮想サーバーを作って編集する
+* Getting News::                USENET ニュースを Gnus で読む
+* Getting Mail::                個人的なメールを Gnus で読む
+* Browsing the Web::            大量のウェブの資源からメッセージを取得する
+* IMAP::                        Gnus を IMAP のクライアントとして使う
+* Other Sources::               ディレクトリー、ファイル、SOUP パケットを読む
+* Combined Groups::             複数のグループを一つのグループに合併させる
+* Email Based Diary::           日程をメールで管理する
+* Gnus Unplugged::              ニュースとメールをオフラインで読む
+
+
+
+File: gnus-ja.info, Node: Server Buffer, Next: Getting News, Prev: Select Methods, Up: Select Methods
+
+サーバーバッファー
+==================
+
+伝統的に、「サーバー」は誰かがそれに接続して、それからの情報を要求する
+マシンかソフトウェアの断片です。Gnus は実際のどんなサーバーにも直接には
+接続せず、何かのバックエンドを通してすべての処理を行ないます。しかしそ
+れはまさしく実際の媒体と Gnus の間に一つ以上の階層を置くことであって、
+ちょうどそれぞれのバックエンドが疑似的なサーバーに相当すると言っても良
+いでしょう。
+
+例えば `nntp' バックエンドは、複数の別々に実在する NNTP サーバー、ある
+いは実在する同じ NNTP サーバーの異なるポートに接続するために用いられま
+す。あなたはどのバックエンドを使うか、そしてどんなパラメーターを設定す
+るかを選択方法 ("select method") に設定して Gnus に指示します。
+
+選択方法の指定は、ときに極めて面倒なものになります--えーと、例えば
+`news.funet.fi' という NNTP サーバーのポート 13 を読みたいのだけれど、
+NOV ヘッダーを取り寄せようとすると固まってしまうし、間違った記事を選択
+してしまうような場合です。うおっほん。とにかくこのサーバーを使うそれぞ
+れのグループについてそういうことを設定しなければならないとしたら、大変
+な作業になってしまうでしょう。そこで Gnus は、そういう作業をサーバーバッ
+ファーで行なうために、選択方法に名前を付ける手段を設けているのです。
+
+サーバーバッファーに入るためには、グループバッファーで `^'
+(`gnus-group-enter-server-mode') コマンドを使って下さい。
+
+* Menu:
+
+* Server Buffer Format::        このバッファーの外見をカスタマイズできる
+* Server Commands::             サーバーを操る命令
+* Example Methods::             サーバー指定の例
+* Creating a Virtual Server::   セッションの例
+* Server Variables::            どの変数を設定するか
+* Servers and Methods::         サーバー名を選択方法として使うことができる
+* Unavailable Servers::         接続しようとしたサーバーのいくつかは落ちているかもしれない
+
+サーバーバッファーを作成するときに `gnus-server-mode-hook' が実行されま
+す。
+
+
+
+File: gnus-ja.info, Node: Server Buffer Format, Next: Server Commands, Prev: Server Buffer, Up: Server Buffer
+
+サーバーバッファーの表示様式
+----------------------------
+
+サーバーバッファーの行の外見を、変数 `gnus-server-line-format' 変数を変
+更することによって変えることができます。これは `format' のような変数で、
+少しばかり単純な拡張がなされています:
+
+`h'
+     どのようにニュースが取得されるか--バックエンドの名前。
+
+`n'
+     サーバーの名前。
+
+`w'
+     どこからニュースが取得されるか--アドレス。
+
+`s'
+     サーバーの接続の 開いた/閉じた/拒否された 状態。
+
+`a'
+     そのサーバーがエージェント化されているかどうか。
+
+モード行も変数 `gnus-server-mode-line-format' を使うことによってカスタ
+マイズすることができます (*Note Mode Line Formatting::)。
+
+[訳注: 現在この変数は使われていません。]
+
+以下の仕様が理解されます:
+
+`S'
+     サーバー名。
+
+`M'
+     サーバーの選択方法。
+
+*Note Formatting Variables:: も参照して下さい。
+
+
+
+File: gnus-ja.info, Node: Server Commands, Next: Example Methods, Prev: Server Buffer Format, Up: Server Buffer
+
+サーバー命令
+------------
+
+`v'
+     `v' キーはユーザー用に予約されています。そのまま何かの機能に割り当
+     てても構いませんが、接頭キーとして使う方が良いでしょう。
+
+`a'
+     新しいサーバーを追加します (`gnus-server-add-server')。
+
+`e'
+     サーバーを編集します (`gnus-server-edit-server')。
+
+`SPACE'
+     現在のサーバーを眺めます (`gnus-server-read-server')。
+
+     訳注: 実際には `gnus-server-read-server-in-server-buffer' 命令を呼
+     びますが、`gnus-server-browse-in-group-buffer' の値がディフォルト
+     の `nil' であれば `gnus-server-read-server' と同じです。
+     `gnus-server-browse-in-group-buffer' を `nil' 以外の値にすることは
+     まったくお勧めできませんが、あなたが何をするのも自由です。詳細はソー
+     スコードを読むか、実際に試して痛い目に会って下さい。;-p
+
+`q'
+     グループバッファーに戻ります (`gnus-server-exit')。
+
+`k'
+     現在のサーバーを切り取ります (kill します)
+     (`gnus-server-kill-server')。
+
+`y'
+     先ほど切られた (killed) サーバーを貼り付けます (yank します)
+     (`gnus-server-yank-server')。
+
+`c'
+     現在のサーバーを複写します (`gnus-server-copy-server')。
+
+`l'
+     すべてのサーバーの一覧を表示します (`gnus-server-list-servers')。
+
+`s'
+     サーバーにそのソースから新しい記事を調べるように要求します
+     (`gnus-server-scan-server')。主にメールサーバーが意味のある動作を
+     します。
+
+`g'
+     サーバーにすべてのデータ構造を再作成させます
+     (`gnus-server-regenerate-server')。これは同期が外れてしまったメー
+     ルバックエンドがあるときに役に立ちます。
+
+
+
+File: gnus-ja.info, Node: Example Methods, Next: Creating a Virtual Server, Prev: Server Commands, Up: Server Buffer
+
+方法の例
+--------
+
+ほとんどの選択方法は、説明する必要が無いくらいにかなり単純です:
+
+     (nntp "news.funet.fi")
+
+直接スプールから読むのはもっと単純です:
+
+     (nnspool "")
+
+見ての通り、選択方法の最初の要素はバックエンドの名前で、二番目は「アド
+レス」(address)、もしくはそう呼びたいのであれば「名前」です。
+
+これらの二つの要素の後には、任意の数の `(変数 様式)' の対を置くことがで
+きます。
+
+最初の例に戻りましょう--そのマシンのポート 15 から読みたいのだと思って
+下さい。これがその時に、そうなるはずの選択方法です:
+
+     (nntp "news.funet.fi" (nntp-port-number 15))
+
+どの変数が関連するかを見つけ出すために、それぞれのバックエンドの説明文
+書を読むべきでしょうが、これは `nnmh' の例です。
+
+`nnmh' はスプールのような構造を読むためのメールバックエンドです。例えば
+アクセスしたい二つの構造があるとしましょう: 一つはあなたの私的なメール
+スプールで、他方は公的なものです。これは私的なメールのために使うことが
+できる指定です:
+
+     (nnmh "private" (nnmh-directory "~/private/mail/"))
+
+(それでこのサーバーは `private' と呼ばれますが、あなたはすでに推測して
+いたかもしれませんね。)
+
+これは公的なスプールのための方法です:
+
+     (nnmh "public"
+           (nnmh-directory "/usr/information/spool/")
+           (nnmh-get-new-mail nil))
+
+あなたが防壁 (firewall) の中にいて、防壁マシンを通して NNTP サーバーに
+接続するしかないのであれば、防壁マシンに `rlogin' して、そこから NNTP
+サーバーに telnet をするように Gnus に指示することができます。こんなこ
+とをするのはいささかばかげているのですが、でも仮想サーバーの定義はおそ
+らくこのようなものになるはずです:
+
+     (nntp "firewall"
+           (nntp-open-connection-function nntp-open-via-rlogin-and-telnet)
+           (nntp-via-address "the.firewall.machine")
+           (nntp-address "the.real.nntp.host")
+           (nntp-end-of-line "\n"))
+
+あの素敵な `ssh' プログラムを、モデムを経由する通信を圧縮するために使い
+たいのならば、上記の例に以下の設定を加えることができます。
+
+           (nntp-via-rlogin-command "ssh")
+
+`nntp-via-rlogin-command-switches' も参照して下さい。間接的に接続する場
+合の例です:
+
+     (setq gnus-select-method
+           '(nntp "indirect"
+                  (nntp-address "news.server.example")
+                  (nntp-via-user-name "intermediate_user_name")
+                  (nntp-via-address "intermediate.host.example")
+                  (nntp-via-rlogin-command "ssh")
+                  (nntp-end-of-line "\n")
+                  (nntp-via-rlogin-command-switches ("-C" "-t" "-e" "none"))
+                  (nntp-open-connection-function nntp-open-via-rlogin-and-telnet)))
+
+防壁の中にいたとしても "runsocks" のようなラッパーコマンドを通して外の
+世界に直接アクセスできるのならば、以下のように socks 化された telnet で
+ニュースサーバーに接続することができるでしょう:
+
+     (nntp "outside"
+           (nntp-pre-command "runsocks")
+           (nntp-open-connection-function nntp-open-via-telnet)
+           (nntp-address "the.news.server")
+           (nntp-end-of-line "\n"))
+
+もちろん、自動認証を行なわせるためには `ssh-agent' を適切に設定しなけれ
+ばなりません。加えて、通信内容を圧縮するためには、`ssh' の `config' ファ
+イルに `Compression' オプションが存在しなければなりません。
+
+
+
+File: gnus-ja.info, Node: Creating a Virtual Server, Next: Server Variables, Prev: Example Methods, Up: Server Buffer
+
+仮想サーバーを作成する
+----------------------
+
+永続記事を使ってたくさんの記事をキャッシュに保存しているのであれば、
+キャッシュを読むための仮想サーバーを作る必要があるでしょう。
+
+最初に新しいサーバーを追加する必要があります。それをするのは `a' 命令で
+す。おそらくキャッシュを読むためには `nnml' を使うのが一番良いでしょう。
+`nnspool' や `nnmh' も使えるでしょうれけど。
+
+`a nnml RET cache RET' とタイプして下さい。
+
+今やあなたは真新しい `cache' という `nnml' の仮想サーバーを手に入れたは
+ずです。次はそれを編集して、正しい定義を与えましょう。サーバーを編集す
+るには `e' をタイプして下さい。あなたは以下のものを含むバッファーに入り
+ます:
+
+     (nnml "cache")
+
+それを次のように変更して下さい:
+
+     (nnml "cache"
+           (nnml-directory "~/News/cache/")
+           (nnml-active-file "~/News/cache/active"))
+
+サーバーバッファーに戻るには `C-c C-c' をタイプして下さい。今ではこの仮
+想サーバーで `RET' を押すと、閲覧バッファーに入って、表示されているどの
+グループにでも入ることができるはずです。
+
+
+
+File: gnus-ja.info, Node: Server Variables, Next: Servers and Methods, Prev: Creating a Virtual Server, Up: Server Buffer
+
+サーバー変数
+------------
+
+変数を (バックエンドと Emacs 一般の両方で) 定義する際の一つのやっかいな
+点は、いくつかの変数は、概してその変数の定義がロードされるときに他の変
+数で初期化されることです。「基」になる変数がロードされた後でそれを変更
+しても、「派生」した変数は変更されません。
+
+これは一般にディレクトリーやファイルの変数に影響します。例えば
+`nnml-directory' はディフォルトでは `~/Mail/' で、また、すべての
+`nnml' ディレクトリー変数はその変数によって初期化されるので、
+`nnml-active-file' は `~/Mail/active' になります。新しい `nnml' 仮想サー
+バーを定義する場合、`nnml-directory' を設定するだけでは十分では *ありま
+せん*---あなたはすべてのファイル変数を、そうしたいと望んだ値に明示的に
+設定しなければなりません。それぞれのバックエンドのための完全な変数のリ
+ストを見るには、このマニュアルの後に続くそれぞれのバックエンドの部分を
+読んで下さい。でも `nnml' の定義の例はここにあります:
+
+     (nnml "public"
+           (nnml-directory "~/my-mail/")
+           (nnml-active-file "~/my-mail/active")
+           (nnml-newsgroups-file "~/my-mail/newsgroups"))
+
+サーバー変数はしばしば「サーバーパラメーター」と呼ばれます。
+
+
+
+File: gnus-ja.info, Node: Servers and Methods, Next: Unavailable Servers, Prev: Server Variables, Up: Server Buffer
+
+サーバーと選択方法
+------------------
+
+普通に選択方法を使う (例えば外部サーバーから記事を読むときにグループを
+選択する手段として `gnus-secondary-select-method' 使う) 場面ではどこで
+も、代わりに仮想サーバーの名前を使うことができます。これによって、たく
+さんキーボードを叩かなくて済むかもしれません。そして、どんなときでもそ
+の方が良いです。
+
+
+
+File: gnus-ja.info, Node: Unavailable Servers, Prev: Servers and Methods, Up: Server Buffer
+
+使用不可能なサーバー
+--------------------
+
+あるサーバーに接続することができないように見えるとき、Gnus はそのサーバー
+に拒否された (`denied') ことを記録します。その後でそのサーバーと接続し
+ようとするどんな試みも、単に無視されます。実際にそうかどうかを少しも確
+かめずに、Gnus は「接続を開くことができません」と (英語で) 告げます。
+
+それはずいぶんお行儀が悪いと思うかもしれませんが、たいていの場合は有意
+義なのです。例えば `nephelococcdyia.com' というサーバーで十個のグループ
+を購読しているとしましょう。サーバーはどこかとても遠いところにあって、
+そのマシンはとても遅いので、今日それが接続を拒否するかどうかを調べるだ
+けでも一分かかります。もし Gnus がそれを十回試すようになっていたとする
+と、とても煩わしいでしょう。ですから Gnus はそれを試そうとはしません。
+一度でも「接続が拒否された」(connection refused) という結果を受け取った
+なら、それはサーバーが「落ちている」(down) のだ、とみなします。
+
+では、一時的にそのマシンの機嫌が悪いだけだったら何が起こるのでしょう?
+マシンが復活したかどうかをどうすれば調べることができるのでしょう?
+
+それには、サーバーバッファーに移動して (*Note Server Buffer::)、以下の
+命令で突いてみて下さい:
+
+`O'
+     現在の行のサーバーとの接続を確立しようとします
+     (`gnus-server-open-server')。
+
+`C'
+     サーバーとの接続 (もしあれば) を閉じます
+     (`gnus-server-close-server')。
+
+`D'
+     現在のサーバーに接続不可の印を付けます
+     (`gnus-server-open-all-server')。
+
+`M-o'
+     バッファーにあるすべてのサーバーとの接続を開きます
+     (`gnus-server-open-all-servers')。
+
+`M-c'
+     バッファーにあるすべてのサーバーとの接続を閉じます
+     (`gnus-server-close-all-servers')。
+
+`R'
+     Gnus が接続を拒否されたすべてのサーバーの、すべての印を消去します
+     (`gnus-server-remove-denials')。
+
+`L'
+     サーバーの状態をオフラインにします (`gnus-server-offline-server')。
+
+
+
+File: gnus-ja.info, Node: Getting News, Next: Getting Mail, Prev: Server Buffer, Up: Select Methods
+
+ニュースの取得
+==============
+
+ニュースリーダーは普通はニュースを読むために使われます。Gnus は現在は
+ニュースを取得するための二つの方法だけを提供しています---NNTP サーバー
+から、またはローカルスプールから読むことができます。
+
+* Menu:
+
+* NNTP::                        NNTP サーバーからニュースを読む
+* News Spool::                  ローカルスプールからニュースを読む
+
+
+
+File: gnus-ja.info, Node: NNTP, Next: News Spool, Prev: Getting News, Up: Getting News
+
+NNTP
+----
+
+NNTP サーバーから外部グループを購読するのは比較的簡単です。単に選択方法
+として `nntp' を指定し、NNTP サーバーのアドレスを、うーん、アドレスとし
+て指定するだけです。
+
+NNTP サーバーが標準ではないポート (port) に設置されているときは、選択方
+法の三番目の要素をこのポートの番号に設定すれば、正しいポートに接続する
+ことができるでしょう。そのためにはグループ情報を編集しなければなりませ
+ん (*Note Foreign Groups::)。
+
+外部グループの名前は基本グループと同じでも構いません。実際、あなたの思
+うままに同じグループを可能な限りの違ったサーバーから購読することができ
+ます。名前の衝突は起こりません。
+
+以下の変数は仮想 `nntp' サーバーを作るために使われます:
+
+`nntp-server-opened-hook'
+     は接続ができた後に実行されます。それは NNTP サーバーに接続した後に、
+     それに命令を送るために使うことができます。ディフォルトでは `MODE
+     READER' 命令が、`nntp-send-mode-reader' 関数によってサーバーに送ら
+     れるようになっています。この関数は常にこのフックにあるべきです。
+
+`nntp-authinfo-function'
+     この関数は NNTP サーバーに `AUTHINFO' を送るために使われます。ディ
+     フォルトの関数は `nntp-send-authinfo' で、適切な記載事項を探すため
+     に `~/.authinfo' (もしくは `nntp-authinfo-file' 変数に設定した何で
+     も) を調べます。もし一つも見つからなかったら、ログイン名とパスワー
+     ドの入力を要求します。`~/.authinfo' ファイルの様式は `ftp' のため
+     の `~/.netrc' ファイルと (ほとんど) 同じです。それは `ftp' のマニュ
+     アルページで定義されていますが、ここに顕著な実例があります:
+
+       1. ファイルは一つ以上の行を含み、それぞれは一つのサーバーを定義
+          します。
+
+       2. それぞれの行は任意の数の標章 (token) と値の対を含むことができ
+          ます。
+
+          有効な標章は `machine', `login', `password', `default' です。
+          加えて、Gnus は `.netrc'/`ftp' の構文の原型には現れない二つの
+          新しい標章、名付けて `port' と `force' を導入します。(これが
+          `.authinfo' ファイルの様式が `.netrc' ファイルの様式から逸脱
+          する唯一の方法です。) `port' はサーバーのどのポートを認証に用
+          いるかを示し、`force' は以下で説明します。
+
+     これがそのファイルの例です:
+
+          machine news.uio.no login larsi password geheimnis
+          machine nntp.ifi.uio.no login larsi force yes
+
+     標章と値の対はどんな順番ででも現れることができます。例えば
+     `machine' が最初でなければならない必要はありません。
+
+     この例では、前者のサーバーにログイン名とパスワードの両方が与えられ
+     ているのに対して、後者にはログイン名だけがあり、利用者はパスワード
+     の入力を求められるでしょう。後者は `force' タグも持っていて、これ
+     によって接続時に NNTP サーバーに認証情報 (authinfo) が送られます。
+     ディフォルト (すなわち、`force' タグが無いとき) では、NNTP サーバー
+     が認証情報を尋ねない限りそれを NNTP サーバーに送りません。
+
+     `machine' 行に合致しないすべてのサーバーに適用される `default' 行
+     を追加することもできます。
+
+          default force yes
+
+     これは、それ以前に書かれていないすべてのサーバーに `AUTHINFO' 命令
+     を強制的に送ります。
+
+     `~/.authinfo' ファイルを世界中が読めるような設定のままで放置しない
+     ように注意して下さい。
+
+`nntp-server-action-alist'
+     これはサーバーの型に合致する正規表現と、合致が起こったときに取られ
+     る動作の連想リストです。例えば、Gnus に innd に接続したときに毎回
+     ビープ音を鳴らしたいのであれば、次のようにすることができます:
+
+          (setq nntp-server-action-list
+                '(("innd" (ding))))
+
+     まぁ、そんなことをしたいとは思わないでしょうけれどね。
+
+     ディフォルトの値は
+
+          '(("nntpd 1\\.5\\.11t"
+             (remove-hook 'nntp-server-opened-hook
+                          'nntp-send-mode-reader)))
+
+     で、これは nntpd 1.5.11t には `MODE READER' 命令を確実に送らないよ
+     うにします。なぜなら、その命令はサーバーの息の根を止めると聞いてい
+     るからです。
+
+`nntp-maximum-request'
+     もし NNTP サーバーが NOV ヘッダーをサポートしていないのであれば、
+     このバックエンドは `head' 命令をいくつも送って、ヘッダーを集めます。
+     この動作を速くするために、バックエンドは返答を待たずにこの命令をた
+     くさん送り、それからすべての返答を読みます。これは変数
+     `nntp-maximum-request' によって制御され、ディフォルトで 400 です。
+     もしネットワークの具合が良くないようなら、この変数を 1 に設定する
+     べきでしょう。
+
+`nntp-connection-timeout'
+     定期的に接続している外部 `nntp' グループがたくさんあると、ちゃんと
+     応答しなかったり常識的な時間内に返答できないくらいの負荷がかかって
+     いる NNTP サーバーの問題があるはずです。これはやっかいな問題をもた
+     らしますが、`nntp-connection-timeout' を設定することによってある程
+     度解消することができます。これは接続を諦める前に、`nntp' バックエ
+     ンドが何秒待つかを示す整数です。もしこれが `nil' であると、それが
+     ディフォルトですが、時間切れによる切断は行ないません。
+
+`nntp-nov-is-evil'
+     NNTP サーバーが NOV をサポートしていない場合は、この変数を `t' に
+     設定すれば良いでしょう。でも `nntp' は普通は NOV が使えるかどうか
+     を自動的に調べます。(訳注: ですから、わざわざ設定しなくても構いま
+     せん。)
+
+`nntp-xover-commands'
+     サーバーから NOV 行を取得するための命令として使われる文字列のリス
+     トです。この変数のディフォルトの値は `("XOVER" "XOVERVIEW")' です。
+     (訳注: それらを順に試します。)
+
+`nntp-nov-gap'
+     `nntp' は、普通はサーバーに NOV 行のための一つの大きな要
+     求を送ります。サーバーは一つの巨大な行のリストで応答します。しかし、グルー
+     プの 2-5000 の記事を読んだ後で 1 と 5001 を読みたいだけだとしても、
+     `nntp' は必要の無い 4999 個の NOV 行を取得することになり
+     ます。この変数は、どれくらい大きな二つの連続した記事群の間の隔た
+     り (gap) まで `XOVER' の要求を分割せずに送るかを決定します。ネット
+     ワークが速い場合に、この変数を本当に小さな数値に設定してしまうと、おそら
+     く取得が遅くなることに注意して下さい。この変数が `nil' ならば、
+     `nntp' は要求を分割しません。ディフォルトは 5 です。
+
+`nntp-prepare-server-hook'
+     NNTP サーバーに接続を試みる前に実行するフックです。
+
+`nntp-record-commands'
+     これを `nil' でない値にすると、`nntp' は NNTP サーバーに送ったすべ
+     ての命令を (時刻と共に) `*nntp-log*' バッファーに記録します。これ
+     は動作していないように見える Gnus の NNTP 接続をデバッグしていると
+     きに役に立ちます。
+
+`nntp-open-connection-function'
+     どのように NNTP サーバーと接続するかをカスタマイズすることができま
+     す。`nntp-open-connection-function' パラメーターを設定しておくと、
+     Gnus は接続を確立するためにその関数を使います。そのために七つの関
+     数があらかじめ用意されています。それらは二種類に分類することができ、
+     直接接続するための関数群 (四つ) と間接的に接続するためのもの (三つ)
+     があります。
+
+`nntp-prepare-post-hook'
+     記事を投稿する直前に実行されるフックです。もし記事に `Message-ID'
+     ヘッダーが無くてニュースサーバーが推奨 ID を提供してくれるならば、
+     このフックが実行される前にそれが記事に加えられます。これは、もしあ
+     なたが Gnus が `Message-ID' ヘッダーを付けないようにしていても、
+     `Cancel-Lock' ヘッダーを作るために利用することができます。それには
+     こうすれば良いでしょう:
+
+          (add-hook 'nntp-prepare-post-hook 'canlock-insert-header)
+
+     すべてのサーバーが推奨 ID をサポートしているわけではないことに注意
+     して下さい。これは例えば INN 2.3.0 以上で動作します。
+
+* Menu:
+
+* Direct Functions::            サーバーに直接接続する
+* Indirect Functions::          サーバーに間接的に接続する
+* Common Variables::            いくつかの接続用の関数が参照する変数
+* NNTP marks::                  NNTP サーバー用の印の保存
+
+
+
+File: gnus-ja.info, Node: Direct Functions, Next: Indirect Functions, Prev: NNTP, Up: NNTP
+
+直接接続するための関数
+......................
+
+これらの関数は、あなたのマシンと NNTP サーバーを接続するために直接呼ば
+れます。また、それらの動作はそれらが共通に参照する変数に影響されます
+(*Note Common Variables::)。
+
+`nntp-open-network-stream'
+     これはディフォルトで、単純に遠隔システムの何らかのポートに接続しま
+     す。
+
+`nntp-open-tls-stream'
+     「安全な」チャンネルを使ってサーバーに接続します。これを使うために
+     は GNUTLS (http://www.gnu.org/software/gnutls/) をインストールして
+     おかなければなりません。それからサーバーを次のように定義します:
+
+          ;; ポート 563 が "nntps" として `/etc/services' で定義済み
+          ;; であっても、`gnutls-cli -p' でその名前は使えません。
+          ;;
+          (nntp "snews.bar.com"
+                (nntp-open-connection-function nntp-open-tls-stream)
+                (nntp-port-number )
+                (nntp-address "snews.bar.com"))
+
+`nntp-open-ssl-stream'
+     「安全な」チャンネルを使ってサーバーに接続します。これを使うために
+     は OpenSSL (http://www.openssl.org) または SSLeay
+     (ftp://ftp.psy.uq.oz.au/pub/Crypto/SSL) をインストールしておかなけ
+     ればなりません。それからサーバーを次のように定義します:
+
+          ;; ポート 563 が "snews" として `/etc/services' で定義済みで
+          ;; あっても、`openssl s_client -port' でその名前は使えません。
+          ;;
+          (nntp "snews.bar.com"
+                (nntp-open-connection-function nntp-open-ssl-stream)
+                (nntp-port-number 563)
+                (nntp-address "snews.bar.com"))
+
+`nntp-open-telnet-stream'
+     単に `telnet' して NNTP サーバーに接続します。ディフォルトの
+     `nntp-open-network-stream' がそれをするのにもかかわらず、なぜこの
+     関数があるのか不思議に思うかもしれません。その理由 (の一つ) は、も
+     しあなたが防壁の中にいたとしても `runsocks' のようなコマンドラッパー
+     のおかげで外の世界を直接アクセスできるならば、それをこのように使う
+     ことができるのです:
+
+          (nntp "socksified"
+                (nntp-pre-command "runsocks")
+                (nntp-open-connection-function nntp-open-telnet-stream)
+                (nntp-address "the.news.server"))
+
+     Emacs のセッション全体をラップして、ディフォルトのメソッドを使うと
+     いうのは、良い考えではありません。
+
+
+
+File: gnus-ja.info, Node: Indirect Functions, Next: Common Variables, Prev: Direct Functions, Up: NNTP
+
+間接的に接続するための関数
+..........................
+
+これらの関数は、実際に NNTP サーバーに接続する前に中間のホストに接続す
+るために間接的に呼ばれます。すべてのこれらの関数と関連する変数は“via”
+接続の仲間に属しているとも言えるので、それを明確にするためにすべて
+“via”という接頭語が付けられます。また、それらの動作はそれらが共通に参
+照する変数に影響されます (*Note Common Variables::)。
+
+`nntp-open-via-rlogin-and-telnet'
+     遠隔システムに `rlogin' して、そこから本当の NNTP サーバーに
+     `telnet' します。これは、例えばあなたが始めに防壁マシンに接続しな
+     ければならない場合に便利です。
+
+     `nntp-open-via-rlogin-and-telnet'-用の変数:
+
+     `nntp-via-rlogin-command'
+          中間のホストにログインするために使われるコマンドです。ディフォ
+          ルトは `rsh' ですが、`ssh' が人気のある代替手段です。
+
+     `nntp-via-rlogin-command-switches'
+          `nntp-via-rlogin-command' のコマンドのスイッチとして使われる
+          文字列のリストです。ディフォルトは `nil' です。もし `ssh' を
+          `nntp-via-rlogin-command' の値として使うならば、データ接続を
+          圧縮するために `("-C")' を使うことができます。あるいは、もし
+          中間のホストで telnet コマンドが疑似端末を必要とするならば、
+          これを `("-t" "-e" "none")' または `("-C" "-t" "-e" "none")'
+          にして下さい。
+
+     `nntp-end-of-line' の値を `\n' に変更する必要があるであろうことに
+     注意して下さい (*Note Common Variables::)。
+
+`nntp-open-via-rlogin-and-netcat'
+     本質的には同じことなのですが、中間のホストから本当の NNTP サーバー
+     に接続するために、`telnet' の代わりに netcat
+     (http://netcat.sourceforge.net/) を使います。
+
+     `nntp-open-via-rlogin-and-netcat'-用の変数:
+
+     `nntp-via-netcat-command'
+          中間のホストから本当の NNTP サーバーに接続するために使われる
+          コマンドです。ディフォルトは `nc' です。代わりに connect
+          (http://www.imasy.or.jp/~gotoh/ssh/connect.html) のような、他
+          のコマンドを使うこともできます。
+
+     `nntp-via-netcat-switches'
+          `nntp-via-netcat-command' のコマンドのスイッチとして使われる
+          文字列のリストです。ディフォルトは `nil' です。
+
+     `nntp-via-rlogin-command'
+          中間のホストにログインするために使われるコマンドです。ディフォ
+          ルトは `rsh' ですが、`ssh' が人気のある代替手段です。
+
+     `nntp-via-rlogin-command-switches'
+          `nntp-via-rlogin-command' のコマンドのスイッチとして使われる
+          文字列のリストです。ディフォルトは `nil' です。
+
+`nntp-open-via-telnet-and-telnet'
+     これもまた本質的には同じことなのですが、中間のホストに接続するため
+     に `rlogin' の代わりに `telnet' を使います。
+
+     `nntp-open-via-telnet-and-telnet'-用の変数:
+
+     `nntp-via-telnet-command'
+          中間のホストに `telnet' するために使われるコマンドです。ディ
+          フォルトは `telnet' です。
+
+     `nntp-via-telnet-switches'
+          `nntp-via-telnet-command' のコマンドのスイッチとして使われる
+          文字列のリストです。ディフォルトは `("-8")' です。
+
+     `nntp-via-user-password'
+          中間のホストにログインするときに使われるパスワードです。
+
+     `nntp-via-envuser'
+          もし非-`nil' なら、中間の `telnet' のセッション (クライアント
+          とサーバーの両方) で `ENVIRON' オプションをサポートし、ログイ
+          ン名の入力を要求しません。これは例えば Solaris の `telnet' で
+          動作します。
+
+     `nntp-via-shell-prompt'
+          中間のホストでのシェルのプロンプトに合致する正規表現です。ディ
+          フォルトは `bash\\|\$ *\r?$\\|> *\r?' です。
+
+     `nntp-end-of-line' の値を `\n' に変更する必要があるであろうことに
+     注意して下さい (*Note Common Variables::)。
+
+これらは上記のすべての関数が参照する付加的な変数です:
+
+`nntp-via-user-name'
+     中間のホストに接続するときに使う利用者名です。
+
+`nntp-via-address'
+     接続する中間のホストのアドレスです。
+
+
+
+File: gnus-ja.info, Node: Common Variables, Next: NNTP marks, Prev: Indirect Functions, Up: NNTP
+
+共通の変数
+..........
+
+以下の変数は、すべての、またはいくつかのあらかじめ用意されている関数の
+動作に影響を及ぼします。設定されていなければ、すべての関数が影響されま
+す (それぞれの仮想サーバーにおいて、サーバー変数として個々に値が設定さ
+れていない場合に、以下の値がディフォルトで使われます)。
+
+`nntp-pre-command'
+     素の接続用の関数ではないもの (`nntp-open-network-stream'、
+     `nntp-open-tls-stream' または `nntp-open-ssl-stream' 以外のすべて)
+     を通して接続するときに使うコマンドラッパーです。例えばあなたは
+     `SOCKS' ラッパーを割り当てるでしょう。(訳注: `telnet' などの外部コ
+     マンドに被せて使われます。)
+
+`nntp-address'
+     NNTP サーバーのアドレスです。
+
+`nntp-port-number'
+     接続する NNTP サーバーのポート番号です。ディフォルトは `nntp' です。
+     TLS/SSL を介した NNTP を使うには、ポートの名前ではなくて整数 (つま
+     り `snews' や `nntps' ではなくて `563') を指定する必要があります。
+     外部の TLS/SSL ツールはポートの名前では動作しないからです。
+
+`nntp-end-of-line'
+     NNTP サーバーとお話をしているときに行の終わりの印として使われる文
+     字列です。これはディフォルトで `\r\n' ですが、素ではない接続用の
+     telnet 同等の関数を使っているときは `\n' であるべきです。
+
+`nntp-telnet-command'
+     `telnet' を通して NNTP サーバーと接続するときに使うコマンドです。
+     これは中間のホストと接続するためのものでは *ありません*。これはま
+     さに本当の NNTP サーバーと接続するためのものです。ディフォルトは
+     `telnet' です。
+
+`nntp-telnet-switches'
+     `nntp-telnet-command' に渡すスイッチのリストです。ディフォルトは
+     `("-8")' です。
+
+
+
+File: gnus-ja.info, Node: NNTP marks, Prev: Common Variables, Up: NNTP
+
+NNTP marks
+..........
+
+Gnus は NNTP サーバーのための記事の印 (marks) (*Note Marking
+Articles::) を印ファイルに保存します。印ファイルはあるグループで設定し
+た印を記録し、それぞれのファイルは、対応するサーバーに対して専用です。
+印ファイルは、ニュースサーバーに似ている古典的な階層で `~/News/marks'
+(`nntp-marks-directory') に保存されます。例えば news.gmane.org サーバー
+における `gmane.discuss' グループのための印ファイルは
+`~/News/marks/news.gmane.org/gmane/discuss/.marks' に保存されます。
+
+印ファイルは役に立ちます。`~/News/marks' ディレクトリーは (rsync、scp
+または他の何かを使って) Gnus を走らせる別のホストにコピーすることができ、
+どの記事を読んで印を付けたかをそちらで再現します。`~/News/marks' のデー
+タは、`~/.newsrc.eld' にある同じものよりも優先されます。
+
+印ファイルは、それぞれのサーバーでそれ専用に非常に特化されることに注意
+して下さい。Gnus は記事番号を記憶するので、両方のホストで同じサーバーを
+使っていないと、ものごとは壊れてしまうでしょう (大抵の NNTP サーバーは
+他のどんなサーバーとも同じ記事番号を使いません)。しかし、あるホストでサー
+バー A、B、C を使い、別のホストでサーバー A、D、E を使う場合には、A の
+ための印ファイルを同じにすることができるので、二つのホスト間でそのサー
+バーは同期するでしょう。
+
+NNTP 印の使用は性能の劣化を招き、Gnus をのろく感じさせる可能性がありま
+す。そういう場合は `nntp-marks-is-evil' 変数を `t' に設定してみて下さい。
+すると、印は `~/.newsrc.eld' (だけ) に格納されるようになるでしょう。
+
+関連する変数:
+
+`nntp-marks-is-evil'
+     非-`nil' だったら、このバックエンドは印ファイルを無視します。ディ
+     フォルトは `nil' です。
+
+`nntp-marks-directory'
+     NNTP グループの印が格納されるディレクトリーです。
+
+
+
+File: gnus-ja.info, Node: News Spool, Prev: NNTP, Up: Getting News
+
+ニューススプール
+----------------
+
+ローカルスプールから外部グループを購読することは極めて簡単だし便利かも
+しれません。非常に大きな記事があるグループ--例えば
+`alt.binaries.pictures.furniture' を読む速度が速くなります。
+
+とにかく、`nnspool' を選択方法として、かつ `""' (もしくは何でも) をアド
+レスとして指定するだけです。
+
+もしローカルスプールにつなぐことが可能なら、おそらくそれを基本選択方法
+として使うべきでしょう (*Note Finding the News::)。それは普通は `nntp'
+選択方法を使うより速いですが、そうでないかもしれません。それは場合によ
+ります。何があなたのサイトで一番良いかを見つけるために、いろいろと試し
+てみなければなりません。
+
+`nnspool-inews-program'
+     記事を投稿するために使われるプログラムです。
+
+`nnspool-inews-switches'
+     記事を投稿するときに inews プログラムに与えられるパラメーターです。
+
+`nnspool-spool-directory'
+     `nnspool' が記事を探すところです。これは普通は `/usr/spool/news/'
+     です。
+
+`nnspool-nov-directory'
+     `nnspool' が NOV ファイルを探すところです。これは普通は
+     `/usr/spool/news/over.view/' です。
+
+`nnspool-lib-dir'
+     ニュースのライブラリーが置かれているディレクトリーの場所です (ディ
+     フォルトで `/usr/lib/news/' です)。
+
+`nnspool-active-file'
+     アクティブファイルの絶対パス名です。
+
+`nnspool-newsgroups-file'
+     `newsgroups' ファイルの絶対パス名です。
+
+`nnspool-history-file'
+     `history' ファイルの絶対パス名です。
+
+`nnspool-active-times-file'
+     `active.times' ファイルの絶対パス名です。
+
+`nnspool-nov-is-evil'
+     `nil' でないと、`nnspool' はそれが見つけたどんな NOV ファイルも使
+     おうとはしません。
+
+`nnspool-sift-nov-with-sed'
+     `nil' でないと、これがディフォルトですが、概観ファイル (overview)
+     から関連する部分を得るために `sed' を使います。もし `nil' だと、
+     `nnspool' はファイル全体をバッファーに読み込んで、そこで実行します。
+
+
+
+File: gnus-ja.info, Node: Getting Mail, Next: Browsing the Web, Prev: Getting News, Up: Select Methods
+
+メール取得
+==========
+
+ニュースリーダーでメールを読むなんて実に奇妙ですよね?  いや、もちろんで
+きるのですが。
+
+* Menu:
+
+* Mail in a Newsreader::        ニュースリーダーでメール (大事な前置き)
+* Getting Started Reading Mail::  簡単な料理本のような例
+* Splitting Mail::              メールグループの作り方
+* Mail Sources::                どこからメールを取ってくるかを Gnus に知らせる方法
+* Mail Back End Variables::     メールの扱いをカスタマイズするための変数
+* Fancy Mail Splitting::        Gnus は入って来たメールを、身の毛のよだつような分割をすることができる
+* Group Mail Splitting::        グループをカスタマイズしてメールを分割する
+* Incorporating Old Mail::      あなたが持っている古いメールをどうするか?
+* Expiring Mail::               要らないメールを取り除く
+* Washing Mail::                取得したメールからごみを取り除く
+* Duplicates::                  重複したメールを処理する
+* Not Reading Mail::            メールバックエンドで別のファイルを読む
+* Choosing a Mail Back End::    Gnus は色々なメール様式を読むことができる
+
+
+
+File: gnus-ja.info, Node: Mail in a Newsreader, Next: Getting Started Reading Mail, Prev: Getting Mail, Up: Getting Mail
+
+ニュースリーダーでメール
+------------------------
+
+使い慣れた伝統的なメールリーダーから Gnus に乗り換えることを決断したな
+らば、かなりのカルチャーショックを経験することになるでしょう。
+
+Gnus は伝統的なメールリーダーのようなふるまいをしません。あなたが望むな
+らそのようにもできますが、それは骨折り損のくたびれ儲けです。
+
+Gnus はふつう同じ手法ですべてのグループを扱います。あるグループを選んで
+新しい、または未読のメッセージを読むと、それらには既読の印が付けられ、
+(意図的に要求しなければ) 以後はそれらを目にすることはありません。これっ
+てとてもニュースリーダー的でしょ。
+
+メッセージを消すために、取り立てて何かを行なうことはありません。
+
+このことは既読のメッセージはすべて消されてしまうことを意味するのかって?
+そりゃあんまりですよね!
+
+しかし、そうではありません。古いメッセージは何らかの仕組みによって期限切
+れ消去 ("expire") されるのです。ニュースのメッセージはニュースの管理
+人 (が管理しているサーバー) によって期限切れ消去の処理が制御され、メール
+の期限切れ消去の処理はあなたが制御します。メールの期限切れ消去については、
+*Note Expiring Mail:: で徹底的に網羅されています。
+
+多くの Gnus の利用者が、それをニュースとメールの両方でしばらく使ってみ
+た後で気が付くのは、その配送の機構がメッセージの扱い方に関して行なうこ
+とが、ほんの少ししか無いことです。
+
+多くの人たちが複数のメーリングリストを講読しています。それらは SMTP で
+配送されるもの、すなわちメールです。それらのメッセージに返答をしないま
+ま、あるいはさらに、それらを非常に注意深くは読まないままに、私たちは何
+週間も過ごすかもしれません。でも、そういうメッセージを保存しておく必要
+はありません。なぜならば、もう一度読む必要が生じたとしても、それらはど
+こかに保存されているからです。
+
+ある人たちは小人数に利用されているローカルニュースグループを講読してい
+ます。それらは NNTP で配送されるもの、すなわちニュースです。私たちは自
+分の仕事に役立てるために、それらの膨大なメッセージの断片を読んだり返事
+をしなければなりません。しかもそれらがどこかに保存されているとは限らな
+いので、興味のあるメッセージを個人メールと同じように保存しなければなり
+ません。
+
+配送の仕組みの違いはどうでもよいことで、大事なのはいかに主題に興味を持っ
+ているかと、もう一度読みたいときにいかに簡単に呼び出せるかなのです。
+
+Gnus はメールをニュースグループのように「グループ」に並べ変えて、各々の
+グループ (メールかニュース) を別個に扱うための豊富な機能を提供します。
+
+ある人たちは Gnus (えっへん) のやりかたに満足できなくて、Gnus が男
+(male) になること、もとい、メールリーダーになることを欲します。Gnus を
+もっとメールリーダー的なものにするために鞭打つことは可能ではあるのです
+が、前にも言ったように簡単ではありません。いわゆるメールリーダーが好み
+ならば VM を使いましょう。これは優秀な、厳密な意味でのメールリーダーで
+す。
+
+脅かすわけではないのですが、はっきりさせておきたいのは、あなたにメッセー
+ジについての新しいやり方を修得して欲しいということです。あなたが Gnus
+のやり方を受け入れてくれた暁には、きっとあなたは Gnus が好きになるでしょ
+う。請け合いますよ。(少くとも、私が Gnus に入れた Emacs のサブリミナル
+脳味噌洗濯関数を売ってくれた人はそれを保証しています。あなたも同化しま
+す。あなたは Gnus を愛します。あなたは Gnus でのメールの方法を愛します。
+絶対に。)
+
+
+
+File: gnus-ja.info, Node: Getting Started Reading Mail, Next: Splitting Mail, Prev: Mail in a Newsreader, Up: Getting Mail
+
+メールを読むことを始める
+------------------------
+
+Gnus を使って新しいメールを読むことはまったく簡単です。あなたが選んだメー
+ルバックエンドを `gnus-secondary-select-methods' に放り込むだけで、自動
+的に読むことができるようになります。
+
+例えば `nnml' (これは「一メールにつき一ファイル」のバックエンドです) を
+使いたいなら、次のものを `~/.gnus.el' ファイルに入れれば良いでしょう:
+
+     (setq gnus-secondary-select-methods '((nnml "")))
+
+そうすると、次に Gnus を起動したときにこのバックエンドは新しい記事を求
+め、すべてのメッセージをスプールファイルからそのディレクトリー (ディフォ
+ルトでは `~/Mail/') に移します。新しいグループ (`mail.misc') が作られて、
+他のグループと同じように読むことができるようになります。
+
+たぶんメールをいくつかのグループに分割したいでしょうけれど:
+
+     (setq nnmail-split-methods
+           '(("junk" "^From:.*Lars Ingebrigtsen")
+             ("crazy" "^Subject:.*die\\^Organization:.*flabby")
+             ("other" "")))
+
+これは三つの新しい `nnml' メールグループ `nnml:junk', `nnml:crazy' およ
+び `nnml:other' を作ることになります。初めの二つのグループにふさわしく
+ないすべてのメールは、最後のグループに置かれます。
+
+Gnus でメールを読むにはこれで十分なはずです。マニュアルのこの部分の他の
+章を熟読する必要があるかもしれませんが。特に *Note Choosing a Mail
+Back End:: と *Note Expiring Mail:: を。
+
+
+
+File: gnus-ja.info, Node: Splitting Mail, Next: Mail Sources, Prev: Getting Started Reading Mail, Up: Getting Mail
+
+メールの分割
+------------
+
+     訳注: このマニュアルの多方面で使われている「分割」という語のうち、
+     受信したメールをいろいろなグループに「区分け」することを意味するも
+     のは“split”という語に対応します。ある一つのメールを「分解」する
+     のではなくて、外からやって来た複数のメールをそれぞれの格納先に一通
+     ずつ「振り分ける」意味で使っています。
+
+変数 `nnmail-split-methods' は入ってくるメールをどのようにグループ分け
+するかを指定します。
+
+     (setq nnmail-split-methods
+       '(("mail.junk" "^From:.*Lars Ingebrigtsen")
+         ("mail.crazy" "^Subject:.*die\\|^Organization:.*flabby")
+         ("mail.other" "")))
+
+この変数はリストのリストで、それぞれのリストの最初の要素はメールグルー
+プの名前、二つめの要素はそれぞれのメールがそのグループに属するかどうか
+をヘッダーで判定するために使う正規表現です (ところで、メールグループの
+名前が `mail' で始まる必要はありません)。最初の文字列は、
+`replace-match' が合致した文章から取り出した副表現を挿入するために使わ
+れるような、`\\1' の様式を含むかもしれません。例えば:
+
+     ("list.\\1" "From:.* \\(.*\\)-list@majordomo.com")
+
+この場合、挿入されるテキストを小文字にすべきかどうかを
+`nnmail-split-lowercase-expanded' が制御します。*Note Fancy Mail
+Splitting::.
+
+二番目の要素は関数でも構いません。その場合、それは規則の最初の要素 (メー
+ルグループの名前) を引数として、ヘッダーだけに範囲を狭められたバッファー
+で呼ばれます。メールがそのグループに属すると判断したら、その関数は
+`nil' でない値を返す必要があります。
+
+これらのグループの最後は常に総合的なものであるべきで、その正規表現は他
+の正規表現に合致しなかったメールに合致するために、*いつも* `""' でなけ
+ればなりません。(これらの規則は連想リストの初めから終わりまで順番に処理
+されます。クロスポストを有効にしていない限り、最初に合致した規則が「勝
+ち」ます。クロスポストを有効にしている場合は、すべての合致した規則が
+「勝ち」ます。) 合致する規則がなかったら、メールは最後に `bogus' グルー
+プで終わります。メール分割によって新しいグループが作られた場合は、それ
+らを見るために `gnus-group-find-new-groups' を実行する必要があるでしょ
+う。これは `bogus' グループにも当てはまります。
+
+あなた自身でこれをいじくりまわしたいときは、あなたの選んだ関数をこの変
+数に設定することができます。この関数は入って来たメールメッセージのヘッ
+ダーに範囲を狭められたバッファーで、引数無しで呼ばれます。この関数は、
+そのメールメッセージをが行くべきだと判断するグループ名のリストを返さな
+ければなりません。
+
+すべてのメールバックエンドは、入って来た気の毒な無実のヘッダーを乱暴に
+扱っても良いことに注意して下さい。それらはすべて `Lines' ヘッダーを追加
+します。いくつかは `X-Gnus-Group' ヘッダーを加えます。たいていのものは
+Unix の mbox の `From<SPACE>' 行を何か別のものに変えます。
+
+すべてのメールバックエンドはクロスポストをサポートします。複数の正規表
+現が合致すると、メールはそれらすべてのグループに「クロスポスト」されま
+す。`nnmail-crosspost' はこの機能を使うかどうかを指定します。どの記事も
+総合の (`""') グループにクロスポストされないことに注意して下さい。
+
+`nnmh' と `nnml' はクロスポストされた記事にハードリンク (hardlink) を作
+ることによってクロスポストを行ないます。しかし、すべてのファイルシステ
+ムがハードリンクの機能を提供しているわけではありません。もしあなたがそ
+の場合に当てはまるのであれば、`nnmail-crosspost-link-function' を
+`copy-file' に設定して下さい。(この変数はディフォルトで
+`add-name-to-file' です。)
+
+以前に行なわれたメール分割がメッセージをどこに入れたかを見たい場合は、
+`M-x nnmail-split-history' 命令を使って下さい。これからスプールし直そう
+とするメッセージがどこに入るかを見たい場合は、
+`gnus-summary-respool-trace' および関連する命令 (*Note Mail Group
+Commands::) を使って下さい。
+
+`nnmail-split-header-length-limit' の制限より長いヘッダー行は、分割関数
+の処理対象から除外されます。
+
+ディフォルトでは分割の処理においてヘッダーを MIME デコードするので、
+非-ASCII 文字列に合致させることができます。変数
+`nnmail-mail-splitting-charset' で、デコードするときのディフォルトの文
+字セットを指定します。`nnmail-mail-splitting-decodes' を `nil' に束縛す
+ることによってまったくデコードを行なわないようにすることができ、それは、
+生のヘッダーのデータを元に記事の合致を判定したい場合には役立つでしょう。
+
+ディフォルトでは入ってくるすべてのメッセージに対して分割の処理が行なわ
+れます。しかし、もし `mail-sources' 変数 (*Note Mail Source
+Specifiers::) に `directory' の項目を設定すると、ディフォルトでは分割は
+*行なわれません*。変数 `nnmail-resplit-incoming' を `nil' ではない値に
+設定すれば、この場合でも分割を起こさせることができます。(この変数は他の
+種類の項目に対しては効果がありません。)
+
+Gnus はあなた自身に災いが及ぶ可能性あっても、あなたが望むすべての機会を
+提供します。例えば、あなたの上司からくるすべてのメールを入れるグループ
+を作ったとしましょう。その後、偶発的にそのグループの購読をやめてしまう
+とどうなるでしょう。それでも Gnus は上司からのすべてのメールを未購読の
+グループに入れるので、上司が「月曜日までにその報告書を準備しないと首だ!」
+というメールをあなたに送っても、あなたはそれを見ることはなく、火曜日に
+なって本当は翌月の家賃を払うために空のボトルを集めるべきであっても、ま
+だ有給で雇われていると信じているかもしれません。
+
+
+
+File: gnus-ja.info, Node: Mail Sources, Next: Mail Back End Variables, Prev: Splitting Mail, Up: Getting Mail
+
+メールソース
+------------
+
+メールはたくさんの別のソース (source) から取得することができます--例え
+ばメールスプールから、POP メールサーバーから、procmail ディレクトリーか
+ら、maildir から。
+
+* Menu:
+
+* Mail Source Specifiers::      メールのソースがどこかを指定する
+* Mail Source Customization::   ものごとに影響するいくつかの変数
+* Fetching Mail::               メールソース指示子を使う
+
+
+
+File: gnus-ja.info, Node: Mail Source Specifiers, Next: Mail Source Customization, Prev: Mail Sources, Up: Mail Sources
+
+メールソース指示子
+..................
+
+「メールソース指示子」に `メールソース' (*Note Fetching Mail::) を設定
+して、Gnus にメールを取得する方法を指示しましょう。
+
+例です:
+
+     (pop :server "pop3.mailserver.com" :user "myname")
+
+ご覧のように、メールソース指示子はリストで、最初の要素は「メールソース
+の型」、それに任意の数の「キーワード」が続きます。明示的に指定されてい
+ないキーワードはディフォルト値になります。
+
+以下のメールソースの型が使用可能です:
+
+`file'
+     単一のファイルからメールを取得します。普通はメールスプールです。
+
+     キーワード:
+
+     `:path'
+          ファイルの名前です。ディフォルトは `MAIL' 環境変数の値か
+          `rmail-spool-directory' の値 (普通は
+          `usr-mail/spool/user-name' のようなもの) です。
+
+     `:prescript'
+     `:postscript'
+          それぞれのメールを取得する前と後で実行するスクリプトです。
+
+     ファイルメールソースの例:
+
+          (file :path "/usr/spool/mail/user-name")
+
+     もしくは、ディフォルトのファイル名を使うと:
+
+          (file)
+
+     メールスプールファイルがローカルマシンに無い場合は、POP や IMAP な
+     どでメールを取得するのが最善です。ここでは ange-ftp のファイル名は
+     使用できません--メールを移動しているときにメールスプールをロックす
+     る方法がありません。
+
+     適当なサーバーを設置することが不可能なら、変わりに ssh を使うこと
+     ができます。
+
+          (setq mail-sources
+                '((file :prescript "ssh host bin/getmail >%t")))
+
+     `getmail' スクリプトは以下のようなものになるでしょう:
+
+          #!/bin/sh
+          #  getmail - move mail from spool to stdout
+          #  flu@iki.fi
+
+          MOVEMAIL=/usr/lib/emacs/20.3/i386-redhat-linux/movemail
+          TMP=$HOME/Mail/tmp
+          rm -f $TMP; $MOVEMAIL $MAIL $TMP >/dev/null && cat $TMP
+
+     あなたが使いたい `movemail' に合わせて、スクリプトを書き換えて下さ
+     い。
+
+`directory'
+     特定のディレクトリーにある複数のファイルからメールを取得します。こ
+     れは普通は procmail に新しいメールをいくつかのファイルに分割させて
+     いるときに使われます。すなわち、そのディレクトリーにあるファイルと
+     グループは一対一で対応しているので、`foo.bar.spool' ファイルにある
+     メールは `foo.bar' グループに置かれます (接尾語の `.spool' は変更
+     可能です)。`nnmail-scan-directory-mail-source-once' を `nil' 以外
+     の値にすると、Gnus に新しいメールソースを一回だけ調べさせることが
+     できます。これは特に、指定したレベルのメールグループだけを調べたい
+     ときに便利です。
+
+     `nnmail-resplit-incoming' という変数もあり、これを非-`nil' にする
+     と通常の分割処理がそのディレクトリーにあるすべてのファイルに対して
+     行なわれます (*Note Splitting Mail::)。
+
+     キーワード:
+
+     `:path'
+          ファイルがあるディレクトリーの名前です。これにはディフォルト
+          値はありません。
+
+     `:suffix'
+          この接尾語で終わる名前ファイルだけが使われます。ディフォルト
+          は `.spool' です。
+
+     `:predicate'
+          この述語が `nil' でない値を返すファイルだけが使われます。ディ
+          フォルトは `identity' です。これは追加の選別器として使用され
+          ます--正しい接尾語で、*かつ* この述語を満足するファイルだけが
+          対象になります。
+
+          訳注: この場合の述語は関数で、正しい接尾語を持つファイルの名
+          前が引数として渡されます。
+
+     `:prescript'
+     `:postscript'
+          それぞれのメールを取得する前と後で実行するスクリプトです。
+
+     ディレクトリーメールソースの例です:
+
+          (directory :path "/home/user-name/procmail-dir/"
+                     :suffix ".prcml")
+
+`pop'
+     POP サーバーからメールを取得します。
+
+     キーワード:
+
+     `:server'
+          POP サーバーの名前です。ディフォルトは `MAILHOST' 環境変数か
+          ら取得されます。
+
+     `:port'
+          POP サーバーのポート番号です。これは数値 (例えば `:port
+          1234') か文字列 (例えば `:port "pop3"') です。もし文字列なら
+          Unix システムにおける `/etc/services' に載っているサービス名
+          でなければなりません。ディフォルトは `"pop3"' です。システム
+          によっては `"pop-3"' としなければならないかもしれません。
+
+     `:user'
+          POP サーバーに与える利用者名です。ディフォルトはログイン名です。
+
+     `:password'
+          POP サーバーに与えるパスワードです。設定しないと利用者は入力
+          を求められます。
+
+     `:program'
+          POP サーバーからメールを取得するために使用されるプログラムで
+          す。これは `format' で使うような文字列でなければなりません。
+          例です:
+
+               fetchmail %u@%s -P %p %t
+
+          有効な書法仕様指示子は:
+
+          `t'
+               メールがそこに移動させられるファイルの名前です。これは常
+               にこの文字列に含まれていなければなりません。
+
+          `s'
+               サーバーの名前です。
+
+          `P'
+               サーバーのポート番号です。
+
+          `u'
+               使用する利用者名です。
+
+          `p'
+               使用するパスワードです。
+
+          これらの仕様で使われる値は、対応するキーワードに与えた値から
+          取られます。
+
+     `:prescript'
+          メールを取得する前に実行されるスクリプトです。構文は
+          `:program' キーワードと同じです。これは実行される関数であるこ
+          ともできます。
+
+     `:postscript'
+          メールを取得した後で実行されるスクリプトです。構文は
+          `:program' キーワードと同じです。これは実行される関数であるこ
+          ともできます。
+
+     `:function'
+          POP サーバーからメールを取得するために使う関数です。その関数
+          は一つのパラメーター (メールがそこへ移動されるべきファイルの
+          名前) とともに呼ばれます
+
+     `:authentication'
+          これは `password' かシンボル `apop' のどちらかで、何の認証方
+          式を使うかを指示します。ディフォルトは `password' です。
+
+     `:program' と `:function' キーワードが指定されていない場合は
+     `pop3-movemail' が使われます。`pop3-movemail' を使う場合に
+     `pop3-leave-mail-on-server' が非-`nil' だったら、メールは取得した
+     後でも POP サーバーに残されます。POP サーバーはセッションとセッショ
+     ンの間の状態の情報を維持しないので、そこにあるクライアントが信頼で
+     きる情報と、実際にそこにあるものは一致しないかもしれないことに注意
+     して下さい。それらが一致しないとすべてが崩壊して、あなたは壊れたメー
+     ルボックスとともに置き去りにされる可能性があります。
+
+          訳注: Gnus に含まれている `pop3.el' を使う場合に
+          `pop3-leave-mail-on-server' を非-`nil' に設定するのは、あまり
+          意味がありません。サーバーに残されたメールは、次回に (何度で
+          も) 再び取り込まれてしまいます。一度取り込んだメールを二度と
+          取得しないようにする機能を持つ `pop3.el' は T-gnus に含まれて
+          います。これは XEmacs 用に開発されたものが元になっています。
+          しかし、残念ながら誰が開発したかがわかりません。したがって
+          FSF への正式な権利譲渡が行なわれていないので、Gnus に含めるこ
+          とができないのです。
+
+          参考: 以下は T-gnus の `pop3.el' を使う場合に自動的に追加され
+          るメールソース用のキーワードです:
+
+          `:connection'
+               サーバーに接続するときに使うストリームで、`ssl'、`tls'
+               または `nil' を指定することができます。ディフォルトは
+               `nil' で、安全ではない接続を用います。`ssl' と `tls' で
+               は外部プログラムとライブラリーが必要であることに注意して
+               下さい:
+
+               `ssl'
+                    SSL を使います。OpenSSL (`openssl' プログラム) か
+                    SSLeay (`s_client') と外部ライブラリー `ssl.el' が
+                    必要です。
+
+               `tls'
+                    STARTTLS (SSL に類似) を使います。外部ライブラリー
+                    `starttls.el' と `starttls' プログラムが必要です。
+
+          `:leave'
+               非-`nil' でメールをサーバーに残し、メッセージの取得に
+               UIDL を使います。ディフォルトは `nil' です。
+
+     いくつか例を挙げます:
+
+     ディフォルトの利用者名を使って、ディフォルトの POP サーバーから取
+     得し、ディフォルトの取得方法を使用します:
+
+          (pop)
+
+     指名したサーバーから、指名した利用者とパスワードで取得します:
+
+          (pop :server "my.pop.server"
+               :user "user-name" :password "secret")
+
+     メールの移動に `movemail' を使います:
+
+          (pop :program "movemail po:%u %t %p")
+
+`maildir'
+     Maildir からメールを取得します。これは少なくとも qmail と postfix
+     によってサポートされているメールボックスの形式で、特別のディレクト
+     リーにあるそれぞれのファイルは、厳密に一通のメールを含んでいます。
+
+     キーワード:
+
+     `:path'
+          メールが保存されるディレクトリーの名前です。ディフォルトは環
+          境変数 `MAILDIR' から取得した値か、または `~/Maildir/' です。
+     `:subdirs'
+          Maildir のサブディレクトリーです。ディフォルトは `("new"
+          cur")' です。
+
+          リモートマシンからメールを取り寄せることも出来ます。(というの
+          も、maildir はロックの問題を気にせずに済むからです。)
+
+     Maildir メールソースの例をふたつ:
+
+          (maildir :path "/home/user-name/Maildir/"
+                   :subdirs ("cur" "new"))
+
+          (maildir :path "/user@remotehost.org:~/Maildir/"
+                   :subdirs ("new"))
+
+`imap'
+     IMAP サーバーからメールを取得します。何らかの理由で、IMAP をそれが
+     意図されたようなネットワーク上でメールを読むプロトコルとしては (す
+     なわち `nnimap' で) 使いたくないときは、Gnus では POP サーバーと同
+     様に扱って、指定された IMAP メールボックスから記事を取得することが
+     できます。詳しくは *Note IMAP:: を参照して下さい。
+
+     Kerberos, GSSAPI, TLS/SSL および STARTTLS のための外部プログラムと
+     ライブラリーが必要であることに留意して下さい。*Note IMAP::.
+
+     キーワード:
+
+     `:server'
+          IMAP サーバーの名前。ディフォルトは環境変数 `MAILHOST' から得
+          ます。
+
+     `:port'
+          IMAP サーバーのポート番号。普通はディフォルトは `143' で、
+          TLS/SSL 接続には `993' です。
+
+     `:user'
+          IMAP サーバーに渡す利用者名です。ディフォルトはログイン名です。
+
+     `:password'
+          IMAP サーバーに渡すパスワードです。指定されていないときは、利
+          用者は入力することを促されます。
+
+     `:stream'
+          サーバーに接続するときに使うストリーム。`imap-stream-alist' にある
+          シンボルの中のひとつを設定します。現状では `gssapi',
+          `kerberos4', `starttls', `tls', `ssl',
+          `shell' またはディフォルトの `network' になります。
+
+     `:authentication'
+          サーバーでの認証にどの認証法を使うか。これには
+          `imap-authenticator-alist' で定義されているシンボルの一つを設
+          定します。現状では `gssapi', `kerberos4', `digest-md5',
+          `cram-md5', `anonymous' またはディフォルトの `login' になりま
+          す。
+
+     `:program'
+          :stream に `shell' が設定されているときは、この値が変数
+          `imap-shell-program' に割り当てられます。これは `format' ふう
+          の文字列 (または文字列のリスト) でなければなりません。例を示
+          しましょう:
+
+               ssh %s imapd
+
+          有効な書法仕様指示子は以下の通りです。
+
+          `s'
+               サーバーの名前。
+
+          `l'
+               `imap-default-user' で設定された利用者名。
+
+          `p'
+               サーバーのポート番号。
+
+          これらの指定に使われる値は、対応するキーワードに与えた値から
+          取ってきます。
+
+     `:mailbox'
+          メールを取得するメールボックスの名前。ディフォルトは `INBOX'
+          で、これは普通は入ってくるメールを受け取るメールボックスです。
+
+     `:predicate'
+          取得する記事を見つけるために使われる述語。ディフォルトの、
+          `UNSEEN UNDELETED' はおそらくたいていの人には最良の選択でしょ
+          うが、ときどき IMAP クライアントでメールボックスを覗いて、い
+          くつかの記事に既読 (または SEEN) の印を付けるなら、これを
+          `1:*' に設定する必要があるかもしれません。そうすれば、メール
+          ボックスのすべての記事は印の如何に関わらず取得されます。述語
+          の完全な一覧は、RFC2060 の 6.4.4 節を読んで下さい。
+
+     `:fetchflag'
+          サーバーで、取得した記事にフラグを付ける方法。ディフォルトの
+          `\Deleted' はそれらに消去のフラグを付けますが、単に既読のフラ
+          グを付けるための `\Seen' が代案になるでしょう。これらは最もあ
+          りそうな二つの選択ですが、他のフラグも RFC2060 の 2.3.2 節で
+          定義されています。
+
+     `:dontexpunge'
+          `nil' でなかったら、記事を取得した後で、それらに消去の印が付
+          いていても削除しません。
+
+     IMAP メールソースの例:
+
+          (imap :server "mail.mycorp.com"
+                :stream kerberos4
+                :fetchflag "\\Seen")
+
+`webmail'
+     `http://www.hotmail.com/', `http://webmail.netscape.com/',
+     `http://www.netaddress.com/', `http://www.yahoo.com/' などのウェブ
+     メールサーバーからメールを取得します。
+
+     注: ウェブメールはクッキーに大きく依存します。url "4.0pre.46" を使
+     う場合は "one-line-cookie" パッチを当てる必要があります。
+
+     警告: メールが失われるかもしれません。無保証です。
+
+     キーワード:
+
+     `:subtype'
+          ウェブメールサーバーの型です。ディフォルトは `hotmail' です。
+          他の候補には `netscape', `netaddress', `my-deja' があります。
+
+     `:user'
+          ウェブメールサーバーに渡す利用者名です。ディフォルトはログイ
+          ン名です。
+
+     `:password'
+          ウェブメールサーバーに渡すパスワードです。指定しない場合は、
+          利用者は入力することを促されます。
+
+     `:dontexpunge'
+          `nil' でなかったら、未読の記事だけを取得し、かつ取得後にそれ
+          らをごみ箱のフォルダーに移動しません。
+
+     ウェブメールのソースの例です:
+
+          (webmail :subtype 'hotmail
+                   :user "user-name"
+                   :password "secret")
+
+"Common Keywords"
+     共通キーワードはどんな型のメールソースにも使うことができます。
+
+     キーワード:
+
+     `:plugged'
+          `nil' でなかったら、Gnus が unplugged (ネットワークから切り離
+          されている状態) であってもメールを取得します。ディレクトリー
+          をメールソースに使っているのならば、この例のように指定するこ
+          とができます:
+
+               (setq mail-sources
+                     '((directory :path "/home/pavel/.Spool/"
+                                  :suffix ""
+                                  :plugged t)))
+
+          こうしておくことによって unplugged であっても Gnus はメールを
+          取得します。これはローカルのメールとニュースを使う場合に便利
+          です。
+
+
+関数インターフェース
+....................
+
+上記のいくつかのキーワードは、実行するための Lisp 関数を指定します。関
+数が実行されている間だけ、それぞれのキーワード `:foo' に対して Lisp 変
+数 `foo' が、そのキーワードの値に束縛されます。例えば、以下のメールソー
+スの設定例について考えてみて下さい。
+
+     (setq mail-sources '((pop :user "jrl"
+                               :server "pophost" :function fetchfunc)))
+
+関数 `fetchfunc' が実行されているとき、`user' というシンボルの値は
+`"jrl"' に束縛され、`server' というシンボルの値は `"pophost"' に束縛さ
+れます。`port', `password', `program', `prescript', `postscript',
+`function' および `authentication' の値もまた (それらのディフォルト値に)
+束縛されます。
+
+それぞれの型のメールソースのためのキーワードのリストについては、前述の
+説明を参照して下さい。
+
+
+
+File: gnus-ja.info, Node: Mail Source Customization, Next: Fetching Mail, Prev: Mail Source Specifiers, Up: Mail Sources
+
+メールソースのカスタマイズ
+..........................
+
+以下はメールの取得方法に影響する変数の一覧です。普通はこれらのどれも設
+定または変更する必要は無いでしょう。
+
+`mail-source-crash-box'
+     メールが、それを処理している期間中に格納されている場所です。ディフォ
+     ルトは `~/.emacs-mail-crash-box' です。
+
+`mail-source-delete-incoming'
+     `nil' でなければ、入って来たメールを一時的に格納したファイルを、そ
+     れを処理した後で消去します。`t' ではファイルをただちに消去し、
+     `nil' ではいかなるファイルも消しません。正の数だった場合は、その日
+     数以上に古いファイルを消去します (消去は新着メールを受け取るときだ
+     け行なわれます)。`mail-source-delete-incoming' を `nil' にしておい
+     て、`mail-source-delete-old-incoming' をフックで呼ぶか、または対話
+     的に呼ぶこともできます。
+
+`mail-source-delete-old-incoming-confirm'
+     非-`nil' だったら、古い incoming (メールの到着時に使われた) ファイ
+     ルを消去するときに確認を求めます。この変数は
+     `mail-source-delete-incoming' が正の数である場合だけ使われます。
+
+`mail-source-ignore-errors'
+     非-`nil' だったら、メールソースからメールを読むときのエラーを無視
+     します。
+
+`mail-source-directory'
+     入ってきたメールソースのファイルが (もしあれば) 格納されるディレク
+     トリーです。ディフォルトは `~/Mail/' です。現時点でこれが使われる
+     唯一のものは、変数 `mail-source-delete-incoming' が `nil' または数
+     値であった場合に、入ってきたメールを格納するファイルの置き場所の指
+     定です。
+
+`mail-source-incoming-file-prefix'
+     入ってきたメールを一時的に格納するファイルの名前の接頭語です。ディ
+     フォルトは `Incoming' で、この場合ファイルは `Incoming30630D_' や
+     `Incoming298602ZD' のようになります。これが本当に関係するのは
+     `mail-source-delete-incoming' が `nil' または数値の場合だけすが。
+
+`mail-source-default-file-modes'
+     すべての新しいメールファイルはこのファイルモードになります。ディフォ
+     ルトは 384 です。
+
+`mail-source-movemail-program'
+     `nil' でなかったら、新着メールを取り込むためのプログラムの名前であ
+     ると解釈されます。`nil' だったら `exec-directory' にある
+     `movemail' が使われます。
+
+
+

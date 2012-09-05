@@ -1,0 +1,2104 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Frame Titles, Next: Deleting Frames, Prev: Frame Parameters, Up: Frames
+
+フレームタイトル
+================
+
+各フレームにはパラメータ`name'があります。これは、典型的にはウィンドウ
+システムがフレームの先頭に表示するフレームタイトルのデフォルトにもなり
+ます。フレーム属性`name'に設定することで明示的に名前を指定できます。
+
+通常は名前を明示的に指定しないでしょうから、変数`frame-title-format'に
+保持してある雛型からEmacsが自動的にフレーム名を計算します。Emacsは、フ
+レームを再表示するたびに名前を再計算します。
+
+ -- Variable: frame-title-format
+     この変数は、読者がフレーム名を明示的に指定しなかったときの
+     フレーム向けの名前の計算方法を指定する。
+     変数の値は実際には、`mode-line-format'のようなモード行構成である。
+     *Note Mode Line Data::。
+
+ -- Variable: icon-title-format
+     この変数は、フレームタイトルを明示的に指定しなかったときのアイコン
+     にしたフレーム向けの名前の計算方法を指定する。これはアイコンそのも
+     のに現れる。
+
+ -- Variable: multiple-frames
+     この変数はEmacsが自動的に設定する。（ミニバッファ専用のフレームや
+     不可視フレームを数えずに）複数個のフレームがあるとこの値が`t'であ
+     る。`frame-title-format'のデフォルト値では`multiple-frames'を使っ
+     ており、複数のフレームがあるときに限りフレームタイトルにバッファ名
+     が入るようにする。
+
+
+
+File: elisp-ja, Node: Deleting Frames, Next: Finding All Frames, Prev: Frame Titles, Up: Frames
+
+フレームの削除
+==============
+
+フレームを明示的に"削除"（delete）しない限り、フレームは見える可能性が
+あります。フレームを削除するとスクリーンに表示できなくなりますが、それ
+を参照するものがなくならない限りLispオブジェクトとしては存在し続けます。
+保存したフレーム構成（*Note Frame Configurations::）を復元する以外には、
+フレームの削除を取り消すことはできません。これはウィンドウと同様です。
+
+ -- コマンド: delete-frame &optional FRAME
+     この関数はフレームFRAMEを削除する。デフォルトでは、FRAMEは選択され
+     ているフレームである。
+
+ -- Function: frame-live-p FRAME
+     関数`frame-live-p'は、フレームFRAMEが削除されていなければ
+     `nil'以外を返す。
+
+ウィンドウを削除するコマンドを与えるウィンドウマネージャもあります。
+それらは、ウィンドウを操作しているプログラムに特別なメッセージを
+送ることで動作します。
+Emacsがそのようなコマンドを受け取ると、
+イベント`delete-frame'を生成します。
+このイベントの普通の定義は、関数`delete-frame'を呼び出すコマンドです。
+*Note Misc Events::。
+
+
+
+File: elisp-ja, Node: Finding All Frames, Next: Frames and Windows, Prev: Deleting Frames, Up: Frames
+
+すべてのフレームを探す
+======================
+
+ -- Function: frame-list
+     関数`frame-list'は、削除されていないすべてのフレームから成るリスト
+     を返す。これは、バッファに対する`buffer-list'に相当する。得られる
+     リストは新たに作成したものであり、このリストを変更してもEmacs内部
+     にはなんの効果もない。
+
+ -- Function: visible-frame-list
+     この関数は、現在可視のフレームだけのリストを返す。*Note
+     Visibility of Frames::。（選択されているフレームだけが実際に表示さ
+     れている場合でも、端末フレームはすべてつねに『可視』とみなす。）
+
+ -- Function: next-frame &optional FRAME MINIBUF
+     関数`next-frame'により、任意の位置から始めてすべてのフレームを便利
+     に巡回できる。巡回順の中でFRAMEの『つぎ』のフレームを返す。FRAMEを
+     省略したり`nil'であると、デフォルトでは選択されているフレームを使
+     う。
+
+     第2引数MINIBUFは、対象とするフレームを指定する。
+
+     `nil'
+          ミニバッファ専用のフレームを除外する。
+     `visible'
+          すべての可視なフレームを対象にする。
+     0
+          すべての可視なフレームやアイコンにしたフレームを対象にする。
+     ウィンドウ
+          ミニバッファとして特定のウィンドウを使っているフレームのみを
+          対象にする。
+     その他
+          すべてのフレームを対象にする。
+
+ -- Function: previous-frame &optional FRAME MINIBUF
+     `next-frame'と同様であるが、すべてのフレームを逆方向に巡回する。
+
+*Note Cyclic Window Ordering::の`next-window'と`previous-window'も参照
+してください。
+
+
+
+File: elisp-ja, Node: Frames and Windows, Next: Minibuffers and Frames, Prev: Finding All Frames, Up: Frames
+
+フレームとウィンドウ
+====================
+
+各ウィンドウはある1つのフレームだけの一部であり、
+`window-frame'で当該フレームを得られます。
+
+ -- Function: window-frame WINDOW
+     この関数は、WINDOWが属するフレームを返す。
+
+フレーム内のミニバッファ用以外のすべてウィンドウには、巡回順序がついて
+います。その順序は、フレームの左上隅の先頭のウィンドウから始まって、右
+下隅のウィンドウ（フレームにミニバッファがあれば、これはつねにミニバッ
+ファ用ウィンドウ）に達するまで下向き右向きに進み、そして先頭へ戻ります。
+
+ -- Function: frame-top-window FRAME
+     この関数は、フレームFRAMEのもっとも上端のもっとも左端の先頭のウィ
+     ンドウを返す。
+
+ある時点では、各フレームではたった1つのフレームが
+"当該フレームで選択されている"のです。
+このような区別の意味は、
+フレームを選択するとそのようなウィンドウも選択されるということです。
+フレームで現在選択されているフレームは
+`frame-selected-window'で得られます。
+
+ -- Function: frame-selected-window FRAME
+     この関数は、フレームFRAMEで選択されている
+     FRAME内のウィンドウを返す。
+
+逆に、`select-window'でEmacsのウィンドウを選ぶと、
+それがそのフレームで選択されているウィンドウになります。
+*Note Selecting Windows::。
+
+指定したフレームのウィンドウの1つを返す別の関数は
+`minibuffer-window'です。
+*Note Minibuffer Misc::。
+
+
+
+File: elisp-ja, Node: Minibuffers and Frames, Next: Input Focus, Prev: Frames and Windows, Up: Frames
+
+ミニバッファとフレーム
+======================
+
+通常、各フレームにはそれ独自のミニバッファ用ウィンドウが底にあり、フレー
+ムが選択されているときにはいつもそれが使われます。フレームにミニバッファ
+があれば、`minibuffer-window' （*Note Minibuffer Misc::）でそれを得られ
+ます。
+
+しかし、ミニバッファのないフレームを作ることもできます。そのようなフレー
+ムでは、別のフレームのミニバッファ用ウィンドウを使う必要があります。そ
+のようなフレームを作成するときには、使用する（他のフレームの）ミニバッ
+ファを明示的に指定できます。そうしないと、変数
+`default-minibuffer-frame'の値で指定されるフレームのミニバッファを使い
+ます。その値は、ミニバッファを有したフレームである必要があります。
+
+ミニバッファ専用のフレームを使うときは、
+ミニバッファで入力するときにそのフレームが
+自動的に手前にくるようにしたいでしょう。
+そうしたい場合には、変数`minibuffer-auto-raise'に`t'に設定します。
+*Note Raising and Lowering::。
+
+ -- Variable: default-minibuffer-frame
+     この変数は、デフォルトで使うミニバッファ用ウィンドウのフレームを指定する。
+     この変数は現在の端末につねにローカルであり、
+     バッファローカルにはなりえない。
+     *Note Multiple Displays::。
+
+
+
+File: elisp-ja, Node: Input Focus, Next: Visibility of Frames, Prev: Minibuffers and Frames, Up: Frames
+
+入力フォーカス
+==============
+
+ある時点では、Emacsの1つのフレームが"選択されているフレーム"
+（selected frame）です。選択されているウィンドウは選択されているフレー
+ムの中につねにあります。
+
+ -- Function: selected-frame
+     この関数は選択されているフレームを返す。
+
+マウスが入っているウィンドウにキーボード入力を振り向けるウィンドウシス
+テムやウィンドウマネージャがあります。ウィンドウに"フォーカスを置くため
+に"、明示的にクリックしたりコマンドを必要とするものもあります。いずれで
+あっても、Emacsはどのフレームにフォーカスがあるかを自動的に追跡します。
+
+Lispプログラムからは、関数`select-frame'を呼ぶことで、『一時的に』フレー
+ムを切り替えることもできます。これは、ウィンドウシステムのフォーカスは
+変えません。というよりは、プログラムで指定するまでウィンドウシステムの
+制御を回避します。
+
+文字端末を使っているときには、選択されているフレームのみが端末に実際に
+表示されます。フレームを切り替える唯一の方法は`switch-frame'であり、そ
+れ以降に`switch-frame'を呼び出すまで切り替えた効果は持続します。初期フ
+レーム以外の各端末フレームには番号が付いていて、選択されているフレーム
+の番号がモード行内のバッファ名のまえに現れます（*Note Mode Line
+Variables::）。
+
+ -- Function: select-frame FRAME
+     この関数はフレームFRAMEを選択し、Xサーバーのフォーカスを一時的に無
+     視する。FRAMEを選択している状態は、ユーザーが別のフレームを選択す
+     る動作を行うか再度この関数が呼ばれるまで持続する。
+
+サーバーやウィンドウマネジャーの要請にしたがって
+フレームを選択するようにして、
+Emacsはウィンドウシステムと協調します。
+必要なときには"focus"イベントと呼ばれる特別な入力イベントを
+生成することでこのようにします。
+コマンドループは`handle-switch-frame'を呼び出すことで
+イベント"focus"を処理します。
+*Note Focus Events::。
+
+ -- コマンド: handle-switch-frame FRAME
+     この関数は、フレームFRAMEを選択することでフォーカスイベントを処理
+     する。
+
+     フォーカスイベントは、通常、このコマンドを起動することで処理される。
+     それ以外の理由ではこれを呼び出さないこと。
+
+ -- Function: redirect-frame-focus FRAME FOCUS-FRAME
+     この関数は、フォーカスをFRAMEからFOCUS-FRAMEへ振り向ける。
+     つまり、以降の打鍵やイベントは、FOCUSではなく、
+     FOCUS-FRAMEが受け取ることになる。
+     そのようなイベントのあとでは、
+     `last-event-frame'の値はFOCUS-FRAMEになる。
+     また、FOCUSを指定したイベント`switch-frame'は、
+     FOCUS-FRAMEを選ぶことになる。
+
+     FOCUS-FRAMEが`nil'であると、FRAMEでの振り向けを取り消す。つまり、
+     FRAMEはイベントをふたたび受けるようになる。
+
+     フォーカスの振り向けの用途の1つは、ミニバッファを持たないフレーム
+     のためである。これらのフレームでは、別のフレームのミニバッファを使
+     う。別のフレームのミニバッファを活性にすると、フォーカスを当該フレー
+     ムへ振り向ける。これにより、ミニバッファを活性にしたフレームにマウ
+     スが入っていても、ミニバッファのフレームにフォーカスを置ける。
+
+     フレームを選択してもフォーカスの振り向けを変更する。フレーム`foo'
+     を選択しているときにフレーム`bar'を選択すると、`foo'への振り向けを
+     `bar'へ振り向けるように変更する。これにより、`select-window'を使っ
+     てユーザーが別のフレームへ切り替えても、フォーカスの振り向けが正し
+     く動作する。
+
+     これは、フォーカスを自分自身へ振り向けているフレームは、
+     フォーカスを振り向けていないフレームとは異なる扱いを受けることを意味する。
+     `select-frame'は前者に影響するが後者には影響しない。
+
+     `redirect-frame-focus'で変更するまで、振り向けは持続する。
+
+ -- User Option: focus-follows-mouse
+     このオプションは、ユーザーがマウスを動かしたときにウィンドウマネー
+     ジャがフォーカスを移動するかどうかをEmacsに伝える。`nil'以外である
+     とフォーカスが移動することを意味する。その場合、コマンド
+     `other-frame'は、新たに選択されたフレームに適合するような位置にマ
+     ウスを移動する。
+
+
+
+File: elisp-ja, Node: Visibility of Frames, Next: Raising and Lowering, Prev: Input Focus, Up: Frames
+
+フレームの可視性
+================
+
+ウィンドウフレームは、"可視"、"不可視"、"アイコンになっている"のいずれ
+かです。フレームが可視であると、その内容を見ることができます。アイコン
+になっているとフレームの内容はスクリーンで見えませんが、アイコンは見え
+ます。フレームが不可視であると、それはスクリーン上に見えずアイコンでも
+ありません。
+
+端末フレームは選択されているものだけが表示されるので、端末フレームでは
+可視性は意味がありません。
+
+ -- コマンド: make-frame-visible &optional FRAME
+     この関数は、フレームFRAMEを可視にする。
+     FRAMEを省略すると、選択されているフレームを可視にする。
+
+ -- コマンド: make-frame-invisible &optional FRAME
+     この関数は、フレームFRAMEを不可視にする。
+     FRAMEを省略すると、選択されているフレームを不可視にする。
+
+ -- コマンド: iconify-frame &optional FRAME
+     この関数は、フレームFRAMEをアイコンにする。
+     FRAMEを省略すると、選択されているフレームをアイコンにする。
+
+ -- Function: frame-visible-p FRAME
+     この関数は、フレームFRAMEの可視性を返す。その値は、FRAMEが可視なら
+     ば`t'、不可視ならば`nil'、アイコンになっていれば`icon'である。
+
+フレームの可視性は、フレームパラメータとしても得られます。
+フレームパラメータとして読んだり変更できます。
+*Note Window Frame Parameters::。
+
+ユーザーは、ウィンドウマネージャを用いて
+フレームをアイコンにしたりアイコンを開けます。
+これは、Emacsが制御できるレベルよりしたで行われますが、
+Emacsはそのような変更を追跡できるようにイベントを提供します。
+*Note Misc Events::。
+
+
+
+File: elisp-ja, Node: Raising and Lowering, Next: Frame Configurations, Prev: Visibility of Frames, Up: Frames
+
+フレームを手前にしたり奥へ置く
+==============================
+
+ほとんどのウィンドウシステムでは、机のたとえを使います。つまり、スクリー
+ンの面に垂直な方向を概念的な3軸目と考えて、ウィンドウは積み重なっていて、
+もっとも手前からもっとも奥に順序がついています。2つのウィンドウが重なり
+合っているところでは、手前のものがそのしたのものを隠しています。もっと
+も奥にあるウィンドウであっても、それに重なるウィンドウがなければ見るこ
+とができます。
+
+ウィンドウのこのような順序は固定されていません。実際、ユーザーは順序を
+頻繁に変更します。ウィンドウを"手前に置く"（raising）とは、ウィンドウを
+積み重ねのもっとも上に移動することです。ウィンドウを"奥に置く
+（lowering）とは、ウィンドウを積み重ねのもっとも下に移動することです。
+この移動は概念的な3軸目に限り、スクリーン上でのウィンドウの位置は変えま
+せん。
+
+Emacsのフレームを表すウィンドウは、つぎの関数で手前へ置いたり奥へ置けま
+す。
+
+ -- コマンド: raise-frame &optional FRAME
+     この関数は、フレームFRAMEを手前に置く（デフォルトは選択されている
+     フレーム）。
+
+ -- コマンド: lower-frame &optional FRAME
+     この関数は、フレームFRAMEを奥に置く（デフォルトは選択されているフ
+     レーム）。
+
+ -- User Option: minibuffer-auto-raise
+     これが`nil'以外であると、ミニバッファが活性になるとミニバッファ用
+     ウィンドウがあるフレームを手前に置く。
+
+フレームパラメータを使うと、フレームが
+選択されると自動的に手前に置いたり（`auto-raise'）、
+選択を止めると奥へ置け（`auto-lower'）ます。
+*Note Window Frame Parameters::。
+
+
+
+File: elisp-ja, Node: Frame Configurations, Next: Mouse Tracking, Prev: Raising and Lowering, Up: Frames
+
+フレーム構成
+============
+
+"フレーム構成"（frame configuration）は、現在のフレームの配置、それらの
+すべての属性、それぞれのウィンドウ構成を記録したものです。（*Note
+Window Configurations::。）
+
+ -- Function: current-frame-configuration
+     この関数は、現在のフレームの配置とそれらの内容を記述したフレーム構
+     成のリストを返す。
+
+ -- Function: set-frame-configuration CONFIGURATION
+     この関数は、CONFIGURATIONで記述されたフレームの状態に復元する。
+
+
+
+File: elisp-ja, Node: Mouse Tracking, Next: Mouse Position, Prev: Frame Configurations, Up: Frames
+
+マウスの追跡
+============
+
+マウスを"追跡"（track）できると有用なことがあります。つまり、マウスがど
+こにあるかを表す指示子を表示してマウスの移動に従って指示子を動かすので
+す。効率よくマウスを追跡するには、マウスが実際に移動するまで待つ手段が
+必要です。
+
+マウスを追跡する便利な方法は、マウスの移動を表すイベントを待つことです。
+そうすれば、そのようなイベントを待てばマウスの移動を待てます。さらに、
+発生しうるそれ以外の種類のイベントを扱うのも簡単です。普通はマウスを永
+遠に追跡し続けたいのではなくボタンを離すなどの別のイベントを待ちたいの
+でしょうから、これは有用です。
+
+ -- Special form: track-mouse BODY...
+     このスペシャルフォームは、マウスモーションイベントを生成するようにして
+     BODYを実行する。
+     典型的にはBODYでは`read-event'を使って
+     モーションイベントを読み、それに従って表示を変更する。
+     マウスモーションイベントの形式については、
+     *Note Motion Events::。
+
+     `track-mouse'の値はBODYの最後のフォームの値である。BODYは、ボタン
+     を離したことを表すイベントや追跡を終えるべきイベントに出会うと戻る
+     ように設計すること。
+
+マウスの移動を追跡する普通の目的は、現在の位置でボタンを押したり離すと
+なにが起こるかをスクリーン上に示すことです。
+
+多くの場面では、テキスト属性`mouse-face'（*Note Special Properties::）
+を使えば、マウスを追跡する必要はなくなります。これはとても低いレベルで
+動作し、Lispレベルでマウスを追跡するより滑らかに動作します。
+
+
+
+
+File: elisp-ja, Node: Mouse Position, Next: Pop-Up Menus, Prev: Mouse Tracking, Up: Frames
+
+マウスの位置
+============
+
+関数`mouse-position'と`set-mouse-position'で、マウスの現在位置を参照で
+きます。
+
+ -- Function: mouse-position
+     この関数は、マウスの位置を表すものを返す。その値は`(FRAME X . Y)'
+     の形であり、XとYはフレームFRAMEの内側の左上隅を基準にした文字数で
+     数えた位置を表す整数である。
+
+ -- Function: set-mouse-position FRAME X Y
+     この関数は、フレームFRAME内でXとYの位置にマウスを移動する。引数Xと
+     Yは整数であり、フレームFRAMEの内側の左上隅を基準にした文字数で数え
+     た位置である。FRAMEが不可視であると、この関数はなにもしない。戻り
+     値には意味はない。
+
+ -- Function: mouse-pixel-position
+     この関数は`mouse-position'に似ているが、文字単位ではなくピクセル単
+     位で座標を返す。
+
+ -- Function: set-mouse-pixel-position FRAME X Y
+     この関数は`set-mouse-position'のようにマウスを移動するが、XとYは文
+     字単位でなくピクセル単位である。これらの座標はフレームの内側にある
+     必要はない。
+
+     FRAMEが不可視であると、この関数はなにもしない。戻り値には意味はな
+     い。
+
+
+
+
+File: elisp-ja, Node: Pop-Up Menus, Next: Dialog Boxes, Prev: Mouse Position, Up: Frames
+
+ポップアップメニュー
+====================
+
+ウィンドウシステムを使っているときには、ユーザーがマウスで選択できるよ
+うにLispプログラムからメニューをポップアップできます。
+
+ -- Function: x-popup-menu POSITION MENU
+     この関数はポップアップメニューを表示し、ユーザーが行った選択を表す
+     指示子を返す。
+
+     引数POSITIONは、スクリーンのどこにメニューを置くかを指定する。それ
+     はマウスのボタンイベント（ユーザーがボタンを押した場所にメニューを
+     置く）かつぎの形のリストでもよい。
+
+          ((XOFFSET YOFFSET) WINDOW)
+
+     ここで、XOFFSETとYOFFSETはウィンドウWINDOWのフレームの左上隅から測っ
+     たピクセル単位の座標である。
+
+     POSITIONが`t'であるとマウスの現在位置を使うことを意味する。
+     POSITIONが`nil'であると、メニューを実際には表示せずに、MENUに指定
+     してあるキーマップに等価なキーバインディングをあらかじめ計算するこ
+     とを意味する。
+
+     引数MENUは、メニューに表示するものを指定する。それはキーマップかキー
+     マップのリストである（*Note Menu Keymaps::）。あるいは、つぎの形で
+     もよい。
+
+          (TITLE PANE1 PANE2...)
+
+     ここで、各ペインはつぎの形のリストである。
+
+          (TITLE (LINE . ITEM)...)
+
+     各LINEは文字列であり、各ITEMは対応するLINEが選ばれたときに返される
+     値であること。
+
+*使用上の注意：*` ' メニューキーマップで定義したプレフィックスキーでで
+きることには、メニューを表示するために`x-popup-menu'を使わないこと。メ
+ニューキーマップを使ってメニューを実装すると、`C-h c'や`C-h a'で当該メ
+ニューの個々の項目を見ることができ、それらに対するヘルプを提供できる。
+`x-popup-menu'を呼び出すコマンドを定義してメニューを実装すると、ヘルプ
+機能には当該コマンドの内側でなにがなされるかわからないので、メニューの
+項目に対するヘルプを提供できない。
+
+マウスの移動でサブメニューを切り替えられるメニューバーの機構では、
+`x-popup-menu'を呼び出すコマンドの定義を調べられません。
+したがって、`x-popup-menu'を使ってサブメニューを実装すると、
+それらはメニューバーに適応した動作をできません。
+このために、メニューバーのすべてのサブメニューは、
+親メニュー内のメニューキーマップとして実装してあり、
+`x-popup-menu'は使っていません。
+*Note Menu Bar::。
+
+メニューバーに内容が変化するサブメニューを使いたいときでも、
+メニューキーマップを使って実装するべきです。
+内容を変えるには、必要に応じてメニューキーの内容を更新するために
+`menu-bar-update-hook'にフック関数を追加します。
+
+
+
+File: elisp-ja, Node: Dialog Boxes, Next: Pointer Shapes, Prev: Pop-Up Menus, Up: Frames
+
+対話ボックス
+============
+
+対話ボックスはポップアップメニューの変形です。少々異なって見えますが、
+フレームの中央につねに現れ、たった1つのレベルで1つのペインです。対話ボッ
+クスの主な用途は、ユーザーが『yes』、『no』、および他の少数の選択肢で答
+えるような問い合わせを行うためです。関数`y-or-n-p'と`yes-or-no-p'は、マ
+ウスクリックで起動されたコマンドから呼ばれるとキーボードではなく対話ボッ
+クスを使います。
+
+ -- Function: x-popup-dialog POSITION CONTENTS
+     この関数は、対話ボックスを表示し、ユーザーが選んだ選択肢を表す指示
+     子を返す。引数CONTENTSは表示する選択肢を指定し、つぎの形である。
+
+          (TITLE (STRING . VALUE)...)
+
+     これは、`x-popup-menu'に対して単一のペインを指定するリストに似てい
+     る。
+
+     戻り値は、選ばれた選択肢のVALUEである。
+
+     リストの要素は、`(STRING . VALUE)'の形のコンスセルのかわりに単に文
+     字列でもよい。そうすると、対話ボックスでは選択できなくなる。
+
+     リストに`nil'が現れると、それは左側の項目と右側の項目を区切る。
+     `nil'のまえの項目は左側に現れ、`nil'に続く項目は右側に現れる。リス
+     トに`nil'を含めなければ、項目のほぼ半分がそれぞれの側に現れる。
+
+     対話ボックスはフレームの中央につねに現れ、引数POSITIONはそのフレー
+     ムを指定する。可能な値は`x-popup-menu'と同様であるが、正確な座標は
+     関係なくフレームだけが意味を持つ。
+
+     場合によっては、Emacsは本当の対話ボックスを表示できない。そのとき
+     にはフレームの中央にポップアップメニューで同じ項目を表示する。
+
+
+
+File: elisp-ja, Node: Pointer Shapes, Next: Window System Selections, Prev: Dialog Boxes, Up: Frames
+
+ポインタの形状
+==============
+
+これらの変数は、Xウィンドウシステムを使っているときにさまざまな場面で使
+用するマウスポインタの形状を指定します。
+
+`x-pointer-shape'
+     この変数は、Emacsのフレーム内で普通に使うポインタ形状を指定する。
+
+`x-sensitive-text-pointer-shape'
+     この変数は、マウスに反応するテキスト上にマウスがあるときに使用する
+     ポインタ形状を指定する。
+
+これらの変数は、新たに作成したフレームに影響します。
+既存のフレームには通常は影響しません。
+しかし、フレームのマウスの表示色を設定すると、
+これらの変数の現在値に基づいてポインタ形状も更新します。
+*Note Window Frame Parameters::。
+
+これらのポインタ形状の指定に使える値は、
+ファイル`lisp/term/x-win.el'で定義してあります。
+それらの一覧を見るには
+`M-x apropos RET x-pointer RET'を使います。
+
+
+
+File: elisp-ja, Node: Window System Selections, Next: Font Names, Prev: Pointer Shapes, Up: Frames
+
+ウィンドウシステムのセレクション
+================================
+
+Xサーバーは、アプリケーションプログラムのあいだでデータを転送するための
+セレクション"（selection）の集まりを記録します。さまざまなセレクション
+は、Emacsではシンボルで表した"セレクション型"（selection type）で区別さ
+れます。Emacsを含むXクライアントは、任意の型のセレクションを読んだり設
+定できます。
+
+ -- Function: x-set-selection TYPE DATA
+     この関数は、Xサーバーに『セレクション』を設定する。これは2つの引数、
+     セレクション型TYPEとそれに割り当てる値DATAを取る。DATAが`nil'であ
+     ると、当該セレクションを削除することを意味する。さもなければDATAは、
+     文字列、整数（あるいは2つの数のコンスセルかリスト）、オーバレイ、
+     同じバッファを指す2つのマーカのコンスセルのいずれかである。オーバ
+     レイやマーカの対は、オーバレイのテキストやマーカのあいだのテキスト
+     を表す。
+
+     引数DATAは、ベクトルではない正しいセレクション値のベクトルでもよい。
+
+     可能な各TYPEには型に依存した独自のセレクション値がある。TYPEの普通
+     の値は`PRIMARY'か`SECONDARY'である。これらのシンボルは、Xウィンド
+     ウシステムの慣習に従って大文字の名前である。デフォルトは`PRIMARY'
+     である。
+
+ -- Function: x-get-selection &optional TYPE DATA-TYPE
+     この関数は、Emacsや他のXクライアントが設定したセレクションを参照す
+     る。これは2つの引数、TYPEとDATA-TYPEを取る。セレクション型TYPEのデ
+     フォルトは`PRIMARY'である。
+
+     引数DATA-TYPEは、他のXクライアントから得た生データを
+     Lispデータに変換するために使用するデータ変換の書式を指定する。
+     意味のある値は、`TEXT'、`STRING'、
+     `CHARACTER_POSITION'、`LINE_NUMBER'、`COLUMN_NUMBER'、
+     `OWNER_OS'、`HOST_NAME'、`USER'、`CLASS'、
+     `NAME'、`ATOM'、`INTEGER'である。
+     （これらのシンボルは、Xウィンドウシステムの慣習に従って
+     大文字の名前である。）
+     DATA-TYPEのデフォルトは`STRING'である。
+
+Xサーバーには、アプリケーションのあいだで移動するテキストや他のデータを
+保存できる番号付きの"カットバッファ"（cut buffer）の集まりもあります。
+カットバッファは廃れているとみなされますが、それらを使っているXクライア
+ント向けにEmacsはカットバッファを扱えます。
+
+ -- Function: x-get-cut-buffer N
+     この関数は、番号Nのカットバッファの内容を返す。
+
+ -- Function: x-set-cut-buffer STRING
+     Emacsが連続したキルをキルリングで順に下向きに移動するのと同様に、
+     この関数は一連のカットバッファの値を順に下向きに移動してから文字列
+     STRINGを最初のカットバッファ（番号0）に保存する。
+
+ -- Variable: selection-coding-system
+     この変数は、セレクション、クリップボード、カットバッファを読み書き
+     するときに使うコーディングシステムを指定する。*Note Coding
+     Systems::。デフォルトは`compound-text'である。
+
+
+
+File: elisp-ja, Node: Font Names, Next: Fontsets, Prev: Window System Selections, Up: Frames
+
+フォント名の探索
+================
+
+ -- Function: x-list-font PATTERN &optional FACE FRAME MAXIMUM
+     この関数は、パターンPATTERNに一致する利用可能なフォント名のリスト
+     を返す。省略可能な引数FACEとFRAMEを指定すると、FRAMEで現在オンになっ
+     ているFACEと同じサイズのフォントにリストを制限する。
+
+     引数PATTERNは文字列であること。これはワイルドカード文字を含んでい
+     てもよい。`*'は任意の部分文字列に一致し、`?'は任意の1文字に一致す
+     る。フォント名とパターンの一致を取る際には、大文字小文字を区別しな
+     い。
+
+     FACEとFRAMEを指定するときには、
+     FACEはフェイス名（シンボル）であり、FRAMEはフレームであること。
+
+     省略可能な引数MAXIMUMは、返すフォントの個数を制限する。これが
+     `nil'以外であると、戻り値は最初のMAXIMUM個の一致したフォントに切り
+     詰める。MAXIMUMに小さな値を指定すると、多くのフォントに一致する場
+     合ではこの関数の動作がだいぶ速くなる。
+
+
+
+File: elisp-ja, Node: Fontsets, Next: Color Names, Prev: Font Names, Up: Frames
+
+フォントセット
+==============
+
+"フォントセット"（fontset）は、フォントのリストであって、各フォントが文
+字コードのある範囲に割り付けられています。個々のフォントだけでは、
+Emacsが扱う文字集合の範囲全体を表示できませんが、フォントセットならば可
+能です。フォントセットにはフォントと同様に名前があり、フレームやフェイ
+ス向けに『フォント』を指定するときのフォント名のかわりにフォントセット
+名を使えます。ここでは、Lispプログラムの制御のもとにフォントセットを定
+義することに関する情報を述べます。
+
+ -- Function: create-fontset-from-fontset-spec FONTSET-SPEC &optional STYLE-VARIANT-P NOERROR
+     この関数は、指定文字列FONTSET-SPECに従って新たなフォントセットを定
+     義する。文字列はつぎの形であること。
+
+          FONTPATTERN, [CHARSETNAME:FONTNAME]...
+
+     コンマの前後の白文字は無視する。
+
+     文字列の始めの部分FONTPATTERNは、最後の2つのフィールドが
+     `fontset-ALIAS'であることを除いて、Xの標準フォント名であること。
+
+     新たなフォントセットには2つの名前、つまり、長い名前と短い名前があ
+     る。長い名前はFONTPATTERNそのものである。短い名前は
+     `fontset-ALIAS'である。どちらの名前でもフォントセットを参照できる。
+     同じ名前のフォントセットがすでに存在する場合、NOERRORが`nil'である
+     とエラーを通知し、この関数はなにもしない。
+
+     省略可能な引数STYLE-VARIANT-Pが`nil'以外であると、フォントセットの
+     bold（太字）、italic（斜体）、bold-italic（太字斜体）の各変種も作
+     成することを指示する。これらの変種のフォントセットには短い名前はな
+     く、var{fontpattern}のboldやitalicを変更して作った長い名前だけであ
+     る。
+
+     指定文字列ではフォントセットで使うフォントも指定する。詳しくは下記
+     参照。
+
+`CHARSET:FONT'という構成は、特定の1つの文字集合向けに（このフォントセッ
+トで）使うフォントを指定します。ここで、CHARSETは文字集合の名前であり、
+FONTはその文字集合に使うフォントです。この構成は、指定文字列で何回でも
+使えます。
+
+明示してない残りの文字集合向けには、
+FONTPATTERNに基づいてEmacsがフォントを選びます。
+つまり、`fontset-ALIAS'を1つの文字集合を指名する値で置き換えます。
+ASCII文字集合向けには、
+`fontset-ALIAS'を`ISO8859-1'で置き換えます。
+
+これに加えて、いくつか連続したフィールドがワイルドカードであるなら、
+Emacsはそれらを1つのワイルドカードにまとめます。これは、自動的に拡大縮
+小したフォントの使用を避けるためです。大きめのフォントを縮小したフォン
+トは編集には使えません。また、小さめのフォントを拡大したフォントも有用
+ではありません。というのは、Emacsがそうするように、もともと小さなフォン
+トを使うほうがよいからです。
+
+したがって、FONTPATTERNがつぎのようであると、
+
+     -*-fixed-medium-r-normal-*-24-*-*-*-*-*-fontset-24
+
+ASCII文字に対するフォント指定はつぎのようになります。
+
+     -*-fixed-medium-r-normal-*-24-*-ISO8859-1
+
+また、Chinese GB2312文字に対するフォント指定はつぎのようになります。
+
+     -*-fixed-medium-r-normal-*-24-*-gb2312*-*
+
+上のフォント指定に一致する中国語フォントがないかもしれません。多くのXの
+配布には、FAMILYフィールドが`song ti'か`fangsong ti'の中国語フォントだ
+けが含まれています。そういった場合、`Fontset-N'をつぎのように指定します。
+
+     Emacs.Fontset-0: -*-fixed-medium-r-normal-*-24-*-*-*-*-*-fontset-24,\
+             chinese-gb2312:-*-*-medium-r-normal-*-24-*-gb2312*-*
+
+そうすると、Chinese GB2312の文字を除くフォント指定では
+FAMILYフィールドが`fixed'となり、
+Chinese GB2312の文字に対するフォント指定では
+FAMILYフィールドが`*'となります。
+
+
+
+File: elisp-ja, Node: Color Names, Next: Resources, Prev: Fontsets, Up: Frames
+
+表示色名
+========
+
+ -- Function: x-color-defined-p COLOR &optional FRAME
+     この関数は、表示色名が意味のあるものかどうかを報告する。
+     意味があれば`t'を返し、さもなければ`nil'を返す。
+     引数FRAMEは、どのフレームで調べるかを指定する。
+     FRAMEを省略したり`nil'であると、選択されているフレームを使う。
+
+     この関数では、読者が使用しているディスプレイで当該表示色を実際に表
+     示できるかどうかはわからない。どんな種類のディスプレイでも定義され
+     ていればどんな表示色でも問い合わせることができ、なんらかの結果を得
+     られる。Xサーバーはこのように動作するのである。読者のディスプレイ
+     で表示色COLORを使えるかどうかを検査する近似方法はつぎのとおりであ
+     る。
+
+          (defun x-color-supported-p (color &optional frame)
+            (and (x-color-defined-p color frame)
+                 (or (x-display-color-p frame)
+                     (member color '("black" "white"))
+                     (and (> (x-display-planes frame) 1)
+                          (equal color "gray")))))
+
+ -- Function: x-color-values COLOR &optional FRAME
+     この関数は、表示色COLORが理想的にはどのように見えるかを記述した値を返す。
+     COLORが定義されていれば、その値は、赤の分量、緑の分量、青の分量を表す
+     3つの整数のリストである。
+     各整数の範囲は原理的には0から65535であるが、
+     実際には65280を超えることはないようである。
+     COLORが定義されていなければ、値は`nil'である。
+
+          (x-color-values "black")
+               => (0 0 0)
+          (x-color-values "white")
+               => (65280 65280 65280)
+          (x-color-values "red")
+               => (65280 0 0)
+          (x-color-values "pink")
+               => (65280 49152 51968)
+          (x-color-values "hungry")
+               => nil
+
+     フレームFRAMEのディスプレイに対する表示色の値を返す。FRAMEを省略し
+     たり`nil'であると、選択されているフレームのディスプレイに対する値
+     を返す。
+
+
+
+File: elisp-ja, Node: Resources, Next: Server Data, Prev: Color Names, Up: Frames
+
+Xリソース
+=========
+
+ -- Function: x-get-resource ATTRIBUTE CLASS &optional COMPONENT SUBCLASS
+     関数`x-get-resource'は、Xウィンドウのデフォルトのデータベースから
+     リソースの値を取り出す。
+
+     リソースは、"key"と"class"の組み合わせで添字付けされる。この関数は
+     `INSTANCE.ATTRIBUTE'の形（INSTANCEはEmacsを起動した名前）のキーと
+     クラスとして`Emacs.CLASS'を使って探索する。
+
+     省略可能な引数COMPONENTとSUBCLASSは、それぞれ、キーとクラスに追加
+     される。2つを指定するかまったく指定しないこと。これらを指定すると、
+     キーは`INSTANCE.COMPONENT.ATTRIBUTE'であり、クラスは
+     `Emacs.CLASS.SUBCLASS'である。
+
+ -- Variable: x-resource-class
+     この変数は、`x-get-resource'が探すアプリケーション名を指定する。デ
+     フォルト値は`"Emacs"'である。`x-get-resource'を呼び出す周りでこの
+     変数に別の文字列を束縛すれば、『Emacs』以外のアプリケーション名で
+     Xリソースを探せる。
+
+  *Note Xリソース: (emacs)Resources X。
+
+
+
+File: elisp-ja, Node: Server Data, Prev: Resources, Up: Frames
+
+Xサーバーに関するデータ
+=======================
+
+本節では、Emacsが使っているXディスプレイの能力や製造元に関する情報を得
+るために使う関数について述べます。これらの関数のそれぞれには、どのディ
+スプレイを対象にするか引数DISPLAYで指定できます。引数DISPLAYは、ディス
+プレイ名かフレーム（が表示されいるディスプレイを意味する）のいずれかで
+す。引数DISPLAYを省略したり`nil'であると、選択されているフレームのディ
+スプレイを使うことを意味します。
+
+ -- Function: x-display-screens &optional DISPLAY
+     この関数は、ディスプレイに対応付けられているスクリーンの個数を返す。
+
+ -- Function: x-server-version &optional DISPLAY
+     この関数は、ディスプレイで動作中のXサーバーの版番号のリストを返す。
+
+ -- Function: x-server-vendor &optional DISPLAY
+     この関数は、Xサーバーソフトウェアの提供業者を返す。
+
+ -- Function: x-display-pixel-height &optional DISPLAY
+     この関数はスクリーンのピクセル単位の高さを返す。
+
+ -- Function: x-display-mm-height &optional DISPLAY
+     この関数はスクリーンのミリメートル単位の高さを返す。
+
+ -- Function: x-display-pixel-width &optional DISPLAY
+     この関数はスクリーンのピクセル単位の幅を返す。
+
+ -- Function: x-display-mm-width &optional DISPLAY
+     この関数はスクリーンのミリメートル単位の幅を返す。
+
+ -- Function: x-display-backing-store &optional DISPLAY
+     この関数は、スクリーンのバッキングストア機能を返す。その値は、
+     `always'、`when-mapped'、`not-useful'のシンボルのいずれかである。
+
+ -- Function: x-display-save-under &optional DISPLAY
+     この関数は、ディスプレイにセーブアンダー機能があれば`nil'以外を返
+     す。
+
+ -- Function: x-display-planes &optional DISPLAY
+     この関数は、ディスプレイのプレイン数を返す。
+
+ -- Function: x-display-visual-class &optional DISPLAY
+     この関数は、スクリーンのビジュアルクラスを返す。
+     その値は、`static-gray'、`gray-scale'、
+     `static-color'、`pseudo-color'、`true-color'、
+     `direct-color'のシンボルのいずれかである。
+
+ -- Function: x-display-grayscale-p &optional DISPLAY
+     この関数は、スクリーンで白黒の濃淡を表示できると`t'を返す。
+
+ -- Function: x-display-color-p &optional DISPLAY
+     この関数は、スクリーンがカラースクリーンならば`t'を返す。
+
+ -- Function: x-display-color-cells &optional DISPLAY
+     この関数はスクリーンで使えるカラーセルの個数を返す。
+
+
+
+
+
+File: elisp-ja, Node: Positions, Next: Markers, Prev: Frames, Up: Top
+
+バッファ内の位置
+****************
+
+バッファ内"位置"（position）は、バッファ内のテキストの文字を添字付けし
+ます。より正確にいえば、バッファ内位置は2つの文字のあいだの箇所（あるい
+は、先頭文字ではそのまえ、最後の文字ではそのうしろ）を識別して、指定位
+置のまえやうしろの文字を指定できるようにします。しかし、しばしば位置
+『にある』文字といいますが、これは位置の直後の文字を意味します。
+
+バッファ内位置は、通常、1から始まる整数で表しますが、
+"マーカ"（marker）で表すこともできます。
+マーカは特別なオブジェクトであり、
+テキストを挿入したり削除しても
+同じ周りの文字に留まるように自動的に再配置されます。
+*Note Markers::。
+
+* Menu:
+
+* Point::         The special position where editing takes place.
+* Motion::        Changing point.
+* Excursions::    Temporary motion and buffer changes.
+* Narrowing::     Restricting editing to a portion of the buffer.
+
+
+
+File: elisp-ja, Node: Point, Next: Motion, Prev: Positions, Up: Positions
+
+ポイント
+========
+
+"ポイント"（point）は、自己挿入文字やテキスト挿入関数を含む多くの編集コ
+マンドが使うバッファ内の特別な位置です。他のコマンドは、バッファ内の別
+の箇所で編集したり挿入できるようにポイントをテキスト内で移動します。
+
+他のバッファ内位置と同様に、ポイントは文字そのものではなく、2つの文字の
+あいだの箇所（あるいは、先頭文字ではそのまえ、最後の文字ではそのうしろ）
+を指定します。通常、端末では、ポイントの直後の文字に重ねてカーソルを表
+示します。ポイントはカーソルがある文字のまえに実際にはあります。
+
+ポイントの値は、1からバッファのサイズ足す1です。ナロイング（*Note
+Narrowing::）していると、ポイントはバッファの参照可能な（バッファの端を
+含むかもしれない）範囲内に制限されます。
+
+各バッファには独自のポイント値があり、それは他のバッファのポイント値と
+は独立です。各ウィンドウにも独自のポイント値があり、同じバッファを表示
+している他のウィンドウのポイント値とは独立です。このようなわけで、同じ
+バッファを表示しているさまざまなウィンドウで異なるポイント値を持てるの
+です。1つのウィンドウだけにバッファが表示されているときには、バッファの
+ポイントとウィンドウのポイントは、通常、同じ値であり、それらを区別する
+ことはほとんど重要ではありません。詳しくは、*Note Window Point::。
+
+ -- Function: point
+     この関数はカレントバッファのポイント値を整数で返す。
+
+          (point)
+               => 175
+
+ -- Function: point-min
+     この関数は、カレントバッファで参照可能なポイント値の最小値を返す。
+     これは通常1であるが、ナロイングしているときには、ナロイングした領
+     域の開始位置である。（*Note Narrowing::。）
+
+ -- Function: point-max
+     この関数は、カレントバッファで参照可能なポイント値の最大値を返す。
+     ナロイングしていなければ、これは`(1+ (buffer-size))'である。ナロイ
+     ングしているときには、ナロイングした領域の終了位置である。（*Note
+     Narrowing::。）
+
+ -- Function: buffer-end FLAG
+     この関数は、FLAGが1未満であれば`(point-min)'を返し、さもなければ
+     `(point-max)'を返す。引数FLAGは整数であること。
+
+ -- Function: buffer-size
+     この関数は、カレントバッファ内の総文字数を返す。
+     ナロイング（*Note Narrowing::）していなければ、
+     `point-max'はこの値より1大きな値を返す。
+
+          (buffer-size)
+               => 35
+          (point-max)
+               => 36
+
+
+
+File: elisp-ja, Node: Motion, Next: Excursions, Prev: Point, Up: Positions
+
+移動
+====
+
+移動関数は、現在のポイント値やバッファの先頭や末尾を基準にして、
+あるいは、選択されているウィンドウの端を基準にして、
+ポイント値を変更します。
+*Note Point::。
+
+* Menu:
+
+* Character Motion::       Moving in terms of characters.
+* Word Motion::            Moving in terms of words.
+* Buffer End Motion::      Moving to the beginning or end of the buffer.
+* Text Lines::             Moving in terms of lines of text.
+* Screen Lines::           Moving in terms of lines as displayed.
+* List Motion::            Moving by parsing lists and sexps.
+* Skipping Characters::    Skipping characters belonging to a certain set.
+
+
+
+File: elisp-ja, Node: Character Motion, Next: Word Motion, Prev: Motion, Up: Motion
+
+文字単位の移動
+--------------
+
+これらの関数は、文字数に基づいてポイントを移動します。
+`goto-char'が基本になる基本関数であり、他の関数はこれを使っています。
+
+ -- コマンド: goto-char POSITION
+     この関数は、カレントバッファのポイント位置を値POSITIONとする。
+     POSITIONが1未満であると、バッファの先頭にポイントを移動する。
+     POSITIONがバッファの長さより大きい場合には、バッファの末尾にポイン
+     トを移動する。
+
+     ナロイングしている場合であっても、
+     POSITIONはバッファの先頭から数えるが、
+     参照可能部分の外側にはポイントは移動できない。
+     POSITIONが範囲外であると、
+     `goto-char'は参照可能部分の先頭か末尾にポイントを移動する。
+
+     この関数を対話的に呼び出すと、前置引数があればPOSITIONは数値前置引
+     数である。さもなければミニバッファから読む。
+
+     `goto-char'はPOSITIONを返す。
+
+ -- コマンド: forward-char &optional COUNT
+     この関数は、前方へ、つまり、バッファの末尾に向けて（COUNTが負であ
+     れば、後方へ、つまり、バッファの先頭へ向けて）COUNT文字分ポイント
+     を移動する。バッファの先頭や末尾を越えて（ナロイングしているときに
+     は参照可能部分を越えて）ポイントを移動しようとすると、
+     `beginning-of-buffer'か`end-of-buffer'のエラーコードでエラーを通知
+     する。
+
+     対話的に呼び出されると、COUNTは数値前置引数である。
+
+ -- コマンド: backward-char &optional COUNT
+     この関数は、後方へ、つまり、バッファの先頭に向けて（COUNTが負であ
+     れば、前方へ、つまり、バッファの末尾へ向けて）COUNT文字分ポイント
+     を移動する。バッファの先頭や末尾を越えて（ナロイングしているときに
+     は参照可能部分を越えて）ポイントを移動しようとすると、
+     `beginning-of-buffer'か`end-of-buffer'のエラーコードでエラーを通知
+     する。
+
+     対話的に呼び出されると、COUNTは数値前置引数である。
+
+
+
+File: elisp-ja, Node: Word Motion, Next: Buffer End Motion, Prev: Character Motion, Up: Motion
+
+単語単位の移動
+--------------
+
+これらの単語を解析する関数は、
+当該文字が単語の一部かどうかを判定するために構文テーブルを使います。
+*Note Syntax Tables::。
+
+ -- コマンド: forward-word COUNT
+     この関数は、前方へ（COUNTが負ならば後方へ）COUNT単語分ポイントを移
+     動する。『1単語分移動する』とは、単語構成文字を越えてから単語区切
+     り文字（あるいはバッファの参照可能部分の境界）に出会うまでポイント
+     を移動することを意味する。
+
+     バッファの境界で止まらず（最後の単語は除く）にCOUNT単語分移動でき
+     ると、値は`t'である。さもなければ値は`nil'であり、ポイントはバッファ
+     の境界で止まる。
+
+     対話的に呼び出されると、COUNTは数値前置引数である。
+
+ -- コマンド: backward-word COUNT
+     この関数は`forward-word'と同様であるが、前方へではなく後方へ単語の
+     先頭に出会うまで移動する。
+
+     対話的に呼び出されると、COUNTは数値前置引数である。
+
+     この関数は、プログラムではほとんど使われない。負の引数で
+     `forward-word'を呼び出すほうが効率的だからである。
+
+ -- Variable: words-include-escapes
+     この変数は、`forward-word'とそれを使うもののふるまいに影響する。
+     `nil'以外であると、『エスケープ』や『文字クォート』の構文クラスに
+     属する文字も単語の一部とみなす。さもなければ、単語の一部とはみなさ
+     ない。
+
+
+
+File: elisp-ja, Node: Buffer End Motion, Next: Text Lines, Prev: Word Motion, Up: Motion
+
+バッファの両端への移動
+----------------------
+
+バッファの先頭にポイントを移動するには、つぎのように書きます。
+
+     (goto-char (point-min))
+
+同様に、バッファの末尾に移動するには、つぎのようにします。
+
+     (goto-char (point-max))
+
+上のことを行うためにユーザーが使うコマンドが2つあります。これらはマーク
+を設定してエコー領域にメッセージを表示するので、これらをLispプログラム
+からは使わないように警告しておきます。
+
+ -- コマンド: beginning-of-buffer &optional N
+     この関数は、バッファ（あるいはナロイングしているときには参照可能部
+     分）の先頭にポイントを移動し、移動前の位置にマークを設定する。Nが
+     `nil'以外であると、バッファの先頭から10分のNの箇所にポイントを移動
+     する。
+
+     対話的に呼び出すと、前置引数があればNは数値前置引数である。さもな
+     ければNのデフォルトは`nil'である。
+
+     *警告：*` 'Lispプログラムではこの関数を使わないこと！
+
+ -- コマンド: end-of-buffer &optional N
+     この関数は、バッファ（あるいはナロイングしているときには参照可能部
+     分）の末尾にポイントを移動し、移動前の位置にマークを設定する。Nが
+     `nil'以外であると、バッファの末尾から10分のNの箇所にポイントを移動
+     する。
+
+     対話的に呼び出すと、前置引数があればNは数値前置引数である。さもな
+     ければNのデフォルトは`nil'である。
+
+     *警告：*` 'Lispプログラムではこの関数を使わないこと！
+
+
+
+File: elisp-ja, Node: Text Lines, Next: Screen Lines, Prev: Buffer End Motion, Up: Motion
+
+テキスト行単位の移動
+--------------------
+
+テキスト行とは、改行文字で区切られたバッファの部分です。改行文字はまえ
+の行に属するとみなします。最初のテキスト行がバッファの先頭から始まり、
+バッファの末尾の文字が改行であってもなくても、最後のテキスト行はバッファ
+の末尾で終ります。バッファをテキスト行に分割することは、ウィンドウの幅、
+表示上の行の継続、タブやコントロール文字の表示方法には影響されません。
+
+ -- コマンド: goto-line LINE
+     この関数は、バッファの先頭を1行目と数えてLINE行目の先頭にポイント
+     を移動する。LINEが1未満であると、バッファの先頭へポイントを移動す
+     る。LINEがバッファ内の行数より大きいと、バッファの末尾、つまり、*
+     バッファの最後の行の末尾*にポイントを移動する。これは、
+     `goto-line'が行頭にポイントを移動しない唯一の場面である。
+
+     ナロイングしているときでも、
+     LINEはバッファの先頭から数えるが、
+     参照可能部分の外側にはポイントは移動しない。
+     したがって、行番号が参照不可な部分を指定するときには、
+     `goto-line'は参照可能部分の先頭か末尾へポイントを移動する。
+
+     `goto-line'の戻り値は、（ナロイングを考慮せずにバッファ全体でみた）
+     LINEと実際のポイントの移動先の行の行番号との差である。したがって、
+     指定した行に達するまえにバッファの末尾に出会うと値は正である。バッ
+     ファの実際の末尾にではなく参照可能部分の末尾に出会うと値は0である。
+
+     対話的に呼び出すと、前置引数があればLINEは数値前置引数である。さも
+     なければLINEをミニバッファから読む。
+
+ -- コマンド: beginning-of-line &optional COUNT
+     この関数は、現在行の先頭にポイントを移動する。
+     引数COUNTが`nil'でも1でもないと、
+     COUNT-1行だけ前方へ移動してから行頭に移動する。
+
+     バッファ（ナロイングしているときには参照可能部分）の末尾に達すると
+     ポイントをそこへ移動する。エラーは通知しない。
+
+ -- コマンド: end-of-line &optional COUNT
+     この関数は、現在行の末尾にポイントを移動する。
+     引数COUNTが`nil'でも1でもないと、
+     COUNT-1行だけ前方へ移動してから行末に移動する。
+
+     バッファ（ナロイングしているときには参照可能部分）の末尾に達すると
+     ポイントをそこへ移動する。エラーは通知しない。
+
+ -- コマンド: forward-line &optional COUNT
+     この関数は、COUNT行前方の行頭にポイントを移動する。
+     COUNTが負であると、
+     -COUNT行後方の行頭にポイントを移動する。
+     COUNTが0であると、現在行の先頭にポイントを移動する。
+
+     指定行数だけ移動するまえにバッファ（ナロイングしているときには参照
+     可能部分）の先頭や末尾に達するとポイントをそこへ移動する。エラーは
+     通知しない。
+
+     `forward-line'は、COUNTと実際に移動した行数の差を返す。3行しかない
+     バッファの先頭で5行前方へ移動しようとすると、ポイントは最後の行の
+     末尾で止まり、値は2になる。
+
+     対話的に呼び出すと、COUNTは数値前置引数である。
+
+ -- Function: count-lines START END
+     この関数は、カレントバッファのSTARTとENDのあいだの部分にある行の行
+     数を返す。STARTとENDが等しければ0を返す。さもなければ、STARTとEND
+     が同じ行にある場合であっても少なくとも1を返す。というのは、それら
+     のあいだのテキストは孤立しているとみなされ、空でなければ少なくとも
+     1行はあるはずだからである。
+
+     `count-lines'の使用例を示す。
+
+          (defun current-line ()
+            "Return the vertical position of point..."
+            (+ (count-lines (window-start) (point))
+               (if (= (current-column) 0) 1 0)
+               -1))
+
+
+*Note Near Point::の関数`bolp'や`eolp'も参照してください。これらの関数
+はポイントを移動しませんが、ポイントがすでに行の先頭や末尾にあるかどう
+かを検査します。
+
+
+
+File: elisp-ja, Node: Screen Lines, Prev: Text Lines, Up: Motion
+
+スクリーン行分の移動
+--------------------
+
+前節の行単位の関数は、改行文字で区切られたテキスト行だけを数えます。対
+照的に、これらの関数は、スクリーン上にどのようにテキストが現れるかで定
+義されるスクリーン上の行を数えます。テキスト行が選択されているウィンド
+ウの幅に収まるだけ短ければ、1テキスト行は1スクリーン行ですが、しかし、
+それ以外では1テキスト行は複数のスクリーン行を占めます。
+
+テキスト行を複数のスクリーン行に継続せずに
+スクリーン上で切り詰める場合もあります。
+このような場合、`vertical-motion'は、
+`forward-line'によく似たポイントの移動を行います。
+*Note Truncation::。
+
+与えられた文字列の幅は、各文字の見ためを制御するフラグに依存するので、
+`vertical-motion'は、
+テキストを収めたバッファや選択されているウィンドウ
+（その幅や切り詰めフラグ、ウィンドウごとに異なりうる表示テーブルが
+あるため）に依存して、特定のテキスト部分に対して異なったふるまいをします。
+*Note Usual Display::。
+
+これらの関数は、スクリーン行がどこで区切れるかを決定するためにテキストを走査
+するので、走査する量に比例して時間がかかります。
+読者がこれらを多用する意図があるときには、
+読者のコードの効率を改善するキャッシュをEmacsが提供します。
+*Note cache-long-line-scans: Truncation。
+
+
+ -- Function: vertical-motion COUNT &optional WINDOW
+     この関数は、ポイントを含むスクリーン行から
+     COUNTスクリーン行数だけ下向きにポイントを移動する。
+     COUNTが負であると上向きに移動する。
+
+     `vertical-motion'は、ポイントを移動したスクリーン行数を返す。バッ
+     ファの先頭や末尾に達すると、この値は絶対値ではCOUNTより小さい。
+
+     ウィンドウWINDOWは、
+     幅、水平スクロール、表示テーブルなどのパラメータを得るために使われる。
+     しかし、WINDOWに別のバッファが表示されているとしても、
+     `vertical-motion'はつねにカレントバッファに作用する。
+
+ -- コマンド: move-to-window-line COUNT
+     この関数は、選択されているウィンドウに現在表示されているテキストに
+     基づいてポイントを移動する。
+     ウィンドウの先頭からCOUNTスクリーン行の先頭にポイントを移動する。
+     COUNTが負であると、底（あるいはバッファの末尾がスクリーンの
+     底より上にある場合にはバッファの最終行）から数えて
+     -COUNTスクリーン行位置を指定する。
+
+     COUNTが`nil'であると、ウィンドウの中央の行の先頭にポイントを移動す
+     る。COUNT の絶対値がウィンドウのサイズよりも大きいときには、ウィン
+     ドウに十分な高さがあった場合に移動するであろうスクリーン行の箇所に
+     ポイントを移動する。そのため、スクロールして当該箇所がスクリーンに
+     現れるように再表示する。
+
+     対話的に呼び出されると、COUNTは数値前置引数である。
+
+     戻り値は、ウィンドウの先頭行を0と数えて、移動先の行のウィンドウ行
+     番号である。
+
+ -- Function: compute-motion FROM FROMPOS TO TOPOS WIDTH OFFSETS WINDOW
+     この関数は、スクリーン上での位置を計算しながらカレントバッファを走
+     査する。バッファ内位置FROMがスクリーン座標FROMPOSに対応すると仮定
+     して、FROMから前方へ向けてTOかTOPOSのどちらかに達するまでバッファ
+     を走査する。バッファ内の終了位置とスクリーン座標を返す。
+
+     座標引数FROMPOSとTOPOSは、
+     `(HPOS . VPOS)'の形のコンスセルである。
+
+     引数WIDTHは、テキストを表示できるコラム数であり、これは継続行の扱
+     いに影響する。読者が選んだウィンドウに対して`window-width'が返した
+     値、つまり、通常、`(window-width WINDOW)'を使う。
+
+     引数OFFSETSは、`nil'であるか、`(HSCROLL . TAB-OFFSET)'の形のコンス
+     セルである。ここで、HSCROLLは左端に表示されていないコラム数であり、
+     多くの場合は`window-hscroll'を呼び出して得た値を使う。一方、
+     TAB-OFFSETはスクリーン上でのコラム番号とバッファ内でのコラム番号の
+     差である。この値は、継続行においてまえのスクリーン行の幅が
+     `tab-width'で終らない場合に0以外になる。継続しない行ではつねに0で
+     ある。
+
+     ウィンドウWINDOWは、使用する表示テーブルを指定するためだけに使われる。
+     WINDOWに表示されているバッファに関わらず、
+     `compute-motion'はつねにカレントバッファに作用する。
+
+     戻り値は、5要素のリストである。
+
+          (POS VPOS HPOS PREVHPOS CONTIN)
+
+     ここで、POSは走査を終えたバッファ内位置であり、
+     VPOSは垂直方向のスクリーン位置、
+     HPOSは水平方向のスクリーン位置である。
+
+     結果のPREVHPOSは、POSから1文字分戻った箇所の水平位置である。この文
+     字のあとで最終行が継続しているときには、結果のCONTINは`t'である。
+
+     たとえば、あるウィンドウのLINEスクリーン行のCOLコラムに対応するバッ
+     ファ内位置を探すには、FROMとしてウィンドウの表示開始位置、FROMPOS
+     としてウィンドウの左上隅の座標を渡します。TOにはバッファの
+     `(point-max)'を渡して走査をバッファの参照可能部分のみに制限し、
+     TOPOSとしてLINEとCOLを渡す。つぎのように呼び出す。
+
+          (defun coordinates-of-position (col line)
+            (car (compute-motion (window-start)
+                                 '(0 . 0)
+                                 (point-max)
+                                 (cons col line)
+                                 (window-width)
+                                 (cons (window-hscroll) 0)
+                                 (selected-window))))
+
+     ミニバッファに対して`compute-motion'を使うときには、
+     `minibuffer-prompt-width'を使って
+     最初のスクリーン行の先頭の水平位置を得る必要がある。
+     *Note Minibuffer Misc::。
+
+
+
+File: elisp-ja, Node: List Motion, Prev: Screen Lines, Up: Motion
+
+式単位の移動
+------------
+
+ここでは、釣り合った括弧で囲まれた式（Emacs内でそれらを単位に移動すると
+きには"S式"（sexps）とも呼ばれる）を扱う関数について述べます。構文テー
+ブルは、これらの関数がさまざまな文字をどのように解釈するかを制御します。
+*Note Syntax Tables::を参照してください。S式やその一部を走査する下位レ
+ベルの基本関数については、*Note Parsing Expressions::。ユーザーレベルの
+コマンドに関しては、*Note リストとS式に対するコマンド: (emacs)List
+Commandsを参照してください。
+
+ -- コマンド: forward-list ARG
+     この関数は、釣り合った括弧で囲まれたものをARG個前方へ飛び越えて移
+     動する。（単語や文字列のクォート対などの他の構文要素は無視する。）
+
+ -- コマンド: backward-list ARG
+     この関数は、釣り合った括弧で囲まれたものをARG個後方へ飛び越えて移
+     動する。（単語や文字列のクォート対などの他の構文要素は無視する。）
+
+ -- コマンド: up-list ARG
+     この関数は、前方へ向けてARG個の括弧のレベルを抜ける。負の引数では
+     後方へ向けて浅いレベルへ移動する。
+
+ -- コマンド: down-list ARG
+     この関数は、前方へ向けてARG個の括弧のレベルだけ深く入る。負の引数
+     では後方へ向けて括弧の深い（-ARG）レベルへ移動する。
+
+ -- コマンド: forward-sexp ARG
+     この関数は、ARG個の釣り合った式を前方へ向けて飛び越えて移動する。
+     釣り合った式には、括弧で区切られたものに加えて、単語や文字列定数な
+     どの他の種類も含まれる。たとえばつぎのとおり。
+
+          ---------- Buffer: foo ----------
+          (concat-!- "foo " (car x) y z)
+          ---------- Buffer: foo ----------
+
+          (forward-sexp 3)
+               => nil
+
+          ---------- Buffer: foo ----------
+          (concat "foo " (car x) y-!- z)
+          ---------- Buffer: foo ----------
+
+ -- コマンド: backward-sexp ARG
+     この関数は、ARG個の釣り合った式を後方へ向けて飛び越えて移動する。
+
+ -- コマンド: beginning-of-defun ARG
+     この関数は、前方へ向けてARG個目の関数定義の先頭へ移動する。ARGが負
+     であると、後方へ向けて、関数定義の末尾ではなく関数定義の先頭へ移動
+     する。
+
+ -- コマンド: end-of-defun ARG
+     この関数は、前方へ向けてARG個目の関数定義の末尾へ移動する。ARGが負
+     であると、後方へ向けて、関数定義の先頭ではなく関数定義の末尾へ移動
+     する。
+
+ -- User Option: defun-prompt-regexp
+     この変数が`nil'以外であると、関数定義を始める開き括弧のまえに現れ
+     うるテキストを指定する正規表現を保持する。つまり、関数定義は、行の
+     先頭がこの正規表現に一致するテキストで始まり、それに開き括弧の構文
+     に属する文字が続く行で始まる。
+
+
+
+File: elisp-ja, Node: Skipping Characters, Prev: Screen Lines, Up: Motion
+
+文字群の飛び越し
+----------------
+
+つぎの2つの関数は、指定した種類の文字を飛び越えてポイントを移動します。
+たとえば、白文字を飛び越すためにこれらはしばしば使われます。関連する関
+数については、*Note Motion and Syntax::を参照してください。
+
+ -- Function: skip-chars-forward CHARACTER-SET &optional LIMIT
+     この関数は、指定した文字の集まりを飛び越えて、カレントバッファ内で
+     前方にポイントを移動する。ポイントのあとの文字を調べ、その文字が
+     CHARACTER-SETに一致するとポイントを進める。これをCHARACTER-SETに一
+     致しない文字に達するまで繰り返す。この関数は飛び越えた文字の個数を
+     返す。
+
+     引数CHARACTER-SETは、正規表現の`[...]'の内側と同じであるが、
+     `]'は特別扱いせず、`\'は`^'や`-'や`\'をクォートする。
+     したがって、`"a-zA-Z"'はすべての英文字を飛び越えて
+     最初の英文字でない文字のまえで止まる。
+     `"^a-zA-Z"'は英文字でない文字を飛び越えて最初の英文字で止まる。
+     *Note Regular Expressions::。
+
+     LIMITを指定すると（数かマーカであること）、ポイントを移動できるバッ
+     ファ内の最大位置を指定する。ポイントは、LIMITで止まるかLIMITに達す
+     るまえに止まる。
+
+     つぎの例では、ポイントは最初は`T'の直前に位置している。フォームを
+     評価後には、ポイントはその行末（`hat'の`t'と改行のあいだ）に位置し
+     ている。この関数は、すべての英文字と空白を飛び越えるが、改行は飛び
+     越えない。
+
+          ---------- Buffer: foo ----------
+          I read "-!-The cat in the hat
+          comes back" twice.
+          ---------- Buffer: foo ----------
+
+          (skip-chars-forward "a-zA-Z ")
+               => nil
+
+          ---------- Buffer: foo ----------
+          I read "The cat in the hat-!-
+          comes back" twice.
+          ---------- Buffer: foo ----------
+
+ -- Function: skip-chars-backward CHARACTER-SET &optional LIMIT
+     この関数は、LIMITに達するまで、後方へ向かってCHARACTER-SETに一致す
+     る文字を飛び越えてポイントを移動する。これは`skip-chars-forward'と
+     同様であるが、移動方向が異なる。
+
+     移動距離を表す値を返す。それは0以下の整数である。
+
+
+
+File: elisp-ja, Node: Excursions, Next: Narrowing, Prev: Motion, Up: Positions
+
+エクスカージョン
+================
+
+プログラムの局所的な部分で『一時的に』ポイントを移動したり、一時的にバッ
+ファを切り替えられるとしばしば有用です。これを"エクスカージョン
+（excursion、周遊）と呼び、スペシャルフォーム`save-excursion'で行います。
+この構文は、カレントバッファとそのポイントやマーカの値を保存し、エクス
+カージョンの完了後にそれらを復元します。
+
+ウィンドウの構成を保存したり復元するフォームは、別のところで述べてあり
+ます（*Note Window Configurations::と*Note Frame Configurations::）。
+
+ -- Special form: save-excursion FORMS...
+     スペシャルフォーム`save-excursion'は、カレントバッファの識別子とそ
+     のポイントやマーカの値を保存し、FORMSを評価し、最後に、バッファと
+     保存しておいたポイントやマーカの値を復元する。`throw'やエラーによ
+     る異常脱出（*Note Nonlocal Exits::）であっても、これらの保存した値
+     を復元する。
+
+     スペシャルフォーム`save-excursion'は、プログラムの一部分だけでバッ
+     ファやポイントを移動しプログラムの他の部分への影響を防ぐ標準的な方
+     法である。EmacsのLispソースでは4000回以上も使われている。
+
+     `save-excursion'は他のバッファのポイントやマークの値は保存しないの
+     で、他のバッファでの変更は`save-excursion'から抜けても持続する。
+
+     同様に、`save-excursion'は、`switch-to-buffer'などの関数で変更され
+     たウィンドウとバッファの対応関係は復元しない。これらの対応関係や選
+     択されているウィンドウを復元する1つの方法は、`save-excursion'の内
+     側で`save-window-excursion'を使うことである（*Note Window
+     Configurations::）。
+
+     `save-excursion'の戻り値は、FORMSの最後の結果であるか、
+     FORMSを与えなければ`nil'である。
+
+          (save-excursion FORMS)
+          ==
+          (let ((old-buf (current-buffer))
+                (old-pnt (point-marker))
+                (old-mark (copy-marker (mark-marker))))
+            (unwind-protect
+                (progn FORMS)
+              (set-buffer old-buf)
+              (goto-char old-pnt)
+              (set-marker (mark-marker) old-mark)))
+
+  *警告：*` '保存されたポイント値の箇所に普通にテキストを挿入すると、す
+べてのマーカを再配置するように保存されたポイント値を再配置する。したがっ
+て、保存されたポイント値が復元されると、ポイントは挿入されたテキストの
+まえに普通どおりにくる。
+
+`save-excursion'はマーカの位置を保存しますが、
+バッファを変更する関数が`deactivate-mark'を行うことを防ぎませんから、
+コマンドが終了するとマーカが不活性になってしまいます。
+*Note The Mark::。
+
+
+
+File: elisp-ja, Node: Narrowing, Prev: Excursions, Up: Positions
+
+ナロイング
+==========
+
+"ナロイング"（narrowing）とは、
+Emacsの編集コマンドが参照できるテキストを
+バッファの制限された文字の範囲に限定することです。
+参照できるテキストのことをバッファの
+"参照可能部分"（accessible portion）と呼びます。
+
+ナロイングは、参照可能部分の先頭と末尾になる2つのバッファ内位置で指定し
+ます。ほとんどの編集コマンドやほとんどのEmacs基本関数にとっては、これら
+の位置はバッファの先頭や末尾の値を置き換えることになります。ナロイング
+していると、参照可能部分の外側のテキストは表示されませんし、ポイントは
+参照可能部分の外側へは移動できません。
+
+通常はバッファの先頭から数える位置や行番号などの値はナロイングしていて
+も同様に数えますが、それらを使う関数は参照できないテキストを操作するこ
+とを拒否します。
+
+バッファを保存するコマンドはナロイングの影響を受けません。つまり、ナロ
+イングに関係なくバッファ全体を保存します。
+
+ -- コマンド: narrow-to-region START END
+     この関数は、カレントバッファのSTARTで始まりENDで終る部分を参照可能
+     部分にする。どちらの引数も文字の位置であること。
+
+     対話的に呼び出されると、STARTとENDは現在のリージョンの境界（ポイン
+     トとマークの小さいほうがさきにくる）である。
+
+ -- コマンド: narrow-to-page MOVE-COUNT
+     このコマンドは、カレントバッファの参照可能部分を現在のページのみを
+     含むようにする。省略可能な第1引数MOVE-COUNTが`nil'以外であると、
+     MOVE-COUNTページだけ前方か後方へ移動してから1ページ分にナロイング
+     する。変数`page-delimiter'がページの開始箇所と終了箇所を指定する
+     （*Note Standard Regexps::）。
+
+     対話的に呼び出されると、MOVE-COUNTは数値前置引数である。
+
+ -- コマンド: widen
+     この関数は、カレントバッファのナロイングを解除し、全体を参照できる
+     ようにする。これを"ワイドニング"（widening）と呼ぶ。これはつぎの式
+     と等価である。
+
+          (narrow-to-region 1 (1+ (buffer-size)))
+
+ -- Special form: save-restriction BODY...
+     このスペシャルフォームは、現在の参照可能部分の境界を保存し、フォー
+     ムBODYを評価し、最後に、保存した境界を復元してまえと同じナロイング
+     状態（あるいはナロイングなし）に復元する。`throw'やエラーによる異
+     常脱出（*Note Nonlocal Exits::）であっても、ナロイング状態を復元す
+     る。
+
+     `save-restriction'の戻り値は、BODYの最後の結果であるか、
+     BODYを与えなければ`nil'である。
+
+     *注意：*` '構文`save-restriction'を使うときにはまちがいやすい。使
+     うまえにこの説明全体を読むこと。
+
+     BODYでカレントバッファを切り替えても`save-restriction'はもとのバッ
+     ファ（バッファの制限を保存したバッファ）に制限を復元するが、もとの
+     カレントバッファには戻さない。
+
+     `save-restriction'はポイントやマークは復元*しない*。それには
+     `save-excursion'を使う。`save-restriction'と`save-excursion'の両者
+     を一緒に使うときには、`save-excursion'が先に（外側に）くること。さ
+     もないと、古いポイント値は一時的なナロイングが有効な状態で復元され
+     る。古いポイント値が一時的なナロイングの範囲外にあると正しく復元で
+     きない。
+
+     スペシャルフォーム`save-restriction'は、参照可能部分の先頭と末尾を
+     バッファの先頭と末尾からの距離として記録する。いいかえれば、参照可
+     能部分の前後の参照できないテキストの量を記録する。
+
+     この方法は、BODYでさらにナロイングしても正しい結果を生じる。しかし、
+     BODYでワイドニングして保存されているナロイングの範囲外を変更すると
+     `save-restriction'が混乱する。このようにしたいときには、
+     `save-restriction'は正しい解法ではない。つぎのようにする必要がある。
+
+          (let ((beg (point-min-marker))
+                (end (point-max-marker)))
+            (unwind-protect
+                (progn BODY)
+              (save-excursion
+                (set-buffer (marker-buffer beg))
+                (narrow-to-region beg end))))
+
+     `save-restriction'の正しい使い方の簡単な例を示す。
+
+          ---------- Buffer: foo ----------
+          This is the contents of foo
+          This is the contents of foo
+          This is the contents of foo-!-
+          ---------- Buffer: foo ----------
+
+          (save-excursion
+            (save-restriction
+              (goto-char 1)
+              (forward-line 2)
+              (narrow-to-region 1 (point))
+              (goto-char (point-min))
+              (replace-string "foo" "bar")))
+
+          ---------- Buffer: foo ----------
+          This is the contents of bar
+          This is the contents of bar
+          This is the contents of foo-!-
+          ---------- Buffer: foo ----------
+
+
+File: elisp-ja, Node: Markers, Next: Text, Prev: Positions, Up: Top
+
+マーカ
+******
+
+"マーカ"（marker）とは、バッファ内位置をそれを取り巻くテキストを基準に
+指定するために使われるLispオブジェクトです。テキストが挿入されたり削除
+されると、バッファの先頭からマーカまでの距離は自動的に変更され、マーカ
+は同じ前後の文字のあいだに留まります。
+
+* Menu:
+
+* Overview of Markers::      The components of a marker, and how it relocates.
+* Predicates on Markers::    Testing whether an object is a marker.
+* Creating Markers::         Making empty markers or markers at certain places.
+* Information from Markers:: Finding the marker's buffer or character position.
+* Marker Insertion Types::   Two ways a marker can relocate when you
+                               insert where it points.
+* Moving Markers::           Moving the marker to a new buffer or position.
+* The Mark::                 How "the mark" is implemented with a marker.
+* The Region::               How to access "the region".
+
+
+
+File: elisp-ja, Node: Overview of Markers, Next: Predicates on Markers, Prev: Markers, Up: Markers
+
+マーカの概要
+============
+
+マーカは、バッファとそのバッファ内での位置を指定します。マーカは、位置
+を必要とする関数に対して位置を表すものとして使えます。バッファ内の位置
+について詳しくは*Note Positions::。
+
+マーカには2つの属性、つまり、マーカ位置とマーカバッファがあります。マー
+カ位置は、当該バッファ内の位置としてのマーカに（その時点で）等価な整数
+です。しかし、マーカの生存期間中、マーカ位置の値はしばしば変化します。
+バッファにテキストを挿入したり削除すると、マーカは再配置されます。これ
+は、バッファの任意の箇所で挿入したり削除したとしても、2つの文字のあいだ
+に置かれたマーカが同じ文字のあいだに留まるようにするためです。再配置に
+よって、マーカに等価な整数は変わります。
+
+マーカ位置の周りのテキストを削除すると、削除されたテキストの前後の文字
+のあいだにマーカは留まります。マーカの位置にテキストを挿入すると、
+`insert-before-markers'（*Note Insertion::）で挿入しない限り、マーカの
+挿入型"（insertion type）（*Note Marker Insertion Types::）に依存して、
+マーカは挿入されたテキストのまえかうしろに留まります。
+
+バッファに対する挿入や削除では、すべてのマーカを検査し、必要ならばマー
+カを再配置する必要があります。マーカを多数抱えるバッファでは、このため
+に処理が遅くなります。そのため、マーカが不要であると確信したときには、
+マーカがどこも指さないようにしておくのがよいです。参照されていないマー
+カは最終的には（ガベッジコレクションで）回収されますが、それまでは、マー
+カがどこかを指していると処理時間を浪費します。
+
+マーカ位置にはよく算術演算を施すので、（`+'や`-'を含む）ほとんどの算術
+演算は引数としてマーカを受け付けます。そのような場合、マーカはその現在
+位置を表します。
+
+マーカを作って位置を設定し、ポイントをマーカへ移動する例を示します。
+
+     ;; どこも指していない新しいマーカを作る
+     (setq m1 (make-marker))
+          => #<marker in no buffer>
+
+     ;; マーカm1の位置をカレントバッファの
+     ;; 99番目と100番目の文字のあいだにする
+     (set-marker m1 100)
+          => #<marker at 100 in markers.texi>
+
+     ;; バッファの先頭に1文字挿入する
+     (goto-char (point-min))
+          => 1
+     (insert "Q")
+          => nil
+
+     ;; それにしたがって`m1'が更新される
+     m1
+          => #<marker at 101 in markers.texi>
+
+     ;; 同じ位置を指す2つのマーカは`eq'ではないが
+     ;; `equal'である
+     (setq m2 (copy-marker m1))
+          => #<marker at 101 in markers.texi>
+     (eq m1 m2)
+          => nil
+     (equal m1 m2)
+          => t
+
+     ;; マーカを使い終ったら、どこも指していないようにする
+     (set-marker m1 nil)
+          => #<marker in no buffer>
+
+
+
+File: elisp-ja, Node: Predicates on Markers, Next: Creating Markers, Prev: Overview of Markers, Up: Markers
+
+マーカ向けの述語
+================
+
+オブジェクトがマーカであるかどうかや、オブジェクトが整数かマーカである
+かどうかを検査できます。マーカと整数の両者を扱う算術関数に関連して、後
+者の検査は有用です。
+
+ -- Function: markerp OBJECT
+     この関数は、OBJECTがマーカであれば`t'を返し、さもなければ`nil'を返
+     す。多くの関数がマーカや整数を受け付けるが、整数はマーカではないこ
+     とに注意すること。
+
+ -- Function: integer-or-marker-p OBJECT
+     この関数は、OBJECTが整数かマーカであると`t'を返し、さもなければ
+     `nil'を返す。
+
+ -- Function: number-or-marker-p OBJECT
+     この関数は、OBJECTが数（整数か浮動小数点数）かマーカであると
+     `t'を返し、さもなければ`nil'を返す。
+
+
+
+File: elisp-ja, Node: Creating Markers, Next: Information from Markers, Prev: Predicates on Markers, Up: Markers
+
+マーカ作成関数
+==============
+
+新たにマーカを作成するときには、そのマーカが、どこも指していない、現在
+のポイント位置を指している、バッファの参照可能部分の先頭や末尾を指して
+いる、別のマーカと同じ箇所を指しているのいずれかにできます。
+
+ -- Function: make-marker
+     この関数は、どこも指していない新たに作成したマーカを返す。
+
+          (make-marker)
+               => #<marker in no buffer>
+
+ -- Function: point-marker
+     この関数は、カレントバッファの現在のポイント位置を指す新たに作成し
+     たマーカを返す。*Note Point::。例については、下記の`copy-marker'を
+     参照。
+
+ -- Function: point-min-marker
+     この関数は、バッファの参照可能部分の先頭を指す新たに作成したマーカを返す。
+     ナロイングしていなければ、これはバッファの先頭である。
+     *Note Narrowing::。
+
+ -- Function: point-max-marker
+     この関数は、バッファの参照可能部分の末尾を指す新たに作成したマーカを返す。
+     ナロイングしていなければ、これはバッファの末尾である。
+     *Note Narrowing::。
+
+     本章のソースファイル（の原文）を入れたバッファでのこの関数と
+     `point-min-marker'の例を示す。
+
+          (point-min-marker)
+               => #<marker at 1 in markers.texi>
+          (point-max-marker)
+               => #<marker at 15573 in markers.texi>
+
+          (narrow-to-region 100 200)
+               => nil
+          (point-min-marker)
+               => #<marker at 100 in markers.texi>
+          (point-max-marker)
+               => #<marker at 200 in markers.texi>
+
+ -- Function: copy-marker MARKER-OR-INTEGER &optional INSERTION-TYPE
+     引数としてマーカを渡されると、`copy-marker'は、MARKER-OR-INTEGERが
+     指すのと同じバッファとバッファ内位置を指す新たなマーカを返す。引数
+     として整数を渡されると、`copy-marker'は、カレントバッファで位置
+     MARKER-OR-INTEGERを指す新たなマーカを返す。
+
+     新たなマーカの挿入型は引数INSERTION-TYPEで指定する。
+     *Note Marker Insertion Types::。
+
+     渡された整数引数が1未満であると、`copy-marker'は、カレントバッファ
+     でバッファの先頭を指す新たなマーカを返す。渡された整数引数がバッファ
+     の長さより大きいと、`copy-marker'は、バッファの末尾を指す新たなマー
+     カを返す。
+
+          (copy-marker 0)
+               => #<marker at 1 in markers.texi>
+
+          (copy-marker 20000)
+               => #<marker at 7572 in markers.texi>
+
+     MARKER-OR-INTEGERがマーカでも整数でもないと、エラーを通知する。
+
+2つの異なるマーカが、同じバッファの同じバッファ内位置であるか、どちらも
+どこも指していないときには、両者を（`eq'ではないが）`equal'とみなします。
+
+     (setq p (point-marker))
+          => #<marker at 2139 in markers.texi>
+
+     (setq q (copy-marker p))
+          => #<marker at 2139 in markers.texi>
+
+     (eq p q)
+          => nil
+
+     (equal p q)
+          => t
+
+
+
+File: elisp-ja, Node: Information from Markers, Next: Marker Insertion Types, Prev: Creating Markers, Up: Markers
+
+マーカの情報
+============
+
+本節では、マーカオブジェクトの構成要素を参照する関数について述べます。
+
+ -- Function: marker-position MARKER
+     この関数は、MARKERが指す位置を返す。あるいは、MARKERがどこも指して
+     いなければ`nil'を返す。
+
+ -- Function: marker-buffer MARKER
+     この関数は、MARKERが指すバッファを返す。あるいは、MARKERがどこも指
+     していなければ`nil'を返す。
+
+          (setq m (make-marker))
+               => #<marker in no buffer>
+          (marker-position m)
+               => nil
+          (marker-buffer m)
+               => nil
+
+          (set-marker m 3770 (current-buffer))
+               => #<marker at 3770 in markers.texi>
+          (marker-buffer m)
+               => #<buffer markers.texi>
+          (marker-position m)
+               => 3770
+
+
+
+File: elisp-ja, Node: Marker Insertion Types, Next: Moving Markers, Prev: Information from Markers, Up: Markers
+
+マーカの挿入型
+==============
+
+マーカが指す箇所に直接テキストを挿入すると、マーカの再配置方法には2つの
+可能性、つまり、挿入したテキストのまえに留まるか、あとにくるかのどちら
+かです。マーカの"挿入型"（insertion type）を設定することで、あるマーカ
+ではどちらを選ぶか指定できます。`insert-before-markers'を使うとマーカの
+挿入型は無視され、マーカは挿入したテキストのうしろにつねに再配置される
+ことに注意してください。
+
+ -- Function: set-marker-insertion-type MARKER TYPE
+     この関数は、マーカMARKERの挿入型をTYPEとする。TYPEが`t'であると、
+     テキストが挿入されるとMARKERはその位置へ進む。TYPEが`nil'であると、
+     テキストが挿入されてもMARKERはその位置へ進まない。
+
+ -- Function: marker-insertion-type MARKER
+     この関数は、MARKERの現在の挿入型を報告する。
+
+
+
+File: elisp-ja, Node: Moving Markers, Next: The Mark, Prev: Marker Insertion Types, Up: Markers
+
+マーカ位置の移動
+================
+
+本節では、既存のマーカの位置を変更する方法について述べます。これを行う
+ときには、読者のプログラムの外側で当該マーカが使われているかどうか、使
+われているときには移動による効果はなにかを確実に理解してください。さも
+ないと、Emacsの別の部分で混乱を生じるかもしれません。
+
+ -- Function: set-marker MARKER POSITION &optional BUFFER
+     この関数は、BUFFERにおいてMARKERをPOSITIONへ移動する。
+     BUFFERを与えないと、デフォルトはカレントバッファである。
+
+     POSITIONが1未満であると、
+     `set-marker'はMARKERをバッファの先頭へ移動する。
+     POSITIONがバッファのサイズよりも大きいと、
+     `set-marker'はMARKERをバッファの末尾へ移動する。
+     POSITIONが`nil'であったりどこも指していないマーカであると、
+     MARKERはどこも指さないようにする。
+
+     戻り値はMARKERである。
+
+          (setq m (point-marker))
+               => #<marker at 4714 in markers.texi>
+          (set-marker m 55)
+               => #<marker at 55 in markers.texi>
+          (setq b (get-buffer "foo"))
+               => #<buffer foo>
+          (set-marker m 0 b)
+               => #<marker at 1 in foo>
+
+ -- Function: move-marker MARKER POSITION &optional BUFFER
+     これは`set-marker'の別名である。
+
+
+
+File: elisp-ja, Node: The Mark, Next: The Region, Prev: Moving Markers, Up: Markers
+
+マーク
+======
+
+各バッファの1つの特別なマーカを"マーク"（mark）として区別します。これは、
+`kill-region'や`indent-rigidly'などのコマンド向けにユーザーのために位置
+を記録するものです。Lispプログラムでは、ユーザーが使う可能性のある値だ
+けをマークに設定し、プログラムの内部向けにはけっしてマークを使いません。
+たとえば、コマンド`replace-regexp'は、置換を行うまえのポイント値をマー
+クに設定します。置換を完了したあとに、ユーザーが手軽にまえの位置に戻れ
+るようにするためです。
+
+多くのコマンドは、対話的に呼ばれるとポイントとマークのあいだの
+テキストに作用するように設計されています。
+読者がそのようなコマンドを書くときには、
+マークを直接検査しないでください。
+そのかわりに、`r'を指定した`interactive'を使います。
+こうすると、
+対話的に呼ばれるとポイントとマークの値がコマンドの引数に与えられますが、
+別のLispプログラムからは引数を明示できます。
+*Note Interactive Codes::。
+
+各バッファには、他のバッファのマークの値とは独立な独自のマークの値があ
+ります。バッファが作成されると、マークは存在しますがどこも指さない状態
+です。これを『バッファのマークは欠如している』状態とみなします。
+
+バッファでいったんマークが『存在』するようになれば、マークが存在しなく
+なることは普通はありません。しかし、暫定マーク（transient-mark）モード
+をオンにすると、マークが"不活性"になることはあります。すべてのバッファ
+でつねにバッファローカルな変数`mark-active'がマークが活性かどうかを表し
+ます。その値が`nil'以外であるとマークは活性です。コマンドで
+`deactivate-mark'に`nil'以外の値を設定すると、エディタコマンドループに
+戻ったときにマークを不活性にするようにできます（ただし、暫定マーク
+（transient-mark）モードがオンの場合に限る）。
+
+暫定マーク（transient-mark）モードを使う主な目的は、
+マークが活性であるとこのモードはリージョンを強調表示するからです。
+*Note Display::。
+
+マークに加えて、各バッファには"マークリング"（mark ring）、つまり、マー
+クの以前の値を保持したリストがあります。編集コマンドがマークを変更する
+と、通常、編集コマンドはマークの古い値をマークリングに保存します。変数
+`mark-ring-max'で、マークリングに収める要素の最大個数を指定します。リス
+トがこの長さに達すると、新たな要素を加えるたびに古い要素を削除します。
+
+ -- Function: mark &optional FORCE
+     この関数は、カレントバッファのマーク位置を整数で返す。
+
+     マークが不活性であると、通常、`mark'はエラーを通知する。しかし、
+     FORCEが`nil'以外であると`mark'はマーク位置を返すが、当該バッファで
+     マークが設定されたことがなければ`nil'を返す。
+
+ -- Function: mark-marker
+     この関数は、カレントバッファのマークを返す。これは、Emacs内部のマー
+     ク位置を記録したマーカそのものであり、コピーではない。したがって、
+     このマーカの位置を変更すると、マークの位置に直接影響する。この効果
+     を望まない限り、そのようにしないこと。
+
+          (setq m (mark-marker))
+               => #<marker at 3420 in markers.texi>
+          (set-marker m 100)
+               => #<marker at 100 in markers.texi>
+          (mark-marker)
+               => #<marker at 100 in markers.texi>
+
+     他のマーカと同様に、このマーカは任意のバッファでポイントを指すよう
+     にできる。マークが指しているバッファ以外のバッファ内位置を指すこと
+     は勧めない。そのようにすると、一貫性はあるが妙な結果を生じる。
+
+
+ -- Function: set-mark POSITION
+     この関数は、位置POSITIONにマークを設定し、マークを活性にする。マー
+     クの古い値はマークリングに保存し*ない*。
+
+     *注意：*` 'ユーザーにマークが移動したことを示し、かつ、
+     まえのマーク位置を破棄したい場合にのみこの関数を使うこと。
+     通常、新たにマークを設定したときには、
+     古いマークを`mark-ring'に入れるべきである。
+     この理由から、ほとんどのアプリケーションでは、
+     `set-mark'ではなく`push-mark'と`pop-mark'を使うべきである。
+
+     Emacs Lispの初心者プログラマは、誤った目的にマークを使いがちである。
+     マークはユーザーの便宜のための位置を保存する。編集コマンドは、コマ
+     ンドのユーザーレベルの機能の一部としてマークを変更する以外には、マー
+     クを変更してはならない。（変更する場合には、その効果を明文化してお
+     くべきである。）Lispプログラムの内部で使う位置を記録するには、
+     Lisp変数に保存する。たとえばつぎのようにする。
+
+          (let ((beg (point)))
+            (forward-line 1)
+            (delete-region beg (point))).
+
+
+ -- Function: push-mark &optional POSITION NOMSG ACTIVATE
+     この関数は、カレントバッファのマークをPOSITIONとし、
+     以前のマークのコピーを`mark-ring'へ入れる。
+     POSITIONが`nil'であると、ポイントの値を使う。
+     `push-mark'は`nil'を返す。
+
+     関数`push-mark'は、通常、マークを活性に*しない*。活性にするには引
+     数ACTIVATEに`t'を指定する。
+
+     NOMSGが`nil'であると、メッセージ`Mark set'を表示する。
+
+ -- Function: pop-mark
+     この関数は、`mark-ring'から先頭要素を取り出し、そのマークをカレン
+     トバッファの実際のマークとする。バッファのポイントは移動しない。ま
+     た、`mark-ring'が空であるとなにもしない。マークを不活性にする。
+
+     戻り値に意味はない。
+
+ -- User Option: transient-mark-mode
+     この変数が`nil'以外であると暫定マーク（transient-mark）モードがオ
+     ンであるが、バッファを変更する各基本関数は`deactivate-mark'に設定
+     する。つまり、バッファを変更するコマンドは、通常、マークを不活性に
+     する。
+
+ -- User Option: mark-even-if-inactive
+     これが`nil'以外であると、LispプログラムやEmacsユーザーは、マークが
+     不活性であってもマークを使える。このオプションは、暫定マーク
+     （transient-mark）モードのふるまいに影響する。このオプションが
+     `nil'以外であると、マークが不活性になるとリージョンの強調表示を止
+     めるが、マークを使うコマンドはマークが活性であるものとして動作する。
+
+ -- Variable: deactivate-mark
+     編集コマンドがこの変数に`nil'以外を設定すると、エディタコマンドルー
+     プは（暫定マーク（transient-mark）モードがオンであると）コマンドか
+     ら戻るとマークを不活性にする。コマンドが終了したらマークを不活性に
+     するために、バッファを変更するすべての基本関数は`deactivate-mark'
+     に設定する。
+
+ -- Function: deactivate-mark
+     この関数は、暫定マーク（transient-mark）モードがオンであるとマーク
+     を不活性にする。さもなければなにもしない。
+
+ -- Variable: mark-active
+     この変数が`nil'以外であると、マークは活性である。この変数は各バッ
+     ファにおいてつねにバッファローカルである。
+
+ -- Variable: activate-mark-hook
+ -- Variable: deactivate-mark-hook
+     これらのノーマルフックは、それぞれ、マークが活性になったとき、不活
+     性になったときに実行される。マークが活性でありリージョンが変更され
+     たときには、フック`activate-mark-hook'はコマンドの終りでも実行され
+     る。
+
+ -- Variable: mark-ring
+     このバッファローカルな変数の値は、カレントバッファで保存したマーク
+     を最新のものから順に並べたリストである。
+
+          mark-ring
+          => (#<marker at 11050 in markers.texi>
+              #<marker at 10832 in markers.texi>
+              ...)
+
+ -- User Option: mark-ring-max
+     この変数の値は、`mark-ring'の最大の大きさである。
+     これより多くのマークを`mark-ring'に積むと、
+     `push-mark'は新しいものを追加するときに古いものを削除する。
+
+
+

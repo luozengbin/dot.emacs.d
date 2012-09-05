@@ -1,0 +1,1151 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: 電子メールおよび MIME オブジェクトをゼロから作成する,  Next: 国際化されたヘッダ,  Prev: MIME 文書を生成する,  Up: email
+
+電子メールおよび MIME オブジェクトをゼロから作成する
+----------------------------------------------------
+
+ふつう、メッセージオブジェクト構造はファイルまたは何がしかの
+テキストをパーザに通すことで得られます。パーザは与えられた
+テキストを解析し、基底となる root のメッセージオブジェクトを返します。
+しかし、完全なメッセージオブジェクト構造を何もないところから作成することも
+また可能です。個別の `Message' を手で作成することさえできます。
+実際には、すでに存在するメッセージオブジェクト構造をとってきて、
+そこに新たな `Message' オブジェクトを追加したり、あるものを
+別のところへ移動させたりできます。これは MIME メッセージを
+切ったりおろしたりするために非常に便利なインターフェイスを提供します。
+
+新しいメッセージオブジェクト構造は `Message' インスタンスを
+作成することにより作れます。ここに添付ファイルやその他適切なものを
+すべて手で加えてやればよいのです。MIME メッセージの場合、 `email'
+パッケージはこれらを簡単におこなえるようにするために
+いくつかの便利なサブクラスを提供しています。これらのサブクラスは
+`email' パッケージ内にある、 そのクラスと同じ名前をもつモジュールから
+import してやります。 たとえば:
+
+     import email.MIMEImage.MIMEImage
+
+または以下のようにします:
+
+     from email.MIMEText import MIMEText
+
+以下がそのサブクラスです:
+
+`MIMEBase(_maintype, _subtype, **_params)'
+     これはすべての MIME 用サブクラスの基底となるクラスです。 とくに
+     `MIMEBase' のインスタンスを直接作成することは (可能ではありますが)
+     ふつうはしないでしょう。`MIMEBase' は 単により特化された MIME
+     用サブクラスのための便宜的な基底クラスとして提供されています。
+
+     _MAINTYPE は `Content-Type' の主形式 (maintype) であり (`text' や
+     `image' など)、_SUBTYPE は `Content-Type' の副形式 (subtype) です
+     (`plain' や `gif' など)。 _PARAMS
+     は各パラメータのキーと値を格納した辞書であり、 これは直接
+     `Message.add_header()' に渡されます。
+
+     `MIMEBase' クラスはつねに (_MAINTYPE、 _SUBTYPE、 および _PARAMS
+     にもとづいた) `Content-Type' ヘッダと、 `MIME-Version' ヘッダ
+     (必ず `1.0' に設定される) を追加します。
+
+`MIMENonMultipart()'
+     `MIMEBase' のサブクラスで、これは `multipart' 形式でない MIME
+     メッセージのための中間的な基底クラスです。このクラスのおもな目的は、
+     通常 `multipart' 形式のメッセージに対してのみ意味をなす `attach()'
+     メソッドの使用をふせぐことです。もし `attach()' メソッドが
+     呼ばれた場合、これは `MultipartConversionError' 例外を発生します。
+
+     _Added in Python version 2.2.2_
+
+`MIMEMultipart([subtype[, boundary[, _subparts[, _params]]]])'
+     `MIMEBase' のサブクラスで、これは `multipart' 形式の MIME
+     メッセージのための中間的な基底クラスです。オプション引数 _SUBTYPE
+     は デフォルトでは `mixed' になっていますが、そのメッセージの副形式
+     (subtype) を
+     指定するのに使うことができます。メッセージオブジェクトには
+     `multipart/'_SUBTYPE という値をもつ `Content-Type' ヘッダとともに、
+     `MIME-Version' ヘッダが追加されるでしょう。
+
+     オプション引数 BOUNDARY は multipart の境界文字列です。 これが
+     `None' の場合 (デフォルト)、境界は必要に応じて計算されます。
+
+     _SUBPARTS はそのペイロードの subpart
+     の初期値からなるシーケンスです。
+     このシーケンスはリストに変換できるようになっている必要があります。
+     新しい subpart はつねに `Message.attach()' メソッドを使って
+     そのメッセージに追加できるようになっています。
+
+     `Content-Type' ヘッダに対する追加のパラメータは キーワード引数
+     _PARAMS を介して取得あるいは設定されます。
+     これはキーワード辞書になっています。
+
+     _Added in Python version 2.2.2_
+
+`MIMEAudio(_audiodata[, _subtype[, _encoder[, **_params]]])'
+     `MIMEAudio' クラスは `MIMENonMultipart' のサブクラスで、 主形式
+     (maintype) が `audio' の MIME
+     オブジェクトを作成するのに使われます。 _AUDIODATA
+     は実際の音声データを格納した文字列です。 もしこのデータが標準の
+     Python モジュール `sndhdr' によって
+     認識できるものであれば、`Content-Type' ヘッダの 副形式 (subtype)
+     は自動的に決定されます。 そうでない場合はその画像の形式 (subtype)
+     を _SUBTYPE で
+     明示的に指定する必要があります。副形式が自動的に決定できず、
+     _SUBTYPE の指定もない場合は、`TypeError' が発生します。
+
+     オプション引数 _ENCODER は呼び出し可能なオブジェクト (関数など)
+     で、 トランスポートのさいに画像の実際のエンコードをおこないます。
+     このオブジェクトは `MIMEAudio'
+     インスタンスの引数をひとつだけ取ることができます。
+     この関数は、与えられたペイロードをエンコードされた形式に変換するのに
+     `get_payload()' および `set_payload()' を使う必要があります。
+     また、これは必要に応じて `Content-Transfer-Encoding' あるいは
+     そのメッセージに適した何らかのヘッダを追加する必要があります。
+     デフォルトのエンコーディングは base64
+     です。組み込みのエンコーダの詳細については `email.Encoders'
+     を参照してください。
+
+     _PARAMS は `MIMEBase' コンストラクタに直接渡されます。
+
+`MIMEImage(_imagedata[, _subtype[, _encoder[, **_params]]])'
+     `MIMEImage' クラスは `MIMENonMultipart' のサブクラスで、 主形式
+     (maintype) が `image' の MIME
+     オブジェクトを作成するのに使われます。 _IMAGEDATA
+     は実際の画像データを格納した文字列です。 もしこのデータが標準の
+     Python モジュール `imghdr' によって
+     認識できるものであれば、`Content-Type' ヘッダの 副形式 (subtype)
+     は自動的に決定されます。 そうでない場合はその画像の形式 (subtype)
+     を _SUBTYPE で
+     明示的に指定する必要があります。副形式が自動的に決定できず、
+     _SUBTYPE の指定もない場合は、`TypeError' が発生します。
+
+     オプション引数 _ENCODER は呼び出し可能なオブジェクト (関数など)
+     で、 トランスポートのさいに画像の実際のエンコードをおこないます。
+     このオブジェクトは `MIMEImage'
+     インスタンスの引数をひとつだけ取ることができます。
+     この関数は、与えられたペイロードをエンコードされた形式に変換するのに
+     `get_payload()' および `set_payload()' を使う必要があります。
+     また、これは必要に応じて `Content-Transfer-Encoding' あるいは
+     そのメッセージに適した何らかのヘッダを追加する必要があります。
+     デフォルトのエンコーディングは base64
+     です。組み込みのエンコーダの詳細については `email.Encoders'
+     を参照してください。
+
+     _PARAMS は `MIMEBase' コンストラクタに直接渡されます。
+
+`MIMEMessage(_msg[, _subtype])'
+     `MIMEMessage' クラスは `MIMENonMultipart' のサブクラスで、 主形式
+     (maintype) が `message' の MIME
+     オブジェクトを作成するのに使われます。ペイロードとして使われるメッセージは
+     _MSG になります。これは `Message' クラス (あるいはそのサブクラス)
+     の インスタンスでなければいけません。そうでない場合、この関数は
+     `TypeError' を発生します。
+
+     オプション引数 _SUBTYPE はそのメッセージの副形式 (subtype)
+     を設定します。 デフォルトではこれは `rfc822' になっています。
+
+`MIMEText(_text[, _subtype[, _charset[, _encoder]]])'
+     `MIMEText' クラスは `MIMENonMultipart' のサブクラスで、 主形式
+     (maintype) が `text' の MIME
+     オブジェクトを作成するのに使われます。ペイロードの文字列は _TEXT
+     になります。_SUBTYPE には副形式 (subtype) を指定し、 デフォルトは
+     `plain' です。_CHARSET はテキストの
+     文字セットで、`MIMENonMultipart'
+     コンストラクタに引数として渡されます。 デフォルトではこの値は
+     `us-ascii' になっています。
+     テキストデータに対しては文字コードの推定やエンコードはまったく行われません。
+
+     _This is deprecated in Python 2.2.2.  The _ENCODING
+     引数はもはや時代遅れとなっており、推奨されません。
+     現在ではエンコードは _CHARSET
+     引数にもとづき暗黙のうちに行われます。_
+
+
+File: python-lib-jp.info,  Node: 国際化されたヘッダ,  Next: 文字セットの表現,  Prev: 電子メールおよび MIME オブジェクトをゼロから作成する,  Up: email
+
+国際化されたヘッダ
+------------------
+
+非ASCII形式のヘッダを表現する
+
+RFC 2822 は電子メールメッセージの形式を規定する基本規格です。
+これはほとんどの電子メールが ASCII 文字のみで構成されていたころ普及した
+RFC 822 標準から発展したものです。RFC 2822 は電子メールが すべて 7-bit
+ASCII 文字のみから構成されていると仮定して作られた仕様です。
+
+もちろん、電子メールが世界的に普及するにつれ、この仕様は国際化されてきました。
+今では電子メールに言語依存の文字セットを使うことができます。
+基本規格では、まだ電子メールメッセージを 7-bit ASCII 文字のみを
+使って転送するよう要求していますので、多くの RFC でどうやって 非ASCII
+の電子メールを RFC 2822 準拠な形式にエンコードするかが
+記述されています。これらの RFC は以下のものを含みます: RFC 2045 、 RFC
+2046 、 RFC 2047 、 および RFC 2231 。 `email' パッケージは、
+`email.Header' および `email.Charset' モジュールでこれらの規格を
+サポートしています。
+
+ご自分の電子メールヘッダ、たとえば `Subject' や `To'
+などのフィールドに非ASCII文字を入れたい場合、 `Header'
+クラスを使う必要があります。`Message' オブジェクトの
+該当フィールドに文字列ではなく、`Header' インスタンスを値として
+使うのです。たとえば:
+
+     >>> from email.Message import Message
+     >>> from email.Header import Header
+     >>> msg = Message()
+     >>> h = Header('p\xf6stal', 'iso-8859-1')
+     >>> msg['Subject'] = h
+     >>> print msg.as_string()
+     Subject: =?iso-8859-1?q?p=F6stal?=
+
+`Subject' フィールドに非ASCII文字をふくめていることに
+注目してください。ここでは、含めたいバイト列がエンコードされている
+文字セットを指定して `Header' インスタンスを作成することによって
+実現しています。のちにこの `Message' インスタンスから
+フラットなテキストを生成するさいに、この `Subject' フィールドは RFC 2047
+準拠の適切な形式にエンコードされます。MIME 機能のついている
+メーラなら、このヘッダに埋めこまれた ISO-8859-1
+文字をただしく表示するでしょう。
+
+_Added in Python version 2.2.2_
+
+以下は `Header' クラスの説明です:
+
+`Header([s[, charset[, maxlinelen[, header_name[, continuation_ws[, errors]]]]]])'
+     別の文字セットの文字列をふくむ MIME準拠なヘッダを作成します。
+
+     オプション引数 S はヘッダの値の初期値です。 これが `None' の場合
+     (デフォルト)、ヘッダの初期値は設定されません。 この値はあとから
+     `append()' メソッドを呼びだすことによって
+     追加することができます。S はバイト文字列か、あるいは Unicode
+     文字列でもかまいません。 この意味については `append()'
+     の項を参照してください。
+
+     オプション引数 CHARSET には 2つの目的があります。 ひとつは
+     `append()' メソッドにおける CHARSET 引数と
+     同じものです。もうひとつの目的は、これ以降 CHARSET 引数を 省略した
+     `append()' メソッド呼び出しすべてにおける、
+     デフォルト文字セットを決定するものです。コンストラクタに CHARSET
+     が与えられない場合 (デフォルト)、初期値の S および 以後の
+     `append()' 呼び出しにおける文字セットとして `us-ascii'
+     が使われます。
+
+     行の最大長は MAXLINELEN によって明示的に指定できます。 最初の行を
+     (`Subject' などの S に含まれない フィールドヘッダの責任をとるため)
+     短く切りとる場合、 HEADER_NAME
+     にそのフィールド名を指定してください。 MAXLINELEN のデフォルト値は
+     76 であり、HEADER_NAME の デフォルト値は `None'
+     です。これはその最初の行を
+     長い、切りとられたヘッダとして扱わないことを意味します。
+
+     オプション引数 CONTINUATION_WS は RFC 2822 準拠の
+     折り返し用余白文字で、ふつうこれは空白か、ハードウェアタブ文字
+     (hard tab) である
+     必要があります。ここで指定された文字は複数にわたる行の行頭に挿入されます。
+
+     オプション引数 ERRORS は、`append()' メソッドにそのまま渡されます。
+
+`append(s[, charset[, errors]])'
+     この MIME ヘッダに文字列 S を追加します。
+
+     オプション引数 CHARSET がもし与えられた場合、これは `Charset'
+     インスタンス (`email.Charset' を参照) か、
+     あるいは文字セットの名前でなければなりません。この場合は `Charset'
+     インスタンスに変換されます。この値が `None' の場合 (デフォルト)、
+     コンストラクタで与えられた CHARSET が使われます。
+
+     S はバイト文字列か、Unicode 文字列です。 こればバイト文字列
+     (`isinstance(s, str)' が真) の場合、 CHARSET
+     はその文字列のエンコーディングであり、
+     これが与えられた文字セットでうまくデコードできないときは
+     `UnicodeError' が発生します。
+
+     いっぽう S が Unicode 文字列の場合、CHARSET は
+     その文字列の文字セットを決定するためのヒントとして使われます。
+     この場合、RFC 2822 準拠のヘッダは RFC 2047
+     の規則をもちいて作成され、 Unicode 文字列は以下の文字セットを
+     (この優先順位で) 適用してエンコードされます: `us-ascii'、 CHARSET
+     で与えられたヒント、それもなければ `utf-8'。 最初の文字セットは
+     `UnicodeError' をなるべくふせぐために使われます。
+
+     オプション引数 ERRORS は `unicode()' 又は `ustr.encode()'
+     の呼び出し時に使用し、デフォルト値は "strict"です。
+
+`encode([splitchars])'
+     メッセージヘッダを RFC に沿ったやり方でエンコードします。
+     おそらく長い行は折り返され、非ASCII部分は base64 または
+     quoted-printable エンコーディングで包含されるでしょう。
+     オプション引数 SPLITCHARS には長いASCII行を分割する
+     文字の文字列を指定し、 RFC 2822 の_highest level syntactic
+     breaks_の 大まかなサポートの為に使用します。この引数は RFC 2047
+     でエンコード された行には影響しません。
+
+`Header' クラスは、標準の演算子や組み込み関数を
+サポートするためのメソッドもいくつか提供しています。
+
+`__str__()'
+     `Header.encode()' と同じです。 `str(aHeader)'
+     などとすると有用でしょう。
+
+`__unicode__()'
+     組み込みの `unicode()' 関数の補助です。 ヘッダを Unicode
+     文字列として返します。
+
+`__eq__(other)'
+     このメソッドは、ふたつの `Header'
+     インスタンスどうしが等しいかどうか 判定するのに使えます。
+
+`__ne__(other)'
+     このメソッドは、ふたつの `Header'
+     インスタンスどうしが異なっているかどうかを 判定するのに使えます。
+
+さらに、`email.Header' モジュールは以下のような
+便宜的な関数も提供しています。
+
+`decode_header(header)'
+     文字セットを変換することなしに、メッセージのヘッダをデコードします。
+     ヘッダの値は HEADER に渡します。
+
+     この関数はヘッダのそれぞれのデコードされた部分ごとに、
+     `(decoded_string, charset)' という形式の 2要素タプルからなる
+     リストを返します。CHARSET はヘッダのエンコードされていない部分に
+     対しては `None' を、それ以外の場合はエンコードされた文字列が
+     指定している文字セットの名前を小文字からなる文字列で返します。
+
+     以下はこの使用例です:
+
+          >>> from email.Header import decode_header
+          >>> decode_header('=?iso-8859-1?q?p=F6stal?=')
+          [('p\\xf6stal', 'iso-8859-1')]
+
+
+`make_header(decoded_seq[, maxlinelen[, header_name[, continuation_ws]]])'
+     `decode_header()' によって返される 2要素タプルのリストから
+     `Header' インスタンスを作成します。
+
+     `decode_header()' はヘッダの値をとってきて、 `(decoded_string,
+     charset)' という形式の 2要素タプルからなる
+     リストを返します。ここで DECODED_STRING はデコードされた文字列、
+     CHARSET はその文字セットです。
+
+     この関数はこれらのリストの項目から、`Header'
+     インスタンスを返します。 オプション引数 MAXLINELEN、HEADER_NAME
+     および CONTINUATION_WS は `Header'
+     コンストラクタに与えるものと同じです。
+
+
+File: python-lib-jp.info,  Node: 文字セットの表現,  Next: エンコーダ,  Prev: 国際化されたヘッダ,  Up: email
+
+文字セットの表現
+----------------
+
+文字セット
+
+このモジュールは文字セットを表現する `Charset' クラスと
+電子メールメッセージにふくまれる文字セット間の変換、および
+文字セットのレジストリとこのレジストリを操作するための
+いくつかの便宜的なメソッドを提供します。`Charset' インスタンスは
+`email' パッケージ中にあるほかのいくつかのモジュールで使用されます。
+
+_Added in Python version 2.2.2_
+
+`Charset([input_charset])'
+     文字セットを email のプロパティに写像する。 Map character sets to
+     their email properties.
+
+     このクラスはある特定の文字セットに対し、電子メールに課される制約の情報を提供します。
+     また、与えられた適用可能な codec
+     をつかって、文字セット間の変換をおこなう
+     便宜的なルーチンも提供します。またこれは、ある文字セットが与えられたときに、
+     その文字セットを電子メールメッセージのなかで どうやって RFC
+     に準拠したやり方で使用するかに関する、
+     できうるかぎりの情報も提供します。
+
+     文字セットによっては、それらの文字を電子メールのヘッダあるいはメッセージ本体で使う場合は
+     quoted-printable 形式あるいは
+     base64形式でエンコードする必要があります。
+     またある文字セットはむきだしのまま変換する必要があり、電子メールの中では
+     使用できません。
+
+     以下ではオプション引数 INPUT_CHARSET について説明します。
+     この値はつねに小文字に強制的に変換されます。
+     そして文字セットの別名が正規化されたあと、この値は文字セットの
+     レジストリ内を検索し、ヘッダのエンコーディングと
+     メッセージ本体のエンコーディング、および出力時の変換に使われる
+     codec をみつけるのに使われます。 たとえば INPUT_CHARSET が
+     `iso-8859-1' の場合、ヘッダおよびメッセージ本体は quoted-printable
+     でエンコードされ、出力時の変換用 codec は必要ありません。 もし
+     INPUT_CHARSET が `euc-jp' ならば、ヘッダは base64
+     でエンコードされ、
+     メッセージ本体はエンコードされませんが、出力されるテキストは
+     `euc-jp' 文字セットから `iso-2022-jp' 文字セットに変換されます。
+
+`Charset' インスタンスは以下のようなデータ属性をもっています:
+
+`input_charset'
+     最初に指定される文字セットです。
+     一般に通用している別名は、_正式な_ 電子メール用の名前に変換されます
+     (たとえば、`latin_1' は `iso-8859-1' に変換されます)。
+     デフォルトは 7-bit の `us-ascii' です。
+
+`header_encoding'
+     この文字セットが電子メールヘッダに使われる前にエンコードされる必要がある場合、
+     この属性は `Charset.QP' (quoted-printable エンコーディング)、
+     `Charset.BASE64' (base64 エンコーディング)、あるいは 最短の QP
+     または BASE64 エンコーディングである `Charset.SHORTEST' に
+     設定されます。そうでない場合、この値は `None' になります。
+
+`body_encoding'
+     HEADER_ENCODING と同じですが、この値はメッセージ本体のための
+     エンコーディングを記述します。これはヘッダ用のエンコーディングとは
+     違うかもしれません。BODY_ENCODING では、`Charset.SHORTEST' を
+     使うことはできません。
+
+`output_charset'
+     文字セットによっては、電子メールのヘッダあるいはメッセージ本体に
+     使う前にそれを変換する必要があります。もし INPUT_CHARSET が
+     それらの文字セットのどれかをさしていたら、この OUTPUT_CHARSET
+     属性は それが出力時に変換される文字セットの名前をあらわしています。
+     それ以外の場合、この値は `None' になります。
+
+`input_codec'
+     INPUT_CHARSET を Unicode に変換するための Python 用 codec 名です。
+     変換用の codec が必要ないときは、この値は `None' になります。
+
+`output_codec'
+     Unicode を OUTPUT_CHARSET に変換するための Python 用 codec 名です。
+     変換用の codec が必要ないときは、この値は `None' になります。
+     この属性は INPUT_CODEC と同じ値をもつことになるでしょう。
+
+`Charset' インスタンスは、以下のメソッドも持っています:
+
+`get_body_encoding()'
+     メッセージ本体のエンコードに使われる content-transfer-encoding
+     の値を返します。
+
+     この値は使用しているエンコーディングの文字列 `quoted-printable'
+     または `base64' か、
+     あるいは関数のどちらかです。後者の場合、これはエンコードされる
+     Message オブジェクトを
+     単一の引数として取るような関数である必要があります。この関数は変換後
+     `Content-Transfer-Encoding'
+     ヘッダ自体を、なんであれ適切な値に設定する必要があります。
+
+     このメソッドは BODY_ENCODING が `QP' の場合 `quoted-printable'
+     を返し、BODY_ENCODING が `BASE64' の場合 `base64'
+     を返します。それ以外の場合は文字列 `7bit' を返します。
+
+`convert(s)'
+     文字列 S を INPUT_CODEC から OUTPUT_CODEC に変換します。
+
+`to_splittable(s)'
+     おそらくマルチバイトの文字列を、安全に split
+     できる形式に変換します。 S には split する文字列を渡します。
+
+     これは INPUT_CODEC を使って文字列を Unicode にすることで、
+     文字と文字の境界で (たとえそれがマルチバイト文字であっても) 安全に
+     split できるようにします。
+
+     INPUT_CHARSET の文字列 S をどうやって Unicode に変換すればいいかが
+     不明な場合、このメソッドは与えられた文字列そのものを返します。
+
+     Unicode に変換できなかった文字は、Unicode 置換文字 (Unicode
+     replacement character) `U+FFFD' に置換されます。
+
+`from_splittable(ustr[, to_output])'
+     split できる文字列をエンコードされた文字列に変換しなおします。
+     USTR は "逆split" するための Unicode 文字列です。
+
+     このメソッドでは、文字列を Unicode
+     からべつのエンコード形式に変換するために 適切な codec
+     を使用します。与えられた文字列が Unicode ではなかった場合、
+     あるいはそれをどうやって Unicode から変換するか不明だった場合は、
+     与えられた文字列そのものが返されます。
+
+     Unicode から正しく変換できなかった文字については、 適当な文字
+     (通常は `?') に置き換えられます。
+
+     TO_OUTPUT が `True' の場合 (デフォルト)、 このメソッドは
+     OUTPUT_CODEC をエンコードの形式として 使用します。TO_OUTPUT が
+     `False' の場合、これは INPUT_CODEC を使用します。
+
+`get_output_charset()'
+     出力用の文字セットを返します。
+
+     これは OUTPUT_CHARSET 属性が `None' でなければその値になります。
+     それ以外の場合、この値は INPUT_CHARSET と同じです。
+
+`encoded_header_len()'
+     エンコードされたヘッダ文字列の長さを返します。 これは
+     quoted-printable エンコーディングあるいは base64
+     エンコーディングに対しても 正しく計算されます。
+
+`header_encode(s[, convert])'
+     文字列 S をヘッダ用にエンコードします。
+
+     CONVERT が `True' の場合、
+     文字列は入力用文字セットから出力用文字セットに自動的に変換されます。
+     これは行の長さ問題のあるマルチバイトの文字セットに対しては役に立ちません
+     (マルチバイト文字はバイト境界ではなく、文字ごとの境界で split
+     する必要があります)。 これらの問題を扱うには、高水準のクラスである
+     `Header' クラスを 使ってください (`email.Header' を参照)。 CONVERT
+     の値はデフォルトでは `False' です。
+
+     エンコーディングの形式 (base64 または quoted-printable) は、
+     HEADER_ENCODING 属性に基づきます。
+
+`body_encode(s[, convert])'
+     文字列 S をメッセージ本体用にエンコードします。
+
+     CONVERT が `True' の場合 (デフォルト)、
+     文字列は入力用文字セットから出力用文字セットに自動的に変換されます。
+     `header_encode()' とは異なり、メッセージ本体にはふつう
+     バイト境界の問題やマルチバイト文字セットの問題がないので、
+     これはきわめて安全におこなえます。
+
+     エンコーディングの形式 (base64 または quoted-printable) は、
+     BODY_ENCODING 属性に基づきます。
+
+`Charset' クラスには、 標準的な演算と組み込み関数をサポートする
+いくつかのメソッドがあります。
+
+`__str__()'
+     INPUT_CHARSET を小文字に変換された文字列型として返します。
+     `__repr__()' は、`__str__()' の別名となっています。
+
+`__eq__(other)'
+     このメソッドは、2つの `Charset'
+     インスタンスが同じかどうかをチェックするのに使います。
+
+`__ne__(other)'
+     このメソッドは、2つの `Charset'
+     インスタンスが異なるかどうかをチェックするのに使います。
+
+また、`email.Charset' モジュールには、
+グローバルな文字セット、文字セットの別名(エイリアス) および codec
+用のレジストリに 新しいエントリを追加する以下の関数もふくまれています:
+
+`add_charset(charset[, header_enc[, body_enc[, output_charset]]])'
+     文字の属性をグローバルなレジストリに追加します。
+
+     CHARSET
+     は入力用の文字セットで、その文字セットの正式名称を指定する必要があります。
+
+     オプション引数 HEADER_ENC および BODY_ENC は quoted-printable
+     エンコーディングをあらわす `Charset.QP' か、 base64
+     エンコーディングをあらわす `Charset.BASE64'、 最短の
+     quoted-printable または base64 エンコーディングをあらわす
+     `Charset.SHORTEST'、あるいはエンコーディングなしの `None' の
+     どれかになります。`SHORTEST' が使えるのは HEADER_ENC だけです。
+     デフォルトの値はエンコーディングなしの `None' になっています。
+
+     オプション引数 OUTPUT_CHARSET には出力用の文字セットが入ります。
+     `Charset.convert()' が呼ばれたときの変換は
+     まず入力用の文字セットを Unicode
+     に変換し、それから出力用の文字セットに
+     変換されます。デフォルトでは、出力は入力と同じ文字セットになっています。
+
+     INPUT_CHARSET および OUTPUT_CHARSET は
+     このモジュール中の文字セット-codec 対応表にある Unicode codec
+     エントリである 必要があります。モジュールがまだ対応していない
+     codec を追加するには、 `add_codec()'
+     を使ってください。より詳しい情報については `codecs'
+     モジュールの文書を参照してください。
+
+     グローバルな文字セット用のレジストリは、モジュールの global 辞書
+     `CHARSETS' 内に保持されています。
+
+`add_alias(alias, canonical)'
+     文字セットの別名 (エイリアス) を追加します。 ALIAS
+     はその別名で、たとえば `latin-1' のように指定します。 CANONICAL
+     はその文字セットの正式名称で、たとえば `iso-8859-1'
+     のように指定します。
+
+     文字セットのグローバルな別名用レジストリは、モジュールの global
+     辞書 `ALIASES' 内に保持されています。
+
+`add_codec(charset, codecname)'
+     与えられた文字セットの文字と Unicode との変換をおこなう codec
+     を追加します。
+
+     CHARSET はある文字セットの正式名称で、 CODECNAME は Python 用
+     codec の名前です。 これは組み込み関数 `unicode()' の第2引数か、
+     あるいは Unicode 文字列型の `encode()' メソッドに
+     適した形式になっていなければなりません。
+
+
+File: python-lib-jp.info,  Node: エンコーダ,  Next: 例外クラス,  Prev: 文字セットの表現,  Up: email
+
+エンコーダ
+----------
+
+電子メールメッセージのペイロードのためのエンコーダ。
+
+何もないところから `Message' を作成するときしばしば必要になるのが、
+ペイロードをメールサーバに通すためにエンコードすることです。
+これはとくにバイナリデータを含んだ `image/*' や `text/*'
+タイプのメッセージで必要です。
+
+`email' パッケージでは、`Encoders' モジュールにおいて
+いくかの便宜的なエンコーディングをサポートしています。実際にはこれらの
+エンコーダは `MIMEImage' および `MIMEText' クラスの
+コンストラクタでデフォルトエンコーダとして使われています。
+すべてのエンコーディング関数は、エンコードするメッセージオブジェクト
+ひとつだけを引数にとります。これらはふつうペイロードを取りだし、
+それをエンコードして、ペイロードをエンコードされたものにセットしなおします。
+これらはまた `Content-Transfer-Encoding' ヘッダを適切な値に 設定します。
+
+提供されているエンコーディング関数は以下のとおりです:
+
+`encode_quopri(msg)'
+     ペイロードを quoted-printable 形式にエンコードし、
+     `Content-Transfer-Encoding' ヘッダを `quoted-printable'(1)
+     に設定します。
+     これはそのペイロードのほとんどが通常の印刷可能な文字からなっているが、
+     印刷不可能な文字がすこしだけあるときのエンコード方法として適しています。
+
+`encode_base64(msg)'
+     ペイロードを base64 形式でエンコードし、
+     `Content-Transfer-Encoding' ヘッダを `base64'
+     に変更します。これはペイロード中の
+     データのほとんどが印刷不可能な文字である場合に適しています。
+     quoted-printable
+     形式よりも結果としてはコンパクトなサイズになるからです。 base64
+     形式の欠点は、これが人間にはまったく読めないテキストに
+     なってしまうことです。
+
+`encode_7or8bit(msg)'
+     これは実際にはペイロードを変更はしませんが、ペイロードの形式に応じて
+     `Content-Transfer-Encoding' ヘッダを `7bit' あるいは `8bit'
+     に適した形に設定します。
+
+`encode_noop(msg)'
+     これは何もしないエンコーダです。 `Content-Transfer-Encoding'
+     ヘッダを設定さえしません。
+
+---------- Footnotes ----------
+
+(1) 注意: `encode_quopri()' を
+使ってエンコードすると、データ中のタブ文字や空白文字も
+エンコードされます。
+
+
+File: python-lib-jp.info,  Node: 例外クラス,  Next: 雑用ユーティリティ,  Prev: エンコーダ,  Up: email
+
+例外クラス
+----------
+
+電子メールメッセージのペイロードのためのエンコーダ。
+
+何もないところから `Message' を作成するときしばしば必要になるのが、
+ペイロードをメールサーバに通すためにエンコードすることです。
+これはとくにバイナリデータを含んだ `image/*' や `text/*'
+タイプのメッセージで必要です。
+
+`email' パッケージでは、`Encoders' モジュールにおいて
+いくかの便宜的なエンコーディングをサポートしています。実際にはこれらの
+エンコーダは `MIMEImage' および `MIMEText' クラスの
+コンストラクタでデフォルトエンコーダとして使われています。
+すべてのエンコーディング関数は、エンコードするメッセージオブジェクト
+ひとつだけを引数にとります。これらはふつうペイロードを取りだし、
+それをエンコードして、ペイロードをエンコードされたものにセットしなおします。
+これらはまた `Content-Transfer-Encoding' ヘッダを適切な値に 設定します。
+
+提供されているエンコーディング関数は以下のとおりです:
+
+`encode_quopri(msg)'
+     ペイロードを quoted-printable 形式にエンコードし、
+     `Content-Transfer-Encoding' ヘッダを `quoted-printable'(1)
+     に設定します。
+     これはそのペイロードのほとんどが通常の印刷可能な文字からなっているが、
+     印刷不可能な文字がすこしだけあるときのエンコード方法として適しています。
+
+`encode_base64(msg)'
+     ペイロードを base64 形式でエンコードし、
+     `Content-Transfer-Encoding' ヘッダを `base64'
+     に変更します。これはペイロード中の
+     データのほとんどが印刷不可能な文字である場合に適しています。
+     quoted-printable
+     形式よりも結果としてはコンパクトなサイズになるからです。 base64
+     形式の欠点は、これが人間にはまったく読めないテキストに
+     なってしまうことです。
+
+`encode_7or8bit(msg)'
+     これは実際にはペイロードを変更はしませんが、ペイロードの形式に応じて
+     `Content-Transfer-Encoding' ヘッダを `7bit' あるいは `8bit'
+     に適した形に設定します。
+
+`encode_noop(msg)'
+     これは何もしないエンコーダです。 `Content-Transfer-Encoding'
+     ヘッダを設定さえしません。
+
+---------- Footnotes ----------
+
+(1) 注意: `encode_quopri()' を
+使ってエンコードすると、データ中のタブ文字や空白文字も
+エンコードされます。
+
+
+File: python-lib-jp.info,  Node: 雑用ユーティリティ,  Next: イテレータ,  Prev: 例外クラス,  Up: email
+
+雑用ユーティリティ
+------------------
+
+電子メールパッケージの雑多なユーティリティ。
+
+`email.Utils' ではいくつかの便利なユーティリティを 提供しています。
+
+`quote(str)'
+     文字列 STR 内のバックスラッシュを バックスラッシュ2つ に置換した
+     新しい文字列を返します。また、ダブルクォートは バックスラッシュ +
+     ダブルクォートに置換されます。
+
+`unquote(str)'
+     文字列 STR を _逆クォート_した新しい文字列を返します。 もし STR
+     の先頭あるいは末尾がダブルクォートだった場合、
+     これらは単に切りおとされます。同様にもし STR の先頭あるいは末尾が
+     角ブラケット (<、>) だった場合も切りおとされます。
+
+`parseaddr(address)'
+     アドレスをパーズします。`To' や `Cc' のような
+     アドレスをふくんだフィールドの値を与えると、構成部分の _実名_ と
+     _電子メールアドレス_ を取り出します。
+     パーズに成功した場合、これらの情報をタプル `(realname,
+     email_address)' にして返します。 失敗した場合は 2要素のタプル
+     `('', '')' を返します。
+
+`formataddr(pair)'
+     `parseaddr()' の逆で、実名と電子メールアドレスからなる
+     2要素のタプル `(realname, email_address)' を引数にとり、 `To'
+     あるいは `Cc' ヘッダに適した形式の文字列を 返します。タプル PAIR
+     の第1要素が偽である場合、第2要素の値を そのまま返します。
+
+`getaddresses(fieldvalues)'
+     このメソッドは 2要素タプルのリストを `parseaddr()'
+     と同じ形式で返します。 FIELDVALUES はたとえば `Message.get_all()'
+     が返すような、
+     ヘッダのフィールド値からなるシーケンスです。以下はある電子メールメッセージから
+     すべての受け取り人を得る一例です:
+
+          from email.Utils import getaddresses
+          
+          tos = msg.get_all('to', [])
+          ccs = msg.get_all('cc', [])
+          resent_tos = msg.get_all('resent-to', [])
+          resent_ccs = msg.get_all('resent-cc', [])
+          all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
+
+
+`parsedate(date)'
+     RFC 2822 に記された規則にもとづいて日付を解析します。
+     しかし、メイラーによってはここで指定された規則に従っていないものがあり、
+     そのような場合 `parsedate()'
+     はなるべく正しい日付を推測しようとします。 DATE は RFC 2822
+     形式の日付を保持している文字列で、 `"Mon, 20 Nov 1995 19:12:08
+     -0500"' のような形をしています。
+     日付の解析に成功した場合、`parsedate()' は 関数 `time.mktime()'
+     に直接渡せる形式の 9要素からなるタプルを返し、失敗した場合は
+     `None' を返します。 返されるタプルの
+     6、7、8番目のフィールドは有効ではないので注意してください。
+
+`parsedate_tz(date)'
+     `parsedate()' と同様の機能を提供しますが、 `None' または
+     10要素のタプルを返すところが違います。 最初の 9つの要素は
+     `time.mktime()' に直接渡せる形式のものであり、 最後の
+     10番目の要素は、その日付の時間帯の UTC
+     (グリニッジ標準時の公式な呼び名です) に対するオフセットです (1)。
+     入力された文字列に時間帯が指定されていなかった場合、10番目の要素には
+     `None' が入ります。 タプルの
+     6、7、8番目のフィールドは有効ではないので注意してください。
+
+`mktime_tz(tuple)'
+     `parsedate_tz()' が返す 10要素のタプルを UTC の
+     タイムスタンプに変換します。与えられた時間帯が `None' である場合、
+     時間帯として現地時間 (localtime) が仮定されます。 マイナーな欠点:
+     `mktime_tz()' はまず TUPLE の最初の 8要素を localtime
+     として変換し、つぎに時間帯の差を加味しています。
+     夏時間を使っている場合には、これは通常の使用にはさしつかえないものの、
+     わずかな誤差を生じるかもしれません。
+
+`formatdate([timeval[, localtime]])'
+     日付を RFC 2822 形式の文字列で返します。例:
+
+          Fri, 09 Nov 2001 01:08:47 -0000
+
+     オプションとして float 型の値をもつ引数 TIMEVAL が与えられた場合、
+     これは `time.gmtime()' および `time.localtime()' に
+     渡されます。それ以外の場合、現在の時刻が使われます。
+
+     オプション引数 LOCALTIME はフラグです。 これが `True'
+     の場合、この関数は TIMEVAL を解析したあと UTC のかわりに現地時間
+     (localtime) の時間帯をつかって変換します。
+     おそらく夏時間も考慮に入れられるでしょう。 デフォルトではこの値は
+     `False' で、UTC が使われます。
+
+`make_msgid([idstring])'
+     RFC 2822 準拠形式の `Message-ID' ヘッダに適した
+     文字列を返します。オプション引数 IDSTRING が文字列として
+     与えられた場合、これはメッセージ ID
+     の一意性を高めるのに利用されます。
+
+`decode_rfc2231(s)'
+     RFC 2231 に従って文字列 S をデコードします。
+
+`encode_rfc2231(s[, charset[, language]])'
+     RFC 2231 に従って S をエンコードします。 オプション引数 CHARSET
+     および LANGUAGE が与えられた場合、
+     これらは文字セット名と言語名として使われます。
+     もしこれらのどちらも与えられていない場合、S はそのまま返されます。
+     CHARSET は与えられているが LANGUAGE が与えられていない場合、
+     文字列 S は LANGUAGE の空文字列を使ってエンコードされます。
+
+`decode_params(params)'
+     RFC 2231 に従ってパラメータのリストをデコードします。 PARAMS は
+     `(content-type, string-value)' のような形式の
+     2要素からなるタプルです。
+
+以下の関数はもはや時代遅れとなっており、推奨されません:
+
+`dump_address_pair(pair)'
+     _This is deprecated in Python 2.2.2.  これのかわりに
+     `formataddr()' メソッドを使ってください。_
+
+`decode(s)'
+     _This is deprecated in Python 2.2.2.  これのかわりに
+     `Header.decode_header()' メソッドを使ってください。_
+
+`encode(s[, charset[, encoding]])'
+     _This is deprecated in Python 2.2.2.  これのかわりに
+     `Header.encode()' メソッドを使ってください。_
+
+---------- Footnotes ----------
+
+(1) 注意: この時間帯のオフセット値は `time.timezone' の値と
+符合が逆です。これは `time.timezone' が POSIX
+標準に準拠しているのに対して、 こちらは RFC 2822
+に準拠しているからです。
+
+
+File: python-lib-jp.info,  Node: イテレータ,  Next: Python 221 までの email v1 とのちがい,  Prev: 雑用ユーティリティ,  Up: email
+
+イテレータ
+----------
+
+メッセージオブジェクトツリーをたどる。
+
+`Message.walk()' メソッドを使うと、簡単に
+メッセージオブジェクトツリー内を次から次へとたどる (iteration)
+ことができます。 `email.Iterators'
+モジュールはこのための高水準イテレータを いくつか提供します。
+
+`body_line_iterator(msg[, decode])'
+     このイテレータは MSG 中のすべてのサブパートに含まれる
+     ペイロードをすべて順にたどっていき、ペイロード内の文字列を
+     1行ずつ返します。 サブパートのヘッダはすべて無視され、Python
+     文字列でないペイロードからなる サブパートも無視されます。これは
+     `readline()' を使って、 ファイルからメッセージを
+     (ヘッダだけとばして) フラットなテキストとして
+     読むのにいくぶん似ているかもしれません。
+
+     オプション引数 DECODE
+     は、`Message.get_payload()'にそのまま渡されます。
+
+`typed_subpart_iterator(msg[, maintype[, subtype]])'
+     このイテレータは MSG 中のすべてのサブパートをたどり、
+     それらの中で指定された MIME 形式 MAINTYPE と SUBTYPE
+     をもつようなパートのみを返します。
+
+     SUBTYPE は省略可能であることに注意してください。
+     これが省略された場合、サブパートの MIME 形式は maintype のみが
+     チェックされます。じつは MAINTYPE も省略可能で、
+     その場合にはデフォルトは `text' です。
+
+     つまり、デフォルトでは `typed_subpart_iterator()' は MIME 形式
+     `text/*' をもつサブパートを順に返していくというわけです。
+
+以下の関数は役に立つデバッグ用ツールとして追加されたもので、
+パッケージとして公式なサポートのあるインターフェイスでは_ありません_。
+
+`_structure(msg[, fp[, level]])'
+     そのメッセージオブジェクト構造の content-type をインデントつきで
+     表示します。たとえば:
+
+          >>> msg = email.message_from_file(somefile)
+          >>> _structure(msg)
+          multipart/mixed
+              text/plain
+              text/plain
+              multipart/digest
+                  message/rfc822
+                      text/plain
+                  message/rfc822
+                      text/plain
+                  message/rfc822
+                      text/plain
+                  message/rfc822
+                      text/plain
+                  message/rfc822
+                      text/plain
+              text/plain
+
+     オプション引数 FP は出力を渡すためのストリーム
+     (1)オブジェクトです。 これは Python の拡張 print
+     文が対応できるようになっている必要があります。 LEVEL
+     は内部的に使用されます。
+
+---------- Footnotes ----------
+
+(1) 訳注: 原文では file-like。
+
+
+File: python-lib-jp.info,  Node: Python 221 までの email v1 とのちがい,  Next: mimelib との違い,  Prev: イテレータ,  Up: email
+
+(Python 2.2.1 までの) `email' v1 とのちがい
+-------------------------------------------
+
+`email' パッケージ バージョン 1 は、Python 2.2.1 リリースの
+ときまでバンドルされていました。バージョン 2 は Python 2.3 リリース用に
+開発され、Python 2.2.2 にバックポートされたものです。 またこれは
+distutils ベースの別個のパッケージとしても配布されています。 `email'
+バージョン 2 はバージョン 1 とほとんどの点で下位互換ですが、
+以下のような違いがあります:
+
+   * `email.Header' モジュールおよび `email.Charset' モジュールが
+     追加されています。
+
+   * `Message' インスタンスの Pickle 形式が変わりました。
+     が、これは正式に定義されたことは一度もないので (そしてこれからも)、
+     この変更は互換性の欠如とはみなされていません。ですがもし
+     お使いのアプリケーションが `Message' インスタンスを pickle
+     あるいは unpickle しているなら、現在 `email' バージョン 2 では
+     プライベート変数 _CHARSET および _DEFAULT_TYPE を
+     含むようになったということに注意してください。
+
+   * `Message' クラス中のいくつかのメソッドは推奨されなくなったか、
+     あるいは呼び出し形式が変更になっています。また、多くの新しいメソッドが
+     追加されています。詳しくは `Message'
+     クラスの文書を参照してください。
+     これらの変更は完全に下位互換になっているはずです。
+
+   * `message/rfc822' 形式のコンテナは、
+     見た目上のオブジェクト構造が変わりました。`email' バージョン 1 では
+     この content type
+     はスカラー形式のペイロードとして表現されていました。
+     つまり、コンテナメッセージの `is_multipart()' は false
+     を返し、`get_payload()' はリストオブジェクトではなく 単一の
+     `Message' インスタンスを直接返すようになっていたのです。
+
+     この構造はパッケージ中のほかの部分と整合がとれていなかったため、
+     `message/rfc822' 形式のオブジェクト表現形式が
+     変更されました。`email' バージョン 2 では、コンテナは
+     `is_multipart()' に _`True' を返し_ます。 また `get_payload()'
+     はひとつの `Message' インスタンスを
+     要素とするリストを返すようになりました。
+
+     注意:
+     ここは下位互換が完全には成りたたなくなっている部分のひとつです。
+     けれどもあらかじめ `get_payload()' が返すタイプをチェックするように
+     なっていれば問題にはなりません。ただ `message/rfc822' 形式の
+     コンテナを `Message' インスタンスにじかに `set_payload()'
+     しないようにさえすればよいのです。
+
+   * `Parser' コンストラクタに STRICT 引数が 追加され、`parse()' および
+     `parsestr()' メソッドには HEADERSONLY 引数がつきました。STRICT
+     フラグは また `email.message_from_file()' と
+     `email.message_from_string()' にも追加されています。
+
+   * `Generator.__call__()' はもはや推奨されなくなりました。 かわりに
+     `Generator.flatten()' を使ってください。また、 `Generator'
+     クラスには `clone()' メソッドが追加されています。
+
+   * `email.Generator' モジュールに `DecodedGenerator' クラスが
+     加わりました。
+
+   * 中間的な基底クラスである `MIMENonMultipart' および `MIMEMultipart'
+     がクラス階層の中に追加され、 ほとんどの MIME
+     関係の派生クラスがこれを介するようになっています。
+
+   * `MIMEText' コンストラクタの _ENCODER 引数は
+     推奨されなくなりました。いまやエンコーダは _CHARSET 引数に
+     もとづいて暗黙のうちに決定されます。
+
+   * `email.Utils' モジュールにおける以下の関数は
+     推奨されなくなりました: `dump_address_pairs()'、 `decode()'、
+     および `encode()'。
+     また、このモジュールには以下の関数が追加されています:
+     `make_msgid()'、 `decode_rfc2231()'、 `encode_rfc2231()' そして
+     `decode_params()'。
+
+   * Public ではない関数 `email.Iterators._structure()' が
+     追加されました。
+
+
+File: python-lib-jp.info,  Node: mimelib との違い,  Next: 使用例 6,  Prev: Python 221 までの email v1 とのちがい,  Up: email
+
+`mimelib' との違い
+------------------
+
+`email' パッケージはもともと `mimelib' と
+呼ばれる個別のライブラリからつくられたものです。その後変更が加えられ、
+メソッド名がより一貫したものになり、いくつかのメソッドやモジュールが
+加えられたりはずされたりしました。いくつかのメソッドでは、
+その意味も変更されています。しかしほとんどの部分において、 `mimelib'
+パッケージで使うことのできた機能は、ときどきその方法が変わってはいるものの
+`email' パッケージでも使用可能です。 `mimelib' パッケージと `email'
+パッケージの間の 下位互換性はあまり優先はされませんでした。
+
+以下では `mimelib' パッケージと `email' パッケージにおける
+違いを簡単に説明し、それに沿ってアプリケーションを移植するさいの
+指針を述べています。
+
+おそらく 2つのパッケージのもっとも明らかな違いは、 パッケージ名が
+`email' に変更されたことでしょう。
+さらにトップレベルのパッケージが以下のように変更されました:
+
+   * `messageFromString()' は `message_from_string()'
+     に名前が変更されました。
+
+   * `messageFromFile()' は `message_from_file()'
+     に名前が変更されました。
+
+
+`Message' クラスでは、以下のような違いがあります:
+
+   * `asString()' メソッドは `as_string()' に名前が変更されました。
+
+   * `ismultipart()' メソッドは `is_multipart()'
+     に名前が変更されました。
+
+   * `get_payload()' メソッドはオプション引数として DECODE
+     をとるようになりました。
+
+   * `getall()' メソッドは `get_all()' に名前が変更されました。
+
+   * `addheader()' メソッドは `add_header()' に名前が変更されました。
+
+   * `gettype()' メソッドは `get_type()' に名前が変更されました。
+
+   * `getmaintype()' メソッドは `get_main_type()'
+     に名前が変更されました。
+
+   * `getsubtype()' メソッドは `get_subtype()' に名前が変更されました。
+
+   * `getparams()' メソッドは `get_params()' に名前が変更されました。
+     また、従来の `getparams()' は文字列のリストを返していましたが、
+     `get_params()' は 2-タプルのリストを返すようになっています。
+     これはそのパラメータのキーと値の組が、`='
+     記号によって分離されたものです。
+
+   * `getparam()' メソッドは `get_param()'.
+
+   * `getcharsets()' メソッドは `get_charsets()'
+     に名前が変更されました。
+
+   * `getfilename()' メソッドは `get_filename()'
+     に名前が変更されました。
+
+   * `getboundary()' メソッドは `get_boundary()'
+     に名前が変更されました。
+
+   * `setboundary()' メソッドは `set_boundary()'
+     に名前が変更されました。
+
+   * `getdecodedpayload()' メソッドは廃止されました。
+     これと同様の機能は `get_payload()' メソッドの DECODE フラグに 1
+     を渡すことで実現できます。
+
+   * `getpayloadastext()' メソッドは廃止されました。 これと同様の機能は
+     `email.Generator' モジュールの `DecodedGenerator'
+     クラスによって提供されます。
+
+   * `getbodyastext()' メソッドは廃止されました。 これと同様の機能は
+     `email.Iterators' モジュールにある `typed_subpart_iterator()'
+     を使ってイテレータを作ることにより 実現できます。
+
+`Parser' クラスは、その public なインターフェイスは変わっていませんが、
+これはより一層かしこくなって `message/delivery-status'
+形式のメッセージを 認識するようになりました。これは配送状態通知 (1)
+において、各ヘッダブロックを表す独立した `Message' パートを含む
+ひとつの `Message' インスタンスとして表現されます。
+
+`Generator' クラスは、その public
+なインターフェイスは変わっていませんが、 `email.Generator'
+モジュールに新しいクラスが加わりました。 `DecodedGenerator'
+と呼ばれるこのクラスは 以前 `Message.getpayloadastext()'
+メソッドで使われていた 機能のほとんどを提供します。
+
+また、以下のモジュールおよびクラスが変更されています:
+
+   * `MIMEBase' クラスのコンストラクタ引数 _MAJOR と _MINOR
+     は、それぞれ _MAINTYPE と _SUBTYPE に変更されています。
+
+   * `Image' クラスおよびモジュールは `MIMEImage' に
+     名前が変更されました。_MINOR 引数も _SUBTYPE に
+     名前が変更されています。
+
+   * `Text' クラスおよびモジュールは `MIMEText' に
+     名前が変更されました。_MINOR 引数も _SUBTYPE に
+     名前が変更されています。
+
+   * `MessageRFC822' クラスおよびモジュールは `MIMEMessage' に
+     名前が変更されました。注意: 従来バージョンの `mimelib' では、
+     このクラスおよびモジュールは `RFC822' という名前でしたが、
+     これは大文字小文字を区別しないファイルシステムでは Python
+     の標準ライブラリモジュール `rfc822' と
+     名前がかち合ってしまっていました。
+
+     また、`MIMEMessage' クラスはいまや `message' main type
+     をもつあらゆる種類の MIME メッセージを
+     表現できるようになりました。これはオプション引数として、 MIME
+     subtype を指定する _SUBTYPE 引数をとることができる
+     ようになっています。デフォルトでは、_SUBTYPE は `rfc822' に
+     なります。
+
+`mimelib' では、`address' および `date' モジュールで
+いくつかのユーティリティ関数が提供されていました。 これらの関数はすべて
+`email.Utils' モジュールの中に 移されています。
+
+`MsgReader' クラスおよびモジュールは廃止されました。
+これにもっとも近い機能は `email.Iterators' モジュール中の
+`body_line_iterator()' 関数によって提供されています。
+
+---------- Footnotes ----------
+
+(1) 配送状態通知 (Delivery Status Notifications, DSN) は RFC 1894
+によって定義されています。
+
+
+File: python-lib-jp.info,  Node: 使用例 6,  Prev: mimelib との違い,  Up: email
+
+使用例
+------
+
+ここでは `email' パッケージを使って電子メールメッセージを
+読む・書く・送信するいくつかの例を紹介します。より複雑な MIME
+メッセージについても扱います。
+
+最初に、テキスト形式の単純なメッセージを作成・送信する方法です:
+
+`email-simple.py'
+
+つぎに、あるディレクトリ内にある何枚かの家族写真をひとつの MIME
+メッセージに 収めて送信する例です:
+
+`email-mime.py'
+
+つぎはあるディレクトリに含まれている内容全体を
+ひとつの電子メールメッセージとして送信するやり方です (1):
+
+`email-dir.py'
+
+そして最後に、上のような MIME メッセージをどうやって
+展開してひとつのディレクトリ上の複数ファイルにするかを示します:
+
+`email-unpack.py'
+
+---------- Footnotes ----------
+
+(1) 最初の思いつきと用例は Matthew Dixon Cowles のおかげです。
+

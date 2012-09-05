@@ -1,0 +1,1674 @@
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename rluser.info
+@comment %**end of header (This is for running Texinfo on a region.)
+@setchapternewpage odd
+
+@ignore
+This file documents the end user interface to the GNU command line
+editing features.  It is to be an appendix to manuals for programs which
+use these features.  There is a document entitled "readline.texinfo"
+which contains both end-user and programmer documentation for the GNU
+Readline Library.
+
+Copyright (C) 1988, 1991, 1993, 1996 Free Software Foundation, Inc.
+
+Authored by Brian Fox and Chet Ramey.
+
+Permission is granted to process this file through Tex and print the
+results, provided the printed document carries copying permission notice
+identical to this one except for the removal of this paragraph (this
+paragraph not being relevant to the printed manual).
+
+Permission is granted to make and distribute verbatim copies of this manual
+provided the copyright notice and this permission notice are preserved on
+all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+GNU Copyright statement is available to the distributee, and provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+@end ignore
+
+@ignore
+Japanese translation by Kazuhisa Ichikawa
+
+(Please send your comments on this Japanese version to ki@home.email.ne.jp)
+@end ignore
+
+@comment If you are including this manual as an appendix, then set the
+@comment variable readline-appendix.
+
+@node Command Line Editing
+@chapter コマンドライン編集
+
+この章では、
+@sc{GNU}のコマンドライン編集インターフェイスの基本的な特徴について説明します。
+
+@menu
+* Introduction and Notation::	表記法
+* Readline Interaction::	行編集のための最小限のコマンド・セット
+* Readline Init File::		ユーザの見地からのReadlineのカスタマイズ
+* Bindable Readline Commands::	バインディングを行うために利用可能なほとんどの
+                                Readlineコマンドの説明
+* Readline vi Mode::		Readlineをviエディタのように振る舞わせる方法の
+                                簡単な説明
+@end menu
+
+@node Introduction and Notation
+@section 行編集入門
+
+以下のパラグラフでは、
+キー・ストロークを表わすために使用される表記法について説明します。
+
+@key{C-k}は、
+Control-Kという意味です。
+これは、
+コントロール・キーが押されたままの状態でキー@key{k}が押されたときに生成される文字を表わします。
+
+@key{M-k}は、
+Meta-Kという意味です。
+これは、
+メタ・キー
+（があるものとして、それ）
+が押されたままの状態でキー@key{k}が押されたときに生成される文字を表わします。
+メタ・キーがない場合、
+@i{最初に}@key{ESC}キーを押し、
+次にキー@key{k}を押すことで、
+同等のキー・ストロークを生成することができます。
+どちらの手順も、
+キー@key{k}を@dfn{メタ化}する、
+といいます。
+
+@key{M-C-k}は、
+Meta-Control-Kという意味です。
+これは、
+@key{C-k}を@dfn{メタ化}することにより生成される文字を指します。
+
+さらに、
+いくつかのキーには名前があります。
+@key{DEL}、
+@key{ESC}、
+@key{LFD}、
+@key{SPC}、
+@key{RET}、
+@key{TAB}は、
+この文章の中でも、
+初期化ファイルの中でも、
+各々のキーを表わします
+（@pxref{Readline Init File}）。
+
+@node Readline Interaction
+@section Readlineの操作
+@cindex interaction, readline
+@cindex 操作、readlineの[操作、readlineの]
+
+対話的なセッションにおいて、
+長いテキストを1行に記述した後で、
+その行の先頭の単語のスペルが間違っていたことに気が付くことがよくあります。
+Readlineライブラリは、
+入力したテキストを操作するための一連のコマンドを提供しており、
+これによって、
+その行の大部分を入力し直すことなく、
+タイプ・ミスしたところだけを修正することができます。
+これらの編集コマンドを使って、
+修正が必要なところにカーソルを移動させ、
+テキストを削除したり、
+修正テキストを挿入したりします。
+その行の修正が終われば、
+単に@key{RETURN}を押します。
+@key{RETURN}を押すのに、
+行末にいる必要はありません。
+カーソルが行内のどこにあろうと、
+その行全体が入力として受け付けられます。
+
+@menu
+* Readline Bare Essentials::	Readlineについて最低限知っていなければならないこと
+* Readline Movement Commands::	入力行の中での移動
+* Readline Killing Commands::	テキストの削除と再入手
+* Readline Arguments::		コマンドへの数値引数の指定
+* Searching::			以前の行の中の検索
+ @end menu
+
+@node Readline Bare Essentials
+@subsection Readlineの基本
+@cindex notation, readline
+@cindex command editing
+@cindex editing command lines
+@cindex 表記法、readline[ひょうきほう、readline]
+@cindex コマンド編集[コマンドへんしゅう]
+@cindex コマンド行の編集[コマンドぎょうのへんしゅう]
+
+行内に文字を入力するには、
+単にその文字をタイプします。
+タイプされた文字はカーソルの位置に表示され、
+カーソルは1桁分右へ移動します。
+1文字打ち間違えた場合は、
+削除文字（erase character）を使って、
+後退しながら打ち間違えた文字を削除することができます。
+
+ときには、
+本当は入力したかった文字を入力せず、
+その誤りに気が付くことなく、
+さらに数文字を入力してしまうということがあります。
+このような場合には、
+@key{C-b}によってカーソルを左に移動し、
+誤りを訂正することができます。
+訂正後、
+@key{C-f}によってカーソルを右に移動することができます。
+
+行の途中にテキストを追加すると、
+挿入されたテキストのためのスペースを空けるために、
+カーソルの右側にある文字が右方向に押しやられることに気がつくでしょう。
+同様に、
+カーソル位置にあるテキストを削除すると、
+文字が削除されたために生じる空白を埋めるために、
+カーソルの右側にある文字が左方向に引き戻されます。
+入力行のテキストを編集するための最も基本的な操作の一覧を以下に示します。
+
+@table @asis
+@item @key{C-b}
+1文字戻ります。
+@item @key{C-f}
+1文字進みます。
+@item @key{DEL}
+カーソルの左にある文字を削除します。
+@item @key{C-d}
+カーソル位置にある文字を削除します。
+@item @w{表示可能な文字}
+行内のカーソル位置にその文字を挿入します。
+@item @key{C-_}
+最後の編集コマンドを取り消して元に戻します。
+行内に文字が無くなるまで取り消しを繰り返すことが可能です。
+@end table
+
+@node Readline Movement Commands
+@subsection Readline移動コマンド
+
+
+上記の一覧は、
+ユーザが入力行を編集するのに必要な、
+最も基本的なキー・ストロークを説明したものです。
+ユーザの利便を考慮して、
+@key{C-b}、
+@key{C-f}、
+@key{C-d}、
+@key{DEL}に加えて多くのコマンドが追加されてきました。
+以下に、
+行内をより迅速に動きまわるためのコマンドをいくつか示します。
+
+@table @key
+@item C-a
+行の先頭に移動します。
+@item C-e
+行の末尾に移動します。
+@item M-f
+1単語分先に進みます。
+単語は、
+文字と数字から構成されます。
+@item M-b
+1単語分前に戻ります。
+@item C-l
+画面上の情報を消去し、
+カレント行が画面の一番上にくるようにして再表示します。
+@end table
+
+@key{C-f}が1文字分先に進むのに対して、
+@key{M-f}が1単語分先に進む点に注意してください。
+大まかな慣例として、
+コントロール・キーを使うと文字単位の操作になり、
+メタ・キーを使うと単語単位の操作になります。
+
+@node Readline Killing Commands
+@subsection Readlineキル（kill）コマンド
+
+@cindex killing text
+@cindex yanking text
+@cindex テキストのキル（kill）
+@cindex テキストの再挿入（yank）[テキストのさいそうにゅう]
+
+テキストを@dfn{キル（kill）}するとは、
+行からテキストを削除し、
+その際に、
+そのテキストを後に引き出して行内に@dfn{再挿入（yank）}することができるように退避しておくことを指します。
+あるコマンドの説明に「テキストをキル（kill）する」という記述があれば、
+後に別の箇所
+（あるいは同じ箇所）
+において、
+そのテキストを再入手することができると考えて間違いありません。
+
+キル（kill）コマンドを使うと、
+テキストは@dfn{キル・リング（kill-ring）}に退避されます。
+キル（kill）コマンドを任意の回数連続して実行すると、
+キル（kill）されたテキストはすべて連結されて退避されます。
+したがって、
+再挿入（yank）を行うと、
+そのすべてを入手することができます。
+キル・リング（kill-ring）は個々の行に固有のものではありません。
+以前入力した行においてキル（kill）したテキストを、
+後になって別の行を入力しているときに再挿入（yank）することができます。
+@cindex kill ring
+@cindex キル・リング
+
+以下に、テキストをキル（kill）するためのコマンドを一覧で示します。
+
+@table @key
+@item C-k
+カレントなカーソル位置から行末までのテキストをキル（kill）します。
+
+@item M-d
+カーソル位置から、
+カーソルの置かれている単語の末尾までをキル（kill）します。
+カーソルが2つの単語の間にあるときは、
+次の単語の末尾までをキル（kill）します。
+
+@item M-DEL
+カーソル位置から、
+カーソルの置かれている単語の先頭までをキル（kill）します。
+カーソルが2つの単語の間にあるときは、
+前の単語の先頭までをキル（kill）します。
+
+@item C-w
+カーソル位置から、
+それより前にある最初の空白までをキル（kill）します。
+単語間の境界が異なるので、
+これは@key{M-DEL}とは異なります。
+
+@end table
+
+キル（kill）されたテキストを引き出して行内へ@dfn{再挿入（yank）}する方法を、
+以下に示します。
+再挿入（yank）とは、
+最後にキルされたテキストを、
+キル・バッファからコピーすることを意味しています。
+
+@table @key
+@item C-y
+バッファ内のカーソル位置に、
+最後にキル（kill）されたテキストを再挿入（yank）します。
+
+@item M-y
+キル・リング（kill-ring）を回転させ、
+新たに一番上にきたテキストを再挿入（yank）します。
+このコマンドを実行できるのは、
+1つ前に実行したコマンドが@key{C-y}または@key{M-y}の場合だけです。
+@end table
+
+@node Readline Arguments
+@subsection Readlineの引数
+
+Readlineコマンドには数値引数を渡すことができます。
+数値引数は、
+繰り返し回数として使われたり、
+引数の@i{符号}として使われたりします。
+通常は先に進むようなコマンドに負の数を引数として指定すると、
+前に戻るようになります。
+例えば、
+行の先頭までのテキストをキル（kill）するには、
+@samp{M-- C-k}としてもよいでしょう。
+
+コマンドに数値引数を渡す通常の方法は、
+コマンドの前にメタ化された数字を入力することです。
+入力された最初の「数字」がマイナス記号（@key{-}）の場合、
+引数の符号は負になります。
+引数を開始するためには、
+メタ化された数字を1つだけ入力すればよく、
+残りの数字はそのまま入力することができます。
+そして最後にコマンドを入力します。
+例えば、
+@key{C-d}コマンドに引数として10を渡すためには、
+@samp{M-1 0 C-d}と入力します。
+
+@node Searching
+@subsection ヒストリ中のコマンドの検索
+
+readlineは、
+コマンド・ヒストリ
+@ifset BashFeatures
+(@pxref{Bash History Facilities})
+@end ifset
+の中から、
+指定された文字列を含む行を検索するコマンドを提供しています。
+インクリメンタル（@var{incremental}）と
+非インクリメンタル（@var{non-incremental}）の2つの検索モードがあります。
+
+インクリメンタル（incremental）・モードでは、
+ユーザが検索文字列を入力し終わる前から検索が始まります。
+検索文字列の中の文字が1つ入力されるたびに、
+readlineは、
+それまで入力された文字列にマッチする、
+ヒストリの中の次のエントリを表示します。
+インクリメンタル・モードの検索では、
+検索したいヒストリ・エントリを見つけるのに本当に必要となる文字だけを入力するだけで済みます。
+インクリメンタル・モードの検索を中止するのには、
+@key{ESC}文字を使います。
+@key{C-j}でも、
+検索は中止されます。
+@key{C-g}は、
+インクリメンタル・モードの検索を終了させて、
+元の行を表示します。
+検索が中止されると、
+検索文字列を含むヒストリ・エントリがカレント行となります。
+検索文字列にマッチする他のエントリをヒストリ・リストから見つけるためには、
+必要に応じて@key{C-s}または@key{C-r}を入力します。
+これによって、
+それまでに入力された検索文字列にマッチする次のエントリをヒストリから見つけるために、
+下の方向、
+または、
+上の方向に検索が行われます。
+Readlineコマンドにバインドされているキー・シーケンスのうち上記以外のものを入力すると、
+検索は中止され、
+そのコマンドが実行されます。
+例えば
+@key{RET}が入力されると、
+検索は中止され、
+そのときの行が受け入れられたことになります。
+したがって、
+ヒストリ・リストの中のそのコマンドが実行されます。
+
+非インクリメンタル（non-incremental）・モードでは、
+マッチするヒストリ行の検索を開始する前に、
+検索文字列全体を読み込みます。
+検索文字列は、
+ユーザによって入力されたものでも構いませんし、
+カレント行の内容の一部であっても構いません。
+
+@node Readline Init File
+@section Readline初期化ファイル
+@cindex initialization file, readline
+@cindex 初期化ファイル、readline[しょきかファイル、readline]
+
+Readlineライブラリには、
+@code{emacs}スタイルのキー・バインディングがデフォルトで組み込まれていますが、
+異なるキー・バインディングを使うこともできます。
+ホーム・ディレクトリ内のファイル@dfn{inputrc}にコマンドを記述することで、
+誰でもReadlineを使うプログラムをカスタマイズすることができます。
+このファイルの名前は、
+@ifset BashFeatures
+シェル変数@code{INPUTRC}の値から取られます。
+@end ifset
+@ifclear BashFeatures
+環境変数@code{INPUTRC}の値から取られます。
+@end ifclear
+この変数に値がセットされていない場合のデフォルトは、
+@file{~/.inputrc}です。
+
+Readlineライブラリを使うプログラムが起動されると、
+初期化ファイルが読み込まれ、
+キー・バインディングが設定されます。
+
+さらに、
+@code{C-x C-r}コマンドを実行すると、
+この初期化ファイルが再読み込みされます。
+初期化ファイルに変更が加えられていれば、
+その変更が反映されます。
+
+@menu
+* Readline Init File Syntax::	inputrcファイルの中におけるコマンドの構文
+
+* Conditional Init Constructs::	inputrcファイルの中における条件キー・バインディング
+
+* Sample Init File::		inputrcファイルの例
+@end menu
+
+@node Readline Init File Syntax
+@subsection Readline初期化ファイルの構文
+
+Readline初期化ファイルの中では、
+ほんの少数の基本的な構文だけが使用できます。
+空行は無視されます。
+@samp{#}で始まる行はコメントです。
+@samp{$}で始まる行は、
+条件構文を表わします
+（@pxref{Conditional Init Constructs}）。
+その他の行は、
+変数設定とキー・バインディングを示します。
+
+@table @asis
+@item 変数設定
+初期化ファイルの中で@code{set}コマンドを使用してReadlineの変数の値を変更することによって、
+Readlineの実行時の振る舞いを変更することができます。
+デフォルトのEmacsスタイルのキー・バインディングを変更して、
+@code{vi}の行編集コマンドを使用できるようにするには、
+以下のようにします。
+
+@example
+set editing-mode vi
+@end example
+
+以下の変数によって、
+実行時の振る舞いのかなりの部分が変更可能です。
+
+@table @code
+
+@item bell-style
+@vindex bell-style
+Readlineが端末のベル音を鳴らしたいと判断した場合に、
+何が起こるかを制御します。
+@samp{none}がセットされると、
+Readlineはベル音を鳴らしません。
+@samp{visible}がセットされると、
+視覚的なベル@footnote{@emph{訳注}：
+ベル音を鳴らす代わりに、
+画面表示をフラッシュさせることを表わしています。}
+が利用可能であれば、
+それを使います。
+@samp{audible}（デフォルト）がセットされると、
+Readlineは、
+端末のベル音を鳴らそうと試みます。
+
+@item comment-begin
+@vindex comment-begin
+@code{insert-comment}コマンドが実行されたときに、
+行の先頭に挿入される文字列です。
+デフォルトの値は@code{"#"}です。
+
+@item completion-ignore-case
+@samp{on}がセットされると、
+Readlineは、
+大文字・小文字を区別せずに、
+ファイル名のマッチングや補完を行います。
+デフォルトの値は@samp{off}です。
+
+@item completion-query-items
+@vindex completion-query-items
+ユーザに対して補完候補の一覧を見たいかどうか問い合わせるタイミングを決定する、
+補完候補の数です。
+補完候補の数がこの値よりも多いと、
+Readlineは、
+補完候補の一覧を見たいかどうかをユーザに対して問い合わせることになります。
+この値よりも少ない場合は、
+問い合わせを行うことなく一覧を表示します。
+デフォルトの境界は@code{100}です。
+
+@item convert-meta
+@vindex convert-meta
+@samp{on}がセットされると、
+Readlineは、
+第8ビットがセットされている文字をASCIIのキー・シーケンスに変換します。
+これは、
+該当文字の第8ビットを落として、
+その前に@key{ESC}文字を付加することで、
+メタ・プレフィックス・キー・シーケンス（meta-prefixed key sequence）
+に変換することによって行われます。
+デフォルトの値は@samp{on}です。
+
+@item disable-completion
+@vindex disable-completion
+@samp{On}がセットされると、
+Readlineは単語補完を抑制します。
+補完文字（completion  character）は、
+あたかも@code{self-insert}にマップされたかのように、
+行内に挿入されます。
+デフォルトは@samp{off}です。
+
+@item editing-mode
+@vindex editing-mode
+@code{editing-mode}変数は、
+デフォルトで使用するキー・バインディングの種類を制御します。
+Readlineは、
+デフォルトの状態では、
+Emacs編集モードで起動します。
+このモードは、
+キー・ストロークがEmacsに非常に良く似ています。
+この変数は、
+@code{emacs}と@code{vi}のどちらかに設定することができます。
+
+@item enable-keypad
+@vindex enable-keypad
+@samp{on}がセットされると、
+Readlineは、
+呼び出されたときに、
+アプリケーション・キーパッド（application keypad）を有効にすることを試みます。
+システムによっては、
+矢印キーを使用できるようにするために、
+これが必要となります。
+デフォルトは@samp{off}です。
+
+@item expand-tilde
+@vindex expand-tilde
+@samp{on}がセットされると、
+Readlineが単語補完を試みる際に、
+チルダの展開が行われます。
+デフォルトは@samp{off}です。
+
+@item horizontal-scroll-mode
+@vindex horizontal-scroll-mode
+この変数は、
+@samp{on}と@samp{off}のどちらかに設定することができます。
+これを@samp{on}に設定すると、
+1行のテキストの長さがスクリーン幅よりも長い場合に、
+編集中の行のテキストが次の行に折り返すことなく、
+同じ行の上で水平方向にスクロールするようになります。
+デフォルトでは、
+この変数には@samp{off}がセットされています。
+
+@item keymap
+@vindex keymap
+Readlineが認識している、
+キー・バインディング・コマンドのカレントなキーマップをセットします。
+セットすることのできる@code{keymap}名は、
+@code{emacs}、
+@code{emacs-standard}、
+@code{emacs-meta}、
+@code{emacs-ctlx}、
+@code{vi}、
+@code{vi-command}、
+@code{vi-insert}です。
+@code{vi}は@code{vi-command}と同等です。
+また、
+@code{emacs}は@code{emacs-standard}と同等です。
+デフォルトの値は、
+@code{emacs}です。
+@code{editing-mode}変数の値も、
+デフォルトのキーマップに影響を及ぼします。
+
+@item mark-directories
+@samp{on}がセットされると、
+補完されたディレクトリ名の後ろにスラッシュが付加されます。
+デフォルトは@samp{on}です。
+
+@item mark-modified-lines
+@vindex mark-modified-lines
+この変数に@samp{on}がセットされると、
+Readlineは、
+変更されたヒストリ行の先頭にアスタリスク（@samp{*}）を表示します。
+この変数は、
+デフォルトでは@samp{off}です。
+
+@item input-meta
+@vindex input-meta
+@vindex meta-flag
+@samp{on}がセットされると、
+Readlineは、
+8ビット入力に対する端末側のサポートがどうであれ、
+8ビット入力を有効にします
+（読み込まれた文字の第8ビットを落としません）。
+デフォルト値は@samp{off}です。
+@code{meta-flag}は、
+この変数の別名です。
+
+@item output-meta
+@vindex output-meta
+@samp{on}がセットされると、
+Readlineは、
+第8ビットがセットされている文字を、
+メタ・プレフィックス・エスケープ・シーケンス
+（meta-prefixed escape sequence）
+としてではなく、
+直接表示します。
+デフォルトは@samp{off}です。
+
+@item print-completions-horizontally
+@samp{on}がセットされると、
+Readlineは、
+マッチする補完候補をアルファベット順にソートして、
+画面の下向きにではなく、
+水平方向に並べて表示します。
+デフォルトは@samp{off}です。
+
+@item show-all-if-ambiguous
+@vindex show-all-if-ambiguous
+補完関数のデフォルトの振る舞いを変更します。
+@samp{on}がセットされると、
+複数の補完候補を持つ単語は、
+ベル音を鳴らすことなく、
+直ちに補完候補を一覧表示させます。
+デフォルト値は@samp{off}です。
+
+@item visible-stats
+@vindex visible-stats
+@samp{on}がセットされると、
+補完候補を一覧表示する際に、
+ファイル・タイプを示す文字がファイル名の後ろに付加されます。
+デフォルトは@samp{off}です。
+
+@end table
+
+@item キー・バインディング
+初期化ファイルの中でキー・バインディングを制御するための構文は単純です。
+まず、
+キー・バインディングを変更したいコマンドの名前を知っている必要があります。
+以下のセクションにおいて、
+コマンドの名前、
+そのコマンドにデフォルトのキー・バインディングがある場合はそのバインディング、
+および、
+そのコマンドが何をするものであるかについての簡単な説明を、
+一覧にして示します。
+
+コマンドの名前を知っていれば、
+初期化ファイルの中で、
+コマンドにバインドしたいキーの名前、
+コロン、
+そして最後にコマンドの名前を、
+1行にして記述するだけです。
+キーの名前は、
+好みに応じて異なる方法で表現することができます。
+
+@table @asis
+@item @w{@var{keyname}: @var{function-name} or @var{macro}}
+@var{keyname}は、
+英語で記述されたキーの名前です。
+例えば、
+以下のようになります。
+@example
+Control-u: universal-argument
+Meta-Rubout: backward-kill-word
+Control-o: "> output"
+@end example
+
+上の例では、
+@key{C-u}が関数@code{universal-argument}にバインドされ、
+@key{C-o}がその右側に記述されたマクロ
+（行内に@samp{> output}というテキストを挿入するマクロ）
+を実行するようバインドされます。
+
+@item @w{"@var{keyseq}": @var{function-name} or @var{macro}}
+前の例の@var{keyname}とは異なり、
+@var{keyseq}には、
+キー・シーケンス全体を示す文字列を指定することができます。
+これは、
+キー・シーケンスを二重引用符で囲むことによって実現されます。
+以下の例に示すように、
+いくつかのGNU Emacsスタイルのキー・エスケープを使うことができますが、
+特殊文字の名前は認識されません。
+
+@example
+"\C-u": universal-argument
+"\C-x\C-r": re-read-init-file
+"\e[11~": "Function Key 1"
+@end example
+
+上の例では、
+@key{C-u}が
+（最初の例と同様）
+関数@code{universal-argument}に、
+@samp{@key{C-x} @key{C-r}}が関数@code{re-read-init-file}に、
+@samp{@key{ESC} @key{[} @key{1} @key{1} @key{~}}が@samp{Function Key 1}というテキストを挿入するよう、
+それぞれバインドされています。
+
+@end table
+
+キー・シーケンスを指定する際には、
+以下のGNU Emacsスタイルのエスケープ・シーケンスが利用できます。
+
+@table @code
+@item @kbd{\C-}
+コントロール・プレフィックス
+@item @kbd{\M-}
+メタ・プレフィックス
+@item @kbd{\e}
+エスケープ文字
+@item @kbd{\\}
+バックスラッシュ
+@item @kbd{\"}
+@key{"}
+@item @kbd{\'}
+@key{'}
+@end table
+
+GNU Emacsスタイルのエスケープ・シーケンスに加えて、
+別のバックスラッシュ・エスケープ群が利用できます。
+
+@table @code
+@item \a
+警告（ベル）
+@item \b
+バックスペース
+@item \d
+削除
+@item \f
+フォーム・フィード
+@item \n
+改行
+@item \r
+復帰（carriage return）
+@item \t
+水平タブ
+@item \v
+垂直タブ
+@item \@var{nnn}
+ASCIIコードが8進数値の@var{nnn}
+（1個以上3個以下の数字）
+に相当する文字
+@item \x@var{nnn}
+ASCIIコードが16進数値の@var{nnn}
+（1個以上3個以下の数字）
+に相当する文字
+@end table
+
+マクロのテキストを入力する際には、
+マクロ定義であることを示すために、
+単一引用符または二重引用符を使わなければなりません。
+引用符に囲まれないテキストは、
+関数名であると見なされます。
+マクロ本体においては、
+上記のバックスラッシュ・エスケープは展開されます。
+バックスラッシュとそれに続く文字の組み合わせがバックスラッシュ・エスケープに該当しない場合、
+マクロのテキストの中のバックスラッシュは、
+@samp{"}や@samp{'}も含めて、
+直後にある文字を引用します。
+例えば、
+以下のバインディングによって、
+@samp{C-x \}は、
+行内に@samp{\}を1つ挿入することになります。
+@example
+"\C-x\\": "\\"
+@end example
+
+@end table
+
+@node Conditional Init Constructs
+@subsection 条件初期化構文
+
+Readlineは、
+Cのプリプロセッサにおける条件コンパイル機能と質的に類似した機能を実装しています。
+これによって、
+あるテストの結果に応じてキー・バインディングや変数設定が実行されるようにすることができます。
+4種類のパーサ指示子が使われます。
+
+@table @code
+@item $if
+@code{$if}は、
+編集モード、
+使用されている端末、
+あるいは、
+Readlineを使用しているアプリケーションに応じてバインディングが行われるようにすることを可能にします。
+@code{$if}の後ろに、
+テストされる内容が行末まで続きます。
+テストされる内容をほかのものと分離するために特別に文字を使う必要はありません。
+
+@table @code
+@item mode
+Readlineが@code{emacs}モードと@code{vi}モードのどちらで動作しているかをテストするために、
+@code{$if}指示子の一形式である@code{mode=}が使用されます。
+例えば、
+Readlineが@code{emacs}モードで開始されている場合にのみ、
+@code{emacs-standard}や@code{emacs-ctlx}のキーマップでバインディングをセットするようにするために、
+これを@samp{set keymap}コマンドと組み合わせて使用することができます。
+
+@item term
+@code{term=}という形式は、
+端末のファンクション・キーによって特定のキー・シーケンスが出力されるようなバインディングを行うなどの目的で、
+端末固有のキー・バインディングを組み込むために使用することができます。
+@samp{=}の右側の単語は、
+端末の完全名と、
+端末の名前のうち最初の@samp{-}までの部分の両方に対してテストされます。
+これにより、
+例えば@code{sun}は、
+@code{sun}と@code{sun-cmd}の両方にマッチすることになります。
+
+@item application
+@var{application}は、
+アプリケーション固有の設定を組み込むために使用されます。
+Readlineライブラリを使用する個々のプログラムがセットする@var{application name}
+（アプリケーション名）
+をテストすることができます。
+特定のプログラムにとって役に立つ関数に対してキー・シーケンスをバインドするために、
+これを使用することができます。
+例えば以下のコマンドは、
+Bashにおいて、
+カレントな単語、
+または、
+1つ前の単語を引用符で囲むキー・シーケンスを追加します。
+@example
+$if Bash
+@c # Quote the current or previous word
+# カレントな単語、または、1つ前の単語を引用符で囲む
+"\C-xq": "\eb\"\ef\""
+$endif
+@end example
+@end table
+
+@item $endif
+このコマンドは、
+前の例が示すように、
+@code{$if}コマンドを終わらせます。
+
+@item $else
+@code{$if}指示子から枝分かれしたこの部分に記述されたコマンドは、
+テスト結果が偽であった場合に実行されます。
+
+@item $include
+この指示子は、
+引数としてファイル名を1つ取り、
+そのファイルからコマンドとバインディングを読み込みます。
+@example
+$include /etc/inputrc
+@end example
+@end table
+
+@node Sample Init File
+@subsection 初期化ファイルのサンプル
+
+以下に、
+inputrcファイルの実例を示します。
+この中では、
+キー・バインディング、
+変数割り当て、
+条件構文の例が示されています。
+
+@example
+@page
+@c # This file controls the behaviour of line input editing for
+@c # programs that use the Gnu Readline library.  Existing programs
+@c # include FTP, Bash, and Gdb.
+@c #
+@c # You can re-read the inputrc file with C-x C-r.
+@c # Lines beginning with '#' are comments.
+@c #
+@c # First, include any systemwide bindings and variable assignments from
+@c # /etc/Inputrc
+# このファイルは、Gnu Readlineライブラリを使うプログラムの行入力編集
+# の振る舞いを制御する。Gnu Readlineライブラリを使うプログラムには、
+# FTP、Bash、Gdbなどがある。
+#
+# inputrcファイルは、C-x C-rによって再読み込みすることができる。
+# '#'で始まる行は、コメントである。
+#
+# 最初に、/etc/Inputrcからシステム全体のバインディングと変数割り当て
+# を取り込む。
+$include /etc/Inputrc
+
+#
+@c # Set various bindings for emacs mode.
+# emacsモードにおける種々のバインディングをセットする。
+
+set editing-mode emacs 
+
+$if mode=emacs
+
+@c Meta-Control-h:	backward-kill-word	Text after the function name is ignored
+Meta-Control-h:	backward-kill-word	関数名の後ろのテキストは無視される。
+
+#
+@c # Arrow keys in keypad mode
+# キーパッド・モードにおける矢印キー
+#
+#"\M-OD":        backward-char
+#"\M-OC":        forward-char
+#"\M-OA":        previous-history
+#"\M-OB":        next-history
+#
+@c # Arrow keys in ANSI mode
+# ANSIモードにおける矢印キー
+#
+"\M-[D":        backward-char
+"\M-[C":        forward-char
+"\M-[A":        previous-history
+"\M-[B":        next-history
+#
+@c # Arrow keys in 8 bit keypad mode
+# 8ビット・キーパッド・モードにおける矢印キー
+#
+#"\M-\C-OD":       backward-char
+#"\M-\C-OC":       forward-char
+#"\M-\C-OA":       previous-history
+#"\M-\C-OB":       next-history
+#
+@c # Arrow keys in 8 bit ANSI mode
+# 8ビットANSIモードにおける矢印キー
+#
+#"\M-\C-[D":       backward-char
+#"\M-\C-[C":       forward-char
+#"\M-\C-[A":       previous-history
+#"\M-\C-[B":       next-history
+
+C-q: quoted-insert
+
+$endif
+
+@c # An old-style binding.  This happens to be the default.
+# 旧スタイルのバインディング。これがたまたまデフォルトでもある。
+TAB: complete
+
+@c # Macros that are convenient for shell interaction
+# シェルとのやりとりにおいて便利なマクロ
+$if Bash
+@c # edit the path
+# パス（PATH）の編集
+"\C-xp": "PATH=$@{PATH@}\e\C-e\C-a\ef\C-f"
+@c # prepare to type a quoted word -- insert open and close double quotes
+@c # and move to just after the open quote
+# 引用符で囲まれた単語を入力するための準備 -- 先頭と末尾の二重引用符
+# を挿入して、先頭の引用符の直後に移動
+"\C-x\"": "\"\"\C-b"
+@c # insert a backslash (testing backslash escapes in sequences and macros)
+# バックスラッシュを挿入
+# （シーケンスやマクロにおいて、バックスラッシュ・エスケープをテストする）
+"\C-x\\": "\\"
+@c # Quote the current or previous word
+# カレントな単語、または、1つ前の単語を引用符で囲む
+"\C-xq": "\eb\"\ef\""
+@c # Add a binding to refresh the line, which is unbound
+# バインドされていない行再表示コマンドにバインディングを追加
+"\C-xr": redraw-current-line
+@c # Edit variable on current line.
+# カレント行において変数を編集
+"\M-\C-v": "\C-a\C-k$\C-y\M-\C-e\C-a\C-y="
+$endif
+
+@c # use a visible bell if one is available
+# 視覚的なベルが利用可能であれば、それを使う
+set bell-style visible
+
+@c # don't strip characters to 7 bits when reading
+# 読み込みの際に、文字の第8ビットを落とさない
+set input-meta on
+
+@c # allow iso-latin1 characters to be inserted rather than converted to
+@c # prefix-meta sequences
+# iso-latin1文字は、プレフィックス・メタ・シーケンスに変換せず、
+# そのまま挿入する
+set convert-meta off
+
+@c # display characters with the eighth bit set directly rather than
+@c # as meta-prefixed characters
+# 第8ビットがセットされている文字を、メタ・プレフィックス文字として
+# ではなく、直接表示する
+set output-meta on
+
+@c # if there are more than 150 possible completions for a word, ask the
+@c # user if he wants to see all of them
+# ある単語について、150を超える補完候補が存在する場合、ユーザに対して
+# すべてを表示させたいかどうかを問い合わせる
+set completion-query-items 150
+
+@c # For FTP
+# FTP用
+$if Ftp
+"\C-xg": "get \M-?"
+"\C-xt": "put \M-?"
+"\M-.": yank-last-arg
+$endif
+@end example
+
+@node Bindable Readline Commands
+@section バインド可能なReadlineコマンド
+
+@menu
+* Commands For Moving::		行の中での移動
+* Commands For History::	以前の行の入手
+* Commands For Text::		テキストを変更するためのコマンド
+* Commands For Killing::	キル（kill）と再挿入（yank）のためのコマンド
+* Numeric Arguments::		数字引数、繰り返し回数の指定
+* Commands For Completion::	Readlineによる入力補完
+* Keyboard Macros::		入力された文字群の保存と再実行
+* Miscellaneous Commands::	その他のコマンド
+@end menu
+
+このセクションでは、
+キー・シーケンスにバインドすることが可能なReadlineコマンドについて説明します。
+
+@node Commands For Moving
+@subsection 移動のためのコマンド
+@ftable @code
+@item beginning-of-line (C-a)
+カレント行の先頭に移動します。
+
+@item end-of-line (C-e)
+行の末尾に移動します。
+
+@item forward-char (C-f)
+1文字分先に進みます。
+
+@item backward-char (C-b)
+1文字分後へ戻ります。
+
+@item forward-word (M-f)
+次の単語の末尾へ移動します。
+単語は、
+文字と数字により構成されます。
+
+@item backward-word (M-b)
+現在カーソルが指している単語、
+または、
+1つ前の単語の先頭に移動します。
+単語は、
+文字と数字により構成されます。
+
+@item clear-screen (C-l)
+画面を消去し、
+カレント行を再表示します。
+その際、
+カレント行が画面の一番上になるようにします。
+
+@item redraw-current-line ()
+カレント行を再表示します。
+デフォルトでは、
+このコマンドはバインドされていません。
+
+@end ftable
+
+@node Commands For History
+@subsection ヒストリを操作するためのコマンド
+
+@ftable @code
+@item accept-line (Newline, Return)
+@ifset BashFeatures
+カーソルの位置がどこにあっても、
+その行を受け取ります。
+この行が空行ではない場合、
+@code{HISTCONTROL}変数と@code{HISTIGNORE}変数の設定にしたがって、
+それをヒストリ・リストに追加します。
+この行がヒストリ行である場合は、
+そのヒストリ行を最初の状態に復元します。
+@end ifset
+@ifclear BashFeatures
+カーソルの位置がどこにあっても、
+その行を受け取ります。
+この行が空行ではない場合、
+それをヒストリ・リストに追加します。
+この行がヒストリ行である場合は、
+そのヒストリ行を最初の状態に復元します。
+@end ifclear
+
+@item previous-history (C-p)
+ヒストリ・リストを1つ上に移動します。
+
+@item next-history (C-n)
+ヒストリ・リストを1つ下に移動します。
+
+@item beginning-of-history (M-<)
+ヒストリの最初の行に移動します。
+
+@item end-of-history (M->)
+入力ヒストリの最後の行、
+すなわち、
+現在入力中の行に移動します。
+
+@item reverse-search-history (C-r)
+カレント行から始めて上の方向へ検索を行います。
+必要に応じてヒストリの上の方へ移動します。
+インクリメンタルな検索を行います。
+
+@item forward-search-history (C-s)
+カレント行から始めて下の方向へ検索を行います。
+必要に応じてヒストリの下の方へ移動します。
+インクリメンタルな検索を行います。
+
+@item non-incremental-reverse-search-history (M-p)
+カレント行から始めて、
+必要に応じてヒストリの上の方へ移動しつつ、
+非インクリメンタルな検索を使って、
+ユーザによって提供された文字列を上の方向へ検索します。
+
+@item non-incremental-forward-search-history (M-n)
+カレント行から始めて、
+必要に応じてヒストリの下の方へ移動しつつ、
+非インクリメンタルな検索を使って、
+ユーザによって提供された文字列を下の方向へ検索します。
+
+@item history-search-forward ()
+カレント行の先頭からカレントなカーソル位置
+（@var{ポイント}）
+までの間の文字列を、
+ヒストリの中で下の方向へ検索します。
+これは、
+非インクリメンタルな検索です。
+デフォルトでは、
+このコマンドはバインドされていません。
+
+@item history-search-backward ()
+カレント行の先頭からポイントまでの間の文字列を、
+ヒストリの中で上の方向へ検索します。
+これは、
+非インクリメンタルな検索です。
+デフォルトでは、
+このコマンドはバインドされていません。
+
+@item yank-nth-arg (M-C-y)
+1つ前に実行されたコマンドの最初の引数
+（通常は、
+1つ前の行の2つめの単語）
+を挿入します。
+引数@var{n}を指定すると、
+1つ前に実行されたコマンドの@var{n}番目の単語を挿入します
+（1つ前に実行されたコマンドの中の最初の単語を、
+0番目の単語とします）。
+負の値を引数に指定すると、
+1つ前に実行されたコマンドの後ろから数えて@var{n}番目の単語を挿入します
+
+@item yank-last-arg (M-., M-_)
+1つ前に実行されたコマンドの最後の引数
+（1つ前のヒストリ・エントリの最後の単語）
+を挿入します。
+引数を指定すると、
+@code{yank-nth-arg}と同じように動作します。
+@code{yank-last-arg}を連続して実行すると、
+ヒストリ・リストを遡って移動していきます。
+したがって、
+各行の最後の引数が順番に挿入されていきます。
+@end ftable
+
+@node Commands For Text
+@subsection テキストを変更するためのコマンド
+
+@ftable @code
+@item delete-char (C-d)
+カーソル位置にある文字を削除します。
+カーソルが空行の先頭にあり、
+最後に入力された文字が@code{delete-char}にバインドされていない場合は、
+@code{EOF}を返します。
+
+@item backward-delete-char (Rubout)
+カーソル位置の前にある文字を削除します。
+数値引数を指定すると、
+文字を削除するのではなくキル（kill）するよう指示したことになります。
+
+@item quoted-insert (C-q, C-v)
+このコマンドに続けて入力する文字をそのまま行に追加します。
+これが、
+例えば@key{C-q}のようなキー・シーケンスを挿入する方法です。
+
+@ifclear BashFeatures
+@item tab-insert (M-TAB)
+タブを挿入します。
+@end ifclear
+
+@item self-insert (a, b, A, 1, !, ...)
+その文字自身を挿入します。
+
+@item transpose-chars (C-t)
+カーソルの前にある文字をドラッグして、
+カーソル位置にある文字の後ろに持っていきます。
+カーソル自身も同様に前進させます。
+挿入ポイントが行末にある場合には、
+行の最後の2文字を入れ替えます。
+負の引数を与えても機能しません。
+
+@item transpose-words (M-t)
+カーソルの前にある単語をドラッグして、
+カーソルの後ろにある単語の後ろに持っていきます。
+カーソル自身も、
+カーソルの後ろにある単語の後ろに移動します。
+
+@item upcase-word (M-u)
+カレントな
+（あるいは、
+その1つ後ろの）
+単語の中のすべての文字を大文字に変換します。
+負の引数を指定すると、
+1つ前の単語の中のすべての文字を大文字に変換しますが、
+カーソルは移動しません。
+
+@item downcase-word (M-l)
+カレントな
+（あるいは、
+その1つ後ろの）
+単語の中のすべての文字を小文字に変換します。
+負の引数を指定すると、
+1つ前の単語の中のすべての文字を小文字に変換しますが、
+カーソルは移動しません。
+
+@item capitalize-word (M-c)
+カレントな
+（あるいは、
+その1つ後ろの）
+単語の先頭文字を大文字に、
+それ以外の位置にある文字を小文字に変換します。
+負の引数を指定すると、
+1つ前の単語に対して同様の変換を行いますが、
+カーソルは移動しません。
+
+@end ftable
+
+@node Commands For Killing
+@subsection キル（kill）と再挿入（yank）
+
+@ftable @code
+
+@item kill-line (C-k)
+カレントなカーソル位置から行末までのテキストをキル（kill）します。
+
+@item backward-kill-line (C-x Rubout)
+行の先頭までのテキストをキルします。
+
+@item unix-line-discard (C-u)
+カーソル位置から逆方向にカレント行の先頭までをキルします。
+キルされたテキストは、
+キル・リング（kill-ring）に退避されます。
+
+@item kill-whole-line ()
+カーソルの位置にかかわらず、
+カレント行のすべての文字をキルします。
+デフォルトでは、
+バインドされていません。
+
+@item kill-word (M-d)
+カーソル位置からカレントな単語の末尾までをキルします。
+カーソルが単語の間にある場合は、
+次の単語の末尾までをキルします。
+単語の境界は、
+@code{forward-word}の場合と同様です。
+
+@item backward-kill-word (M-DEL)
+カーソルの前にある単語をキルします。
+単語の境界は、
+@code{backward-word}の場合と同様です。
+
+@item unix-word-rubout (C-w)
+空白類@footnote{訳注：空白（スペース）、
+水平タブ、
+改行、
+垂直タブ、
+フォーム・フィード}を単語の境界として、
+カーソルの前にある単語をキルします。
+キルされた単語は、
+キル・リングに退避されます。
+
+@item delete-horizontal-space ()
+ポイントの前後にある、
+すべての空白（スペース）とタブを削除します。
+デフォルトでは、
+バインドされていません。
+
+@item kill-region ()
+ポイントと@emph{マーク}
+（待避されたカーソル位置）
+の間のテキストをキルします。
+このテキストは、
+領域（@var{region}）と呼ばれます。
+デフォルトでは、
+このコマンドはバインドされていません。
+
+@item copy-region-as-kill ()
+領域（region）内のテキストを、
+直ちに再挿入（yank）できるよう、
+キル・バッファ（kill buffer）にコピーします。
+デフォルトでは、
+このコマンドはバインドされていません。
+
+@item copy-backward-word ()
+ポイントの前にある単語をキル・バッファにコピーします。
+単語の境界は、
+@code{backward-word}の場合と同様です。
+デフォルトでは、
+このコマンドはバインドされていません。
+
+@item copy-forward-word ()
+ポイントの後ろにある単語をキル・バッファにコピーします。
+単語の境界は、
+@code{forward-word}の場合と同様です。
+デフォルトでは、
+このコマンドはバインドされていません。
+
+@item yank (C-y)
+キル・リングの一番上の位置にあるテキストを、
+バッファ内のカレントなカーソル位置に再挿入（yank）します。
+
+@item yank-pop (M-y)
+キル・リングを回転させ、
+新しく一番上の位置にきたテキストを再挿入（yank）します。
+1つ前に実行したコマンドが、
+yankまたはyank-popであった場合のみ、
+このコマンドを実行することができます。
+@end ftable
+
+@node Numeric Arguments
+@subsection 数値引数の指定
+@ftable @code
+
+@item digit-argument (M-0, M-1, ... M--)
+既に蓄積済みの引数にこの数字を追加するか、
+または、
+この数字によって新しい引数を開始します。
+負の引数を指定するには、
+先頭を@key{M--}とします。
+
+@item universal-argument ()
+これは、
+引数を指定する別の方法です。
+このコマンドの後に、
+場合によって先頭にマイナス記号の付く、
+1つ以上の数字が続く場合には、
+それらの数字が引数を定義します。
+このコマンドの後ろに数字が続く場合には、
+@code{universal-argument}を再実行することによって、
+その数字引数を終わらせることができます。
+しかし、
+このコマンドの後ろに数字が続かない場合の再実行は、
+無視されます。
+特殊なケースとして、
+このコマンドの直後に数字でもマイナス記号でもない文字が続く場合、
+次に実行されるコマンドの引数カウントは4倍されます。
+引数カウントの初期値は1です。
+したがって、
+この関数を最初に実行した後には、
+引数カウントは4になり、
+2回目に実行した後には16になります。
+以下、
+同様です。
+デフォルトでは、
+キーへのバインドはされていません。
+@end ftable
+
+@node Commands For Completion
+@subsection Readlineによる入力補完
+
+@ftable @code
+@item complete (TAB)
+カーソルの前にあるテキストの補完を試みます。
+これは、
+アプリケーション固有の動作をします。
+通常、
+引数としてファイル名を入力しているときには、
+ファイル名を補完することができます。
+コマンド名を入力しているときには、
+コマンド名を補完することができます。
+GDBに対してシンボル名を入力しているときには、
+シンボル名を補完することができます。
+Bashに対して変数名を入力しているときには、
+変数名を補完することができます。
+@ifset BashFeatures
+Bashは、
+補完を試みる際に、
+（テキストが@samp{$}で始まる場合には）
+変数として、
+（テキストが@samp{~}で始まる場合には）
+ユーザ名として、
+（テキストが@samp{@@}で始まる場合には）
+ホスト名として、
+あるいは、
+（別名や関数を含む）
+コマンドとして、
+テキストを扱います。
+どの方法を使用してもマッチするものが得られない場合には、
+ファイル名としての補完が試みられます。
+@end ifset
+
+@item possible-completions (M-?)
+カーソルの前にあるテキストの補完候補を一覧表示します。
+
+@item insert-completions (M-*)
+@code{possible-completions}を実行すれば生成されたであろうテキストの補完候補をすべて、
+ポイントの前に挿入します。
+
+@item menu-complete ()
+@code{complete}に似ていますが、
+補完されるべき単語を、
+補完候補の一覧の中の1つと置き換えます。
+@code{menu-complete}を繰り返し実行すると、
+補完候補の一覧から順番に1つずつ補完候補が挿入されていきます。
+候補一覧の終端に達すると、
+ベル音が鳴らされ、
+補完前のテキストが復元されます。
+引数@var{n}を指定すると、
+補完候補の一覧の中で@var{n}個先に移動します。
+一覧を逆方向に戻るために、
+負の引数を指定することができます。
+このコマンドは、
+@code{TAB}にバインドすることを意図したものですが、
+デフォルトではバインドされていません。
+
+@ifset BashFeatures
+@item complete-filename (M-/)
+ポイントの前にあるテキストに対して、
+ファイル名補完を試みます。
+
+@item possible-filename-completions (C-x /)
+ポイントの前にあるテキストをファイル名と見なして、
+その補完候補の一覧を表示します。
+
+@item complete-username (M-~)
+ポイントの前にあるテキストをユーザ名と見なして、
+その補完を試みます。
+
+@item possible-username-completions (C-x ~)
+ポイントの前にあるテキストをユーザ名と見なして、
+その補完候補の一覧を表示します。
+
+@item complete-variable (M-$)
+ポイントの前にあるテキストをシェル変数と見なして、
+その補完を試みます。
+
+@item possible-variable-completions (C-x $)
+ポイントの前にあるテキストをシェル変数と見なして、
+その補完候補の一覧を表示します。
+
+@item complete-hostname (M-@@)
+ポイントの前にあるテキストをホスト名と見なして、
+その補完を試みます。
+
+@item possible-hostname-completions (C-x @@)
+ポイントの前にあるテキストをホスト名と見なして、
+その補完候補の一覧を表示します。
+
+@item complete-command (M-!)
+ポイントの前にあるテキストをコマンド名と見なして、
+その補完を試みます。
+コマンド補完では、
+別名（エイリアス）、
+予約語、
+シェル関数、
+シェル組み込みコマンド、
+実行ファイル名の順番で、
+テキストの補完が試みられます。
+
+@item possible-command-completions (C-x !)
+ポイントの前にあるテキストをコマンド名と見なして、
+その補完候補の一覧を表示します。
+
+@item dynamic-complete-history (M-TAB)
+ポイントの前にあるテキストとヒストリ・リストの中の各行を比較して、
+後者の中に前者の補完候補としてマッチするものを探すことによって、
+そのテキストの補完が試みられます。
+
+@item complete-into-braces (M-@{)
+ファイル名補完を実行し、
+補完候補の一覧を、
+シェルから利用できるように、
+大かっこ（brace）で囲んで返します
+（@pxref{Brace Expansion}）。
+
+@end ifset
+@end ftable
+
+@node Keyboard Macros
+@subsection キーボード・マクロ
+@ftable @code
+
+@item start-kbd-macro (C-x ()
+カレントなキーボード・マクロの構成要素として入力される文字の保存を開始します。
+
+@item end-kbd-macro (C-x ))
+カレントなキーボード・マクロの構成要素として入力された文字の保存を終了して、
+そのキーボード・マクロの定義を保存します。
+
+@item call-last-kbd-macro (C-x e)
+最後に定義されたキーボード・マクロを再実行します。
+マクロの中の文字群が、
+あたかもキーボードから入力されたかのように、
+現われます。
+
+@end ftable
+
+@node Miscellaneous Commands
+@subsection その他のコマンド
+@ftable @code
+
+@item re-read-init-file (C-x C-r)
+inputrcファイルの内容を読み込み、
+その中にあるバインディングや変数割り当てをすべて組み込みます。
+
+@item abort (C-g)
+カレントな編集コマンドの実行を停止し、
+（@code{bell-style}の設定次第では）
+端末のベル音を鳴らします。
+
+@item do-uppercase-version (M-a, M-b, M-@var{x}, @dots{})
+メタ化された文字@var{x}が小文字である場合、
+対応する大文字にバインドされているコマンドを実行します。
+
+@item prefix-meta (ESC)
+次に入力される文字をメタ化します。
+これは、
+メタ・キーのないキーボード用のコマンドです。
+@samp{ESC f}を入力するのは、
+@samp{M-f}を入力するのと同じことです。
+
+@item undo (C-_, C-x C-u)
+インクリメンタルな取り消し処理を実行します。
+取り消す内容は、
+各行ごとに別々に記憶されています。
+
+@item revert-line (M-r)
+行に加えられたすべての変更を取り消します。
+これは、
+@code{undo}コマンドを、
+行を元の状態に戻すのに必要な回数繰り返して実行するようなものです。
+
+@item tilde-expand (M-~)
+カレントな単語に対して、
+チルダ展開を実行します。
+
+@item set-mark (C-@@)
+カレントなポイントにマークをセットします。
+数値引数があれば、
+その位置にマークがセットされます。
+
+@item exchange-point-and-mark (C-x C-x)
+ポイントとマークを交換します。
+待避されていた位置がカレントなカーソル位置としてセットされ、
+元のカーソル位置はマークとして待避されます。
+
+@item character-search (C-])
+文字を1つ読み込み、
+その文字が次に現われるところにポイントを移動します。
+負の数を指定すると、
+その文字が以前に現われたところを探します。
+
+@item character-search-backward (M-C-])
+文字を1つ読み込み、
+その文字が前に現われたところにポイントを移動します。
+負の数を指定すると、
+その文字が次に現われるところを探します。
+
+@item insert-comment (M-#)
+カレント行の先頭に@code{comment-begin}変数の値が挿入され、
+挿入後の行が、
+あたかも改行が入力されたかのように、
+受け付けられます。
+@ifset BashFeatures
+これにより、
+カレント行は、
+シェルのコメントとなります。
+@end ifset
+
+@item dump-functions ()
+Readlineの出力ストリームに、
+すべての関数とそのキー・バインディングを出力します。
+数値引数が指定されると、
+@var{inputrc}ファイルの一部として使用することのできる形式に、
+出力がフォーマットされます。
+このコマンドは、
+デフォルトではバインドされていません。
+
+@item dump-variables ()
+Readlineの出力ストリームに、
+値をセットすることのできるすべての変数とその値を出力します。
+数値引数が指定されると、
+@var{inputrc}ファイルの一部として使用することのできる形式に、
+出力がフォーマットされます。
+このコマンドは、
+デフォルトではバインドされていません。
+
+@item dump-macros ()
+マクロにバインドされているすべてのReadlineキー・シーケンスと、
+そのキー・シーケンスが出力する文字列を出力します。
+数値引数が指定されると、
+@var{inputrc}ファイルの一部として使用することのできる形式に、
+出力がフォーマットされます。
+このコマンドは、
+デフォルトではバインドされていません。
+
+@ifset BashFeatures
+@item glob-expand-word (C-x *)
+ポイントの前にある単語が、
+パス名を展開するためのパターンとして扱われ、
+マッチするファイル名の一覧が、
+その単語に置き換わって挿入されます。
+
+@item glob-list-expansions (C-x g)
+@code{glob-expand-word}を実行すると生成されるであろう展開結果の一覧が表示されます。
+行は再表示されます。
+
+@item display-shell-version (C-x C-v)
+Bashのカレント・インスタンスのバージョン情報を表示します。
+
+@item shell-expand-line (M-C-e)
+シェルが展開するのと同様の方法で、
+行を展開します。
+これにより、
+シェルのすべての単語展開
+（@pxref{Shell Expansions}）
+に加えて、
+別名（エイリアス）展開とヒストリ展開が実行されます。
+
+@item history-expand-line (M-^)
+カレント行に対してヒストリ展開を実行します。
+
+@item magic-space ()
+カレント行に対してヒストリ展開を実行し、
+空白（スペース）を挿入します
+（@pxref{History Interaction}）。
+
+@item alias-expand-line ()
+カレント行に対して別名（エイリアス）展開を実行します
+（@pxref{Aliases}）。
+
+@item history-and-alias-expand-line ()
+カレント行に対してヒストリ展開と別名（エイリアス）展開を実行します。
+
+@item insert-last-argument (M-., M-_)
+@code{yank-last-arg}と同義です。
+
+@item operate-and-get-next (C-o)
+実行するためにカレント行を受け取り、
+ヒストリから、
+カレント行の次に位置する行を、
+編集のために取ってきます。
+引数はすべて無視されます。
+
+@item emacs-editing-mode (C-e)
+@code{vi}編集モードであるときに、
+あたかも@samp{set -o emacs}が実行されたかのように、
+編集モードを@code{emacs}に戻します。
+
+@end ifset
+
+@end ftable
+
+@node Readline vi Mode
+@section Readlineの@code{vi}モード
+
+Readlineライブラリは、
+@code{vi}の編集機能のフルセットを提供してはいませんが、
+簡単な行編集を行うのに十分な機能は備えています。
+Readlineの@code{vi}モードは、
+@sc{POSIX} 1003.2標準にしたがって動作します。
+
+@ifset BashFeatures
+@code{emacs}編集モードと@code{vi}編集モードを対話的に切り替えるには、
+@samp{set -o emacs}コマンドと@samp{set -o vi}コマンドを使用してください
+（@pxref{The Set Builtin}）。
+@end ifset
+@ifclear BashFeatures
+@code{emacs}編集モードと@code{vi}編集モードを対話的に切り替えるには、
+コマンドM-C-j（toggle-editing-mode）を使用してください。
+@end ifclear
+Readlineのデフォルトは@code{emacs}モードです。
+
+@code{vi}モードで行入力を行うときには、
+あたかも@samp{i}を入力したかのように、
+最初から「挿入」モードになっています。
+@key{ESC}を押すと「コマンド」モードになり、
+標準的な@code{vi}の移動キーによって行のテキストを編集することができます。
+すなわち、
+@samp{k}により前のヒストリ行に移動すること、
+@samp{j}によって後ろのヒストリ行に移動すること、
+などが可能です。
+

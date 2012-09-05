@@ -1,0 +1,799 @@
+@c Each file has a set of @dfn{permissions} that control the kinds of
+@c access that users have to that file.  The permissions for a file are
+@c also called its @dfn{access mode}.  They can be represented either in
+@c symbolic form or as an octal number.
+@c 
+それぞれのファイルには，ファイルに対してユーザ持つアクセスの種類を制御す
+る@dfn{許可(permission)}の設定があります．ファイルに対する許可は@dfn{ア
+クセスモード(access mode)} とも呼ばれます．それらは，抽象的な形式または
+八進数で表示可能です．
+
+@menu
+* Mode Structure::              Structure of file permissions.
+* Symbolic Modes::              Mnemonic permissions representation.
+* Numeric Modes::               Permissions as octal numbers.
+@end menu
+
+@node Mode Structure
+@c @section Structure of File Permissions
+@section ファイルの許可の構造
+
+@c There are three kinds of permissions that a user can have for a file:
+@c 
+ユーザがファイルに対して持つ三種類の許可があります．
+
+@enumerate
+@item
+@cindex read permission
+@c permission to read the file.  For directories, this means permission to
+@c list the contents of the directory.
+@c 
+ファイルを読み込む許可です．ディレクトリに対しては，これはディレクトリの
+内容をリストアップする許可という意味があります．
+@item
+@cindex write permission
+@c permission to write to (change) the file.  For directories, this means
+@c permission to create and remove files in the directory.
+@c 
+ファイルを書き込む(変更する)許可です．ディレクトリに対しては，これはディ
+レクトリでのファイルの作成と削除の許可を意味します．
+@item
+@cindex execute permission
+@c permission to execute the file (run it as a program).  For directories,
+@c this means permission to access files in the directory.
+@c 
+ファイルを実行(それをプログラムとして実行)する許可です．ディレクトリに対
+しては，これはディレクトリのファイルにアクセスする許可を意味します．
+@end enumerate
+
+@c There are three categories of users who may have different permissions
+@c to perform any of the above operations on a file:
+@c 
+ファイル上で上記のあらゆる処理を行うため，異なる許可を持つ，三つのユーザ
+の分類があります．
+
+@enumerate
+@item
+@c the file's owner;
+@c 
+ファイルの所有者．
+@item
+@c other users who are in the file's group;
+@c 
+ファイルのグループにいるその他のユーザ．
+@item
+@c everyone else.
+@c 
+その他全員．
+@end enumerate
+
+@cindex owner, default
+@cindex group owner, default
+@c Files are given an owner and group when they are created.  Usually the
+@c owner is the current user and the group is the group of the directory
+@c the file is in, but this varies with the operating system, the
+@c filesystem the file is created on, and the way the file is created.  You
+@c can change the owner and group of a file by using the @code{chown} and
+@c @code{chgrp} commands.
+@c 
+ファイルが作成されるとき，所有者とグループが与えられます．通常，所有者は
+現在のユーザで，グループはファイルがあるディレクトリのグループですが，こ
+れはオペレーティングシステム，ファイルが作成されるファイルシステム，そし
+てファイルが作成される方法で変化します．@command{chown}と@command{chgrp}
+コマンドを使用してファイルの所有者とグループを変更可能です．
+
+@c In addition to the three sets of three permissions listed above, a
+@c file's permissions have three special components, which affect only
+@c executable files (programs) and, on some systems, directories:
+@c 
+上記でリストアップされた三つの許可の三つの設定に加えて，ファイルの許可は
+三つの特別な構成部分があり，それは実行可能なファイル(プログラム)と，いく
+つかのシステムのディレクトリにのみ効果があります．
+
+@enumerate
+@item
+@cindex setuid
+@c set the process's effective user ID to that of the file upon execution
+@c (called the @dfn{setuid bit}).  No effect on directories.
+@c 
+プロセスの実効ユーザIDを，実行時にファイルのものに設定します(@dfn{setuid
+bit}と呼ばれます)．ディレクトリには効果がありません．
+@item
+@cindex setgid
+@c set the process's effective group ID to that of the file upon execution
+@c (called the @dfn{setgid bit}).  For directories on some systems, put
+@c files created in the directory into the same group as the directory, no
+@c matter what group the user who creates them is in.
+@c 
+プロセスの実効グループIDを，実行時にファイルのものに設定します
+(@dfn{setgid bit}と呼ばれます)．いくつかのシステムのディレクトリに対して
+は，そのディレクトリで作成されたファイルを同じグループのディレクトリとし
+て置いても，それを作成したユーザのグループは問題ありません．
+@item
+@cindex sticky
+@cindex swap space, saving text image in
+@cindex text image, saving in swap space
+@cindex restricted deletion flag
+@c save the program's text image on the swap device so it will load more
+@c quickly when run (called the @dfn{sticky bit}).  For directories on some
+@c systems, prevent users from removing or renaming a file in a directory
+@c unless they own the file or the directory; this is called the
+@c @dfn{restricted deletion flag} for the directory.
+@c 
+スワップデバイス上のプログラムのテキストイメージを保存するので，実行時に
+より速くロードされます(@dfn{sticky bit}と呼ばれます)．いくつかのシステム
+のディレクトリに対しては，ユーザが所有していないファイルやディレクトリ場
+合，そのディレクトリ内でのファイルの削除や名前の変更を妨げます．これは，
+ディレクトリに対する@dfn{制限された削除フラグ(restricted deletion flag)} 
+と呼ばれます．
+@end enumerate
+
+@c In addition to the permissions listed above, there may be file attributes
+@c specific to the filesystem, e.g: access control lists (ACLs), whether a
+@c file is compressed, whether a file can be modified (immutability), whether
+@c a file can be dumped.  These are usually set using programs
+@c specific to the filesystem.  For example:
+@c 
+上記の追加の許可として，ファイルシステム特有のファイル属性があるかもし
+れません．例えば，アクセス制御リスト(ACL)で，ファイルが圧縮されている
+かどうか，ファイルが編集可能かどうか(不変性)，ファイルのダンプが可能か
+どうかなどです．これらは通常，ファイルシステム特有のプログラムで設定さ
+れます．例えば以下のものがあります．
+@c should probably say a lot more about ACLs... someday
+
+@table @asis  
+@item ext2
+@c On GNU and Linux/GNU the file permissions (``attributes'') specific to
+@c the ext2 filesystem are set using @command{chattr}.
+@c 
+GNUとLinux/GNUのext2ファイルシステム固有のファイルの許可(``属性'')は，
+@command{chattr}を使用して設定します．
+
+@item FFS
+@c On FreeBSD the file permissions (``flags'') specific to the FFS
+@c filesystem are set using @command{chrflags}.
+@c 
+FreeBSDのFFSファイルシステムの固有のファイルの許可(``フラグ'')は，
+@command{chrflags}を使用して設定します．
+@end table
+
+@c Although a file's permission ``bits'' allow an operation on that file, 
+@c that operation may still fail, because:
+@c 
+ファイルの許可``ビット''はファイル上で処理可能であっても，処理が失敗す
+る可能性もあります．その理由は以下の通りです．
+
+@itemize
+@item
+@c the filesystem-specific permissions do not permit it;
+@c 
+ファイルシステム特有の許可は，それを許可していない．
+
+@item
+@c the filesystem is mounted as read-only.
+@c 
+ファイルシステムが読み込み専用でマウントされている．
+@end itemize
+
+@c For example, if the immutable attribute is set on a file,
+@c it cannot be modified, regardless of the fact that you
+@c may have just run @code{chmod a+w FILE}.
+@c 
+例えば，ファイル上の不変属性が設定されている場合，@code{chmod a+w
+FILE}を実行したという事実によらず，編集することは不可能です．
+
+@node Symbolic Modes
+@c @section Symbolic Modes
+@section 象徴的なモード
+
+@cindex symbolic modes
+@c @dfn{Symbolic modes} represent changes to files' permissions as
+@c operations on single-character symbols.  They allow you to modify either
+@c all or selected parts of files' permissions, optionally based on
+@c their previous values, and perhaps on the current @code{umask} as well
+@c (@pxref{Umask and Protection}).
+@c 
+@dfn{象徴的なモード(Symbolic modes)}は，単一文字のシンボルの演算子として，
+ファイルの許可を変更することを表します．それは，ファイルの許可の部分のど
+れかまたは全てを編集可能にし，オプションでそれらに前置される値と，おそら
+く現在の@code{umask}にも基づきます(@pxref{Umask and Protection})．
+
+@c The format of symbolic modes is:
+@c 
+象徴的なモードの書式は以下の通りです．
+
+@example
+@r{[}ugoa@dots{}@r{][[}+-=@r{][}rwxXstugo@dots{}@r{]}@dots{}@r{][},@dots{}@r{]}
+@end example
+
+@c The following sections describe the operators and other details of
+@c symbolic modes.
+@c 
+以下のセクションで，象徴的なモードのその他の詳細の処理を記述します．
+
+@menu
+* Setting Permissions::          Basic operations on permissions.
+* Copying Permissions::          Copying existing permissions.
+* Changing Special Permissions:: Special permissions.
+* Conditional Executability::    Conditionally affecting executability.
+* Multiple Changes::             Making multiple changes.
+* Umask and Protection::              The effect of the umask.
+@end menu
+
+@node Setting Permissions
+@c @subsection Setting Permissions
+@subsection 許可の設定
+
+@c The basic symbolic operations on a file's permissions are adding,
+@c removing, and setting the permission that certain users have to read,
+@c write, and execute the file.  These operations have the following
+@c format:
+@c 
+ファイルの許可での基本的な象徴的処理で，特定ユーザのファイルの読み込み，
+書き込み，実行の許可を，加えたり，削除したり，設定します．これらの処理は
+以下の書式です．
+
+@example
+@var{users} @var{operation} @var{permissions}
+@end example
+
+@noindent
+@c The spaces between the three parts above are shown for readability only;
+@c symbolic modes cannot contain spaces.
+@c 
+上記の三つの部分の間のスペースは，可読性のみのために表示しています．象徴
+的なモードではスペースを含めることはできません．
+
+@c The @var{users} part tells which users' access to the file is changed.
+@c It consists of one or more of the following letters (or it can be empty;
+@c @pxref{Umask and Protection}, for a description of what happens then).  When
+@c more than one of these letters is given, the order that they are in does
+@c not matter.
+@c 
+@var{users}部は，ファイルアクセスを変更されるユーザを伝えます．それは以
+下の，一つ以上の文字から成り立ちます(または，空にすることもできます．そ
+のとき生じることは，@pxref{Umask and Protection})．これらの文字の一つ以
+上が与えられたとき，その順番は重要ではありません．
+
+@table @code
+@item u
+@cindex owner of file, permissions for
+@c the user who owns the file;
+@c 
+ファイルを所有しているユーザ．
+@item g
+@cindex group, permissions for
+@c other users who are in the file's group;
+@c 
+ファイルのグループのその他のユーザ．
+@item o
+@cindex other permissions
+@c all other users;
+@c 
+その他全部のユーザ．
+@item a
+@c all users; the same as @samp{ugo}.
+@c 
+全てのユーザで．@samp{ugo}と同じです．
+@end table
+
+@c The @var{operation} part tells how to change the affected users' access
+@c to the file, and is one of the following symbols:
+@c 
+@var{operation}部は，ファイルにアクセスするユーザの効果を変更する方法を
+伝え，以下のシンボルの一つになります．
+
+@table @code
+@item +
+@cindex adding permissions
+@c to add the @var{permissions} to whatever permissions the @var{users}
+@c already have for the file;
+@c 
+@var{users}が既に持つ，そのファイルに対するあらゆる許可に，
+@var{permissions}を加えます．
+@item -
+@cindex removing permissions
+@cindex subtracting permissions
+@c to remove the @var{permissions} from whatever permissions the
+@c @var{users} already have for the file;
+@c 
+@var{users}が既に持つ，そのファイルに対するあらゆる許可から，
+@var{permissions}を削除します．
+@item =
+@cindex setting permissions
+@c to make the @var{permissions} the only permissions that the @var{users}
+@c have for the file.
+@c 
+@var{users}が持つ，そのファイルに対する許可を，@var{permissions}のみにし
+ます．
+@end table
+
+@c The @var{permissions} part tells what kind of access to the file should
+@c be changed; it is zero or more of the following letters.  As with the
+@c @var{users} part, the order does not matter when more than one letter is
+@c given.  Omitting the @var{permissions} part is useful only with the
+@c @samp{=} operation, where it gives the specified @var{users} no access
+@c at all to the file.
+@c 
+@var{permissions}部は，ファイルが変更されるアクセスの種類を伝えます．ゼ
+ロ以上の文字になります．@var{users}部を用いた場合，一文字以上与えられた
+ときの順序は重要ではありません．@var{permissions}部の省略は，@samp{=}の
+ときだけ役に立ち，それは指定された@var{users}にそのファイルに対する全て
+のアクセス権を取り除きます．
+
+@table @code
+@item r
+@cindex read permission, symbolic
+@c the permission the @var{users} have to read the file;
+@c 
+@var{users}がファイルを読み込むのに必要な許可です．
+@item w
+@cindex write permission, symbolic
+@c the permission the @var{users} have to write to the file;
+@c 
+@var{users}がファイルに書き込むのに必要な許可です．
+@item x
+@cindex execute permission, symbolic
+@c the permission the @var{users} have to execute the file.
+@c 
+@var{users}がファイルを実行するのに必要な許可です．
+@end table
+
+@c For example, to give everyone permission to read and write a file,
+@c but not to execute it, use:
+@c 
+例えば，全員にファイルの読み込みと書き込みの許可を与え，実行を与えないた
+めに，以下を使用してください．
+
+@example
+a=rw
+@end example
+
+@c To remove write permission for from all users other than the file's
+@c owner, use:
+@c 
+ファイルの所有者以外の全てのユーザから書き込み許可を削除するため，以下を
+使用してください．
+
+@example
+go-w
+@end example
+
+@noindent
+@c The above command does not affect the access that the owner of
+@c the file has to it, nor does it affect whether other users can
+@c read or execute the file.
+@c 
+上記のコマンドは，ファイルの所有者のアクセス権に影響せず，その他のユーザ
+が，ファイルの読み込みと実行が可能かどうかにも影響がありません．
+
+@c To give everyone except a file's owner no permission to do anything with
+@c that file, use the mode below.  Other users could still remove the file,
+@c if they have write permission on the directory it is in.
+@c 
+ファイルの所有者以外全員に，そのファイルに対しあらゆる許可を与えないため
+に，以下のモードを使用してください．他のユーザは，ファイルがあるディレク
+トリに書き込み許可がある場合，ファイルを削除可能です．
+
+@example
+go=
+@end example
+
+@noindent
+@c Another way to specify the same thing is:
+@c 
+同じことを指定するもう一つの方法です．
+
+@example
+og-rxw
+@end example
+
+@node Copying Permissions
+@c @subsection Copying Existing Permissions
+@subsection 既存の許可をコピー
+
+@cindex copying existing permissions
+@cindex permissions, copying existing
+@c You can base a file's permissions on its existing permissions.  To do
+@c this, instead of using @samp{r}, @samp{w}, or @samp{x} after the
+@c operator, you use the letter @samp{u}, @samp{g}, or @samp{o}.  For
+@c example, the mode
+@c 
+ファイルの許可を，既存の許可を基準にすることができます．こうするために，
+オペレータの後に@samp{r}，@samp{w}や@samp{x}を使用する代わりに，文字
+@samp{u}，@samp{g}や@samp{o}を使用します．例えば以下のモードです．
+@example
+o+g
+@end example
+@noindent
+@c adds the permissions for users who are in a file's group to the
+@c permissions that other users have for the file.  Thus, if the file
+@c started out as mode 664 (@samp{rw-rw-r--}), the above mode would change
+@c it to mode 666 (@samp{rw-rw-rw-}).  If the file had started out as mode
+@c 741 (@samp{rwxr----x}), the above mode would change it to mode 745
+@c (@samp{rwxr--r-x}).  The @samp{-} and @samp{=} operations work
+@c analogously.
+@c 
+それは，ファイルのグループにいるユーザに対する許可を，その他のユーザがそ
+のファイルに対して持っている許可に加えます．このため，ファイルが最初にモー
+ド664 (@samp{rw-rw-r--})の場合，上記のモードは，それを666
+(@samp{rw-rw-rw-})に変更します．ファイルが最初にモード741
+(@samp{rwxr----x})の場合，上記のモードは，それを745 (@samp{rwxr--r-x})に
+変更します．@samp{-}と@samp{=}の処理は同様に働きます．
+
+@node Changing Special Permissions
+@c @subsection Changing Special Permissions
+@subsection 特別な許可を変更
+
+@cindex changing special permissions
+@c In addition to changing a file's read, write, and execute permissions,
+@c you can change its special permissions.  @xref{Mode Structure}, for a
+@c summary of these permissions.
+@c 
+ファイルの読み込み，書き込み，そして実行の許可の変更に加えて，特別な許可
+を変更できます．許可の概要は，@xref{Mode Structure}.
+
+@c To change a file's permission to set the user ID on execution, use
+@c @samp{u} in the @var{users} part of the symbolic mode and
+@c @samp{s} in the @var{permissions} part.
+@c 
+実行時にファイルの許可をユーザIDに設定するため，象徴的なモードの
+@var{users}部での@samp{u}と，@var{permissions}部での@samp{s}を使用してく
+ださい．
+
+@c To change a file's permission to set the group ID on execution, use
+@c @samp{g} in the @var{users} part of the symbolic mode and
+@c @samp{s} in the @var{permissions} part.
+@c 
+実行時にファイルの許可をグループIDに設定するため，象徴的なモードの
+@var{users}部での@samp{g}と@var{permissions}部での@samp{s}を使用してくだ
+さい．
+
+@c To change a file's permission to stay permanently on the swap device,
+@c use @samp{o} in the @var{users} part of the symbolic mode and
+@c @samp{t} in the @var{permissions} part.
+@c 
+スワップデバイスに永久に残すファイルの許可を変更するため，象徴的なモード
+の@var{users}部での@samp{o}と@var{permissions}部での@samp{t}を使用してく
+ださい．
+
+@c For example, to add set user ID permission to a program,
+@c you can use the mode:
+@c 
+例えば，ユーザID許可をプログラムに加えるため，以下のモードを使用可能です．
+
+@example
+u+s
+@end example
+
+@c To remove both set user ID and set group ID permission from
+@c it, you can use the mode:
+@c 
+ユーザIDのとグループIDの許可の設定をそれから削除するため，以下のモードを
+使用可能です．
+
+@example
+ug-s
+@end example
+
+@c To cause a program to be saved on the swap device, you can use
+@c the mode:
+@c 
+プログラムがスワップデバイスに保存されるようにするため，以下のモードを使
+用可能です．
+
+@example
+o+t
+@end example
+
+@c Remember that the special permissions only affect files that are
+@c executable, plus, on some systems, directories (on which they have
+@c different meanings; @pxref{Mode Structure}).
+@c Also, the combinations @samp{u+t}, @samp{g+t}, and @samp{o+s} have no effect.
+@c 
+特別な許可は実行形式のファイルと，いくつかのシステムのディレクトリ(そこ
+では異なる意味を持ちます．@pxref{Mode Structure})のみに効果があることを，
+覚えておいてください．また，@samp{u+t}，@samp{g+t}，そして@samp{o+s}の様
+な組合わせには効果はありません．
+
+@c The @samp{=} operator is not very useful with special permissions; for
+@c example, the mode:
+@c 
+@samp{=}オペレータは，特別な許可に用いる場合，全く役に立ちません．例えば，
+モードを以下のようにします．
+
+@example
+o=t
+@end example
+
+@noindent
+@c does cause the file to be saved on the swap device, but it also
+@c removes all read, write, and execute permissions that users not in the
+@c file's group might have had for it.
+@c 
+これは，ファイルをスワップデバイスに保存するようにしますが，それは，ファ
+イルのグループにいないユーザが持っている可能性のある，全ての，読み込み，
+書き込み，そして実行の許可を削除します．
+
+@node Conditional Executability
+@c @subsection Conditional Executability
+@subsection 実行可能の条件
+
+@cindex conditional executability
+@c There is one more special type of symbolic permission: if you use
+@c @samp{X} instead of @samp{x}, execute permission is affected only if the
+@c file already had execute permission or is a directory.  It affects
+@c directories' execute permission even if they did not initially have any
+@c execute permissions set.
+@c 
+象徴的な許可の特別な形式がもう一つあります．@samp{x}の代わりに@samp{X}を
+用いた場合，実行許可は，既に実行形式があるファイル，またはディレクトリの
+みに効果があります．それは，ディレクトリが最初にあらゆる実行許可を持って
+いない場合でも，ディレクトリの実行許可に効果があります．
+
+@c For example, this mode:
+@c 
+例えば，以下のようなモードにします．
+
+@example
+a+X
+@end example
+
+@noindent
+@c gives all users permission to execute files (or search directories) if
+@c anyone could before.
+@c 
+これは，全てのユーザに，それまでに持っていなかった，ファイルの実行(やディ
+レクトリの検索)の許可を与えます．
+
+@node Multiple Changes
+@c @subsection Making Multiple Changes
+@subsection 複数の変更
+
+@cindex multiple changes to permissions
+@c The format of symbolic modes is actually more complex than described
+@c above (@pxref{Setting Permissions}).  It provides two ways to make
+@c multiple changes to files' permissions.
+@c 
+象徴的なモードの書式は，実際に上記で記述したより複雑です(@pxref{Setting
+Permissions})．それは，ファイルの許可を複数変更する二つの方法を提供しま
+す．
+
+@c The first way is to specify multiple @var{operation} and
+@c @var{permissions} parts after a @var{users} part in the symbolic mode.
+@c 
+最初の方法は，象徴的なモードで，複数の@var{operation}部と
+@var{permissions}部を@var{users}部の後で指定する方法です．
+
+@c For example, the mode:
+@c 
+例えば，以下のようなモードにします．
+
+@example
+og+rX-w
+@end example
+
+@noindent
+@c gives users other than the owner of the file read permission and, if
+@c it is a directory or if someone already had execute permission
+@c to it, gives them execute permission; and it also denies them write
+@c permission to the file.  It does not affect the permission that the
+@c owner of the file has for it.  The above mode is equivalent to
+@c the two modes:
+@c 
+これは，ファイルの所有者以外のユーザに，ファイルの読み込み許可を与え，そ
+れがディレクトリの場合や，既に誰かに実行形式の許可がある場合，実行許可を
+与えます．そして，それはファイルの書き込み許可を禁止します．それはファイ
+ルの所有者が持つ許可に影響しません．上記のモードは以下の二つのモードと同
+じです．
+
+@example
+og+rX
+og-w
+@end example
+
+@c The second way to make multiple changes is to specify more than one
+@c simple symbolic mode, separated by commas.  For example, the mode:
+@c 
+複数の変更をするための二番目の方法は，カンマで分けられた，単純な象徴的な
+モードを一つ以上指定することです．例えば，以下のようなモードにします．
+
+@example
+a+r,go-w
+@end example
+
+@noindent
+@c gives everyone permission to read the file and removes write
+@c permission on it for all users except its owner.  Another example:
+@c 
+これは，全員にファイルの読み込み許可を与え，所有者以外全員の書き込み許可
+を削除します．もう一つの例です．
+
+@example
+u=rwx,g=rx,o=
+@end example
+
+@noindent
+@c sets all of the non-special permissions for the file explicitly.  (It
+@c gives users who are not in the file's group no permission at all for
+@c it.)
+@c 
+これは，ファイルに明示的に特別でない許可の全てを設定します．(それはファ
+イルのグループではないユーザに，許可を全く与えません．)
+
+@c The two methods can be combined.  The mode:
+@c 
+二つの方法は組み合わせ可能です．以下のモードになります．
+
+@example
+a+r,g+x-w
+@end example
+
+@noindent
+@c gives all users permission to read the file, and gives users who are in
+@c the file's group permission to execute it, as well, but not permission
+@c to write to it.  The above mode could be written in several different
+@c ways; another is:
+@c 
+これは，全てのユーザに，ファイルの読み込み許可を与え，ファイルのグループ
+にいるユーザに実行許可も与えますが，書き込み許可は与えません．上記のモー
+ドは異なる方法で書くこともできます．その一つは以下になります．
+
+@example
+u+r,g+rx,o+r,g-w
+@end example
+
+@node Umask and Protection
+@c @subsection The Umask and Protection
+@subsection umaskと保護
+
+@cindex umask and modes
+@cindex modes and umask
+@c If the @var{users} part of a symbolic mode is omitted, it defaults to
+@c @samp{a} (affect all users), except that any permissions that are
+@c @emph{set} in the system variable @code{umask} are @emph{not affected}.
+@c The value of @code{umask} can be set using the
+@c @code{umask} command.  Its default value varies from system to system.
+@c 
+象徴的なモードの@var{users}部が省略された場合，システム変数@code{umask} 
+で@emph{無効に}@emph{設定されている}あらゆる許可以外，デフォルトは
+@samp{a}になります(全てのユーザに影響します)．@code{umask}の値は
+@command{umask}コマンドを使用して設定できます．そのデフォルト値は，シス
+テムごとに異なります．
+
+@cindex giving away permissions
+@c Omitting the @var{users} part of a symbolic mode is generally not useful
+@c with operations other than @samp{+}.  It is useful with @samp{+} because
+@c it allows you to use @code{umask} as an easily customizable protection
+@c against giving away more permission to files than you intended to.
+@c 
+象徴的なモードの@var{users}部の省略は，@samp{+}以外のオペレーションでは
+一般に役に立ちません．希望しないファイルに対する余分な許可を与えることに
+対して，簡単にカスタマイズ可能な保護として@code{umask}が使用可能になるの
+で，それは@samp{+}とともに用いると役に立ちます．
+
+@c As an example, if @code{umask} has the value 2, which removes write
+@c permission for users who are not in the file's group, then the mode:
+@c 
+例として，@code{umask}の値が2の場合，それはファイルのグループ以外のユー
+ザに対し書き込み許可を削除します．以下のモードを考えます．
+
+@example
++w
+@end example
+
+@noindent
+@c adds permission to write to the file to its owner and to other users who
+@c are in the file's group, but @emph{not} to other users.  In contrast,
+@c the mode:
+@c 
+これは，その所有者とファイルのグループのユーザに対する書き込み許可を加え
+ますが，それ以外のユーザには与え@emph{ません}．対照的に，以下のモードを
+考えます．
+
+@example
+a+w
+@end example
+
+@noindent
+@c ignores @code{umask}, and @emph{does} give write permission for
+@c the file to all users.
+@c 
+これは@code{umask}を無視し，全てのユーザに対し，書き込み許可を与える
+@emph{のです}．
+
+@node Numeric Modes
+@c @section Numeric Modes
+@section 数値的なモード
+
+@cindex numeric modes
+@cindex file permissions, numeric
+@cindex octal numbers for file modes
+@c File permissions are stored internally as integers.  As an
+@c alternative to giving a symbolic mode, you can give an octal (base 8)
+@c number that corresponds to the internal representation of the new mode.
+@c This number is always interpreted in octal; you do not have to add a
+@c leading 0, as you do in C.  Mode 0055 is the same as mode 55.
+@c 
+ファイルの許可は，内部では整数で保存されます．象徴的なモードの代わりとし
+て，新しいモードの内部に対応した適切な八進数(基数8)で与えることができま
+す．この数は常に八進数で処理されます．Cで行うような，前置される0は不要で
+す．モード0055はモード55と同じです．
+
+@c A numeric mode is usually shorter than the corresponding symbolic
+@c mode, but it is limited in that it cannot take into account a file's
+@c previous permissions; it can only set them absolutely.
+@c 
+数値的なモードは，通常対応する象徴的なモードより短くなりますが，ファイル
+の前の許可を考慮するとき制限があります．それは絶対的な設定が可能なだけで
+す．
+
+@c On most systems, the permissions granted to the user,
+@c to other users in the file's group,
+@c and to other users not in the file's group are each stored as three
+@c bits, which are represented as one octal digit.  The three special
+@c permissions are also each stored as one bit, and they are as a group
+@c represented as another octal digit.  Here is how the bits are arranged,
+@c starting with the lowest valued bit:
+@c 
+ほとんどのシステム上では，ユーザ，ファイルのグループのその他のユーザ，そ
+してファイルのグループではないその他のユーザに応じた許可は，それぞれ三つ
+のビットになり，それは一つの八進数として表現されます．ここにビットを整え
+る方法があり，それは最下位ビットからはじめます．
+
+@example
+@c Value in  Corresponding
+@c Mode      Permission
+@c 
+対応する値
+モード    許可
+
+@c           Other users not in the file's group:
+@c    1      Execute
+@c    2      Write
+@c    4      Read
+@c 
+          ファイルのグループにいないその他のユーザ：
+   1      実行
+   2      書き込み
+   4      読み込み
+
+@c           Other users in the file's group:
+@c   10      Execute
+@c   20      Write
+@c   40      Read
+@c 
+          ファイルのグループのその他のユーザ：
+  10      実行
+  20      書き込み
+  40      読み込み
+
+@c           The file's owner:
+@c  100      Execute
+@c  200      Write
+@c  400      Read
+@c 
+          ファイルの所有者：
+ 100      実行
+ 200      書き込み
+ 400      読み込み
+
+@c           Special permissions:
+@c 1000      Save text image on swap device
+@c 2000      Set group ID on execution
+@c 4000      Set user ID on execution
+@c 
+          特別な許可：
+1000      テキストイメージをスワップデバイスに保存
+2000      実行時のグループIDを設定
+4000      実行時のユーザIDを設定
+@end example
+
+@c For example, numeric mode 4755 corresponds to symbolic mode
+@c @samp{u=rwxs,go=rx}, and numeric mode 664 corresponds to symbolic mode
+@c @samp{ug=rw,o=r}.  Numeric mode 0 corresponds to symbolic mode
+@c @samp{ugo=}.
+@c 
+例えば，数値的なモードの4755は，象徴的なモードの@samp{u=rwxs,go=rx}に，
+数値的なモードの664は，象徴的なモードの@samp{ug=rw,o=r}に対応します．数
+値的なモードの0は，象徴的なモードの@samp{ugo=}に対応します．

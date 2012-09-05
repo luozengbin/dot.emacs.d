@@ -1,0 +1,1351 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename slime.info
+@settitle Emacsのためのより優れたLisp対話モード
+@dircategory Emacs
+@direntry
+* SLIME: (slime-ja). Emacsのためのより優れたLisp対話モード.
+@end direntry
+@c %**end of header
+
+@c Written by Luke Gorrie.
+@c
+@c This file has been placed in the public domain.
+
+@macro SLIME
+@acronym{SLIME}
+@end macro
+
+@macro SLDB
+@acronym{SLDB}
+@end macro
+
+@macro REPL
+@acronym{REPL}
+@end macro
+
+@macro CVS
+@acronym{CVS}
+@end macro
+
+@c O with a slash through it (norwegian)
+@macro norsko
+@iftex
+@tex
+\\o
+@end tex
+@end iftex
+@ifnottex
+o@c this comment prevents a newline!
+@end ifnottex
+@end macro
+
+@macro kbditem{key, command}
+@item \key\
+@code{\command\}@*
+@end macro
+
+@set EDITION 1.0 beta
+@set UPDATED @code{$Date: 2004/09/01 22:50:58 $}
+
+@titlepage
+@title SLIMEユーザマニュアル
+@subtitle Emacsのためのより優れたLisp対話モード
+@subtitle @value{EDITION}, @value{UPDATED}
+@author
+@end titlepage
+
+@c @setchapternewpage off
+
+@contents
+
+@node Top, Introduction, (dir), (dir)
+
+@ifinfo
+@top SLIME
+
+@SLIME{}は、``Emacsのためのより優れたLisp対話モード(Superior Lisp
+Interaction Mode for Emacs)''である。
+
+@SLIME{}と同様に、このマニュアルも作成中である。これは、リリースしてい
+ないバージョンの@SLIME{}を文書化している。
+
+@SLIME{}に関する作業を行なったハッカーたちのリストは、@ref{Credits}。
+
+@end ifinfo
+@menu
+* Introduction::
+* Getting started::
+* slime-mode::
+* REPL::
+* Debugger::
+* Extras::
+* Customization::
+* Credits::
+
+@detailmenu
+ --- The Detailed Node Listing ---
+
+Getting started
+
+* Platforms::
+* Downloading::
+* Installation::
+* Running::
+
+Downloading SLIME
+
+* CVS::
+* CVS Incantations::
+
+Downloading from CVS
+
+* CVS Incantations::
+
+@code{slime-mode}
+
+* User-interface conventions::
+* Commands::
+* Semantic indentation::
+* Reader conditionals::
+
+User-interface conventions
+
+* Temporary buffers::
+* Key bindings::
+* inferior-lisp::
+
+Commands
+
+* Compilation::
+* Finding definitions::
+* Lisp Evaluation::
+* Documentation::
+* Programming Helpers::
+* Recovery::
+* Cross-reference::
+* Inspector::
+* Profiling::
+
+REPL: the ``top level''
+
+* REPL commands::
+* Input Navigation::
+* Shortcuts::
+
+SLDB: the SLIME debugger
+
+* Examining frames::
+* Restarts::
+* Frame Navigation::
+* Miscellaneous::
+
+Extras
+
+* slime-autodoc-mode::
+* Multiple connections::
+* Typeout frames::
+
+Customization
+
+* Emacs-side customization::
+* Lisp-side::
+
+Emacs-side
+
+* Hooks::
+
+Lisp-side (Swank)
+
+* Communication style::
+* Other configurables::
+
+@end detailmenu
+@end menu
+
+@node Introduction, Getting started, Top, Top
+@chapter Introduction
+
+@SLIME{}は、``Emacsのためのより優れたLisp対話モード(Superior Lisp
+Interaction Mode for Emacs)''である。
+
+@SLIME{}は、Common Lispでの対話的なプログラミングのための新たなサポー
+トを用いてEmacsを拡張する。その機能は、標準の@code{lisp-mode}を補う
+Emacsのマイナーモードである@code{slime-mode}を中心としている。
+@code{lisp-mode}がLispのソースファイルの編集をサポートする一方で、
+@code{slime-mode}はコンパイル、デバッグ、文書検索などに対して、動作中
+のCommon Lispプロセスとの対話のためのサポートを加える。
+
+@code{slime-mode}プログラミング環境は、Emacs本来のEmacs Lisp環境の例に
+従う。我々は、(@acronym{ILISP}のような)他の類似のシステムからの良いア
+イディアや、いくつかの我々自身による新たなアイディアも含めている。
+
+@SLIME{}は二つの部分から構築されている: Emacs Lispで書かれたユーザイン
+ターフェイスと、Common Lispで書かれたサポート用のサーバプログラムであ
+る。二つの部分はソケットを用いてともに接続されており、@acronym{RPC}の
+ようなプロトコルを使って通信する。
+
+Lispサーバは主に移植可能なCommon Lispで書かれている。必要な実装特有の
+機能は、適切に定義されたインターフェイスによって指定され、それぞれの
+Lispの実装に対して別々に実装されている。このことによって、@SLIME{}は容
+易に移植可能となっている。
+
+@node Getting started, slime-mode, Introduction, Top
+@chapter Getting started
+
+この章は、どのように@SLIME{}を起動して動作させるかについて記述する。
+
+@menu
+* Platforms::
+* Downloading::
+* Installation::
+* Running::
+@end menu
+
+@node Platforms, Downloading, Getting started, Getting started
+@section Supported Platforms
+
+@SLIME{}は広範囲のオペレーティングシステムとLispの実装をサポートする。
+@SLIME{}はUnixシステム、Mac OSX、そしてMicrosoft Windows上で動作する。
+GNU Emacsのバージョン20と21、そしてXEmacsのバージョン21をサポートする。
+
+サポートしているLispの実装は、大まかにもっとも良くサポートするものから
+並べると以下の通りである:
+
+@itemize @bullet
+@item
+CMU Common Lisp (@acronym{CMUCL})
+@item
+Steel Bank Common Lisp (@acronym{SBCL})
+@item
+OpenMCL
+@item
+LispWorks
+@item
+Allegro Common Lisp (@acronym{ACL})
+@item
+@acronym{CLISP}
+@item
+Armed Bear Common Lisp (@acronym{ABCL})
+@end itemize
+
+多くの機能は異なる実装上でも同じように動作するが、いくつかは変化しやす
+い。これらは、コンパイラの注釈を置く際の正確さ、@acronym{XREF}のサポー
+ト、そして(``restart frame''のような)上級のデバッガコマンド含んでいる。
+
+@node Downloading, Installation, Platforms, Getting started
+@section Downloading SLIME
+
+リリースされた@SLIME{}のバージョンを用いるか、あるいは我々の@CVS{}リポ
+ジトリを直接アクセスするかを選択できる。我々のウェブサイトから、最新の
+リリースされたバージョンをダウンロードできる:
+
+@url{http://www.common-lisp.net/project/slime/}
+
+我々は、@code{slime-devel}メーリングリストに参加しているユーザは@CVS{}
+バージョンのコードを使うことを推奨する。
+
+@menu
+* CVS::
+* CVS Incantations::
+@end menu
+
+@node CVS, CVS Incantations, Downloading, Downloading
+@subsection Downloading from CVS
+
+@SLIME{}は@file{common-lisp.net}の@CVS{}リポジトリから利用可能である。
+あなたには、まさに最新のコードか、あるいは@code{FAIRLY-STABLE}というタ
+グの付いたスナップショットのどちらかを用いる選択肢がある。
+
+最新のバージョンは@code{FAIRLY-STABLE}バージョンよりも多くの機能をもち、
+よりバグが少ない傾向があるが、大手術の間は不安定である可能性がある。経
+験からお勧めできることとして、我々は、あなたが@code{slime-devel}メーリ
+ングリストを追っているなら、最新版を用いる方がより幸せに暮らせるのでは
+ないかと思う(我々は重要なハックを行なっているときには注を送信する)。そ
+のメーリングリストを追っていない場合、あなたは最新のコードの状況がわか
+らないだろうから、@code{FAIRLY-STABLE}を追うか、リリースされた版を用い
+ることが安全な選択である。
+
+@CVS{}からチェックアウトする場合、忘れずに時おり@code{cvs update}する
+こと。改善は断続的にcommitされ、@code{FAIRLY-STABLE}タグは時とともに前
+方へ移動する(ほぼ一月に一度)。
+
+@menu
+* CVS Incantations::
+@end menu
+
+@node CVS Incantations,  , CVS, Downloading
+@subsection CVS incantations
+
+@SLIME{}をダウンロードするには、最初にあなたの@code{CVSROOT}を設定して、
+リポジトリにログインする。
+
+@example
+export CVSROOT=:pserver:anonymous@@common-lisp.net:/project/slime/cvsroot
+cvs login
+@end example
+@emph{(パスワードは@code{anonymous})}
+
+最新版は以下のようにチェックアウトできる:
+@example
+cvs checkout slime
+@end example
+
+あるいは、@code{FAIRLY-STABLE}版は以下のようにチェックアウトできる:
+
+@example
+cvs checkout -rFAIRLY-STABLE slime
+@end example
+
+あなたが現在実行中のバージョンから何が新しくなったかを知りたい場合、リ
+ポジトリの@file{ChangeLog}に対してローカル版をdiffすることができる:
+
+@example
+cvs diff -rHEAD ChangeLog      # or: -rFAIRLY-STABLE
+@end example
+
+@node Installation, Running, Downloading, Getting started
+@section Installation
+
+コマンド行から開始できるLispの実装を用いる場合、インストールはあなたの
+@file{~/.emacs}の中に数行を加えるだけである:
+
+@example
+(setq inferior-lisp-program "@emph{あなたのLispシステムへのパス}")
+(add-to-list 'load-path "@emph{あなたの@file{slime}ディレクトリのパス}")
+(require 'slime)
+(slime-setup)
+@end example
+
+@iftex
+上記の断片は@file{README}ファイルにも書かれている。そこからコピー&ペー
+ストしてもよいが、適切なパスを忘れずに記述すること。
+@end iftex
+
+@SLIME{}を使おうとしている場合、我々はEmacsに@acronym{ILISP}パッケージ
+をロードしないことを勧める。そうすることはLispソースファイルに対するキ
+ーマップに多くの余計なバインディングを加え、@SLIME{}によって起動された
+Lispプロセスを混乱させたり、正しく動作しなくなるかもしれない。
+
+@node Running,  , Installation, Getting started
+@section Running SLIME
+
+@SLIME{}はEmacsコマンド@kbd{M-x slime}で開始する。これはLispプロセスを
+開始するために@code{inferior-lisp}パッケージを使い、(``Swank''として知
+られる)Lisp側のサーバをロードして起動し、EmacsとLispの間にソケット接続
+を確立する。最後に、Lispの式を評価するために入力できるところに@REPL{}
+バッファが作られる。
+
+この時点で@SLIME{}は動作しており、あなたは探検を始めることができる。
+
+@node slime-mode, REPL, Getting started, Top
+@chapter @code{slime-mode}
+
+@SLIME{}のコマンドは、Emacsの@code{lisp-mode}と結合して使われるマイナ
+ーモードである@code{slime-mode}を通じて提供される。この章は、
+@code{slime-mode}とそれに関係があるものについて記述する。
+
+@menu
+* User-interface conventions::
+* Commands::
+* Semantic indentation::
+* Reader conditionals::
+@end menu
+
+@node User-interface conventions, Commands, slime-mode, slime-mode
+@section User-interface conventions
+
+快適に@SLIME{}を使うためには、いくつかの``グローバルな''ユーザインター
+フェイスの特徴を理解することが重要である。もっとも重要な原則はこの節に
+記述されている。
+
+@menu
+* Temporary buffers::
+* Key bindings::
+* inferior-lisp::
+@end menu
+
+@node Temporary buffers, Key bindings, User-interface conventions, User-interface conventions
+@subsection Temporary buffers
+
+いくつかの@SLIME{}のコマンドは、結果を表示するための一時的なバッファを
+作る。通常は、これらのバッファは独特の特殊目的のメジャーモードをもつが、
+ある種の慣習は全体を通して守られている。
+
+一時的なバッファは@kbd{q}を押して消すことができる。これはそのバッファ
+をkillして、ウィンドウをそのバッファが表示される前の状態に戻す。一時的
+なバッファは@code{kill-buffer}のような通常のコマンドでもkillできるが、
+その場合、以前のウィンドウの状態は戻らないだろう。
+
+@kbd{RET}を押すと、``もっとも明白な有益なことがらを行なう''ことになっ
+ている。たとえば、aproposバッファではその地点にあるシンボルの完全な記
+述を印字し、@acronym{XREF}バッファではその地点を参照するためにソースコ
+ードを表示する。この慣習は、aproposのリスト、コンパイル結果等のEmacs自
+身のバッファに由来する。
+
+Lispのシンボルを含んでいる一時的なバッファは、それら自身のあらゆる特別
+なモードに加えて@code{slime-mode}を用いる。これは、シンボルの説明や関
+数定義の調査などのために、通常の@SLIME{}コマンドを利用可能にする。
+
+@node Key bindings, inferior-lisp, Temporary buffers, User-interface conventions
+@subsection Key bindings
+
+一般に、我々はキーバインディングをEmacsのスタイルと全体的に調和するよ
+うにしている。我々は、いくぶん普通ではない我々独自の以下の規約ももって
+いる: 三つのキーシーケンスを入力しているとき、最後のキーはコントロール
+を押しながらでも押さなくても入力できる。たとえば、
+@code{slime-describe-symbol}コマンドは@kbd{C-c C-d d}にバインドされて
+いるが、@kbd{C-c C-d C-d}とタイプすることでも動作する。三つのキー全て
+に対してcontrolを押したままにすることを好む人々とそうでない人々がいる
+ため、我々は単に両方のキーシーケンスをバインドする。そして、キーのプレ
+フィックスを二つ用いればキーを使い果たしてしまう恐れはない。
+
+この規則には一つの例外があり、おそらくあなたの足をすくうだろう。我々は
+キーシーケンスのどんな場所でもけっして@kbd{C-h}をバインドしないので、
+@kbd{C-c C-d C-h}は@kbd{C-c C-d h}と同じことは行なわない。これは、
+Emacsはプレフィックスをタイプして@kbd{C-h}を続けるとそのプレフィックス
+で始まる全てのバインディングを表示するという組み込みのデフォルトをもつ
+ので、@kbd{C-c C-d C-h}は実際には全てのドキュメンテーションコマンドに
+対するバインディングをリストするためである。この機能は大被害をもたらす
+のにあまりにも役立ちすぎる!
+
+@node inferior-lisp,  , Key bindings, User-interface conventions
+@subsection @code{*inferior-lisp*} buffer
+
+内部的には、@SLIME{}はLispプロセスを起動するために@code{inferior-lisp}
+パッケージを用いる。これはいくつかのユーザの目に見える帰結をもたらすが、
+いくつかは良いものであり、いくつかはそれほどでもないものである。混乱を
+避けるためには、その相互作用を理解することが有益である。
+
+バッファ@code{*inferior-lisp*}は、Lispプロセスの自身のトップレベルを含
+む。このLispへの直接のアクセスはトラブルシューティングに有益であり、あ
+る程度の@SLIME{}の統合が@code{inferior-slime-mode}を用いて利用可能であ
+る。しかし、通常の使用では、我々は、完全に統合された@SLIME{} @REPL{}を
+使い@code{*inferior-lisp*}バッファを無視することを勧める。
+
+@code{inferior-lisp}の残念な特性は、いくつかの独自のコマンドを直接
+@code{lisp-mode}キーマップに挿入するので、容易には無効にできないことで
+ある。このことはLispソースバッファを若干精神分裂病的にしており、
+@SLIME{}と@code{inferior-lisp}のコマンドの両方がキーにバインドされてば
+らばらに動作することになっている。
+
+@SLIME{}は多くのキーバインディングを無効にするので、実用上は、
+@code{inferior-lisp}コマンドをうっかり用いることはないだろう。
+@code{*inferior-lisp*}バッファをポップアップするコマンドを見つけた場合、
+そのコマンドは@SLIME{}に属するものではなく、おそらく我々の同等物を調べ
+るべきだろう。
+
+@node Commands, Semantic indentation, User-interface conventions, slime-mode
+@section Commands
+
+@menu
+* Compilation::
+* Finding definitions::
+* Lisp Evaluation::
+* Documentation::
+* Programming Helpers::
+* Recovery::
+* Cross-reference::
+* Inspector::
+* Profiling::
+@end menu
+
+@node Compilation, Finding definitions, Commands, Commands
+@subsection Compilation commands
+
+@SLIME{}は関数、ファイル、そしてパッケージをコンパイルするための特別の
+コマンドをもっている。特別な部分は、Lispコンパイラによって提供される注
+や警告が横取りされ、直接にLispソースバッファ内の対応する式の上に注釈づ
+けられるところである(これが何を意味するかを試してみてほしい)。
+
+@table @kbd
+
+@kbditem{C-c C-k, slime-compile-and-load-file}
+カレントバッファのソースファイルをコンパイルしてロードする。
+
+@kbditem{C-c M-k, slime-compile-file}
+カレントバッファのソースファイルをコンパイルする(ロードは行なわない)。
+
+@kbditem{C-c C-c, slime-compile-defun}
+その地点のトップレベルのフォームをコンパイルする。
+
+@end table
+
+注釈はソースフォームへの下線として示される。注釈に関連するコンパイラの
+メッセージは、そのテキストの上にマウスを置くか、あるいは下のセレクショ
+ンコマンドを用いるかのどちらかで読める。
+
+@table @kbd
+
+@item M-n
+@itemx M-p
+@code{slime-next-note, slime-previous-note}@*
+これらのコマンドはコンパイラの注釈の間のポイントを移動し、新たな注釈を
+表示する。
+
+@kbditem{C-c M-c, slime-remove-notes}
+そのバッファから全ての注釈を取り除く。
+
+@end table
+
+@node Finding definitions, Lisp Evaluation, Compilation, Commands
+@subsection Finding definitions (``Meta-Point'').
+
+よく知られている@kbd{M-.}コマンドが提供されている。総称関数に対して、
+このコマンドは全てのメソッドを発見し、いくつかのシステムでは
+(@code{DEFSTRUCT}定義まで構造体のアクセサをトレースするような)その他の
+素晴らしいことを行なう。
+
+@table @kbd
+
+@kbditem{M-., slime-edit-definition}
+その地点のシンボルの定義の場所に行く。
+
+@item M-,
+@code{slime-pop-find-definition-stack}
+@kbd{M-.}で見つかった定義から戻る。これは、@kbd{M-.}が複数回用いられる
+と、複数の段階の逆戻りを行なう。
+
+@end table
+
+@node Lisp Evaluation, Documentation, Finding definitions, Commands
+@subsection Lisp Evaluation
+
+これらのコマンドのそれぞれは、異なった方法でLispの式を評価する。デフォ
+ルトでは、メッセージの中に結果を表示するが、前置引数を指定すると、結果
+は代わりに@REPL{}の中に印字されるようになる。
+
+@table @kbd
+
+@kbditem{C-M-x, slime-eval-defun}
+トップレベルのフォームを評価する。
+
+@kbditem{C-c C-e, slime-eval-last-expression}
+ポイントの前の式を評価する。
+
+@kbditem{C-c C-p, slime-pprint-eval-last-expression}
+ポイントの前の式を評価し、その結果をプリティプリントする。
+
+@kbditem{C-c C-r, slime-eval-region}
+そのリージョンを評価する。
+
+@kbditem{C-c :, slime-interactive-eval}
+ミニバッファから読み込んだ式を評価する。
+
+@item M-x slime-scratch
+@file{*slime-scratch*}バッファを作る。このバッファでは、Emacsの
+@file{*scratch*}バッファのように、Lispの式を入力して@kbd{C-j}を用いて
+評価できる。
+
+@end table
+
+@node Documentation, Programming Helpers, Lisp Evaluation, Commands
+@subsection Documentation
+
+@SLIME{}のオンライン文書コマンドはEmacs Lispの例に従う。それらのコマン
+ドは全て共通のプレフィックス@kbd{C-c C-d}を共有し、最後のキーを修正あ
+るいは非修正にできるようになっている(@xref{Key bindings})。
+
+@table @kbd
+
+@kbditem{C-c C-d d, slime-describe-symbol}
+ポイントがある位置のシンボルを説明する。
+
+@kbditem{C-c C-d a, slime-apropos}
+apropos検索。部分文字列のマッチや存在する文書文字列についてLispシンボ
+ル名を検索する。デフォルトでは、全てのパッケージの外部シンボルが検索さ
+れる。前置引数を用いると、特定のパッケージを選択したり、エキスポートさ
+れていないシンボルを含めるかどうかを選択できる。
+
+@kbditem{C-c C-d z, slime-apropos-all}
+@code{slime-apropos}と同様だが、デフォルトで内部シンボルも含める。
+
+@kbditem{C-c C-d p, slime-apropos-package}
+あるパッケージ内の全てのシンボルのaproposの結果を示す。このコマンドは
+高いレベルでパッケージをブラウズするためのものである。パッケージ名補完
+を用いると、初歩的なSmalltalkっぽいイメージブラウザとしても機能する。
+
+@kbditem{C-c C-d h, slime-hyperspec-lookup}
+@cite{Common Lisp Hyperspec}の中で、ポイントがある地点のシンボルを調べ
+る。これは、適切な節を表示するために、よく知られている
+@file{hyperspec.el}をウェブブラウザの中で用いる。HyperspecはWeb上か
+@code{common-lisp-hyperspec-root}の中のどちらかで見つかり、ブラウザは
+@code{browse-url-browser-function}によって選ばれる。
+
+@kbditem{C-c C-d ~, common-lisp-hyperspec-format}
+@cite{Common Lisp Hyperspec}の中でフォーマット文字を調べる。
+@end table
+
+@node Programming Helpers, Recovery, Documentation, Commands
+@subsection Programming Helpers
+
+@table @kbd
+@kbditem{M-TAB, slime-complete-symbol}
+ポイントの地点のシンボルを補完する。三つの補完のスタイルが@SLIME{}で利
+用可能であり、デフォルトは通常のEmacsの補完とは異なることに注意するこ
+と。@xref{Emacs-side customization}。
+
+@anchor{slime-fuzzy-complete-symbol}
+@kbditem{C-c M-i, slime-fuzzy-complete-symbol}
+その地点の短縮に対して選ばれそうな補完のリストを示す。これは第三の補完
+方法であり、@command{slime-complete-symbol}がデフォルトとするより伝統
+的な補完とは非常に異なる。それはシンボルを一部分ずつではなく全てを一度
+に補完しようと試みる。たとえば、``mvb''は
+``@code{multiple-value-bind}''を、``norm-df''は
+``@code{least-positive-normalized-double-float}''を発見するだろう。こ
+れは、@code{slime-complete-symbol}に対して用いられる補完の方法として選
+ぶこともできる。
+
+@kbditem{SPC, slime-space}
+スペースキーは空白を挿入し、また、ポイントの地点の関数に対する引数リス
+トが存在する場合、それを調べて表示する。
+
+@kbditem{C-c C-s, slime-insert-arglist}
+ポイントの地点の関数に対する引数リストが存在する場合、それを調べてカレ
+ントバッファに挿入する。
+
+@kbditem{C-c C-m, slime-macroexpand-1}
+ポイントの地点の式を一度だけマクロ展開する。
+
+@kbditem{C-c M-m, slime-macroexpand-all}
+ポイントの地点の式を完全にマクロ展開する。
+
+@kbditem{C-c C-t, slime-toggle-trace-fdefinition}
+ポイントの地点の関数のトレースをトグルする
+
+@kbditem{C-c M-d, slime-disassemble-symbol}
+ポイントの地点のシンボルの関数定義を逆アセンブルする。
+
+@end table
+
+@node Recovery, Cross-reference, Programming Helpers, Commands
+@subsection Abort/Recovery
+
+@table @kbd
+
+@kbditem{C-c C-b, slime-interrupt}
+Lispを中断する(@code{SIGINT}を送信する)。
+
+@kbditem{C-c ~, slime-sync-package-and-default-directory}
+EmacsからLispへ現在のパッケージと作業ディレクトリを同期する。
+
+@kbditem{C-c M-p, slime-repl-set-package}
+@acronym{REPL}の現在のパッケージを設定する。
+
+@end table
+
+@node Cross-reference, Inspector, Recovery, Commands
+@subsection Cross-reference
+
+@SLIME{}のクロスリファレンスコマンドはLispシステムによって提供されるサ
+ポートに基づいており、Lisp間で非常に異なる。@acronym{XREF}サポートが組
+み込まれていないシステムに対しては、@SLIME{}は、@cite{CMU AI
+Repository}からとられ、@SLIME{}にバンドルされている移植可能な
+@acronym{XREF}パッケージに尋ねる。
+
+各コマンドはポイントがあるシンボル上で動作するか、あるいは存在しない場
+合は入力を要求する。前置引数を用いると、それらはつねに入力を要求する。
+ここで示したキーバインディングを入力するか、最後のキー上でコントロール
+修飾を用いることが可能である。@xref{Key bindings}。
+
+@table @kbd
+
+@kbditem{C-c C-w c, slime-who-calls}
+関数の呼び出し元を示す。
+
+@kbditem{C-c C-w r, slime-who-references}
+グローバル変数への参照を示す。
+
+@kbditem{C-c C-w b, slime-who-binds}
+グローバル変数の束縛を示す。
+
+@kbditem{C-c C-w s, slime-who-sets}
+グローバル変数への代入を示す。
+
+@kbditem{C-c C-w m, slime-who-macroexpands}
+マクロの展開を示す。
+
+@item M-x slime-who-specializes
+あるクラスに特殊化された全ての既知のメソッドを示す。
+
+@end table
+
+また、``List callers/callees''コマンドもある。これらは呼び出しグラフを
+見つけ出すために、低いレベルでヒープ上の関数オブジェクトを探索すること
+によって動作する。それらはいくつかのLispシステムでのみ利用可能であり、
+正確な@acronym{XREF}情報が利用できない場合の代替としてとても有用である。
+
+@table @kbd
+@kbditem{C-c <, slime-list-callers}
+ある関数を呼び出す関数をリストする。
+@kbditem{C-c >, slime-list-callees}
+ある関数から呼び出される関数をリストする。
+@end table
+
+@node Inspector, Profiling, Cross-reference, Commands
+@subsection Inspector
+
+@SLIME{}のインスペクタは、Lisp関数@code{INSPECT}のEmacsに基づくバージョ
+ンである。インスペクトされたオブジェクトは、スロット毎に一行を用いてバッ
+ファ内に示される。
+
+@table @kbd
+@kbditem{C-c I, slime-inspect}
+ミニバッファに入力された式の値をインスペクトする。
+@end table
+
+インスペクタで利用可能なコマンドは以下のとおり:
+
+@table @kbd
+
+@kbditem{RET, slime-inspector-inspect-object-at-point}
+ポイントがある地点のスロットをインスペクトする。インスペクタは再帰的に
+呼び出される。
+
+@kbditem{d, slime-inspector-describe}
+ポイントがある地点のスロットを説明する。
+
+@kbditem{l, slime-inspector-pop}
+前のオブジェクトに戻る(@kbd{RET}から戻る)。
+
+@kbditem{n, slime-inspector-next}
+@kbd{l}の逆である。同様に@kbd{SPC}にバインドされる。
+
+@kbditem{q, slime-inspector-quit}
+インスペクタバッファを終了する。
+
+@end table
+
+@node Profiling,  , Inspector, Commands
+@subsection Profiling
+
+@table @kbd
+@item M-x slime-toggle-profile-fdefinition
+関数のプロファイリングをトグルする。
+@item M-x slime-profile-package
+パッケージ内の全ての関数をプロファイルする。
+@item M-x slime-unprofile-all
+全ての関数のプロファイルを終了する。
+@item M-x slime-profile-report
+プロファイラのデータを報告する。
+@item M-x slime-profile-reset
+プロファイラのデータをリセットする。
+@end table
+
+@node Semantic indentation, Reader conditionals, Commands, slime-mode
+@section Semantic indentation
+
+@SLIME{}は、どのようにLispシステム中のマクロをインデントするかを自動的
+に発見する。これを行なうために、Lisp側はシステムの中の全てのマクロをス
+キャンし、@code{&body}引数をもつ全てのものをEmacsへ報告する。それから
+Emacsは、最初に引数に四つの空白を、``body''引数に通常どおり空白を二つ
+だけ置いて、これらを特別にインデントする。
+
+これは``おそらく動作する''だろう。あなたがラッキーな種類の人であれば、
+この節の残りを読む必要はない。
+
+実装を単純にするために、@SLIME{}は、同じsymbol-nameだが異なるパッケー
+ジをもつマクロを区別しない。このことはそれをEmacsのインデントコードと
+うまくフィットさせる。しかし、同じsymbol-nameをもつマクロがいくつかあ
+る場合、それらは全て同じ方法で、それらの引数リストの一つのスタイルを無
+作為に使ってインデントされるだろう。以下を用いて、どのシンボルが衝突を
+伴うのかを発見できる:
+
+@example
+(swank:print-indentation-lossage)
+@end example
+
+衝突でイライラする場合、神経衰弱になる必要はなく、単にあなたの趣味に合
+うようにElispシンボルの@code{common-lisp-indent-function}属性を無効に
+すればよい。@SLIME{}はあなたの特別な設定を無効にすることはなく、単に良
+いデフォルトを与えようとする。
+
+より微妙な問題は、不完全なキャッシュが処理性能のために使われることであ
+る。@footnote{@emph{もちろん}汚い最適化を行なう前に、我々は実際に遅過
+ぎることを確かめた。}
+@c
+理想的な世界では、Emacsからのそれぞれのコマンドの後に、Lispはインデン
+トの変更のために自動的にそれぞれのシンボルをスキャンするかもしれない。
+しかし、これは毎回行なうにはあまりに高価である。その代わりに、Lispは、
+つねにホームパッケージが要求元のEmacsのバッファによって用いられている
+ものと一致するシンボルを単純にスキャンする。これは、多くの対話的に定義
+されたマクロのインデントをピックアップすることで十分である。その残りを
+捕らえるために、新たなLispパッケージがコマンド間で作られるたびごとに各
+シンボルの完全なスキャンを作る -- それは新たなシステムがロードされよう
+としているというようなことがらの面倒をみる。
+
+全てのシンボルをインデント情報のために強制的にスキャンさせるには、
+@kbd{M-x slime-update-indentation}を使うことができる。
+
+@node Reader conditionals,  , Semantic indentation, slime-mode
+@section Reader conditional fontification
+
+@SLIME{}はソースバッファ内でリーダの条件式を自動的に評価し、現在のLisp
+の接続に対してはスキップされるコードを``グレイアウト''する。
+
+@node REPL, Debugger, slime-mode, Top
+@chapter REPL: the ``top level''
+
+@SLIME{}は特別なRead-Eval-Printループ(@REPL{}, ``トップレベル''として
+も知られる)を用いる。@REPL{}ユーザインターフェイスはEmacs Lispで書かれ
+ており、伝統的な@code{comint}に基づくLispとの相互作用よりもより良い
+Emacsへの統合を与える:
+
+@itemize @bullet
+@item
+@REPL{}式の中で通知されたコンディションは@SLDB{}を用いてデバッグされる。
+@item
+戻り値は、別々のEmacsのフェース(カラー)によって印字された出力とは区別
+される。
+@item
+Emacsはマーカを用いて@REPL{}プロンプトを管理する。これは、Lispの出力が
+正しい場所に挿入されることと、ユーザの入力と混じり合わないことを確実に
+する。
+@end itemize
+
+@menu
+* REPL commands::
+* Input Navigation::
+* Shortcuts::
+@end menu
+
+@node REPL commands, Input Navigation, REPL, REPL
+@section REPL commands
+
+@table @kbd
+
+@kbditem{RET, slime-repl-return}
+Lispからの現在の入力が完結したものである場合、それを評価する。完結して
+いない場合、新たな行を開始し、インデントする。前置引数が与えられると、
+入力は完結しているかどうかをチェックせずに評価される。
+
+@kbditem{C-RET, slime-repl-closing-return}
+全てのマッチしていない括弧を閉じて、Lispの中で現在の入力を評価する。
+@kbd{M-RET}へもバインドされている。
+
+@kbditem{C-j, slime-repl-newline-and-indent}
+新たな行を開始してインデントする。
+
+@kbditem{C-c C-c, slime-interrupt}
+@code{SIGINT}でLispプロセスを中断する。
+
+@kbditem{TAB, slime-complete-symbol}
+ポイント地点のシンボルを補完する。
+
+@kbditem{C-c C-o, slime-repl-clear-output}
+バッファから前の式の出力と結果を取り除く。
+
+@kbditem{C-c C-t, slime-repl-clear-buffer}
+プロンプトだけを残して、バッファ全体をクリアする。
+
+@end table
+
+@node Input Navigation, Shortcuts, REPL commands, REPL
+@section Input navigation
+
+@table @kbd
+
+@kbditem{C-a, slime-repl-bol}
+行の先頭に行くが、@REPL{}プロンプトのところで停止する。
+
+@item M-n
+@itemx M-p
+@itemx M-s
+@itemx M-r
+@code{slime-repl-@{next,previous@}-input}@*
+@code{slime-repl-@{next,previous@}-matching-input}@*
+@code{comint}スタイルの入力ヒストリコマンドである。
+
+@item C-c C-n
+@itemx C-c C-p
+@code{slime-repl-next-prompt, slime-repl-previous-prompt}@*
+@REPL{}バッファで、現在のプロンプトと一つ前のプロンプトの間を移動する。
+
+@item C-M-a
+@itemx C-M-e
+@code{slime-repl-beginning-of-defun, slime-repl-end-of-defun}
+これらのコマンドは@code{beginning-of-defun}や@code{end-of-defun}と似て
+いるが、@REPL{}の入力領域内で使われると、代わりにそれぞれ先頭あるいは末
+尾へ直接行く。
+
+@end table
+
+@comment  node-name,  next,  previous,  up
+@node Shortcuts,  , Input Navigation, REPL
+@section Shortcuts
+
+``ショートカット''は、名前によって呼び出される特別な@REPL{}コマンドの集
+合である。ショートカットを呼び出すには、最初に@REPL{}プロンプトで
+@kbd{,} (コンマ)を押して、それからプロンプトに対してショートカットの名
+前を入力する。
+
+ショートカットは、ディレクトリとLispシステムのコンパイルやロードとの切
+り替えのようなものごとを扱う。正確なショートカットの集合は現在はまだこ
+のマニュアルには文書化されていないが、それらを対話的にリストするために
+@code{help}ショートカットを用いることができる。
+
+@node Debugger, Extras, REPL, Top
+@chapter SLDB: the SLIME debugger
+
+@SLIME{}は、カスタムメイドの@SLDB{}と呼ばれるEmacsに基づくデバッガをも
+つ。Lispシステム内で通知されるコンディションは、Lispの
+@code{*DEBUGGER-HOOK*}を通じてEmacsの中で@SLDB{}を呼び出す。
+
+コンディションが通知されると、@SLDB{}はバッファをポップアップする。バッ
+ファはコンディションの説明、再起動のリスト、そしてバックトレースを表示
+する。再起動を呼び出したり、バックトレースを調査したり、スタックフレー
+ムの周囲を調べたりするためのコマンドが提供される。
+
+@menu
+* Examining frames::
+* Restarts::
+* Frame Navigation::
+* Miscellaneous::
+@end menu
+
+@node Examining frames, Restarts, Debugger, Debugger
+@section Examining frames
+
+以下は、ポイントの地点のスタックフレームを調べるためのコマンドである。
+
+@table @kbd
+
+@kbditem{t, sldb-toggle-details}
+ローカル変数と@code{CATCH}タグの表示をトグルする。
+
+@kbditem{v, sldb-show-source}
+フレームの現在のソース式を見る。その式はLispソースファイルのバッファ中
+に表示される。
+
+@kbditem{e, sldb-eval-in-frame}
+フレームの中で式を評価する。その式は、そのフレームの中で利用可能なロー
+カル変数を参照することができる。
+
+@kbditem{d, sldb-pprint-eval-in-frame}
+フレームの中で式を評価し、一時的なバッファの中でその結果をプリティプリ
+ントする。
+
+@kbditem{D, sldb-disassemble}
+フレームの関数を逆アセンブルする。フレームの中のインストラクションポイ
+ンタのような情報を含む。
+
+@kbditem{i, sldb-inspect-in-frame}
+そのフレームの中で式を評価した結果を検査する。
+
+@kbditem{l, sldb-list-locals}
+フレーム内のローカル変数とそのバインディングをリストする。
+
+@end table
+
+@node Restarts, Frame Navigation, Examining frames, Debugger
+@section Invoking restarts
+
+@table @kbd
+
+@kbditem{a, sldb-abort}
+@code{ABORT}再起動を呼び出す。
+
+@kbditem{q, sldb-quit}
+``Quit'' -- トップレベルの@SLIME{}リクエストループがcatchするタグへ
+@code{THROW}する。
+
+@kbditem{c, sldb-continue}
+@code{CONTINUE}再起動を呼び出す。
+
+@item 0 ... 9
+数によって再起動を呼び出す。
+
+@end table
+
+再起動は、バッファ内のそれらの上で@kbd{RET}または@kbd{Mouse-2}を押すこ
+とでも呼び出せる。
+
+@node Frame Navigation, Miscellaneous, Restarts, Debugger
+@section Navigating between frames
+
+@table @kbd
+
+@item n
+@item p
+@code{sldb-down, sldb-up}@*
+フレーム間を移動する。
+
+@item M-n
+@item M-p
+@code{sldb-details-@{down,up@}}@*
+``砂糖つきで''フレーム間を移動する: 元のフレームの詳細を隠し、詳細と次
+のソースコードを表示する。砂糖つきの移動は、現在のフレームだけの詳細と
+ソースコードを見られるようにする。
+
+@end table
+
+@node Miscellaneous,  , Frame Navigation, Debugger
+@section Miscellaneous Commands
+
+@table @kbd
+
+@kbditem{r, sldb-restart-frame}
+もともと呼ばれたときと同じ引数を用いてフレームで再起動を実行する(このコ
+マンドはすべての実装で利用可能なわけではない)。
+
+@kbditem{R, sldb-return-from-frame}
+ミニバッファから入力された値を伴ってそのフレームから戻る(このコマンドは
+すべての実装で利用可能なわけではない)。
+
+@kbditem{s, sldb-step}
+フレーム中の次の式にステップする(このコマンドはすべての実装で利用可能な
+わけではない)。
+
+@kbditem{B, sldb-break-with-default-debugger}
+@SLDB{}を脱出して、そのLispシステムのデフォルトのデバッガを用いてそのコ
+ンディションをデバッグする。
+
+@kbditem{:, slime-interactive-eval}
+ミニバッファに入力された式を評価する。
+
+@end table
+
+@node Extras, Customization, Debugger, Top
+@chapter Extras
+
+@menu
+* slime-autodoc-mode::
+* Multiple connections::
+* Typeout frames::
+@end menu
+
+@node slime-autodoc-mode, Multiple connections, Extras, Extras
+@section @code{slime-autodoc-mode}
+
+@code{slime-autodoc-mode}は、ポイントの近くのシンボルに関する情報を自動
+的に示すための付加的なマイナーモードである。関数名に対しては、その引数
+リストが表示され、グローバル変数に対しては、その値が表示される。これは
+Emacs Lispのための@code{eldoc-mode}のクローンである。
+
+このモードは@code{~/.emacs}の@code{slime-setup}呼び出しの中で有効にする
+ことができる:
+
+@example
+(slime-setup :autodoc t)
+@end example
+
+@node Multiple connections, Typeout frames, slime-autodoc-mode, Extras
+@section Multiple connections
+
+@SLIME{}は同時に複数のLispプロセスへ接続できる。前置引数とともに呼び出
+されると、@kbd{M-x slime}コマンドは、Lispプロセスが実行中である場合、追
+加のLispプロセスを作成しようとする。これはしばしば便利であるが、あなた
+の@SLIME{}コマンドが希望するLispの中で実行されることを確実にするために
+ある種の理解を必要とする。
+
+いくつかのバッファは特定のLispプロセスに結び付いている。それぞれのLisp
+への接続は自身の@acronym{REPL}バッファをもち、入力されたすべての式、あ
+るいはそのバッファ内で呼び出された@SLIME{}コマンドは関連する接続へ送ら
+れる。@SLIME{}によって作られたその他のバッファも同様にそれらの元となる
+接続へ結びつけられる。それには@SLDB{}バッファ、aproposの結果のリストな
+どが含まれる。これらのバッファはLispプロセスとの何らかの相互作用の結果
+なので、それらの中のコマンドはつねに同じプロセスへ戻っていく。
+
+@code{slime-mode}ソースバッファのようなその他の場所で実行されるコマンド
+は、通常は``デフォルト''の接続を用いる。通常、これはもっとも最近に確立
+された接続だが、``接続リスト''バッファを通じて再設定することができる:
+
+@table @kbd
+@kbditem{C-c C-x c, slime-list-connections}
+確立された接続をリストするバッファをポップアップする。
+@end table
+
+@code{slime-list-connections}によって表示されたバッファは、各接続の一行
+の要約を与える。要約はその接続のシリアル番号、そのLisp実装の名前、そし
+てそのLispプロセスのその他の詳細なことがらを示す。現在の``デフォルト
+の''接続はアスタリスクを伴って示される。
+
+connection-listバッファで利用可能なコマンドは以下のとおり:
+
+@table @kbd
+
+@kbditem{RET, slime-goto-connection}
+ポイントがある地点の接続の@acronym{REPL}バッファをポップアップする。
+
+@kbditem{d, slime-connection-list-make-default}
+ポイントがある地点の接続を``デフォルトの''接続にする。その後で
+@code{slime-mode}ソースバッファ内のコマンドに対して使われる。
+
+@kbditem{g, slime-update-connection-list}
+バッファ内の接続リストを更新する。
+
+@kbditem{q, slime-temp-buffer-quit}
+接続リストを終了する(バッファをkillして、ウィンドウのコンフィグレーショ
+ンを元に戻す)。
+
+@end table
+
+@node Typeout frames,  , Multiple connections, Extras
+@section Typeout frames
+
+``typeoutフレーム''は、@SLIME{}コマンドからのメッセージを表示するために
+エコー領域(ミニバッファ)の代わりに使われる特別なEmacsのフレームである。
+これはオプションの機能である。エコー領域に勝るtypeoutフレームの長所は、
+より多くのテキストを保持できること、スクロールが可能なこと、そしてキー
+を押したときにその内容が消えないことである。引数リスト、マクロ展開など
+のように潜在的に長いメッセージはすべてtypeoutフレームへ送られる。
+
+@table @kbd
+@item M-x slime-ensure-typeout-frame
+typeoutフレームが存在することを確実にする。必要ならば作成する。
+@end table
+
+typeoutフレームが閉じられている場合、エコー領域が再び通常のように用いら
+れる。
+
+起動時にtypeoutフレームが自動的に作成されるようにするために、
+@code{slime-connected-hook}を使える:
+
+@example
+(add-hook 'slime-connected-hook 'slime-ensure-typeout-frame)
+@end example
+
+@node Customization, Credits, Extras, Top
+@chapter Customization
+
+@menu
+* Emacs-side customization::
+* Lisp-side::
+@end menu
+
+@node Emacs-side customization, Lisp-side, Customization, Customization
+@section Emacs-side
+
+@SLIME{}のEmacs部分はEmacsの@code{customize}システムを用いて、@kbd{M-x
+customize-group slime RET}を使うだけでコンフィグレーションを行なえる。
+customizeシステムは自己記述的であるので、我々はこのマニュアルではいくつ
+かの重要な、あるいは不明瞭なコンフィグレーションオプションだけをカバー
+する。
+
+@table @code
+
+@item slime-truncate-lines
+@SLIME{}によってポップアップされる行ごとのサマリバッファ中の
+@code{truncate-lines}に対して用いられる値である。これはデフォルトでは
+@code{t}であり、そのことでバックトレース、aproposのリストなどで行が折り
+返されないことが確実になっている。しかし、それは情報が画面からあふれる
+ことを引き起こし得る。
+
+@item slime-multiprocessing
+Lispシステムの中でマルチプロセッシング(スレッド)を使いたい場合、これを
+@code{t}にセットするべきである。その場合、Lispサーバの開始時にあらゆる
+必要な初期化が行なわれる。
+
+@item slime-complete-symbol-function
+Lispシンボルの補完のために使うための関数。三つの補完スタイルが利用可能
+である。デフォルトの@code{slime-complete-symbol*}は、シンボル名のハイフ
+ンで分離された単語部分を``並列に''補完を行なう。@footnote{この補完のス
+タイルはChris McConnellによる@file{completer.el}をモデルとしている。そ
+のパッケージは@acronym{ILISP}にバンドルされている。} 形式的には、これは、
+``@code{a-b-c}''は正規表現``@code{^a.*-b.*-c.*}'' (ここで``ドット''はハ
+イフン以外のあらゆるものにマッチする)にマッチするあらゆるシンボルに補完
+することができるということを意味する。例によってもっと直観的に理解でき
+るだろう:
+@itemize @bullet
+@item
+@code{m-v-b}は補完すると@code{multiple-value-bind}になる。
+@item
+@code{w-open}は曖昧である: @code{with-open-file}あるいは
+@code{with-open-stream}のいずれかに補完される。シンボルはもっとも長い共
+通の補完(@code{with-open-})へ展開され、ポイントは曖昧である最初の地点
+(この場合は末尾)に置かれる。
+@item
+@code{w--stream}は補完すると@code{with-open-stream}になる。
+@end itemize
+代替としては@code{slime-simple-complete-symbol}があり、それは通常の
+Emacsの方法で補完を行なう。最後に、@code{slime-fuzzy-complete-symbol}が
+ある。これは上記の二つとはきわめて異なり、短縮されたシンボルに対する最
+良のマッチを見つけようと試みる。それ独自のキーバインディングももち、デ
+フォルトでは@kbd{C-c M-i}である。さらに詳細な情報は、
+@xref{slime-fuzzy-complete-symbol}。
+
+@item slime-translate-to-lisp-filename-function
+@itemx slime-translate-from-lisp-filename-function
+これらの関数は、EmacsとLispシステムの間でファイル名を変換するために使う
+ことができる。ファイルシステムを共有しているが異なるディレクトリ構造(異
+なる``マウントポイント'')を用いる別のマシン上でEmacsとLispを実行してい
+る場合、これらは有益である。これは、@acronym{SMB}に基づくファイル共有の
+多くでは普通のことである。
+
+@end table
+
+@menu
+* Hooks::
+@end menu
+
+@node Hooks,  , Emacs-side customization, Emacs-side customization
+@subsection Hooks
+
+@table @code
+
+@item slime-mode-hook
+このフックは、バッファが@code{slime-mode}に入るたびに実行される。これは、
+Lispソースバッファの中でバッファローカルなコンフィグレーションを設定す
+るのにとても有用である。使い方の一例は@code{slime-autodoc-mode}を有効に
+することである(@xref{slime-autodoc-mode})。
+
+@item slime-connected-hook
+このフックは、@SLIME{}がLispサーバに対する接続を確立したときに実行され
+る。使い方の一例はTypeoutフレーム(@xref{Typeout frames})を作ることであ
+る。
+
+@item sldb-hook
+このフックは、@SLDB{}が呼び出されたあとに実行される。フック関数は、初期
+化された後に@SLDB{}バッファから呼び出される。使い方の一例はこのフックに
+@code{sldb-print-condition}を加えることであり、それによって、@SLDB{}を
+用いてデバッグされるすべてのコンディションが@REPL{}バッファ内に記録され
+る。
+
+@end table
+
+@node Lisp-side,  , Emacs-side customization, Customization
+@section Lisp-side (Swank)
+
+(``Swank''として知られている) @SLIME{}のLispサーバ側は、設定可能ないく
+つかの変数を提供する。初期化ファイル@file{~/.swank.lisp}は起動時に自動
+的に評価され、これらの変数を設定するために使うことができる。
+
+@menu
+* Communication style::
+* Other configurables::
+@end menu
+
+@node Communication style, Other configurables, Lisp-side, Lisp-side
+@subsection Communication style
+
+もっとも重要な設定可能な変数は@code{SWANK:*COMMUNICATION-STYLE*}であり、
+LispがEmacsからのプロトコルメッセージを読み込んで処理するメカニズムを指
+定する。この通信スタイルの選択は@SLIME{}の操作に全体的な影響をもつ。
+
+使用可能な通信スタイルは以下のとおり:
+
+@table @code
+@item :FD-HANDLER
+このスタイルは古典的なUnixスタイルの``@code{select()}ループ''を用いる。
+Swankは(@acronym{CMUCL}や@acronym{SBCL}での@code{SERVE-EVENT}のように)
+イベントディスパッチフレームワークに通信ソケットを登録し、データが利用
+可能になるとコールバックを受け取る。このスタイルでは、Emacsからのリクエ
+ストは、Lispがイベントループに入ったときに検出され処理される。このスタ
+イルは単純で予測可能である。
+
+@item :SIGIO
+このスタイルは、@code{SIGIO}シグナルハンドラを伴う@dfn{signal-driven
+I/O}を用いる。LispはEmacsからシグナルを伴う要求を受け取り、その要求に対
+応するために実施中のあらゆることがらに割り込みが発生する。Emacsは他のこ
+とを実施していてビジーである間でもLispの中で操作することができるので、
+このスタイルには応答性が良いという利点がある。(コンパイルのように)一つ
+の長時間かかる要求を送信して、それからそれが完了する前にいくつかの短い
+要求で割り込むように、Emacsが並行に要求を発行することも可能にする。欠点
+は、Lispコードでの他の@code{SIGIO}の使用と干渉する可能性があること、都
+合の悪い瞬間にLispに割り込むことによって大破壊を引き起こすかもしれない
+ことである。
+
+@item :SPAWN
+このスタイルは、独立したスレッドでそれぞれの要求を実行するためにLispシ
+ステムのマルチプロセッシングサポートを使用する。このスタイルは
+@code{:SIGIO}と同じような属性をもつが、シグナルを用いることはなく、
+Emacsによって発行されたすべての要求は並列に実行することができる。
+
+@end table
+
+デフォルトの要求ハンドリングスタイルはあなたのLispシステムの能力にした
+がって選択される。一般的な優先順位は@code{:SPAWN}, 次に@code{:SIGIO},
+それから@code{:FD-HANDLER}である。
+@code{SWANK-BACKEND:PREFERRED-COMMUNICATION-STYLE}を呼び出すことでデフォ
+ルトのスタイルをチェックすることができる。あなたのSwank初期化ファイルの
+中で@code{SWANK:*COMMUNICATION-STYLE*}を設定することで、そのデフォルト
+を無効にすることもできる。
+
+@node Other configurables,  , Communication style, Lisp-side
+@subsection Other configurables
+
+以下のLisp変数はあなたの@file{~/.swank.lisp}ファイルを通じて設定するこ
+とができる:
+
+@table @code
+
+@item SWANK:*CONFIGURE-EMACS-INDENTATION*
+この変数は、マクロの中の@code{&body}引数に対するインデントスタイルを検
+出してEmacsへ送るかどうかをコントロールする。デフォルトでは有効になって
+いる。
+
+@item SWANK:*GLOBALLY-REDIRECT-IO*
+真である場合、標準ストリーム(@code{*standard-output*}など)がEmacsの
+@REPL{}へグローバルにリダイレクトされる。@code{NIL}であるときには(デフォ
+ルト)、これらのストリームは要求を扱う間には動的な束縛を使って一時的にだ
+けEmacsへリダイレクトされる。Emacsからの標準入力を読み込ませようとする
+ことでLispの元の@REPL{}と不正な相互作用が生じる可能性があるため、
+@code{*standard-input*}がグローバルにリダイレクトされることは現在はまっ
+たくないことに注意しよう。
+
+@item SWANK:*GLOBAL-DEBUGGER*
+真である場合(デフォルト)、@code{*DEBUGGER-HOOK*}がグローバルに
+@code{SWANK:SWANK-DEBUGGER-HOOK}へ設定され、@SLIME{}がそのLispイメージ
+の中のすべてのデバッグを扱うことを引き起こす。これはマルチスレッドやコ
+ールバック駆動のアプリケーションをデバッグするためである。
+
+@item SWANK:*SLDB-PPRINT-FRAMES*
+@code{*PRINT-PRETTY*}は、@SLDB{}でのバックトレースのフォーマット中には
+この値に束縛される。デフォルト値は@code{NIL}である。
+
+@item SWANK:*USE-DEDICATED-OUTPUT-STREAM*
+この変数はLispからEmacsへの印字された出力の送信に対する最適化を制御する。
+@code{t}である場合(デフォルト)、LispがEmacsへ印字された出力を送信するた
+めだけに独立したソケットが確立される。その最適化がない場合、後にデコー
+ドしなければならないプロトコルメッセージの中の出力をEmacsへ送る必要があ
+り、Lispが多量の出力を``吐き出し''始めると、これはつねにもちこたえるわ
+けではない。
+
+@item SWANK:*LOG-EVENTS*
+この変数を@code{t}に設定すると、Emacsと交換するすべてのプロトコルメッセ
+ージは@code{*TERMINAL-IO*}へ印字される。これは、低レベルなデバッグのた
+めに、また、``ワイヤ上で''どのように@SLIME{}が動作するのかを観察するた
+めに有用である。@code{*TERMINAL-IO*}の出力は、あなたのLispシステム自身
+のリスナーの中(通常はバッファ@code{*inferior-lisp*}の中である)で見るこ
+とができる。
+
+@end table
+
+@node Credits,  , Customization, Top
+@chapter Credits
+
+@emph{The soppy ending...}
+
+@unnumberedsec Hackers of the good hack
+
+@SLIME{}はEric Marsdenによる@acronym{SLIM}の拡張(Extension)である。これ
+を書いている時点で、@SLIME{}の作者とコードに貢献した人は以下の通り:
+
+
+…@file{hyperspec.el}, @cite{CLOCC}, そして@cite{CMU AI Repository}にバ
+ンドルされているコードは含んでいない。
+
+@code{slime-devel}メーリングリストの多くの人々は@SLIME{}に対してコード
+以外の貢献を行なっている。それでも、人生は難しい: マニュアルに名前を載
+せるにはコードを送らなければならない@code{:-)}。
+
+@unnumberedsec Thanks!
+
+我々は、場所の提供と手助けに対して、そして``Sourceforge地獄''から救助し
+てくれたことに対して@code{common-lisp.net}の良い人々に借りがある。
+
+我々がサポートするLispの実装者からは非常な援助をいただいた。
+@code{cmucl-imp}リスト上の@acronym{CMUCL}保守担当者、Dan
+Barlow@footnote{Danは``我々''の一員であるので、当然ながらこれらの感謝は
+彼の@acronym{SBCL}ハッカーの側面へのものである。}、@acronym{SBCL}の
+Christophe Rhodes、OpenMCLのGary Byers、LispWorks(寛大にもMemetricの
+Alain Picardによって後援された)のMartin Simmons、@acronym{ABCL}のPeter
+Graves、そしてFranzのCraig NorvellとKevin Layerに感謝する。
+
+@bye
+
+@c Local Variables:
+@c version-control: t
+@c kept-old-versions: 0
+@c kept-new-versions: 0
+@c end:

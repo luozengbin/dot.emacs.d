@@ -1,0 +1,2230 @@
+@c								-*- Texinfo -*-
+@c Copyright (c) 1990 1991 1992 1993 Free Software Foundation, Inc.
+@c This file is part of the source for the GDB manual.
+@c This text diverted to "Remote Debugging" section in general case;
+@c however, if we're doing a manual specifically for one of these, it
+@c belongs up front (in "Getting In and Out" chapter).
+
+@ignore
+Japanese translation by Kazuhisa Ichikawa
+Japanese Texinfo version by IIDA, Yosiaki
+
+(Please send your comments on this Japanese version to ki@home.email.ne.jp)
+@end ignore
+
+@ifset REMOTESTUB
+@node Remote Serial
+@subsection @value{GDBN}リモート・シリアル・プロトコル
+
+@cindex remote serial debugging, overview
+@cindex 概要、リモート・シリアル・デバッグ処理の[がいよう、リモート・シリアル・デバッグしょりの]
+他のマシン上で実行中のプログラムをデバッグするには
+（@dfn{ターゲット}・マシンをデバッグするには）、
+そのプログラムを単独で実行するために通常必要となる事前条件をすべて整える必要があります。
+例えば、
+Cのプログラムの場合、
+
+@enumerate
+@item
+Cの実行環境をセットアップするためのスタートアップ・ルーチンが必要です。
+これは通常@file{crt0}のような名前を持っています。
+スタートアップ・ルーチンは、
+ハードウェアの供給元から提供されることもありますし、
+ユーザが自分で書かなければならないこともあります。
+
+@item 
+ユーザ・プログラムからのサブルーチン呼び出しをサポートするために、
+入出力の管理などを行うCのサブルーチン・ライブラリが必要になるかもしれません。
+
+@item
+ユーザ・プログラムを他のマシンに持っていく手段、
+例えばダウンロード・プログラムが必要です。
+これはハードウェアの供給元から提供されることが多いのですが、
+ハードウェアのドキュメントをもとにユーザが自分で作成しなければならないこともあります。
+@end enumerate
+
+次に、ユーザ・プログラムがシリアル・ポートを使って、@value{GDBN}を実行中のマシン
+（@dfn{ホスト}・マシン）
+と通信できるように準備します。
+一般的には、以下のような形になります。
+
+@table @emph
+@item ホスト上では：
+@value{GDBN}は既にこのプロトコルの使い方を理解しています。
+他の設定がすべて終了した後、
+単に@samp{target remote}コマンドを使用するだけです
+（@pxref{Targets,,Specifying a Debugging Target}）。
+
+@item ターゲット上では：
+ユーザ・プログラムに、
+@value{GDBN}リモート・シリアル・プロトコルを実装した特別なサブルーチンを
+いくつかリンクする必要があります。
+これらのサブルーチンを含むファイルは、
+@dfn{デバッグ・スタブ}と呼ばれます。
+
+@ifset GDBSERVER
+特定のリモート・ターゲットでは、
+ユーザ・プログラムにスタブをリンクする代わりに、
+@code{gdbserver}という補助プログラムを使うこともできます。
+詳細については、
+@xref{Server,,Using the @code{gdbserver} program}。
+@end ifset
+@end table
+
+デバッグ・スタブはリモート・マシンのアーキテクチャに固有のものです。
+例えば、
+@sc{sparc}ボード上のプログラムをデバッグするには@file{sparc-stub.c}を使います。
+
+@cindex remote serial stub list
+@cindex リモート・シリアル・スタブの一覧[リモート・シリアル・スタブのいちらん]
+以下に実際に使えるスタブを列挙します。
+これらは、
+@value{GDBN}とともに配布されています。
+
+@table @code
+
+@item i386-stub.c
+@kindex i386-stub.c
+@cindex Intel
+@cindex i386
+Intel 386アーキテクチャ、
+およびその互換アーキテクチャ用です。
+
+@item m68k-stub.c
+@kindex m68k-stub.c
+@cindex Motorola 680x0
+@cindex m680x0
+Motorola 680x0アーキテクチャ用です。
+
+@item sh-stub.c
+@kindex sh-stub.c
+@cindex Hitachi
+@cindex SH
+@cindex 日立[ひたち]
+日立SHアーキテクチャ用です。
+
+@item sparc-stub.c
+@kindex sparc-stub.c
+@cindex Sparc
+@sc{sparc}アーキテクチャ用です。
+
+@item sparcl-stub.c
+@kindex sparcl-stub.c
+@cindex Fujitsu
+@cindex SparcLite
+@cindex 富士通[ふじつう]
+富士通@sc{sparclite}アーキテクチャ用です。
+
+@end table
+
+@value{GDBN}とともに配布されるREADMEファイルには、
+新しく追加された他のスタブのことが記されているかもしれません。
+
+@menu
+* Stub Contents::       スタブの提供する機能
+* Bootstrapping::       スタブに対する必須作業
+* Debug Session::       ここまでのまとめ
+* Protocol::            通信プロトコルの概略
+@ifset GDBSERVER
+* Server::		gdbserverプログラムの使用
+@end ifset
+@ifset GDBSERVE
+* NetWare::		gdbserve.nlmプログラムの使用
+@end ifset
+@end menu
+
+@node Stub Contents
+@subsubsection スタブの提供する機能
+
+@cindex remote serial stub
+@cindex リモート・シリアル・スタブ
+各アーキテクチャ用のデバッグ・スタブは、
+3つのサブルーチンを提供します。
+
+@table @code
+@item set_debug_traps
+@kindex set_debug_traps
+@cindex remote serial stub, initialization
+@cindex 初期化、リモート・シリアル・スタブの[しょきか、リモート・シリアル・スタブの]
+このルーチンは、
+ユーザ・プログラムが停止したときに@code{handle_exception}が実行されるよう設定します。
+ユーザ・プログラムは、
+その先頭付近でこのサブルーチンを明示的に呼び出さなければなりません。
+
+@item handle_exception
+@kindex handle_exception
+@cindex remote serial stub, main routine
+@cindex リモート・シリアル・スタブ、メイン・ルーチン
+これが中心的な仕事をする部分ですが、
+ユーザ・プログラムはこれを明示的には呼び出しません。
+セットアップ・コードによって、
+トラップが発生したときに
+@code{handle_exception}が実行されるよう設定されます。
+
+ユーザ・プログラムが実行中に
+（例えば、ブレイクポイントで）
+停止すると、
+@code{handle_exception}が制御権を獲得し、
+ホスト・マシン上の@value{GDBN}との通信を行います。
+これが、
+通信プロトコルが実装されている部分です。
+@code{handle_exception}は、
+ターゲット・マシン上で@value{GDBN}の代理として機能します。
+それはまず、
+ユーザ・プログラムの状態に関する情報を要約して送ることから始めます。
+次に、
+@value{GDBN}が必要とする情報を入手して転送する処理を継続します。
+これは、
+ユーザ・プログラムの実行を再開させるような@value{GDBN}コマンドが実行されるまで続きます。
+そのようなコマンドが実行されると、
+@code{handle_exception}は、
+制御をターゲット・マシン上のユーザ・コードに戻します。
+
+@item breakpoint
+@cindex @code{breakpoint} subroutine, remote
+@cindex @code{breakpoint}サブルーチン、リモート
+ユーザ・プログラムにブレイクポイントを持たせるには、
+この補助的なサブルーチンを使います。
+特定の状況においては、
+これが@value{GDBN}が制御を獲得する唯一の方法です。
+例えば、
+ユーザのターゲット・マシンに割り込みを発生させるボタンのようなものがあれば、
+このサブルーチンを呼び出す必要はありません。
+割り込みボタンを押すことで、
+制御は@code{handle_exception}に、
+つまり事実上@value{GDBN}に渡されます。
+マシンによっては、
+シリアル・ポートから文字を受け取るだけでトラップが発生することもあります。
+このような場合には、
+ユーザ・プログラム自身から@code{breakpoint}を呼び出す必要はなく、
+ホストの@value{GDBN}セッションから@samp{target remote}を実行するだけで制御を得ることができます。
+
+これらのどのケースにも該当しない場合、
+あるいは、
+デバッグ・セッションの開始箇所としてあらかじめ決めてあるところでユーザ・プログラムが停止することを
+単に確実にしたいのであれば、
+@code{breakpoint}を呼び出してください。
+@end table
+
+@node Bootstrapping
+@subsubsection スタブに対する必須作業
+
+@cindex remote stub, support routines
+@cindex リモート・スタブ、サポート・ルーチン
+@value{GDBN}とともに配布されるデバッグ用スタブは、
+特定のチップのアーキテクチャ用にセットアップされたものですが、
+デバッグのターゲット・マシンに関してそれ以外の情報は持っていません。
+
+まず最初に、
+どのようにしてシリアル・ポートと通信するかをスタブに教えてやる必要があります。
+
+@table @code
+@item int getDebugChar()
+@kindex getDebugChar
+シリアル・ポートから単一文字を読み込むサブルーチンとしてこれを書きます。
+これは、
+ターゲット・システム上の
+@code{getchar}と同一かもしれません。
+これら2つを区別したい場合を考慮して、
+異なる名前が使われています。
+
+@item void putDebugChar(int)
+@kindex putDebugChar
+シリアル・ポートに単一文字を書き込むサブルーチンとしてこれを書きます。
+これは、
+ターゲット・システム上の
+@code{putchar}と同一かもしれません。
+これら2つを区別したい場合を考慮して、
+異なる名前が使われています。
+@end table
+
+@cindex control C, and remote debugging
+@cindex interrupting remote targets
+@cindex Ctrl-C、リモート・デバッグ処理[Ctrl-C、リモート・デバッグしょり]
+@cindex リモート・ターゲットの割り込み[リモート・ターゲットのわりこみ]
+実行中のユーザ・プログラムを@value{GDBN}が停止できるようにしたいのであれば、
+割り込み駆動型のシリアル・ドライバを使用して、
+@code{^C}
+（control-C文字、
+すなわち@samp{\003}）
+を受信したときに停止するよう設定する必要があります。
+@value{GDBN}はこの文字を使って、
+リモート・システムに対して停止するよう通知します。
+
+デバッグ・ターゲットが適切なステータス情報を@value{GDBN}に対して返せるようにするためには、
+おそらく標準のスタブを変更する必要があるでしょう。
+最も美しくなく、
+しかし最も手っ取り早くこれを実現する方法は、
+ブレイクポイント命令を実行することです
+（この方法が「美しくない」のは、
+@value{GDBN}が@code{SIGINT}ではなく@code{SIGTRAP}を報告してくる点にあります）。
+
+ユーザが提供する必要のあるルーチンには、
+ほかに以下のようなものがあります。
+
+@table @code
+@item void exceptionHandler (int @var{exception_number}, void *@var{exception_address})
+@kindex exceptionHandler
+例外処理テーブルに@var{exception_address}を組み込むよう、
+この関数を書きます。
+ユーザがこれを提供しなければならないのは、
+スタブにはターゲット・システム上の例外処理テーブルがどのようなものになるかを知る手段がないからです
+（例えば、
+プロセッサのテーブルは@sc{rom}上にあり、
+その中のエントリが@sc{ram}上のテーブルを指す、
+という形になっているかもしれません）。
+@var{exception_number}
+は例外番号で、
+これは変更される必要があります。
+例外番号の意味は、
+アーキテクチャに依存します
+（例えば、
+0による除算、
+境界を無視したメモリ・アクセス等は、
+異なる番号によって表わされるかもしれません）。
+この例外が発生したとき、
+制御は直接@var{exception_address}に渡されなければならず、
+また、
+プロセッサの状態
+（スタック、レジスタなど）
+はプロセッサ例外が発生したときの状態と同じでなければなりません。
+したがって、
+@var{exception_address}に到達するのにジャンプ命令を使用したいのであれば、
+サブルーチン・ジャンプではなく、
+ただのジャンプ命令を使わなければなりません。
+
+386では、
+ハンドラが実行されているときに割り込みがマスクされるよう、
+@var{exception_address}は割り込みゲートとして組み込まれる必要があります。
+そのゲートは特権レベル0
+（最も高いレベル）
+でなければなりません。
+@sc{sparc}用のスタブや68k用のスタブは、
+@code{exceptionHandler}の助けを借りなくても自分で割り込みをマスクすることができます。
+
+@item void flush_i_cache()
+@kindex flush_i_cache
+（sparc、
+sparcliteのみ）
+ターゲット・マシンに命令キャッシュがある場合、
+それをフラッシュするようこのサブルーチンを書きます。
+命令キャッシュがない場合には、
+このサブルーチンは何もしないものになるかもしれません。
+
+命令キャッシュを持つターゲット・マシン上の@value{GDBN}は、
+ユーザ・プログラムが安定した状態にあることが
+この関数によって保証されることを必要とします。
+@end table
+
+@noindent
+@c {{有効にしておかなけければなりません}}
+また、次のライブラリ・ルーチンが使用可能であることを確かめなければなりません。
+
+@table @code
+@item void *memset(void *, int, int)
+@kindex memset
+あるメモリ領域に既知の値を設定する標準ライブラリ関数@code{memset}です。
+フリーの@code{libc.a}を持っていれば、
+そこに@code{memset}があります。
+フリーの@code{libc.a}がなければ、
+@code{memset}をハードウェアの供給元から入手するか、
+自分で作成する必要があります。
+@end table
+
+@c {{原文はGNU}}
+@sc{gnu} Cコンパイラを使っていないのであれば、
+他の標準ライブラリ・サブルーチンも必要になるかもしれません。
+これは、
+スタブによっても異なりますが、
+一般的にスタブは、
+@code{gcc}がインライン・コードとして生成する共通ライブラリ・サブルーチンを使用する可能性があります。
+
+@node Debug Session
+@subsubsection ここまでのまとめ
+
+@cindex remote serial debugging summary
+@cindex 要約、リモート・シリアル・デバッグ処理の[ようやく、リモート・シリアル・デバッグしょりの]
+要約すると、
+ユーザ・プログラムをデバッグする準備が整った後、
+以下の手順に従わなければなりません。
+
+@enumerate
+@item
+下位レベルのサポート・ルーチンがあることを確認します
+（@pxref{Bootstrapping,,What you must do for the stub}）。
+@display
+@code{getDebugChar}, @code{putDebugChar},
+@code{flush_i_cache}, @code{memset}, @code{exceptionHandler}.
+@end display
+
+@item
+ユーザ・プログラムの先頭付近に以下の行を挿入します。
+
+@example
+set_debug_traps();
+breakpoint();
+@end example
+
+@item
+680x0のスタブに限り、
+@code{exceptionHook}という変数を提供する必要があります。
+通常は、
+以下のように使います。
+
+@example
+void (*exceptionHook)() = 0;
+@end example
+
+しかし、
+@code{set_debug_traps}が呼び出される前に、
+ユーザ・プログラム内のある関数を指すようこの変数を設定すると、
+トラップ
+（例えば、
+バス・エラー）
+で停止した後に@value{GDBN}が処理を継続実行するときに、
+その関数が呼び出されます。
+@code{exceptionHook}によって指される関数は、
+1つの引数付きで呼び出されます。
+それは、
+@code{int}型の例外番号です。
+
+@item
+ユーザ・プログラム、
+ターゲット・アーキテクチャ用の@value{GDBN}デバッグ・スタブ、
+サポート・サブルーチンをコンパイルしリンクします。
+
+@item
+ターゲット・マシンと@value{GDBN}ホストとの間がシリアル接続されていることを確認します。
+また、
+ホスト上のシリアル・ポートの名前を調べます。
+
+@item
+@c The "remote" target now provides a `load' command, so we should
+@c document that.  FIXME.
+ターゲット・マシンにユーザ・プログラムをダウンロードし
+（あるいは、
+製造元の提供する手段によってターゲット・マシンにユーザ・プログラムを持っていき）、
+起動します。
+
+@item
+リモート・デバッグを開始するには、
+ホスト・マシン上で@value{GDBN}を実行し、
+リモート・マシン上で実行中のプログラムを実行ファイルとして指定します。
+これにより、
+ユーザ・プログラムのシンボルとテキスト域の内容を見つける方法が@value{GDBN}に通知されます。
+
+@cindex serial line, @code{target remote}
+@cindex @code{target remote}、シリアル回線[@code{target remote}、シリアルかいせん]
+次に@code{target remote}コマンドを使って通信を確立します。
+引数には、
+シリアル回線に接続された装置名または
+（通常はターゲットと接続されたシリアル回線を持つ端末サーバの）
+TCPポートを指定することで、
+ターゲット・マシンとの通信方法を指定します。
+例えば、
+@file{/dev/ttyb}という名前の装置に接続されているシリアル回線を使うには、
+
+@example
+target remote /dev/ttyb
+@end example
+
+@noindent
+とします。
+
+@cindex TCP port, @code{target remote}
+@cindex @code{target remote}、TCPポート
+TCP接続を使うには、
+@c {{原文は``@var{host}:port''}}
+@code{@var{host}:@var{port}}という形式の引数を使用します。
+例えば、
+@code{manyfarms}という名前の端末サーバのポート2828に接続するには、
+
+@example
+target remote manyfarms:2828
+@end example
+
+とします。
+@end enumerate
+
+@noindent
+
+ここまでくると、
+データの値の調査、
+変更、
+リモート・プログラムのステップ実行、
+継続実行に通常使用するすべてのコマンドを使用することができます。
+
+リモート・プログラムの実行を再開し、
+デバッグするのをやめるには、
+@code{detach}コマンドを使います。
+
+@cindex interrupting remote programs
+@cindex remote programs, interrupting
+@cindex リモート・プログラムの割り込み[リモート・プログラムのわりこみ]
+@cindex 割り込み、リモート・プログラムの[わりこみ、リモート・プログラムの]
+@value{GDBN}がリモート・プログラムを待っているときにはいつでも、
+割り込み文字
+（多くの場合
+@key{C-C}）
+を入力すると、
+@value{GDBN}はそのプログラムを停止しようとします。
+これは成功することも失敗することもありますが、
+その成否は、
+リモート・システムのハードウェアやシリアル・ドライバにも依存します。
+割り込み文字を再度入力すると、
+@value{GDBN}は以下のプロンプトを表示します。
+
+@example
+Interrupted while waiting for the program.
+Give up (and stop debugging it)?  (y or n)
+@end example
+
+ここで@kbd{y}を入力すると、
+@value{GDBN}はリモート・デバッグ・セッションを破棄します
+（後になって再実行したくなった場合には、
+接続するために@samp{target remote}を再度使用します）。
+@kbd{n}を入力すると、
+@value{GDBN}は再び待ち状態になります。
+
+@node Protocol
+@subsubsection 通信プロトコル
+
+@cindex debugging stub, example
+@cindex remote stub, example
+@cindex stub example, remote debugging
+@cindex 実例、スタブのデバッグの[じつれい、スタブのデバッグの]
+@cindex 実例、リモート・スタブの[じつれい、リモート・スタブの]
+@cindex リモート・デバッグ処理、スタブの実例[リモート・デバッグしょり、スタブのじつれい]
+@value{GDBN}とともに提供されるスタブ・ファイルは、
+ターゲット側の通信プロトコルを実装します。
+そして@value{GDBN}側の通信プロトコルは、
+@value{GDBN}のソース・ファイル@file{remote.c}に実装されています。
+通常は、
+これらのサブルーチンに通信処理を任せて、
+詳細を無視することができます
+（独自のスタブ・ファイルを作成するときでも、
+詳細については無視して、
+既存のスタブ・ファイルをもとにして作成を始めることができます。
+@file{sparc-stub.c}が最もよく整理されており、
+したがって最も読みやすくなっています）。
+
+しかし、
+場合によっては、
+プロトコルについて何かを知る必要が出てくることもあるでしょう。
+例えば、
+ターゲット・マシンにシリアル・ポートが1つしかなく、
+@value{GDBN}に対して送られてきたパケットを検出したときに、
+ユーザ・プログラムが何か特別なことをするようにしたい場合です。
+
+@cindex protocol, @value{GDBN} remote serial
+@cindex serial protocol, @value{GDBN} remote
+@cindex remote serial protocol
+@cindex プロトコル、@value{GDBN}リモート・シリアル
+@cindex シリアル・プロトコル、@value{GDBN}リモート
+@cindex リモート・シリアル・プロトコル
+（単一文字による確認メッセージを除く）
+すべての@value{GDBN}コマンドとそれに対する応答は、
+チェックサムを含むパケットとして送信されます。
+パケットは、
+文字@samp{$}で始まり、
+文字@samp{#}に2桁のチェックサム値が続いて終わります。
+
+@example
+$@var{packet info}#@var{checksum}
+@end example
+
+@cindex checksum, for @value{GDBN} remote
+@cindex チェックサム、@value{GDBN}リモートの
+@noindent
+ここで、
+@var{checksum}は@var{packet info}のすべての文字の値を合計したものを256で割った余りとして計算されます。
+
+ホスト・マシンまたはターゲット・マシンがパケットを受信したとき、
+最初に期待される応答は確認メッセージです。
+これは単一文字で、
+（パッケージが正しく受信されたことを示す）
+@samp{+}または
+（再送要求を示す）
+@samp{-}です。
+
+ホスト
+（@value{GDBN}）
+がコマンドを送信し、
+ターゲット
+（ユーザ・プログラムに組み込まれたデバッグ・スタブ）
+が応答としてデータを送信します。
+ターゲットは、ユーザ・プログラムが停止したときにも、
+データを送信します。
+
+コマンド・パケットは最初の文字で区別されます。
+最初の文字がコマンドの種類を表わします。
+
+以下に、
+現在サポートされているコマンドをいくつか列挙します
+@c {{原文は「@file{gdb/remote.c.}」}}
+（コマンドの完全なリストについては@file{gdb/remote.c}を参照してください）。
+
+@table @code
+@item g
+CPUレジスタの値を要求します。
+
+@item G
+CPUレジスタの値を設定します。
+
+@item m@var{addr},@var{count}
+@var{addr}で示される位置から@var{count}で示されるバイト数を読み込みます。
+
+@item M@var{addr},@var{count}:@dots{}
+@var{addr}で示される位置から@var{count}で示されるバイト数を書き込みます。
+
+@need 500
+@item c
+@itemx c@var{addr}
+カレントなアドレス
+（@var{addr}が指定されているのであれば、
+それによって指定されるアドレスから）
+実行を再開します。
+
+@need 500
+@item s
+@itemx s@var{addr}
+プログラム・カウンタの指すカレントな箇所から
+（@var{addr}が指定されているのであれば、
+それによって指定されるアドレスから）
+ターゲット・プログラムを1命令だけステップ実行します。
+
+@item k
+ターゲット・プログラムを終了させます。
+
+@item ?
+最後に受信したシグナルを報告します。
+@value{GDBN}のシグナル処理コマンドを利用できるように、
+デバッグ・スタブの中のある関数が、
+CPUトラップを対応するPOSIXシグナル値として報告してきます。
+
+@item T
+リモートのスタブに対して、
+@value{GDBN}がシングル・ステップ処理や条件付きブレイクポイントに関する迅速な決定を下すのに必要となる
+レジスタの情報だけを送信するようにさせます。
+これによって、
+ステップ実行中の1命令ごとにすべてのレジスタの情報を入手する必要がなくなります。
+
+現在の@value{GDBN}は、
+レジスタへのライト・スルー・キャッシュを実装していて、
+ターゲットが実行された場合のみ、
+レジスタを再度読み込みます。
+@end table
+
+@kindex set remotedebug
+@kindex show remotedebug
+@cindex packets, reporting on stdout
+@cindex serial connections, debugging
+@cindex パケット、標準出力への報告[パケット、ひょうじゅんしゅつりょくへのほうこく]
+@cindex シリアル接続、デバッグ処理[シリアルせつぞく、デバッグしょり]
+シリアル接続に問題がある場合には、
+@code{set remotedebug}コマンドを使うことができます。
+これにより@value{GDBN}は、
+シリアル回線経由でリモート・マシンとの間で送受信したすべてのパケットを報告するようになります。
+パケット・デバッグ用の情報は@value{GDBN}の標準出力ストリームに表示されます。
+@code{set remotedebug off}によってこの設定が解除され、
+@code{show remotedebug}によって現在の設定が表示されます。
+
+@ifset GDBSERVER
+@node Server
+@subsubsection @code{gdbserver}プログラムの使用
+
+@kindex gdbserver
+@cindex remote connection without stubs
+@cindex スタブを使わないリモート接続[スタブをつかわないリモートせつぞく]
+@code{gdbserver}は、
+UNIX系システム用の制御プログラムで、
+これにより、
+通常のデバッグ用スタブをリンクすることなく、
+@code{target remote}コマンドによって、
+ユーザ・プログラムをリモートの@value{GDBN}に接続することができます。
+
+@code{gdbserver}は、
+デバッグ用スタブに完全に取って代わるものではありません。
+@code{gdbserver}は、
+@value{GDBN}が必要とするのと同様のオペレーティング・システムの機能を基本的には必要とするからです。
+@c {{ここは意味的に逆かも。}}
+実際、
+リモートの@value{GDBN}と接続するために@code{gdbserver}を実行できるシステムであれば、
+@value{GDBN}をローカルに実行することも可能です。
+@c @code{gdbserver} to connect to a remote @value{GDBN} could also run
+@c @value{GDBN} locally!  @code{gdbserver} is sometimes useful nevertheless,
+それでも、
+@code{gdbserver}は@value{GDBN}と比較するとかなりサイズが小さいので、
+便利なことがあります。
+また、
+@code{gdbserver}の移植は@value{GDBN}全体の移植よりも簡単なので、
+@code{gdbserver}を使うことで、
+新しいシステムでの作業をより早く開始することができます、
+最後に、
+リアル・タイム・システムの開発をしている場合、
+リアル・タイムな操作に関わるトレードオフのために、
+例えばクロス・コンパイルなどによって、
+他のシステム上で可能な限り多くの開発作業を行ったほうが便利であるということがあるでしょう。
+デバッグ作業に関しても、
+@code{gdbserver}を使うことでこれと同じような選択を行うことができます。
+
+@value{GDBN}と@code{gdbserver}は、
+シリアル回線またはTCP接続を経由して、
+標準的な@value{GDBN}リモート・シリアル・プロトコルによって通信します。
+
+@table @emph
+@item ターゲット・マシンでは：
+デバッグしたいプログラムのコピーが1つ必要です。
+@code{gdbserver}はユーザ・プログラムのシンボル・テーブルを必要とはしませんので、
+スペースの節約が必要であれば、
+プログラムをストリップすることができます。
+ホスト・システム上の@value{GDBN}が、
+シンボルに関するすべての処理を実行します。
+
+@code{gdbserver}を使うには、
+@value{GDBN}との通信方法、
+ユーザ・プログラムの名前、
+ユーザ・プログラムへの引数を教えてやる必要があります。
+構文は、
+以下のとおりです。
+
+@smallexample
+target> gdbserver @var{comm} @var{program} [ @var{args} @dots{} ]
+@end smallexample
+
+@var{comm}は
+（シリアル回線を使うための）
+装置名、
+あるいは、
+TCPのホスト名とポート番号です。
+例えば、
+@samp{foo.txt}という引数を指定してEmacsをデバッグし、
+シリアル・ポート@file{/dev/com1}経由で@value{GDBN}と通信するには、
+以下のように実行します。
+
+@smallexample
+target> gdbserver /dev/com1 emacs foo.txt
+@end smallexample
+
+@code{gdbserver}は、
+ホスト側の@value{GDBN}が通信してくるのを受動的に待ちます。
+
+シリアル回線の代わりにTCP接続を使うには、
+以下のようにします。
+
+@smallexample
+target> gdbserver host:2345 emacs foo.txt
+@end smallexample
+
+前の例との唯一の違いは第1引数です。
+これは、
+ホストの@value{GDBN}とTCPによって接続することを指定しています。
+@samp{host:2345}は、
+マシン@samp{host}からローカルのTCPポート2345へのTCP接続を@code{gdbserver}が期待していることを意味します
+（現在のバージョンでは、
+@samp{host}の部分は無視されます）。
+ターゲット・システム上で既に使われているTCPポートでなければ、
+任意の番号をポート番号として選択できます
+（例えば、
+@code{23}は@code{telnet}に予約されています）
+@footnote{原注：他のサービスによって使用されているポート番号を選択すると、
+@code{gdbserver}はエラー・メッセージを出力して終了します。}。
+ここで指定したのと同じポート番号を、
+ホスト上の@value{GDBN}の@code{target remote}コマンドで使わなければなりません。
+
+@item @value{GDBN}のホスト・マシンでは：
+@value{GDBN}はシンボル情報、
+デバッグ情報を必要とするので、
+ストリップされていないユーザ・プログラムのコピーが必要です。
+通常どおり、
+第1引数にユーザ・プログラムのローカル・コピーの名前を指定して@value{GDBN}を起動します
+（シリアル回線の速度が9600 bps以外であれば、
+@w{@samp{--baud}}オプションも必要になります）。
+その後、
+@code{target remote}コマンドによって@code{gdbserver}との通信を確立します。
+引数には、
+装置名
+（通常は@file{/dev/ttyb}のようなシリアル装置）、
+または、
+@code{@var{host}:@var{PORT}}という形式でのTCPポート記述子を指定します。
+例えば、
+
+@smallexample
+(@value{GDBP}) target remote /dev/ttyb
+@end smallexample
+
+@noindent
+では、
+シリアル回線@file{/dev/ttyb}を介して@code{gdbserver}と通信します。
+また、
+
+@smallexample
+(@value{GDBP}) target remote the-target:2345
+@end smallexample
+
+@noindent
+では、
+ホスト@w{@file{the-target}}上のポート2345に対するTCP接続によって通信します。
+TCP接続を使う場合には、
+@code{target remote}コマンドを実行する前に、
+@code{gdbserver}を起動しておかなければなりません。
+そうしないと、エラーになります。
+エラー・テキストの内容はホスト・システムによって異なりますが、
+通常は@samp{Connection refused}のような内容です。
+@end table
+@end ifset
+
+@ifset GDBSERVE
+@node NetWare
+@subsubsection @code{gdbserve.nlm}プログラムの使用
+
+@kindex gdbserve.nlm
+@code{gdbserve.nlm}はNetWareシステムでの制御プログラムです。
+これによって、
+@code{target remote}コマンドでユーザ・プログラムをリモートの@value{GDBN}に接続することができます。
+
+@value{GDBN}と@code{gdbserve.nlm}は、
+標準の@value{GDBN}リモート・シリアル・プロトコルを使って、
+シリアル回線経由で通信します。
+
+@table @emph
+@item ターゲット・マシンでは：
+デバッグしたいプログラムのコピーが1つ必要です。
+@code{gdbserve.nlm}はユーザ・プログラムのシンボル・テーブルを必要とはしませんので、
+スペースの節約が必要であれば、
+プログラムをストリップすることができます。
+ホスト・システム上の@value{GDBN}が、
+シンボルに関わるすべての処理を実行します。
+
+@code{gdbserve.nlm}を使うには、
+@value{GDBN}との通信方法、
+ユーザ・プログラムの名前、
+ユーザ・プログラムの引数を教えてやる必要があります。
+構文は、
+以下のとおりです。
+
+@smallexample 
+load gdbserve [ BOARD=@var{board} ] [ PORT=@var{port} ]
+              [ BAUD=@var{baud} ] @var{program} [ @var{args} @dots{} ]
+@end smallexample
+
+@var{board}と@var{port}がシリアル回線を指定します。
+@var{baud}は接続に使われるボーレートを指定します。
+@var{port}と@var{node}のデフォルト値は0、
+@var{baud}のデフォルト値は9600 bpsです。
+
+例えば、
+@samp{foo.txt}という引数を指定してEmacsをデバッグし、
+シリアル・ポート番号2、
+ボード1を経由して19200 bpsの接続で@value{GDBN}と通信するには、
+以下のように実行します。
+
+@smallexample
+load gdbserve BOARD=1 PORT=2 BAUD=19200 emacs foo.txt
+@end smallexample
+
+@item @value{GDBN}のホスト・マシンでは：
+@value{GDBN}はシンボル情報、
+デバッグ情報を必要とするので、
+ストリップされていないユーザ・プログラムのコピーが必要です。
+通常どおり、
+第1引数にユーザ・プログラムのローカル・コピーの名前を指定して@value{GDBN}を起動します
+（シリアル回線の速度が9600 bps以外であれば、
+@w{@samp{--baud}}オプションも必要になります）。
+その後、
+@code{target remote}コマンドによって
+@code{gdbserve.nlm}との通信を確立します。
+引数には、
+装置名
+（通常は@file{/dev/ttyb}のようなシリアル装置）
+を指定します。
+例えば、
+
+@smallexample
+(@value{GDBP}) target remote /dev/ttyb
+@end smallexample
+
+@noindent
+は、
+シリアル回線@file{/dev/ttyb}を経由して@code{gdbserve.nlm}と通信します。
+@end table
+@end ifset
+
+@end ifset
+
+@ifset I960
+@node i960-Nindy Remote
+@subsection @value{GDBN}とリモートi960（Nindy）
+
+@cindex Nindy
+@cindex i960
+@dfn{Nindy}は、
+Intel 960ターゲット・システム用のROM Monitorプログラムです。
+Nindyを使ってリモートのIntel 960を制御するよう@value{GDBN}が構成されている場合、
+いくつかの方法によって@value{GDBN}に960との接続方法を教えることができます。
+
+@itemize @bullet
+@item
+シリアル・ポート、
+Nindyプロトコルのバージョン、
+通信スピードを指定するコマンドライン・オプションによる方法
+
+@item
+起動時のプロンプトに答える方法
+
+@item
+@value{GDBN}セッション中の任意の時点で@code{target}コマンドを使う方法
+（@xref{Target Commands, ,Commands for managing targets}）
+
+@end itemize
+
+@menu
+* Nindy Startup::               Nindy使用時の起動方法
+* Nindy Options::               Nindy用のオプション
+* Nindy Reset::                 Nindy resetコマンド
+@end menu
+
+@node Nindy Startup
+@subsubsection Nindy使用時の起動方法
+
+コマンドライン・オプションを一切使わずに@code{@value{GDBP}}を起動すると、
+通常の@value{GDBN}プロンプトが表示される@emph{前}に、
+使用するシリアル・ポートを指定するよう促されます。
+
+@example
+Attach /dev/ttyNN -- specify NN, or "quit" to quit:  
+@end example
+
+@noindent
+このプロンプトに対して、
+使いたいシリアル・ポートを示す
+（@samp{/dev/tty}の後ろの）
+サフィックスを入力します。
+もしそうしたいのであれば、
+プロンプトに空行で答えることによって、
+Nindyとの接続を確立せずに起動することもできます。
+この場合、
+後にNindyと接続したいときには@code{target}コマンドを使います
+（@pxref{Target Commands, ,Commands for managing targets}）。
+
+@node Nindy Options
+@subsubsection Nindy用のオプション
+
+接続されたNindy-960ボードとの@value{GDBN}セッションを開始するための
+起動オプションを以下に示します。
+
+@table @code
+@item -r @var{port}
+ターゲット・システムとの接続に使用されるシリアル・インターフェイスのシリアル・ポート名を指定します。
+このオプションは、
+@value{GDBN}がIntel 960ターゲット・アーキテクチャ用に構成されているときのみ利用可能です。
+@var{port}は、
+@c {{pathを補った}}
+完全なパス名
+（例：@samp{-r /dev/ttya}）、
+@file{/dev}配下のデバイス名
+（例：@samp{-r ttya}）、
+@code{tty}固有の一意なサフィックス
+（例：@samp{-r a}）
+のいずれによっても指定することができます。
+
+@item -O
+（ゼロではなく、
+英大文字のOです）。
+@value{GDBN}がターゲット・システムと接続する際に、
+古いNindyモニタ・プロトコルを使用すべきであることを指定します。
+このオプションは、
+@value{GDBN}がIntel 960ターゲット・アーキテクチャ用に構成されているときのみ利用可能です。
+
+@quotation
+@emph{注意}：@samp{-O}を指定したにもかかわらず、
+実際にはより新しいプロトコルを期待しているターゲット・システムに接続しようとした場合、
+接続は失敗します。
+この失敗は、
+あたかも通信速度の不一致が原因であるかのように見えてしまいます。
+@value{GDBN}は、
+異なる回線速度によって再接続を繰り返し試みます。
+割り込みによって、
+この処理を中断させることができます。
+@end quotation
+
+@item -brk
+接続する前にNindyターゲットをリセットするために、
+ターゲット・システムに対して最初に@code{BREAK}信号を送信するよう、
+@value{GDBN}に対して指定します。
+
+@quotation
+@emph{注意}：多くのターゲット・システムは、
+このオプションが必要とするハードウェアを備えていません。
+このオプションは、
+少数のボードでしか機能しません。
+@end quotation
+@end table
+
+標準の@samp{-b}オプションが、
+シリアル・ポート上で使用される回線速度を制御します。
+
+@c @group
+@node Nindy Reset
+@subsubsection Nindy resetコマンド
+
+@table @code
+@item reset
+@kindex reset
+ターゲットがNindyである場合、
+このコマンドはBREAK信号をリモートのターゲット・システムに送信します。
+これは、
+BREAK信号を受信したときにハード・リセット
+（または、
+その他の興味深いアクション）
+を実行する回路がターゲットに備わっている場合にのみ役に立ちます。
+@end table
+@c @end group
+@end ifset
+
+@ifset AMD29K
+@node UDI29K Remote
+@subsection AMD29K用のUDIプロトコル
+
+@cindex UDI
+@cindex AMD29K via UDI
+@cindex UDI経由のAMD29K[UDIけいゆのAMD29K]
+@value{GDBN}は、
+a29kプロセッサ・ファミリをデバッグするためのAMD UDI
+（Universal Debugger Interface）
+プロトコルをサポートしています。
+MiniMONモニタを実行するAMDターゲットという構成を使うには、
+AMD社から無料で入手可能な@code{MONTIP}プログラムが必要になります。
+また、
+AMD社から入手可能なUDI準拠のa29kシミュレータ・プログラム@code{ISSTIP}とともに@value{GDBN}を使うこともできます。
+
+@table @code
+@item target udi @var{keyword}
+@kindex udi
+リモートのa29kボードまたはシミュレータへのUDIインターフェイスを選択します。
+@var{keyword}は、
+AMD構成ファイル@file{udi_soc}内のエントリです。
+このファイルには、
+a29kターゲットに接続するときに使われるパラメータを指定する
+キーワード・エントリが含まれます。
+@file{udi_soc}ファイルが作業ディレクトリにない場合には、
+環境変数@samp{UDICONF}にそのパス名を設定しなければなりません。
+@end table
+
+@node EB29K Remote
+@subsection AMD29KのEBMONプロトコル
+
+@cindex EB29K board
+@cindex running 29K programs
+@cindex EB29Kボード
+@cindex 29Kプログラムの実行[29Kプログラムのじっこう]
+
+AMD社は、
+PC組み込み用の29K開発ボードを、
+DOS上で動作する@code{EBMON}というモニタ・プログラムとともに配布しています。
+この開発システムは、
+省略してEB29Kと呼ばれます。
+UNIXシステム上の@value{GDBN}を使ってEB29Kボード上でプログラムを実行するには、
+まず
+（EB29Kを組み込んだ）
+PCとUNIXシステムのシリアル・ポートの間をシリアル回線で接続しなければなりません。
+以下の節では、
+PCの@file{COM1}ポートとUNIXシステムの@file{/dev/ttya}との間をケーブルで接続してあるものと仮定します。
+
+@menu
+* Comms (EB29K)::               通信セットアップ
+* gdb-EB29K::                   EB29Kクロス・デバッグ
+* Remote Log::                  リモート・ログ
+@end menu
+
+@node Comms (EB29K)
+@subsubsection 通信セットアップ
+
+PC上のDOSで以下のように実行することによって、
+PCのポートをセットアップします。
+
+@example
+C:\> MODE com1:9600,n,8,1,none
+@end example
+
+@noindent
+MS DOS 4.0上で実行されているこの例では、
+PCポートを通信速度9600 bps、
+パリティ・ビットなし、
+データ・ビット数8、
+ストップ・ビット数1、
+リトライなしに設定しています。
+UNIX側を設定する際には、
+同一の通信パラメータを使わなければなりません。
+@c FIXME: Who knows what this "no retry action" crud from the DOS manual may
+@c       mean?  It's optional; leave it out? ---doc@cygnus.com, 25feb91 
+
+シリアル回線のUNIX側にPCの制御権を与えるには、
+DOSコンソール上で以下のように実行します。
+
+@example
+C:\> CTTY com1
+@end example
+
+@noindent
+（後に、
+DOSコンソールに制御を戻したいときには、
+@code{CTTY con}コマンドを使うことができます。
+ただし、
+制御権を持っている装置からこのコマンドを送信する必要があります。
+ここでの例では、
+@file{COM1}に接続されているシリアル回線を通して送信することになります）。
+
+UNIXのホストからは、
+PCと通信するのに@code{tip}や@code{cu}のような通信プログラムを使います。
+以下に例を示します。
+
+@example
+cu -s 9600 -l /dev/ttya
+@end example
+
+@noindent
+ここで示されている@code{cu}オプションはそれぞれ、
+使用する回線速度とシリアル・ポートを指定しています。
+@code{tip}コマンドを使った場合は、
+コマンドラインは以下のようなものになるでしょう。
+
+@example
+tip -9600 /dev/ttya
+@end example
+
+@noindent
+ここで@code{tip}への引数として指定した@file{/dev/ttya}の部分には、
+システムによって異なる名前を指定する必要があるかもしれません。
+使用するポートを含む通信パラメータは、
+``remote''記述ファイルにおいて@code{tip}コマンドへの引数と関連付けられます。
+通常このファイルは、
+システム・テーブル@file{/etc/remote}です。
+@c FIXME: What if anything needs doing to match the "n,8,1,none" part of
+@c the DOS side's comms setup?  cu can support -o (odd
+@c parity), -e (even parity)---apparently no settings for no parity or
+@c for character size.  Taken from stty maybe...?  John points out tip
+@c can set these as internal variables, eg ~s parity=none; man stty
+@c suggests that it *might* work to stty these options with stdin or
+@c stdout redirected... ---doc@cygnus.com, 25feb91
+
+@kindex EBMON
+@code{tip}接続または@code{cu}接続を使用して
+DOSの作業ディレクトリを29Kプログラムが存在するディレクトリに変更し、
+PCプログラム@code{EBMON}
+（AMD社からボードとともに提供されるEB29K制御プログラム）
+を起動します。
+以下に示す例によく似た、
+@code{EBMON}プロンプト@samp{#}で終わる@code{EBMON}の初期画面が表示されるはずです。
+
+@example
+C:\> G:
+
+G:\> CD \usr\joe\work29k
+
+G:\USR\JOE\WORK29K> EBMON
+Am29000 PC Coprocessor Board Monitor, version 3.0-18
+Copyright 1990 Advanced Micro Devices, Inc.
+Written by Gibbons and Associates, Inc.
+
+Enter '?' or 'H' for help
+
+PC Coprocessor Type   = EB29K
+I/O Base              = 0x208
+Memory Base           = 0xd0000
+
+Data Memory Size      = 2048KB
+Available I-RAM Range = 0x8000 to 0x1fffff
+Available D-RAM Range = 0x80002000 to 0x801fffff
+
+PageSize              = 0x400
+Register Stack Size   = 0x800
+Memory Stack Size     = 0x1800
+
+CPU PRL               = 0x3
+Am29027 Available     = No
+Byte Write Available  = Yes
+
+# ~.
+@end example
+
+続いて、
+@code{cu}プログラムまたは@code{tip}プログラムを終了させます
+（上の例では、
+@code{EBMON}プロンプトにおいて@code{~.}を入力することで終了させています）。
+@code{EBMON}は、
+@value{GDBN}が制御権を獲得できる状態で、
+実行を継続します。
+
+この例では、
+PCとUNIXシステムの両方に同一の29Kプログラムが確実に存在するようにするのに、
+おそらく最も便利であろうと思われる方法を使うことを仮定しました。
+それは、
+PC/NFSによる接続で、
+UNIXホストのファイル・システムの1つをPCの@code{G:}ドライブとする方法です。
+PC/NFS、
+あるいは、
+2つのシステム間を接続する類似の方法がない場合、
+フロッピ・ディスクによる転送など、
+UNIXシステムからPCへ29Kプログラムを転送するための他の手段を準備する必要があります。
+@value{GDBN}は、
+シリアル回線経由で29Kプログラムをダウンロードすることは@emph{しません}。
+
+@node gdb-EB29K
+@subsubsection EB29Kクロス・デバッグ
+
+最後に、
+UNIXシステム上の29Kプログラムが存在するディレクトリに@code{cd}コマンドによって移動して、
+@value{GDBN}を起動します。
+引数には、
+29Kプログラムの名前を指定します。
+
+@example
+cd /usr/joe/work29k
+@value{GDBP} myfoo
+@end example
+
+@need 500
+これで@code{target}コマンドが使えるようになります。
+
+@example
+target amd-eb /dev/ttya 9600 MYFOO
+@c FIXME: test above 'target amd-eb' as spelled, with caps!  caps are meant to
+@c emphasize that this is the name as seen by DOS (since I think DOS is
+@c single-minded about case of letters).  ---doc@cygnus.com, 25feb91
+@end example
+
+@noindent
+この例では、
+ユーザ・プログラムは@file{myfoo}と呼ばれるファイルであると仮定しています。
+@code{target amd-eb}に対して最後の引数として指定するファイル名は、
+DOS上でのプログラム名でなければならない点に注意してください。
+この例では単に@code{MYFOO}となっていますが、
+DOSのパス名を含むこともできますし、
+転送メカニズムによっては、
+UNIX側での名前とは似ても似つかないものになることもあるでしょう。
+
+ここまでくると、
+好きなようにブレイクポイントを設定することができます。
+29Kボード上でのプログラムの実行を監視する準備が整えば、
+@value{GDBN}の@code{run}コマンドを使います。
+
+リモート・プログラムのデバッグを停止するには、
+@value{GDBN}の@code{detach}コマンドを使います。
+
+PCの制御をPCコンソールに戻すには、@value{GDBN}セッションが終了した後に、
+@code{EBMON}にアタッチするために、
+もう一度@code{tip}または@code{cu}を使います。
+その後、
+@code{q}コマンドによって@code{EBMON}をシャットダウンし、
+DOSのコマンドライン・インタープリタに制御を戻します。
+@code{CTTY con}と入力して、
+入力されたコマンドがメインのDOSコンソールによって受け取られるようにし、
+@kbd{~.}を入力して@code{tip}または@code{cu}を終了させます。
+
+@node Remote Log
+@subsubsection リモート・ログ
+@kindex eb.log
+@cindex log file for EB29K
+@cindex EB29K用のログ・ファイル[EB29Kようのログ・ファイル]
+
+@code{target amd-eb}コマンドは、
+接続に関わる問題のデバッグを支援するため、
+カレントな作業ディレクトリに@file{eb.log}というファイルを作成します。
+@file{eb.log}は、
+@code{EBMON}に送信されたコマンドのエコーを含む、
+@code{EBMON}からのすべての出力を記録します。
+別のウィンドウ内でこのファイルに対して@samp{tail -f}を実行すると、
+@code{EBMON}に関わる問題やPC側での予期せぬイベントを理解する助けになることがよくあります。
+
+@end ifset
+
+@ifset ST2000
+@node ST2000 Remote
+@subsection @value{GDBN}とTandem ST2000
+
+ST2000をホスト・システムに接続する方法については、
+製造元のマニュアルを参照してください。
+ST2000が物理的に接続されれば、
+それをデバッグ環境として確立するには、以下を実行します。
+
+@example
+target st2000 @var{dev} @var{speed}
+@end example
+
+@noindent
+@var{dev}は通常、
+シリアル回線によってST2000と接続される@file{/dev/ttya}のようなシリアル装置の名前です。
+代わりに、
+@code{@var{hostname}:@var{portnumber}}という構文を使って
+（例えば、端末多重化装置経由で接続されたシリアル回線への）
+TCP接続として@var{dev}を指定することもできます。
+
+このターゲットに対して、
+@code{load}コマンドと@code{attach}コマンドは定義されて@emph{いません}。
+通常スタンドアロンで操作している場合と同様、
+ST2000にユーザ・プログラムをロードしなければなりません。
+@value{GDBN}は
+（シンボルのような）
+デバッグ用の情報を、
+ホスト・コンピュータ上にある別のデバッグ・バージョンのプログラムから読みとります。
+@c FIXME!! This is terribly vague; what little content is here is
+@c basically hearsay.
+
+@cindex ST2000 auxiliary commands
+@cindex ST2000用の補助的なコマンド[ST2000ようのほじょてきなコマンド]
+ST2000での作業を支援するために、
+以下の補助的な@value{GDBN}コマンドが利用可能です。
+
+@table @code
+@item st2000 @var{command}
+@kindex st2000 @var{cmd}
+@cindex STDBUG commands (ST2000)
+@cindex commands to STDBUG (ST2000)
+@cindex STDBUGコマンド（ST2000）
+@cindex コマンド、STDBUG（ST2000）に対する[コマンド、STDBUG（ST2000）にたいする]
+STDBUGモニタに@var{command}を送信します。
+利用できるコマンドについては、
+製造元のマニュアルを参照してください。
+
+@item connect
+@cindex connect (to STDBUG)
+@cindex connect（STDBUGに対する）[connect（STDBUGにたいする）]
+STDBUGコマンド・モニタに対して制御端末を接続します。
+STDBUGの操作が終了した後、
+@kbd{@key{RET}~.}
+（Returnキーに続いて、チルダとピリオドを入力）、
+または、
+@kbd{@key{RET}~@key{C-d}}
+（Returnキーに続いて、チルダとControl-Dを入力）
+のいずれかを入力することによって@value{GDBN}コマンド・プロンプトに戻ります。
+@end table
+@end ifset
+
+@ifset VXWORKS
+@node VxWorks Remote
+@subsection @value{GDBN}とVxWorks
+@cindex VxWorks
+
+開発者は、
+@value{GDBN}を使用することによって、
+ネットワークに接続されたVxWorks端末上のタスクを、
+UNIXのホストから起動してデバッグすることができます。
+VxWorksシェルから起動され、
+既に実行中の状態のタスクをデバッグすることもできます。
+@value{GDBN}は、
+UNIXホスト上で実行されるコードとVxWorksターゲット上で実行されるコードの両方を使います。
+@code{gdb}は、
+UNIXホスト上にインストールされて実行されます
+（ホスト上のプログラムをデバッグするのに使う@value{GDBN}と区別するために、
+@code{vxgdb}という名前でインストールされることもあります）。
+
+@table @code
+@item VxWorks-timeout @var{args}
+@kindex vxworks-timeout
+すべてのVxWorksベースのターゲットが、
+@code{vxworks-timeout}オプションをサポートするようになりました。
+このオプションはユーザによってセットされるもので、
+@var{args}は、
+@value{GDBN}がRPCの応答を待つ秒数を表わします。
+実際のVxWorksターゲットが速度の遅いソフトウェア・シミュレータであったり、
+帯域の小さいネットワーク回線を介して遠距離にある場合などに使うとよいでしょう。
+@end table
+
+VxWorksとの接続に関する以下の情報は、
+このマニュアルの作成時における最新の情報です。
+新しくリリースされたVxWorksでは、
+手順が変更されているかもしれません。
+
+@kindex INCLUDE_RDB
+VxWorks上で@value{GDBN}を使うためには、
+VxWorksカーネルを再構築して、
+VxWorksライブラリ@file{rdb.a}の中のリモート・デバッグ用のインターフェイス・ルーチンを組み込む必要があります。
+そのためには、
+VxWorksのコンフィギュレーション・ファイル@file{configAll.h}の中で@code{INCLUDE_RDB}を定義して、
+VxWorksカーネルを再構築します。
+この結果として生成されるカーネルには@file{rdb.a}が組み込まれ、
+VxWorksの起動時にソース・デバッグ用のタスク@code{tRdbTask}が起動されます。
+VxWorksの構成や再構築に関する詳細については、
+製造元のマニュアルを参照してください。
+@c VxWorks, see the @cite{VxWorks Programmer's Guide}.
+
+VxWorksシステム・イメージへの@file{rdb.a}の組み込みが終わり、
+UNIXの実行ファイル・サーチ・パスに@value{GDBN}の存在するパスを加えれば、
+@value{GDBN}を実行するための準備は完了です。
+UNIXホストから@code{gdb}
+（インストールの方法によっては@code{vxgdb}）
+を実行します。
+
+@value{GDBN}が起動されて、
+以下のプロンプトを表示します。
+
+@example
+(vxgdb)
+@end example
+
+@menu
+* VxWorks Connection::          VxWorksへの接続
+* VxWorks Download::            VxWorksダウンロード
+* VxWorks Attach::              タスクの実行
+@end menu
+
+@node VxWorks Connection
+@subsubsection VxWorksへの接続
+
+@value{GDBN}の@code{target}コマンドによって、
+ネットワーク上のVxWorksターゲットに接続します。
+@code{tt}というホスト名を持つターゲットに接続するには、
+以下のようにします。
+
+@example
+(vxgdb) target vxworks tt
+@end example
+
+@need 750
+@value{GDBN}は以下のようなメッセージを表示します。
+
+@smallexample
+Attaching remote machine across net... 
+Connected to tt.
+@end smallexample
+
+@need 1000
+続いて@value{GDBN}は、
+最後にVxWorksターゲットが起動されたときより後にロードされた
+オブジェクト・モジュールのシンボル・テーブルを読み込もうと試みます。
+@value{GDBN}は、
+コマンドのサーチ・パスに含まれているディレクトリを探索することによって、
+これらのファイルを見つけます
+（@pxref{Environment, ,Your program's environment}）。
+オブジェクト・ファイルを見つけることができない場合には、
+以下のようなメッセージを表示します。
+
+@example
+prog.o: No such file or directory.
+@end example
+
+このような場合には、
+@value{GDBN}の@code{path}コマンドによって適切なディレクトリを検索パスに加えてから、
+再度@code{target}コマンドを実行します。
+
+@node VxWorks Download
+@subsubsection VxWorksダウンロード
+
+@cindex download to VxWorks
+@cindex VxWorksへのダウンロード
+VxWorksターゲットに接続済みの状態で、
+まだロードされていないオブジェクトをデバッグしたい場合には、
+@value{GDBN}の@code{load}コマンドを使ってUNIXからVxWorksへ追加的にファイルをダウンロードすることができます。
+@code{load}コマンドの引数として指定されたオブジェクト・ファイルは、
+実際には2回オープンされます。
+まず、
+コードをダウンロードするためにVxWorksターゲットによってオープンされ、
+次にシンボル・テーブルを読み込むために@value{GDBN}によってオープンされます。
+2つのシステム上のカレントな作業ディレクトリが異なると、
+問題が発生します。
+両方のシステムが同一のファイル・システムをNFSマウントしているのであれば、
+絶対パスを使うことで問題を回避することができます。
+そうでない場合は、
+両方のシステム上で、
+オブジェクト・ファイルが存在するディレクトリを作業ディレクトリにして、
+パスを一切使わずにファイル名だけでファイルを参照するのが、
+最も簡単でしょう。
+例えば、
+プログラム@file{prog.o}が、
+VxWorksでは@file{@var{vxpath}/vw/demo/rdb}に存在し、
+ホストでは@file{@var{hostpath}/vw/demo/rdb}に存在するとしましょう。
+このプログラムをロードするには、
+VxWorks上で以下のように実行します。
+
+@example
+-> cd "@var{vxpath}/vw/demo/rdb"
+@end example
+
+@value{GDBN}上では、
+以下のように実行します。
+
+@example
+(vxgdb) cd @var{hostpath}/vw/demo/rdb 
+(vxgdb) load prog.o
+@end example
+
+@value{GDBN}は次のような応答を表示します。
+
+@smallexample
+Reading symbol data from wherever/vw/demo/rdb/prog.o... done.
+@end smallexample
+
+ソース・ファイルを編集して再コンパイルした後に、
+@code{load}コマンドを使ってオブジェクト・モジュールを再ロードすることもできます。
+ただし、
+これを行うと、
+@value{GDBN}はその時点で定義されているすべてのブレイクポイント、
+自動表示設定、
+コンビニエンス変数を削除し、
+値ヒストリを初期化してしまいますので、
+注意してください
+（これは、
+ターゲット・システムのシンボル・テーブルを参照するデバッガのデータ構造の完全性を保つために必要です）。
+
+@node VxWorks Attach
+@subsubsection タスクの実行
+
+@cindex running VxWorks tasks
+@cindex VxWorksタスクの実行[VxWorksタスクの実行]
+以下のように@code{attach}コマンドを使うことで、
+既存のタスクにアタッチすることも可能です。
+
+@example
+(vxgdb) attach @var{task}
+@end example
+
+@noindent
+@var{task}は、
+VxWorksの16進数のタスクIDです。
+アタッチするときに、
+タスクは実行中であってもサスペンドされていても構いません。
+実行中であったタスクは、
+アタッチされたときにサスペンドされます。
+@end ifset
+
+@ifset SPARCLET
+@node Sparclet Remote
+@subsection @value{GDBN} と Sparclet
+@cindex Sparclet
+
+開発者は、
+@value{GDBN}を使うことによって、
+Sparcletターゲット上で実行中のタスクをUnixホストからデバッグできるようになります。
+@value{GDBN}は、
+Unixホスト上で実行されるコードとSparcletターゲット上で実行されるコードの両方を使用します。
+@code{gdb}は、
+Unixホスト上にインストールされて実行されます。
+
+@table @code
+@item timeout @var{args}
+@kindex remotetimeout
+@value{GDBN}はオプション@code{remotetimeout}をサポートするようになりました。
+このオプションはユーザによって設定されるもので、
+@var{args}は@value{GDBN}が応答を待つ秒数を表わします。
+@end table
+
+@kindex Compiling
+デバッグ用にコンパイルする際には、
+デバッグ情報を得るために"-g"オプションを、
+また、
+ターゲット上でロードしたい位置にプログラムを再配置するために"-Ttext"オプションを指定します。
+各セクションのサイズを小さくするために、
+"-n"または"-N"オプションを加えるのも良いでしょう。
+
+@example
+sparclet-aout-gcc prog.c -Ttext 0x12010000 -g -o prog -N
+@end example
+
+アドレスが意図したものと一致しているかどうかを検証するのに、
+objdumpを使うことができます。
+
+@example
+sparclet-aout-objdump --headers --syms prog
+@end example
+
+@kindex Running
+@value{GDBN}が見つかるようにUnixの実行サーチ・パスを設定すれば、
+@value{GDBN}を実行するための準備は完了です。
+Unixホストから@code{gdb}
+（インストールの方法によっては、
+@code{sparclet-aout-gdb}）
+を実行します。
+
+@value{GDBN}が起動されて、
+以下のプロンプトを表示します。
+
+@example
+(gdbslet)
+@end example
+
+@menu
+* Sparclet File::                デバッグするファイルの選択
+* Sparclet Connection::          Sparcletへの接続
+* Sparclet Download::            Sparcletダウンロード
+* Sparclet Execution::           実行とデバッグ
+@end menu
+
+@node Sparclet File
+@subsubsection デバッグするファイルの選択
+
+@value{GDBN}の@code{file}コマンドによって、
+デバッグするプログラムを選択することができます。
+
+@example
+(gdbslet) file prog
+@end example
+
+@need 1000
+このコマンドを実行すると、
+@value{GDBN}は@file{prog}のシンボル・テーブルを読み込もうとします。
+@value{GDBN}は、
+コマンド・サーチ・パスに含まれるディレクトリを探索することによって、
+そのファイルを見つけます。
+そのファイルがデバッグ情報付き
+（オプション"-g"）
+でコンパイルされた場合は、
+ソース・ファイルも探します。
+@value{GDBN}は、
+ディレクトリ・サーチ・パス
+（@pxref{Environment, ,Your program's environment}）
+に含まれるディレクトリを探索することによって、
+そのソース・ファイルを見つけます。
+ファイルが見つからない場合には、
+次のようなメッセージを表示します。
+
+@example
+prog: No such file or directory.
+@end example
+
+このメッセージが表示された場合には、
+@value{GDBN}の@code{path}コマンドと@code{dir}コマンドを使って適切なディレクトリをサーチ・パスに加えてから、
+@code{target}コマンドを再実行します。
+
+@node Sparclet Connection
+@subsubsection Sparcletへの接続
+
+@value{GDBN}の@code{target}コマンドによってSparcletターゲットに接続することができます。
+シリアル・ポート``@code{ttya}''でターゲットに接続するには、
+以下のように入力します。
+
+@example
+(gdbslet) target sparclet /dev/ttya
+Remote target sparclet connected to /dev/ttya
+main () at ../prog.c:3 
+@end example
+
+@need 750
+@value{GDBN}は以下のようなメッセージを表示します。
+
+@smallexample
+Connected to ttya.
+@end smallexample
+
+@node Sparclet Download
+@subsubsection Sparcletダウンロード
+
+@cindex download to Sparclet
+@cindex Sparcletへのダウンロード
+Sparcletターゲットへの接続が完了すると、
+@value{GDBN}の@code{load}コマンドを使って、
+ホストからターゲットへファイルをダウンロードすることができます。
+ファイル名とロード・オフセットを、
+@code{load}コマンドへの引数として渡さなければなりません。
+ファイル形式はaoutですので、
+プログラムはその開始アドレスにロードされなければなりません。
+開始アドレスの値を知るにはobjdumpを使うことができます。
+ロード・オフセットとは、
+ファイルの個々のセクションのVMA（仮想メモリ・アドレス）に加算されるオフセットのことです。
+例えば、
+プログラム@file{prog}が、
+textセクションのアドレス0x12010000、
+dataセクションのアドレス0x12010160、
+bssセクションのアドレス0x12010170にリンクされているとすると、
+@value{GDBN}では以下のように入力します。
+
+@example
+(gdbslet) load prog 0x12010000
+Loading section .text, size 0xdb0 vma 0x12010000
+@end example
+
+プログラムがリンクされたアドレスとは異なるアドレスにコードがロードされた場合、
+どこにシンボル・テーブルをマップするかを@value{GDBN}に通知するために、
+@code{section}コマンドと@code{add-symbol-file}コマンドを使う必要があるかもしれません。
+
+@node Sparclet Execution
+@subsubsection 実行とデバッグ
+
+@cindex running and debugging Sparclet programs
+@cindex Sparcletプログラムの実行とデバッグ[Sparcletプログラムのじっこうとデバッグ]
+以上により、
+@value{GDBN}の実行制御コマンドである@code{b}、
+@code{step}、
+@code{run}などを使ってタスクのデバッグを開始することができます。
+コマンドの一覧については、
+@value{GDBN}のマニュアルを参照してください。
+
+@example
+(gdbslet) b main
+Breakpoint 1 at 0x12010000: file prog.c, line 3.
+(gdbslet) run 
+Starting program: prog
+Breakpoint 1, main (argc=1, argv=0xeffff21c) at prog.c:3
+3        char *symarg = 0;
+(gdbslet) step
+4        char *execarg = "hello!";
+(gdbslet)                           
+@end example
+
+@end ifset
+
+@ifset H8
+@node Hitachi Remote
+@subsection @value{GDBN}と日立のマイクロ・プロセッサ
+
+日立のSH、
+H8/300、
+H8/500と通信するためには、
+@value{GDBN}は以下の情報を知っている必要があります。
+
+@enumerate
+@item
+ユーザは、
+日立マイクロ・プロセッサへのリモート・デバッグ用インターフェイスである@samp{target hms}と、
+日立SHや日立300Hのインサーキット・エミュレータであるtarget@samp{e7000}のどちらを使用したいかということ
+（@value{GDBN}が日立SH、
+H8/300、
+H8/500用に特に構成されている場合には、
+@samp{target hms}がデフォルトです）。
+
+@item
+ホストと日立ボードを接続しているシリアル装置
+（デフォルトは、
+ホスト上で利用できる最初のシリアル装置です）
+
+@ifclear H8EXCLUSIVE
+@c this is only for Unix hosts, not of interest to Hitachi
+@item
+シリアル装置で使用する速度
+@end ifclear
+@end enumerate
+
+@menu
+* Hitachi Boards::      日立ボードへの接続
+* Hitachi ICE::         E7000インサーキット・エミュレータの使用
+* Hitachi Special::     日立マイクロ・プロセッサ用の特別な@value{GDBN}コマンド
+@end menu
+
+@node Hitachi Boards
+@subsubsection 日立ボードへの接続
+
+@ifclear H8EXCLUSIVE
+@c only for Unix hosts
+@kindex device
+@cindex serial device, Hitachi micros
+@cindex シリアル装置、日立マイクロ[シリアルそうち、ひたちマイクロ]
+シリアル装置を明示的に指定する必要があれば、
+そのための専用コマンドである、
+@code{@value{GDBP}}の@samp{device @var{port}}コマンドを使用します。
+@c {{訳していたが}}
+@var{port}のデフォルトは、
+ホスト上で最初に利用可能なポートです。
+これはUNIXホスト上でのみ必要であり、
+そこでは典型的には@file{/dev/ttya}という名前になります。
+
+@kindex speed
+@cindex serial line speed, Hitachi micros
+@cindex シリアル回線速度、日立マイクロ[シリアルかいせんそくど、ひたちマイクロ]
+@code{@value{GDBP}}には、
+通信速度を設定するための専用コマンド@samp{speed @var{bps}}があります。
+このコマンドもまた
+UNIXホストからのみ使用されるものです。
+DOSホストでは通常どおり、
+@value{GDBN}からではなくDOSの@kbd{mode}コマンドによって回線速度を設定します
+（例えば、
+9600 bpsの接続を確立するには@w{@samp{mode com2:9600,n,8,1,p}}のように実行します）。
+
+@samp{device}コマンドと@samp{speed}コマンドは、
+日立マイクロ・プロセッサ・プログラムのデバッグにUNIXホストを使う場合のみ利用可能です。
+DOSホストを使う場合、
+@end ifclear
+@value{GDBN}は、
+PCのシリアル・ポート経由で開発ボードと通信するのに、
+@code{asynctsr}と呼ばれる補助的な常駐プログラムに依存します。
+DOS側でシリアル・ポートの設定をする場合にも、
+DOSの@code{mode}コマンドを使わなければなりません。
+
+@ifset DOSHOST
+以下のサンプル・セッションは、
+@value{GDBN}の制御のもとに、
+H8/300上においてプログラムを起動するのに必要とされる方法を示したものです。
+この例では、
+@file{t.x}という名前の
+H8/300サンプル・プログラムを使用します。
+手順自体は、
+日立（Hitachi）SHやH8/500でも同様です。
+
+まず最初に、
+開発ボードを取り付けます。
+この例では、
+シリアル・ポート@code{COM2}に接続したボードを使用します。
+異なるシリアル・ポートを使用するのであれば、
+@code{mode}コマンドの引数の中の名前を置き換えます。
+デバッガにより使用される補助的な通信プログラムである
+@code{asynctsr}を呼び出すときには、
+シリアル・ポート名の数字の部分だけを渡します。
+例えば、
+以下の例における@samp{asyncstr 2}は、
+@code{COM2}において@code{asyncstr}を実行します。
+
+@example
+C:\H8300\TEST> asynctsr 2
+C:\H8300\TEST> mode com2:9600,n,8,1,p
+
+Resident portion of MODE loaded
+
+COM2: 9600, n, 8, 1, p
+
+@end example
+
+@quotation
+@emph{注意:} PC-NFSには、
+@code{asynctsr}と衝突するようなバグのあることが判明しています。
+DOSホスト上でPC-NFSを実行しているのであれば、
+開発ボードを制御するのに@code{asynctsr}を使用するためには、
+PC-NFSを停止するか、
+場合によっては、
+PC-NFSが実行されないようにして
+ホストを起動し直す必要があるかもしれません。
+@end quotation
+
+@kindex target hms
+シリアル通信がセットアップされて、
+開発ボードが接続されれば、
+@value{GDBN}を起動することができます。
+プログラムの名前を引数にして@code{@value{GDBP}}を呼び出します。
+@code{@value{GDBP}}は、
+通常どおり、
+@samp{(@value{GDBP})}というプロンプトによって入力待ちになります。
+デバッグ・セッションを開始するには、
+2つの特別なコマンドを使用します。
+日立（Hitachi）ボードに対するクロス・デバッグを指定するには
+@samp{target hms}コマンドを使用します。
+また、
+ボードにプログラムをダウンロードするには
+@code{load}コマンドを使用します。
+@code{load}コマンドは、
+プログラムのセクション名を表示し、
+さらに、
+2Kのデータをダウンロードするたびに@samp{*}を表示します。
+（@value{GDBN}の持っているシンボルや実行ファイルに関するデータを
+ダウンロードすることなく最新の状態にしたいのであれば、
+@value{GDBN}の@code{file}コマンドや
+@code{symbol-file}コマンドを使用します。
+これらのコマンドと@code{load}コマンド自体については、
+@ref{Files,,Commands to specify files}
+に説明されています。）
+
+@smallexample
+(eg-C:\H8300\TEST) @value{GDBP} t.x
+GDB is free software and you are welcome to distribute copies
+ of it under certain conditions; type "show copying" to see 
+ the conditions.
+There is absolutely no warranty for GDB; type "show warranty" 
+for details.
+GDB @value{GDBVN}, Copyright 1992 Free Software Foundation, Inc...
+(gdb) target hms
+Connected to remote H8/300 HMS system.
+(gdb) load t.x
+.text   : 0x8000 .. 0xabde ***********
+.data   : 0xabde .. 0xad30 *
+.stack  : 0xf000 .. 0xf014 *
+@end smallexample
+
+この時点において、
+プログラムを実行したりデバッグしたりする準備が整いました。
+ここからは、
+普通の@value{GDBN}コマンドはすべて使用することができます。
+@code{break}コマンドによるブレイクポイントのセット、
+@code{run}コマンドによるプログラムの実行開始、
+@code{print}コマンドや@code{x}コマンドによるデータの表示、
+ブレイクポイントにおける停止後の
+@code{continue}コマンドによる実行再開が可能です。
+@value{GDBN}のコマンドに関して詳細を知るには、
+いつでも@code{help}コマンドを使用することができます。
+
+しかし、
+開発ボード上では、
+@emph{オペレーティング・システム}の機能は利用できないということを
+忘れないでください。
+例えば、
+プログラムがハングしても、
+割り込みを送信することはできません。
+もちろん、
+@sc{reset}ボタンを押すことはできます！
+
+開発ボード上で以下のことを行うには、
+@sc{reset}ボタンを使用してください。
+@itemize @bullet
+@item
+プログラムに割り込みをかける。
+（DOSホスト上で@kbd{ctl-C}を使用しないでください。
+DOSホストから開発ボードに対して割り込みシグナルを送る方法はありません。）
+
+@item
+プログラムが正常終了した後に、
+@value{GDBN}のコマンド・プロンプトに戻る。
+通信プロトコルは、
+@value{GDBN}がプログラムの完了を検出するための方法をこれ以外に提供していません。
+@end itemize
+
+どちらの場合でも、
+開発ボード上での@sc{reset}は、
+@value{GDBN}からはプログラムの「正常終了」と見えます。
+@end ifset
+
+@node Hitachi ICE
+@subsubsection E7000インサーキット・エミュレータの使用
+
+@kindex target e7000
+E7000インサーキット・エミュレータを使って、
+日立SHまたはH8/300H用のコードを開発することができます。
+@samp{target e7000}コマンドを以下のいずれかの形式で使って、
+@value{GDBN}をE7000に接続します。
+
+@table @code
+@item target e7000 @var{port} @var{speed}
+E7000がシリアル・ポートに接続されている場合は、
+この形式を使ってください。
+引数@var{port}が、
+使用するシリアル・ポートを指定します
+（例えば、
+@samp{com2}）。
+3番目の引数は、
+秒あたりのビット数による回線速度です
+（例えば、
+@samp{9600}）。
+
+@item target e7000 @var{hostname}
+E7000がTCP/IPネットワーク上のホストとしてインストールされている場合、
+ホスト名だけを指定することもできます。
+@value{GDBN}は接続に@code{telnet}を使います。
+@end table
+
+@node Hitachi Special
+@subsubsection 日立マイクロ・プロセッサ用の特別な@value{GDBN}コマンド
+
+いくつかの@value{GDBN}コマンドは、
+H8/300またはH8/500用に構成された場合にのみ利用可能です。
+
+@table @code
+@kindex set machine
+@kindex show machine
+@item set machine h8300
+@itemx set machine h8300h
+@samp{set machine}コマンドによって、
+2種類のH8/300アーキテクチャのどちらか一方にあわせて@value{GDBN}を調整します。
+@samp{show machine}コマンドによって、
+現在有効なアーキテクチャを調べることができます。
+
+@kindex set memory @var{mod}
+@cindex memory models, H8/500
+@cindex メモリ・モデル、H8/500
+@item set memory @var{mod}
+@itemx show memory
+@samp{set memory}コマンドによって、
+使用中のH8/500メモリ・モデル
+（@var{mod}）
+を指定します。
+@samp{show memory}コマンドによって、
+現在有効なメモリ・モデルを調べます。
+@var{mod}に指定可能な値は、
+@code{small}、
+@code{big}、
+@code{medium}、
+@code{compact}のいずれかです。
+@end table
+
+@end ifset
+
+@ifset MIPS
+@node MIPS Remote
+@subsection @value{GDBN}とリモートMIPSボード
+
+@cindex MIPS boards
+@cindex MIPSボード
+@value{GDBN}は、
+MIPSのリモート・デバッグ用のプロトコルを使って、
+シリアル回線に接続されたMIPSボードと通信することができます。
+これは、
+@value{GDBN}を@samp{--target=mips-idt-ecoff}によって構成することによって、
+利用することができます。
+
+@need 1000
+ターゲット・ボードとの接続を指定するには、
+以下の@value{GDBN}コマンドを使用します。
+
+@table @code
+@item target mips @var{port}
+@kindex target mips @var{port}
+ボード上でプログラムを実行するには、
+引数にユーザ・プログラムの名前を指定して@code{@value{GDBP}}を起動します。
+ボードに接続するには、
+@samp{target mips @var{port}}コマンドを使用します。
+@var{port}は、
+ボードに接続されているシリアル・ポートの名前です。
+プログラムがまだボードにダウンロードされていないのであれば、
+@code{load}コマンドを使ってダウンロードすることができます。
+その後、
+通常利用できるすべての@value{GDBN}コマンドを使うことができます。
+
+例えば以下の手順では、
+デバッガを使うことによって、
+シリアル・ポートを経由してターゲット・ボードに接続した後に、
+@var{prog}と呼ばれるプログラムをロードして実行しています。
+
+@example
+host$ @value{GDBP} @var{prog}
+GDB is free software and @dots{}
+(gdb) target mips /dev/ttyb
+(gdb) load @var{prog}
+(gdb) run
+@end example
+
+@item target mips @var{hostname}:@var{portnumber}
+@value{GDBN}のホスト構成によっては、
+@samp{@var{hostname}:@var{portnumber}}という構文を使うことで、
+シリアル・ポートの代わりに
+（例えば、
+端末多重化装置によって管理されているシリアル回線への）
+TCP接続を指定することができます。
+
+@item target pmon @var{port}
+@kindex target pmon @var{port}
+
+@item target ddb @var{port}
+@kindex target ddb @var{port}
+
+@item target lsi @var{port}
+@kindex target lsi @var{port}
+
+@end table
+
+
+@noindent
+@value{GDBN}は、
+MIPSターゲットに対して、
+以下の特別なコマンドもサポートしています。
+
+@table @code
+@item set processor @var{args}
+@itemx show processor
+@kindex set processor @var{args}
+@kindex show processor
+プロセッサの種類に固有のレジスタにアクセスしたい場合には、
+@code{set processor}コマンドを使ってMIPSプロセッサの種類を設定します。
+例えば、
+@code{set processor r3041}は、
+3041チップで有効なCPOレジスタを使うよう、
+@value{GDBN}に対して通知します。
+@value{GDBN}が使っているMIPSプロセッサの種類を知るには、
+@code{show processor}コマンドを使います。
+@value{GDBN}が使っているレジスタを知るには、
+@code{info reg}コマンドを使います。
+
+@item set mipsfpu double
+@itemx set mipsfpu single
+@itemx set mipsfpu none
+@itemx show mipsfpu
+@kindex set mipsfpu
+@kindex show mipsfpu
+@cindex MIPS remote floating point
+@cindex floating point, MIPS remote
+@cindex MIPSリモート浮動小数点[MIPSリモートふどうしょうすうてん]
+@cindex 浮動小数点、MIPSリモートの[ふどうしょうすうてん、MIPSリモートの]
+MIPS浮動小数点コプロセッサをサポートしないターゲット・ボードを使う場合は、
+@samp{set mipsfpu none}コマンドを使う必要があります
+@c {{原文では、「初期化ファイル」ではなく@value{GDBINIT}であるが、}}
+@c {{GDBINITがセットされていないためエラーになっている            }}
+（このようなことが必要な場合には、
+初期化ファイルの中にそのコマンドを入れてしまってもよいでしょう）。
+これによって、
+浮動小数値を返す関数の戻り値を見つける方法を@value{GDBN}に知らせます。
+またこれにより、
+ボード上で関数を呼び出すときに、
+@value{GDBN}は浮動小数点レジスタの内容を退避する必要がなくなります。
+@sc{R4650}プロセッサ上にあるような、
+単精度浮動小数だけをサポートする浮動小数点コプロセッサを使っている場合には、
+@samp{set mipsfpu single}コマンドを使います。
+デフォルトの倍精度浮動小数点コプロセッサは、
+@samp{set mipsfpu double}によって選択することができます。
+
+以前のバージョンでは、
+有効な選択肢は、
+倍精度浮動小数コプロセッサを使う設定と浮動小数点コプロセッサを使わない設定だけでした。
+したがって、
+@samp{set mipsfpu on}で倍精度浮動小数コプロセッサが選択され、
+@samp{set mipsfpu off}で浮動小数点コプロセッサを使わないという設定が選択されていました。
+
+他の場合と同様、
+@code{mipsfpu}変数に関する設定は、
+@samp{show mipsfpu}によって問い合わせることができます。
+
+@item set remotedebug @var{n}
+@itemx show remotedebug
+@kindex set remotedebug
+@kindex show remotedebug
+@cindex @code{remotedebug}, MIPS protocol
+@cindex MIPS @code{remotedebug} protocol
+@cindex @code{remotedebug}、MIPSプロトコル
+@cindex MIPS @code{remotedebug}プロトコル
+@c FIXME! For this to be useful, you must know something about the MIPS
+@c FIXME...protocol.  Where is it described?
+@code{remotedebug}変数を設定することによって、
+ボードとの通信に関するいくつかのデバッグ用の情報を見ることができます。
+@samp{set remotedebug 1}によって値@code{1}を設定すると、
+すべてのパケットが表示されます。
+値を@code{2}に設定すると、
+すべての文字が表示されます。
+@samp{show remotedebug}コマンドによって、
+いつでも現在の設定値を調べることができます。
+
+@item set timeout @var{seconds}
+@itemx set retransmit-timeout @var{seconds}
+@itemx show timeout
+@itemx show retransmit-timeout
+@cindex @code{timeout}, MIPS protocol
+@cindex @code{retransmit-timeout}, MIPS protocol
+@cindex @code{timeout}、MIPSプロトコル
+@cindex @code{retransmit-timeout}、MIPSプロトコル
+@kindex set timeout
+@kindex show timeout
+@kindex set retransmit-timeout
+@kindex show retransmit-timeout
+MIPSリモート・プロトコルにおけるパケット待ちの状態でのタイムアウト時間を、
+@code{set timeout @var{seconds}}コマンドで制御することができます。
+デフォルトは5秒です。
+同様に、
+パケットに対する確認
+（ACK）
+を待っている状態でのタイムアウト時間を、
+@code{set retransmit-timeout @var{seconds}}コマンドで制御することができます。
+デフォルトは3秒です。
+それぞれの値を@code{show timeout}と@code{show retransmit-timeout}で調べることができます
+（どちらのコマンドも、
+@value{GDBN}が@samp{--target=mips-idt-ecoff}用に構成されている場合@emph{のみ}使用可能です）。
+
+@code{set timeout}で設定されたタイムアウト時間は、
+ユーザ・プログラムが停止するのを@value{GDBN}が待っている間は適用されません。
+この場合には、
+@value{GDBN}は永遠に待ち続けます。
+これは、
+停止するまでにプログラムがどの程度長く実行を継続するのかを知る方法がないからです。
+@end table
+@end ifset
+
+@ifset SIMS
+@node Simulator
+@subsection シミュレートされたCPUターゲット
+
+@ifset GENERIC
+@cindex simulator
+@cindex simulator, Z8000
+@cindex Z8000 simulator
+@cindex simulator, H8/300 or H8/500
+@cindex H8/300 or H8/500 simulator
+@cindex simulator, Hitachi SH
+@cindex Hitachi SH simulator
+@cindex CPU simulator
+@cindex シミュレータ
+@cindex シミュレータ、Z8000
+@cindex Z8000シミュレータ
+@cindex シミュレータ、H8/300またはH8/500
+@cindex H8/300またはH8/500のシミュレータ
+@cindex シミュレータ、日立SH[シミュレータ、ひたちSH]
+@cindex 日立SHシミュレータ[ひたちSHシミュレータ]
+@cindex CPUシミュレータ
+構成によっては、
+ユーザ・プログラムをデバッグする際にハードウェアCPUの代わりに使うことのできるCPUシミュレータが、
+@value{GDBN}の中に組み込まれています。
+現在のところ、
+ARM、D10V、D30V、FR30、H8/300、H8/500、
+i960、M32R、MIPS、MN10200、MN10300、
+PowerPC、SH、Sparc、V850、W65、Z8000
+用のシミュレータが利用できます。
+@end ifset
+
+@ifclear GENERIC
+@ifset H8
+@cindex simulator, H8/300 or H8/500
+@cindex Hitachi H8/300 or H8/500 simulator
+@cindex simulator, Hitachi SH
+@cindex Hitachi SH simulator
+@cindex シミュレータ、H8/300またはH8/500
+@cindex 日立H8/300またはH8/500シミュレータ[ひたちH8/300またはH8/500シミュレータ]
+@cindex シミュレータ、日立SH[シミュレータ、ひたちSH]
+@cindex 日立SHシミュレータ[ひたちSHシミュレータ]
+日立（Hitachi）マイクロプロセッサをターゲットとしてデバッグするための
+コンフィギュレーションが行われると、
+@value{GDBN}には、
+ターゲット・チップ
+（日立SH、H8/300、H8/500）
+のCPUシミュレータが組み込まれます。
+@end ifset
+
+@ifset Z8K
+@cindex simulator, Z8000
+@cindex Zilog Z8000 simulator
+@cindex シミュレータ、Z8000
+@cindex Zilog Z8000シミュレータ
+Zilog Z8000をターゲットとしてデバッグするための
+コンフィギュレーションが行われると、
+@value{GDBN}には、
+Z8000シミュレータが組み込まれます。
+@end ifset
+@end ifclear
+
+@ifset Z8K
+Z8000系については、
+@samp{target sim}によって、
+Z8002
+（Z8000アーキテクチャの、
+セグメントを持たない変種）
+またはZ8001
+（セグメントを持つ変種）
+をシミュレートします。
+シミュレータは、
+オブジェクト・コードを調べることで、
+どちらのアーキテクチャが適切であるかを認識します。
+@end ifset
+
+@table @code
+@item target sim @var{args}
+@kindex sim
+@kindex target sim
+シミュレートされたCPU上でプログラムをデバッグします。
+シミュレータがセットアップ・オプションをサポートしている場合は、
+それを@var{args}の部分に指定します。
+@end table
+
+@noindent
+このターゲットを指定した後には、
+ホスト・コンピュータ上のプログラムをデバッグするのと同様の方法で、
+シミュレートされたCPU用のプログラムをデバッグすることができます。
+新しいプログラムのイメージをロードするには
+@code{file}コマンドを使い、
+ユーザ・プログラムを実行するには@code{run}コマンドを使う、
+という具合です。
+
+Z8000シミュレータでは、
+通常のマシン・レジスタ
+（@code{info reg} を参照）
+がすべて利用可能であるだけでなく、
+特別な名前を持つレジスタとして、
+3つの追加情報が提供されています。
+
+@table @code
+@item cycles
+シミュレータ内のクロック・ティックをカウントします。
+
+@item insts
+シミュレータ内で実行された命令をカウントします。
+
+@item time
+1/60秒を単位とする実行時間を示します。
+@end table
+
+これらの変数は、
+@value{GDBN}の式の中で普通に参照することができます。
+例えば、
+@w{@samp{b fputc if $cycles>5000}}は、
+シミュレートされたクロック・ティックが最低5,000回発生した後に停止するような、
+条件付きブレイクポイントを設定します。
+@end ifset
+
+@c need to add much more detail about sims!

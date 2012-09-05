@@ -1,0 +1,1717 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Documentation, Next: Files, Prev: Modes, Up: Top
+
+説明文
+******
+
+GNU Emacs Lispには, 便利なオンラインのヘルプ機能があります.  そのほと
+んどは, 関数や変数に付随した説明文字列から取り出したものです.  本章で
+は, 説明文を参照するプログラムの書き方に加えて, 読者のLispプログラムに
+適切な説明文字列を書く方法を説明します.
+
+Emacsの説明文字列は, Emacsマニュアルと同じものではないことに注意願いま
+す.  マニュアルには言語texinfoで書いた独自のソースファイルがありますが, 
+説明文字列は関数や変数の定義の中で指定されています.  説明文字列を集め
+ても, よいマニュアルとは構成が違いますので, マニュアルとしては十分では
+ありません.
+
+* Menu:
+
+* Documentation Basics::      Good style for doc strings.
+                                Where to put them.  How Emacs stores them.
+* Accessing Documentation::   How Lisp programs can access doc strings.
+* Keys in Documentation::     Substituting current key bindings.
+* Describing Characters::     Making printable descriptions of
+                                non-printing characters and key sequences.
+* Help Functions::            Subroutines used by Emacs help facilities.
+
+
+
+File: elisp-ja, Node: Documentation Basics, Next: Accessing Documentation, Prev: Documentation, Up: Documentation
+
+説明文の基本
+============
+
+説明文字列は, 文字列に対するLisp構文, つまり, 文字列のテキストをダブル
+クォートで囲って書きます.  これは, 説明文字列が実際にはLispの文字列オ
+ブジェクトだからです.  関数や変数の定義の正しい箇所に文字列を書くと, 
+説明文としての役割を果たします.  関数定義においては, 説明文字列は引数
+のつぎにあります.  変数定義においては, 変数の初期値のつぎにあります.
+
+説明文字列を書くときには, 最初の1行は1つの（あるいは2つの）完全な文に
+してください.  `apropos'などのある種のコマンドは, 複数行にまたがる説明
+文字列の最初の1行だけを表示するからです.  また, 説明文字列の2行目以降
+を字下げしないでください.  字下げがあると, `C-h f'
+（`describe-function'）や`C-h v'（`describe-variable'）で説明文字列を
+表示すると不恰好になります.  *Note Documentation Tips::.
+
+説明文字列には, 特別な部分文字列, つまり, 説明文を表示するときに現在の
+キーマップからキーバインディングを探すことを表すものがあります.  これ
+により, ユーザーがキーバインディングを変更していても説明文字列から関連
+するコマンドのキーを参照できます.  （*Note Accessing Documentation::）.
+
+Emacs Lispでは, 説明文字列はその説明対象である関数や変数を介して参照し
+ます.
+
+   * 関数の説明文は, 関数定義自身に収められている（*Note Lambda
+     Expressions::）.  関数`documentation'がその取り出し方を知っている.
+
+   * 変数の説明文は, 変数の属性リストに属性名`variable-documentation'
+     で収められている.  関数`documentation-property'がその取り出し方を
+     知っている.
+
+場所を節約するために, あらかじめロード済みの関数や変数（基本関数や自動
+ロード対象の関数を含む）に対する説明文は, Emacs本体にではなく, ファイ
+ル`emacs/etc/DOC-VERSION'に収めてあります.  Emacsセッションの最中にバ
+イトコンパイル済みのファイルからロードされる関数や変数の説明文字列は, 
+当該ファイルに収めてあります（*Note Docs and Compilation::）.
+
+Emacs内部のデータ構造では, 説明文字列のかわりに, ファイル内の位置を表
+す整数かファイル名と整数を含むリストで表します.  関数`documentation'や
+`documentation-property'は, この情報を用いて適切なファイルから説明文字
+列を取り出します.  この処理はユーザーには見えません.
+
+説明文字列の利用に関する情報は, *Note ヘルプ機能: (emacs-ja)Help.を参
+照してください.
+
+ディレクトリ`emacs/lib-src'には, ファイル`emacs/etc/DOC-VERSION'を美し
+く印刷するためのコマンドが2つあります.  `sorted-doc'と`digest-doc'です.
+
+
+
+File: elisp-ja, Node: Accessing Documentation, Next: Keys in Documentation, Prev: Documentation Basics, Up: Documentation
+
+説明文字列の参照
+================
+
+ -- Function: documentation-property SYMBOL PROPERTY &optional VERBATIM
+     この関数は, シンボルSYMBOLの属性リストに属性PROPERTYで記録されて
+     いる説明文字列を返す.  必要ならばファイルからテキストを取り出し, 
+     実際のキーバインディングに置き換えるために
+     `substitute-command-keys'を実行する.  （VERBATIMが`nil'以外である
+     と, 置換を行わない. ）
+
+          (documentation-property 'command-line-processed
+             'variable-documentation)
+               => "Non-nil once command line has been processed"
+          (symbol-plist 'command-line-processed)
+               => (variable-documentation 188902)
+
+ -- Function: documentation FUNCTION &optional VERBATIM
+     この関数は, 関数FUNCTIONの説明文字列を返す.  必要ならばファイルか
+     らテキストを取り出す.  続いて, （VERBATIMが`nil'ならば）実際の
+     （現在の）キーバインディングを含んだ値を返すために
+     `substitute-command-keys'を実行する.
+
+     関数`documentation'は, FUNCTIONに関数定義がないとエラー
+     `void-function'を通知する.  しかし, 関数定義に説明文字列がなくて
+     もエラーではない.  その場合, `documentation'は`nil'を返す.
+
+2つの関数`documentation'と`documentation-property'を用いて, 数個のシン
+ボルの説明文字列をバッファ`*Help*'に表示する例を示します.
+
+     (defun describe-symbols (pattern)
+       "Describe the Emacs Lisp symbols matching PATTERN.
+     All symbols that have PATTERN in their name are described
+     in the `*Help*' buffer."
+       (interactive "sDescribe symbols matching: ")
+       (let ((describe-func
+              (function 
+               (lambda (s)
+                 ;; Print description of symbol.
+                 (if (fboundp s)             ; これは関数
+                     (princ
+                      (format "%s\t%s\n%s\n\n" s
+                        (if (commandp s) 
+                            (let ((keys (where-is-internal s)))
+                              (if keys
+                                  (concat
+                                   "Keys: "
+                                   (mapconcat 'key-description 
+                                              keys " "))
+                                "Keys: none"))
+                          "Function")
+                        (or (documentation s) 
+                            "not documented"))))
+            
+                 (if (boundp s)              ; これは変数
+                     (princ
+                      (format "%s\t%s\n%s\n\n" s
+                        (if (user-variable-p s) 
+                            "Option " "Variable")
+                        (or (documentation-property 
+                              s 'variable-documentation)
+                            "not documented")))))))
+             sym-list)
+
+         ;; パターンに一致するシンボルのリストを作る
+         (mapatoms (function 
+                    (lambda (sym)
+                      (if (string-match pattern (symbol-name sym))
+                          (setq sym-list (cons sym sym-list))))))
+
+         ;; データを表示する
+         (with-output-to-temp-buffer "*Help*"
+           (mapcar describe-func (sort sym-list 'string<))
+           (print-help-return-message))))
+
+関数`describe-symbols'は`apropos'のように動作しますが, より多くの情報
+を提供します.
+
+     (describe-symbols "goal")
+
+     ---------- Buffer: *Help* ----------
+     goal-column     Option 
+     *Semipermanent goal column for vertical motion, as set by ...
+
+     set-goal-column Keys: C-x C-n
+     Set the current horizontal position as a goal for C-n and C-p.
+     Those commands will move to this position in the line moved to
+     rather than trying to keep the same horizontal position.
+     With a non-nil argument, clears out the goal column
+     so that C-n and C-p resume vertical motion.
+     The goal column is stored in the variable `goal-column'.
+
+     temporary-goal-column   Variable
+     Current goal column for vertical motion.
+     It is the column where point was
+     at the start of current run of vertical motion commands.
+     When the `track-eol' feature is doing its job, the value is 9999.
+     ---------- Buffer: *Help* ----------
+
+ -- Function: Snarf-documentation FILENAME
+     この関数は, 実行可能なEmacsをダンプする直前のEmacsの初期化処理中
+     にのみ使われる.  ファイルFILENAMEに格納された説明文字列のファイル
+     内位置を探し出し, それらの情報を実際の文字列のかわりにメモリ内の
+     関数定義や変数の属性リストに記録する.  *Note Building Emacs::.
+
+     EmacsはファイルFILENAMEをディレクトリ`emacs/etc'から読む.  ダンプ
+     したEmacsをのちに実行すると, 同じファイルをディレクトリ
+     `doc-directory'で探す.  通常, FILENAMEは`"DOC-VERSION"'である.
+
+ -- Variable: doc-directory
+     この変数は, 組み込みであったりあらかじめロード済みの関数や変数の
+     説明文字列を収めたファイル`"DOC-VERSION"'を置いたディレクトリの名
+     前を保持する.
+
+     ほとんどの場合, これは`data-directory'と同じである.  Emacsをイン
+     ストールせずに構築したディレクトリから起動すると, それらは異なる
+     ことがある.  *Note Help Functions::の`data-directory'を参照.
+
+     Emacsの古い版では, この目的には`exec-directory'を用いていた.
+
+
+
+File: elisp-ja, Node: Keys in Documentation, Next: Describing Characters, Prev: Accessing Documentation, Up: Documentation
+
+説明文内のキーバインディングの置換
+==================================
+
+説明文字列からキー列を参照するときには, 現在の活性なキーバインディング
+を使うべきです.  これは以下に述べる特別なテキスト列でできます.  普通の
+方法で説明文字列を参照すると, これらの特別な列は現在のキーバインディン
+グ情報で置き換えられます.  置き換えは`substitute-command-keys'を呼び出
+して行います.  読者自身がこの関数を使うこともできます.
+
+特別な列とその意味を以下にあげます.
+
+`\[COMMAND]'
+     コマンドCOMMANDを起動するキー列を表す.  COMMANDにキーバインディン
+     グがなければ, `M-x COMMAND'を表す.
+
+`\{MAPVAR}'
+     変数MAPVARの値であるキーマップの概要を表す.  この概要は
+     `describe-bindings'を使って作成する.
+
+`\<MAPVAR>'
+     空テキストを表す.  副作用のためだけに使う.  つまり, この説明文字
+     列内のこれ以降にある列`\[COMMAND]'に対するキーマップとしてMAPVAR
+     の値を指定する.
+
+`\='
+     後続の文字をクォートし`\='は破棄する.  したがって, `\=\['は`\['と
+     いう出力になり, `\=\='は`\='という出力になる.
+
+*注意：*` ' Emacs Lispでは, 文字列内の`\'は, 2つ続けて書くこと.
+
+ -- Function: substitute-command-keys STRING
+     この関数は, STRINGから上記の特別な列を探し, それらをそれらが意味
+     するものに置き換え, 結果を文字列で返す.  これにより, 説明文の表示
+     では, ユーザー独自のカスタマイズしたキーバインディングを実際に参
+     照できる.
+
+特別な列の例を示します.
+
+     (substitute-command-keys 
+        "To abort recursive edit, type: \\[abort-recursive-edit]")
+     => "To abort recursive edit, type: C-]"
+
+     (substitute-command-keys 
+        "The keys that are defined for the minibuffer here are:
+       \\{minibuffer-local-must-match-map}")
+     => "The keys that are defined for the minibuffer here are:
+
+     ?               minibuffer-completion-help
+     SPC             minibuffer-complete-word
+     TAB             minibuffer-complete
+     C-j             minibuffer-complete-and-exit
+     RET             minibuffer-complete-and-exit
+     C-g             abort-recursive-edit
+     "
+
+     (substitute-command-keys
+        "To abort a recursive edit from the minibuffer, type\
+     \\<minibuffer-local-must-match-map>\\[abort-recursive-edit].")
+     => "To abort a recursive edit from the minibuffer, type C-g."
+
+
+
+File: elisp-ja, Node: Describing Characters, Next: Help Functions, Prev: Keys in Documentation, Up: Documentation
+
+ヘルプメッセージ用の文字変換
+============================
+
+これらの関数は, イベント, キー列, 文字をテキスト表記に変換します.  こ
+れらの表記は, メッセージに文字やキー列をテキストとして含めるのに有用で
+す.  というのは, 非印字文字や白文字を印字文字の列に変換するからです. 
+白文字でない印字文字は文字そのもので表記します.
+
+ -- Function: key-description SEQUENCE
+     この関数は, SEQUENCEの入力イベントに対するEmacsの標準表記を含んだ
+     文字列を返す.  引数SEQUENCEは, 文字列, ベクトル, リストである. 
+     正しいイベントについて詳しくは*Note Input Events::.  下記の
+     `single-key-description'の例を参照.
+
+ -- Function: single-key-description EVENT
+     この関数は, EVENTをキーボード入力向けのEmacsの標準表記で表した文
+     字列を返す.  普通の印字文字はそのまま現れるが, コントロール文字は
+     `C-'で始まる文字列に, メタ文字は`M-'で始まる文字列に, 空白, タブ
+     などは, `SPC', `TAB'などとなる.  ファンクションキーのシンボルはそ
+     れ自身が現れる.  リストであるイベントはリストのCARのシンボルの名
+     前が現れる.
+
+          (single-key-description ?\C-x)
+               => "C-x"
+          (key-description "\C-x \M-y \n \t \r \f123")
+               => "C-x SPC M-y SPC C-j SPC TAB SPC RET SPC C-l 1 2 3"
+          (single-key-description 'C-mouse-1)
+               => "C-mouse-1"
+
+ -- Function: text-char-description CHARACTER
+     この関数は, CHARACTERをテキストに現れる文字向けのEmacsの標準表記
+     で表した文字列を返す.  `single-key-description'に似ているが, コン
+     トロール文字は, 始めにカレットを付けて表現する点が異なる（Emacsの
+     バッファでは, コントロールは普通このように表示される）.
+
+          (text-char-description ?\C-c)
+               => "^C"
+          (text-char-description ?\M-m)
+               => "M-m"
+          (text-char-description ?\C-\M-m)
+               => "M-^M"
+
+ -- Function: read-kbd-macro STRING
+     この関数は, キーボードマクロの処理に主に使われるが,
+     `key-description'に対するおおまかな逆変換にも使える.  空白で区切っ
+     たキーの表記を収めた文字列で, この関数を呼び出す.  対応するイベン
+     トを収めた文字列かベクトルを返す.  （指定したイベントに依存して, 
+     正しい単一のキー列であったりなかったりする.  *Note Keymap
+     Terminology::. ）
+
+
+
+File: elisp-ja, Node: Help Functions, Next: Files, Prev: Describing Characters, Up: Documentation
+
+ヘルプ機能
+==========
+
+Emacsにはさまざまオンラインヘルプ関数があり, それらはすべてプレフィッ
+クス`C-h'のサブコマンドとして使えます.  それらについて詳しくは, *Note 
+ヘルプ機能: (emacs-ja)Help.を参照してください.  ここでは, 同じ情報を得
+るプログラムレベルのインターフェイスを説明します.
+
+ -- コマンド: apropos REGEXP &optional DO-ALL
+     この関数は, 正規表現REGEXPに一致する名前を持つすべてのシンボルを
+     探し, それらのリストを返す（*Note Regular Expressions::）.  さら
+     に, バッファ`*Help*'に, 各シンボルについて, シンボルとその説明文
+     字列の始めの部分から取り出した1行の説明文を表示する.
+
+     DO-ALLが`nil'以外であると, `apropos'は, みつけた関数に対するキー
+     バインディングも表示する.  さらに, 関数や変数以外も含めてすべての
+     シンボルを表示する.
+
+     つぎの例では, `apropos'は, `exec'を名前に含むすべてのシンボルを探
+     しだす.  （ここではバッファ`*Help*'の表示は示さない. ）
+
+          (apropos "exec")
+               => (Buffer-menu-execute command-execute exec-directory
+              exec-path execute-extended-command execute-kbd-macro
+              executing-kbd-macro executing-macro)
+
+ -- Variable: help-map
+     この変数の値は, ヘルプキー`C-h'に続く文字向けのローカルキーマップ
+     である.
+
+ -- プレフィックスコマンド: help-command
+     このシンボルは関数ではない.  その関数定義セルは, `help-map'として
+     知られるキーマップを保持している.  `help.el'での定義はつぎのとお
+     りである.
+
+          (define-key global-map "\C-h" 'help-command)
+          (fset 'help-command help-map)
+
+ -- Function: print-help-return-message &optional FUNCTION
+     この関数は, ヘルプコマンドのあとでそれ以前のウィンドウの状態に復
+     元する方法を述べた文字列を作成する.  メッセージを作成後, FUNCTION
+     が`nil'以外であれば, メッセージをFUNCTIONに適用する.  さもなけれ
+     ば, メッセージをエコー領域に表示するために`message'を呼び出す.
+
+     この関数は, スペシャルフォーム`with-output-to-temp-buffer'の中か
+     ら呼び出され, しかも, 当該スペシャルフォームで`standard-output'に
+     値が束縛されているものと仮定する.  使用例については, *Note
+     Accessing Documentation::の長い例を参照.
+
+ -- Variable: help-char
+     この変数の値はヘルプ文字, つまり, Emacsがヘルプを意味すると認識す
+     る文字である.  デフォルトでは, その値は`C-h'を表す8である.
+     `help-form'が`nil'以外のLisp式であると, Emacsがこの文字を読み取る
+     とその式を評価し, その結果が文字列であれば結果をウィンドウに表示
+     する.
+
+     通常, `help-form'の値は`nil'である.  そうすると, ヘルプ文字にはコ
+     マンド入力のレベルでは特別な意味はなく, 普通の意味でのキー列の一
+     部になる.  `C-h'の標準のキーバインディングは, いくつかの汎用目的
+     のヘルプ機能向けのプレフィックスキーである.
+
+     ヘルプ文字は, プレフィックスキーのうしろでも特別である.  プレフィッ
+     クスのサブコマンドとしてのバインディングがないと, プレフィックス
+     キーのすべてのサブコマンドの一覧を表示する
+     `describe-prefix-bindings'を実行する.
+
+ -- Variable: help-event-list
+     この変数の値は, 別の『ヘルプ文字』として動作するイベント型のリス
+     トである.  これらのイベントは`help-char'で指定されたイベントとまっ
+     たく同様に扱われる.
+
+ -- Variable: help-form
+     この変数が`nil'以外であると, その値は, `help-char'を読むたびに評
+     価すべきフォームである.  フォームを評価すると文字列を生成すれば, 
+     その文字列が表示される.
+
+     `read-event'や`read-char'を呼ぶコマンドは, 入力中には`help-form'
+     を`nil'以外に（たぶん）束縛すべきである.  （`C-h'に別の意味がある
+     場合には, こうしないこと. ）この式の評価結果は, なんのための入力
+     でどのように入力すべきかを説明する文字列であること.
+
+     ミニバッファに入ると, この変数は`minibuffer-help-form' （*Note
+     Minibuffer Misc::）の値に束縛される.
+
+ -- Variable: prefix-help-command
+     この変数はプレフィックスキーに対するヘルプを表示する関数を保持す
+     る.  ユーザーがプレフィックスキーに続けてヘルプ文字や当該プレフィッ
+     クスのあとではバインディングを持たない文字を打つとその関数が呼ば
+     れる.  この変数のデフォルト値は`describe-prefix-bindings'である.
+
+ -- Function: describe-prefix-bindings
+     この関数は, もっとも最近のキー列のプレフィックスキーのすべてのサ
+     ブコマンドの一覧を表示するために`describe-bindings'を呼び出す. 
+     プレフィックスの説明には, 当該キー列の最後のイベント以外のすべて
+     が含まれる.  （最後のイベントはヘルプ文字であると仮定する. ）
+
+つぎの2つの関数は, 『エレクトリック』モードのように制御を放棄せずにヘ
+ルプを提供したいモードのためです.  それらの名前は, 普通のヘルプ関数と
+区別するために`Helper'で始まります.
+
+ -- コマンド: Helper-describe-bindings
+     このコマンドは, ローカルキーマップとグローバルキーマップの両者の
+     すべてのキーバインディングの一覧を収めたヘルプバッファを表示した
+     ウィンドウをポップアップする.  `describe-bindings'を呼び出すこと
+     で動作する.
+
+ -- コマンド: Helper-help
+     このコマンドはカレントモードについてのヘルプを提供する.  ミニバッ
+     ファにおいて`Help (Type ? for further options)'のメッセージでユー
+     ザーに問い合わせ, キーバインディングの意味やモードの目的を調べる
+     ことを補佐する.  `nil'を返す.
+
+     このコマンドは, キーマップ`Helper-help-map'を変更することでカスタ
+     マイズできる.
+
+ -- Variable: data-directory
+     この変数は, Emacsとともに配布された特定の説明文やテキストファイル
+     をEmacsが探すためのディレクトリの名前を保持する.  Emacsの古い版で
+     は, この目的には`exec-directory'を用いていた.
+
+ -- Macro: make-help-screen FNAME HELP-LINE HELP-TEXT HELP-MAP
+     このマクロは, サブコマンドの一覧を表示するプレフィックスキーのよ
+     うに動作するFNAMEという名前のコマンドのヘルプを定義する.
+
+     起動されると, FNAMEはウィンドウにHELP-TEXTを表示し, HELP-MAPに従っ
+     てキー列を読み実行する.  文字列HELP-TEXTは, HELP-MAPが提供するバ
+     インディングを記述するべきである.
+
+     コマンドFNAMEは, HELP-TEXTの表示をスクロールすることで, それ自身
+     では少数のイベントを扱うように定義される.  FNAMEがそれらの特殊イ
+     ベントの1つを読み取ると, スクロールしてつぎのイベントを読み取る. 
+     読み取ったイベントが, 扱えるものでなく, HELP-MAPにバインディング
+     があれば, 当該キーのバインディングを実行して戻る.
+
+     HELP-LINEは, HELP-MAP内の選択項目を1行にまとめたものであること.
+     Emacsの現在の版では, この引数はオプション`three-step-help'を`t'に
+     設定してある場合にのみ使われる.
+
+     このマクロは, `C-h C-h'のバインディングであるコマンド
+     `help-for-help'で使われている.
+
+ -- User Option: three-step-help
+     この変数が`nil'以外であると, `make-help-screen'で定義されたコマン
+     ドは, まず文字列HELP-LINEをエコー領域に表示し, ユーザーがヘルプ文
+     字を再度打った場合にのみより長い文字列を表示する.
+
+
+File: elisp-ja, Node: Files, Next: Backups and Auto-Saving, Prev: Documentation, Up: Top
+
+ファイル
+********
+
+Emacsでは, ファイルやディレクトリを探したり, 作成したり, 眺めたり, 保
+存したり, その他のことをできます.  本章では, Emacs Lispのファイル関連
+の関数のほとんどについて説明しますが, 他の一部は*Note Buffers::で, バッ
+クアップや自動保存に関することは*Note Backups and Auto-Saving::で説明
+します.
+
+ファイル関数の多くは, ファイル名の引数を1つないし複数個取ります.  ファ
+イル名は実際には文字列です.  これらのほとんどの関数では,
+`expand-file-name'を呼び出してファイル名引数を展開することで`~'や
+（`../'を含む）相対ファイル名を正しく処理します.  これらの関数は,
+`$HOME'などの環境変数置換は認識しません.  *Note File Name Expansion::.
+
+* Menu:
+
+* Visiting Files::           Reading files into Emacs buffers for editing.
+* Saving Buffers::           Writing changed buffers back into files.
+* Reading from Files::       Reading files into buffers without visiting.
+* Writing to Files::         Writing new files from parts of buffers.
+* File Locks::               Locking and unlocking files, to prevent
+                               simultaneous editing by two people.
+* Information about Files::  Testing existence, accessibility, size of files.
+* Changing Files::           Renaming files, changing protection, etc.
+* File Names::               Decomposing and expanding file names.
+* Contents of Directories::  Getting a list of the files in a directory.
+* Create/Delete Dirs::	     Creating and Deleting Directories.
+* Magic File Names::	     Defining "magic" special handling
+			       for certain file names.
+* Format Conversion::        Conversion to and from various file formats.
+
+
+
+File: elisp-ja, Node: Visiting Files, Next: Saving Buffers, Prev: Files, Up: Files
+
+ファイルの訪問
+==============
+
+ファイルを訪問するとは, ファイルをバッファに読み込むことです.  いった
+んこうすると, バッファはそのファイルを"訪問している"（visiting）といい, 
+そのファイルをバッファの『訪問しているファイル』と呼びます.
+
+ファイルとバッファは2つの異なるものです.  ファイルは, コンピュータ内に
+（読者が削除しない限り）恒久的に記録されている情報です.  一方, バッファ
+はEmacs内部にある情報であり, 編集セッションを終了する（あるいはバッファ
+を削除する）と消えてしまいます.  通常, バッファにはファイルからコピー
+した情報があります.  つまり, バッファはそのファイルを訪問しているので
+す.  読者は, バッファ内のコピーを編集コマンドで修正するのです.  バッファ
+に対するそのような変更では, ファイルは変更しません.  したがって, 変更
+を恒久的なものにするには, 読者はバッファを"保存"（save）する, つまり, 
+バッファの変更した内容をファイルにコピーし戻す必要があります.
+
+ファイルとバッファの区別にも関わらず, バッファを意味してファイルといっ
+たり, その逆のいい方をしばしばします.  もちろん, 『同じ名前のファイル
+にただちに保存するつもりでバッファを編集している』とはいわずに『ファイ
+ルを編集している』といいます.  しばしば, 人間は明確に区別する必要はあ
+りません.  しかし, コンピュータプログラムを扱ううえでは, 区別を心得て
+おくことがよいのです.
+
+* Menu:
+
+* Visiting Functions::         The usual interface functions for visiting.
+* Subroutines of Visiting::    Lower-level subroutines that they use.
+
+
+
+File: elisp-ja, Node: Visiting Functions, Next: Subroutines of Visiting, Prev: Visiting Files, Up: Visiting Files
+
+ファイルを訪問する関数
+----------------------
+
+本節では, ファイルを訪問するために通常使う関数について述べます.  歴史
+的な理由で, これらの関数は`visit-'でなく`find-'という名前で始まります. 
+バッファで訪問したファイルの名前を参照するための関数や変数, ならびに, 
+訪問したファイルの名前で既存バッファを探すための関数や変数については,
+*Note Buffer File Name::.
+
+Lispプログラムにおいて, ファイルの内容を変更せずにその内容を調べたいと
+きには, もっとも速い方法は一時的なバッファで`insert-file-contents'を使
+うことです.  ファイルを訪問する必要はありませんし, それには余計に時間
+がかかります.  *Note Reading from Files::.
+
+ -- コマンド: find-file FILENAME
+     このコマンドはファイルFILENAMEを訪問したバッファを選択する.  その
+     ようなバッファが既存ならば当該バッファを使う.  さもなければ, 新た
+     なバッファを作成してファイルを読み込む.  当該バッファを返す.
+
+     関数`find-file'の本体は非常に簡単で, つぎのとおりである.
+
+          (switch-to-buffer (find-file-noselect filename))
+
+     （*Note Displaying Buffers::の`switch-to-buffer'を参照. ）
+
+     `find-file'が対話的に呼び出されると, ミニバッファでFILENAMEを問い
+     合わせる.
+
+ -- Function: find-file-noselect FILENAME &optional NOWARN RAWFILE
+     この関数は, ファイルを訪問するすべての関数の基である.  ファイル
+     FILENAMEを訪問した／するバッファを探し／作成し, 当該バッファを返
+     す.  そのようなバッファが既存ならば当該バッファを使う.  さもなけ
+     れば, 新たなバッファを作成してファイルを読み込む.  必要に応じて, 
+     バッファをカレントバッファにしたりウィンドウに表示できるが, この
+     関数はそこまでは行わない.
+
+     `find-file-noselect'が既存バッファを使うときには, ファイルの内容
+     が当該バッファに最後に訪問してから, あるいは, 当該バッファを最後
+     に保存してから変更されたかどうかまず確認する.  ファイルが変更され
+     ていれば, この関数は変更されたファイルを再度読み込むかどうかユー
+     ザーに問い合わせる.  ユーザーが`yes'と答えると, バッファ内の変更
+     は破棄される.
+
+     省略可能な引数NOWARNが`nil'であると, この関数はさまざまな場面で警
+     告／助言メッセージを表示する.  たとえば, バッファを作成する必要が
+     あり, かつ, 指定したファイルFILENAMEがない場合には, エコー領域に
+     メッセージ`New file'を表示し, バッファは空にしておく.
+
+     関数`find-file-noselect'は, ファイルを読み込み終えると通常
+     `after-find-file'を呼び出す（*Note Subroutines of Visiting::）. 
+     その関数は, バッファのメジャーモードを設定し, ローカル変数を解析
+     し, 訪問したファイルより新しい自動保存ファイルが存在するとユーザー
+     に警告を発し, `find-file-hooks'の関数を実行して処理を終える.
+
+     省略可能な引数RAWFILEが`nil'以外であると, `after-find-file'を呼び
+     出さず, 失敗しても`find-file-not-found-hooks'を実行しない.  さら
+     に, RAWFILEの値が`nil'以外であると, コーディングシステムの変換
+     （*Note Coding Systems::）や書式変換（*Note Format Conversion::）
+     も行わない.
+
+     関数`find-file-noselect'は, ファイルFILENAMEを訪問したバッファを
+     返す.
+
+          (find-file-noselect "/etc/fstab")
+               => #<buffer fstab>
+
+ -- コマンド: find-file-other-window FILENAME
+     このコマンドは, 選択しているウィンドウ以外のウィンドウにおいて, 
+     ファイルFILENAMEを訪問したバッファを選択する.  別の既存ウィンドウ
+     を使うか, ウィンドウを分割する.  *Note Displaying Buffers::を参照.
+
+     このコマンドが対話的に呼び出されると, FILENAMEを問い合わせる.
+
+ -- コマンド: find-file-read-only FILENAME
+     このコマンドは, `find-file'のようにファイルFILENAMEを訪問したバッ
+     ファを選択するが, 当該バッファは読み出し専用となる.  *Note Read
+     Only Buffers::.
+
+     このコマンドが対話的に呼び出されると, FILENAMEを問い合わせる.
+
+ -- コマンド: view-file FILENAME
+     このコマンドは, 閲覧（view）モードでFILENAMEを訪問し, 閲覧（view）
+     モードを抜けるとそれ以前のバッファに戻る.  閲覧（view）モードは, 
+     ファイルを素早く眺めるためのコマンドを与えるがテキストの変更は許
+     さないマイナモードである.  閲覧（view）モードに入ると, ノーマルフッ
+     ク`view-mode-hook'を実行する.  *Note Hooks::.
+
+     `view-file'が対話的に呼び出されると, FILENAMEを問い合わせる.
+
+ -- Variable: find-file-hooks
+     この変数の値は, ファイルを訪問後に呼び出される関数のリストである. 
+     ファイルにローカル変数指定（があれば）は, フックを実行するまえに
+     処理される.  フック関数が実行されときには, ファイルを訪問したバッ
+     ファはカレントバッファになっている.
+
+     この変数はノーマルフックのように動作するが, 改名すべきではないと
+     考えている.  *Note Hooks::.
+
+ -- Variable: find-file-not-found-hooks
+     この変数の値は, `find-file'や`find-file-noselect'に存在しないファ
+     イルを与えたときに呼び出される関数のリストである.
+     `find-file-noselect'は, ファイルが存在しないことがわかるとただち
+     にこれらの関数を呼び出す.  `nil'以外の値が返されるまで, リストに
+     現れる順に呼び出す.  `buffer-file-name'は設定済みである.
+
+     関数の値を使い, しかも, 一部の関数だけを呼び出すので, これはノー
+     マルフックではない.
+
+
+
+File: elisp-ja, Node: Subroutines of Visiting, Next: Saving Buffers, Prev: Visiting Functions, Up: Visiting Files
+
+訪問するためのサブルーティン
+----------------------------
+
+関数`find-file-noselect'は, ユーザーのLispコードでも有用な2つの重要な
+サブルーティン, `create-file-buffer'と`after-find-file'を使います.  本
+節ではそれらの使い方を説明します.
+
+ -- Function: create-file-buffer FILENAME
+     この関数は, FILENAMEを訪問するのに適するように命名したバッファを
+     作成しそれを返す.  （ディレクトリを除外した）FILENAMEが使用中の名
+     前でなければ, それを名前とする.  さもなければ, 未使用の名前を得る
+     ために`<2>'などの文字列を付加する.  *Note Creating Buffers::も参
+     照.
+
+     *注意：*` ' `create-file-buffer'は, 新たなバッファをファイルに対
+     応付け*ない*し, 当該バッファを選択しない.  デフォルトのメジャーモー
+     ドも使わない.
+
+          (create-file-buffer "foo")
+               => #<buffer foo>
+          (create-file-buffer "foo")
+               => #<buffer foo<2>>
+          (create-file-buffer "foo")
+               => #<buffer foo<3>>
+
+     この関数は`find-file-noselect'で使われる.  この関数は
+     `generate-new-buffer'（*Note Creating Buffers::）を使う.
+
+ -- Function: after-find-file &optional ERROR WARN
+     この関数は, バッファのメジャーモードを設定し, ローカル変数を解析
+     する（*Note Auto Major Mode::）.  `find-file-noselect'やデフォル
+     トの復元処理関数（*Note Reverting::）から呼ばれる.
+
+     ディレクトリはあるのにファイルが存在しないためにファイルの読み込
+     みがエラーになった場合には, 呼び出し側はERRORの値として`nil'以外
+     を渡すこと.  その場合, `after-find-file'は警告`(New File)'を表示
+     する.  より重大なエラーの場合には, `after-find-file'を呼び出すべ
+     きでない.
+
+     WARNが`nil'以外であると, 自動保存ファイルが存在しそれが訪問したファ
+     イルより新しい場合には, この関数は警告を発する.
+
+     `after-find-file'が最後に行うことは, リスト`find-file-hooks'内の
+     すべての関数を呼び出すことである.
+
+
+
+File: elisp-ja, Node: Saving Buffers, Next: Reading from Files, Prev: Visiting Files, Up: Files
+
+バッファの保存
+==============
+
+Emacsでファイルを編集するときには, ファイルを訪問したバッファを実際に
+は扱っています.  つまり, ファイルの内容はバッファにコピーされ, そのコ
+ピーを編集しているのです.  バッファを変更しても, 当該バッファを"保存"
+（save）するまで, つまり, バッファの内容をファイルへコピーするまでは, 
+ファイルを変更しません.
+
+ -- コマンド: save-buffer &optional BACKUP-OPTION
+     この関数は, 最後に訪問／保存してからカレントバッファが変更されて
+     いれば, カレントバッファの内容を訪問しているファイルへ保存する.
+
+     `save-buffer'は, バックアップの作成に責任がある.  通常,
+     BACKUP-OPTIONは`nil'であり, `save-buffer'は, ファイルを訪問してか
+     ら最初に保存するときにのみバックアップファイルを作成する.
+     BACKUP-OPTIONが別の値であると, 別の場面でもバックアップファイルを
+     作成することを指示する.
+
+        * 引数が1つか3つの`C-u'を反映した4か64であると, 関数
+          `save-buffer'は, バッファをつぎに保存したときにファイルの現
+          在の版をバックアップするように印を付ける.
+
+        * 引数が2つか3つの`C-u'を反映した16か64であると, `save-buffer'
+          は, 保存するまえに無条件にファイルのまえの版をバックアップす
+          る.
+
+ -- コマンド: save-some-buffers &optional SAVE-SILENTLY-P EXITING
+     このコマンドは, ファイルを訪問している変更されたバッファを保存す
+     る.  通常, 各バッファについてユーザーに問い合わせる.  しかし,
+     SAVE-SILENTLY-Pが`nil'以外であると, ユーザーに問い合わせずにファ
+     イルを訪問しているバッファをすべて保存する.
+
+     省略可能な引数EXITINGが`nil'以外であると, この関数は, ファイルを
+     訪問していないある種のバッファを保存する機会も与える.
+     `buffer-offer-save'のバッファローカルな値が`nil'以外のバッファが
+     対象となる.  （ユーザーがこれらのバッファの1つを保存するように答
+     えると, ファイル名を指定するように聞いてくる. ）関数
+     `save-buffers-kill-emacs'は, この引数に`nil'以外の値を渡す.
+
+ -- コマンド: write-file FILENAME
+     この関数は, カレントバッファをファイルFILENAMEに保存し, 当該ファ
+     イルを訪問しているバッファとし, さらに未変更という印を付ける.  続
+     いて, バッファ名を一意にするために必要ならば`<2>'のような文字列を
+     付加して, バッファをFILENAMEに基づいた名前に改名する.  この処理の
+     ほとんどは, `set-visited-file-name'（*Note Buffer File Name::）と
+     `save-buffer'を呼び出して行う.
+
+バッファを保存すると, いくつかのフックを実行します.  また, 書式変換
+（*Note Format Conversion::）を行い, テキスト属性を『注記』
+（annotations）（*Note Saving Properties::）に保存することもあります.
+
+ -- Variable: write-file-hooks
+     この変数の値は, バッファを訪問しているファイルに書き出すまえに呼
+     ばれる関数のリストである.  それらの1つが`nil'以外を返すと, すでに
+     ファイルに書き出したとみなして残りの関数を呼び出さず, ファイルに
+     書き出すための通常のコードも実行しない.
+
+     `write-file-hooks'の関数が`nil'以外を返すときには, その関数には
+     （必要ならば）バックアップファイルを作成する責任がある.  そのため
+     にはつぎのコードを実行する.
+
+          (or buffer-backed-up (backup-buffer))
+
+     `backup-buffer'が返したファイルモードの値を保存しておき, 読者が書
+     くファイルのモードにその値を使いたい場合がある.  `save-buffer'は
+     通常そのようにする.
+
+     `write-file-hooks'のフック関数は, （必要ならば）データの符号化に
+     も責任がある.  適切なコーディングシステム（*Note Lisp and Coding
+     Systems::）を選び, 符号化（*Note Explicit Encoding::）を行い, 使
+     用したコーディングシステムを`last-coding-system-used'に設定する
+     （*Note Encoding and I/O::）.
+
+     この変数をバッファローカルにはしないこと.  バッファ固有のフック関
+     数を指定するには, かわりに`write-contents-hooks'を使う.
+
+     これはノーマルフックではないが, `add-hook'と`remove-hook'でリスト
+     を扱える.  *Note Hooks::.
+
+ -- Variable: local-write-file-hooks
+     これは`write-file-hooks'のように働くが, 特定のバッファにバッファ
+     ローカルにするように意図してあり, ファイル名に関するフックやバッ
+     ファ内容を得た方法に関するフックとして使われる.
+
+     変数は恒久的にバッファローカルと印が付いているので, メジャーモー
+     ドを変更してもバッファローカルな値は変更されない.  これは, 『ファ
+     イル』の内容を特別な方法で読み込み, 対応した方法でデータを保存す
+     るフックを設定するようなパッケージには便利である.
+
+ -- Variable: write-contents-hooks
+     この変数は`write-file-hooks'のように働くが, ファイルの場所に関す
+     るフックではなく, ファイルの内容に関するフックであると意図されて
+     いる.  そのようなフックは, この変数のバッファローカルな束縛として
+     メジャーモードが通常設定する.
+
+     この変数に設定すると自動的にバッファローカルになる.  このフックに
+     要素を追加するために`add-hooks'を使うときには, 引数LOCALに`nil'以
+     外を指定し*ない*こと.  この変数はバッファローカル*のみ*であるから
+     である.
+
+ -- Variable: after-save-hook
+     このノーマルフックは, バッファを訪問したファイルに保存し終えてか
+     ら実行される.  このフックの用途の1つは高速ロック（fast-lock）モー
+     ドである.  このフックを使って強調表示情報をキャッシュファイルに保
+     存する.
+
+ -- Variable: file-precious-flag
+     この変数が`nil'以外ならば, `save-buffer'は保存処理中の入出力エラー
+     に備えて対処する.  つまり, 目的の名前のファイルにではなく一時的な
+     名前の新規ファイルに書き出し, エラーがないことを確認してから目的
+     の名前に改名する.  これにより, 不正なファイルに起因する問題からディ
+     スク容量の不足といった問題を回避できる.
+
+     副作用として, バックアップも必然的にコピーして行う.  *Note Rename
+     or Copy::.  それと同時に, 大事な（precious）ファイルとして保存す
+     ると, 読者が保存したファイルと別のファイル名とのあいだのハードリ
+     ンクをつねに切ってしまう.
+
+     特定のバッファではこの変数に`nil'以外のバッファローカルな値を指定
+     するモードもある.
+
+ -- User Option: require-final-newline
+     この変数は, 改行で終ら*ない*ファイルを書き出すかどうかを決定する. 
+     この変数の値が`t'であると, `save-buffer'は, 保存するバッファが改
+     行で終っていないと黙ってファイルの末尾に改行を追加する.  この変数
+     の値が`t'ではない`nil'以外であると, `save-buffer'は, 必要な場面で
+     は改行を追加するかどうかユーザーに問い合わせる.
+
+     この変数の値が`nil'であると, `save-buffer'は改行を追加しない.  デ
+     フォルト値は`nil'であるが, 特定のバッファでは`t'に設定するメジャー
+     モードもある.
+
+関数`set-visited-file-name'（*Note Buffer File Name::）も参照してくだ
+さい.
+
+
+
+File: elisp-ja, Node: Reading from Files, Next: Writing to Files, Prev: Saving Buffers, Up: Files
+
+ファイルの読み込み
+==================
+
+関数`insert-file-contents'を使ってディスクからファイルをバッファへコピー
+できます.  ユーザーレベルのコマンド`insert-file'はマークを設定するので
+Lispプログラムでは使わないでください.
+
+ -- Function: insert-file-contents FILENAME &optional VISIT BEG END REPLACE
+     この関数は, ファイルFILENAMEの内容をカレントバッファのポイントの
+     うしろに挿入する.  絶対ファイル名と挿入したデータの長さから成るリ
+     ストを返す.  FILENAMEが読み込めるファイルの名前でないと, エラーを
+     通知する.
+
+     関数`insert-file-contents'は, ファイルの内容を定義済みのファイル
+     の書式と比較し, 必要ならばファイルの内容を変換する.  *Note Format
+     Conversion::.  リスト`after-insert-file-functions'の関数も呼び出
+     す.  *Note Saving Properties::を参照.
+
+     VISITが`nil'以外であると, この関数はバッファを未変更と印を付け, 
+     ファイルFILENAMEを訪問しているバッファとなるようにバッファのさま
+     ざまな部分を設定する.  これには, バッファが訪問しているファイルの
+     名前, ファイル更新時刻を含む.  この機能は`find-file-noselect'で使
+     われており, 読者自身が使うことはないであろう.
+
+     BEGとENDが`nil'以外であると, それらは挿入すべきファイルの部分を指
+     定する整数であること.  この場合, VISITは`nil'であること.  たとえ
+     ば,
+
+          (insert-file-contents filename nil 0 500)
+
+     はファイルの最初の500文字を挿入する.
+
+     引数REPLACEが`nil'以外であると, バッファの内容（実際には参照可能
+     な部分のみ）をファイルの内容で置き換えることを意味する.  これは, 
+     単純にバッファの内容を削除してからファイル全体を挿入するより好ま
+     しい.  なぜなら, （1）マーカ位置を保存できる場合がある, （2）アン
+     ドゥリストにほとんどデータを入れない, からである.
+
+     REPLACEとVISITが`nil'である限り, `insert-file-contents'で（FIFOや
+     入出力装置などの）特別なファイルを読むことも可能である.
+
+ -- Function: insert-file-contents-literally FILENAME &optional VISIT BEG END REPLACE
+     この関数は`insert-file-contents'のように動作するが, 書式を変換し
+     ない（*Note Format Conversion::）, 文字コードを変換しない（*Note
+     Coding Systems::）, `find-file-hooks'を実行しない, 自動的に解凍し
+     ないなどが異なる.
+
+別のプログラムが読めるようにファイル名を別のプロセスに渡すには, 関数
+`file-local-copy'を使います.  *Note Magic File Names::を参照してくださ
+い.
+
+
+
+File: elisp-ja, Node: Writing to Files, Next: File Locks, Prev: Reading from Files, Up: Files
+
+ファイルへの書き出し
+====================
+
+関数`append-to-file'や`write-region'を使って, バッファの内容やその一部
+をディスク上のファイルへ直接書き出せます.  訪問しているファイルには, 
+これらの関数で書き出さないでください.  訪問の機構に混乱をきたすことが
+あります.
+
+ -- コマンド: append-to-file START END FILENAME
+     この関数は, カレントバッファのSTARTからENDで区切られる領域の内容
+     をファイルFILENAMEの末尾に追加する.  当該ファイルが存在しなければ
+     作成する.  この関数は`nil'を返す.
+
+     書き込めないファイルをFILENAMEに指定したり, ファイルを作成できな
+     いディレクトリ上の存在しないファイルをFILENAMEに指定するとエラー
+     を通知する.
+
+ -- コマンド: write-region START END FILENAME &optional APPEND VISIT CONFIRM
+     この関数は, カレントバッファのSTARTからENDで区切られる領域の内容
+     をFILENAMEで指定したファイルに書き出す.
+
+     STARTが文字列であると, `write-region'はバッファのテキストではなく
+     その文字列を書いたり追加する.
+
+     APPENDが`nil'以外であると, 指定したテキストを既存ファイル（があれ
+     ば）の内容に追加する.
+
+     CONFIRMが`nil'以外であると, FILENAMEが既存ファイルの名前であると
+     `write-region'は確認を求める.
+
+     VISITが`t'であると, Emacsはバッファとファイルの対応を確立する. 
+     つまり, バッファはそのファイルを訪問していることになる.  さらに, 
+     カレントバッファの最終ファイル更新時刻をFILENAMEの更新時刻にし, 
+     バッファには未変更と印を付ける.  この機能は`save-buffer'が使って
+     いるが, 読者自身が使うことはないであろう.
+
+     VISITが文字列であると, 訪問するファイルの名前を指定する.  このよ
+     うにして, データを1つのファイル（FILENAME）に書き出す一方で, バッ
+     ファは別のファイル（VISIT）を訪問していると設定できる.  引数VISIT
+     はエコー領域のメッセージに使われ, ファイルのロックにも使われる.
+     VISITは`buffer-file-name'に保存される.  この機能は
+     `file-precious-flag'の実装に使われているが, 読者は, なにをしてい
+     るか理解できない限り, この機能を使わないこと.
+
+     関数`write-region'は, 書き出すデータを`buffer-file-format'で指定
+     される適切なファイル書式に変換する.  *Note Format Conversion::. 
+     さらに, リスト`write-region-annotate-functions'の関数も呼び出す.
+     *Note Saving Properties::を参照.
+
+     通常, `write-region'はエコー領域にメッセージ`Wrote FILENAME'を表
+     示する.  VISITが`t'でも`nil'でも文字列でもないと, このメッセージ
+     は表示しない.  この機能は, ユーザーが知る必要のない内部目的にファ
+     イルを使うプログラムに有用である.
+
+ -- Macro: with-temp-file FILE BODY...
+     マクロ`with-temp-file'は, 一時的なバッファをカレントバッファとし
+     てフォームBODYを評価する.  そして最後にバッファの内容をファイル
+     FILEに書き出す.  終了すると一時的なバッファを削除し, フォーム
+     `with-temp-file'のまえにカレントバッファであったバッファに戻る.
+     BODYの最後のフォームの値を返す.
+
+     `throw'やエラーによる異常終了（*Note Nonlocal Exits::）であっても
+     カレントバッファに戻る.
+
+     *Note Current Buffer::の`with-temp-buffer'も参照.
+
+
+
+File: elisp-ja, Node: File Locks, Next: Information about Files, Prev: Writing to Files, Up: Files
+
+ファイルロック
+==============
+
+2人のユーザーが同時に同じファイルを編集すると, 互いに干渉し合います.
+Emacsは, ファイルが変更されると"ファイルロック"（file lock）を記録する
+ことで, このような状況が発生しないように努めます.  すると, Emacsは別の
+Emacsがロックしているファイルを訪問したバッファを変更しようとする最初
+の試みを検出でき, ユーザーにどうすべきかを問い合わせます.
+
+複数の計算機がファイルシステムを共有している場合には, ファイルロックに
+は完全な信頼性はありません.  ファイルロックが働かないと, 2人のユーザー
+が同時に変更する可能性がありますが, それでも, Emacsは2番目に保存したユー
+ザーに警告できます.  また, ディスク上で変更されたファイルを訪問してい
+るバッファの変更を検出することで, 同時編集のある場面を捕捉できます.
+*Note Modification Time::を参照してください.
+
+ -- Function: file-locked-p FILENAME
+     ファイルFILENAMEがロックされていなければ, この関数は`nil'を返す. 
+     このEmacsプロセスがロックしているときには`t'を返す.  他のEmacsが
+     ロックしている場合には, ロックしているユーザーの名前を返す.
+
+          (file-locked-p "foo")
+               => nil
+
+ -- Function: lock-buffer &optional FILENAME
+     この関数は, カレントバッファが変更されていればファイルFILENAMEを
+     ロックする.  引数FILENAMEのデフォルトは, カレントバッファで訪問し
+     ているファイルである.  カレントバッファがファイルを訪問していなかっ
+     たり, 未変更ならばなにもしない.
+
+ -- Function: unlock-buffer
+     この関数は, バッファが変更されていれば, カレントバッファで訪問し
+     ているファイルのロックを解除する.  バッファが未変更ならばファイル
+     をロックしていないはずであり, この関数はなにもしない.  カレントバッ
+     ファがファイルを訪問していなければ, やはりなにもしない.
+
+ -- Function: ask-user-about-lock FILE OTHER-USER
+     この関数は, 別のユーザーOTHER-USERがロックしているファイルFILEを
+     ユーザーが変更しようとしたときに呼び出される.  この関数のデフォル
+     トの定義は, ユーザーになにをすべきか問い合わせることである.  この
+     関数の戻り値がEmacsのつぎの動作を決定する.
+
+        * 値が`t'であると, ファイルのロックを取得することを意味する. 
+          すると, このユーザーはファイルを編集でき, 別のユーザー
+          OTHER-USERはロックを失う.
+
+        * 値が`nil'であると, ロックを無視してとにかくユーザーにファイ
+          ルの編集を許す.
+
+        * この関数はエラー`file-locked'を通知する.  この場合, ユーザー
+          が行おうとしていた変更は行われない.
+
+          このエラーのエラーメッセージはつぎのようである.
+
+               error--> File is locked: FILE OTHER-USER
+
+          ここで, `file'はファイル名であり, OTHER-USERはそのファイルを
+          ロックしているユーザー名である.
+
+     読者は, 関数`ask-user-about-lock'を別の方法で決定する読者独自のも
+     のに置き換えてもよい.  通常の定義に対応したコードは`userlock.el'
+     にある.
+
+
+
+File: elisp-ja, Node: Information about Files, Next: Changing Files, Prev: File Locks, Up: Files
+
+ファイルに関する情報
+====================
+
+本節に述べる関数はすべて, ファイル名を表す文字列に作用します.  すべて
+の関数の名前は単語`file'で始まり, それらの引数は, 特に断らないかぎり, 
+既存のファイルやディレクトリである必要があります.
+
+* Menu:
+
+* Testing Accessibility::   Is a given file readable?  Writable?
+* Kinds of Files::          Is it a directory?  A symbolic link?
+* Truenames::		    Eliminating symbolic links from a file name.
+* File Attributes::         How large is it?  Any other names?  Etc.
+
+
+
+File: elisp-ja, Node: Testing Accessibility, Next: Kinds of Files, Prev: Information about Files, Up: Information about Files
+
+参照可能性の検査
+----------------
+
+これらの関数は, 特別な方法でファイル参照のパーミッションを検査します.
+
+ -- Function: file-exists-p FILENAME
+     ファイルFILENAMEが存在すれば, この関数は`t'を返す.  これは必ずし
+     もファイルを読めることは意味せず, 単にファイルの属性を調べられる
+     だけである.  （UNIXでは, ファイルが存在し, かつ, それを収めたディ
+     レクトリに対する実行パーミッションがあれば, ファイル自体のパーミッ
+     ションに関係なくこのようになる. ）
+
+     ファイルが存在しなかったり, ファイルの属性を探す権限がなければ, 
+     この関数は`nil'を返す.
+
+ -- Function: file-readable-p FILENAME
+     ファイルFILENAMEが存在しそれを読むことができるならば, この関数は
+     `t'を返す.  さもなければ`nil'を返す.
+
+          (file-readable-p "files.texi")
+               => t
+          (file-exists-p "/usr/spool/mqueue")
+               => t
+          (file-readable-p "/usr/spool/mqueue")
+               => nil
+
+ -- Function: file-executable-p FILENAME
+     ファイルFILENAMEが存在しそれを実行できるならば, この関数は`t'を返
+     す.  さもなければ`nil'を返す.  ファイルがディレクトリである場合, 
+     実行パーミッションは, ディレクトリ内のファイルの存在やその属性を
+     検査でき, それらのファイルのモードが許せばオープンできることを意
+     味する.
+
+ -- Function: file-writable-p FILENAME
+     ファイルFILENAMEに書き出したり作成できるならば, この関数は`t'を返
+     し, さもなければ`nil'を返す.  ファイルに書き出せるのは, ファイル
+     が存在し書ける場合である.  作成できるのは, ファイルは存在しないが
+     指定したディレクトリが存在しそのディレクトリに書ける場合である.
+
+     以下の3番目の例では, `foo'の親ディレクトリが存在しないので, たと
+     えディレクトリを作成できるとしても`foo'は書けない.
+
+          (file-writable-p "~/foo")
+               => t
+          (file-writable-p "/foo")
+               => nil
+          (file-writable-p "~/no-such-dir/foo")
+               => nil
+
+ -- Function: file-accessible-directory-p DIRNAME
+     ディレクトリDIRNAMEの既存ファイルをオープンするパーミッションがあ
+     れば, この関数は`t'を返す.  さもなければ（あるいは当該ディレクト
+     リが存在しなければ）`nil'を返す.  DIRNAMEの値はディレクトリ名であ
+     る.
+
+     例：` 'つぎの例では,
+
+          (file-accessible-directory-p "/foo")
+               => nil
+
+     から, `/foo/'内のファイルを読もうとするとエラーになると推論できる.
+
+ -- Function: access-file FILENAME STRING
+     この関数は, ファイルFILENAMEを読むためにオープンし, クローズして
+     から`nil'を返す.  しかし, オープンに失敗するとSTRINGをエラーメッ
+     セージのテキストとしたエラーを通知する.
+
+ -- Function: file-ownership-preserved-p FILENAME
+     もしファイルFILENAMEを削除して改めて作成してもファイルの所有者が
+     変更されなければ, この関数は`t'を返す.
+
+ -- Function: file-newer-than-file-p FILENAME1 FILENAME2
+     ファイルFILENAME1がFILENAME2より新しければ, この関数は`t'を返す.
+     FILENAME1が存在しなければ`nil'を返す.  FILENAME2が存在しなければ
+     `t'を返す.
+
+     以下の例で, ファイル`aug-19'は19日に書かれ, ファイル`aug-20'は20
+     日に書かれ, ファイル`no-file'は存在しないと仮定する.
+
+          (file-newer-than-file-p "aug-19" "aug-20")
+               => nil
+          (file-newer-than-file-p "aug-20" "aug-19")
+               => t
+          (file-newer-than-file-p "aug-19" "no-file")
+               => t
+          (file-newer-than-file-p "no-file" "aug-19")
+               => nil
+
+     `file-attributes'を使って, 2つの数から成るリストとしてファイルの
+     最終更新時刻を取得できる.  *Note File Attributes::.
+
+
+
+File: elisp-ja, Node: Kinds of Files, Next: Truenames, Prev: Testing Accessibility, Up: Information about Files
+
+ファイルの種類の区別
+--------------------
+
+本節ではさまざまな種類のファイル, つまり, ディレクトリ, シンボリックリ
+ンク, 普通のファイルを区別する方法を説明します.
+
+ -- Function: file-symlink-p FILENAME
+     ファイルFILENAMEがシンボリックリンクであると, 関数
+     `file-symlink-p'は当該リンクが指すファイルの名前を返す.  これは, 
+     テキストファイル, ディレクトリ, 別のシンボリックリンク, 存在しな
+     いファイルの名前のいずれかである.
+
+     ファイルFILENAMEがシンボリックリンクでない（あるいは当該ファイル
+     が存在しない）場合, `file-symlink-p'は`nil'を返す.
+
+          (file-symlink-p "foo")
+               => nil
+          (file-symlink-p "sym-link")
+               => "foo"
+          (file-symlink-p "sym-link2")
+               => "sym-link"
+          (file-symlink-p "/bin")
+               => "/pub/bin"
+
+
+ -- Function: file-directory-p FILENAME
+     ファイルFILENAMEが既存ディレクトリの名前であると`t'を返し, さもな
+     ければ`nil'を返す.
+
+          (file-directory-p "~rms")
+               => t
+          (file-directory-p "~rms/lewis/files.texi")
+               => nil
+          (file-directory-p "~rms/lewis/no-such-file")
+               => nil
+          (file-directory-p "$HOME")
+               => nil
+          (file-directory-p
+           (substitute-in-file-name "$HOME"))
+               => t
+
+ -- Function: file-regular-p FILENAME
+     ファイルFILENAMEが存在しそれが普通のファイル（ディレクトリでもシ
+     ンボリックリンクでも名前付きパイプでも端末でもその他の入出力装置
+     でもない）であれば, この関数は`t'を返す.
+
+
+
+File: elisp-ja, Node: Truenames, Next: File Attributes, Prev: Kinds of Files, Up: Information about Files
+
+実名
+----
+
+ファイルの"実名"（truename）とは, シンボリックリンクをすべて辿り尽くし
+てから, 要素として現れる`.' や`..' を簡略化して得られる名前です.  厳密
+にいえば, ファイルが一意の実名を持つ必要はありません.  ファイルの異な
+る実名の個数は, 当該ファイルに対するハードリンクの個数に等しいのです. 
+それでも, 実名はシンボリックリンクによる名前の変動を取り除くため, 実名
+は有用です.
+
+ -- Function: file-truename FILENAME
+     関数`file-truename'はファイルFILENAMEの実名を返す.  これはシンボ
+     リックリンクをすべて辿り尽くして得られる名前である.  引数は絶対ファ
+     イル名であること.
+
+関連情報については, *Note Buffer File Name::.
+
+
+
+File: elisp-ja, Node: File Attributes, Next: Changing Files, Prev: Truenames, Up: Information about Files
+
+ファイルに関する他の情報
+------------------------
+
+本節では, ファイルの内容以外の詳しい情報を得るための関数を説明します. 
+この情報には, 参照パーミッションを制御するモードビット, 所有者とグルー
+プの番号, 名前の個数, iノード番号, サイズ, 参照時刻と更新時刻が含まれ
+ます.
+
+ -- Function: file-modes FILENAME
+     この関数はFILENAMEのモードビットを整数で返す.  モードビットはファ
+     イルのパーミッションとも呼ばれ, UNIX流の参照制御を指定する.  最下
+     位ビットが1であると, 当該ファイルはすべてのユーザーが実行でき, 2
+     番目の下位ビットが1であると, 当該ファイルはすべてのユーザーが書け
+     るといった具合である.
+
+     戻り値の最大値は4095（8進数7777）であり, これは, だれもが読み／書
+     き／実行でき, 所有者とグループの両者にビットSUIDが設定してあり, 
+     スティッキービットも設定されていることを意味する.
+
+          (file-modes "~/junk/diffs")
+               => 492               ; 10進整数
+          (format "%o" 492)
+               => "754"             ; 8進数に変換
+
+          (set-file-modes "~/junk/diffs" 438)
+               => nil
+
+          (format "%o" 438)
+               => "666"             ; 8進数に変換
+
+          % ls -l diffs
+            -rw-rw-rw-  1 lewis 0 3063 Oct 30 16:00 diffs
+
+ -- Function: file-nlinks FILENAME
+     この関数は, ファイルFILENAMEの名前（つまりハードリンク）の個数を
+     返す.  ファイルが存在しなければ, この関数は`nil'を返す.  シンボリッ
+     クリンクはそれが指すファイルの名前とはみなさないので, シンボリッ
+     クリンクはこの関数には効果を持たない.
+
+          % ls -l foo*
+          -rw-rw-rw-  2 rms       4 Aug 19 01:27 foo
+          -rw-rw-rw-  2 rms       4 Aug 19 01:27 foo1
+
+          (file-nlinks "foo")
+               => 2
+          (file-nlinks "doesnt-exist")
+               => nil
+
+ -- Function: file-attributes FILENAME
+     この関数はファイルFILENAMEの属性のリストを返す.  オープンできない
+     ファイルを指定すると`nil'を返す.
+
+     リストの要素は順につぎのとおりである.
+
+       0. ディレクトリは`t', シンボリックリンクは（それが指す名前の）
+          文字列, テキストファイルは`nil'である.
+
+       1. ファイルの名前の個数.  別の名前, つまり, ハードリンクは関数
+          `add-name-to-file'（*Note Changing Files::）を使って作成する.
+
+       2. ファイルのUID（所有者番号）.
+
+       3. ファイルのGID（グループ番号）.
+
+       4. 2つの整数から成るリストとしての最終参照時刻.  最初の整数は時
+          刻の上位16ビットであり, 2番目は下位16ビット.  （これは
+          `current-time'の値と同様.  *Note Time of Day::を参照. ）
+
+       5. 2つの整数から成るリストとしての最終更新時刻（上記と同様）.
+
+       6. 2つの整数から成るリストとしての最終状態更新時刻（上記と同様）.
+
+       7. バイト単位でのファイルのサイズ.
+
+       8. `ls -l'と同様のファイルのモードを表す10文字の文字列.
+
+       9. もしファイルを削除して再度作成した場合にファイルのGID（グルー
+          プ番号）が変わる場合には`t'.  さもなければ`nil'.
+
+      10. ファイルのiノード番号.  可能ならばこれは整数である.  iノード
+          番号がEmacs Lispの整数として表現できないほど大きな場合, 値は
+          `(HIGH . LOW)'の形である.  ただし, LOWは下位16ビットである.
+
+      11. ファイルが置いてあるファイルシステムのファイルシステム番号. 
+          この要素とファイルのiノード番号により, システム上の任意の2つ
+          のファイルを区別するために十分な情報を与える.  つまり, 2つの
+          ファイルが同じ値のこれらの番号を持つことはない.
+
+     たとえば, `files.texi'のファイル属性はつぎのようである.
+
+          (file-attributes "files.texi")
+               =>  (nil 1 2235 75 
+                    (8489 20284) 
+                    (8489 20284) 
+                    (8489 20285)
+                    14906 "-rw-rw-rw-" 
+                    nil 129500 -32252)
+
+     この意味はつぎのとおりである.
+
+     `nil'
+          ディレクトリでもシンボリックリンクでもない.
+
+     `1'
+          唯一の名前（カレントディレクトリで`files.texi'）を持つ.
+
+     `2235'
+          UID（ユーザー番号）2235のユーザーが所有している.
+
+     `75'
+          GID（グループ番号）75のグループに属する.
+
+     `(8489 20284)'
+          最後に参照されたのは8月19日00時09分である.
+
+     `(8489 20284)'
+          最後に更新されたのは8月19日00時09分である.
+
+     `(8489 20285)'
+          最後にこのiノードを変更したのは8月19日00時09分である.
+
+     `14906'
+          長さは14906バイトである.
+
+     `"-rw-rw-rw-"'
+          モードは, 所有者／グループ／その他は読み書きできる.
+
+     `nil'
+          再度作成してもGID（グループ番号）は保存される.
+
+     `129500'
+          iノード番号は129500.
+     `-32252'
+          ファイルシステム番号は-32252.
+
+
+
+File: elisp-ja, Node: Changing Files, Next: File Names, Prev: Information about Files, Up: Files
+
+ファイルの名前と属性の変更
+==========================
+
+本節の関数は, ファイルを改名／コピー／削除／リンクしたり, ファイルのモー
+ドを設定するためのものです.
+
+引数NEWNAMEをとる関数では, NEWNAMEで指定したファイルが既存の場合, 関数
+の動作は引数OK-IF-ALREADY-EXISTSの値に依存します.
+
+   * OK-IF-ALREADY-EXISTSが`nil'であると, エラー`file-already-exists'
+     を通知する.
+
+   * OK-IF-ALREADY-EXISTSが数であると, 確認を必要とする.
+
+   * OK-IF-ALREADY-EXISTSがそれ以外の値であると, 確認せずに古いファイ
+     ルを置き換える.
+
+ -- Function: add-name-to-file OLDNAME NEWNAME &optional OK-IF-ALREADY-EXISTS
+     この関数は, OLDNAMEで指定したファイルに追加の名前NEWNAMEを与える. 
+     つまり, NEWNAMEはOLDNAMEへの新たな『ハードリンク』になる.
+
+     つぎの例では, 2つのファイル`foo'と`foo3'がある.
+
+          % ls -li fo*
+          81908 -rw-rw-rw-  1 rms       29 Aug 18 20:32 foo
+          84302 -rw-rw-rw-  1 rms       24 Aug 18 20:31 foo3
+
+     `add-name-to-file'を呼んでハードリンクを作成し, ファイル一覧を表
+     示し直す.  1つのファイルに2つの名前`foo'と`foo2'があることがわか
+     る.
+
+          (add-name-to-file "foo" "foo2")
+               => nil
+
+          % ls -li fo*
+          81908 -rw-rw-rw-  2 rms       29 Aug 18 20:32 foo
+          81908 -rw-rw-rw-  2 rms       29 Aug 18 20:32 foo2
+          84302 -rw-rw-rw-  1 rms       24 Aug 18 20:31 foo3
+
+     最後につぎの式を評価し
+
+          (add-name-to-file "foo" "foo3" t)
+
+     ファイル一覧を表示し直す.  今度は, 1つのファイルに3つの名前`foo',
+     `foo2', `foo3'がある.  古い`foo3'の内容は失われている.
+
+          (add-name-to-file "foo1" "foo3")
+               => nil
+
+          % ls -li fo*
+          81908 -rw-rw-rw-  3 rms       29 Aug 18 20:32 foo
+          81908 -rw-rw-rw-  3 rms       29 Aug 18 20:32 foo2
+          81908 -rw-rw-rw-  3 rms       29 Aug 18 20:32 foo3
+
+     1つのファイルに複数の名前を許さないオペレーティングシステムでは, 
+     この関数は意味がない.
+
+     *Note File Attributes::の`file-nlinks'も参照.
+
+ -- コマンド: rename-file FILENAME NEWNAME &optional OK-IF-ALREADY-EXISTS
+     このコマンドは, ファイルFILENAMEをNEWNAMEと改名する.
+
+     FILENAMEにFILENAME以外の名前があれば, それらの名前は存在し続ける. 
+     実際, `add-name-to-file'で名前NEWNAMEを追加してからFILENAMEを削除
+     すると, 一時的な中間状態があることを除けば, 改名と同じ効果がある.
+
+     対話的に呼び出されると, この関数はミニバッファでFILENAMEとNEWNAME
+     を聞く.  また, NEWNAMEが既存であると確認を求める.
+
+ -- コマンド: copy-file OLDNAME NEWNAME &optional OK-IF-EXISTS TIME
+     このコマンドはファイルOLDNAMEをNEWNAMEへコピーする.  OLDNAMEが存
+     在しないとエラーを通知する.
+
+     TIMEが`nil'以外であると, この関数は新たなファイルに古いファイルと
+     同じ最終更新時刻を与える.  （これは特定のオペレーティングシステム
+     でのみ動作する. ）時刻設定でエラーがあると, `copy-file'はエラー
+     `file-date-error'を通知する.
+
+     対話的に呼び出されると, この関数はミニバッファでOLDNAMEとNEWNAME
+     を聞く.  また, NEWNAMEが既存であると確認を求める.
+
+ -- コマンド: delete-file FILENAME
+     このコマンドは, シェルコマンド`rm FILENAME'と同様にファイル
+     FILENAMEを削除する.  ファイルに複数の名前があると, 他の名前では存
+     在し続ける.
+
+     ファイルが存在しなかったり削除できないと, エラー`file-error'の適
+     切な種類が通知される.  （UNIXでは, ファイルを収めたディレクトリに
+     書けると当該ファイルは削除可能である. ）
+
+     *Note Create/Delete Dirs::の`delete-directory'も参照.
+
+ -- コマンド: make-symbolic-link FILENAME NEWNAME &optional OK-IF-EXISTS
+     このコマンドは, FILENAMEに対するシンボリックリンクNEWNAMEを作成す
+     る.  これはシェルコマンド`ln -s FILENAME NEWNAME'と同じである.
+
+     対話的に呼び出されると, この関数はミニバッファでFILENAMEとNEWNAME
+     を聞く.  また, NEWNAMEが既存であると確認を求める.
+
+ -- Function: define-logical-name NAME STRING
+     この関数は論理名NAMEに値STRINGを定義する.  VMSでのみ使える.
+
+ -- Function: set-file-modes FILENAME MODE
+     この関数はFILENAMEのモードビットをMODE（整数であること）と設定す
+     る.  MODEの下位12ビットのみを使う.
+
+ -- Function: set-default-file-modes MODE
+     この関数は, Emacsやそのサブプロセスが作成する新規ファイルのデフォ
+     ルトのファイルモードを設定する.  Emacsが作成する各ファイルは最初
+     このモードになる.  UNIXでは, デフォルトのモードは『umask』の値の1
+     の補数である.
+
+     引数MODEは整数であること.  ほとんどのシステムでは, MODEの下位9ビッ
+     トのみが意味を持つ.
+
+     既存ファイルの変更を保存することはファイルの作成とはみなさないた
+     め, ファイルのモードは変わらず, デフォルトのファイルモードを使わ
+     ない.
+
+ -- Function: default-file-modes
+     この関数は, 現在のデフォルトのファイルモードの値を返す.
+
+MS-DOSでは, 『実行可能』ファイルモードビットのようなものはありません. 
+そのためEmacsは, `.com', `.bat', `.exe'のいずれかで終る名前のファイル
+を実行可能であるとみなします.  これは, `file-modes'や`file-attributes'
+が返す値に反映されます.
+
+
+
+File: elisp-ja, Node: File Names, Next: Contents of Directories, Prev: Changing Files, Up: Files
+
+ファイル名
+==========
+
+他の場面と同様にEmacsでは, 一般にファイルはその名前で参照します.
+Emacsではファイル名は文字列で表します.  ファイルを操作する関数はすべて
+ファイル名引数を仮定します.
+
+ファイル自体の操作に加えて, Emacs Lispプログラムはファイルの名前そのも
+のを操作する必要があります.  つまり, ファイル名を分解したり, 関連する
+ファイル名を作成するためにその一部を使います.  本節ではファイル名を操
+作する方法を説明します.
+
+本節の関数は実際にはファイルを参照しませんから, 既存のファイルやディレ
+クトリを表さないファイル名を操作できます.
+
+VMSでは, これらの関数はすべて, VMSのファイル名構文とUNIXの構文の両方を
+理解します.  つまり, 標準LispライブラリはUNIX構文でファイル名を指定で
+き, 変更せずにVMS上で正しく動作します.  MS-DOSやMS-Windowsでは, これら
+の関数は, UNIX構文に加えてMS-DOSやMS-Windowsのファイル名構文を理解しま
+す.
+
+* Menu:
+
+* File Name Components::  The directory part of a file name, and the rest.
+* Directory Names::       A directory's name as a directory
+                            is different from its name as a file.
+* Relative File Names::   Some file names are relative to a current directory.
+* File Name Expansion::   Converting relative file names to absolute ones.
+* Unique File Names::     Generating names for temporary files.
+* File Name Completion::  Finding the completions for a given file name.
+* Standard File Names::   If your package uses a fixed file name,
+                            how to handle various operating systems simply.
+
+
+
+File: elisp-ja, Node: File Name Components, Next: Directory Names, Prev: File Names, Up: File Names
+
+ファイル名の構成要素
+--------------------
+
+オペレーティングシステムは, 一連のファイルをディレクトリにまとめます. 
+ファイルを指定するには, ディレクトリと当該ディレクトリ内のファイルの名
+前を指定する必要があります.  そのためEmacsは, ファイル名には2つの部分,
+"ディレクトリ名"（directory name）部分と"非ディレクトリ名"
+（nondirectory name）部分（つまり"ディレクトリ内のファイル名"）がある
+とみなします.  どちらかの部分は空でもかまいません.  これらの2つの部分
+を連結するともとのファイル名になります.
+
+UNIXでは, ディレクトリ部分は最後のスラッシュまでを含んだ部分であり, 非
+ディレクトリ部分は残りの部分です.  VMSの構文規則は複雑です.
+
+ある種の目的のために, 非ディレクトリ部分をさらに名前だけの部分と"版番
+号"（version number）に分けます.  UNIXでは, バックアップファイルだけに
+それらの名前に版番号があります.  VMSでは各ファイルに版番号がありますが, 
+ほとんどの場合, Emacsで実際に使うファイル名では版番号を省略します.  そ
+のため, Emacsで版番号が見えるのは多くの場合ディレクトリ一覧です.
+
+ -- Function: file-name-directory FILENAME
+     この関数はFILENAMEのディレクトリ部分（ディレクトリ部分がなければ
+     `nil'）を返す.  UNIXでは, この関数はスラッシュで終る文字列を返す.
+     VMSでは, `:', `]', `>'のいずれかで終る文字列を返す.
+
+          (file-name-directory "lewis/foo")  ; UNIXの例
+               => "lewis/"
+          (file-name-directory "foo")        ; UNIXの例
+               => nil
+          (file-name-directory "[X]FOO.TMP") ; VMSの例
+               => "[X]"
+
+ -- Function: file-name-nondirectory FILENAME
+     この関数はFILENAMEの非ディレクトリ部分を返す.
+
+          (file-name-nondirectory "lewis/foo")
+               => "foo"
+          (file-name-nondirectory "foo")
+               => "foo"
+          ;; つぎの例はVMSでのみ正確である
+          (file-name-nondirectory "[X]FOO.TMP")
+               => "FOO.TMP"
+
+ -- Function: file-name-sans-versions FILENAME
+     この関数は, FILENAMEから版番号, バックアップ版番号, 末尾のティル
+     ダをすべて削除したものを返す.
+
+          (file-name-sans-versions "~rms/foo.~1~")
+               => "~rms/foo"
+          (file-name-sans-versions "~rms/foo~")
+               => "~rms/foo"
+          (file-name-sans-versions "~rms/foo")
+               => "~rms/foo"
+          ;; つぎの例はVMSでのみ正確である
+          (file-name-sans-versions "foo;23")
+               => "foo"
+
+ -- Function: file-name-sans-extension FILENAME
+     この関数は, FILENAMEからあれば『拡張子』を除いたものを返す.  ファ
+     イル名の拡張子とは, 名前の最後の部分にある`.'で始まる部分である. 
+     たとえばつぎのとおりである.
+
+          (file-name-sans-extension "foo.lose.c")
+               => "foo.lose"
+          (file-name-sans-extension "big.hack/foo")
+               => "big.hack/foo"
+
+
+
+File: elisp-ja, Node: Directory Names, Next: Relative File Names, Prev: File Name Components, Up: File Names
+
+ディレクトリ名
+--------------
+
+"ディレクトリ名"（directory name）とはディレクトリの名前です.  ディレ
+クトリはファイルの一種であり, ファイル名を持ちますが, それはディレクト
+リ名に関連付けられますが同一ではありません.  （これはUNIXの通常の用語
+と同じではない. ）同じものに対するこれらの異なる2つの名前は, 構文の変
+換で関連付けます.  UNIXではこれは簡単であり, ディレクトリ名はスラッシュ
+で終りますが, ファイルとしてのディレクトリの名前にはスラッシュはありま
+せん.  VMSでは, 関係はより複雑です.
+
+ディレクトリ名とそのファイルとしての名前との違いはわずかですが重大です.
+Emacsの変数や関数引数がディレクトリ名と記述されているときには, ディレ
+クトリのファイルとしての名前は受け付けません.
+
+つぎの2つの関数はディレクトリ名とファイルとしての名前を相互に変換しま
+す.  これらは, `$HOME'などの環境変数置換や`~'や`..'などの構造にはなに
+も特別なことはしません.
+
+ -- Function: file-name-as-directory FILENAME
+     この関数は, オペレーティングシステムがディレクトリ名と解釈する表
+     現で表したFILENAMEの文字列を返す.  UNIXでは, 文字列に（最後にスラッ
+     シュがなければ）スラッシュを付加することを意味する.  VMSでは,
+     `[X]Y.DIR.1'の形の文字列を`[X.Y]'の形に変換する.
+
+          (file-name-as-directory "~rms/lewis")
+               => "~rms/lewis/"
+
+ -- Function: directory-file-name DIRNAME
+     この関数は, オペレーティングシステムがファイルの名前と解釈する表
+     現で表したDIRNAMEの文字列を返す.  UNIXでは, 文字列の最後のスラッ
+     シュを取り除くことを意味する.  VMSでは, `[X.Y]'の形の文字列を
+     `[X]Y.DIR.1'の形に変換する.
+
+          (directory-file-name "~lewis/")
+               => "~lewis"
+
+シンボリックリンクを介して通常参照されるディレクトリにはディレクトリ名
+の省略形が有用です.  ユーザーはリンクの名前をディレクトリの『名前』と
+しばしばみなし, ディレクトリの『本当の』名前を見るのをわずらわしく思う
+ことがあります.  リンク名を『本当の』名前の省略形と定義しておくと,
+Emacsはユーザーに省略形を表示します.
+
+ -- Variable: directory-abbrev-alist
+     変数`directory-abbrev-alist'は, ディレクトリに使う省略形の連想リ
+     ストを保持する.  各要素は`(FROM . TO)'の形であり, ディレクトリ名
+     にFROMが現れるとこれをTOに置き換えることを指示する.  文字列FROMは
+     実際には正規表現であり, つねに`^'で始まること.  関数
+     `abbreviate-file-name'がこれらの置換を行う.
+
+     ファイル`site-init.el'でこの変数に設定し, 読者のサイトに適した省
+     略形を記述できる.
+
+     ファイルシステム`/home/fsf'などをシンボリック名`/fsf'で通常参照す
+     るシステムの例をつぎに示す.
+
+          (("^/home/fsf" . "/fsf")
+           ("^/home/gp" . "/gp")
+           ("^/home/gd" . "/gd"))
+
+ディレクトリ名をその省略形に変換するには, つぎの関数を使います.
+
+ -- Function: abbreviate-file-name DIRNAME
+     この関数は, `directory-abbrev-alist'の省略形を引数に適用し, ユー
+     ザーのホームディレクトリを`~'に置き換える.
+
+
+

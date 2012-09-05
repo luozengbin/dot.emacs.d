@@ -1,0 +1,1795 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp.texi'
+using `texinfmt.el' version 2.38 of 3 July 1998.
+
+
+INFO-DIR-SECTION Editors
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	The Emacs Lisp Reference Manual(Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+Emacs Lispリファレンスマニュアル2.5版であり, Emacs 20.3版に対応します.
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998 Free
+Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included exactly
+as in the original, and provided that the entire resulting derived
+work is distributed under the terms of a permission notice identical
+to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public
+License" may be included in a translation approved by the Free
+Software Foundation instead of in the original English.
+
+
+
+
+
+
+File: elisp-ja, Node: Filling, Next: Margins, Prev: Maintaining Undo, Up: Text
+
+詰め込み
+========
+
+"詰め込み"（fill）とは, 指定されている最大幅（を越えず）にほぼ収まるよ
+うに（行分け位置を移動して）行の長さを調整することです.  さらに, 行を"
+幅揃え"（justify）することもできます.  つまり, 左右の両端や片側の余白
+をきちんと揃えるため空白を挿入することです.  幅は変数`fill-column'で制
+御します.  読みやすいように, 行は70コラム程度に収めるべきです.
+
+テキストを挿入するにつれて自動的にテキストを詰め込むには, 自動詰め込み
+（auto-fill）モード（*Note Auto Filling::）を使いますが, 既存のテキス
+トを変更しても正しくない詰め込み状態のまま放置されます.  したがって, 
+そのようなテキストは明示的に詰め込む必要があります.
+
+本節のほとんどの関数が返す値には意味はありません.  詰め込みを行うすべ
+ての関数は, 現在の左端余白, 現在の右端余白, 現在の幅揃えスタイルに注意
+をはらいます（*Note Margins::）.  現在の幅揃えスタイルが`none'であると, 
+詰め込み関数は実際にはなにもしません.
+
+詰め込み関数には引数JUSTIFYを取るものもあります.  それが`nil'以外であ
+ると, 幅揃えの種類を指示します.  特定の幅揃えスタイルを指示するものは,
+`left', `right', `full', `center'です.  それが`t'であると, テキストの
+当該部分には現在の幅揃えスタイルを用いることを意味します（下記の
+`current-justification'を参照）.  これ以外の値は`full'として扱います.
+
+対話的に詰め込み関数を呼ぶときに前置引数を使うと, JUSTIFYとして値
+`full'を暗に指示します.
+
+ -- コマンド: fill-paragraph JUSTIFY
+     このコマンドは, ポイントがある段落, あるいは, ポイントのあとの段
+     落を詰め込む.  JUSTIFYが`nil'以外であると, 各行の幅揃えも行う. 
+     段落の境界を探すために普通の段落移動コマンドを用いる.  *Note 段落:
+     (emacs-ja)Paragraphs.
+
+ -- コマンド: fill-region START END &optional JUSTIFY NOSQUEEZE TO-EOP
+     このコマンドは, STARTからENDの領域内の各段落を詰め込む.  JUSTIFY
+     が`nil'以外であれば, 幅揃えも行う.
+
+     NOSQUEEZEが`nil'以外であると, 行分け以外の白文字にはふれないこと
+     を意味する.  TO-EOPが`nil'以外であると, 段落の末尾まで, あるいは,
+     `use-hard-newlines'がオンならばつぎのハード改行（下記参照）までを
+     詰め込むことを意味する.
+
+     変数`paragraph-separate'は, 段落の区別方法を制御する.  *Note
+     Standard Regexps::.
+
+ -- コマンド: fill-individual-paragraphs START END &optional JUSTIFY MAIL-FLAG
+     このコマンドは, 領域内の各段落を各段落の詰め込み接頭辞に従って詰
+     め込む.  したがって, 段落の行が空白で字下げされていると, 詰め込ん
+     だあとの段落も同じように字下げされる.
+
+     最初の2つの引数STARTとENDは, 詰め込むべき範囲の先頭と末尾である.
+     3番目と4番目の引数, JUSTIFYとMAIL-FLAGは省略できる.  JUSTIFYが
+     `nil'以外であると, 段落の詰め込みに加えて幅揃えも行う.  MAIL-FLAG
+     が`nil'以外であると, メイルメッセージなのでヘッダ行を詰め込まない
+     ことを意味する.
+
+     通常, `fill-individual-paragraphs'は, 字下げが変わると新しい段落
+     の開始とみなす.  `fill-individual-varying-indent'が`nil'以外であ
+     ると, 区切り行のみが段落を区切るとみなす.  これは段落の先頭行と後
+     続の行で字下げが異なる段落を処理できる.
+
+ -- User Option: fill-individual-varying-indent
+     この変数は, 上に述べたように`fill-individual-paragraphs'の動作を
+     変える.
+
+ -- コマンド: fill-region-as-paragraph START END &optional JUSTIFY NOSQUEEZE SQUEEZE-AFTER
+     このコマンドは, テキストの領域を1つの段落とみなして詰め込む.  領
+     域に複数の段落があると, 段落のあいだの空行は取りさる.  JUSTIFYが
+     `nil'以外であると幅揃えも行う.
+
+     対話的な呼び出しでは, 前置引数で幅揃えを指示する.
+
+     NOSQUEEZEが`nil'以外であると, 行分け以外の白文字にはふれないこと
+     を意味する.  SQUEEZE-AFTERが`nil'以外であると, それは領域内の位置
+     を表し, その位置よりまえにある空白を変更しないように指示する.
+
+     適応型詰め込み（adaptive-fill）モードでは, デフォルトの詰め込み接
+     頭辞を選ぶためにこのコマンドは`fill-context-prefix'を呼び出す.
+     *Note Adaptive Fill::.
+
+ -- コマンド: justify-current-line HOW EOP NOSQUEEZE
+     このコマンドは, 現在行の単語のあいだに空白を挿入し, ちょうど
+     `fill-column'コラムで行が終るようにする.  `nil'を返す.
+
+     引数HOWが`nil'以外であると, 幅揃えスタイルを指定する.  可能な値は,
+     `left', `right', `full', `center', または, `none'である.  `t'であ
+     ると, 指定されている幅揃えスタイルに従うことを意味する（下記の
+     `current-justification'を参照）.  `nil'は, 幅揃えしないことを意味
+     する.
+
+     EOPが`nil'以外であると, `current-justification'が両端揃えを指定し
+     ているときには左端揃えを行うことを意味する.  これは段落の最後の行
+     に適用される.  段落全体として両端揃えであっても, 最後の行はそうす
+     べきではない.
+
+     NOSQUEEZEが`nil'以外であると, 内側の白文字を変更しないことを意味
+     する.
+
+ -- User Option: default-justification
+     この変数の値は, テキスト属性で幅揃えスタイルを指定していないテキ
+     ストに対して用いる幅揃えスタイルを指定する.  可能な値は, `left',
+     `right', `full', `center', `none'である.  デフォルト値は`left'で
+     ある.
+
+ -- Function: current-justification
+     この関数は, ポイントの周りのテキストを詰め込むときに使う正しい幅
+     揃えスタイルを返す.
+
+ -- User Option: sentence-end-double-space
+     この変数が`nil'以外であると, 直後に1つの空白を従えたピリオドを文
+     末とみなさず, 詰め込み関数はそのような箇所で行分けしない.
+
+ -- Variable: fill-paragraph-function
+     この変数は, 段落の詰め込みに優先する方法をメジャーモードに与える. 
+     値が`nil'以外であると, `fill-paragraph'は詰め込み処理のためにこの
+     関数を呼び出す.  関数が`nil'以外の値を返すと, `fill-paragraph'は
+     処理が完了したとみなして戻り値をただちに返す.
+
+     この機能の普通の用途は, プログラム言語向けのモードでコメントを詰
+     め込むためである.  この関数で普通の方法で詰め込む必要がある場合に
+     は, つぎのようにする.
+
+          (let ((fill-paragraph-function nil))
+            (fill-paragraph arg))
+
+ -- Variable: use-hard-newlines
+     この変数が`nil'以外であると, 詰め込み関数は, テキスト属性`hard'を
+     持つ改行を削除しない.  これらの『ハード改行』は段落の区切りとして
+     働く.
+
+
+
+File: elisp-ja, Node: Margins, Next: Adaptive Fill, Prev: Filling, Up: Text
+
+詰め込みのための余白
+====================
+
+ -- User Option: fill-prefix
+     このバッファローカルな変数は, 普通のテキスト行の先頭に現れ, 詰め
+     込み時には無視すべきテキストの文字列（詰め込み接頭辞）を指定する. 
+     詰め込み接頭辞で始まらない行は段落の開始行とみなすため, 詰め込み
+     接頭辞のあとに余分に白文字があるとそれらも段落の開始行とみなす. 
+     詰め込み接頭辞で始まりそのあとに余分な白文字がない行は, いっしょ
+     に詰め込める普通のテキスト行である.
+
+     左端余白がある場合には, 左端余白のあとに詰め込み接頭辞が続く.
+
+ -- User Option: fill-column
+     このバッファローカルな変数は, 詰め込んだ行の最大幅を指定する.  こ
+     の値は整数であり, コラム数であること.  自動詰め込み（auto-fill）
+     モード（*Note Auto Filling::）を含めてすべての詰め込み／幅揃え／
+     中央揃えを行うコマンドは, この変数に影響される.
+
+     特に他人のために書いているテキストでは, `fill-column'を70未満にす
+     るべきである.  さもないと, 人によっては快適に読むには行が長すぎて, 
+     テキストが不恰好に見える.
+
+ -- Variable: default-fill-column
+     この変数の値は, バッファで`fill-column'の値を設定していない場合の
+     `fill-column'のデフォルト値である.  これは`(default-value
+     'fill-column)'と同じである.
+
+     `default-fill-column'のデフォルト値は70である.
+
+ -- コマンド: set-left-margin FROM TO MARGIN
+     FROMからTOまでのテキストの属性`left-margin'を値MARGINにする.  自
+     動詰め込み（auto-fill）モードがオンであると, このコマンドは, 当該
+     領域を再詰め込みして新たな余白に適合するようにする.
+
+ -- コマンド: set-right-margin FROM TO MARGIN
+     FROMからTOまでのテキストの属性`right-margin'を値MARGINにする.  自
+     動詰め込み（auto-fill）モードがオンであると, このコマンドは, 当該
+     領域を再詰め込みして新たな余白に適合するようにする.
+
+ -- Function: current-left-margin
+     この関数は, ポイントの周りのテキストを詰め込むときに使う正しい左
+     端余白の値を返す.  その値は, 現在行の最初の文字の属性
+     `left-margin'の値（なければ0）と変数`left-margin'の値の和である.
+
+ -- Function: current-fill-column
+     この関数は, ポイントの周りのテキストを詰め込むときに使う正しい詰
+     め込み幅を返す.  その値は, 変数`fill-column'の値からポイント直後
+     の文字の属性`right-margin'の値を引いたものである.
+
+ -- コマンド: move-to-left-margin &optional N FORCE
+     この関数は, ポイントを現在行の左端余白へ移動する.  移動先のコラム
+     位置は関数`current-left-margin'を呼び出して決定する.  引数Nが
+     `nil'以外であると, `move-to-left-margin'はN-1先の行へまず移動する.
+
+     FORCEが`nil'以外であると, 行の字下げが左端余白の値に一致しないと
+     きには, 字下げを修正することを指示する.
+
+ -- Function: delete-to-left-margin FROM TO
+     この関数は, FROMからTOまでのテキストから左端余白分の字下げを取り
+     さる.  削除する字下げ量は, `current-left-margin'を呼び出して決定
+     する.  この関数が白文字以外を削除することは絶対にない.
+
+ -- Function: indent-to-left-margin
+     これは, 基本（fundamental）モード, テキスト（text）モードなどが使
+     うデフォルトの`indent-line-function'である.  その効果は, 変数
+     `left-margin'の値で指定した位置から現在行が始まるように字下げを調
+     整することである.  それには白文字の挿入や削除が伴う.
+
+ -- Variable: left-margin
+     この変数は, 左端余白コラムの起点を指定する.  基本（fundamental）
+     モードでは, `C-j'がこのコラム位置に字下げする.  この変数に設定す
+     ると自動的にバッファローカルになる.
+
+ -- Variable: fill-nobreak-predicate
+     この変数は, 特定の箇所では行分けしない方法をメジャーモードに提供
+     する.  その値は関数であること.  この関数は, 引数なしで行分け予定
+     箇所にポイントを置いて呼び出される.  この関数が`nil'以外を返すと, 
+     当該箇所では行分けしない.
+
+
+
+File: elisp-ja, Node: Adaptive Fill, Next: Auto Filling, Prev: Margins, Up: Text
+
+適応型詰め込み（adaptive-fill）モード
+=====================================
+
+適応型詰め込みモード（adaptive-fill）では, 詰め込むべき各段落のテキス
+トから自動的に詰め込み接頭辞を選びます.
+
+ -- User Option: adaptive-fill-mode
+     この変数が`nil'以外であると, 適応型詰め込みモード（adaptive-fill）
+     がオンである.  デフォルトでは`t'である.
+
+ -- Function: fill-context-prefix FROM TO
+     この関数は適応型詰め込みモード（adaptive-fill）の中核を実装するも
+     のであり, FROMからTOのあいだのテキストに基づいて詰め込み接頭辞を
+     選ぶ.  以下に述べる変数に基づいて, 段落の最初の2行を調べてこれを
+     行う.
+
+ -- User Option: adaptive-fill-regexp
+     この変数は, 適応型詰め込みモード（adaptive-fill）を制御する正規表
+     現を保持する.  適応型詰め込みモード（adaptive-fill）では, 行の
+     （あれば）左端余白の白文字のうしろから始まるテキストに対してこの
+     正規表現の一致を試みる.  一致した文字群が当該行の詰め込み接頭辞の
+     候補になる.
+
+ -- User Option: adaptive-fill-first-line-regexp
+     1行だけの段落において, 詰め込み接頭辞の候補がこの正規表現に一致す
+     るか, `comment-start-skip'に一致すると, その候補を使う.  さもなけ
+     れば, 同じ幅に相当する白文字をかわりに使う.
+
+     1行だけの段落から選んだ詰め込み接頭辞が後続の行の段落の始まりであ
+     る場合には, 1行だけの段落からはけっして詰め込み接頭辞を選ばない.
+
+ -- User Option: adaptive-fill-function
+     この変数に関数を指定することで, 詰め込み接頭辞のより複雑な自動選
+     択方法を指定できる.  この関数は, `adaptive-fill-regexp'の一致に失
+     敗したときに, 行の左端余白のうしろにポイントを置いて呼び出され, 
+     当該行に基づいて適切な詰め込み接頭辞を返すこと.  それが`nil'を返
+     すと, 当該行には詰め込み接頭辞がないことを意味する.
+
+
+
+File: elisp-ja, Node: Auto Filling, Next: Sorting, Prev: Adaptive Fill, Up: Text
+
+自動詰め込み（auto-filling）モード
+==================================
+
+自動詰め込み（auto-filling）モードは, テキストを挿入するにつれて自動的
+に行を詰め込むマイナモードです.  本節では, 自動詰め込み（auto-filling）
+モードが使うフックについて述べます.  既存のテキストを詰め込んだり幅揃
+えするために明示的に呼び出す関数については, *Note Filling::を参照して
+ください.
+
+自動詰め込み（auto-filling）モードでは, テキストの一部を再詰め込む際の
+余白や幅揃えスタイルを変更するための関数も使えるようにします.  *Note
+Margins::.
+
+ -- Variable: auto-fill-function
+     この変数の値は, 自己挿入される空白や改行のあとで呼び出されるべき
+     （引数なしの）関数であること.  これが`nil'であると, そのような場
+     合に特別なことを行わない.
+
+     自動詰め込み（auto-filling）モードがオンであると,
+     `auto-fill-function'の値は`do-auto-fill'である.  この関数の目的は, 
+     行分けの通常の方針を実装することである.
+
+          Emacsの古い版では, この変数を`auto-fill-hook'と命名していた
+          が, フックの標準的な慣習に従って呼ばれないため19版で
+          `auto-fill-function'と改名した.
+
+ -- Variable: normal-auto-fill-function
+     この変数は, 自動詰め込み（auto-filling）モードがオンになったとき／
+     であるときに`auto-fill-function'として用いる関数を指定する.  メ
+     ジャーモードでは, この変数のバッファローカルな値に設定することで
+     自動詰め込み（auto-filling）モードのふるまいを変更できる.
+
+
+
+File: elisp-ja, Node: Sorting, Next: Columns, Prev: Auto Filling, Up: Text
+
+テキストのソート
+================
+
+本節で述べるソート関数すべては, バッファ内のテキストを並べ替えます. 
+これは, リスト内の要素の順番を並べ替える関数`sort' （*Note
+Rearrangement::）と対照的です.  これらの関数が返す値には意味はありませ
+ん.
+
+ -- Function: sort-subr REVERSE NEXTRECFUN ENDRECFUN &optional STARTKEYFUN ENDKEYFUN
+     この関数は, バッファ内のテキストをレコードに分割してソートする汎
+     用のテキストソートルーティンである.  本節のコマンドのほとんどは, 
+     この関数を用いる.
+
+     `sort-subr'の動作方法を理解するためは, バッファの参照可能部分全体
+     が"ソートレコード"（sort record）と呼ばれる重なり合いのない断片に
+     分割されていると考える.  レコードは連続しているかもしれないし, そ
+     うでないかもしれないが, けっして重なり合わない.  各ソートレコード
+     の一部分（あるいは全体）をソートキーとして区別する.  ソートでは, 
+     ソートキーの順に並ぶようにレコードを並び替える.
+
+     通常, レコードをソートキーの昇順に並べ替える.  関数`sort-subr'の
+     第1引数REVERSEが`nil'以外であると, ソートキーの降順にレコードを並
+     べ替える.
+
+     `sort-subr'のつぎの4つの引数は, ソートレコードをまたいでポイント
+     を移動するために呼ばれる関数である.  それらは, `sort-subr'で多数
+     回呼び出される.
+
+       1. NEXTRECFUNは, レコードの末尾にポイントを置いて呼び出される. 
+          この関数は, つぎのレコードの先頭にポイントを移動する.  最初
+          のレコードの先頭は, `sort-subr'を呼び出したときのポイント位
+          置であると仮定する.  したがって, `sort-subr'を呼び出すまえに
+          は, 普通, バッファの先頭にポイントを移動しておくこと.
+
+          この関数は, バッファの末尾にポイントを置いておくことで, ソー
+          トレコードがなくなったことを表せる.
+
+       2. ENDRECFUNは, レコード内にポイントを置いて呼び出される.  レコー
+          ドの末尾にポイントを移動する.
+
+       3. STARTKEYFUNは, レコードの先頭からソートキーの先頭へポイント
+          を移動するために呼び出される.  この引数は省略可能であり, 省
+          略するとレコード全体をソートキーとする.  指定した場合, その
+          関数は, ソートキーとして用いる`nil'以外の値を返すか, バッファ
+          のポイント位置からソートキーが始まることを表す`nil'を返すこ
+          と.  後者の場合, ソートキーの末尾を探すためにENDKEYFUNが呼ば
+          れる.
+
+       4. ENDKEYFUNは, ソートキーの先頭からソートキーの末尾にポイント
+          を移動するために呼び出される.  この引数は省略可能である.
+          STARTKEYFUNが`nil'を返しこの引数が省略されている（あるいは
+          `nil'である）と, ソートキーはレコードの末尾までである.
+          STARTKEYFUNが`nil'以外の値を返すのであれば, ENDKEYFUNは必要
+          ない.
+
+     `sort-subr'の例として, `sort-lines'の完全な関数定義を示す.
+
+          ;; 説明文字列の始めの2行は, ユーザーが見るときには
+          ;; 実質的には1行であることに注意
+          (defun sort-lines (reverse beg end)
+            "Sort lines in region alphabetically;\
+           argument means descending order.
+          Called from a program, there are three arguments:
+          REVERSE (non-nil means reverse order),\
+           BEG and END (region to sort).
+          The variable `sort-fold-case' determines\
+           whether alphabetic case affects
+          the sort order.
+            (interactive "P\nr")
+            (save-excursion
+              (save-restriction
+                (narrow-to-region beg end)
+                (goto-char (point-min))
+                (sort-subr reverse 'forward-line 'end-of-line))))
+
+     ここで, `forward-line'はつぎのレコードの先頭にポイントを移動し,
+     `end-of-line'はレコードの末尾にポイントを移動する.  レコード全体
+     をソートキーとして用いるため, 引数STARTKEYFUNとENDKEYFUNは指定し
+     ない.
+
+     関数`sort-paragraphs'もほぼ同様であるが, つぎのように`sort-subr'
+     を呼び出す点が異なる.
+
+          (sort-subr reverse
+                     (function
+                       (lambda ()
+                         (while (and (not (eobp))
+                                (looking-at paragraph-separate))
+                           (forward-line 1))))
+                     'forward-paragraph)
+
+     `sort-subr'から戻ったあとでは, ソートレコードを指しているマーカは
+     意味のある位置を指していない.
+
+ -- User Option: sort-fold-case
+     この変数が`nil'以外であると, `sort-subr'や他のバッファソート関数
+     は, 文字列の比較において大文字小文字を区別しない.
+
+ -- コマンド: sort-regexp-fields REVERSE RECORD-REGEXP KEY-REGEXP START END
+     このコマンドは, STARTとENDのあいだの領域をRECORD-REGEXPと
+     KEY-REGEXPの指定に従ってアルファベット順にソートする.  REVERSEが
+     負の整数であると, 逆順にソートする.
+
+     アルファベット順のソートとは, 最初の文字同士, 2番目の文字同士といっ
+     た具合に2つのソートキーを比較することである.  不一致がみつかると, 
+     ソートキーが等しくないことを意味し, 最初の不一致箇所の文字が小さ
+     いほうのソートキーが小さい.  個々の文字は, Emacsの文字集合におけ
+     る文字コードの数値に従って比較する.
+
+     引数RECORD-REGEXPの値は, バッファをソートレコードに分割する方法を
+     指定する.  各レコードの末尾において, この正規表現を探索しそれに一
+     致したテキストをつぎのレコードとする.  たとえば, 正規表現`^.+$'は, 
+     少なくとも1つの文字のあとに改行があるような行に一致し, そのような
+     行をソートレコードとする.  正規表現の構文と意味については, *Note
+     Regular Expressions::.
+
+     引数KEY-REGEXPの値は, レコードのどの部分がソートキーであるかを指
+     定する.  KEY-REGEXPは, レコード全体かその一部分に一致する.  後者
+     の場合, レコードの残りの部分は, レコードの並び替え順序には影響し
+     ないが, レコードをその新たな位置に移動するときにいっしょに移動さ
+     れる.
+
+     引数KEY-REGEXPでRECORD-REGEXPの部分式に一致したテキストを参照して
+     もよいし, 独立した正規表現でもよい.
+
+     KEY-REGEXPにはつぎの可能性がある.
+
+     `\DIGIT'
+          RECORD-REGEXPのDIGIT番目の括弧によるグループ化`\(...\)'に一
+          致したテキストがソートキーである.
+
+     `\&'
+          レコード全体がソートキーである.
+
+     正規表現
+          `sort-regexp-fields'はレコード内でこの正規表現に一致するもの
+          を探す.  一致がみつかれば, それがソートキーになる.  レコード
+          内でKEY-REGEXPに対する一致がみつからなければ, レコードを無視
+          する.  つまり, バッファ内での当該レコードの位置を変更しない. 
+          （別のレコードが周りに移動してくるかもしれない. ）
+
+     たとえば, 領域内のすべての行を各行の`f'で始まる最初の単語でソート
+     するには, RECORD-REGEXPに`^.*$', KEY-REGEXPに`\<f\w*\>'を指定する. 
+     つまり, つぎのような式になる.
+
+          (sort-regexp-fields nil "^.*$" "\\<f\\w*\\>"
+                              (region-beginning)
+                              (region-end))
+
+     `sort-regexp-fields'を対話的に呼び出すと, ミニバッファで
+     RECORD-REGEXPとKEY-REGEXPを問い合わせる.
+
+ -- コマンド: sort-lines REVERSE START END
+     このコマンドは, STARTとENDのあいだの領域の行をアルファベット順に
+     ソートする.  REVERSEが`nil'以外であると, 逆順にソートする.
+
+ -- コマンド: sort-paragraphs REVERSE START END
+     このコマンドは, STARTとENDのあいだの領域の段落をアルファベット順
+     にソートする.  REVERSEが`nil'以外であると, 逆順にソートする.
+
+ -- コマンド: sort-pages REVERSE START END
+     このコマンドは, STARTとENDのあいだの領域のページをアルファベット
+     順にソートする.  REVERSEが`nil'以外であると, 逆順にソートする.
+
+ -- コマンド: sort-fields FIELD START END
+     このコマンドは, STARTとENDのあいだの領域の行を各行のFIELD番目の
+     フィールド同士をアルファベット順に比較してソートする.  フィールド
+     は白文字で区切られ, 1から数える.  FIELDが負であると, 行末から-
+     FIELD番目のフィールドでソートする.  このコマンドは, 表をソートす
+     るのに有用である.
+
+ -- コマンド: sort-numeric-fields FIELD START END
+     このコマンドは, STARTとENDのあいだの領域の行を各行のFIELD番目の
+     フィールド同士を数値として比較してソートする.  領域内の各行の指定
+     したフィールドには数があること.  フィールドは白文字で区切られ, 1
+     から数える.  FIELDが負であると, 行末から-FIELD番目のフィールドで
+     ソートする.  このコマンドは, 表をソートするのに有用である.
+
+ -- コマンド: sort-columns REVERSE &optional BEG END
+     このコマンドは, STARTとENDのあいだの領域の行を特定範囲のコラムを
+     アルファベット順に比較してソートする.  BEGとENDのコラム位置は, ソー
+     ト対象のコラムの範囲を区切る.
+
+     REVERSEが`nil'以外であると, 逆順にソートする.
+
+     このコマンドの普通でない点は, 位置BEGを含む行全体と位置ENDを含む
+     行全体もソート対象の領域に含まれることである.
+
+     `sort-columns'は, ユーティリティプログラム`sort'を使うため, タブ
+     文字を含むテキストを正しく扱えない.  ソートするまえに`M-x
+     untabify'を使ってタブを空白に変換すること.
+
+
+
+File: elisp-ja, Node: Columns, Next: Indentation, Prev: Sorting, Up: Text
+
+コラムを数える
+==============
+
+コラム関数は, （バッファの先頭から文字を数えた）文字位置を（スクリーン
+の行頭から文字を数えた）コラム位置に変換します.
+
+これらの関数は, 各文字をそれがスクリーン上で占めるコラム数を基に数える. 
+つまり, `ctl-arrow'の値に依存してコントロール文字は, 2コラムか4コラム
+占めると数え, タブ文字は, タブの開始コラムと`tab-width'の値に依存する
+コラム数を占めると数えることを意味します.  *Note Usual Display::.
+
+コラム番号の計算では, ウィンドウの幅や水平スクロール量を無視します. 
+その結果, コラム値は任意の大きさになりえます.  最初の（スクリーン左端
+の）コラムの番号は0です.
+
+ -- Function: current-column
+     この関数は, 左端を0としてコラム数で数えたポイントの水平位置を返す. 
+     コラム位置は, 現在行の先頭からポイント位置までの文字すべての表示
+     上の表記の幅の総和である.
+
+     `current-column'の使用例については, *Note Text Lines::の
+     `count-lines'を参照.
+
+ -- Function: move-to-column COLUMN &optional FORCE
+     この関数は, ポイントを現在行のCOLUMNへ移動する.  COLUMNの計算では, 
+     現在行の先頭からポイント位置までの文字すべての表示上の表記の幅を
+     考慮する.
+
+     コラムCOLUMNが行末を越える場合, ポイントを行末へ移動する.  COLUMN
+     が負であると, ポイントを行頭へ移動する.
+
+     コラムCOLUMNがタブなどの複数コラムを占める文字の中ほどにあるため
+     にそこへ移動できない場合には, ポイントを当該文字の末尾へ移動する. 
+     しかし, FORCEが`nil'以外でありCOLUMNがタブの中ほどであると, コラ
+     ムCOLUMNに正確に移動できるようにタブを空白に変換する.  複数コラム
+     を占めるその他の文字では, それらを分割する方法がないため, FORCEを
+     指定しても変則的になる.
+
+     コラムCOLUMNに到達できるほど行が長くない場合にも引数FORCEには効果
+     がある.  そのような場合, 指定コラムに達するように行末に白文字を追
+     加する.
+
+     COLUMNが整数でないと, エラーを通知する.
+
+     戻り値は, 実際の移動先のコラム番号である.
+
+
+
+File: elisp-ja, Node: Indentation, Next: Case Changes, Prev: Columns, Up: Text
+
+字下げ
+======
+
+字下げ関数は, 行頭の空白を調べたり, そこへ移動したり, 変更するために使
+います.  行の他の白文字を変更するものもあります.  コラム関数と字下げ関
+数は左端を0と数えます.
+
+* Menu:
+
+* Primitive Indent::      Functions used to count and insert indentation.
+* Mode-Specific Indent::  Customize indentation for different modes.
+* Region Indent::         Indent all the lines in a region.
+* Relative Indent::       Indent the current line based on previous lines.
+* Indent Tabs::           Adjustable, typewriter-like tab stops.
+* Motion by Indent::      Move to first non-blank character.
+
+
+
+File: elisp-ja, Node: Primitive Indent, Next: Mode-Specific Indent, Prev: Indentation, Up: Indentation
+
+字下げ基本関数
+--------------
+
+本節では, 字下げを数えたり挿入するために使われる基本関数について述べま
+す.  後続の節の関数群は, これらの基本関数を使っています.  関連する関数
+については, *Note Width::.
+
+ -- Function: current-indentation
+     この関数は, 現在行の字下げを返す.  これは最初の白文字以外の文字の
+     水平位置である.  行全体が白文字や空である場合には, 行末の水平位置
+     を返す.
+
+ -- コマンド: indent-to COLUMN &optional MINIMUM
+     この関数は, ポイント位置からCOLUMNに達するまでタブや空白で字下げ
+     する.  MINIMUMを指定し`nil'以外であると, COLUMNを越える場合であっ
+     ても最低MINIMUM個の空白を挿入する.  さもなければ, ポイントが
+     COLUMNを越えている場合には, この関数はなにもしない.  戻り値は, 挿
+     入した字下げが終る箇所のコラムである.
+
+     挿入された白文字は周りの文字（普通は, まえの文字）からテキスト属
+     性を継承する.  *Note Sticky Properties::.
+
+ -- User Option: indent-tabs-mode
+     この変数が`nil'以外であると, 字下げ関数は空白に加えてタブも挿入す
+     る.  さもなければ, 空白のみを挿入する.  この変数に設定すると, カ
+     レントバッファでバッファローカルになる.
+
+
+
+File: elisp-ja, Node: Mode-Specific Indent, Next: Region Indent, Prev: Primitive Indent, Up: Indentation
+
+メジャーモードの制御による字下げ
+--------------------------------
+
+各メジャーモードの重要な機能は, キーTABを編集対象の言語に適した字下げ
+にカスタマイズすることです.  本節では, キーTABの機構とそれを制御する方
+法について述べます.  本節の関数は, 予測できない値を返します.
+
+ -- Variable: indent-line-function
+     この変数の値は, 現在行を字下げするためにTAB（やさまざまなコマンド）
+     が使う関数である.  コマンド`indent-according-to-mode'は, この関数
+     を呼ぶこと以上のことはしない.
+
+     lispモードでは値はシンボル`lisp-indent-line', Cモードでは
+     `c-indent-line', fortranモードでは`fortran-indent-line'である. 
+     標準的な字下げがない基本（fundamental）モード, テキスト（text）モー
+     ド, 他の多くのモードでは, 値は`indent-to-left-margin'（デフォルト
+     値）である
+
+ -- コマンド: indent-according-to-mode
+     このコマンドは, 現在のメジャーモードに適した方法で現在行を字下げ
+     するために`indent-line-function'で指定される関数を呼び出す.
+
+ -- コマンド: indent-for-tab-command
+     このコマンドは, 現在行を字下げするために`indent-line-function'で
+     指定される関数を呼び出すが, その関数が`indent-to-left-margin'であ
+     ると, かわりに`insert-tab'を呼び出す.  （これはタブ文字を挿入する
+     単純なコマンドである. ）
+
+ -- コマンド: newline-and-indent
+     この関数は, 改行を挿入してから, （改行を挿入したばかりの行に続く）
+     新たな行をメジャーモードに基づいて字下げする.
+
+     現在の`indent-line-function'を呼び出して字下げを行う.  プログラム
+     言語向けのモードでは, これはTABが行うことと同じであるが, TABがタ
+     ブを挿入するテキスト向けのモードの一部では, `newline-and-indent'
+     は`left-margin'で指定されたコラムに字下げする.
+
+ -- コマンド: reindent-then-newline-and-indent
+     このコマンドは, 現在行を字下げし直し, ポイント位置に改行を挿入し, 
+     （改行を挿入したばかりの行に続く）新たな行を字下げする.
+
+     このコマンドは, `indent-line-function'の現在の値を呼び出すことで, 
+     どちらの行も現在のメジャーモードに基づいて字下げする.  プログラム
+     言語向けのモードでは, これはTABが行うことと同じであるが, TABがタ
+     ブを挿入するテキスト向けのモードの一部では,
+     `reindent-then-newline-and-indent'は, `left-margin'で指定されるコ
+     ラムに字下げする.
+
+
+
+File: elisp-ja, Node: Region Indent, Next: Relative Indent, Prev: Mode-Specific Indent, Up: Indentation
+
+領域全体の字下げ
+----------------
+
+本節では, 領域内のすべての行を字下げするコマンドについて述べます.  こ
+れらは予測できない値を返します.
+
+ -- コマンド: indent-region START END TO-COLUMN
+     このコマンドは, START（を含めて）とEND（を含めない）のあいだで始
+     まる空でない各行を字下げする.  TO-COLUMNが`nil'であると,
+     `indent-region'は, 現在のモードの字下げ関数, つまり,
+     `indent-line-function'の値を呼び出して, 空でない各行を字下げする.
+
+     TO-COLUMNが`nil'以外であると, それは字下げ先のコラム番号を指定す
+     る整数であること.  すると, この関数は, 白文字を追加するか削除して, 
+     各行を指定どおりに字下げする.
+
+     詰め込み接頭辞がある場合, `indent-region'は詰め込み接頭辞で行を始
+     めることで各行を字下げする.
+
+ -- Variable: indent-region-function
+     この変数の値は, `indent-region'の短縮版として利用可能な関数である. 
+     領域の開始位置と終了位置の2つの引数をとる.  領域の行を1つ1つ字下
+     げする場合と同じ結果を生じるが, より速く動作することを意図してこ
+     の関数を設計するべきである.
+
+     値が`nil'であると短縮版はなく, `indent-region'が実際に1行ずつ処理
+     する.
+
+     短縮版関数はCモードやlispモードのようなモードで有用である.  その
+     ようなモードでは, `indent-line-function'で関数定義の始まりを走査
+     する必要があり, これを各行に適用すると自乗の時間がかかる.  短縮版
+     では, 字下げし終えた関数定義を通過するたびに走査情報を更新でき, 
+     これには線形時間かかるだけである.  個々の行を高速に字下げできるモー
+     ドでは, 短縮版は必要ない.
+
+     引数TO-COLUMNに`nil'以外を指定した`indent-region'には別の意味があ
+     り, この変数を使わない.
+
+ -- コマンド: indent-rigidly START END COUNT
+     このコマンドは, START（を含めて）とEND（を含めない）のあいだで始
+     まる行すべてをコラム数COUNTだけ字下げする.  これは, 領域を1つの塊
+     として動かしてその領域の『形を保つ』.  このコマンドは, 字下げして
+     いないテキストの領域だけでなく, 整形済みの領域を字下げするために
+     も有用である.
+
+     たとえば, COUNTが3であると, このコマンドは指定した領域内の各行の
+     行頭に3コラムの字下げを追加する.
+
+     メイル（mail）モードでは, `C-c C-y'（`mail-yank-original'）が返信
+     対象のメッセージからコピーしたテキストを字下げするために
+     `indent-rigidly'を使っている.
+
+ -- Function: indent-code-rigidly START END COLUMNS &optional NOCHANGE-REGEXP
+     この関数は`indent-rigidly'と同様であるが, 文字列やコメントで始ま
+     る行を変更しない点が異なる.
+
+     さらに, （NOCHANGE-REGEXPが`nil'以外のとき）行の先頭が
+     NOCHANGE-REGEXPに一致する場合にも行を変更しない.
+
+
+
+File: elisp-ja, Node: Relative Indent, Next: Indent Tabs, Prev: Region Indent, Up: Indentation
+
+先行行相対の字下げ
+------------------
+
+本節では, 先行する行の内容に基づいて現在行を字下げする2つのコマンドに
+ついて述べます.
+
+ -- コマンド: indent-relative &optional UNINDENTED-OK
+     このコマンドは, 空白でないまえの行のつぎの"字下げ位置"のコラムに
+     達するまで, ポイント位置に白文字を挿入する.  字下げ位置とは, 白文
+     字に続く白文字以外の文字である.  つぎの字下げ位置とは, 現在行のポ
+     イントのコラム位置より大きな最初の字下げ位置のことである.  たとえ
+     ば, テキスト行の白文字以外の最初の文字より左側で, その下の行にポ
+     イントがあると, 白文字を挿入してそのコラム位置にポイントを移動す
+     る.
+
+     空白でないまえの行に, つぎの字下げ位置（つまり, ポイント位置より
+     大きなコラム）がないと, `indent-relative'は, （UNINDENTED-OKが
+     `nil'以外であれば）なにもしないか, `tab-to-tab-stop'を呼び出す. 
+     したがって, まえのテキスト行が短くてその行末より右側で, その下の
+     行にポイントがあると, このコマンドは, 通常どおり, 白文字を挿入し
+     てつぎのタブ位置へポイントを移動する.
+
+     `indent-relative'の戻り値は予測できない.
+
+     つぎの例では, ポイントは2行目の行頭にある.
+
+                      This line is indented twelve spaces.
+          -!-The quick brown fox jumped.
+
+     式`(indent-relative nil)'を評価すると, つぎのようになる.
+
+                      This line is indented twelve spaces.
+                      -!-The quick brown fox jumped.
+
+     つぎの例では, ポイントは`jumped'の`m'と`p'のあいだにある.
+
+                      This line is indented twelve spaces.
+          The quick brown fox jum-!-ped.
+
+     式`(indent-relative nil)'を評価すると, つぎのようになる.
+
+                      This line is indented twelve spaces.
+          The quick brown fox jum  -!-ped.
+
+ -- コマンド: indent-relative-maybe
+     このコマンドは, 引数UNINDENTED-OKに`t'を指定して`indent-relative'
+     を呼び出すことで, まえの行と同様に字下げする.  戻り値は予測できな
+     い.
+
+     空行でないまえの行に現在のコラム位置を越える字下げ位置がなければ, 
+     このコマンドはなにもしない.
+
+
+
+File: elisp-ja, Node: Indent Tabs, Next: Motion by Indent, Prev: Relative Indent, Up: Indentation
+
+調整可能な『タブストップ』
+--------------------------
+
+本節では, ユーザー指定の『タブストップ』の機構と, それを使ったり設定す
+るための機構について説明します.  『タブストップ』という名前を使うのは, 
+この機構がタイプライタのタブストップに似た機能だからです.  この機能は, 
+適切な個数の空白とタブ文字を挿入してつぎのタブストップのコラムへ到達し
+ますが, バッファ内のタブ文字の表示に影響することはありません（*Note
+Usual Display::）.  テキスト（text）モードなどの少数のメジャーモードで
+のみ, 入力としての文字TABがこのタブストップ機能を使います.
+
+ -- コマンド: tab-to-tab-stop
+     このコマンドは, `tab-stop-list'で定義されたつぎのタブストップコラ
+     ムまで, ポイントのまえに空白やタブを挿入する.  このリストで現在の
+     コラム番号より大きな要素を探し, その要素を字下げ位置のコラムとし
+     て使う.  そのような要素がなければ, このコマンドはないもしない.
+
+ -- User Option: tab-stop-list
+     この変数は, `tab-to-tab-stops'が使うタブストップコラムのリストで
+     ある.  それらの要素は, 昇順の整数であること.  タブストップコラム
+     の間隔は, 等間隔である必要はない.
+
+     タブストップを対話的に編集するには`M-x edit-tab-stops'を使う.
+
+
+
+File: elisp-ja, Node: Motion by Indent, Next: Case Changes, Prev: Indent Tabs, Up: Indentation
+
+字下げに基づく移動コマンド
+--------------------------
+
+これらのコマンドは, 主に対話的に使うもので, テキストの字下げに基づいて
+動作します.
+
+ -- コマンド: back-to-indentation
+     このコマンドは, 現在行（ポイントが位置する行）の白文字でない最初
+     の文字へポイントを移動する.  `nil'を返す.
+
+ -- コマンド: backward-to-indentation ARG
+     このコマンドは, ARG行だけポイントを後方へ移動してから, 当該行の白
+     文字でない最初の文字へポイントを移動する.  `nil'を返す.
+
+ -- コマンド: forward-to-indentation ARG
+     このコマンドは, ARG行だけポイントを前方へ移動してから, 当該行の白
+     文字でない最初の文字へポイントを移動する.  `nil'を返す.
+
+
+
+File: elisp-ja, Node: Case Changes, Next: Text Properties, Prev: Indentation, Up: Text
+
+大文字小文字の変更
+==================
+
+ここに述べる大文字小文字の変更コマンドは, カレントバッファのテキストに
+作用します.  文字列や文字の大文字小文字を変換する関数については, *Note
+Case Conversion::.  どの文字が大文字でどの文字が小文字であり, それらを
+どのように変換するかをカスタマイズする方法については, *Note Case
+Tables::.
+
+ -- コマンド: capitalize-region START END
+     この関数は, STARTとENDで定義される領域内のすべての単語をキャピタ
+     ライズ（大文字で始まるように）する.  つまり, 各単語の最初の文字を
+     大文字に, 残りの文字を小文字に変換する.  この関数は`nil'を返す.
+
+     領域の端が単語の途中にあると, その単語の領域内の部分を1つの単語と
+     みなす.
+
+     `capitalize-region'を対話的に呼び出すと, STARTとENDはポイントとマー
+     クであり, 小さいほうがさきにくる.
+
+          ---------- Buffer: foo ----------
+          This is the contents of the 5th foo.
+          ---------- Buffer: foo ----------
+
+          (capitalize-region 1 44)
+          => nil
+
+          ---------- Buffer: foo ----------
+          This Is The Contents Of The 5th Foo.
+          ---------- Buffer: foo ----------
+
+ -- コマンド: downcase-region START END
+     この関数は, STARTとENDで定義される領域内のすべての文字を小文字に
+     変換する.  この関数は`nil'を返す.
+
+     `downcase-region'を対話的に呼び出すと, STARTとENDはポイントとマー
+     クであり, 小さいほうが先にくる.
+
+ -- コマンド: upcase-region START END
+     この関数は, STARTとENDで定義される領域内のすべての文字を大文字に
+     変換する.  この関数は`nil'を返す.
+
+     `upcase-region'を対話的に呼び出すと, STARTとENDはポイントとマーク
+     であり, 小さいほうが先にくる.
+
+ -- コマンド: capitalize-word COUNT
+     この関数は, ポイントのうしろのCOUNT個の単語をキャピタライズ（大文
+     字で始まるように）し, ポイントをそれらの末尾に移動する.  つまり, 
+     各単語の最初の文字を大文字に, 残りの文字を小文字に変換する.
+     COUNTが負であると, まえの-COUNT個の単語を大文字で始まるようにする
+     が, ポイントは移動しない.  値は`nil'である.
+
+     ポイントが単語の途中にあると, 単語を前方へ移動するときにはポイン
+     トよりまえにある単語の部分を無視する.  単語の残りの部分を1つの単
+     語として扱う.
+
+     `capitalize-word'を対話的に呼び出すと, COUNTは数値前置引数である.
+
+ -- コマンド: downcase-word COUNT
+     この関数は, ポイントのうしろのCOUNT個の単語をすべて小文字に替え, 
+     ポイントをそれらの末尾に移動する.  COUNTが負であると, まえの-
+     COUNT個の単語を変換するが, ポイントは移動しない.  値は`nil'である.
+
+     `downcase-word'を対話的に呼び出すと, COUNTは数値前置引数である.
+
+ -- コマンド: upcase-word COUNT
+     この関数は, ポイントのうしろのCOUNT個の単語をすべて大文字に替え, 
+     ポイントをそれらの末尾に移動する.  COUNTが負であると, まえの-
+     COUNT個の単語を変換するが, ポイントは移動しない.  値は`nil'である.
+
+     `upcase-word'を対話的に呼び出すと, COUNTは数値前置引数である.
+
+
+
+File: elisp-ja, Node: Text Properties, Next: Substitution, Prev: Case Changes, Up: Text
+
+テキスト属性
+============
+
+シンボルの属性リスト（*Note Property Lists::）のように, バッファや文字
+列の各文字には"テキスト属性リスト" （text property list）を持てます. 
+この属性は, （本節の原文のタイトルの）文字`T'や`foo'の最初の`o'のよう
+な特定の箇所の特定の文字に属します.  同じ文字が異なる箇所に現れるとき, 
+一般にはそれぞれに異なる属性を持てます.
+
+各属性には, 名前と値があります.  どちらも任意のLispオブジェクトでかま
+いませんが, 名前は普通はシンボルです.  属性リストを参照する普通の方法
+では, 名前を指定してそれに対応する値を問い合わせます.
+
+文字に属性`category'があるとき, それを文字の"カテゴリ"（category）とい
+います.  それはシンボルであるべきです.  そのシンボルの属性が, 文字の属
+性のデフォルトとして働きます.
+
+文字列とバッファのあいだでテキストをコピーすると, 文字とともにその属性
+も保たれます.  `substring', `insert', `buffer-substring'などのさまざま
+な関数がそうします.
+
+* Menu:
+
+* Examining Properties::	Looking at the properties of one character.
+* Changing Properties::		Setting the properties of a range of text.
+* Property Search::		Searching for where a property changes value.
+* Special Properties::		Particular properties with special meanings.
+* Format Properties::           Properties for representing formatting of text.
+* Sticky Properties::           How inserted text gets properties from
+                                  neighboring text.
+* Saving Properties::           Saving text properties in files, and reading
+                                  them back.
+* Lazy Properties::             Computing text properties in a lazy fashion
+                                  only when text is examined.
+* Clickable Text::              Using text properties to make regions of text
+                                  do something when you click on them.
+* Not Intervals::		Why text properties do not use
+				  Lisp-visible text intervals.
+
+
+
+File: elisp-ja, Node: Examining Properties, Next: Changing Properties, Prev: Text Properties, Up: Text Properties
+
+テキスト属性を調べる
+--------------------
+
+テキスト属性を調べるもっとも簡単な方法は, 特定の文字の特定の属性の値を
+問い合わせることです.  それには, `get-text-property'を使います.  文字
+の属性リスト全体を取得するには`text-properties-at'を使います.  複数の
+文字の属性を一度に調べるための関数については, *Note Property Search::.
+
+これらの関数は, 文字列とバッファの両方を扱えます.  文字列内の位置は0か
+ら始まり, バッファ内の位置は1から始まることに注意してください.
+
+ -- Function: get-text-property POS PROP &optional OBJECT
+     この関数は, OBJECT（バッファか文字列）内の位置POSのうしろの1文字
+     の属性PROPの値を返す.  引数OBJECTは省略でき, デフォルトはカレント
+     バッファである.
+
+     その文字に属性PROPがなくてもシンボルであるカテゴリがあれば,
+     `get-text-property'は当該シンボルの属性PROPを返す.
+
+ -- Function: get-char-property POS PROP &optional OBJECT
+     この関数は`get-text-property'に似ているが, まずオーバレイを調べて
+     からテキスト属性を調べる.  *Note Overlays::.
+
+     引数OBJECTは, 文字列, バッファ, ウィンドウのいずれかである.  ウィ
+     ンドウであると, そのウィンドウに表示しているバッファのテキスト属
+     性とオーバレイを対象にするが, 対象となるオーバレイはそのウィンド
+     ウに対して活性なものだけである.  OBJECTがバッファであると, テキス
+     ト属性に加えてそのバッファのすべてのオーバレイを対象にする.
+     OBJECTが文字列であると, 文字列にはオーバレイはないので, テキスト
+     属性のみを対象にする.
+
+ -- Function: text-properties-at POSITION &optional OBJECT
+     この関数は, 文字列やバッファであるOBJECT内の位置POSITIONにある1文
+     字の属性リスト全体を返す.  OBJECTが`nil'であると, デフォルトはカ
+     レントバッファである.
+
+ -- Variable: default-text-properties
+     この変数は, テキスト属性のデフォルト値を与える属性リストを保持す
+     る.  直接的にもカテゴリシンボルを介して間接的にも文字に属性の値が
+     指定されていないと, このリストに収めた値をかわりに使う.  つぎに例
+     を示す.
+
+          (setq default-text-properties '(foo 69))
+          ;; 位置1の文字に属性がないことを保証する
+          (set-text-properties 1 2 nil)
+          ;; 問い合わせたときに見えるのはデフォルト値である
+          (get-text-property 1 'foo)
+               => 69
+
+
+
+File: elisp-ja, Node: Changing Properties, Next: Property Search, Prev: Examining Properties, Up: Text Properties
+
+テキスト属性の変更
+------------------
+
+属性を変更する基本関数は, バッファや文字列の指定した範囲に作用します. 
+関数`set-text-properties'（本節の最後）は, その範囲のテキストの属性リ
+スト全体を設定します.  これは, 名前で指定した特定の属性のみを追加／変
+更／削除するのにしばしば有用です.
+
+テキスト属性はバッファ（や文字列）の一部分であるとみなされ, スクリーン
+上でのバッファの見た目に影響するので, バッファのテキスト属性を変更する
+と, バッファには変更済みの印を付けます.  バッファのテキスト属性の変更
+もアンドゥ（*Note Undo::）できます.
+
+ -- Function: put-text-property START END PROP VALUE &optional OBJECT
+     この関数は, 文字列やバッファであるOBJECT内のSTARTとENDのあいだの
+     テキストの属性PROPの値をVALUEとする.  OBJECTが`nil'であると, デフォ
+     ルトはカレントバッファである.
+
+ -- Function: add-text-properties START END PROPS &optional OBJECT
+     この関数は, 文字列やバッファであるOBJECT内のSTARTとENDのあいだの
+     テキストのテキスト属性に追加／上書きする.  OBJECTが`nil'であると, 
+     デフォルトはカレントバッファである.
+
+     引数PROPSで追加する属性を指定する.  これは属性リスト（*Note
+     Property Lists::）の形であること.  つまり, 属性名とその値を交互に
+     並べたリストであること.
+
+     この関数が属性の値をどれか実際に変更したならば, 戻り値は`t'である. 
+     さもなければ（PROPSが`nil'だったり, テキスト内の値と同じ値である
+     と）`nil'である.
+
+     たとえば, テキストのある範囲の属性`comment'と`face'を設定するには
+     つぎのようにする.
+
+          (add-text-properties START END
+                               '(comment t face highlight))
+
+ -- Function: remove-text-properties START END PROPS &optional OBJECT
+     この関数は, 文字列やバッファであるOBJECT内のSTARTとENDのあいだの
+     テキストから指定したテキスト属性を削除する.  OBJECTが`nil'である
+     と, デフォルトはカレントバッファである.
+
+     引数PROPSで削除する属性を指定する.  これは属性リスト（*Note
+     Property Lists::）の形であること.  つまり, 属性名とその値を交互に
+     並べたリストであること.  ただし, 意味があるのは名前のみであり, そ
+     の値は無視する.  たとえば, 属性`face'を削除するにはつぎのようにす
+     る.
+
+          (remove-text-properties START END '(face nil))
+
+     この関数が属性の値をどれか実際に変更したならば, 戻り値は`t'である. 
+     さもなければ（PROPSが`nil'だったり, 指定したテキスト内の文字にそ
+     れらのいずれの属性もなければ）`nil'である.
+
+     特定のテキストからすべてのテキスト属性を削除するには, 新たな属性
+     リストとして`nil'を指定して`set-text-properties'を使う.
+
+ -- Function: set-text-properties START END PROPS &optional OBJECT
+     この関数は, 文字列やバッファであるOBJECT内のSTARTとENDのあいだの
+     テキストのテキスト属性を完全に置き換える.  OBJECTが`nil'であると, 
+     デフォルトはカレントバッファである.
+
+     引数PROPSは新たな属性リストである.  これは, 属性名とその値を交互
+     に並べたリストであること.
+
+     `set-text-properties'から戻ると, 指定した範囲のすべての文字は同一
+     の属性を持つことになる.
+
+     PROPSが`nil'であると, テキストの指定した範囲からすべての属性を削
+     除する効果がある.  たとえば, つぎのようにする.
+
+          (set-text-properties START END nil)
+
+バッファからテキストをコピーするがその属性はコピーしない関数
+`buffer-substring-no-properties'（*Note Buffer Contents::）も参照して
+ください.
+
+
+
+File: elisp-ja, Node: Property Search, Next: Special Properties, Prev: Changing Properties, Up: Text Properties
+
+テキスト属性を探す関数
+----------------------
+
+テキスト属性の典型的な用途では, ほとんどの場合多くの連続した文字の1つ
+の属性には同じ値があります.  1つずつ文字を調べるようにプログラムするよ
+りは, 同じ属性値を持つテキストの塊を処理するほうがとても速いです.
+
+このために使える関数をここで説明します.  これらは属性値の比較に`eq'を
+使います.  OBJECTのデフォルトは, すべての場合でカレントバッファです.
+
+高い効率のためには, これらの関数に引数LIMITを使うことが重要であり, 1つ
+の属性を探す関数には特にあてはまります.  さもないと, 読者が望む属性が
+変更されないような場合, それらの関数はバッファの末尾まで走査して長い時
+間を費すことになります.
+
+これらの関数はポイントを移動しませんが, そのかわりに位置（あるいは
+`nil'）を返します.  位置はつねに2つの文字のあいだにあることに注意して
+ください.  これらの関数が返す位置は, 異なる属性を持つ2つの文字のあいだ
+です.
+
+ -- Function: next-property-change POS &optional OBJECT LIMIT
+     この関数は, 文字列やバッファであるOBJECT内の位置POSからテキスト属
+     性のいずれかが異なるまでテキストを走査し, その変化する位置を返す. 
+     いいかえれば, POSの直後の文字のテキスト属性とは異なる属性を持つ
+     POSのあとにある最初の文字の位置を返す.
+
+     LIMITが`nil'以外であると, LIMITの位置で走査を終える.  その箇所ま
+     で異なる属性がないと, `next-property-change'はLIMITを返す.
+
+     LIMITが`nil'でありOBJECTの末尾まで属性に変化がないと, 値は`nil'で
+     ある.  値が`nil'以外であると, それはPOSより大きいか等しい位置であ
+     る.  値がPOSに等しいのは, LIMITがPOSに等しい場合のみである.
+
+     バッファからすべての属性が同じであるテキストの塊を走査する方法の
+     例をつぎに示す.
+
+          (while (not (eobp))
+            (let ((plist (text-properties-at (point)))
+                  (next-change
+                   (or (next-property-change (point) (current-buffer))
+                       (point-max))))
+              ポイントからNEXT-CHANGEまでのテキストを処理する...
+              (goto-char next-change)))
+
+ -- Function: next-single-property-change POS PROP &optional OBJECT LIMIT
+     この関数は, 文字列やバッファであるOBJECT内の位置POSから属性PROPが
+     異なるまでテキストを走査し, その変化する位置を返す.  いいかえれば,
+     POSの直後の文字の属性PROPとは異なる属性PROPをもつPOSのあとにある
+     最初の文字の位置を返す.
+
+     LIMITが`nil'以外であると, LIMITの位置で走査を終える.  その箇所ま
+     で異なる属性がないと, `next-single-property-change'はLIMITを返す.
+
+     LIMITが`nil'でありOBJECTの末尾まで属性に変化がないと, 値は`nil'で
+     ある.  値が`nil'以外であると, それはPOSより大きいか等しい位置であ
+     る.  値がPOSに等しいのは, LIMITがPOSに等しい場合のみである.
+
+ -- Function: previous-property-change POS &optional OBJECT LIMIT
+     これは`next-property-change'と同様であるが, 前方へではなくPOSから
+     後方へ走査する.  値が`nil'以外であると, それはPOSより小さいか等し
+     い位置である.  値がPOSに等しいのは, LIMITがPOSに等しい場合のみで
+     ある.
+
+ -- Function: previous-single-property-change POS PROP &optional OBJECT LIMIT
+     これは`next-single-property-change'と同様であるが, 前方へではなく
+     POSから後方へ走査する.  値が`nil'以外であると, それはPOSより小さ
+     いか等しい位置である.  値がPOSに等しいのは, LIMITがPOSに等しい場
+     合のみである.
+
+ -- Function: next-char-property-change POSITION &optional LIMIT
+     これは`next-property-change'と同様であるが, テキスト属性に加えて
+     オーバレイも対象にする.  この関数はカレントバッファにのみ作用する
+     ため, OBJECTを表す引数はない.  どちらかの属性が異なるつぎの位置を
+     返す.
+
+ -- Function: previous-char-property-change POSITION &optional LIMIT
+     これは`next-char-property-change'と同様であるが, 前方へではなく
+     POSから後方へ走査する.
+
+ -- Function: text-property-any START END PROP VALUE &optional OBJECT
+     STARTとENDのあいだに属性PROPの値がVALUEである文字が1つでもあれば, 
+     この関数は`nil'以外を返す.  より正確には, そのような最初の文字の
+     位置を返す.  さもなければ`nil'を返す.
+
+     省略可能な5番目の引数OBJECTは, 走査すべき文字列やバッファを指定す
+     る.  位置はOBJECTに相対である.  OBJECTのデフォルトはカレントバッ
+     ファである.
+
+ -- Function: text-property-not-all START END PROP VALUE &optional OBJECT
+     STARTとENDのあいだに属性PROPの値がVALUEでない文字が1つでもあれば, 
+     この関数は`nil'以外を返す.  より正確には, そのような最初の文字の
+     位置を返す.  さもなければ`nil'を返す.
+
+     省略可能な5番目の引数OBJECTは, 走査すべき文字列やバッファを指定す
+     る.  位置はOBJECTに相対である.  OBJECTのデフォルトはカレントバッ
+     ファである.
+
+
+
+File: elisp-ja, Node: Special Properties, Next: Format Properties, Prev: Property Search, Up: Text Properties
+
+特別な意味を持つ属性
+--------------------
+
+特別な組み込みの意味を持つテキスト属性名の一覧を以下に示します.  以降
+の節では, 詰め込みや属性の継承を制御する特別な属性名も示します.  それ
+以外の名前には標準的な意味はないので, 読者はそれらを好きなように使って
+かまいません.
+
+`category'
+     文字に属性`category'があるとき, これを文字の"カテゴリ"（category）
+     と呼ぶ.  これはシンボルであること.  そのシンボルの属性が, 文字の
+     属性のデフォルトとして働く.
+
+`face'
+     テキストのフォントと表示色を制御するために属性`face'を使う.  その
+     値はフェイス名かフェイス名のリストである.  詳しくは, *Note
+     Faces::.
+
+     属性値がリストであると, その要素は, `(foreground-color
+     . COLOR-NAME)'や`(background-color . COLOR-NAME)'の形でもよい. 
+     これらの要素は, 前景色だけや背景色だけを指定する.  したがって, 使
+     用する各色を表すフェイスを作成する必要はない.
+
+     テキストの内容に基づいて属性`face'を自動的に更新する方法に関して
+     は, *Note Font Lock Mode::.
+
+`mouse-face'
+     マウスが文字の上やその近くにあると, 属性`face'のかわりに属性
+     `mouse-face'が使われる.  この目的において『近く』とは, 文字とマウ
+     スの位置のあいだの属性`mouse-face'の値が同じであるすべてのテキス
+     トである.
+
+`local-map'
+     属性`local-map'を用いることで, バッファ内のテキストの一部分に対し
+     て別のキーマップを指定できる.  ポイントのうしろの文字のこの属性の
+     値が`nil'以外であると, バッファのローカルマップのかわりにその値を
+     キー探索に使う.  属性値がシンボルであると, シンボルの関数定義をキー
+     マップとして使う.  *Note Active Keymaps::.
+
+`syntax-table'
+     属性`syntax-table'は, 構文テーブルがこの文字に指定するものに優先
+     する.  *Note Syntax Properties::.
+
+`read-only'
+     文字に属性`read-only'があると, その文字を変更できない.  変更する
+     どのようなコマンドもエラーになる.
+
+     挿入されるテキストがスティッキ性のために属性`read-only'を継承する
+     場合には, 読み出し専用文字のつぎにテキストを挿入するとエラーにな
+     る.  したがって, スティッキ性を制御することで, 読み出し専用テキス
+     トのつぎへのテキスト挿入を許すかどうかを制御できる.  *Note Sticky
+     Properties::.
+
+     属性を変更するとバッファを変更したとみなすため, 特別なトリックを
+     知らない限り, 属性を`read-only'を削除できない.  つまり,
+     `inhibit-read-only'に`nil'以外の値を束縛して, 属性を削除する.
+     *Note Read Only Buffers::.
+
+`invisible'
+     属性`invisible'が`nil'以外であると, その文字はスクリーンに表示さ
+     れない.  詳しくは, *Note Invisible Text::.
+
+`intangible'
+     連続する文字に属性`intangible'の`nil'でない同じ値があると, それら
+     のあいだにポイントを置けなくなる.  前方に向けてこれらの文字の中に
+     ポイントを移動しようとすると, ポイントは実際にはそれらの末尾へ移
+     動する.  後方に向けてこれらの文字の中にポイントを移動しようとする
+     と, ポイントは実際にはそれらの先頭へ移動する.
+
+     変数`inhibit-point-motion-hooks'が`nil'以外であると, 属性
+     `intangible'は無視される.
+
+`modification-hooks'
+     文字に属性`modification-hooks'がある場合, それは関数のリストであ
+     ること.  その文字の変更にはそれらの関数すべてが呼び出される.  各
+     関数は2つの引数, つまり, バッファの変更対象部分の先頭と末尾を受け
+     取る.  1つの操作で変更される一連の文字に同じ変更フック関数が現れ
+     る場合, 関数が実際に何回呼ばれるか予測できないことに注意してほし
+     い.
+
+`insert-in-front-hooks'
+`insert-behind-hooks'
+     バッファにテキストを挿入する操作でも, 挿入箇所のうしろの文字の属
+     性`insert-in-front-hooks'とまえの文字の属性`insert-behind-hooks'
+     に指定されている関数群を呼び出す.  これらの関数は2つの引数, つま
+     り, 挿入されたテキストの先頭と末尾を受け取る.  これらの関数が呼ば
+     れるのは, 実際の挿入操作を*終えてから*である.
+
+     バッファ内のテキストを変更するときに呼び出される他のフックについ
+     ては, *Note Change Hooks::も参照.
+
+`point-entered'
+`point-left'
+     特別な属性`point-entered'と`point-left'は, ポイント移動を報告する
+     フック関数を保持する.  ポイントが動くたびに, Emacsはこれらの2つの
+     属性値, つまり,
+
+        * 移動前のポイントのうしろの文字の属性`point-left'と
+        * 移動後のポイントのうしろの文字の属性`point-entered'
+
+     を比較する.  これら2つの値が異なれば, ポイントの古い値と新しい値
+     の2つの引数で（`nil'でなければ）それぞれを呼び出す.
+
+     同じことを移動前後のポイントのまえの文字についても行う.  その結果, 
+     （同じかもしれない）`point-left'の関数を2回, かつ／あるいは, （同
+     じかもしれない）`point-entered'の関数を2回実行する.  いずれにして
+     も, `point-left'の関数が最初に呼ばれ, そのあとで`point-entered'の
+     関数が呼ばれる.
+
+     これらの関数では, `char-after'を使ってポイントを移動せずにさまざ
+     まな箇所の文字を調べられる.  ポイントの値が実際に変わったときにの
+     み, これらのフック関数が実行される.
+
+ -- Variable: inhibit-point-motion-hooks
+     この変数が`nil'以外であると, `point-left'と`point-entered'のフッ
+     ク関数は実行されなくなり, 属性`intangible'の効果もなくなる.  この
+     変数はグローバルに設定せずに, `let'で束縛すること.
+
+
+
+File: elisp-ja, Node: Format Properties, Next: Sticky Properties, Prev: Special Properties, Up: Text Properties
+
+整形済みテキストの属性
+----------------------
+
+これらのテキスト属性は, 詰め込みコマンドのふるまいに影響します.  これ
+らは整形済みのテキストを表現するために使われます.  *Note Filling::と
+*Note Margins::.
+
+`hard'
+     改行文字にこの属性があると, 『ハード』改行である.  詰め込みコマン
+     ドは『ハード』改行を変更せず, それらをまたがって単語を移動しない. 
+     しかし, この属性は`use-hard-newlines'が`nil'以外の場合にのみ効果
+     を持つ.
+
+`right-margin'
+     テキストのこの部分を詰め込むための余分な右端余白を指定する.
+
+`left-margin'
+     テキストのこの部分を詰め込むための余分な左端余白を指定する.
+
+`justification'
+     テキストのこの部分を詰め込むための幅揃えスタイルを指定する.
+
+
+
+File: elisp-ja, Node: Sticky Properties, Next: Saving Properties, Prev: Format Properties, Up: Text Properties
+
+テキスト属性のスティッキ性
+--------------------------
+
+自己挿入文字は, 通常, 先行する文字と同じ属性を持ちます.  これを属性の"
+継承"（inheritance）と呼びます.
+
+Lispプログラムでは, 挿入基本関数を選べば, 継承して挿入したり継承せずに
+挿入できます.  `insert'などの普通のテキスト挿入関数は, いかなる属性も
+継承しません.  これらは, 挿入する文字列の属性をそのまま持ったテキスト
+を挿入し, それ以外の属性はありません.  キルリングなどのある文脈から別
+の文脈へテキストをコピーするプログラムには, これは正しい動作です.  継
+承して挿入するには, 本節で述べる特別な基本関数を使います.  自己挿入文
+字はこれらの基本関数を使っているので, 属性を継承します.
+
+継承して挿入するとき, *どの*属性を継承するかは, 2つの特別な属性
+`front-sticky'と`rear-nonsticky'に依存します.
+
+文字のうしろに挿入すると, その文字の"後続スティッキ"（rear-sticky）で
+ある属性を継承します.  文字のまえに挿入すると, その文字の"先行スティッ
+キ"（front-sticky）である属性を継承します.  デフォルトでは, テキスト属
+性は先行スティッキではなく後続スティッキです.  したがって, デフォルト
+では, まえの文字のすべての属性を継承して, うしろの文字からはなにも継承
+しません.  特定の属性のスティッキ性を指定することで, 異なるふるまいを
+指定できます.
+
+文字の属性`front-sticky'が`t'であると, その文字のすべての属性は先行ス
+ティッキです.  属性`front-sticky'がリストであると, リストに現れる名前
+のその文字の属性は先行スティッキです.  たとえば, 文字の属性
+`front-sticky'の値が`(face read-only)'であると, この文字のまえに挿入す
+るとこの文字の属性`face'と`read-only'を継承しますが, それ以外には継承
+しません.
+
+`rear-nonsticky'は反対の働きをします.  すべての属性はデフォルトでは後
+続スティッキですから, 属性`rear-nonsticky'はどの属性が後続スティッキで
+*ない*かを指定します.  文字の属性`rear-nonsticky'が`t'であると, その文
+字には後続スティッキである属性はありません.  属性`rear-nonsticky'がリ
+ストであると, リストに名前が現れ*ない限り*, 属性は後続スティッキです.
+
+継承するようにテキストを挿入すると, まえの文字からは後続スティッキであ
+るすべての属性を継承し, うしろの文字からは先行スティッキであるすべての
+属性を継承します.  両側の文字に異なるスティッキ性の同じ属性がある場合
+には, まえの文字の属性が優先します.
+
+属性を継承してテキストを挿入する関数はつぎのとおりです.
+
+ -- Function: insert-and-inherit &rest STRINGS
+     関数`insert'と同様に文字列STRINGSを挿入するが, 前後のテキストから
+     任意のスティッキ性の属性を継承する.
+
+ -- Function: insert-before-markers-and-inherit &rest STRINGS
+     関数`insert-before-markers'と同様に文字列STRINGSを挿入するが, 前
+     後のテキストから任意のスティッキ性の属性を継承する.
+
+継承しない普通の挿入関数については, *Note Insertion::.
+
+
+
+File: elisp-ja, Node: Saving Properties, Next: Lazy Properties, Prev: Sticky Properties, Up: Text Properties
+
+テキスト属性をファイルへ保存する
+--------------------------------
+
+つぎの2つのフックを使って, テキスト属性を（テキストそのものとともに）
+ファイルに保存しておき, ファイルを訪問したり挿入するときに同じテキスト
+属性を復元できます.
+
+ -- Variable: write-region-annotate-functions
+     この変数の値は, ファイルへ書き込むテキストに対する注記の形でテキ
+     スト属性を符号化するために`write-region'が呼び出す関数のリストで
+     ある.  *Note Writing to Files::.
+
+     リスト内の各関数は2つの引数, つまり, 書き込む領域の先頭と末尾で呼
+     び出される.  これらの関数はバッファの内容を変更しないこと.  その
+     かわりに, バッファのテキストに加えてファイルに書き込むべき注記を
+     表すリストを返すべきである.
+
+     各関数は, `(POSITION . STRING)'の形の要素から成るリストを返すべき
+     である.  ここで, POSITIONは書き込まれるテキスト内の相対位置を指定
+     する整数, STRINGはそこへ追加する注記である.
+
+     これらの関数が返す各リストは, POSITIONの昇順になっている必要があ
+     る.  複数の関数があると, `write-region'はリストを破壊的に併合して
+     1つのソートしたリストにする.
+
+     `write-region'がバッファからファイルにテキストを実際に書くときに, 
+     指定された注記を対応する位置に混在させる.  バッファを変更せずにこ
+     れらすべてを行う.
+
+ -- Variable: after-insert-file-functions
+     この変数は, `insert-file-contents'がファイルの内容を挿入してから
+     呼び出す関数のリストを保持する.  これらの関数は挿入されたテキスト
+     で注記を走査し, それらが表すテキスト属性にそれらを変換する.
+
+     各関数は1つの引数, つまり, 挿入されたテキストの長さで呼ばれ, ポイ
+     ントは挿入されたテキストの先頭を表す.  関数は当該テキストで注記を
+     走査して注記を削除し, 注記が指定するテキスト属性を作成する.  関数
+     は, 変更を反映した挿入されたテキストの更新された長さを返すこと. 
+     関数が返した値がつぎの関数の引数になる.
+
+     これらの関数は, 挿入されたテキストの先頭にポイントをつねに戻すこ
+     と.
+
+     `after-insert-file-functions'の意図された用途は, テキスト表現の注
+     記を実際のテキスト属性に変換することである.  しかし, 別の使い方も
+     可能である.
+
+これらのフックを使ってファイルにテキスト属性を保存したり復元するLispプ
+ログラムを書いて, さまざまなデータ書式を試してよいものをみつけるように
+お願いします.  最終的には, Emacsに取り込める良質で汎用の拡張をユーザー
+が作り出すことを願っています.
+
+テキスト属性の名前や値として任意のLispオブジェクトを処理しないように忠
+告しておきます.  そのような汎用のプログラムは書くのが難しく動作が遅く
+なりがちです.  そのかわりに, 適当に柔軟性があり符号化が難しくないデー
+タ型の集合を選びます.
+
+関連する機能については, *Note Format Conversion::.
+
+
+
+
+File: elisp-ja, Node: Lazy Properties, Next: Clickable Text, Prev: Saving Properties, Up: Text Properties
+
+テキスト属性の遅延計算
+----------------------
+
+バッファ内のすべてのテキストのテキスト属性を計算するかわりに, 必要になっ
+た時点でテキストの一部分のテキスト属性を計算するようにできます.
+
+バッファからテキスト属性とともにテキストを取り出す基本関数は,
+`buffer-substring'です.  属性を調べるまえに, この関数はアブノーマルフッ
+ク`buffer-access-fontify-functions'を実行します.
+
+ -- Variable: buffer-access-fontify-functions
+     この変数は, テキスト属性を計算する関数のリストを保持する.
+     `buffer-substring'がバッファの一部分からテキストとテキスト属性を
+     コピーするまえに, この関数はこのリスト内の関数すべてを呼び出す. 
+     各関数は, バッファの参照される範囲を指定する2つの引数を受け取る. 
+     （バッファはつねにカレントバッファである. ）
+
+関数`buffer-substring-no-properties'はテキスト属性を無視するので, これ
+らの関数を呼び出しません.
+
+バッファの同じ部分に対してフック関数が複数回呼び出されるのを防ぐには, 
+変数`buffer-access-fontified-property'を使います.
+
+ -- Variable: buffer-access-fontified-property
+     この変数の値が`nil'以外であると, それはテキスト属性の名前として使
+     われるシンボルである.  そのテキスト属性に対する`nil'以外の値は, 
+     『この文字の他のテキスト属性はすでに計算済みである』ことを意味す
+     る.
+
+     `buffer-substring'に指定された範囲のすべての文字において, この属
+     性に対して`nil'以外の値があると, `buffer-substring'は
+     `buffer-access-fontify-functions'の関数を呼び出さない.  それらの
+     文字にはすでに正しいテキスト属性があるとみなし, それらにすでにあ
+     る属性をコピーする.
+
+     この機能を使う普通の方法は, `buffer-access-fontify-functions'の関
+     数が他の属性ととともにこの属性をそれらが操作した文字に追加する. 
+     そうすれば, 同じテキストに対して何回も呼び出されるのを防ぐことが
+     できる.
+
+
+
+File: elisp-ja, Node: Clickable Text, Next: Not Intervals, Prev: Lazy Properties, Up: Text Properties
+
+クリック可能なテキストを定義する
+--------------------------------
+
+バッファ内に"クリック可能なテキスト"（clickable text）を設定するには2
+つの方法があります.  これは典型的には2つの部分から成ります.  つまり, 
+マウスが重なるとテキストを強調表示し, テキストのその部分をクリックする
+とマウスボタンがなんらかの処理を行うようにします.
+
+強調表示はテキスト属性`mouse-face'で行います.  diredでの方法を例として
+示します.
+
+     (condition-case nil
+         (if (dired-move-to-filename)
+             (put-text-property (point)
+                                (save-excursion
+                                  (dired-move-to-end-of-filename)
+                                  (point))
+                                'mouse-face 'highlight))
+       (error nil))
+
+`put-text-property'の最初の2つの引数は, テキストの先頭と末尾を指定しま
+す.
+
+このテキストをクリックしたときにマウスになにかをさせるようにする普通の
+方法は, メジャーモードのキーマップで`mouse-2'を定義することです.  クリッ
+ク可能なテキストをクリックしたかどうかの検査は, コマンド定義で行われま
+す.  diredではつぎのようにしています.
+
+     (defun dired-mouse-find-file-other-window (event)
+       "In dired, visit the file or directory name you click on."
+       (interactive "e")
+       (let (file)
+         (save-excursion
+           (set-buffer (window-buffer (posn-window (event-end event))))
+           (save-excursion
+             (goto-char (posn-point (event-end event)))
+             (setq file (dired-get-filename))))
+         (select-window (posn-window (event-end event)))
+         (find-file-other-window (file-name-sans-versions file t))))
+
+外側の`save-excursion'は, カレントバッファが変わることを防ぎます.  内
+側のは, クリックしたバッファのポイントを恒久的に変更することを防ぎます. 
+この例では, diredは関数`dired-get-filename'を用いて, イベントの位置に
+基づいて訪問すべきファイルを決定します.
+
+メジャーモードのマウスコマンドを定義するかわりに, テキスト属性
+`local-map'を使って, クリック可能なテキストそのものにキーバインディン
+グを定義することもできます.
+
+     (let ((map (make-sparse-keymap)))
+       (define-key-binding map [mouse-2] 'operate-this-button)
+       (put-text-property (point)
+                          (save-excursion
+                            (dired-move-to-end-of-filename)
+                            (point))
+                          'local-map map))
+
+この方法では, テキストのさまざまなクリック可能な部分に異なるコマンドを
+定義できます.  さらに, バッファの残りの部分に対しては, メジャーモード
+の定義（やグローバルな定義）がそのまま有効です.
+
+
+
+File: elisp-ja, Node: Not Intervals, Next: Substitution, Prev: Clickable Text, Up: Text Properties
+
+テキスト属性が範囲でない理由
+----------------------------
+
+バッファ内のテキストに属性を付加できるエディタのなかには, ユーザーにテ
+キスト内の『範囲』を指定させ, その範囲に属性を付加するものがあります. 
+このようなエディタでは, ユーザーやプログラマが個々の範囲の先頭と末尾を
+決定できます.  テキスト変更に伴うある種の矛盾するようなふるまいを避け
+るために, 熟考の結果Emacs Lispでは別の種類のインターフェイスを提供する
+ことにしました.
+
+複数の範囲に細分することが意味を持つならば, ある属性の1つの範囲がある
+だけのバッファと, その同じテキストをその同じ属性の2つの範囲にしてある
+バッファとを区別できるはずです.
+
+1つの範囲だけを持つバッファにおいて, そのテキストの一部をキルしたとし
+ます.  バッファに残っているテキストは1つの範囲であり, キルリング（とア
+ンドゥリスト）内のコピーは1つの別の範囲になります.  そしてキルされたテ
+キストをヤンクして戻すと, 同じ属性を持つ2つの範囲ができます.  つまり, 
+編集すると, 1つの範囲と2つの範囲の区別を保存できなくなります.
+
+テキストを挿入すると2つの範囲を融合することでこの問題を『修正』したと
+します.  バッファにもともと1つの範囲しかなければ, うまくいきます.  し
+かし, 同じ属性の範囲が連続して2つある場合に, 一方の範囲をキルしてから
+ヤンクして戻したとします.  別の場面では救いになる同じ属性の範囲を融合
+する機能が, ここではトラブルを引き起こします.  つまり, ヤンクすると1つ
+の範囲になってしまいます.  ここでも, 編集すると, 1つの範囲と2つの範囲
+の区別を保存できなくなります.
+
+2つの範囲の境界にテキストを挿入する場合でも, 満足できる解決方法がない
+問題を提起します.
+
+しかし, 『この文字の属性はなにか』といった形の問いに対して一貫したふる
+まいをするような編集にするのは簡単です.  そのために, これらが唯一の意
+味ある問いかけであると判断したのです.  範囲の先頭と末尾を問うようなも
+のは実装してありません.
+
+実用上は, 明示的な範囲の境界のかわりに, テキスト属性を探索する関数を普
+通は使えます.  それらの関数は, 可能な場合にはつねに範囲は融合されると
+仮定して範囲の境界を探すと考えることができます.  *Note Property
+Search::.
+
+Emacsには表示機能として明示的な範囲もあります.  *Note Overlays::を参照
+してください.
+
+
+
+File: elisp-ja, Node: Substitution, Next: Transposition, Prev: Text Properties, Up: Text
+
+文字コードの置換
+================
+
+つぎの関数は, 指定した領域内の文字をそれらの文字コードに基づいて置き換
+えます.
+
+ -- Function: subst-char-in-region START END OLD-CHAR NEW-CHAR &optional NOUNDO
+     この関数は, カレントバッファのSTARTとENDで定義される領域のすべて
+     の文字OLD-CHARを文字NEW-CHARに置き換える.
+
+     NOUNDOが`nil'以外であると, `subst-char-in-region'はアンドゥ用の変
+     更を記録せず, バッファに変更済みの印も付けない.  この機能は, 選択
+     表示（*Note Selective Display::）の制御に使われている.
+
+     `subst-char-in-region'はポイントを移動せず, `nil'を返す.
+
+          ---------- Buffer: foo ----------
+          This is the contents of the buffer before.
+          ---------- Buffer: foo ----------
+
+          (subst-char-in-region 1 20 ?i ?X)
+               => nil
+
+          ---------- Buffer: foo ----------
+          ThXs Xs the contents of the buffer before.
+          ---------- Buffer: foo ----------
+
+ -- Function: translate-region START END TABLE
+     この関数は, バッファのSTARTとENDのあいだの文字に変換表を適用する.
+
+     変換表TABLEは文字列であり, `(aref TABLE OCHAR)'は, OCHARに対応す
+     る変換した文字を与える.  TABLEの長さが256未満であると, TABLEの長
+     さより大きなコードの文字は変換によっては変更されない.
+
+     `translate-region'の戻り値は, 変換によって実際に変更した文字の個
+     数を返す.  これには, 変換表で自分自身に変換された文字は数えない.
+
+
+
+File: elisp-ja, Node: Registers, Next: Change Hooks, Prev: Transposition, Up: Text
+
+レジスタ
+========
+
+レジスタは, Emacsの編集においてさまざまな種類の値を保持できる変数の一
+種です.  各レジスタには1文字の名前が付いています.  すべてのASCII文字と
+それらのメタ変種（ただし`C-g'を除く）をレジスタの名前に使えます.  した
+がって, 255個のレジスタを使えます.  Emacs Lispでは, レジスタ名でレジス
+タを区別します.
+
+ -- Variable: register-alist
+     この変数は, `(NAME . CONTENTS)'の形の要素の連想リストである.  通
+     常, 使用中のEmacsの各レジスタに対して1つの要素がある.
+
+     オブジェクトNAMEは, レジスタを識別する文字（整数）である.
+
+レジスタの内容（CONTENTS）に可能な型はいくつかあります.
+
+数
+     数そのものを表す.  `insert-register'がレジスタ内で数をみつけると
+     10進数に変換する.
+
+マーカ
+     マーカはジャンプ先のバッファ内位置を表す.
+
+文字列
+     文字列はレジスタに保存されたテキストである.
+
+矩形領域
+     矩形領域は文字列のリストで表現される.
+
+`(WINDOW-CONFIGURATION POSITION)'
+     これは, 1つのフレームに復元するウィンドウ構成とカレントバッファで
+     のポイントの移動先を表す.
+
+`(FRAME-CONFIGURATION POSITION)'
+     これは, 復元するフレーム構成とカレントバッファでのポイントの移動
+     先を表す.
+
+(file FILENAME)
+     訪問すべきファイルを表す.  この値にジャンプするとファイルFILENAME
+     を訪問する.
+
+(file-query FILENAME POSITION)
+     これは, 訪問すべきファイルとその中での位置を表す.  この値にジャン
+     プするとファイルFILENAMEを訪問しバッファ内位置POSITIONへ移動する. 
+     この種の位置を復元すると, まずユーザーに確認を取る.
+
+本節の関数は, 明記してない場合には予測できない値を返します.
+
+ -- Function: get-register REG
+     この関数は, レジスタREGの内容, あるいは, 内容がなければ`nil'を返
+     す.
+
+ -- Function: set-register REG VALUE
+     この関数は, レジスタREGの内容をVALUEとする.  レジスタには任意の値
+     を設定できるが, 他のレジスタ関数は特定のデータ型を期待する.  戻り
+     値はVALUEである.
+
+ -- コマンド: view-register REG
+     このコマンドは, レジスタREGになにが入っているかを表示する.
+
+
+ -- コマンド: insert-register REG &optional BEFOREP
+     このコマンドはレジスタREGの内容をカレントバッファに挿入する.
+
+     通常, このコマンドは挿入したテキストのまえにポイントを置き, その
+     あとにマークを置く.  しかし, 省略可能な2番目の引数BEFOREPが`nil'
+     以外であると, まえにマークを置きあとにポイントを置く.  この関数を
+     対話的に呼び出すときに前置引数を指定すれば, 2番目の引数BEFOREPに
+     `nil'以外を渡せる.
+
+     レジスタに矩形領域が含まれる場合, ポイント位置に矩形領域の左上隅
+     がくるように挿入される.  つまり, テキストは現在行とそのしたの連続
+     する行に挿入される.
+
+     保存したテキスト（文字列）や矩形領域（リスト）以外がレジスタに入っ
+     ていると, 現状では有用なことは起こらない.  将来これは変更されるで
+     あろう.
+
+
+
+
+File: elisp-ja, Node: Transposition, Next: Registers, Prev: Substitution, Up: Text
+
+テキストの転置
+==============
+
+つぎのサブルーティンは転置コマンドで使われます.
+
+ -- Function: transpose-regions START1 END1 START2 END2 &optional LEAVE-MARKERS
+     この関数は, バッファの重なり合わない2つの部分を入れ換える.  引数
+     START1とEND1で一方の部分の境界を指定し, 引数START2とEND2で他方の
+     部分の境界を指定する.
+
+     通常, `transpose-regions'は転置したテキスト内のマーカを再配置する. 
+     つまり, 2つの転置部分の一方の内側を指していたマーカはその部分とと
+     もに移動して, 新しい位置で同じ2つの文字のあいだに留まる.  しかし,
+     LEAVE-MARKERSが`nil'以外であると, `transpose-regions'はこれを行わ
+     ず, すべてのマーカは再配置されない.
+
+
+

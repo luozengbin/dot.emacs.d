@@ -1,0 +1,461 @@
+Info file: pgg-ja.info,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `pgg-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* PGG-ja: (pgg-ja).        Emacs interface to various PGP implementations (Ja).
+END-INFO-DIR-ENTRY
+
+
+
+
+
+
+File: pgg-ja.info, Node: Top, Next: Overview, Prev: (dir), Up: (dir)
+
+PGG
+***
+
+これは PGG のマニュアルです。PGG は、安全な通信のための様々なツールと
+Emacs の仲を取り持つライブラリーです。また、PGG は MIME メッセージの暗
+号化と解読、それに署名と検証のための単純なユーザーインタフェースも提供
+します。
+
+* Menu:
+
+* Overview::                    PGG とは
+* Prerequisites::               あらかじめしておくべき複雑な事柄
+* How to use::                  とっとと使い始めよう
+* Architecture::
+* Parsing OpenPGP packets::
+* Function Index::
+* Variable Index::
+
+
+
+File: pgg-ja.info, Node: Overview, Next: Prerequisites, Prev: Top, Up: Top
+
+概要
+****
+
+PGG は、安全な通信のための様々なツールと Emacs の仲を取り持つライブラリー
+です。同様の機能は Mailcrypt も持っていますが、Mailcrypt は PGP/MIME の
+インフラで通常用いられる分離された PGP メッセージを取り扱うことができま
+せん。これが、私 (作者) が新しいライブラリーを書いた主な理由です。
+
+PGP/MIME は MIME Object Security Services (RFC1848) の実装です。その標
+準は RFC2015 で記述されています。
+
+
+
+File: pgg-ja.info, Node: Prerequisites, Next: How to use, Prev: Overview, Up: Top
+
+必要条件
+********
+
+PGG を使うためには、少なくとも一つのプライバシー保護システムの実装が必
+要です。このマニュアルは、そのようなプログラムをすでに取得、インストー
+ルしていて、基本的な使い方を知っていることを想定しています。
+
+ディフォルトでは PGG は GnuPG を使います。しかし、PGP (Pretty Good
+Privacy) のバージョン 2 または 5 もサポートします。もし、このようなシス
+テムに慣れていないのであれば、GNU Privacy Handbook (GPH) を先に読んでお
+くことを薦めます。GPH は `http://www.gnupg.org/gph/' で見ることができま
+す。
+
+
+
+File: pgg-ja.info, Node: How to use, Next: Architecture, Prev: Prerequisites, Up: Top
+
+使い方
+******
+
+このライブラリーの最上位インタフェースはとても単純で、公開鍵による暗号
+の操作のみを想定しています。
+
+PGG を使うためには、アプリケーションプログラムの冒頭で次の S 式を評価し
+て下さい。
+
+     (require 'pgg)
+
+実行時に pgg.el の存在を確認したいなら、上記の方法ではなく以下のように、
+必要な機能の autoload を設定することもできます。
+
+     (autoload 'pgg-encrypt-region "pgg"
+       "Encrypt the current region." t)
+     (autoload 'pgg-encrypt-symmetric-region "pgg"
+       "Encrypt the current region with symmetric algorithm." t)
+     (autoload 'pgg-decrypt-region "pgg"
+       "Decrypt the current region." t)
+     (autoload 'pgg-sign-region "pgg"
+       "Sign the current region." t)
+     (autoload 'pgg-verify-region "pgg"
+       "Verify the current region." t)
+     (autoload 'pgg-insert-key "pgg"
+       "Insert the ASCII armored public key." t)
+     (autoload 'pgg-snarf-keys-region "pgg"
+       "Import public keys in the current region." t)
+
+* Menu:
+
+* User Commands::
+* Selecting an implementation::
+* Caching passphrase::
+* Default user identity::
+
+
+
+File: pgg-ja.info, Node: User Commands, Next: Selecting an implementation, Prev: How to use, Up: How to use
+
+ユーザーコマンド
+================
+
+この時点で、いくつかの暗号に関するコマンドを使うことができます。これら
+のコマンドの挙動は起動方法に依存します。これらのコマンドは、ライブラリー
+関数として利用されることもあるからです。例えば、あなたがある署名者の公
+開鍵を持っていないと `pgg-verify-region' という関数は即座に失敗しますが、
+これが対話的に呼び出された場合には、サーバーから公開鍵をダウンロードす
+るかどうかをあなたに尋ねます。
+
+ -- Command: pgg-encrypt-region START END RECIPIENTS &optional SIGN PASSPHRASE
+     START と END の間の領域を RECIPIENTS 宛に送るものとして暗号化しま
+     す。対話的に呼ぶと、受信者を尋ねます。
+
+     暗号化に成功すると、現在の領域の内容を暗号化したデータで置き換えま
+     す。
+
+     オプション引数 SIGN が `nil' でなかったら、署名と暗号化を同時に行
+     ないます。現在この機能は GnuPG で動作することが確認されていますが、
+     PGP や PGP5 では動作しないかもしれません。
+
+     オプション引数 PASSPHRASE が `nil' だったら、パスフレーズのキャッ
+     シュからか、またはユーザーに入力してもらうことによってパスフレーズ
+     を得ます。
+
+ -- Command: pgg-encrypt-symmetric-region &optional START END PASSPHRASE
+     現在の START と END の間の領域を、共通鍵暗号 (symmetric cipher) で
+     暗号化します。呼び出した後でパスフレーズが尋ねられます。
+
+     オプション引数 PASSPHRASE が `nil' だったら、パスフレーズのキャッ
+     シュからか、またはユーザーに入力してもらうことによってパスフレーズ
+     を得ます。
+
+     共通鍵暗号による暗号化は、現在 GnuPG だけで実装されています。
+
+ -- Command: pgg-decrypt-region START END &optional PASSPHRASE
+     START と END の間の領域を解読します。解読に成功すると、現在の領域
+     の内容を解読したデータで置き換えます。
+
+     オプション引数 PASSPHRASE が `nil' だったら、パスフレーズのキャッ
+     シュからか、またはユーザーに入力してもらうことによってパスフレーズ
+     を得ます。
+
+ -- Command: pgg-sign-region START END &optional CLEARTEXT PASSPHRASE
+     START と END の間のテキストに署名します。三番目のオプション引数
+     CLEARTEXT が `nil' ではないか、あるいは対話的に呼ばれた場合、分離
+     された署名を作りません。そのような場合には、現在の領域の内容を署名
+     したデータで置き換えます。
+
+     オプション引数 PASSPHRASE が `nil' だったら、パスフレーズのキャッ
+     シュからか、またはユーザーに入力してもらうことによってパスフレーズ
+     を得ます。
+
+ -- Command: pgg-verify-region START END &optional SIGNATURE FETCH
+     START と END の間の領域にある署名を検証します。三番目のオプション
+     引数 SIGNATURE が `nil' でなかったら、その引数は現在の領域の分離さ
+     れた署名のファイルとして取り扱われます。
+
+     四番目のオプション引数 FETCH が `nil' ではないか、あるいは対話的に
+     呼ばれた場合、公開鍵をサーバーから取得します。
+
+ -- Command: pgg-insert-key
+     ユーザーの公開鍵を取得して、それを ASCII 装甲の形式で挿入します。
+
+ -- Command: pgg-snarf-keys-region START END
+     START と END の間の領域にある公開鍵を集め、ユーザーの鍵束
+     (keyring) に追加します。
+
+
+
+File: pgg-ja.info, Node: Selecting an implementation, Next: Caching passphrase, Prev: User Commands, Up: How to use
+
+どの実装を使うか
+================
+
+PGP は歴史が長く、今では多くの実装を利用することができるので、それぞれ
+が持っている個々の機能がずいぶん異なっていることがあります。例えば
+GnuPG を使っているのならば、暗号アルゴリズムとして 3DES や CAST5、
+BLOWFISH などを選ぶことができますが、PGP のバージョン 2 は IDEA しかサ
+ポートしていません。
+
+どの実装を使うかは `pgg-scheme' 変数が制御します。`nil' だったら (それ
+がディフォルト)、代わりに `pgg-default-scheme' 変数の値を使います。
+
+ -- Variable: pgg-scheme
+     どの PGP 実装を用いるかを強制します。設定できるのは `gpg'、`pgp'
+     および `pgp5' のどれかです。ディフォルトは `nil' です。
+
+ -- Variable: pgg-default-scheme
+     ディフォルトの PGP 実装です。値は `gpg'、`pgp' および `pgp5' のど
+     れかでなければなりません。ディフォルトは `gpg' です。
+
+
+
+File: pgg-ja.info, Node: Caching passphrase, Next: Default user identity, Prev: Selecting an implementation, Up: How to use
+
+パスフレーズをキャッシュする
+============================
+
+PGG は単純なメカニズムを使ってパスフレーズをキャッシュします。それを行
+なうことは、ディフォルトで有効になっています。
+
+ -- Variable: pgg-cache-passphrase
+     `nil' でなければ、パスフレーズを保持します。初期値は `t' です。し
+     かし、あなたがセキュリティについて気掛かりなら、この変数を `nil'
+     に設定することによって、パスフレーズのキャッシュをやめさせることが
+     できます。
+
+ -- Variable: pgg-passphrase-cache-expiry
+     パスフレーズを保持しておく時間を秒で指定します。
+
+
+
+File: pgg-ja.info, Node: Default user identity, Prev: Caching passphrase, Up: How to use
+
+ディフォルトのユーザー ID
+=========================
+
+通常 PGP の実装は、暗号化および復号化に使う適切な鍵を選ぶことができます
+が、あなたが一つ以上の鍵を持っている場合、用いる鍵の id を指定する必要
+があります。
+
+ -- Variable: pgg-default-user-id
+     ディフォルトのユーザー ID です。指定しない場合は
+     `(user-login-name)' の戻り値がディフォルトになります。この変数はカ
+     スタマイズ可能です。
+
+ -- Variable: pgg-gpg-user-id
+     GnuPG で使うディフォルトのユーザー ID です。ディフォルトは `nil'
+     です。`nil' ではない値にすると、`pgg-default-user-id' より優先して
+     使われます。カスタマイズ可能です。
+
+ -- Variable: pgg-pgp-user-id
+     PGP 2.x/6.x で使うディフォルトのユーザー ID です。ディフォルト
+     は `nil' です。`nil' ではない値にすると、
+     `pgg-default-user-id' より優先して使われます。カスタマイズ可能です。
+
+ -- Variable: pgg-pgp5-user-id
+     PGP 5.x で使うディフォルトのユーザ ID です。ディフォルトは `nil'
+     です。`nil' ではない値にすると、`pgg-default-user-id' より優先して
+     使われます。カスタマイズ可能です。
+
+
+
+File: pgg-ja.info, Node: Architecture, Next: Parsing OpenPGP packets, Prev: How to use, Up: Top
+
+構成
+****
+
+PGG は「PGP 実装のスキーム (枠組)」という考えを導入します。以後、「スキー
+ム (scheme)」と表記します。この用語は luna object system での
+singleton object に由来します。
+
+PGG は PGP の機能にアクセスすると同時にそれを開発するために設計されたの
+で、その構成は、相互運用性だけでなく拡張性も考慮する必要がありました。
+この章では、PGG のバックエンドをどのように記述するかを探しながら、PGG
+がどのようにつくられているかを探検してみましょう。
+
+* Menu:
+
+* Initializing::
+* Back end methods::
+* Getting output::
+
+
+
+File: pgg-ja.info, Node: Initializing, Next: Back end methods, Prev: Architecture, Up: Architecture
+
+初期化
+======
+
+スキームは、使う前に初期化されなければなりません。ただ一つのスキームを
+使うことを保証するのが良いでしょう。
+
+以下のコードは `pgg-gpg.el' からの抜き書きです。ある `pgg-gpg' のスキー
+ムがいったん初期化されると、それは `pgg-scheme-gpg-instance' 変数に保存
+され、以後、再利用されます。
+
+     (defvar pgg-scheme-gpg-instance nil)
+
+     (defun pgg-make-scheme-gpg ()
+       (or pgg-scheme-gpg-instance
+           (setq pgg-scheme-gpg-instance
+	    (luna-make-entity 'pgg-scheme-gpg))))
+
+関数の名前は `pgg-make-scheme-' の後ろにバックエンド名を付加したものに
+しなければなりません。
+
+
+
+File: pgg-ja.info, Node: Back end methods, Next: Getting output, Prev: Initializing, Up: Architecture
+
+バックエンドのメソッド
+======================
+
+各バックエンドには、これらのメソッドが存在しなければなりません。メソッ
+ドの実行結果のステータスを知らせなければならないので、メソッドの出力は
+特別なバッファーに保存されます (*Note Getting output::)。
+
+ -- Method: pgg-scheme-lookup-key SCHEME STRING &optional TYPE
+     STRING に関連付けられた鍵を返します。三番目のオプション引数 TYPE
+     が非-`nil' だったら、秘密の鍵束から検索します。
+
+ -- Method: pgg-scheme-encrypt-region SCHEME START END RECIPIENTS &optional SIGN PASSPHRASE
+     START と END の間の領域を RECIPIENTS 宛に送るものとして暗号化しま
+     す。オプション引数 SIGN が `nil' でなかったら、署名と暗号化を同時
+     に行ないます。暗号化に成功すると `t' を、失敗すると `nil' を返しま
+     す。
+
+ -- Method: pgg-scheme-encrypt-symmetric-region SCHEME START END &optional PASSPHRASE
+     現在の START と END の間の領域を、共通鍵暗号 (symmetric cipher) と
+     パスフレーズで暗号化します。暗号化に成功すると `t' を返し、そうで
+     なければ `nil' を返します。この機能は現在 GnuPG だけで実装されてい
+     ます。
+
+ -- Method: pgg-scheme-decrypt-region SCHEME START END &optional PASSPHRASE
+     START と END の間の領域を解読します。解読に成功すると `t' を、失敗
+     すると `nil' を返します。
+
+ -- Method: pgg-scheme-sign-region SCHEME START END &optional CLEARTEXT PASSPHRASE
+     START と END の間のテキストに署名します。三番目のオプション引数
+     CLEARTEXT が `nil' ではない場合、分離された署名を作りません。署名
+     に成功すると `t' を、失敗すると `nil' を返します。
+
+ -- Method: pgg-scheme-verify-region SCHEME START END &optional SIGNATURE
+     START と END の間の領域にある署名を検証します。三番目のオプション
+     引数 SIGNATURE が `nil' でなかったら、その引数は現在の領域の分離さ
+     れた署名のファイルとして取り扱われます。署名が正しく検証された場合
+     は `t' を、失敗すると `nil' を返します。
+
+ -- Method: pgg-scheme-insert-key SCHEME
+     ユーザーの公開鍵を取得して、それを ASCII 装甲の形式で挿入します。
+     成功すると `t' を、失敗すると `nil' を返します。
+
+ -- Method: pgg-scheme-snarf-keys-region SCHEME START END
+     START と END の間の領域にある公開鍵を集め、ユーザーの鍵束
+     (keyring) に追加します。成功すると `t' を、失敗すると `nil' を返し
+     ます。
+
+
+
+File: pgg-ja.info, Node: Getting output, Prev: Back end methods, Up: Architecture
+
+出力を得る
+==========
+
+バックエンドメソッド (*Note Back end methods::) の出力は特別なバッファー
+に格納されます。したがって、これらのメソッドは実行結果を伝える必要があ
+ります。
+
+ -- Variable: pgg-errors-buffer
+     PGP コマンド実行時の標準エラー出力は、このバッファーに格納されます。
+
+ -- Variable: pgg-output-buffer
+     PGP コマンド実行時の標準出力は、このバッファーに格納されます。
+
+ -- Variable: pgg-status-buffer
+     PGP コマンド実行時のその他の結果の情報は、このバッファーに格納され
+     ます。
+
+
+
+File: pgg-ja.info, Node: Parsing OpenPGP packets, Next: Function Index, Prev: Architecture, Up: Top
+
+OpenPGP パケットの解析
+**********************
+
+OpenPGP のメッセージのフォーマットは、相互運用できるアプリケーション開
+発に必要なすべての情報を出力するように維持されています。その標準は
+RFC2440 に記載されています。
+
+PGG は OpenPGP パケットに対応した独自のメッセージ解析を行ないます。
+
+ -- Function: pgg-parse-armor STRING
+     STRING 内のパケットの並びを `list' の形式で返します。
+
+ -- Function: pgg-parse-armor-region START END
+     START と END の間の領域にあるパケットの並びを `list' の形式で返し
+     ます。
+
+ -- Variable: pgg-ignore-packet-checksum
+     `nil' でなかったら、パケットのチェックサムを検証しません。
+
+
+
+File: pgg-ja.info, Node: Function Index, Next: Variable Index, Prev: Parsing OpenPGP packets, Up: Top
+
+Function Index
+**************
+
+* Menu:
+
+* pgg-decrypt-region:           User Commands.          (line  40)
+* pgg-encrypt-region:           User Commands.          (line  15)
+* pgg-encrypt-symmetric-region: User Commands.          (line  30)
+* pgg-insert-key:               User Commands.          (line  66)
+* pgg-parse-armor:              Parsing OpenPGP packets.  (line  14)
+* pgg-parse-armor-region:       Parsing OpenPGP packets.  (line  17)
+* pgg-scheme-decrypt-region:    Back end methods.       (line  28)
+* pgg-scheme-encrypt-region:    Back end methods.       (line  16)
+* pgg-scheme-encrypt-symmetric-region: Back end methods.  (line  22)
+* pgg-scheme-insert-key:        Back end methods.       (line  43)
+* pgg-scheme-lookup-key:        Back end methods.       (line  12)
+* pgg-scheme-sign-region:       Back end methods.       (line  32)
+* pgg-scheme-snarf-keys-region: Back end methods.       (line  47)
+* pgg-scheme-verify-region:     Back end methods.       (line  37)
+* pgg-sign-region:              User Commands.          (line  48)
+* pgg-snarf-keys-region:        User Commands.          (line  69)
+* pgg-verify-region:            User Commands.          (line  58)
+
+
+
+File: pgg-ja.info, Node: Variable Index, Prev: Function Index, Up: Top
+
+Variable Index
+**************
+
+* Menu:
+
+* pgg-cache-passphrase:         Caching passphrase.     (line  11)
+* pgg-default-scheme:           Selecting an implementation.  (line  21)
+* pgg-default-user-id:          Default user identity.  (line  12)
+* pgg-errors-buffer:            Getting output.         (line  12)
+* pgg-gpg-user-id:              Default user identity.  (line  17)
+* pgg-ignore-packet-checksum:   Parsing OpenPGP packets.  (line  21)
+* pgg-output-buffer:            Getting output.         (line  15)
+* pgg-passphrase-cache-expiry:  Caching passphrase.     (line  17)
+* pgg-pgp-user-id:              Default user identity.  (line  22)
+* pgg-pgp5-user-id:             Default user identity.  (line  27)
+* pgg-scheme:                   Selecting an implementation.  (line  17)
+* pgg-status-buffer:            Getting output.         (line  18)
+
+Tag table:
+Node: Top299
+Node: Overview731
+Node: Prerequisites1074
+Node: How to use1480
+Node: User Commands2500
+Node: Selecting an implementation4567
+Node: Caching passphrase5216
+Node: Default user identity5696
+Node: Architecture6516
+Node: Initializing6950
+Node: Back end methods7494
+Node: Getting output9244
+Node: Parsing OpenPGP packets9671
+Node: Function Index10214
+Node: Variable Index11506
+
+End tag table

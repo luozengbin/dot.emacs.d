@@ -1,0 +1,315 @@
+Info file: sieve-ja.info,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `sieve-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Sieve-ja: (sieve-ja).         Managing Sieve scripts in Emacs (Japanese).
+END-INFO-DIR-ENTRY
+
+
+
+
+
+File: sieve-ja.info, Node: Top, Next: Installation, Prev: (dir), Up: (dir)
+
+Sieve Support for Emacs
+***********************
+
+このマニュアルは Emacs Sieve パッケージの説明書です。
+
+これは Sieve モードと「Sieve-管理」(Manage Sieve) のためのユーザーズマ
+ニュアルとして、および `sieve-manage' プロトコルを扱う Emacs Lisp API
+のためのリファレンスマニュアルとして活用されることを意図しています。
+
+Sieve はサーバー側でメールを濾過するための言語です。その言語は RFC
+3028 に文書化されています。このマニュアルの目的は言語を説明することでは
+ないので、RFC 3028 は手元に置いておいて下さい。
+
+まともな Sieve の資料は `http://www.cyrusoft.com/sieve/' にあります。
+
+訳注: Sieve == 篩 (ふるい)
+
+* Menu:
+
+* Installation::          このパッケージを使うための準備
+* Sieve Mode::            Sieve スクリプトの編集
+* Managing Sieve::        遠隔サーバー上の Sieve スクリプトを管理する
+* Examples ::             Sieve コードの片鱗
+* Manage Sieve API ::     「Sieve-管理」プロトコル API のインターフェース
+* Standards::             使われている RFC と作業文書の概略
+* Index::                 関数および変数の索引
+
+
+
+File: sieve-ja.info, Node: Installation, Next: Sieve Mode, Prev: Top, Up: Top
+
+インストール
+************
+
+Sieve パッケージはあなたの Emacs の版に付属していて、すぐに使えるように
+なっているはずです。
+
+そうなっていないのであれば、このパッケージを手作業で設定するために、以
+下のコマンドを `~/.emacs' ファイルに書き込んで下さい:
+
+     (autoload 'sieve-mode "sieve-mode")
+     (setq auto-mode-alist (cons '("\\.s\\(v\\|iv\\|ieve\\)\\'" . sieve-mode)
+                                 auto-mode-alist))
+
+
+
+File: sieve-ja.info, Node: Sieve Mode, Next: Managing Sieve, Prev: Installation, Up: Top
+
+Sieve モード
+************
+
+Sieve モードは、構文に基づいたインデント、font-lock のサポート、および
+Sieve スクリプトを楽に編集できるようにするためのその他の便利な機能を提
+供します。
+
+このメジャーモードに切り替えるには `M-x sieve-mode' を使って下さい。こ
+のコマンドは `sieve-mode-hook' で与えられたフックを実行します。
+
+Sieve モードは `c-mode' から派生していて、コメントの構文以外はとても似
+ています。インデントをカスタマイズする変数があるのと同様に、キーマップ
+(`sieve-mode-map') は `c-mode' のものを受け継ぎます。Sieve モードは専用
+の略語表 (`sieve-mode-abbrev-table') と構文テーブル
+(`sieve-mode-syntax-table') を持っています。
+
+編集に役立つ関数に加えて、Sieve モードには Sieve スクリプトを遠隔管理す
+るためのキー設定もあります。*Note Managing Sieve::.
+
+`C-c RET'
+     「Sieve-管理」プロトコル (Managesieve protocol) を使って、遠隔サー
+     バーに接続します。
+
+`C-c C-l'
+     現在接続しているサーバーに Sieve スクリプトをアップロードします。
+
+
+
+File: sieve-ja.info, Node: Managing Sieve, Next: Examples, Prev: Sieve Mode, Up: Top
+
+Sieve の管理
+************
+
+「Sieve-管理」は、遠隔サーバーにある Sieve スクリプトを表示するために使
+われる特別なモードです。それは `M-x sieve-manage RET' で起動し、そのサー
+バーにおけるユーザー名と、必要な場合には資格証明書 (credentials) の入力
+を求めます。
+
+サーバーとの接続に成功すると、「Sieve-管理」バッファーには以下のような
+ものが表示されます:
+
+     Server  : mailserver:2000
+
+     2 scripts on server, press RET on a script name edits it, or
+     press RET on <new script> to create a new script.
+             <new script>
+      ACTIVE .sieve
+             template.siv
+
+スクリプトの一つが強調表示され、標準のポイント移動コマンド (`<up>',
+`<down>' など) でリスト内を移動することができます。
+
+以下のコマンドが「Sieve-管理」バッファーで利用可能です:
+
+`m'
+     現在の強調表示されたスクリプトを活性化します。
+
+`u'
+     現在の強調表示されたスクリプトを不活性化します。
+
+`C-M-?'
+     すべてのスクリプトを不活性化します。
+
+`r'
+     現在の強調表示されたスクリプトを取り除きます。
+
+`RET'
+`mouse-2'
+`f'
+     サーバーバッファーを隠して、現在の強調表示されたスクリプトを
+     Sieve モード (*Note Sieve Mode::) で編集するための新しいバッファー
+     にダウンロードします。
+
+`o'
+     Sieve モード (*Note Sieve Mode::) で編集するために、現在の強調表示
+     されたスクリプトを含んでいる新しいバッファーを、別ウィンドウで作成
+     します。
+
+`q'
+     接続を切らずに「Sieve-管理」バッファーを隠します。
+
+`?'
+`h'
+     ミニバッファーにヘルプを表示します。
+
+
+
+File: sieve-ja.info, Node: Examples, Next: Manage Sieve API, Prev: Managing Sieve, Up: Top
+
+例
+**
+
+Sieve を熟知していないなら、この章にほんの少しだけあるコードの断片を利
+用すれば良いでしょう。Sieve 言語でゼロから規則を書くことがもっと快適に
+感じられるようになるまでは、それらをカット＆ペーストして好きなように変
+更して下さい。
+
+以下の完全な Sieve スクリプトは、合致する `Sender:' ヘッダーを持つすべ
+てのメッセージを、指定されたメールボックスに格納します。多くのメーリン
+グリストがこの形式を使っています。最初の行は Sieve サーバーが確実に
+`fileinto' コマンドを理解できるようにするためのものです。
+
+     require "fileinto";
+
+     if address "sender" "owner-w3-beta@xemacs.org" {
+	fileinto "INBOX.w3-beta";
+     }
+
+少数のメーリングリストは `Sender:' ヘッダーを使いませんが、別のヘッダー
+に独特の識別子を含んでいます。以下のスクリプトは完全ではなく、すでに
+`fileinto' が読み込まれていることを仮定しています。
+
+     if header :contains "Delivered-To" "auc-tex@sunsite.dk" {
+	fileinto "INBOX.auc-tex";
+     }
+
+最後は、どんな独特の識別子も持っていない絶望的なメーリングリストのため
+に、`To:' と `Cc' ヘッダーにおける合致を強いられる例です。前のものと同
+様に、この断片は `fileinto' が読み込まれていることを仮定しています。
+
+     if address ["to", "cc"] "kerberos@mit.edu" {
+	fileinto "INBOX.kerberos";
+     }
+
+
+
+File: sieve-ja.info, Node: Manage Sieve API, Next: Standards, Prev: Examples, Up: Top
+
+「Sieve-管理」の API
+********************
+
+`sieve-manage.el' ライブラリーには MANAGESIEVE プロトコルでサーバーと話
+すための、低階層の関数群があります。
+
+いくつかの、ユーザーが見ることができる変数があり、それらすべては
+`sieve' グループでカスタマイズすることができます (`M-x customize-group
+RET sieve RET'):
+
+`sieve-manage-default-user'
+     ディフォルトのユーザー名を設定します。
+
+`sieve-manage-default-port'
+     仕様するディフォルトのポートを設定します。提案されているポート番号
+     は `2000' です。
+
+`sieve-manage-log'
+     非-`nil' だったら、やり取りしたプロトコルの結果が記録されるバッ
+     ファー名の文字列でなければなりません (デバッグするときに使います)。
+
+API の関数には以下のものがあります:
+
+`sieve-manage-open'
+     「Sieve-管理」サーバーに接続し、他のすべての API で使うバッファー
+     を返します。
+
+`sieve-manage-opened'
+     サーバーと接続しているか否かを検査します。
+
+`sieve-manage-close'
+     サーバーとの接続を閉じます。
+
+`sieve-manage-authenticate'
+     サーバーを認証します。
+
+`sieve-manage-capability'
+     サーバーがサポートしている機能のリストを返します。
+
+`sieve-manage-listscripts'
+     サーバーにあるスクリプトを列挙します。
+
+`sieve-manage-havespace'
+     与えられたサイズのスクリプトのための空きがある場合だけ、非-`nil'
+     を返します。
+
+`sieve-manage-getscript'
+     サーバーからスクリプトをダウンロードします。
+
+`sieve-manage-putscript'
+     サーバーにスクリプトをアップロードします。
+
+`sieve-manage-setactive'
+     サーバーにあるどのスクリプトが活きているはずであるかを示します。
+
+
+
+File: sieve-ja.info, Node: Standards, Next: Index, Prev: Manage Sieve API, Up: Top
+
+標準
+****
+
+Emacs Sieve パッケージは、少ないけれども増大することが望まれる RFC 群お
+よび草稿文書の、すべてまたは一部分を実装します。この章では関連するもの
+を列挙します。それらはすべて `http://quimby.gnus.org/notes/' から入手す
+ることができます。
+
+"RFC3028"
+     Sieve: メール濾過言語
+
+"draft-martin-managesieve-03"
+     Sieve スクリプトを遠隔管理するためのプロトコル
+
+
+
+File: sieve-ja.info, Node: Index, Prev: Standards, Up: Top
+
+Index
+*****
+
+* Menu:
+
+* Install:                      Installation.           (line   5)
+* Setup:                        Installation.           (line   5)
+* manage remote sieve script:   Sieve Mode.             (line  24)
+* sieve-activate:               Managing Sieve.         (line  29)
+* sieve-bury-buffer:            Managing Sieve.         (line  61)
+* sieve-deactivate:             Managing Sieve.         (line  33)
+* sieve-deactivate-all:         Managing Sieve.         (line  37)
+* sieve-edit-script:            Managing Sieve.         (line  49)
+* sieve-edit-script-other-window: Managing Sieve.       (line  55)
+* sieve-help:                   Managing Sieve.         (line  67)
+* sieve-manage:                 Sieve Mode.             (line  24)
+* sieve-manage-authenticate:    Manage Sieve API.       (line  41)
+* sieve-manage-capability:      Manage Sieve API.       (line  45)
+* sieve-manage-close:           Manage Sieve API.       (line  37)
+* sieve-manage-default-port:    Manage Sieve API.       (line  19)
+* sieve-manage-default-user:    Manage Sieve API.       (line  15)
+* sieve-manage-getscript:       Manage Sieve API.       (line  58)
+* sieve-manage-havespace:       Manage Sieve API.       (line  53)
+* sieve-manage-listscripts:     Manage Sieve API.       (line  49)
+* sieve-manage-log:             Manage Sieve API.       (line  24)
+* sieve-manage-open:            Manage Sieve API.       (line  28)
+* sieve-manage-opened:          Manage Sieve API.       (line  33)
+* sieve-manage-putscript:       Manage Sieve API.       (line  62)
+* sieve-manage-setactive:       Manage Sieve API.       (line  66)
+* sieve-mode-map:               Sieve Mode.             (line  13)
+* sieve-mode-syntax-table:      Sieve Mode.             (line  13)
+* sieve-remove:                 Managing Sieve.         (line  41)
+* sieve-upload:                 Sieve Mode.             (line  29)
+* upload sieve script:          Sieve Mode.             (line  29)
+
+Tag table:
+Node: Top298
+Node: Installation1108
+Node: Sieve Mode1508
+Node: Managing Sieve2231
+Node: Examples3312
+Node: Manage Sieve API4220
+Node: Standards5362
+Node: Index5697
+
+End tag table

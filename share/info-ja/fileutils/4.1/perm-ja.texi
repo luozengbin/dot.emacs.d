@@ -1,0 +1,454 @@
+それぞれのファイルには，ファイルに対してユーザ持つアクセスの種類を制御す
+る@dfn{許可}の設定があります．ファイルに対する許可は@dfn{アクセスモード} 
+とも呼ばれます．それらは，抽象的な形式または8進数で表示可能です．
+
+@menu
+* Mode Structure::              Structure of file permissions.
+* Symbolic Modes::              Mnemonic permissions representation.
+* Numeric Modes::               Permissions as octal numbers.
+@end menu
+
+@node Mode Structure
+@section ファイルの許可の構造
+
+ユーザがファイルに対して持つ3種類の許可があります．
+
+@enumerate
+@item
+@cindex read permission
+ファイルを読み込む許可です．ディレクトリに対しては，これはディレクトリの
+内容をリストアップする許可という意味があります．
+@item
+@cindex write permission
+ファイルを書き込む(変更する)許可です．ディレクトリに対しては，これはディ
+レクトリでのファイルの作成と削除の許可を意味します．
+@item
+@cindex execute permission
+ファイルを実行(それをプログラムとして実行)する許可です．ディレクトリに対
+しては，これはディレクトリのファイルにアクセスする許可を意味します．
+@end enumerate
+
+ファイル上で上記のあらゆる処理を行うため，異なる許可を持つ，3つのユーザ
+の分類があります．
+
+@enumerate
+@item
+ファイルの所有者．
+@item
+ファイルのグループにいるその他のユーザ．
+@item
+その他全員．
+@end enumerate
+
+@cindex owner, default
+@cindex group owner, default
+ファイルが作成されるとき，所有者とグループが与えられます．通常，所有者は
+現在のユーザで，グループはファイルがあるディレクトリのグループですが，こ
+れはオペレーティングシステム，ファイルが作成されるファイルシステム，そし
+てファイルが作成される方法で変化します．@code{chown}と@code{chgrp}コマン
+ドを使用してファイルの所有者とグループを変更可能です．
+
+上記でリストアップされた3つの許可の3つの設定に加えて，ファイルの許可は3 
+つの特別な構成部分があり，それは実行可能なファイル(プログラム)と，いくつ
+かのシステムのディレクトリにのみ効果があります．
+
+@enumerate
+@item
+@cindex setuid
+プロセスの事実上のユーザIDを，実行時にファイルのものに設定します
+(@dfn{setuid bit}と呼ばれます)．ディレクトリには効果がありません．
+@item
+@cindex setgid
+プロセスの事実上のグループIDを，実行時にファイルのものに設定します
+(@dfn{setgid bit}と呼ばれます)．いくつかのシステムのディレクトリに対して
+は，そのディレクトリで作成されたファイルを同じグループのディレクトリとし
+て置いたとしても，それを作成したユーザのグループは問題ありません．
+@item
+@cindex sticky
+@cindex swap space, saving text image in
+@cindex text image, saving in swap space
+@cindex restricted deletion flag
+スワップデバイス上のプログラムのテキストイメージを保存するので，実行時に
+より速くロードされます(@dfn{sticky bit}と呼ばれます)．いくつかのシステム
+のディレクトリに対しては，ユーザが所有していないファイルやディレクトリ場
+合，そのディレクトリ内でのファイルの削除や名前の変更を妨げます．これは，
+ディレクトリに対する@dfn{限定削除フラグ}と呼ばれます．
+@end enumerate
+
+@node Symbolic Modes
+@section 象徴的なモード
+
+@cindex symbolic modes
+@dfn{象徴的なモード}は，単一文字のシンボルの演算子として，ファイルの許可
+を変更することを表します．それは，ファイルの許可の部分のどれかまたは全て
+を編集可能にし，オプションでそれらに前置される値と，おそらく現在の
+@code{umask}にも基づきます(@pxref{Umask and Protection})．
+
+抽象的なモードの書式は以下の通りです．
+
+@example
+@r{[}ugoa@dots{}@r{][[}+-=@r{][}rwxXstugo@dots{}@r{]}@dots{}@r{][},@dots{}@r{]}
+@end example
+
+以下のセクションで，抽象的なモードのその他の詳細の処理を記述します．
+
+@menu
+* Setting Permissions::          Basic operations on permissions.
+* Copying Permissions::          Copying existing permissions.
+* Changing Special Permissions:: Special permissions.
+* Conditional Executability::    Conditionally affecting executability.
+* Multiple Changes::             Making multiple changes.
+* Umask and Protection::              The effect of the umask.
+@end menu
+
+@node Setting Permissions
+@subsection 許可の設定
+
+ファイルの許可での基本的な抽象的処理で，特定ユーザのファイルの読み込み，
+書き込み，実行の許可を，加えたり，削除したり，設定します．これらの処理は
+以下の書式です．
+
+@example
+@var{users} @var{operation} @var{permissions}
+@end example
+
+@noindent
+上記の3つの部分の間のスペースは，可読性のみのために表示しています．抽象
+的なモードではスペースを含めることはできません．
+
+@var{users}部は，ファイルアクセスを変更されるユーザを伝えます．それは以
+下の，一つ以上の文字から成り立ちます(または，空にすることもできます．そ
+のとき生じることは，@pxref{Umask and Protection})．これらの文字の一つ以
+上が与えられたとき，その順番は重要ではありません．
+
+@table @code
+@item u
+@cindex owner of file, permissions for
+ファイルを所有しているユーザ．
+@item g
+@cindex group, permissions for
+ファイルのグループのその他のユーザ．
+@item o
+@cindex other permissions
+その他全部のユーザ．
+@item a
+全てのユーザで，@samp{ugo}と同じです．
+@end table
+
+@var{operation}部は，ファイルにアクセスするユーザの効果を変更する方法を
+伝え，以下のシンボルの一つになります．
+
+@table @code
+@item +
+@cindex adding permissions
+@var{users}が既に持つ，そのファイルに対するあらゆる許可に，
+@var{permissions}を加えます．
+@item -
+@cindex removing permissions
+@cindex subtracting permissions
+@var{users}が既に持つ，そのファイルに対するあらゆる許可から，
+@var{permissions}を削除します．
+@item =
+@cindex setting permissions
+@var{users}が持つ，そのファイルに対する許可を，@var{permissions}のみにし
+ます．
+@end table
+
+@var{permissions}部は，ファイルが変更されるアクセスの種類を伝えます．ゼ
+ロ以上の文字になります．@var{users}部を用いた場合，1文字以上与えられたと
+きは，その順序は重要ではありません．@var{permissions}部の省略は，
+@samp{=}の時のみ役に立ち，それは指定された@var{users}にそのファイルに対
+する全てのアクセス権を取り除きます．
+
+@table @code
+@item r
+@cindex read permission, symbolic
+@var{users}がファイルを読み込むのに必要な許可です．
+@item w
+@cindex write permission, symbolic
+@var{users}がファイルに書き込むのに必要な許可です．
+@item x
+@cindex execute permission, symbolic
+@var{users}がファイルを実行するのに必要な許可です．
+@end table
+
+例えば，全員にファイルの読み込みと書き込みの許可を与え，実行を与えないた
+めに，以下を使用してください．
+
+@example
+a=rw
+@end example
+
+ファイルの所有者以外の全てのユーザから書き込み許可を削除するため，以下を
+使用してください．
+
+@example
+go-w
+@end example
+
+@noindent
+上記のコマンドは，ファイルの所有者のアクセス権に効果が無く，その他のユー
+ザが，ファイルの読み込みと実行が可能かどうかにも効果がありません．
+
+ファイルの所有者以外全員に，そのファイルに対しあらゆる許可を与えないため
+に，以下のモードを使用してください．他のユーザは，ファイルがあるディレク
+トリに書き込み許可がある場合，ファイルを削除可能です．
+
+@example
+go=
+@end example
+
+@noindent
+同じことを指定するもう1つの方法です．
+
+@example
+og-rxw
+@end example
+
+
+@node Copying Permissions
+@subsection 既存の許可をコピー
+
+@cindex copying existing permissions
+@cindex permissions, copying existing
+ファイルの許可を，既存の許可を基準にすることができます．こうするために，
+オペレータの後に@samp{r}，@samp{w}や@samp{x}を使用する代わりに，文字
+@samp{u}，@samp{g}や@samp{o}を使用します．例えば以下のモードです．
+@example
+o+g
+@end example
+@noindent
+それは，ファイルのグループにいるユーザに対する許可を，その他のユーザがそ
+のファイルに対して持っている許可に加えます．このため，ファイルが最初にモー
+ド664 (@samp{rw-rw-r--})の場合，上記のモードは，それを666
+(@samp{rw-rw-rw-})に変更します．ファイルが最初にモード741
+(@samp{rwxr----x})の場合，上記のモードは，それを745 (@samp{rwxr--r-x})に
+変更します．@samp{-}と@samp{=}の処理は同様に働きます．
+
+
+@node Changing Special Permissions
+@subsection 特別な許可を変更
+
+@cindex changing special permissions
+ファイルの読み込み，書き込み，そして実行の許可の変更に加えて，特別な許可
+を変更できます．許可の概要は，@xref{Mode Structure}.
+
+実行時にファイルの許可をユーザIDに設定するため，象徴的なモードの
+@var{users}部での@samp{u}と，@var{permissions}部での@samp{s}を使用してく
+ださい．
+
+実行時にファイルの許可をグループIDに設定するため，象徴的なモードの
+@var{users}部での@samp{g}と@var{permissions}部での@samp{s}を使用してくだ
+さい．
+
+スワップデバイスに永久に残すファイルの許可を変更するため，象徴的なモード
+の@var{users}部での@samp{o}と@var{permissions}部での@samp{t}を使用してく
+ださい．
+
+例えば，ユーザID許可をプログラムに加えるため，以下のモードを使用可能です．
+
+@example
+u+s
+@end example
+
+ユーザIDのとグループIDの許可の設定をそれから削除するため，以下のモードを
+使用可能です．
+
+@example
+ug-s
+@end example
+
+プログラムがスワップデバイスに保存されるようにするため，以下のモードを使
+用可能です．
+
+@example
+o+t
+@end example
+
+特別な許可は実行形式のファイルと，いくつかのシステムのディレクトリ(そこ
+では異なる意味を持ちます．@pxref{Mode Structure})のみに効果があることを，
+覚えておいてください．また，@samp{u+t}，@samp{g+t}，そして@samp{o+s}の様
+な組合わせには効果はありません．
+
+@samp{=}オペレータは，特別な許可に用いる場合，全く役に立ちません．例えば，
+モードを以下のようにします．
+
+@example
+o=t
+@end example
+
+@noindent
+これは，ファイルをスワップデバイスに保存するようにしますが，それは，ファ
+イルのグループにいないユーザが持っている可能性のある，全ての，読み込み，
+書き込み，そして実行の許可を削除します．
+
+
+@node Conditional Executability
+@subsection 実行可能の条件
+
+@cindex conditional executability
+象徴的な許可の特別な形式がもう1つあります．@samp{x}の代わりに@samp{X}を
+用いた場合，実行許可は，既に実行形式があるファイル，またはディレクトリの
+みに効果があります．それは，ディレクトリが最初にあらゆる実行許可を持って
+いない場合でも，ディレクトリの実行許可に効果があります．
+
+例えば，このようなモードにします．
+
+@example
+a+X
+@end example
+
+@noindent
+これは，全てのユーザに，それまでに持っていなかった，ファイルの実行(やディ
+レクトリの検索)の許可を与えます．
+
+
+@node Multiple Changes
+@subsection 複数の変更
+
+@cindex multiple changes to permissions
+象徴的なモードの書式は，実際に上記で記述したより複雑です(@pxref{Setting
+Permissions})．それは，ファイルの許可を複数変更する2つの方法を提供します．
+
+最初の方法は，象徴的なモードで，複数の@var{operation}部と
+@var{permissions}部を@var{users}部の後で指定する方法です．
+
+例えば，以下のようなモードにします．
+
+@example
+og+rX-w
+@end example
+
+@noindent
+これは，ファイルの所有者以外のユーザに，ファイルの読み込み許可を与え，そ
+れがディレクトリの場合や，既に誰かに実行形式の許可がある場合，実行許可を
+与えます．そして，それはファイルの書き込み許可を禁止します．それはファイ
+ルの所有者が持つ許可に影響しません．上記のモードは以下の2つのモードと同
+じです．
+
+@example
+og+rX
+og-w
+@end example
+
+複数の変更をするための2番目の方法は，カンマで分けられた，単純な象徴的な
+モードを1つの以上の指定することです．例えば，以下のようなモードにします．
+
+@example
+a+r,go-w
+@end example
+
+@noindent
+これは，全員にファイルの読み込み許可を与え，所有者以外全員の書き込み許可
+を削除します．もう1つの例です．
+
+@example
+u=rwx,g=rx,o=
+@end example
+
+@noindent
+これは，ファイルに明示的に特別でない許可の全てを設定します．(それはファ
+イルのグループではないユーザに，許可を全く与えません．)
+
+2つの方法は組み合わせ可能です．以下のモードになります．
+
+@example
+a+r,g+x-w
+@end example
+
+@noindent
+これは，全てのユーザに，ファイルの読み込み許可を与え，ファイルのグループ
+にいるユーザに実行許可も与えますが，書き込み許可は与えません．上記のモー
+ドは異なる方法で書くこともできます．その1つは以下になります．
+
+@example
+u+r,g+rx,o+r,g-w
+@end example
+
+
+@node Umask and Protection
+@subsection umaskと保護
+
+@cindex umask and modes
+@cindex modes and umask
+象徴的なモードの@var{users}部が省略された場合，システム変数@code{umask} 
+で@emph{無効に}@emph{設定されている}あらゆる許可以外，デフォルトは
+@samp{a}になります(全てのユーザに影響します)．@code{umask}の値は
+@code{umask}コマンドを使用して設定できます．そのデフォルト値は，システム
+毎に異なります．
+
+@cindex giving away permissions
+象徴的なモードの@var{users}部の省略は，@samp{+}以外のオペレーションでは
+一般に役に立ちません．希望しないファイルに対する余分な許可を与えることに
+対して，簡単にカスタマイズ可能な保護として@code{umask}が使用可能になるの
+で，それは@samp{+}とともに用いると役に立ちます．
+
+例として，@code{umask}の値が2の場合，それはファイルのグループ以外のユー
+ザに対し書き込み許可を削除します．以下のモードを考えます．
+
+@example
++w
+@end example
+
+@noindent
+これは，その所有者とファイルのグループのユーザに対する書き込み許可を加え
+ますが，それ以外のユーザには与え@emph{ません}．対照的に，以下のモードを
+考えます．
+
+@example
+a+w
+@end example
+
+@noindent
+これは@code{umask}を無視し，全てのユーザに対し，書き込み許可を与える
+@emph{のです}．
+
+
+@node Numeric Modes
+@section 数値的なモード
+
+@cindex numeric modes
+@cindex file permissions, numeric
+@cindex octal numbers for file modes
+ファイルの許可は，内部では整数で保存されます．象徴的なモードの代わりとし
+て，新しいモードの内部に対応した適切な8進数(基数8)で与えることができます．
+この数は常に8進数で処理されます．Cで行うような，前置される0は不要です．
+モード0055はモード55と同じです．
+
+数値的なモードは，通常対応する象徴的なモードより短くなりますが，ファイル
+の前の許可を考慮にいれることに制限されます．それは絶対的に設定が可能なだ
+けです．
+
+ほとんどのシステム上では，ユーザ，ファイルのグループのその他のユーザ，そ
+してファイルのグループではないその他のユーザに応じた許可は，それぞれ3つ
+のビットになり，それは1つの8進数として表現されます．ここにビットを整える
+方法があり，それは最下位ビットからはじめます．
+
+@example
+対応する値
+モード    許可
+
+          ファイルのグループにいないその他のユーザ：
+   1      実行
+   2      書き込み
+   4      読み込み
+
+          ファイルのグループのその他のユーザ：
+  10      実行
+  20      書き込み
+  40      読み込み
+
+          ファイルの所有者：
+ 100      実行
+ 200      書き込み
+ 400      読み込み
+
+          特別な許可：
+1000      テキストイメージをスワップデバイスに保存
+2000      実行時のグループIDを設定
+4000      実行時のユーザIDを設定
+@end example
+
+例えば，数値的なモードの4755は，象徴的なモードの@samp{u=rwxs,go=rx}に，
+数値的なモードの664は，象徴的なモードの@samp{ug=rw,o=r}に対応します．数
+値的なモードの0は，象徴的なモードの@samp{ugo=}に対応します．

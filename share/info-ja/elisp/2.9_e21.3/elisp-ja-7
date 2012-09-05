@@ -1,0 +1,1953 @@
+Info file: elisp-ja,    -*-Text-*-
+produced by `texinfo-format-buffer'
+from file `elisp-ja.texi'
+using `texinfmt.el' version 2.41 of  1 Mar 2005.
+
+INFO-DIR-SECTION Emacs
+START-INFO-DIR-ENTRY
+* Elisp-ja: (elisp-ja).	　　　　　　Emacs-Lisp 2.9日本語マニュアル.
+END-INFO-DIR-ENTRY
+
+
+
+
+Emacs Lispリファレンスマニュアル2.9版であり、Emacs 21.3版に対応します。
+
+Published by the Free Software Foundation 59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
+
+Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1998, 1999,
+              2000, 2002 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "GNU General Public License", with the
+Front-Cover texts being "A GNU Manual", and with the Back-Cover Texts
+as in (a) below.  A copy of the license is included in the section
+entitled "GNU Free Documentation License".
+
+(a) The FSF's Back-Cover Text is: "You have freedom to copy and modify
+this GNU Manual, like GNU software.  Copies published by the Free
+Software Foundation raise funds for GNU development."
+
+
+
+
+File: elisp-ja, Node: Backquote, Next: Problems with Macros, Prev: Defining Macros, Up: Macros
+
+バッククォート
+==============
+
+マクロでは、定数部分と非定数部分を組み合わせた大きなリスト構造を構築す
+る必要がしばしばあります。これを簡単に行うためには、（通常、"バッククォー
+ト"（backquote）と呼ばれる）``'構文を使います。
+
+バッククォートにより、リストの要素を選択に評価しつつ、リストをクォート
+できます。もっとも単純な場合、これはスペシャルフォーム`quote'（*Note
+Quoting::）と等価です。たとえば、つぎの2つのフォームは等価な結果になり
+ます。
+
+     `(a list of (+ 2 3) elements)
+          => (a list of (+ 2 3) elements)
+     '(a list of (+ 2 3) elements)
+          => (a list of (+ 2 3) elements)
+
+バッククォートの引数の内側にある特別な印`,'は、値が定数ではないことを表
+します。バッククォートは、リスト構造の中の`,'の引数を評価し、値で置き換
+えます。
+
+     (list 'a 'list 'of (+ 2 3) 'elements)
+          => (a list of 5 elements)
+     `(a list of ,(+ 2 3) elements)
+          => (a list of 5 elements)
+
+`,'による置き換えは、リスト構造の深いレベルでも許されます。たとえば、つ
+ぎのとおりです。
+
+     (defmacro t-becomes-nil (variable)
+       `(if (eq ,variable t)
+            (setq ,variable nil)))
+
+     (t-becomes-nil foo)
+          == (if (eq foo t) (setq foo nil))
+
+特別な印`,@'を使って、評価結果を結果となるリストに"繋ぎ合わせる
+（splice）こともできます。繋ぎ合わせたリストの要素は、結果となるリスト
+の他の要素と同じレベルになります。``'を使わない等価なコードはしばしば読
+み難くなります。例をあげましょう。
+
+     (setq some-list '(2 3))
+          => (2 3)
+     (cons 1 (append some-list '(4) some-list))
+          => (1 2 3 4 2 3)
+     `(1 ,@some-list 4 ,@some-list)
+          => (1 2 3 4 2 3)
+
+     (setq list '(hack foo bar))
+          => (hack foo bar)
+     (cons 'use
+       (cons 'the
+         (cons 'words (append (cdr list) '(as elements)))))
+          => (use the words foo bar as elements)
+     `(use the words ,@(cdr list) as elements)
+          => (use the words foo bar as elements)
+
+19.29版よりまえのEmacsの旧版では、``'の構文は異なっていて、バッククォー
+ト構文全体を囲む括弧の余分なレベルが必要でした。同様に、`,'や`,@'の置換
+でも、`,'や`,@'、および後続の式を囲む括弧の余分なレベルが1つ必要でした。
+古い構文では、``'、 `,'、`,@'と後続の式とのあいだには空白が必要でした。
+
+この構文も受け付けますが、これはEmacsの旧版との互換性のためであり、新し
+いプログラムでは使わないことを勧めます。
+
+
+
+File: elisp-ja, Node: Problems with Macros, Prev: Backquote, Up: Macros
+
+マクロ使用時の一般的な問題
+==========================
+
+マクロ展開に関する基本的事実には、直観的でない結果があります。本節では、
+問題を引き起こしかねない重要な結果を説明し、問題を回避するための規則を
+説明します。
+
+* Menu:
+
+* Argument Evaluation::    The expansion should evaluate each macro arg once.
+* Surprising Local Vars::  Local variable bindings in the expansion
+                              require special care.
+* Eval During Expansion::  Don't evaluate them; put them in the expansion.
+* Repeated Expansion::     Avoid depending on how many times expansion is done.
+
+
+
+File: elisp-ja, Node: Argument Evaluation, Next: Surprising Local Vars, Prev: Problems with Macros, Up: Problems with Macros
+
+マクロ引数の複数回評価
+----------------------
+
+マクロを定義するときには、展開形を実行するときに、引数が何回評価かされ
+るかに注意を払う必要があります。つぎの（繰り返しを行う）マクロで、この
+問題を示しましょう。このマクロで、Pascalにあるような単純な『for』ループ
+を書けます。
+
+     (defmacro for (var from init to final do &rest body)
+       "Execute a simple \"for\" loop.
+     For example, (for i from 1 to 10 do (print i))."
+       (list 'let (list (list var init))
+             (cons 'while (cons (list '<= var final)
+                                (append body (list (list 'inc var)))))))
+     => for
+
+     (for i from 1 to 3 do
+        (setq square (* i i))
+        (princ (format "\n%d %d" i square)))
+     ==>
+     (let ((i 1))
+       (while (<= i 3)
+         (setq square (* i i))
+         (princ (format "%d      %d" i square))
+         (inc i)))
+
+          -|1       1
+          -|2       4
+          -|3       9
+     => nil
+
+このマクロの引数、`from'、`to'、`do'は、『シンタックスシュガー』であり、
+完全に無視します。（`from'、`to'、`do'などの）余分な単語をマクロ呼び出
+しのこの引数位置に書けるようにするのです。
+
+バッククォートを使って単純化した等価な定義をつぎに示します。
+
+     (defmacro for (var from init to final do &rest body)
+       "Execute a simple \"for\" loop.
+     For example, (for i from 1 to 10 do (print i))."
+       `(let ((,var ,init))
+          (while (<= ,var ,final)
+            ,@body
+            (inc ,var))))
+
+この定義の（バッククォートありとなしの）どちらの形式でも、
+各繰り返しごとにFINALが評価されるという欠陥があります。
+FINALが定数ならば、これは問題になりません。
+たとえば`(long-complex-calculation x)'のような、
+より複雑なフォームであると、実行速度をかなり遅くしてしまいます。
+FINALに副作用があると、複数回評価するのは正しくありません。
+
+繰り返し評価することがマクロの意図している目的の一部でなければ、よく設
+計されたマクロ定義では、引数をちょうど1回だけ評価するような展開形を生成
+して、上のような問題を回避するように手立てします。
+
+     (let ((i 1)
+           (max 3))
+       (while (<= i max)
+         (setq square (* i i))
+         (princ (format "%d      %d" i square))
+         (inc i)))
+
+このような展開形を作るマクロ定義はつぎのようになります。
+
+     (defmacro for (var from init to final do &rest body)
+       "Execute a simple for loop: (for i from 1 to 10 do (print i))."
+       `(let ((,var ,init)
+              (max ,final))
+          (while (<= ,var max)
+            ,@body
+            (inc ,var))))
+
+残念なことに、この修正は、次節に説明する別の問題を引き起こします。
+
+
+
+File: elisp-ja, Node: Surprising Local Vars, Next: Eval During Expansion, Prev: Argument Evaluation, Up: Problems with Macros
+
+マクロ展開形内のローカル変数
+----------------------------
+
+前節では、`for'の定義をつぎのように修正して、マクロ引数を適切な回数だけ
+評価する展開形にしました。
+
+     (defmacro for (var from init to final do &rest body)
+       "Execute a simple for loop: (for i from 1 to 10 do (print i))."
+       `(let ((,var ,init)
+              (max ,final))
+          (while (<= ,var max)
+            ,@body
+            (inc ,var))))
+
+`for'の新しい定義には、新たな問題があります。ユーザーが予期していないロー
+カル変数`max'を導入しているのです。これは、つぎのような場合、問題を引き
+起こします。
+
+     (let ((max 0))
+       (for x from 0 to 10 do
+         (let ((this (frob x)))
+           (if (< max this)
+               (setq max this)))))
+
+`for'の本体内での`max'の参照は、ユーザーが束縛した`max'を参照するものと
+期待されていますが、実際には`for'が作った束縛を使います。
+
+これを修正するには、`max'のかわりに、インターンしてないシンボル（*Note
+Creating Symbols::）を使います。インターンしてないシンボルは、他のシン
+ボルと同様に、束縛したり参照したりできますが、`for'で作ったので、ユーザー
+プログラムには現れていないことがわかっています。インターンしてないので、
+ユーザーがプログラムのあとの部分で参照する方法もありません。`for'で使っ
+た箇所以外には現れえないのです。このように動作する`for'の定義をつぎに示
+します。
+
+     (defmacro for (var from init to final do &rest body)
+       "Execute a simple for loop: (for i from 1 to 10 do (print i))."
+       (let ((tempvar (make-symbol "max")))
+         `(let ((,var ,init)
+                (,tempvar ,final))
+            (while (<= ,var ,tempvar)
+              ,@body
+              (inc ,var)))))
+
+これは、`max'という名前のインターンしてないシンボルを作成し、もとの式に
+現れていたインターンしたシンボル`max'のかわりに展開形内部で使います。
+
+
+
+File: elisp-ja, Node: Eval During Expansion, Next: Repeated Expansion, Prev: Surprising Local Vars, Up: Problems with Macros
+
+展開形におけるマクロ引数の評価
+------------------------------
+
+`eval'（*Note Eval::）を呼び出すなどして、マクロ定義そのものの中でマク
+ロ引数の式を評価すると、別の問題を生じます。引数でユーザーの変数を参照
+する場合、ユーザーがマクロ引数の1つと同じ名前を使っていると、問題になり
+ます。マクロ本体の内側では、マクロ引数の束縛が最ローカルな束縛ですから、
+そのフォームの内側からの参照は、この束縛を使います。例を示しましょう。
+
+     (defmacro foo (a)
+       (list 'setq (eval a) t))
+          => foo
+     (setq x 'b)
+     (foo x) ==> (setq b t)
+          => t                  ; `b'を設定する
+     ;; しかし
+     (setq a 'c)
+     (foo a) ==> (setq a t)
+          => t                  ; `c'ではなく`a'を設定する
+
+
+ユーザーの引数の名前が`a'か`x'かで違いがでます。というのは、マクロ引数
+の変数`a'と`a'が衝突するからです。
+
+マクロ定義内で`eval'を呼び出したときの別の問題点は、コンパイルしたプロ
+グラムでは、意図した動作をしないだろうということです。バイトコンパイラ
+は、プログラムをコンパイル中にマクロ定義を実行しますから、（`eval'で参
+照したい）プログラムそのものの計算は行われず、そのローカル変数の束縛も
+存在しません。
+
+これらの問題を回避するには、*マクロ展開の計算過程では、引数の式を評価し
+ない*ことです。そのかわりに、マクロ展開では式の置換を使って、展開時にそ
+の値が計算されるようにします。このようにすれば、本章の他の例題は動作し
+ます。
+
+
+
+File: elisp-ja, Node: Repeated Expansion, Prev: Eval During Expansion, Up: Problems with Macros
+
+マクロは何回展開されるか
+------------------------
+
+関数を解釈実行しているときには、マクロ呼び出しを評価するたびに展開しま
+すが、コンパイルした関数では、（コンパイル時に）1回だけ展開します。この
+違いが問題になることもあります。マクロ定義に副作用があると、マクロを何
+回展開したかに依存して動作が異なります。
+
+したがって、マクロ展開の計算では、本当になにをしているのか理解していな
+い限り、副作用は避けてください。
+
+特別な種類の副作用の1つ、つまり、Lispオブジェクトを構築することは回避で
+きません。ほとんどすべてのマクロ展開では、リストを構築し、それがマクロ
+の重要な点でもあります。これは、通常、安全ですが、1つだけ注意する必要が
+あります。読者が構築したオブジェクトが、マクロ展開形の中のクォートした
+定数の一部であるときです。
+
+コンパイル時にマクロを1回だけ展開すると、コンパイル中にはオブジェクトは
+一度だけ作られます。しかし、解釈実行中には、マクロ呼び出しを行うたびに
+マクロを展開するので、そのたびに新たなオブジェクトが作成されたことを意
+味します。
+
+見通しのよいほとんどのLispコードでは、この違いは関係ありません。マクロ
+定義で構築したオブジェクトに副作用のある操作を行うと違いが出てきます。
+したがって、問題を回避するには、*マクロ定義で構築したオブジェクトに副作
+用のある操作は行わない* ということです。そのような副作用がどのように問
+題を引き起こすのか、例をあげましょう。
+
+     (defmacro empty-object ()
+       (list 'quote (cons nil nil)))
+
+     (defun initialize (condition)
+       (let ((object (empty-object)))
+         (if condition
+             (setcar object condition))
+         object))
+
+`initialize'を解釈実行しているときには、`initialize'を呼び出すたびに新
+たなリスト`(nil)'が作られます。したがって、2つの呼び出しのあいだで副作
+用が残ることはありません。`initialize'をコンパイルしてあると、マクロ
+`empty-object'はコンパイル時に展開され、1つの『定数』`(nil)'を作ります
+が、これは、`initialize'を呼び出すたびに、再利用され変更されてしまいま
+す。
+
+このような病的な場面を回避する1つの方法は、
+`empty-object'を、メモリ割り付けではなく、
+ある種の定数と考えることです。
+`'(nil)'のような定数に`setcar'は使わないでしょうから、
+`(empty-object)'も自然にそのように使わないでしょう。
+
+
+
+File: elisp-ja, Node: Customization, Next: Loading, Prev: Macros, Up: Top
+
+カスタマイズ定義の書き方
+************************
+
+本章では、カスタマイズのためのユーザーオプションの宣言方法、
+および、それらを分類するカスタマイズグループの宣言方法を説明します。
+フェイスの定義（*Note Defining Faces::）に加えて、
+カスタマイズの両方の種類を含めて、
+"カスタマイズ項目"（customization item）という用語を使います。
+
+* Menu:
+
+* Common Keywords::
+* Group Definitions::
+* Variable Definitions::
+* Customization Types::
+
+
+
+File: elisp-ja, Node: Common Keywords, Next: Group Definitions, Prev: Customization, Up: Customization
+
+すべての種類の項目に共通のキーワード
+====================================
+
+（変数やグループ、フェイスの）すべての種類のカスタマイズ宣言では、さま
+ざまな情報を指定するためのキーワード引数を受け付けます。本節では、全種
+類に適用できるキーワードを説明します。
+
+`:tag'を除くこれらのキーワードすべては、各項目で複数回使えます。キーワー
+ドのそれぞれの使用には、独立の効果があります。キーワード`:tag'は例外で
+す。任意の項目には名前を1つしか表示できないからです。
+
+`:tag NAME'
+     カスタマイズメニューやカスタマイズバッファ内で項目に付けるラベルと
+     して、項目の名前のかわりに文字列NAMEを使う。
+
+`:group GROUP'
+     このカスタマイズ項目をグループGROUPに入れる。`defgroup'の中で
+     `:group'を使うと、新たなグループをGROUPの下位グループにする。
+
+     このキーワードを複数回使うと、1つの項目を複数のグループに入れるこ
+     とができる。それらのグループのどれを表示しても、この項目が表示され
+     る。これを多用しすぎないように注意すること！
+
+`:link LINK-DATA'
+     この項目に対する説明文字列のうしろに外部リンクを含める。これは、他
+     の説明文字列を参照するアクティブフィールドを含む文である。
+
+     LINK-DATAとして使えるものは3種類ある。
+
+     `(custom-manual INFO-NODE)'
+          infoのノードへリンクする。INFO-NODEは、`"(emacs)Top"'のような
+          ノード名を指定する文字列。リンクは、カスタマイズバッファでは
+          `[manual]'のように表示される。
+
+     `(info-link INFO-NODE)'
+          `custom-manual'と同様であるが、カスタマイズバッファに現れるリ
+          ンクはinfoのノード名になる。
+
+     `(url-link URL)'
+          webページへリンクする。URLは、URLを指定する文字列。カスタマイ
+          ズバッファに現れるリンクはURLになる。
+
+     LINK-DATAの先頭要素のうしろに`:tag NAME'を使うことで、カスタマイズ
+     バッファに使うテキストを指定できる。たとえば、`(info-link :tag
+     foo" "(emacs)Top")'とすると、バッファでは`foo'と表示されるEmacsマ
+     ニュアルへのリンクを作れる。
+
+     1つの項目に複数個の外部リンクがあってもよいが、ほとんどの項目には
+     外部リンクはない。
+
+`:load FILE'
+     このカスタマイズ項目を表示するまえにファイルFILE（文字列）をロードする。
+     ファイルをすでにロードしていない場合に限り、
+     `load-library'でロードする。
+
+`:require FEATURE'
+     カスタマイズ機能を用いて保存するこの項目に対する値をインストールするときに
+     必要となる機能FEATURE（シンボル）を指定する。
+     `require'を呼び出す。
+
+     `:require'を使うもっとも一般的な理由は、変数がマイナモードなどの機
+     能をオンにするとき、そのモードを実装するコードをロードしてないと、
+     変数にはなんの効果もないからである。
+
+
+
+File: elisp-ja, Node: Group Definitions, Next: Variable Definitions, Prev: Common Keywords, Up: Customization
+
+カスタマイズグループを定義する
+==============================
+
+Emacs Lispの各パッケージには、そのパッケージのすべてのオプション、フェ
+イス、他のグループを含んだ1つの主要なカスタマイズグループがあるべきです。
+パッケージに少数のオプションやフェイスしかなければ、それらを1つのグルー
+プにまとめます。12個を超えるオプションやフェイスがある場合には、それら
+を下位グループに構造化して、下位グループすべてをパッケージの主カスタマ
+イズグループに入れておきます。パッケージの主グループに下位グループとと
+もにいくつかのオプションやフェイスを入れておくのもよいでしょう。
+
+パッケージの主グループや単一のグループは、標準カスタマイズグループの1つ
+かそれ以上のメンバであるべきです。（それらの完全な一覧を表示するには
+`M-x customize'を使う。）それらの中から1個か数個を選び（多すぎないこ
+と）、キーワード`:group'を使って、それぞれに読者のグループを追加します。
+
+新たなカスタマイズグループは、`defgroup'で宣言します。
+
+ -- Macro: defgroup GROUP MEMBERS DOC [KEYWORD VALUE]...
+     MEMBERSを含むカスタマイズグループとしてGROUPを宣言する。シンボル
+     GROUPをクォートしないこと。引数DOCは、グループの説明文字列を指定す
+     る。
+
+     引数MEMBERSは、グループのメンバとなるカスタマイズ項目の初期集合を
+     指定するリストである。しかし、ほとんどの場合、MEMBERSは`nil'であり、
+     それらのメンバを定義するときに、キーワード`:group'を使って、グルー
+     プのメンバであることを指定する。
+
+     MEMBERSでグループのメンバを指定する場合には、各要素は`(NAME
+     WIDGET)'という形式であること。ここで、NAMEはシンボル、WIDGETはその
+     シンボルを編集するためのウィジェット型である。有用なウィジェットは、
+     変数に対しては`custom-variable'、フェイスに対しては`custom-face'、
+     グループに対しては`custom-group'である。
+
+     共通のキーワード（*Note Common Keywords::）に加えて、
+     `defgroup'ではつぎのキーワードも使える。
+
+     `:prefix PREFIX'
+          グループ内の項目の名前がPREFIXで始まるときには、その項目に対
+          するタグを（デフォルトでは）PREFIXを省略して作る。
+
+          1つのグループに`prefix'がいくつあってもよい。
+
+接頭辞を取りさる機能は、現在、オフにしてあります。つまり、`:prefix'は、
+現在、なんの効果もありません。このようにしたのは、指定した接頭辞を取り
+さると、オプション名がしばしば混乱するからです。さまざまなグループの
+`defgroup'定義を書く人は、論理的と考えられるとき、つまり、ライブラリに
+共通の接頭辞があるときにはキーワード`:prefix'を追加するので、このように
+なるのです。
+
+`:prefix'を使ってよい結果を得るには、グループ内の特定の項目とそれらの名
+前と説明文字列に関して、特定の接頭辞を取りさった場合の効果を調べる必要
+があります。その結果、テキストがわかり難ければ、その場面では、
+`:prefix'を使うべきではないのでしょう。
+
+カスタマイズグループすべてを調べ直して、わかり難くなる結果をもたらす
+`:prefix'指定を削除し、この機能をオンにすることは、誰かが頑張れば、可能
+です。
+
+
+
+File: elisp-ja, Node: Variable Definitions, Next: Customization Types, Prev: Group Definitions, Up: Customization
+
+カスタマイズ変数を定義する
+==========================
+
+`defcustom'を使って、ユーザーが編集可能な変数を宣言します。
+
+ -- Macro: defcustom OPTION DEFAULT DOC [KEYWORD VALUE]...
+     カスタマイズ可能なユーザーオプション変数としてOPTIONを宣言する。
+     OPTIONをクォートしないこと。引数DOCは変数の説明文字列を指定する。
+
+     OPTIONが空であると、`defcustom'はDEFAULTで初期化する。DEFAULTは値
+     を計算する式であること。これは複数回評価される可能性があるので、書
+     き方には注意すること。
+
+`defcustom'では、つぎの追加キーワードも使えます。
+
+`:type TYPE'
+     このオプションのデータ型としてTYPEを使う。これは、正しい値とその表
+     示方法を指定する。詳しくは、*Note Customization Types::。
+
+`:options LIST'
+     このオプションに使える合理的な値のリストとしてLISTを指定する。
+
+     これは、現時点では、型が`hook'のときだけ意味を持つ。その場合、
+     LISTの要素は、フックの値の要素として使える関数であること。ユーザー
+     はこれらの関数以外も使えるが、便利な選択肢として提示する。
+
+`:version VERSION'
+     このオプションは、変数を最初に導入したり、デフォルト値を変更したり
+     したEmacsの版VERSIONを指定する。値VERSIONは、文字列であること。た
+     とえば、つぎのとおり。
+
+          (defcustom foo-max 34
+            "*Maximum number of foo's allowed."
+            :type 'integer
+            :group 'foo
+            :version "20.3")
+
+`:set SETFUNCTION'
+     このオプションの値を変更する方法としてSETFUNCTIONを指定する。
+     関数SETFUNCTIONは、2つの引数、つまり、シンボルと新しい値を取り、
+     このオプションの値を（Lisp変数としてオプションを設定するだけでなく）
+     適切に更新するために必要なことを行うこと。
+     SETFUNCTIONのデフォルトは`set-default'。
+
+`:get GETFUNCTION'
+     このオプションの値を取り出す方法としてGETFUNCTIONを指定する。関数
+     GETFUNCTIONは、1つの引数、つまり、シンボルを取り、そのシンボル（の
+     Lisp値とは必ずしも限らない）の『現在値』を返すこと。デフォルトは
+     `default-value'。
+
+`:initialize FUNCTION'
+     FUNCTIONは、`defcustom'を評価したときに変数の初期化に使う関数。こ
+     の関数は、2つの引数、つまり、シンボルと値を取ること。このように使
+     うことを意図した定義済みの関数がいくつかある。
+
+     `custom-initialize-set'
+          変数の`:set'関数を使って変数を初期化するが、変数の値が空でな
+          いときには再初期化しない。これは`:initialize'のデフォルト。
+
+     `custom-initialize-default'
+          `custom-initialize-set'に似ているが、変数の`:set'関数のかわり
+          に関数`set-default'を使って変数を設定する。変数の`:set'関数が
+          マイナモードをオン／オフする場合には、普通はこれを選ぶ。これ
+          を選ぶと、変数を定義してもマイナモード関数を呼び出さないが、
+          変数をカスタマイズするとマイナモード関数を呼び出す。
+
+     `custom-initialize-reset'
+          変数を初期化するにはつねに`:set'関数を使う。
+          変数の値が空でない場合には、（`:get'で得られる）現在値で
+          `:set'関数を呼び出して、変数をリセットする。
+
+     `custom-initialize-changed'
+          変数がすでに設定されていたりカスタマイズしてあるときに、変数
+          を初期化するために`:set'関数を使う。さもなければ、
+          `set-default'を使う。
+
+`:require'オプションは、特定の機能をオンにするようなオプションには便利
+です。パッケージがオプション変数の値を検査するように書かれていたとして
+も、パッケージをロードするようにする必要があります。これを`:require'で
+行えるのです。*Note Common Keywords::。ライブラリ`paren.el'からとった例
+をつぎに示します。
+
+     (defcustom show-paren-mode nil
+       "Toggle Show Paren mode...."
+       :set (lambda (symbol value)
+              (show-paren-mode (or value 0)))
+       :initialize 'custom-initialize-default
+       :type 'boolean
+       :group 'paren-showing
+       :require 'paren)
+
+
+内部的には、`defcustom'は、デフォルト値を与える式は属性
+`standard-value'を使って記録し、ユーザーがカスタマイズバッファで保存し
+た値は属性`saved-value'を使って記録しています。属性`saved-value'は実際
+にはリストであり、そのCARが値に評価される式です。
+
+
+
+File: elisp-ja, Node: Customization Types, Prev: Variable Definitions, Up: Customization
+
+カスタマイズ型
+==============
+
+`defcustom'でユーザーオプションを定義するときには、その"カスタマイズ型
+（customization type）を定義する必要があります。これはLispオブジェクト
+であり、（1）どのような値が正しいものであり、（2）編集用にカスタマイズ
+バッファに表示する方法、を示します。
+
+カスタマイズ型は、`defcustom'内の`:type'キーワードで指定します。
+`:type'の引数は評価されます。実行時に型が変わるものはほとんど使い途がな
+いので、普通、クォートした型を指定します。たとえば、つぎのとおりです。
+
+     (defcustom diff-command "diff"
+       "*The command to use to run diff."
+       :type '(string)
+       :group 'diff)
+
+一般に、カスタマイズ型はリストであり、その先頭要素はシンボルで、次節以
+降で定義するカスタマイズ型名の1つです。このシンボルのあとには、シンボル
+に依存した数個の引数が続きます。型シンボルとその引数のあいだには、キー
+ワード・値の対を書くこともできます（*Note Type Keywords::）。
+
+型シンボルには、引数を取らないものもあります。
+これらを"単純型"（simple types）と呼びます。
+単純型では、キーワード・値の対を指定しなければ、
+型シンボルを囲む括弧を省略できます。
+たとえば、カスタマイズ型としての`string'は、
+`(string)'と等価です。
+
+* Menu:
+
+* Simple Types::
+* Composite Types::
+* Splicing into Lists::
+* Type Keywords::
+
+
+
+File: elisp-ja, Node: Simple Types, Next: Composite Types, Prev: Customization Types, Up: Customization Types
+
+単純型
+------
+
+本節では、すべての単純型を説明します。
+
+`sexp'
+     値は、表示したり読み取れるならば、任意のLispオブジェクトでよい。
+     使用する型をより限定する手間を省きたければ、
+     任意のオプションに対するデフォルトとして、
+     `sexp'を使うことができる。
+
+`integer'
+     値は整数である必要があり、カスタマイズバッファではテキストで表示す
+     る。
+
+`number'
+     値は数である必要があり、カスタマイズバッファではテキストで表示する。
+
+`string'
+     値は文字列である必要があり、カスタマイズバッファでは、その内容だけ
+     を表示し、文字`"'で区切ったり、`\'でクォートしない。
+
+`regexp'
+     `string'と同様であるが、文字列は正規表現である必要がある。
+
+`character'
+     値は文字コードである必要がある。文字コードは実際には整数であるが、
+     この型では、数として表示するのではなく、文字としてバッファに挿入し
+     てその値を表示する。
+
+`file'
+     値はファイル名である必要があり、`M-TAB'で補完できる。
+
+`(file :must-match t)'
+     値は既存のファイル名である必要があり、`M-TAB'で補完できる。
+
+`directory'
+     値はディレクトリ名である必要があり、`M-TAB'で補完できる。
+
+`hook'
+     値は関数のリスト（あるいは、単一の関数。ただし、この使い方は廃れている）
+     である必要がある。
+     このカスタマイズ型は、フック変数に使用する。
+     フックに使う推奨される関数のリストを指定するために、
+     フック変数の`defcustom'で`:options'キーワードを使用できる。
+     *Note Variable Definitions::。
+
+`symbol'
+     値はシンボルである必要がある。カスタマイズバッファでは、シンボルの
+     名前を表示する。
+
+`function'
+     値はラムダ式か関数名である必要がある。関数名の場合、`M-TAB'で補完
+     できる。
+
+`variable'
+     値は変数名である必要があり、`M-TAB'で補完できる。
+
+`face'
+     値はフェイス名を表すシンボルである必要があり、`M-TAB'で補完できる。
+
+`boolean'
+     値は真理値、つまり、`nil'か`t'である必要がある。`choice'と`const'
+     を同時に使うと（次節参照）、値は`nil'か`t'である必要があることを指
+     定し、さらに、どちらの値がどの選択肢に合うかを記述するテキストを指
+     定できることに注意。
+
+
+
+File: elisp-ja, Node: Composite Types, Next: Splicing into Lists, Prev: Simple Types, Up: Customization Types
+
+複合型
+------
+
+単純型が適切でない場合には、他の型から新たな型を作り上げる複合型を使え
+ます。これには、いくつかの方法があります。
+
+`(restricted-sexp :match-alternatives CRITERIA)'
+     値は、CRITERIAの1つを満たす任意のLispオブジェクトでよい。
+     CRITERIAはリストであり、その各要素は以下の1つであること。
+
+        * 述語。つまり、引数を1つ取る副作用のない関数であり、引数に応じ
+          て`nil'か`nil'以外を返す。リスト内の述語がオブジェクトに対し
+          て`nil'以外を返せばそのオブジェクトを受理することを意味する。
+
+        * クォートした定数。
+          つまり、`'OBJECT'。
+          リスト内のこの種の要素は、
+          OBJECTそのものが受理できる値であることを意味する。
+
+     たとえば、
+
+          (restricted-sexp :match-alternatives
+                           (integerp 't 'nil))
+
+     は、整数、`t'、`nil'が正しい値である。
+
+     カスタマイズバッファでは、すべての正しい値はその入力構文で表示し、
+     ユーザーはそれらをテキストとして編集する。
+
+`(cons CAR-TYPE CDR-TYPE)'
+     値はコンスセルである必要があり、
+     そのCARはCAR-TYPEに合い、かつ、
+     そのCDRはCDR-TYPEに合う必要がある。
+     たとえば、`(cons string symbol)'は、
+     `("foo" . foo)'などの値に一致するカスタマイズ型である。
+
+     カスタマイズバッファでは、CARとCDRは、それらに指定した型に応じて別々
+     に表示され、個別に編集できる。
+
+`(list ELEMENT-TYPES...)'
+     値はELEMENT-TYPESに指定したとおりの個数のリストである必要があり、
+     各要素はELEMENT-TYPEに合うこと。
+
+     たとえば、`(list integer string function)'は、3要素のリストを意味
+     し、第1要素は整数、第2要素は文字列、第3要素は関数であることを指定
+     する。
+
+     カスタマイズバッファでは、各要素は、それらに指定した型に応じて別々
+     に表示され、個別に編集できる。
+
+`(vector ELEMENT-TYPES...)'
+     `list'と同様だが、値はリストではなくベクトルである必要がある。その
+     要素は`list'の場合と同じ。
+
+`(choice ALTERNATIVE-TYPES...)'
+     値は、ALTERNATIVE-TYPESの少なくとも1つに合う必要がある。たとえば、
+     `(choice integer string)'は、整数か文字列を許す。
+
+     カスタマイズバッファでは、ユーザーはメニューを使って選択肢を選び、
+     その選択肢において普通の方法で値を編集する。
+
+     通常、このメニューの選択肢名は、選択肢から自動的に決定されるが、選
+     択肢に`:tag'キーワードを含めることで、メニューに異なる名前を指定で
+     きる。たとえば、整数が空白の個数を表し、文字列がそのまま使うテキス
+     トを表す場合には、つぎのようにカスタマイズ型を書く。
+
+          (choice (integer :tag "Number of spaces")
+                  (string :tag "Literal text"))
+
+     そうすると、メニューには、
+     `Number of spaces'と`Literal Text'が表示される。
+
+     `const'以外の`nil'が正当な値ではない選択肢では、
+     そのような選択肢には`:value'キーワードを使って
+     正当なデフォルト値を指定すること。
+     *Note Type Keywords::。
+
+`(const VALUE)'
+     値はVALUEであること。それ以外は許さない。
+
+     `const'の主な用途は`choice'の内側である。たとえば、`(choice
+     integer (const nil))'は、整数か`nil'を許す。
+
+     `choice'の内側では、`const'にしばしば`:tag'を使う。たとえば、
+
+          (choice (const :tag "Yes" t)
+                  (const :tag "No" nil)
+                  (const :tag "Ask" foo))
+
+     は、`t'は『yes』（はい）、`nil'は『no』（いいえ）、
+     `foo'は『ask』（問い合わせる）を意味する変数を記述する。
+
+`(other VALUE)'
+     この選択肢は任意のLisp値に一致するが、ユーザーがこの選択肢を選ぶと、
+     値VALUEを選ぶことになる。
+
+     `other'は、主に、`choice'の最後の要素として使うことである。たとえ
+     ば、
+
+          (choice (const :tag "Yes" t)
+                  (const :tag "No" nil)
+                  (other :tag "Ask" foo))
+
+     は、`t'は『yes』（はい）、`nil'は『no』（いいえ）、
+     それ以外は『ask』（問い合わせる）を意味することを示す。
+     ユーザーが選択肢のメニューから`Ask'を選ぶと、値`foo'を指定する。
+     しかし、（`t'でも`nil'でも`foo'でもない）それ以外の値は、
+     `foo'と同様に`Ask'と表示される。
+
+`(function-item FUNCTION)'
+     `const'と同様だが、関数であるような値に使う。
+     これは、関数名に加えて説明文字列を表示する。
+     説明文字列は、`:doc'に指定したものか、
+     FUNCTIONそのものの説明文字列である。
+
+`(variable-item VARIABLE)'
+     `const'と同様だが、変数名であるような値に使う。
+     これは、変数名に加えて説明文字列を表示する。
+     説明文字列は、`:doc'に指定したものか、
+     VARIABLEそのものの説明文字列である。
+
+`(set ELEMENTS...)'
+     値はリストである必要があり、その各要素はELEMENTSに指定したものの1
+     つである必要がある。これは、カスタマイズバッファにはチェックリスト
+     として表示される。
+
+`(repeat ELEMENT-TYPE)'
+     値はリストである必要があり、その各要素はELEMENT-TYPEに指定した型に
+     合う必要がある。これは、カスタマイズバッファには、要素を追加したり
+     削除したりする`[INS]'や`[DEL]'ボタンを伴って、要素のリストとして表
+     示される。
+
+
+
+File: elisp-ja, Node: Splicing into Lists, Next: Type Keywords, Prev: Composite Types, Up: Customization Types
+
+リストに繋ぎ合わせる
+--------------------
+
+`:inline'機能により、可変個数の要素をリストやベクトルの
+途中に繋ぎ合わせることができます。
+`list'や`vector'の要素型に現れる
+`set'型、`choice'型、`repeat'型の中に使います。
+
+通常、`list'や`vector'のおのおのの要素型は、リストやベクトルのたった1つ
+の要素を記述します。したがって、要素型が`repeat'であると、1要素として表
+示される長さを指定しないリストを指定します。
+
+しかし、要素型に`:inline'を使うと、これに一致する値は、`:inline'を含む
+シーケンスに直接に併合されます。たとえば、3要素のリストに一致すると、そ
+れがシーケンス全体の3つの要素になります。これはバッククォート構文の
+`,@'の使い方に似ています。
+
+たとえば、先頭要素が`t'であり、残りが`foo'か`bar'の0個以上の繰り返しで
+あるリストを指定するには、つぎのカスタマイズ型を使います。
+
+     (list (const t) (set :inline t foo bar))
+
+これは、`(t)'、`(t foo)'、`(t bar)'、`(t foo bar)'などの値に一致します。
+
+要素型が`choice'であるときには、`choice'そのものには`:inline'を使いませ
+んが、`choice'の選択肢（のどれか）に`:inline'を使います。たとえば、ファ
+イル名で始まりシンボル`t'か2つの文字列が続くようなリストに一致するよう
+にするには、つぎのカスタマイズ型を使います。
+
+     (list file
+           (choice (const t)
+                   (list :inline t string string)))
+
+ユーザーが最初の選択肢を選ぶと、全体としてのリストは2要素になり、第2要
+素は`t'です。ユーザーが2番目の選択肢を選ぶと、全体としてのリストは3要素
+になり、第2要素と第3要素は文字列である必要があります。
+
+
+
+File: elisp-ja, Node: Type Keywords, Prev: Splicing into Lists, Up: Customization Types
+
+型キーワード
+------------
+
+型名のシンボルのあとに、カスタマイズ型内にキーワード・引数の対を指定で
+きます。使えるキーワードとその意味を以下に示します。
+
+`:value DEFAULT'
+     `choice'の内側の選択肢として現れる型に使う。これは、カスタマイズバッ
+     ファのメニューでユーザーがこの選択肢を選ぶと、使用するデフォルト値
+     をまず指定する。
+
+     もちろん、オプションの実際の値がこの選択肢に合えば、
+     DEFAULTではなく実際の値が表示される。
+
+     選択肢の値として`nil'が不正であるときには、
+     `:value'で正当なデフォルトを指定することが本質的である。
+
+`:format FORMAT-STRING'
+     この文字列は、型に対応する値を表現するためにバッファに挿入される。
+     FORMAT-STRINGには、以下に示す`%'を使える。
+
+     `%[BUTTON%]'
+          ボタンとして印を付けたテキストBUTTONを表示する。`:action'属性
+          は、ユーザーがボタンを起動したらなにを行うかを指定する。その
+          値は2つの引数、つまり、ボタンが現れるウィジェットとイベントを
+          取る関数であること。
+
+          異なるアクションを有する異なるボタンを指定する方法はない。
+
+     `%{SAMPLE%}'
+          `:sample-face'で指定した特別なフェイスでSAMPLEを表示する。
+
+     `%v'
+          項目の値で置き換える。値の表示方法は項目の種類と、（変数の）
+          カスタマイズ型に依存する。
+
+     `%d'
+          項目の説明文字列で置き換える。
+
+     `%h'
+          `%d'と同様だが、説明文字列が1行を超えるときには、説明文字列全
+          体を表示するか先頭行だけを表示するかを制御するアクティブフィー
+          ルドを追加する。
+
+     `%t'
+          タグで置き換える。タグは`:tag'キーワードで指定する。
+
+     `%%'
+          `%'をそのまま表示する。
+
+`:action ACTION'
+     ユーザーがボタンをクリックしたらACTIONを行う。
+
+`:button-face FACE'
+     `%[...%]'で表示するボタンテキストにフェイスFACE（フェイス名かフェ
+     イス名のリスト）を使う。
+
+`:button-prefix PREFIX'
+`:button-suffix SUFFIX'
+     これらは、以下のようにボタンの前後に表示するテキストを指定する。
+
+     `nil'
+          テキストを挿入しない。
+
+     文字列
+          文字列をそのまま挿入する。
+
+     シンボル
+          シンボルの値を使う。
+
+`:tag TAG'
+     この型に対応する値（やその一部）に対するタグとして
+     TAG（文字列）を使う
+
+`:doc DOC'
+     この型に対応する値（やその一部）に対する説明文字列としてDOCを使う。
+     これが動作するためには、`:format'の値を指定し、かつ、その値の中で
+     `%d'や`%h'を使う必要がある。
+
+     型に対して説明文字列を指定するのは、`:choice'の選択肢や他の複合型
+     の一部の意味についてより多くの情報をユーザーに与えるためである。
+
+`:help-echo MOTION-DOC'
+     `widget-forward'や`widget-backward'でこの項目に移動すると、エコー
+     領域に文字列MOTION-DOCを表示する。
+
+`:match FUNCTION'
+     値がこの型に一致することを調べる方法を指定する。対応する値
+     FUNCTIONは、2つの引数、つまり、ウィジェットと値を取る関数であるこ
+     と。受理できる値の場合には`nil'以外を返すこと。
+
+
+
+File: elisp-ja, Node: Loading, Next: Byte Compilation, Prev: Customization, Up: Top
+
+ロード
+******
+
+Lispコードのファイルをロードするとは、その内容をLispオブジェクトの形で
+Lisp環境に取り込むことです。Emacsは、ファイルを探してオープンし、テキス
+トを読み取り、各フォームを評価し、そしてファイルをクローズします。
+
+ロード関数は、関数`eval-current-buffer'がバッファ内のすべての式を評価す
+るように、ファイル内のすべての式を評価します。異なる点は、ロード関数は、
+Emacsバッファ内のテキストではなくディスク上のファイル内のテキストを読み
+取って評価することです。
+
+ロードするファイルには、Lisp式のソースコードかバイトコンパイル済みコー
+ドが入っている必要があります。ファイルの各フォームを"トップレベルのフォー
+ム"（top-level form）と呼びます。ロード可能なファイル内のフォーム向けの
+特別な書式はありません。ファイル内のどんなフォームでも、バッファに直接
+打ち込んで評価できます。（もちろん、ほとんどのコードはこのようにして試
+したはず。）ほとんどの場合、フォームは関数定義や変数定義です。
+
+Lispコードを収めたファイルをしばしば"ライブラリ"（library）と呼びます。
+したがって、『rmailライブラリ』は、rmailモード用のコードを収めたファイ
+ルです。同様に、『Lispライブラリディレクトリ』は、Lispコードを収めたファ
+イルのディレクトリです。
+
+* Menu:
+
+* How Programs Do Loading::     The `load' function and others.
+* Library Search::              Finding a library to load.
+* Loading Non-ASCII::           Non-ASCII characters in Emacs Lisp files.
+* Autoload::                    Setting up a function to autoload.
+* Repeated Loading::            Precautions about loading a file twice.
+* Named Features::              Loading a library if it isn't already loaded.
+* Unloading::			How to "unload" a library that was loaded.
+* Hooks for Loading::		Providing code to be run when
+				  particular libraries are loaded.
+
+
+
+File: elisp-ja, Node: How Programs Do Loading, Next: Library Search, Prev: Loading, Up: Loading
+
+プログラムからのロード方法
+==========================
+
+Emacs Lispには、ロードのためのインターフェイスがいくつかあります。たと
+えば、`autoload'は、ファイルで定義された関数向けに場所を確保するオブジェ
+クトを作成します。自動ロードする関数を呼び出すと、ファイルの実際の定義
+を得るためにファイルをロードします（*Note Autoload::）。`require'は、ファ
+イルをすでにロードしていなければロードします（*Note Named Features::）。
+これらの機構はすべて、最終的には、関数`load'を呼び出して動作します。
+
+ -- Function: load FILENAME &optional MISSING-OK NOMESSAGE NOSUFFIX MUST-SUFFIX
+     この関数は、Lispコードのファイルを探してオープンし、その中のフォー
+     ムすべてを評価してから、ファイルをクローズする。
+
+     ファイルを探すために、
+     `load'はまず`FILENAME.elc'という名前のファイル、
+     つまり、FILENAMEに`.elc'を付加した名前のファイルを探す。
+     そのようなファイルが存在すれば、それをロードする。
+     そのような名前のファイルがなければ、
+     `load'は`FILENAME.el'という名前のファイルを探す。
+     そのファイルが存在すれば、それをロードする。
+     いずれの名前のファイルもみつからなければ、
+     最終的に、`load'は、なにも付加しないFILENAMEという名前のファイルを
+     探し、存在すればそれをロードする。
+     （関数`load'がFILENAMEを探す手順は賢くない。
+     `(load "foo.el")'を評価すると、
+     `foo.el.el'という名前のファイルを探してしまう。）
+
+     省略可能な引数NOSUFFIXが`nil'以外であれば、
+     `.elc'と`.el'の接尾辞を試さない。
+     この場合、目的のファイルの正確な名前を指定する必要がある。
+     正確なファイル名を指定し、かつ、NOSUFFIXに`t'を使えば、
+     `foo.el.el'のようなファイル名を探してしまうことを防げる。
+
+     省略可能な引数MUST-SUFFIXが`nil'以外であれば、`load'は、ディレクト
+     リ名を明示していない限り、ファイル名は`.el'か`.elc'で終るものと仮
+     定する。FILENAMEにディレクトリ名が明示してなく、かつ、接尾辞も指定
+     してなければ、`load'は接尾辞を必ず付加する。
+
+     FILENAMEが`foo'や`baz/foo.bar'のように
+     相対ファイル名であると、`load'は変数`load-path'を使って
+     ファイルを探す。
+     FILENAMEに`load-path'に指定した各ディレクトリを付加し、
+     最初にみつかったファイルをロードする。
+     デフォルトディレクトリを表す`nil'が`load-path'に
+     指定されている場合に限り、カレントディレクトリを試す。
+     `load'は、まず最初のディレクトリで3つの可能な接尾辞を試し、
+     続いて2番目のディレクトリで3つの可能な接尾辞を試し、
+     というように行う。
+     *Note Library Search::。
+
+     `foo.elc'が`foo.el'より古いという旨の警告を受け取った場合には、
+     `foo.el'の再コンパイルを考えるべきである。
+     *Note Byte Compilation::。
+
+     （コンパイルしていない）ソースファイルをロードするときには、
+     Emacsがファイルを訪問する場合と同様に、
+     `load'は文字集合を変換する。
+     *Note Coding Systems::。
+
+     NOMESSAGEが`nil'であると、
+     ロード中にはエコー領域に
+     `Loading foo...'や`Loading foo...done'のメッセージを表示する。
+
+     ファイルをロード中に処理できないエラーに出会うと、ロードを終了する。
+     `autoload'によるロードの場合には、ロード中に行われた関数定義はすべ
+     てもとに戻す。
+
+     `load'がロードすべきファイルをみつけられないと、
+     普通、（`Cannot open load file FILENAME'を伴った）
+     エラー`file-error'を通知する。
+     MISSING-OKが`nil'以外であれば、
+     `load'は`nil'を返すだけである。
+
+     変数`load-read-function'を使って、式を読み取るために`read'のかわり
+     に`load'が使う関数を指定できる。下記参照。
+
+     ファイルを正しくロードできると`load'は`t'を返す。
+
+ -- コマンド: load-file FILENAME
+     このコマンドはファイルFILENAMEをロードする。FILENAMEが相対ファイル
+     名であると、現在のデフォルトディレクトリを仮定する。`load-path'を
+     使わず、接尾辞も付加しない。ロードするファイル名を正確に指定したい
+     場合にこのコマンドを使う。
+
+ -- コマンド: load-library LIBRARY
+     このコマンドは、LIBRARYという名前のライブラリをロードする。
+     `load'と等価であるが、引数を対話的に読み取る点が異なる。
+
+ -- Variable: load-in-progress
+     Emacsがファイルをロード処理中であると、この変数は`nil'以外であり、
+     さもなければ`nil'である。
+
+ -- Variable: load-read-function
+     この変数は、`load'や`eval-region'が、`read'のかわりに使う、式を読
+     み取る関数を指定する。その関数は`read'と同様に引数を1つとること。
+
+     通常、この変数の値は`nil'であり、これらの関数が`read'を使うことを
+     意味する。
+
+     *注意：*` '
+     この変数を使うかわりに、`eval-region'の引数READ-FUNCTIONとして
+     関数を渡す新しい別の機能を使ったほうが見通しがよい。
+     *Note Eval::。
+
+Emacs構築時の`load'の使い方についての情報は、
+*Note Building Emacs::。
+
+
+
+File: elisp-ja, Node: Library Search, Next: Loading Non-ASCII, Prev: How Programs Do Loading, Up: Loading
+
+ライブラリの探索
+================
+
+EmacsがLispライブラリをロードするときには、変数`load-path'で指定したディ
+レクトリ群でライブラリを探します。
+
+ -- User Option: load-path
+     この変数の値は、`load'でファイルをロードするときに探索するディレク
+     トリのリストである。各要素は、（ディレクトリ名である）文字列か（カ
+     レント作業ディレクトリを表す）`nil'である。
+
+`load-path'の値は、環境変数`EMACSLOADPATH'があれば、それで初期化します。
+さもなければ、デフォルト値は、Emacsを構築したときに`emacs/src/paths.h'
+で指定したものです。そして、リスト内のディレクトリのサブディレクトリを
+リストに追加して拡張します。
+
+`EMACSLOADPATH'の構文は`PATH'と同じです。`:'（オペレーティングシステム
+によっては`;'）でディレクトリ名を区切ります。デフォルトのカレントディレ
+クトリには`.'を使います。`csh'の`.login'ファイルで環境変数
+`EMACSLOADPATH'を指定する例はつぎのとおりです。
+
+     setenv EMACSLOADPATH .:/user/bil/emacs:/usr/local/share/emacs/20.3/lisp
+
+`sh'を使っている場合はつぎのようにします。
+
+     export EMACSLOADPATH
+     EMACSLOADPATH=.:/user/bil/emacs:/usr/local/share/emacs/20.3/lisp
+
+`.emacs'ファイルで、デフォルトの`load-path'の先頭に複数のディレクトリを
+追加するには、つぎのようなコードを書きます。
+
+     (setq load-path
+           (append (list nil "/user/bil/emacs"
+                         "/usr/local/lisplib"
+                         "~/emacs")
+                   load-path))
+
+この例では、Lispコードを、まずカレント作業ディレクトリで探索し、続いて、
+`/user/bil/emacs'ディレクトリ、`/usr/local/lisplib'ディレクトリ、
+`~/emacs'ディレクトリ、さらに、標準のディレクトリで探索します。
+
+Emacsのダンプには、`load-path'の特別な値を使います。ダンプ終了時に
+`load-path'の値が未変更（つまり、同じ特別な値）であれば、ダンプ版Emacs
+は起動時に、上に述べたように、普通の`load-path'の値を使います。しかし、
+ダンプ終了時に`load-path'の値が別の値であれば、ダンプ版Emacsの実行でも
+その（別の）値を使います。
+
+したがって、`site-init.el'や`site-load.el'で
+少数のライブラリをロードするために
+一時的に`load-path'を変更したい場合には、
+`load'の呼び出しを`let'で囲んで
+`load-path'をローカルに束縛するべきです。
+
+システムにインストールしたEmacsを実行中は、`load-path'のデフォルト値に
+は、2つの特別なディレクトリ（とそれらのサブディレクトリ）が含まれます。
+
+     "/usr/local/share/emacs/VERSION/site-lisp"
+
+と
+
+     "/usr/local/share/emacs/site-lisp"
+
+です。前者は、Emacsの特定の版向けにローカルにインストールしたパッケージ
+用です。後者は、Emacsの任意の版向けにローカルにインストールしたパッケー
+ジ用です。
+
+Emacsのある版向けのパッケージが別の版ではトラブルを引き起こす理由はいく
+つかあります。Emacsの互換性のない変更のために更新を必要とするパッケージ
+もあります。予告なしに変更される可能性のある明文化していないEmacsの内部
+データに依存するものもあります。Emacsの新しい版では、パッケージの特定の
+版と一体になっているものもあり、その版だけで使うべきです。
+
+Emacsは、起動すると、ディレクトリのサブディレクトリを捜し出して、
+それらを`load-path'に追加します。
+直下のサブディレクトリも複数レベル下のサブディレクトリも
+`load-path'に追加します。
+
+しかし、サブディレクトリすべてを含むわけではありません。英数字で始まら
+ない名前のサブディレクトリは除外します。`RCS'という名前のサブディレクト
+リも除外します。また、`.nosearch'という名前のファイルを置いたサブディレ
+クトリも除外します。これらの方法を用いれば、`site-lisp'ディレクトリ下の
+特定のサブディレクトリの探索を防げます。
+
+Emacsを構築したディレクトリでEmacsを起動すると、つまり、正式にインストー
+ルしてない実行形式を起動すると、`load-path'には、普通、2つのディレクト
+リを追加します。主構築ディレクトリのサブディレクトリ、`lisp'と
+`site-lisp'です。（どちらも、絶対ファイル名で表される。）
+
+ -- コマンド: locate-library LIBRARY &optional NOSUFFIX PATH INTERACTIVE-CALL
+     このコマンドは、ライブラリLIBRARYの正確なファイル名を探す。`load'
+     と同様にライブラリを探索する。引数NOSUFFIXの意味は`load'と同じであ
+     り、指定した名前LIBRARYに接尾辞`.elc'や`.el'を付加しない。
+
+     PATHが`nil'以外であると、それは`load-path'のかわりに使うディレクト
+     リのリストである。
+
+     `locate-library'をプログラムから呼び出した場合、
+     文字列でファイル名を返す。
+     ユーザーが`locate-library'を対話的に実行した場合、
+     引数INTERACTIVE-CALLは`t'であり、これは
+     `locate-library'に対してファイル名をエコー領域に表示するように指示する。
+
+
+
+File: elisp-ja, Node: Loading Non-ASCII, Next: Autoload, Prev: Library Search, Up: Loading
+
+非ASCII文字のロード
+===================
+
+Emacs Lispプログラムが非ASCII文字の文字列定数を含む場合、
+Emacs内部では、それらはユニバイト文字列かマルチバイト文字列で表現できます
+（*Note Text Representations::）。
+どちらの表現形式を用いるかは、
+どのようにファイルをEmacsに読み込んだかに依存します。
+マルチバイト表現へ復号化して読んだ場合には、
+Lispプログラムのテキストはマルチバイトテキストになり、
+その文字列定数はマルチバイト文字列になります。
+（たとえば）Lantin-1文字を含むファイルを復号化せずに読むと、
+プログラムテキストはユニバイトテキストになり、
+その文字列定数はユニバイト文字列になります。
+*Note Coding Systems::。
+
+結果をより予測可能にするために、オプション`--unibyte'を指定して起動した
+場合であっても、Lispファイルをロードするときには、Emacsはつねにマルチバ
+イト表現に復号化します。つまり、非ASCII文字の文字列定数はマルチバイト文
+字列に変換します。唯一の例外は、特定のファイルで無変換を指定した場合だ
+けです。
+
+Emacsをこのように設計したのは、Emacsの起動方法によらずに、Lispプログラ
+ムが予測可能な結果をもたらすようにするためです。さらに、こうすることで、
+ユニバイト動作のEmacsであっても、マルチバイトテキストを使うことに依存し
+たプログラムが動作します。もちろん、そのようなプログラムは、
+`default-enable-multibyte-characters'を検査して適切に表現を変換して、ユー
+ザーがユニバイトテキストとマルチバイトテキストのどちらを好んでいるか調
+べるように設計すべきです。
+
+Emacs Lispのほとんどのプログラムでは、非ASCII文字列はマルチバイト文字列
+であるということに気づかないでしょう。というのは、それらをユニバイトバッ
+ファに挿入すると自動的にユニバイトに変換するからです。しかしながら、こ
+れで違いがでるならば、Lispファイルの先頭行のコメントに`-*-unibyte:
+t;-*-'と書くことで、特定のLispファイルをユニバイトと解釈するように強制
+できます。このように指定すると、マルチバイト動作のEmacsであっても、その
+ファイルを無条件にユニバイトと解釈します。
+
+
+
+File: elisp-ja, Node: Autoload, Next: Repeated Loading, Prev: Loading Non-ASCII, Up: Loading
+
+自動ロード
+==========
+
+"自動ロード"（autoload）機能により、関数やマクロを定義しているファイル
+をロードしていなくても、関数やマクロをLispに登録できます。関数を初めて
+呼び出すと、適切なファイルを読み込んで実際の定義と関連する他のコードを
+インストールしてから、すでにロードしてあったかのように実際の定義を実行
+します。
+
+関数を自動的にロードするように設定する方法は2つあります。`autoload'を呼
+び出すか、あるいは、ソース内の実際の定義のまえに特別な『マジック』コメ
+ントを書きます。`autoload'は自動ロードを行う低レベルの基本関数です。任
+意のLispプログラムでいつでも`autoload'を呼び出せます。マジックコメント
+は、Emacsで使うパッケージ向けに関数を自動的にロードするように設定すると
+ても便利な方法です。これらのコメントそのものはなにもしませんが、コマン
+ド`update-file-autoloads'に対する指針として働きます。このコマンドは、
+`autoload'の呼び出しを作成し、Emacs構築時にそれらを実行するように設定し
+ます。
+
+ -- Function: autoload FUNCTION FILENAME &optional DOCSTRING INTERACTIVE TYPE
+     この関数は、FUNCTIONという名前の関数（やマクロ）をFILENAMEから自動
+     的にロードするように定義する。文字列FILENAMEは、FUNCTIONの実際の定
+     義を取得するためにロードするファイルを指定する。
+
+     FILENAMEにディレクトリ名や接尾辞`.el'や`.elc'がなければ、
+     `autoload'はこれらの接尾辞の1つを必ず付加し、接尾辞を付けない
+     FILENAMEという名前のファイルはロードしない。
+
+     引数DOCSTRINGは、関数に対する説明文字列である。通常、これは関数定
+     義そのものの説明文字列と同一であること。`autoload'の呼び出しにおい
+     て説明文字列を指定しておくことで、関数の実際の定義をロードしなくて
+     も説明文を見ることが可能になる。
+
+     INTERACTIVEが`nil'以外ならば、FUNCTIONを対話的に呼び出せることを意
+     味する。つまり、関数の実際の定義をロードしなくても`M-x'の補完が動
+     作するのである。完全な対話指定を指定しない。ユーザーがFUNCTIONを実
+     際に呼び出すまでは必要なく、呼び出し時点で実際の定義をロードするか
+     らである。
+
+     普通の関数と同様に、マクロやキーマップも自動的にロードできる。
+     FUNCTIONが実際にはマクロならば、TYPEには`macro'を指定する。
+     FUNCTIONが実際にはキーマップならば、TYPEには`keymap'を指定する。
+     Emacsのさまざまな部分では、実際の定義をロードせずにこの情報を知る
+     必要がある。
+
+     自動ロードと指定したキーマップは、
+     プレフィックスキーのバインディングがシンボルFUNCTIONであるときに、
+     キーを探す過程で自動的にロードする。
+     キーマップのこれ以外の参照方法では、自動的にロードしない。
+     特に、変数名がシンボルFUNCTIONと同じであっても、
+     Lispプログラムで変数の値からキーマップを取得して
+     `define-key'を呼び出す場合には、自動的にロードしない。
+
+     FUNCTIONが自動ロードオブジェクトではない空でない関数定義を有する場
+     合には、`autoload'はなにもせずに`nil'を返す。FUNCTIONの関数セルが
+     空であったり、すでに自動ロードオブジェクトである場合には、つぎのよ
+     うな自動ロードオブジェクトとして関数セルを定義する。
+
+          (autoload FILENAME DOCSTRING INTERACTIVE TYPE)
+
+     たとえばつぎのとおり。
+
+          (symbol-function 'run-prolog)
+               => (autoload "prolog" 169681 t nil)
+
+     この場合、`"prolog"'はロードすべきファイルの名前であり、
+     169681はファイル`emacs/etc/DOC-VERSION'
+     （*Note Documentation Basics::）内の説明文字列を指す。
+     `t'は関数が対話的であることを示し、
+     `nil'はマクロでもキーマップでもないことを示す。
+
+自動ロード対象のファイルでは、通常、他の定義や複数の機能を提供したり必
+要としたりします。（その内容の評価中のエラーなどで）ファイルを完全にロー
+ドできないと、ロード中に行った関数定義や`provide'の呼び出しをもとに戻し
+ます。そのファイルから自動ロードする任意の関数をつぎに呼び出そうとした
+ときに、そのファイルを再度ロードすることを保証するためです。こうしてお
+かないと、自動ロードをアボートしたファイルで関数が定義されても、そのファ
+イルのうしろの部分で定義されるその関数に必要なサブルーティンが必ずしも
+ロードされないためにその関数が動作しない可能性があるからです。
+
+自動ロード対象のファイルで必要なLisp関数やマクロの定義に失敗すると、
+`"Autoloading failed to define function FUNCTION-NAME"'を伴ったエラーを
+通知します。
+
+自動ロードを指定するマジックコメントは、`;;;###autoload'だけを書いた行
+であり、自動ロード対象のソースファイル上で実際の関数定義の直前に必要で
+す。コマンド`M-x update-file-autoloads'は、対応する`autoload'呼び出しを
+`loaddefs.el'に書き込みます。Emacs構築時には`loaddefs.el'をロードするの
+で、`autoload'を呼び出します。`M-x update-directory-autoloads'はもっと
+強力で、カレントディレクトリのすべてのファイルに対する自動ロード情報を
+更新します。
+
+同じマジックコメントは、任意の種類のフォームを`loaddefs.el'にコピーでき
+ます。マジックコメントに続くフォームが関数定義でない場合、そのフォーム
+をそのままコピーします。構築時にはフォームを実行しても、ファイルのロー
+ド時にはそのフォームを実行しないようにマジックコメントを使うこともでき
+ます。そうするには、マジックコメントと*同じ行に*そのフォームを書きます。
+するとそれはコメントなので、ソースファイルをロードするときにはなにもし
+ません。一方、`M-x update-file-autoloads'はそのフォームを`loaddefs.el'
+にコピーするので、Emacs構築時には実行されるのです。
+
+つぎの例は、マジックコメントを使って`doctor'を自動ロードする方法です。
+
+     ;;;###autoload
+     (defun doctor ()
+       "Switch to *doctor* buffer and start giving psychotherapy."
+       (interactive)
+       (switch-to-buffer "*doctor*")
+       (doctor-mode))
+
+こうすると、`loaddefs.el'ではつぎのようになります。
+
+     (autoload 'doctor "doctor"
+       "\
+     Switch to *doctor* buffer and start giving psychotherapy."
+       t)
+
+ダブルクォートの直後にバックスラッシュや改行を書く慣習は、
+`loaddefs.el'などの
+あらかじめロードするLispファイルの中だけで使うものです。
+これは、`make-docfile'に対して、
+説明文字列を`etc/DOC'ファイルに書くように指示します。
+*Note Building Emacs::。
+
+
+
+File: elisp-ja, Node: Repeated Loading, Next: Named Features, Prev: Autoload, Up: Loading
+
+ロードの繰り返し
+================
+
+1つのEmacsセッションにおいて、あるファイルを複数回ロードできます。たと
+えば、バッファ内の関数定義を編集して、関数定義を書き直してインストール
+し直したあとで、もとの版に戻したいこともあるでしょう。これには、もとの
+ファイルを再ロードすればよいのです。
+
+ファイルをロードしたり再ロードするとき、関数`load'や`load-library'は、
+コンパイルしていないファイルではなく、バイトコンパイル済みのファイルを
+自動的にロードすることに注意してください。ファイルを書き直して保存して
+から再インストールする場合、新しい版をバイトコンパイルする必要がありま
+す。さもないと、Emacsは、新しいコンパイルしていないファイルではなく、バ
+イトコンパイル済みの古いファイルをロードしてしまいます。そのような場合、
+ファイルをロードすると、`(compiled; note, source is newer)'とメッセージ
+を表示して、再コンパイルするように忠告してきます。
+
+Lispライブラリファイルにフォームを書くときには、ファイルを複数回ロード
+する可能性があることを忘れないでください。たとえば、ライブラリを再ロー
+ドするたびに各変数を再初期化すべきかどうか考えましょう。`defvar'は、初
+期化済みの変数の値を変更しません。（*Note Defining Variables::。）
+
+連想リストに要素を追加するもっとも簡単な方法はつぎのとおりです。
+
+     (setq minor-mode-alist
+           (cons '(leif-mode " Leif") minor-mode-alist))
+
+しかし、これでは、ライブラリを再ロードすると、複数の要素を追加してしま
+います。これを避けるにはつぎのようにします。
+
+     (or (assq 'leif-mode minor-mode-alist)
+         (setq minor-mode-alist
+               (cons '(leif-mode " Leif") minor-mode-alist)))
+
+リストに要素を1回だけ追加するには、
+`add-to-list'（*Note Setting Variables::）も使えます。
+
+ライブラリをすでにロードしたかどうか明示的に調べたいこともあるでしょう。
+ライブラリ内で以前ロードされたかどうか検査する方法の1つは、つぎのとおり
+です。
+
+     (defvar foo-was-loaded nil)
+
+     (unless foo-was-loaded
+       EXECUTE-FIRST-TIME-ONLY
+       (setq foo-was-loaded t))
+
+ライブラリで名前付き機能を提供するために`provide'を使っていれば、
+ファイルの始めのほうで`featurep'を使って、
+`provide'を以前呼び出したかどうか検査できます。
+*Note Named Features::。
+
+
+
+File: elisp-ja, Node: Named Features, Next: Unloading, Prev: Repeated Loading, Up: Loading
+
+機能
+====
+
+`provide'と`require'は、ファイルを自動的にロードするための`autoload'の
+代替手段です。それらは指定した"機能"（features）という考え方で動作しま
+す。自動ロードは特定の関数を呼び出すことで起動しますが、機能はその名前
+でプログラムが最初に要求したときにロードします。
+
+機能名は、関数や変数などの集合を表すシンボルです。それらを定義するファ
+イルでは、その機能を"提供"（provide）します。それらを使う別のプログラム
+では、その機能を"要求"（require）することで、それらが定義されることを確
+実にします。こうすると、未ロードであれば定義しているファイルをロードし
+ます。
+
+機能を要求するには、機能名を引数にして`require'を呼び出します。
+`require'は、グローバル変数`features'を調べて、目的の機能がすでに提供さ
+れているかどうか調べます。提供されていなければ、適当なファイルから機能
+をロードします。このファイルでは、トップレベルで`provide'を呼び出して、
+`features'に機能を追加するべきです。そうしないと、`require'はエラーを通
+知します。
+
+たとえば、`emacs/lisp/prolog.el' には、つぎのコードのような
+`run-prolog'の定義が入っています。
+
+     (defun run-prolog ()
+       "Run an inferior Prolog process, with I/O via buffer *prolog*."
+       (interactive)
+       (require 'comint)
+       (switch-to-buffer (make-comint "prolog" prolog-program-name))
+       (inferior-prolog-mode))
+
+`(require 'comint)'は、ファイル`comint.el'が未ロードであると、
+そのファイルをロードします。
+これにより、`make-comint'が定義済みであることを保証します。
+普通、機能には、その機能を提供するファイル名からとった名前を付けますから、
+`require'にファイル名を指定する必要はありません。
+
+`comint.el'ファイルには、つぎのトップレベルの式が入っています。
+
+     (provide 'comint)
+
+これにより、グローバル変数`features'のリストに`comint'が追加されるので、
+これ以降に`(require 'comint)'を実行しても、なにもしないでよいことになり
+ます。
+
+ファイルのトップレベルで`require'を使うと、そのファイルをロードする場合
+と同様に、そのファイルをバイトコンパイルするとき（*Note Byte
+Compilation::）にも`require'には効果があります。要求したパッケージに、
+バイトコンパイラが知っている必要があるマクロが入っている場合です。
+
+トップレベルの`require'の呼び出しは、バイトコンパイル中に評価されますが、
+`provide'の呼び出しは評価しません。したがって、つぎの例のように、同じ機
+能に対する`provide'に続けて`require'を書くことで、バイトコンパイルする
+まえに定義のファイルをロードすることを確実にできます。
+
+     (provide 'my-feature)  ; バイトコンパイラは無視し、
+                            ;   `load'は評価する
+     (require 'my-feature)  ; バイトコンパイラは評価する
+
+コンパイラは`provide'を無視し、続く`require'の処理では当該ファイルをロー
+ドします。ファイルのロード時には`provide'の呼び出しを実行するので、その
+あとの`require'の呼び出しは、ファイルをロードするときにはなにもしません。
+
+ -- Function: provide FEATURE
+     この関数は、機能FEATUREをロードし終えたこと、あるいは、ロード中で
+     あることを現在のEmacsセッション内で宣言する。つまり、FEATUREに関連
+     した機能が他のLispプログラムから利用できることを意味する。
+
+     `provide'の呼び出しの直接の効果は、
+     FEATUREがリスト`features'に入っていなければ、
+     FEATUREをリスト`features'の先頭に入れることである。
+     引数FEATUREはシンボルであること。
+     `provide'はFEATUREを返す。
+
+          features
+               => (bar bish)
+
+          (provide 'foo)
+               => foo
+          features
+               => (foo bar bish)
+
+     自動ロードによってファイルをロードしているとき、
+     その内容を評価することでエラーになってロードを中止すると、
+     ロード中に行われた関数定義や`provide'の呼び出しはもとに戻す。
+     *Note Autoload::。
+
+ -- Function: require FEATURE &optional FILENAME
+     この関数は（`(featurep FEATURE)'を使って）現在のEmacsセッション内
+     にFEATUREが存在するかどうか調べる。引数FEATUREはシンボルであること。
+
+     機能が存在していなければ、`require'は、
+     `load'を使ってFILENAMEをロードする。
+     FILENAMEを指定しないと、シンボルFEATUREの名前を
+     ロードすべきファイル名の基にする。
+     しかしながら、この場合には、`require'は、
+     接尾辞を必ず付加してFEATUREを探す。
+     FEATUREだけの名前のファイルは探さない。
+
+     FEATUREを提供するファイルのロードに失敗すると、
+     `require'はエラー
+     `Required feature FEATURE was not provided'を通知する。
+
+ -- Function: featurep FEATURE
+     この関数は、現在のEmacsセッションでFEATUREが提供されていれば
+     （つまり、FEATUREが`features'のメンバであれば）
+     `t'を返す。
+
+ -- Variable: features
+     この変数の値は、現在のEmacsセッションにロード済みの機能を表すシン
+     ボルのリストである。各シンボルは、`provide'を呼び出すことでこのリ
+     ストに追加される。リスト`features'内の要素の順番は関係ない。
+
+
+
+File: elisp-ja, Node: Unloading, Next: Hooks for Loading, Prev: Named Features, Up: Loading
+
+アンロード
+==========
+
+ライブラリでロードした関数や変数を捨てさって他のLispオブジェクト向けに
+メモリを回収することができます。そうするには関数`unload-feature'を使い
+ます。
+
+ -- コマンド: unload-feature FEATURE &optional FORCE
+     このコマンドは、FEATUREを提供するライブラリをアンロードする。つま
+     り、当該ライブラリにおいて、`defun'、`defalias'、`defsubst'、
+     `defmacro'、`defconst'、`defvar'、`defcustom'で定義した関数、マク
+     ロ、変数すべてを未定義にする。そうして、これらのシンボルに以前設定
+     してあった自動ロードの設定を復元する。（ロード時に、これらをシンボ
+     ルの属性`autoload'に保存している。）
+
+     以前の定義に復元するまえに、`unload-feature'は`remove-hook'を実行
+     して、ライブラリ内の関数を特定のフックから取り除く。これらのフック
+     は、`-hook'や`-hooks'で終る名前の変数、および、
+     `loadhist-special-hooks'に入っているものである。これは、重要なフッ
+     クにおいて存在しない関数を参照することでEmacsが動作不能になるのを
+     防ぐ。
+
+     これらの処置でも誤動作防止には不十分であるときには、ライブラリで明
+     示的なアンロードフックを定義できる。`FEATURE-unload-hook'を定義し
+     てあると、以前の定義を復元するまえに、フックを削除する通常の動作の
+     *かわりに* このフックをノーマルフックとして実行する。アンロードフッ
+     クでは、ライブラリをいったんアンロードすると動作不能になるようなラ
+     イブラリで変更したグローバルな状態をすべてアンドゥすべきである。
+
+     通常、`unload-feature'は、他のライブラリが依存しているライブラリの
+     アンロードは拒否する。（ライブラリAでBを`require'（要求）している
+     と、ライブラリAはライブラリBに依存している。）省略可能な引数FORCE
+     が`nil'以外であると、依存関係を無視し、任意のライブラリをアンロー
+     ドできる。
+
+関数`unload-feature'はLispで書いてあり、その動作は`load-history'に基づ
+きます。
+
+ -- Variable: load-history
+     この変数の値は、ライブラリ名をそのライブラリが定義する関数や変数の
+     名前、そのライブラリが提供する機能、そのライブラリが要求する機能に
+     対応付ける連想リストである。
+
+     各要素はリストであり、1つ1つが1つのライブラリを記述する。リストの
+     CARは文字列であり、ライブラリ名である。リストの残りは、以下の種類
+     のオブジェクトから成る。
+
+        * このライブラリで定義されたシンボル。
+        * `(require . FEATURE)'の形のリストであり、要求する機能を示す。
+        * `(provide . FEATURE)'の形のリストであり、提供する機能を示す。
+
+     `load-history'の値には、CARが`nil'であるような1つの要素があっても
+     よい。この要素は、ファイルを訪問してないバッファ内で`eval-buffer'
+     によって作られた定義であることを示す。
+
+コマンド`eval-region'は`load-history'を更新しますが、訪問先ファイルに対
+応する要素に、定義されるシンボルを追加するのであって、要素を置き換える
+のではありません。
+
+あらかじめロード済みのライブラリは、`load-history'に寄与しません。
+
+ -- Variable: loadhist-special-hooks
+     この変数は、ライブラリ内で定義された関数を削除するためにライブラリ
+     をアンロードするまえに走査するフックのリストを保持する。
+
+
+
+File: elisp-ja, Node: Hooks for Loading, Prev: Unloading, Up: Loading
+
+ロード時のフック
+================
+
+`eval-after-load'を呼び出すと、特定のライブラリをロードする／してあると
+きに実行するコードを指定できます。
+
+ -- Function: eval-after-load LIBRARY FORM
+     この関数は、ライブラリLIBRARYをロードする／してあるときに、ライブ
+     ラリLIBRARYのロードの最後にFORMを評価するように設定する。LIBRARYを
+     すでにロードしてあると、この関数はFORMをただちに評価する。
+
+     ライブラリ名LIBRARYは`load'の引数に正確に一致する必要がある。
+     `load-path'を探索してインストールするライブラリを探したときに正し
+     い結果を得るために、LIBRARYにはディレクトリ名を含めないこと。
+
+     FORMでエラーが発生してもロード処理をもとに戻さないが、
+     FORMの残りは実行しない。
+
+一般に、よく設計されたLispプログラムはこの機能を使うべきではありません。
+Lispライブラリを見通しよくモジュール化して扱うには、（1）ライブラリの
+（外部から使うことを意図した）変数を調べて設定し、（2）ライブラリの関数
+を呼び出すことです。（1）を行いたければ、すぐにしてかまいません。ライブ
+ラリをロードするまで待つ必要はありません。（2）を行うには、ライブラリを
+ロードする必要があります（`require'で行うことが好ましい）。
+
+広く使われるプログラムに対する設計基準に合わなくても、個人のカスタマイ
+ズで`eval-after-load'を使うのはかまいません。
+
+ -- Variable: after-load-alist
+     特定のライブラリをロードする／してあるときに評価する式の連想リスト。
+     各要素はつぎのとおり。
+
+          (FILENAME FORMS...)
+
+     関数`load'は、`eval-after-load'を実現するために
+     `after-load-alist'を調べる。
+
+
+
+File: elisp-ja, Node: Byte Compilation, Next: Advising Functions, Prev: Loading, Up: Top
+
+バイトコンパイル
+****************
+
+Emacs Lispには、Lispで書いた関数をより効率よく実行可能な"バイトコード"
+（byte-code）と呼ばれる特別な表現に変換する"コンパイラ"（compiler）があ
+ります。コンパイラはLispの関数定義をバイトコードで置き換えます。バイト
+コード関数を呼び出すと、"バイトコードインタープリタ"（byte-code
+interpreter）がその定義を評価します。
+
+（真のコンパイル済みコードのように）計算機ハードウェアが直接実行するか
+わりに、バイトコードインタープリタがバイトコンパイル済みのコードを評価
+するので、バイトコードは、再コンパイルせずに計算機から計算機に移せます。
+しかしながら、真のコンパイル済みコードほど速くはありません。
+
+EmacsバイトコンパイラがLispファイルをコンパイルするときには、
+`--unibyte'を指定してEmacsを起動したとしても、
+ファイルで特に指定しなければ、
+つねにファイルをマルチバイトテキストとして読みます。
+コンパイルしても、コンパイルせずに同じファイルを実行した場合と同じ結果を
+得るようにするためです。
+*Note Loading Non-ASCII::。
+
+一般に、Emacsの任意の版は、それよりまえの版でバイトコンパイルしたコード
+を実行できますが、その逆は真ではありません。Emacs 19.29では互換性のない
+大きな変更を行いましたから、それ以降の版でコンパイルしたファイルは、特
+別なオプションを指定しない限り、それ以前の版ではまったく動きません。さ
+らに、Emacs 19.29では、キーボード文字の修飾ビットを変更しました。その結
+果、19.29よりまえの版でコンパイルしたファイルは、修飾ビットを含む文字定
+数を使っているとそれ以降の版では動作しません。
+
+バイトコンパイル中に生起するエラーについては、
+*Note Compilation Errors::。
+
+* Menu:
+
+* Speed of Byte-Code::          An example of speedup from byte compilation.
+* Compilation Functions::       Byte compilation functions.
+* Docs and Compilation::        Dynamic loading of documentation strings.
+* Dynamic Loading::             Dynamic loading of individual functions.
+* Eval During Compile::	Code to be evaluated when you compile.
+* Byte-Code Objects::		The data type used for byte-compiled functions.
+* Disassembly::                 Disassembling byte-code; how to read byte-code.
+
+
+
+File: elisp-ja, Node: Speed of Byte-Code, Next: Docs and Compilation, Prev: Byte Compilation, Up: Byte Compilation
+
+バイトコンパイルコードの性能
+============================
+
+バイトコンパイルした関数は、Cで書いた基本関数ほど効率よくはありませんが、
+Lispで書いた版よりはよほど速く動きます。例を示しましょう。
+
+     (defun silly-loop (n)
+       "Return time before and after N iterations of a loop."
+       (let ((t1 (current-time-string)))
+         (while (> (setq n (1- n))
+                   0))
+         (list t1 (current-time-string))))
+     => silly-loop
+
+     (silly-loop 100000)
+     => ("Fri Mar 18 17:25:57 1994"
+         "Fri Mar 18 17:26:28 1994")  ; 31秒
+
+     (byte-compile 'silly-loop)
+     => [コンパイルしたコードは省略]
+
+     (silly-loop 100000)
+     => ("Fri Mar 18 17:26:52 1994"
+         "Fri Mar 18 17:26:58 1994")  ; 6秒
+
+この例では、解釈実行するコードでは実行に31秒必要でしたが、バイトコンパ
+イルしたコードでは6秒でした。この結果は代表的なのもですが、実際の結果は
+大きく変動します。
+
+
+
+File: elisp-ja, Node: Compilation Functions, Next: Docs and Compilation, Prev: Speed of Byte-Code, Up: Byte Compilation
+
+コンパイル関数
+==============
+
+関数`byte-compile'で、個々の関数定義やマクロ定義をバイトコンパイルでき
+ます。`byte-compile-file'で1つのファイル全体をコンパイルしたり、
+`byte-recompile-directory'や`batch-byte-compile'で複数個のファイルをコ
+ンパイルできます。
+
+バイトコンパイラは、各ファイルに対するエラーメッセージや警告メッセージ
+を`*Compile-Log*'と呼ばれるバッファに出力します。読者のプログラムに関し
+てここに報告されたことがらは、問題点を指摘しますが、必ずしもエラーとは
+限りません。
+
+バイトコンパイルする可能性のあるファイルにマクロ呼び出しを書くときには
+注意してください。マクロ呼び出しはコンパイル時に展開されるので、正しく
+コンパイルするためにはマクロは定義済みである必要があります。詳しくは、
+*Note Compiling Macros::。
+
+通常、ファイルをコンパイルしてもファイルの内容を評価したり、ファイルを
+ロードしません。しかし、ファイルのトップレベルに書いた`require'は実行し
+ます。コンパイル時に必要なマクロ定義が存在することを保証する1つの方法は、
+それらを定義するファイルを要求（`require'）することです（*Note Named
+Features::）。コンパイルしたプログラムを*実行する*ときにマクロ定義ファ
+イルのロードを防ぐには、`require'の呼び出しの周りに`eval-when-compile'
+を書きます（*Note Eval During Compile::）。
+
+ -- Function: byte-compile SYMBOL
+     この関数は、SYMBOLの関数定義をバイトコンパイルし、
+     以前の定義をコンパイルしたもので置き換える。
+     SYMBOLの関数定義は、関数の実際のコードであること。
+     つまり、コンパイラは、別のシンボルへの間接参照を辿らない。
+     `byte-compile'は、SYMBOLのコンパイル済みの新たな定義を返す。
+
+     SYMBOLの定義がバイトコード関数オブジェクトであると、
+     `byte-compile'はなにもせずに`nil'を返す。Lispはどんなシンボルに対
+     しても関数定義を1つだけ記録するので、それがすでにコンパイル済みで
+     あると、コンパイルまえのコードはどこにもないのである。したがって、
+     『同じ定義をコンパイルし直す』方法はない。
+
+          (defun factorial (integer)
+            "Compute factorial of INTEGER."
+            (if (= 1 integer) 1
+              (* integer (factorial (1- integer)))))
+          => factorial
+
+          (byte-compile 'factorial)
+          =>
+          #[(integer)
+            "^H\301U\203^H^@\301\207\302^H\303^HS!\"\207"
+            [integer 1 * factorial]
+            4 "Compute factorial of INTEGER."]
+
+     結果は、バイトコード関数オブジェクトである。この文字列には実際のバ
+     イトコードが入っている。その各文字は、命令や命令のオペランドである。
+     ベクトルには、特別な命令に符号化される特定の基本関数を除いて、関数
+     が使うすべての定数、変数名、関数名が入っている。
+
+ -- コマンド: compile-defun
+     このコマンドはポイントを含む`defun'を読み取り、それをコンパイルし
+     て、結果を評価する。実際に関数定義である`defun'でこのコマンドを使
+     うと、その関数をコンパイルしたものをインストールすることになる。
+
+ -- コマンド: byte-compile-file FILENAME
+     この関数は、FILENAMEという名前のLispコードのファイルを
+     コンパイルしバイトコードのファイルにする。
+     出力ファイルの名前は、接頭辞`.el'を`.elc'に換えて作る。
+     FILENAMEが`.el'で終っていないときには、
+     FILENAMEの末尾に`.elc'を付加する。
+
+     入力ファイルから一度に1つずつフォームを読みながらコンパイルを行う。
+     それが関数定義やマクロ定義であると、コンパイルした関数定義やマクロ
+     定義を書き出す。他のフォームは一塊にして、各塊をコンパイルして書き
+     出し、ファイルを読むとコンパイルしたコードが実行されるようにする。
+     入力ファイルを読むときにすべてのコメントを捨てる。
+
+     このコマンドは`t'を返す。対話的に呼び出すとファイル名を問い合わせ
+     る。
+
+          % ls -l push*
+          -rw-r--r--  1 lewis     791 Oct  5 20:31 push.el
+
+          (byte-compile-file "~/emacs/push.el")
+               => t
+
+          % ls -l push*
+          -rw-r--r--  1 lewis     791 Oct  5 20:31 push.el
+          -rw-rw-rw-  1 lewis     638 Oct  8 20:25 push.elc
+
+ -- コマンド: byte-recompile-directory DIRECTORY FLAG
+     この関数は、DIRECTORYにある再コンパイルが必要な
+     個々の`.el'ファイルを再コンパイルする。
+     ファイルを再コンパイルする必要があるのは、
+     `.elc'ファイルが存在しても`.el'ファイルより古い場合である。
+
+     `.el'ファイルに対応する`.elc'ファイルが存在しない場合には、FLAGが
+     動作を指示する。それが`nil'であると、そのようなファイルは無視する。
+     `nil'以外であると、そのような各ファイルをコンパイルするかどうかユー
+     ザーに問い合わせる。
+
+     このコマンドの戻り値は予測できない。
+
+ -- Function: batch-byte-compile
+     この関数は、コマンド行に指定したファイル群に対して
+     `byte-compile-file'を実行する。この関数はEmacsをバッチモードで実行
+     しているときにだけ使うこと。完了するとEmacsを終了するからである。
+     1つのファイルでエラーが発生しても、後続のファイルの処理には影響し
+     ないが、エラーを起こしたファイルに対する出力ファイルは生成せず、
+     Emacsのプロセスは0以外の状態コードで終了する。
+
+          % emacs -batch -f batch-byte-compile *.el
+
+ -- Function: byte-code CODE-STRING DATA-VECTOR MAX-STACK
+     この関数はバイトコードを実際に解釈実行する。バイトコンパイルした関
+     数は、実際には、`byte-code'を呼び出すような本体として定義される。
+     この関数を読者自身で呼び出さないこと。この関数の正しい呼び出しを生
+     成する方法はバイトコンパイラだけが知っている。
+
+     Emacs 18版では、バイトコードは関数`byte-code'をつねに呼び出すこと
+     で実行していた。現在では、バイトコード関数オブジェクトの一部として
+     バイトコードを実行するのが普通であり、`byte-code'を明示的に呼び出
+     すことは稀である。
+
+
+
+File: elisp-ja, Node: Docs and Compilation, Next: Dynamic Loading, Prev: Speed of Byte-Code, Up: Byte Compilation
+
+説明文字列とコンパイル
+======================
+
+バイトコンパイルしたファイルからロードした関数や変数では、それらの説明
+文字列は、必要に応じてそのファイルを動的に参照します。これはEmacs内のメ
+モリを節約しロード処理も速くなります。というのは、ファイルのロード処理
+で説明文字列を処理する必要がないからです。説明文字列を実際に参照するの
+は遅くなりますが、普通、ユーザーをいらいらさせるほとではありません。
+
+説明文字列を動的に参照することには欠点があります。
+
+   * コンパイルしたファイルをロード後に削除したり移動したりすると、その
+     ファイル内の関数や変数に対する説明文字列をEmacsから参照できなくな
+     る。
+
+   * コンパイルしたファイルを（新版をコンパイルするなどして）変更すると、
+     それ以降にそのファイルから説明文字列を参照すると、無意味な結果にな
+     る。
+
+読者のサイトでEmacsを通常の手順でインストールした場合には、これらの問題
+は普通起こらないはずです。新版のインストールには別のディレクトリを使い
+ますから、旧版をインストールしてある限り、そのファイル群は意図した場所
+に無変更で残っているはずです。
+
+しかしながら、読者自身がEmacsを構築して、構築したディレクトリからEmacs
+を使う場合、Lispファイルを編集して再コンパイルすると、しばしばこの問題
+を経験するでしょう。そのような場合には、再コンパイルしたあとでファイル
+を再ロードすれば問題を解決できます。
+
+旧版ではこの機能を使えないので、Emacsの（19.29以降の）最近の版でバイト
+コンパイルしたファイルは旧版ではロードできません。
+`byte-compile-dynamic-docstrings'に`nil'を設定すれば、コンパイル時にこ
+の機能をオフにできます。Emacsの旧版にロードできるようにファイルをコンパ
+イルできるのです。すべてのファイルをこのようにコンパイルしたり、あるい
+は、この変数をファイルにローカルな束縛に指定して1つのソースファイルだけ
+をこのようにコンパイルしたりもできます。そのようにする1つの方法は、つぎ
+の文字列をファイルの先頭行に追加することです。
+
+     -*-byte-compile-dynamic-docstrings: nil;-*-
+
+ -- Variable: byte-compile-dynamic-docstrings
+     これが`nil'以外であると、バイトコンパイラは、説明文字列を動的にロー
+     ドするように設定したコンパイル済みファイルを生成する。
+
+説明文字列を動的に扱う場合、コンパイル済みのファイルではLispリーダの特
+別な構文`#@COUNT'を使います。この構文は後続のCOUNT文字を読み飛ばします。
+また、`#$'という構文も使います。これは、『文字列としてのこのファイルの
+名前』を表します。Lispのソースファイルでは、これらの構文を使わないのが
+最良です。これらは人が読むファイル向けに設計したものではないからです。
+
+
+

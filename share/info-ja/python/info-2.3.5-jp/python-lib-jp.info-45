@@ -1,0 +1,1113 @@
+This is python-lib-jp.info, produced by makeinfo version 4.5 from
+python-lib-jp.texi.
+
+12 October 2005
+
+
+File: python-lib-jp.info,  Node: パーザオブジェクト,  Prev: プレーヤーオブジェクト,  Up: cd
+
+パーザオブジェクト
+------------------
+
+パーザオブジェクト（`createparser()'で返されます）には以下のメ
+ソッドがあります：
+
+`addcallback(type, func, arg)'
+     パーザにコールバックを加えます。
+     デジタルオーディオストリームの8つの異なるデータタイプのためのコールバッ
+     クをパーザは持っています。
+     これらのタイプのための定数は`cd'モジュールのレベルで定義されてい
+     ます（上記参照）。 コールバックは以下のように呼び出されます：
+     `FUNC(ARG, type, data)'、ここでARGはユーザが与え
+     た引数、TYPEはコールバックの特定のタイプ、DATAはこの
+     TYPEのコールバックに渡されるデータです。
+     データのタイプは以下のようにコールバックのタイプによって決まります：
+
+     Type                               Value
+     ------                             -----
+     audio                              `al.writesamps()'へそのまま渡すことのできる文字列。
+     pnum                               プログラム（トラック）ナンバーを示す整数。
+     index                              インデックスナンバーを示す整数。
+     ptime                              プログラムの時間を示す分、秒、フレームからなるタプル。
+     atime                              絶対的な時刻を示す分、秒、フレームからなるタプル。
+     catalog                            CDのカタログナンバーを示す13文字の文字列。
+     ident                              録音のISRC識別番号を示す12文字の文字列。
+                                        文字列は2文字の国別コード、3文字の所有者コード、2文字の年号、5文字のシリ
+                                        アルナンバーからなります。
+     control                            CDのサブコードデータのコントロールビットを示す整数。
+
+
+`deleteparser()'
+     パーザを消去して、使用していたメモリを解放します。
+     この呼び出しのあと、オブジェクトは使用できません。
+     オブジェクトへの最後の参照が削除されると、自動的にこのメソッドが呼び出さ
+     れます。
+
+`parseframe(frame)'
+     `readda()'などから返されたデジタルオーディオCDのデータの1つあるい
+     はそれ以上のフレームをパースします。
+     データ内にどういうサブコードがあるかを決定します。
+     その前のフレームからサブコードが変化していたら、`parseframe()'
+     は対応するタイプのコールバックを起動して、フレーム内のサブコードデータを
+     コールバックに渡します。
+     Cの関数とは違って、1つ以上のデジタルオーディオデータのフレームをこの
+     メソッドに渡すことができます。
+
+`removecallback(type)'
+     指定したTYPEのコールバックを削除します。
+
+`resetparser()'
+     サブコードを追跡しているパーザのフィールドをリセットして、初期状態にしま
+     す。
+     ディスクを交換したあと、`resetparser()'を呼び出さなければなりませ
+     ん。
+
+
+File: python-lib-jp.info,  Node: fl,  Next: FL,  Prev: cd,  Up: SGI IRIX 特有のサービス
+
+グラフィカルユーザーインターフェースのためのFORMSライブラリ
+===========================================================
+
+グラフィカルユーザーインターフェースのためのFORMSライブラリ。
+
+このモジュールは、Mark Overmars によるFORMS Library
+へのインターフェースを提供します。 FORMSライブラリのソースはanonymous
+ftp `ftp.cs.ruu.nl'の `SGI/FORMS'ディレクトリから入手できます。
+最新のテストはバージョン2.0bで行いました。
+
+ほとんどの関数は接頭辞の`fl_'を取ると、対応するCの関数名になりま す。
+ライブラリで使われる定数は後述の`FL'モジュールで 定義されています。
+
+Pythonでこのオブジェクトを作る方法はCとは少し違っています：
+ライブラリに保持された`現在のフォーム'に新しいFORMSオブジェクトを加える
+のではなく、フォームにFORMSオブジェクトを加えるには、フォームを示す
+Pythonオブジェクトのメソッドで全て行います。
+したがって、Cの関数の`fl_addto_form()'と
+`fl_end_form()'に相当するものはPythonにはありませんし、
+`fl_bgn_form()'に相当するものとしては`fl.make_form()' を呼び出します。
+
+用語のちょっとした混乱に注意してください：
+FORMSではフォームの中に置くことができるボタン、スライダーなどに
+"object"の用語を使います。 Pythonでは全ての値が`オブジェクト'です。
+FORMSへのPythonのインターフェースによって、2つの新しいタイプのPythonオブ
+ジェクト：フォームオブジェクト（フォーム全体を示します）とFORMSオブジェ
+クト（ボタン、スライダーなどの一つひとつを示します）を作ります。
+おそらく、混乱するほどのことではありません。
+
+FORMSへのPythonインターフェースに`フリーオブジェクト'はありませんし、
+Pythonでオブジェクトクラスを書いて加える簡単な方法もありません。
+しかし、GLイベントハンドルへのFORMSインターフェースが利用可能で、純粋な
+GLウィンドウにFORMSを組み合わせることができます。
+
+* 注意：* `fl'をインポートすると、GLの関数`foreground()'と
+FORMSのルーチン`fl_init()'を呼び出します。
+
+* Menu:
+
+* FL Functions::
+* フォームオブジェクト::
+* FORMSオブジェクト::
+
+
+File: python-lib-jp.info,  Node: FL Functions,  Next: フォームオブジェクト,  Prev: fl,  Up: fl
+
+`fl'モジュールに定義されている関数
+----------------------------------
+
+`fl'モジュールには以下の関数が定義されています。
+これらの関数の働きに関する詳しい情報については、FORMSドキュメントで対応
+するCの関数の説明を参照してください。
+
+`make_form(type, width, height)'
+     与えられたタイプ、幅、高さでフォームを作ります。
+     これは"form"オブジェクトを返します。このオブジェクトは後述のメソッド
+     を持ちます。
+
+`do_forms()'
+     標準のFORMSのメインループです。
+     ユーザからの応答が必要なFORMSオブジェクトを示すPythonオブジェクト、ある
+     いは特別な値`FL.EVENT'を返します。
+
+`check_forms()'
+     FORMSイベントを確認します。
+     `do_forms()'が返すもの、あるいはユーザからの応答をすぐに必要と
+     するイベントがないなら`None'を返します。
+
+`set_event_call_back(function)'
+     イベントのコールバック関数を設定します。
+
+`set_graphics_mode(rgbmode, doublebuffering)'
+     グラフィックモードを設定します。
+
+`get_rgbmode()'
+     現在のRGBモードを返します。
+     これはCのグローバル変数`fl_rgbmode'の値です。
+
+`show_message(str1, str2, str3)'
+     3行のメッセージとOKボタンのあるダイアログボックスを表示します。
+
+`show_question(str1, str2, str3)'
+     3行のメッセージとYES、NOのボタンのあるダイアログボックスを表示します。
+     ユーザによってYESが押されたら`1'、NOが押されたら`0'を返しま す。
+
+`show_choice(str1, str2, str3, but1[, but2[, but3]])'
+     3行のメッセージと最大3つまでのボタンのあるダイアログボックスを表示しま
+     す。 ユーザによって押されたボタンの数値を返します（それぞれ`1'、`2'
+     、`3'）。
+
+`show_input(prompt, default)'
+     1行のプロンプトメッセージと、ユーザが入力できるテキストフィールドを持つ
+     ダイアログボックスを表示します。
+     2番目の引数はデフォルトで表示される入力文字列です。
+     ユーザが入力した文字列が返されます。
+
+`show_file_selector(message, directory, pattern,  default)'
+     ファイル選択ダイアログを表示します。
+     ユーザによって選択されたファイルの絶対パス、あるいはユーザがCancelボタン
+     を押した場合は`None'を返します。
+
+`get_directory()'
+
+`get_pattern'
+
+`get_filename'
+     これらの関数は最後にユーザが`show_file_selector()'で選択した
+     ディレクトリ、パターン、ファイル名（パスの末尾のみ）を返します。
+
+`qdevice(dev)'
+
+`unqdevice dev'
+
+`isqueued dev'
+
+`qtest'
+
+`qread'
+
+`qreset'
+
+`qenter dev, val'
+
+`get_mouse'
+
+`tie button, valuator1, valuator2'
+     これらの関数は対応するGL関数へのFORMSのインターフェースです。
+     `fl.do_events()'を使っていて、自分で何かGLイベントを操作したい
+     ときにこれらを使います。
+     FORMSが扱うことのできないGLイベントが検出されたら
+     `fl.do_forms()'が特別の値`FL.EVENT'を返すので、
+     `fl.qread()'を呼び出して、キューからイベントを読み込むべきで す。
+     対応するGLの関数は使わないでください！
+
+`color()'
+
+`mapcolor'
+
+`getmcolor'
+     FORMSドキュメントにある`fl_color()'、
+     `fl_mapcolor()'、`fl_getmcolor()' の記述を参照してください。
+
+
+File: python-lib-jp.info,  Node: フォームオブジェクト,  Next: FORMSオブジェクト,  Prev: FL Functions,  Up: fl
+
+フォームオブジェクト
+--------------------
+
+フォームオブジェクト（上で述べた`make_form()'で返されます）には
+下記のメソッドがあります。
+各メソッドは名前の接頭辞に`fl_'を付けたCの関数に対応します；また、
+最初の引数はフォームのポインタです；
+説明はFORMSの公式文書を参照してください。
+
+全ての`add_*()'メソッドは、FORMSオブジェクトを示すPythonオブジェ
+クトを返します。 FORMSオブジェクトのメソッドを以下に記載します。
+ほとんどのFORMSオブジェクトは、そのオブジェクトの種類ごとに特有のメソッ
+ドもいくつか持っています。
+
+`show_form(placement, bordertype, name)'
+     フォームを表示します。
+
+`hide_form()'
+     フォームを隠します。
+
+`redraw_form()'
+     フォームを再描画します。
+
+`set_form_position(x, y)'
+     フォームの位置を設定します。
+
+`freeze_form()'
+     フォームを固定します。
+
+`unfreeze_form()'
+     固定したフォームの固定を解除します。
+
+`activate_form()'
+     フォームをアクティベートします。
+
+`deactivate_form()'
+     フォームをディアクティベートします。
+
+`bgn_group()'
+     新しいオブジェクトのグループを作ります；グループオブジェクトを返します。
+
+`end_group()'
+     現在のオブジェクトのグループを終了します。
+
+`find_first()'
+     フォームの中の最初のオブジェクトを見つけます。
+
+`find_last()'
+     フォームの中の最後のオブジェクトを見つけます。
+
+`add_box(type, x, y, w, h, name)'
+     フォームにボックスオブジェクトを加えます。
+     特別な追加のメソッドはありません。
+
+`add_text(type, x, y, w, h, name)'
+     フォームにテキストオブジェクトを加えます。
+     特別な追加のメソッドはありません。
+
+`add_clock(type, x, y, w, h, name)'
+     フォームにクロックオブジェクトを加えます。\ メソッド：
+     `get_clock()'。
+
+`add_button(type, x, y, w, h,  name)'
+     フォームにボタンオブジェクトを加えます。\ メソッド：
+     `get_button()'、 `set_button()'。
+
+`add_lightbutton(type, x, y, w, h, name)'
+     フォームにライトボタンオブジェクトを加えます。\ メソッド：
+     `get_button()'、 `set_button()'。
+
+`add_roundbutton(type, x, y, w, h, name)'
+     フォームにラウンドボタンオブジェクトを加えます。\ メソッド：
+     `get_button()'、 `set_button()'。
+
+`add_slider(type, x, y, w, h, name)'
+     フォームにスライダーオブジェクトを加えます。\ メソッド：
+     `set_slider_value()'、 `get_slider_value()'、
+     `set_slider_bounds()'、 `get_slider_bounds()'、
+     `set_slider_return()'、 `set_slider_size()'、
+     `set_slider_precision()'、 `set_slider_step()'。
+
+`add_valslider(type, x, y, w, h, name)'
+     フォームにバリュースライダーオブジェクトを加えます。\ メソッド：
+     `set_slider_value()'、 `get_slider_value()'、
+     `set_slider_bounds()'、 `get_slider_bounds()'、
+     `set_slider_return()'、 `set_slider_size()'、
+     `set_slider_precision()'、 `set_slider_step()'。
+
+`add_dial(type, x, y, w, h, name)'
+     フォームにダイアルオブジェクトを加えます。\ メソッド：
+     `set_dial_value()'、 `get_dial_value()'、 `set_dial_bounds()'、
+     `get_dial_bounds()'。
+
+`add_positioner(type, x, y, w, h, name)'
+     フォームに2次元ポジショナーオブジェクトを加えます。\ メソッド：
+     `set_positioner_xvalue()'、 `set_positioner_yvalue()'、
+     `set_positioner_xbounds()'、 `set_positioner_ybounds()'、
+     `get_positioner_xvalue()'、 `get_positioner_yvalue()'、
+     `get_positioner_xbounds()'、 `get_positioner_ybounds()'。
+
+`add_counter(type, x, y, w, h, name)'
+     フォームにカウンタオブジェクトを加えます。\ メソッド：
+     `set_counter_value()'、 `get_counter_value()'、
+     `set_counter_bounds()'、 `set_counter_step()',
+     `set_counter_precision()'、 `set_counter_return()'。
+
+`add_input(type, x, y, w, h, name)'
+     フォームにインプットオブジェクトを加えます。\ メソッド：
+     `set_input()'、 `get_input()'、 `set_input_color()'、
+     `set_input_return()'。
+
+`add_menu(type, x, y, w, h, name)'
+     フォームにメニューオブジェクトを加えます。\ メソッド：
+     `set_menu()'、 `get_menu()'、 `addto_menu()'。
+
+`add_choice(type, x, y, w, h, name)'
+     フォームにチョイスオブジェクトを加えます。\ メソッド：
+     `set_choice()'、 `get_choice()'、 `clear_choice()'、
+     `addto_choice()'、 `replace_choice()'、 `delete_choice()'、
+     `get_choice_text()'、 `set_choice_fontsize()'、
+     `set_choice_fontstyle()'。
+
+`add_browser(type, x, y, w, h, name)'
+     フォームにブラウザオブジェクトを加えます。\ メソッド：
+     `set_browser_topline()'、 `clear_browser()'、
+     `add_browser_line()'、 `addto_browser()'、
+     `insert_browser_line()'、 `delete_browser_line()'、
+     `replace_browser_line()'、 `get_browser_line()'、
+     `load_browser()'、 `get_browser_maxline()'、
+     `select_browser_line()'、 `deselect_browser_line()'、
+     `deselect_browser()'、 `isselected_browser_line()'、
+     `get_browser()'、 `set_browser_fontsize()'、
+     `set_browser_fontstyle()'、 `set_browser_specialkey()'。
+
+`add_timer(type, x, y, w, h, name)'
+     フォームにタイマーオブジェクトを加えます。\ メソッド：
+     `set_timer()'、 `get_timer()'。
+
+フォームオブジェクトには以下のデータ属性があります；FORMSドキュメントを
+参照してください：
+
+名称                     Cの型                    意味
+------                   -----                    -----
+window                   int (read-only)          GLウィンドウのid
+w                        float                    フォームの幅
+h                        float                    フォームの高さ
+x                        float                    フォーム左肩のx座標
+y                        float                    フォーム左肩のy座標
+deactivated              int                      フォームがディアクティベートされているなら非ゼロ
+visible                  int                      フォームが可視なら非ゼロ
+frozen                   int                      フォームが固定されているなら非ゼロ
+doublebuf                int                      ダブルバッファリングがオンなら非ゼロ
+
+
+File: python-lib-jp.info,  Node: FORMSオブジェクト,  Prev: フォームオブジェクト,  Up: fl
+
+FORMSオブジェクト
+-----------------
+
+FORMSオブジェクトの種類ごとに特有のメソッドの他に、全てのFORMSオブジェク
+トは以下のメソッドも持っています：
+
+`set_call_back(function, argument)'
+     オブジェクトのコールバック関数と引数を設定します。
+     オブジェクトがユーザからの応答を必要とするときには、コールバック関数は2
+     つの引数、オブジェクトとコールバックの引数とともに呼び出されます。
+     （コールバック関数のないFORMSオブジェクトは、ユーザからの応答を必要とす
+     るときには`fl.do_forms()'あるいは`fl.check_forms()'に
+     よって返されます。）
+     引数なしにこのメソッドを呼び出すと、コールバック関数を削除します。
+
+`delete_object()'
+     オブジェクトを削除します。
+
+`show_object()'
+     オブジェクトを表示します。
+
+`hide_object()'
+     オブジェクトを隠します。
+
+`redraw_object()'
+     オブジェクトを再描画します。
+
+`freeze_object()'
+     オブジェクトを固定します。
+
+`unfreeze_object()'
+     固定したオブジェクトの固定を解除します。
+
+FORMSオブジェクトには以下のデータ属性があります；FORMSドキュメントを参照
+してください。
+
+名称                     Cの型                    意味
+------                   -----                    -----
+objclass                 int (read-only)          オブジェクトクラス
+type                     int (read-only)          オブジェクトタイプ
+boxtype                  int                      ボックスタイプ
+x                        float                    左肩のx座標
+y                        float                    左肩のy座標
+w                        float                    幅
+h                        float                    高さ
+col1                     int                      第1の色
+col2                     int                      第2の色
+align                    int                      配置
+lcol                     int                      ラベルの色
+lsize                    float                    ラベルのフォントサイズ
+label                    string                   ラベルの文字列
+lstyle                   int                      ラベルのスタイル
+pushed                   int (read-only)          （FORMSドキュメント参照）
+focus                    int (read-only)          （FORMSドキュメント参照）
+belowmouse               int (read-only)          （FORMSドキュメント参照）
+frozen                   int (read-only)          （FORMSドキュメント参照）
+active                   int (read-only)          （FORMSドキュメント参照）
+input                    int (read-only)          （FORMSドキュメント参照）
+visible                  int (read-only)          （FORMSドキュメント参照）
+radio                    int (read-only)          （FORMSドキュメント参照）
+automatic                int (read-only)          （FORMSドキュメント参照）
+
+
+File: python-lib-jp.info,  Node: FL,  Next: flp,  Prev: fl,  Up: SGI IRIX 特有のサービス
+
+`fl'モジュールで使用される定数
+==============================
+
+`fl'モジュールで使用される定数。
+
+このモジュールには、組み込みモジュール`fl'を使うのに必要なシン
+ボル定数が定義されています（上記参照）；これらは名前の接頭辞`FL_'が
+省かれていることを除いて、Cのヘッダファイル`<forms.h>'に定義されて
+いるものと同じです。
+定義されている名称の完全なリストについては、モジュールのソースをご覧くだ
+さい。 お勧めする使い方は以下の通りです：
+
+     import fl
+     from FL import *
+
+
+File: python-lib-jp.info,  Node: flp,  Next: fm,  Prev: FL,  Up: SGI IRIX 特有のサービス
+
+保存されたFORMSデザインをロードする関数
+=======================================
+
+保存されたFORMSデザインをロードする関数。
+
+このモジュールには、FORMSライブラリ（上記の`fl'モジュールを参
+照してください）とともに配布される`フォームデザイナー'
+（`fdesign'）プログラムで作られたフォームの定義を読み込む関数が
+定義されています。
+
+詳しくはPythonライブラリソースのディレクトリの中の`flp.doc'を参照し
+てください。
+
+XXX　完全な説明をここに書いて！
+
+
+File: python-lib-jp.info,  Node: fm,  Next: gl,  Prev: flp,  Up: SGI IRIX 特有のサービス
+
+_Font Manager_ インターフェース
+===============================
+
+SGIワークステーションの _Font Manager_ インターフェース。
+
+このモジュールはIRIS _Font Manager_ライブラリへのアクセスを提供しま す。
+Silicon Graphics マシン上だけで利用可能です。
+次も参照してください：_4Sight User's Guide_, section 1, chapter 5:
+"Using the IRIS Font Manager"。 このモジュールは、まだ IRIS Font
+Managerへの完全なインターフェースではあ りません。
+サポートされていない機能は次のものです： matrix operations; cache
+operations; character operations（代わりに string operations を使ってく
+ださい）; font info のうちのいくつか; individual glyph metrics; printer
+matching。
+
+以下の操作をサポートしています：
+
+`init()'
+     関数を初期化します。 `fminit()'を呼び出します。 この関数は
+     `fm'モジュールを最初にインポートすると自動的に呼び出さ
+     れるので、普通、呼び出す必要はありません。
+
+`findfont(fontname)'
+     フォントハンドルオブジェクトを返します。
+     `fmfindfont(FONTNAME)'を呼び出します。
+
+`enumerate()'
+     利用可能なフォント名のリストを返します。
+     この関数は`fmenumerate()'へのインターフェースです。
+
+`prstr(string)'
+     現在のフォントを使って文字列をレンダリングします（下のフォントハンドルメ
+     ソッド`setfont()'を参照）。 `fmprstr(STRING)'を呼び出します。
+
+`setpath(string)'
+     フォントの検索パスを設定します。
+     `fmsetpath(STRING)'を呼び出します。 （XXX 機能しない！？！）
+
+`fontpath()'
+     現在のフォント検索パスを返します。
+
+フォントハンドルオブジェクトは以下の操作をサポートします：
+
+`scalefont(factor)'
+     このフォントを拡大／縮小したハンドルを返します。 `fmscalefont(FH,
+     FACTOR)'を呼び出します。
+
+`setfont()'
+     このフォントを現在のフォントに設定します。
+     注意：フォントハンドルオブジェクトが削除されると、設定は告知なしに元に戻
+     ります。 `fmsetfont(FH)'を呼び出します。
+
+`getfontname()'
+     このフォントの名前を返します。 `fmgetfontname(FH)'を呼び出します。
+
+`getcomment()'
+     このフォントに関連付けられたコメント文字列を返します。
+     コメント文字列が何もなければ例外を返します。
+     `fmgetcomment(FH)'を呼び出します。
+
+`getfontinfo()'
+     このフォントに関連したデータを含むタプルを返します。
+     これは`fmgetfontinfo()'へのインターフェースです。
+     以下の数値を含むタプルを返します：
+     `('PRINTERMATCHED、FIXED_WIDTH、XORIG、
+     YORIG、XSIZE、YSIZE、HEIGHT、 NGLYPHS`)'。
+
+`getstrwidth(string)'
+     このフォントでSTRINGを描いたときの幅をピクセル数で返します。
+     `fmgetstrwidth(FH, STRING)'を呼び出します。
+
+
+File: python-lib-jp.info,  Node: gl,  Next: DEVICE,  Prev: fm,  Up: SGI IRIX 特有のサービス
+
+_Graphics Library_ インターフェース
+===================================
+
+Silicon Graphics の_Graphics Library_ の関数。
+
+このモジュールはSilicon Graphicsの_Graphics Library_へのアクセスを
+提供します。 Silicon Graphicsマシン上だけで利用可能です。
+
+_
+GLライブラリの不適切な呼び出しによっては、Pythonインタープリタがコアを吐
+き出すことがあります。
+特に、GLのほとんどの関数では最初のウィンドウを開く前に呼び出すのは安全で
+はありません。 _
+
+このモジュールはとても大きいので、ここに全てを記述することはできません
+が、以下の説明で出発点としては十分でしょう。
+Cの関数のパラメータは、以下のような決まりに従ってPythonに翻訳されます：
+
+   *
+     全て（short、long、unsigned）の整数値（int）はPythonの整数に相当します。
+
+   *
+     全ての浮動小数点数と倍精度浮動小数点数はPythonの浮動小数点数に相当しま
+     す。 たいていの場合、Pythonの整数も使えます。
+
+   * 全ての配列はPythonの一次元のリストに相当します。
+     たいていの場合、タプルも使えます。
+
+   * 全ての文字列と文字の引数は、Pythonの文字列に相当します。例えば、
+     `winopen('Hi There!')' と `rotate(900, 'z')'。
+
+   * 配列である引数の長さを特定するためだけに使われる全て
+     （short、long、unsigned）の整数値の引数あるいは返り値は、無視されます。
+     例えば、Cの呼び出しで、
+
+          lmdef(deftype, index, np, props)
+
+     これはPythonでは、こうなります。
+
+          lmdef(deftype, index, props)
+
+   * 出力のための引数は、引数のリストから省略されています；
+     代わりにこれらは関数の返り値として渡されます。
+     もし１つ以上の値が返されるのなら、返り値はタプルです。
+     もしCの関数が通常の返り値（先のルールによって省略されません）と、出力の
+     ための引数の両方を取るなら、返り値はタプルの最初に来ます。
+     例：Cの呼び出しで、
+
+          getmcolor(i, &red, &green, &blue)
+
+     これはPythonではこうなります。
+
+          red, green, blue = getmcolor(i)
+
+
+以下の関数は一般的でないか、引数に特別な決まりを持っています：
+
+`varray(argument)'
+     `v3d()'の呼び出しに相当しますが、それよりも速いです。
+     ARGUMENTは座標のリスト（あるいはタプル）です。 各座標は`(X, Y,
+     Z)'あるいは `(X, Y)'のタプルでなければなりません。
+     座標は２次元あるいは３次元が可能ですが、全て同次元でなければなりません。
+     ですが、浮動小数点数と整数を混合して使えます。
+     座標は（マニュアルページにあるように）必要であれば`Z = 0.0'と
+     仮定して、常に３次元の精密な座標に変換され、各座標について`v3d()'が
+     呼び出されます。
+
+`nvarray()'
+     `n3f'と`v3f'の呼び出しに相当しますが、それらよりも速いです。
+     引数は法線と座標とのペアからなる配列（リストあるいはタプル）です。
+     各ペアは座標と、その座標からの法線とのタプルです。
+     各座標と各法線は`(X, Y, Z)'からなるタプルでなけれ ばなりません。
+     ３つの座標が渡されなければなりません。
+     浮動小数点数と整数を混合して使えます。
+     各ペアについて、法線に対して`n3f()'が呼び出され、座標に対して
+     `v3f()'が呼び出されます。
+
+`vnarray()'
+     `nvarray()'と似ていますが、各ペアは始めに座標を、２番目に法線を持っ
+     ています。
+
+`nurbssurface(s_k, t_k, ctl, s_ord, t_ord, type)'
+     nurbs（非均一有理Bスプライン）曲面を定義します。
+     `CTL[][]'の次元は以下のように計算されます： `[len(S_K) - S_ORD]'、
+     `[len(T_K) - T_ORD]'。
+
+`nurbscurve(knots, ctlpoints, order, type)'
+     nurbs（非均一有理Bスプライン）曲線を定義します。
+     ctlpointsの長さは、`len(KNOTS) - ORDER'です。
+
+`pwlcurve(points, type)'
+     区分線形曲線（piecewise-linear curve）を定義します。
+     POINTSは座標のリストです。 TYPEは`N_ST'でなければなりません。
+
+`pick(n)'
+
+`select n'
+     これらの関数はただ一つの引数を取り、pick/selectに使うバッファのサイズを
+     設定します。
+
+`endpick()'
+
+`endselect'
+     これらの関数は引数を取りません。
+     pick/selectに使われているバッファの大きさを示す整数のリストを返します。
+     バッファがあふれているのを検出するメソッドはありません。
+
+小さいですが完全なPythonのGLプログラムの例をここに挙げます：
+
+     import gl, GL, time
+     
+     def main():
+         gl.foreground()
+         gl.prefposition(500, 900, 500, 900)
+         w = gl.winopen('CrissCross')
+         gl.ortho2(0.0, 400.0, 0.0, 400.0)
+         gl.color(GL.WHITE)
+         gl.clear()
+         gl.color(GL.RED)
+         gl.bgnline()
+         gl.v2f(0.0, 0.0)
+         gl.v2f(400.0, 400.0)
+         gl.endline()
+         gl.bgnline()
+         gl.v2f(400.0, 0.0)
+         gl.v2f(0.0, 400.0)
+         gl.endline()
+         time.sleep(5)
+     
+     main()
+
+See also:
+     `PyOpenGL: PythonのOpenGLとの結合' {OpenGL
+
+
+File: python-lib-jp.info,  Node: DEVICE,  Next: GL,  Prev: gl,  Up: SGI IRIX 特有のサービス
+
+`gl'モジュールで使われる定数
+============================
+
+`gl'モジュールで使われる定数。
+
+このモジュールには、Silicon Graphicsの_Graphics Library_で使われる
+定数が定義されています。これらはCのプログラマーがヘッダーファイル
+`<gl/device.h>'の中から使っているものです。
+詳しくはモジュールのソースファイルをご覧ください。
+
+
+File: python-lib-jp.info,  Node: GL,  Next: imgfile,  Prev: DEVICE,  Up: SGI IRIX 特有のサービス
+
+`gl'モジュールで使われる定数
+============================
+
+`gl'モジュールで使われる定数。
+
+このモジュールにはSilicon Graphicsの_Graphics Library_で使われる
+Cのヘッダーファイル`<gl/gl.h>'の定数が定義されています。
+詳しくはモジュールのソースファイルをご覧ください。
+
+
+File: python-lib-jp.info,  Node: imgfile,  Next: jpeg,  Prev: GL,  Up: SGI IRIX 特有のサービス
+
+SGI imglib ファイルのサポート
+=============================
+
+SGI imglib ファイルのサポート。
+
+`imgfile' モジュールは、Python プログラムが SGI imglib 画像 ファイル
+(`.rgb' ファイルとしても知られています) にアクセスできる
+ようにします。このモジュールは完全なものにはほど遠いですが、その機能
+はある状況で十分役に立つものなので、ライブラリで提供されています。
+現在、カラーマップ形式のファイルはサポートされていません。
+
+このモジュールでは以下の変数および関数が定義されています:
+
+`error'
+     この例外は、サポートされていないファイル形式の場合のような全てのエラーで
+     送出されます。
+
+`getsizes(file)'
+     この関数はタプル `(X, Y, Z)' を返します。 X および Y
+     は画像のサイズをピクセルで表したもので、 Z
+     はピクセルあたりのバイト長です。3 バイトの RGB ピクセルと 1
+     バイトのグレイスケールピクセルのみが現在サポートされています。
+
+`read(file)'
+     この関数は指定されたファイル上の画像を読み出して復号化し、Python
+     文字列として返します。この文字列は 1 バイトのグレイスケールピクセル
+     か、4 バイトの RGBA ピクセルによるものです。左下のピクセルが文字列
+     中の最初のピクセルになります。これは `gl.lrectwrite()'
+     に渡すのに適した形式です。
+
+`readscaled(file, x, y, filter[, blur])'
+     この関数は read と同じですが、X および Y のサイズに
+     スケールされた画像を返します。FILTER および BLUR
+     パラメタが省略された場合、単にピクセルデータを捨てたり複製したりする
+     ことによってスケール操作が行われるので、処理結果は、特に計算機上で
+     合成した画像の場合にはおよそ完璧とはいえないものになります。
+
+     そうする代わりに、スケール操作後に画像を平滑化するために用いる
+     フィルタを指定することができます。サポートされているフィルタの
+     形式は `'impulse''、`'box''、 `'triangle''、 `'quadratic''、および
+     `'gaussian'' です。フィルタを 指定する場合、BLUR
+     はオプションのパラメタで、フィルタの
+     不明瞭化度を指定します。標準の値は `1.0' です。
+
+     `readscaled()' は正しいアスペクト比をまったく維持しようと
+     しないので、それはユーザの責任になります。
+
+`ttob(flag)'
+     この関数は画像のスキャンラインの読み書きを下から上に向かって 行う
+     (フラグがゼロの場合で、SGI GL 互換です) か、上から下に向かって
+     行う (フラグが 1 の場合で、X 互換です) かを決定する大域的なフラグを
+     設定します。標準の値はゼロです。
+
+`write(file, data, x, y, z)'
+     この関数は DATA 中の RGB またはグレイスケールのデータ
+     を画像ファイル FILE に書き込みます。X および Y
+     には画像のサイズを与え、Z は 1 バイトグレイスケール画像 の場合には
+     1 で、RGB 画像の場合には 3 (4 バイトの値として記憶され、 下位 3
+     バイトが使われます) です。これらは `gl.lrectread()'
+     が返すデータの形式です。
+
+
+File: python-lib-jp.info,  Node: jpeg,  Prev: imgfile,  Up: SGI IRIX 特有のサービス
+
+JPEGファイルの読み書きを行う
+============================
+
+JPEGファイルの読み書きを行います。
+
+この`jpeg'モジュールはIndependent JPEG Group (IJG)
+によって書かれたJEPG圧縮及び展開アルゴリズムを提供します。
+JPEG形式は写真等の画像圧縮で標準的に利用され、ISO
+10918で定義されてます。 JPEG、あるいはIndependent JPEG
+Groupソフトウェアの詳細は、
+標準JPEG、若しくは提供されるソフトウェアのドキュメントを参照してください。
+
+JPEGファイルを扱うポータブルなインタフェースはFredrik Lundhによる
+Python Imaging Library (PIL)があります。また、PILの情報は
+<http://www.pythonware.com/products/pil/>で見つけることができます。
+
+モジュール`jpeg'では、一つの例外といくつかの関数を定義しています。
+
+`error'
+     関数`compress()'または`decompress()'のエラーで 上げられる例外です。
+
+`compress(data, w, h, b)'
+     イメージファイルの幅W、高さH、1ピクセルあたりのバイト数Bを
+     引数として扱います。データはSGI GL順になっていて、
+     最初のピクセルは左下端になります。
+     また、これは`gl.lrectread()'が返す値をすぐに`compress()'に
+     かけるためです。現在は、1バイト若しくは4バイトのピクセルを
+     取り扱うことができます、前者はグレースケール、後者はRGBカラーを扱います。
+     `compress()'は、圧縮されたJFIF 形式のイメージが
+     含まれた文字列を返します。
+
+`decompress(data)'
+     データは圧縮されたJFIF 形式のイメージが含まれた文字列で、
+     この関数はタプル`(DATA, WIDTH, HEIGHT,
+     BYTESPERPIXEL)'を返します。また、そのデータは
+     `gl.lrectwrite()'を通過します。
+
+`setoption(name, value)'
+     `compress()'と`decompress()'を呼ぶための様々な
+     オプションをセットします。次のオプションが利用できます:
+
+     オプション                         効果
+     ------                             -----
+     'forcegray'                        入力がRGBでも強制的にグレースケールを出力します。
+     'quality'                          圧縮後イメージの品質を`0'から`100'の間の値で指定します
+                                        (デフォルトは`75'です)。これは圧縮にのみ影響します。
+     'optimize'                         ハフマンテーブルを最適化します。時間がかかりますが、高圧縮になります。
+                                        これは圧縮にのみ影響します。
+     'smooth'                           圧縮されていないイメージ上でインターブロックスムーシングを行います。
+                                        低品質イメージに役立ちます。これは展開にのみ影響します。
+
+
+See also:
+     `JPEG Still Image Data Compression Standard'{The  canonical
+     reference for the JPEG image format, by Pennebaker and Mitchell.}
+
+     `Information Technology - Digital Compression and Coding of
+     Continuous-tone Still Images - Requirements and Guidelines'{The
+     ISO standard for JPEG is also published as ITU T.81.  This is
+     available online in PDF form.}
+
+
+File: python-lib-jp.info,  Node: SunOS 特有のサービス,  Next: MS Windows 特有のサービス,  Prev: SGI IRIX 特有のサービス,  Up: Top
+
+SunOS 特有のサービス
+********************
+
+この章では、SunOSオペレーティングシステム
+バージョン4及び5(Solarisバージョン2)に固有の機能を解説します。
+
+* Menu:
+
+* sunaudiodev::
+* SUNAUDIODEV::
+
+
+File: python-lib-jp.info,  Node: sunaudiodev,  Next: SUNAUDIODEV,  Prev: SunOS 特有のサービス,  Up: SunOS 特有のサービス
+
+Sunオーディオハードウェアへのアクセス
+=====================================
+
+Sunオーディオハードウェアへのアクセス
+
+このモジュールを使うと、Sunのオーディオインターフェースにアクセスでき
+ます。 Sunオーディオハードウェアは、 1秒あたり8kのサンプリングレート、
+u-LAW フォーマットでオーディオデータを録音、再生できます。
+完全な説明文書はマニュアルページ`audio(7I)'にあります。
+
+モジュール `SUNAUDIODEV'
+には、このモジュールで使われる定数が定義されています。
+
+このモジュールには、以下の変数と関数が定義されています：
+
+`error'
+     この例外は、全てのエラーについて発生します。
+     引数は誤りを説明する文字列です。
+
+`open(mode)'
+     この関数はオーディオデバイスを開き、Sunオーディオデバイスのオブジェクト
+     を返します。
+     こうすることで、オブジェクトがI/Oに使用できるようになります。
+     パラメータMODEは次のうちのいずれか一つで、
+     録音のみには`'r''、再生のみには`'w''、
+     録音と再生両方には`'rw''、コントロールデバイスへのアクセスには
+     `'control''です。
+     レコーダーやプレーヤーには同時に１つのプロセスしかアクセスが許されていな
+     いので、必要な動作についてだけデバイスをオープンするのがいい考えです。
+     詳しくは`audio(7I)'を参照してください。
+     マニュアルページにあるように、このモジュールは環境変数
+     `AUDIODEV'の中のベースオーディオデバイスファイルネームを初めに参照
+     します。 見つからない場合は`/dev/audio'を参照します。
+     コントロールデバイスについては、ベースオーディオデバイスに"ctl"を
+     加えて扱われます。
+
+* Menu:
+
+* オーディオデバイスオブジェクト 2::
+
+
+File: python-lib-jp.info,  Node: オーディオデバイスオブジェクト 2,  Prev: sunaudiodev,  Up: sunaudiodev
+
+オーディオデバイスオブジェクト
+------------------------------
+
+オーディオデバイスオブジェクトは`open()'で返され、このオブジェ
+クトには以下のメソッドが定義されています
+（`control'オブジェクトは除きます。これには`getinfo()'、
+`setinfo()'、`fileno()'、`drain()'だけが定義されて います）：
+
+`close()'
+     このメソッドはデバイスを明示的に閉じます。
+     オブジェクトを削除しても、それを参照しているものがあって、すぐに閉じてく
+     れない場合に便利です。 閉じられたデバイスを使うことはできません。
+
+`fileno()'
+     デバイスに関連づけられたファイルディスクリプタを返します。
+     これは、後述の`SIGPOLL'の通知を組み立てるのに使われます。
+
+`drain()'
+     このメソッドは全ての出力中のプロセスが終了するまで待って、それから制御が
+     戻ります。 このメソッドの呼び出しはそう必要ではありません：
+     オブジェクトを削除すると自動的にオーディオデバイスを閉じて、暗黙のうちに
+     吐き出します。
+
+`flush()'
+     このメソッドは全ての出力中のものを捨て去ります。
+     ユーザの停止命令に対する反応の遅れ（1秒までの音声のバッファリングによっ
+     て起こります）を避けるのに使われます。
+
+`getinfo()'
+     このメソッドは入出力のボリューム値などの情報を引き出して、オーディオス
+     テータスのオブジェクト形式で返します。
+     このオブジェクトには何もメソッドはありませんが、現在のデバイスの状態を示
+     す多くの属性が含まれます。
+     属性の名称と意味は`<sun/audioio.h>'と`audio(7I)'に記載があ ります。
+     メンバー名は相当するCのものとは少し違っています：
+     ステータスオブジェクトは１つの構造体です。
+     その中の構造体である`play'のメンバーには名前の初めに`o_'がつ
+     いていて、`record'には`i_'がついています。
+     そのため、Cのメンバーである`play.sample_rate'は
+     `o_sample_rate'として、`record.gain'は`i_gain'として 参照され、
+     `monitor_gain'はそのまま`monitor_gain'で参照されます。
+
+`ibufcount()'
+     このメソッドは録音側でバッファリングされるサンプル数を返します。
+     つまり、プログラムは同じ大きさのサンプルに対する`read()'の
+     呼び出しをブロックしません。
+
+`obufcount()'
+     このメソッドは再生側でバッファリングされるサンプル数を返します。
+     残念ながら、この数値はブロックなしに書き込めるサンプル数を調べるのには
+     使えません。というのは、カーネルの出力キューの長さは可変だからです。
+
+`read(size)'
+     このメソッドはオーディオ入力からSIZEのサイズのサンプルを読み込ん
+     で、Pythonの文字列として返します。
+     この関数は必要なデータが得られるまで他の操作をブロックします。
+
+`setinfo(status)'
+     このメソッドはオーディオデバイスのステータスパラメータを設定します。
+     パラメータSTATUSは`getinfo()'で返されたり、
+     プログラムで変更されたオーディオステータスオブジェクトです。
+
+`write(samples)'
+     パラメータとしてオーディオサンプルをPython文字列を受け取り、再生します。
+     もし十分なバッファの空きがあればすぐに制御が戻り、そうでないならブロック
+     されます。
+
+オーディオデバイスはSIGPOLLを介して様々なイベントの非同期通知に対応して
+います。 Pythonでこれをどのようにしたらできるか、例を挙げます：
+
+     def handle_sigpoll(signum, frame):
+         print 'I got a SIGPOLL update'
+     
+     import fcntl, signal, STROPTS
+     
+     signal.signal(signal.SIGPOLL, handle_sigpoll)
+     fcntl.ioctl(audio_obj.fileno(), STROPTS.I_SETSIG, STROPTS.S_MSG)
+
+
+File: python-lib-jp.info,  Node: SUNAUDIODEV,  Prev: sunaudiodev,  Up: SunOS 特有のサービス
+
+`sunaudiodev'で使われる定数
+===========================
+
+`sunaudiodev'で使われる定数。
+
+これは`sunaudiodev' に付随する モジュールで、`MIN_GAIN'、`MAX_GAIN'、
+`SPEAKER'などの便利なシンボル定数を定義しています。
+定数の名前はCのincludeファイル`<sun/audioio.h>'のものと同じで、
+初めの文字列 `AUDIO_'を除いたものです。
+
+
+File: python-lib-jp.info,  Node: MS Windows 特有のサービス,  Next: ドキュメント化されていないモジュール,  Prev: SunOS 特有のサービス,  Up: Top
+
+MS Windows 特有のサービス
+*************************
+
+この章では、MS Windows プラットフォーム上でのみ利用可能な
+モジュール群について記述します。
+
+* Menu:
+
+* msvcrt - MS VC++実行時システムの有用なルーチン群::
+* _winreg - Windows レジストリへのアクセス::
+* winsound::
+
+
+File: python-lib-jp.info,  Node: msvcrt - MS VC++実行時システムの有用なルーチン群,  Next: _winreg - Windows レジストリへのアクセス,  Prev: MS Windows 特有のサービス,  Up: MS Windows 特有のサービス
+
+`msvcrt' - MS VC++実行時システムの有用なルーチン群
+==================================================
+
+MS VC++実行時システムの雑多な有用ルーチン群。
+
+このモジュールの関数は、 Windows プラットフォームの便利な機能の
+いくつかに対するアクセス機構を提供しています。高レベルモジュール
+のいくつかは、提供するサービスを Windows で実装するために、これらの
+関数を使っています。例えば、 `getpass' モジュールは 関数 `getpass()'
+を実装するためにこのモジュールの関数を 使います。
+
+ここに挙げた関数の詳細なドキュメントについては、プラットフォーム API
+ドキュメントで見つけることができます。
+
+* Menu:
+
+* ファイル操作関連::
+* コンソール I/O 関連::
+* その多の関数::
+
+
+File: python-lib-jp.info,  Node: ファイル操作関連,  Next: コンソール I/O 関連,  Prev: msvcrt - MS VC++実行時システムの有用なルーチン群,  Up: msvcrt - MS VC++実行時システムの有用なルーチン群
+
+ファイル操作関連
+----------------
+
+`locking(fd, mode, nbytes)'
+     C 言語による実行時システムにおけるファイル記述子 FD に基づいて、
+     ファイルの一部にロックをかけます。ロックされるファイルの領域は、
+     現在のファイル位置から NBYTES バイトで、ファイルの末端まで
+     延長することができます。MODE は 以下に列挙する `LK_*'
+     のいずれか一つでなければなりません。
+     一つのファイルの複数の領域を同時にロックすることは可能ですが、
+     領域が重複してはなりません。連接する領域をまとめて指定することは
+     できません; それらの領域は個別にロック解除しなければなりません。
+
+`LK_LOCK'
+
+`LK_RLCK'
+     指定されたバイト列にロックをかけます。指定領域がロックできなかった
+     場合、プログラムは 1 秒後に再度ロックを試みます。10 回
+     再試行した後でもロックをかけられない場合、`IOError'
+     が送出されます。
+
+`LK_NBLCK'
+
+`LK_NBRLCK'
+     指定されたバイト列にロックをかけます。指定領域がロックできなかった
+     場合、`IOError' が送出されます。
+
+`LK_UNLCK'
+     指定されたバイト列のロックを解除します。指定領域はあらかじめロック
+     されていなければなりません。
+
+`setmode(fd, flags)'
+     ファイル記述子 FD に対して、行末文字の変換モードを設定します。
+     テキストモードに設定するには、FLAGS を `os.O_TEXT' にします;
+     バイナリモードにするには `os.O_BINARY' にします。
+
+`open_osfhandle(handle, flags)'
+     C 言語による実行時システムにおけるファイル記述子をファイルハンドル
+     HANDLE から生成します。FLAGS パラメタは `os.O_APPEND'、
+     `os.O_RDONLY'、および `os.O_TEXT' をビット単位で OR
+     したものになります。 返されるファイル記述子は `os.fdopen()'
+     でファイルオブジェクト を生成するために使うことができます。
+
+`get_osfhandle(fd)'
+     ファイル記述子 FD のファイルハンドルを返します。FD
+     が認識できない場合、 IOERROR を送出します。
+
+
+File: python-lib-jp.info,  Node: コンソール I/O 関連,  Next: その多の関数,  Prev: ファイル操作関連,  Up: msvcrt - MS VC++実行時システムの有用なルーチン群
+
+コンソール I/O 関連
+-------------------
+
+`kbhit()'
+     読み出し待ちの打鍵イベントが存在する場合に真を返します。
+
+`getch()'
+     打鍵を読み取り、読み出された文字を返します。コンソールには
+     何もエコーバックされません。この関数呼び出しは読み出し可能な
+     打鍵がない場合にはブロックしますが、文字を読み出せるように
+     するために <Enter> の打鍵を待つ必要はありません。
+     打鍵されたキーが特殊機能キー (function key) である場合、この
+     関数は `'\000'' または `'\xe0'' を返します;
+     キーコードは次に関数を呼び出した際に返されます。この関数で
+     <Control-C> の打鍵を読み出すことはできません。
+
+`getche()'
+     `getch()' に似ていますが、打鍵した字が印字可能な文字の
+     場合エコーバックされます。
+
+`putch(char)'
+     キャラクタ CHAR をバッファリングを行わないでコンソールに
+     出力します。
+
+`ungetch(char)'
+     キャラクタ CHAR をコンソールバッファに "押し戻し (push back)"
+     ます; これにより、押し戻された 文字は `getch()' や `getche()'
+     で次に 読み出される文字になります。
+
+
+File: python-lib-jp.info,  Node: その多の関数,  Prev: コンソール I/O 関連,  Up: msvcrt - MS VC++実行時システムの有用なルーチン群
+
+その多の関数
+------------
+
+`heapmin()'
+     `malloc()' されたヒープ領域を強制的に消去させて、未使用の
+     メモリブロックをオペレーティングシステムに返します。この関数は
+     Windows NT 上でのみ動作します。失敗した場合、 `IOError'
+     を送出します。
+

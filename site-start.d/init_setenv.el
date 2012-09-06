@@ -60,8 +60,8 @@
                             ;; Python言語
                             ;; privateに置かれたツール
                             ;; (expand-file-name (concat my-private-emacs-path "toolkit/twittering-mode/win-curl"))
+                            (expand-file-name (concat os-local-bin "cmigemo-default-win32"))
                             (expand-file-name (concat my-private-emacs-path "toolkit/WinShot-1.53a")) ;画面キャプチャツール
-                            (expand-file-name (concat my-private-emacs-path "toolkit/cmigemo-default-win32"))
                             (expand-file-name (concat my-private-emacs-path "toolkit/boxes-1.1"))
                             (expand-file-name (concat my-private-emacs-path "toolkit/darkroom-mode"))
                             (expand-file-name (concat my-private-emacs-path "toolkit/jsl-0.3.0"))

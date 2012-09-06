@@ -119,6 +119,13 @@
              ))
 
 ;;
+;; emux.el
+;;  https://github.com/m2ym/emux-el
+;;______________________________________________________________________
+;; (install-elisp "https://raw.github.com/m2ym/emux-el/master/emux.el")
+(autoload 'emux:term "emux" nil t nil)
+
+;;
 ;; shell history
 ;;______________________________________________________________________
 ;; 実行履歴を保存

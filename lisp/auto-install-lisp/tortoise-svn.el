@@ -19,6 +19,14 @@
    (concat "TortoiseProc /command:" command " "
 	   "/path:\"" (expand-file-name filename) "\"")))
 
+(defun tortoise-svn-update ()
+  (interactive)
+  (tortoise-svn-update-select (or (buffer-file-name) default-directory)))
+
+(defun tortoise-svn-update-select (filename &optional wildcards)
+  (interactive (find-file-read-args "Find file: " t))
+  (tortoise-command "update" filename))
+
 (defun tortoise-svn-log ()
   (interactive)
   (tortoise-svn-log-select (or (buffer-file-name) default-directory)))
@@ -69,6 +77,9 @@
   (concat "TortoiseProc /command:help")))
 
 ; add key bind
+(global-set-key "\C-xvtl" 'tortoise-svn-update)
+(global-set-key "\C-xvtL" 'tortoise-svn-update-select)
+
 (global-set-key "\C-xvtl" 'tortoise-svn-log)
 (global-set-key "\C-xvtL" 'tortoise-svn-log-select)
 

@@ -21,6 +21,6 @@ git pull bitbicket source
 pushd
 
 # do not update yasnippet
-pushd lisp/yasnippet
-git co b4ccb6e9566c17fe38ab30310e2e64749bd2d7ce
-pushd
+#pushd lisp/yasnippet
+#git co b4ccb6e9566c17fe38ab30310e2e64749bd2d7ce
+#pushd

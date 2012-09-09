@@ -92,5 +92,28 @@
 ;; (require 'yascroll)
 ;; (global-yascroll-bar-mode 1)
 
+
+;;; Emacsのマーク履歴にアイコン表示
+;; http://dev.ariel-networks.com/Members/inoue/icon-on-emacs-marks/
+(defun show-mark-icon ()
+  (interactive)
+  (if (not (boundp 'my-mark-overlays))
+      (setq my-mark-overlays nil))
+  (if (not (boundp 'my-mark-face))
+      (make-face 'my-mark-face))
+  (set-face-underline-p 'my-mark-face  t)
+  (if my-mark-overlays
+      (while my-mark-overlays
+        (delete-overlay (car my-mark-overlays))
+        (setq my-mark-overlays (cdr my-mark-overlays)))
+    (mapcar
+     '(lambda (m)
+        (let ((ov (make-overlay (marker-position m) (1+ (marker-position m)))))
+          ;; (overlay-put ov 'display (find-image '((:type xpm
+          ;;                                               :file (expand-file-name (concat user-emacs-directory "etc/icons/right-arrow.xpm"))
+          ;;                                               :ascent center))))
+          (overlay-put ov 'face 'my-mark-face)
+          (setq my-mark-overlays (cons ov my-mark-overlays)))) (cons (mark-marker) mark-ring))))
+
 (provide 'init_point)
 ;;; init_point.el ends here

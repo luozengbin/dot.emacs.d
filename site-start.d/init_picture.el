@@ -135,6 +135,39 @@
 ;; (autoload 'keisen-left-move "keisen" nil t)
 ;; (autoload 'keisen-right-move "keisen" nil t)
 
+;;
+;; slideview.el image+.el image-dired+.el
+;; http://d.hatena.ne.jp/mhayashi1120/20111214/1323868097
+;;______________________________________________________________________
+;;; install
+;; (install-elisp "https://raw.github.com/mhayashi1120/Emacs-slideview/master/slideview.el")
+;; (install-elisp "https://raw.github.com/mhayashi1120/Emacs-imagex/master/image+.el")
+;; (install-elisp "https://raw.github.com/mhayashi1120/Emacs-image-diredx/master/image-dired+.el")
+
+(autoload 'slideview-mode "slideview" "ディレクトリの中のファイルや zip
+ や tar の中にあるファイルを連続してみることができます" t nil)
+
+(defvar imagex-mode-description "画像を window サイズに合わせて最大化したり、
+カーソル位置の画像サイズの拡大、縮小をする拡張です")
+
+(autoload 'imagex-global-sticky-mode "image+" imagex-mode-description t nil)
+(autoload 'imagex-auto-adjust-mode "image+" imagex-mode-description t nil)
+(add-hook 'image-mode-hook (lambda ()
+                             (slideview-mode 1)
+                             ;; C-c + / C-c -	    拡大、縮小
+                             ;; C-c M-l / C-c M-r	画像の回転
+                             ;; C-c M-o	            元画像の表示
+                             (imagex-global-sticky-mode 1)
+                             ;; (imagex-auto-adjust-mode 1)
+                             ))
+
+;; image-dired すると非同期で実行する
+(require 'image-dired+)
+(image-diredx-async-mode 1)
+
+;;
+;; my-picture-mode
+;;______________________________________________________________________
 ;; カスタマイズpicture-mode
 (require 'my-picture-mode)
 

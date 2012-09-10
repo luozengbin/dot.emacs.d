@@ -86,22 +86,30 @@
 ;;   (change-cursor-mode 1) ; Turn on change for overwrite, read-only, and input mode
 ;;   )
 
+;;
+;; yascroll-el
+;;______________________________________________________________________
 ;; スクロールバーモード
 ;; git clone https://github.com/m2ym/yascroll-el.git
 ;; (install-elisp "https://github.com/m2ym/yascroll-el/raw/master/yascroll.el")
 ;; (require 'yascroll)
 ;; (global-yascroll-bar-mode 1)
 
-
+;;
+;; show-active-marks
+;;______________________________________________________________________
 ;;; Emacsのマーク履歴にアイコン表示
 ;; http://dev.ariel-networks.com/Members/inoue/icon-on-emacs-marks/
-(defun show-mark-icon ()
+(defun show-active-marks ()
   (interactive)
   (if (not (boundp 'my-mark-overlays))
       (setq my-mark-overlays nil))
   (if (not (boundp 'my-mark-face))
       (make-face 'my-mark-face))
-  (set-face-underline-p 'my-mark-face  t)
+  (set-face-background 'my-mark-face  "red")
+  (set-face-foreground 'my-mark-face  "white")
+  ;; (set-face-bold-p 'my-mark-face t)
+  ;; (set-face-underline-p 'my-mark-face  "red")
   (if my-mark-overlays
       (while my-mark-overlays
         (delete-overlay (car my-mark-overlays))
@@ -109,11 +117,32 @@
     (mapcar
      '(lambda (m)
         (let ((ov (make-overlay (marker-position m) (1+ (marker-position m)))))
-          ;; (overlay-put ov 'display (find-image '((:type xpm
-          ;;                                               :file (expand-file-name (concat user-emacs-directory "etc/icons/right-arrow.xpm"))
-          ;;                                               :ascent center))))
           (overlay-put ov 'face 'my-mark-face)
           (setq my-mark-overlays (cons ov my-mark-overlays)))) (cons (mark-marker) mark-ring))))
+
+
+;;
+;; pop-mark
+;;______________________________________________________________________
+;;; 連続 pop-mark
+;;; http://d.hatena.ne.jp/kbkbkbkb1/20111205/1322988550
+(setq set-mark-command-repeat-pop t)
+
+;;
+;; customize scroll-up scroll-down
+;;______________________________________________________________________
+;;; スクロール時画面にカーソルの位置を保持する
+(defadvice scroll-up (around scroll-up-relative activate)
+  "Scroll up relatively without move of cursor."
+  (let ((line (my-count-lines-window)))
+    ad-do-it
+    (move-to-window-line line)))
+
+(defadvice scroll-down (around scroll-down-relative activate)
+  "Scroll down relatively without move of cursor."
+  (let ((line (my-count-lines-window)))
+    ad-do-it
+    (move-to-window-line line)))
 
 (provide 'init_point)
 ;;; init_point.el ends here

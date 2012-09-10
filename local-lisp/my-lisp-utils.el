@@ -235,5 +235,28 @@ Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
    (t
     (find-file-upward name (expand-file-name ".." dir)))))
 
+(defun my-count-lines-window ()
+  "Count lines relative to the selected window. The number of lines begins 0."
+  (interactive)
+  (let* ((window-string (buffer-substring-no-properties (window-start) (point)))
+         (line-string-list (split-string window-string "\n"))
+         (line-count 0)
+         line-count-list)
+    (setq line-count (1- (length line-string-list)))
+    (unless truncate-lines      ; consider folding back
+      ;; `line-count-list' is list of the number of physical lines which each logical line has.
+      (setq line-count-list (mapcar '(lambda (str)
+                                       (/ (my-count-string-columns str) (window-width)))
+                                    line-string-list))
+      (setq line-count (+ line-count (apply '+ line-count-list))))
+    line-count))
+
+(defun my-count-string-columns (str)
+  "Count columns of string. The number of column begins 0."
+  (with-temp-buffer
+    (insert str)
+    (current-column)))
+
+
 (provide 'my-lisp-utils)
 ;;; my-lisp-utils.el ends here

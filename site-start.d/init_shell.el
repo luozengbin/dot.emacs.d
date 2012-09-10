@@ -9,8 +9,19 @@
 ;;
 ;; common setting
 ;;______________________________________________________________________
-;; 色を付ける
-(add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
+;; shell の存在を確認
+(defun skt:shell ()
+  (or (executable-find "bash")
+      (executable-find "zsh")
+      ;; (executable-find "f_zsh") ;; Emacs + Cygwin を利用する人は Zsh の代りにこれにしてください
+      ;; (executable-find "f_bash") ;; Emacs + Cygwin を利用する人は Bash の代りにこれにしてください
+      (executable-find "cmdproxy")
+      (error "can't find 'shell' command in PATH!!")))
+
+;; Shell 名の設定
+(setq shell-file-name (skt:shell))
+(setenv "SHELL" shell-file-name)
+(setq explicit-shell-file-name shell-file-name)
 
 ;; coding設定
 ;; ;; Shell Mode
@@ -18,6 +29,10 @@
 ;;       (function (lambda()
 ;;                   (set-buffer-process-coding-system 'utf-8-unix
 ;;                                                     'utf-8-unix))))
+
+;; エスケープを綺麗に表示する
+(autoload 'ansi-color-for-comint-mode-on "ansi-color" nil t)
+(add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 
 ;;
 ;; for cygwin shell
@@ -87,7 +102,12 @@
 ;; F10でshellを素早くアクセスする
 ;; (install-elisp-from-emacswiki "shell-pop.el")
 (require 'shell-pop)
-(shell-pop-set-internal-mode "shell")
+
+;; multi-term に対応
+(add-to-list 'shell-pop-internal-mode-list '("multi-term" "*terminal<1>*" '(lambda () (multi-term))))
+
+(shell-pop-set-internal-mode "shell")   ;; multi-term
+
 ;; (shell-pop-set-internal-mode-shell "bash")
 (global-set-key [f10] 'shell-pop)
 ;; 高さの調整
@@ -110,6 +130,7 @@
 ;; shellシミュレーション
 ;; (install-elisp-from-emacswiki "multi-term.el")
 (require 'multi-term)
+(setq multi-term-program shell-file-name)
 
 ;; term 内での文字削除、ペーストを有効にする
 (add-hook 'term-mode-hook

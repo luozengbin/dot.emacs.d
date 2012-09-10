@@ -18,10 +18,11 @@
       (executable-find "cmdproxy")
       (error "can't find 'shell' command in PATH!!")))
 
-;; Shell 名の設定
-(setq shell-file-name (skt:shell))
-(setenv "SHELL" shell-file-name)
-(setq explicit-shell-file-name shell-file-name)
+(when (or linux-p mac-p)
+  ;; Shell 名の設定
+  (setq shell-file-name (skt:shell))
+  (setenv "SHELL" shell-file-name)
+  (setq explicit-shell-file-name shell-file-name))
 
 ;; coding設定
 ;; ;; Shell Mode

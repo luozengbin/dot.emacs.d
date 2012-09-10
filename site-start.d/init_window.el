@@ -14,8 +14,7 @@
 ;; macのFinderから新しいファイルを開いた時にemacsを複数起動させない
 ;;______________________________________________________________________
 (when ns-p
-  (setq ns-pop-up-frames nil)
-)
+  (setq ns-pop-up-frames nil))
 
 ;;
 ;; win:resume-windows --> windows 状態保存と復元
@@ -44,8 +43,7 @@
   "restore windows status ."
   (interactive)
    (resume-windows t)
-   (clear-active-region-all-buffers)
-  )
+   (clear-active-region-all-buffers))
 
 ;; 終了時状態を保存する
 (add-hook 'kill-emacs-hook 'win-save-all-configurations)
@@ -118,7 +116,9 @@
                                       ("*compilation*" :noselect t)
                                       ;; ("*Occur*" :noselect t)
                                       ("*VC-log*")
-                                      ("*Process List*")))
+                                      ("*Process List*")
+                                      ;; ("*svn-info*")
+                                      ))
 
 ;; keyマップのprefixキーの定義
 ;;| Key    | Command                    |

@@ -70,7 +70,10 @@
  ;; M-xによる補完をAnythingで行なう
  ;; (anything-read-string-mode 1)
  ;; lispシンボルの補完候補の再検索時間
- anything-lisp-complete-symbol-set-timer 150)
+ anything-lisp-complete-symbol-set-timer 150
+ ;; migemoを有効にする
+ ;; anything-use-migemo nil
+ )
 
 ;; ------------> 目が疲れそう、コメントアウトしました。
 ;; バッファに対しては、カーソルを合わせただけで中身を表示する

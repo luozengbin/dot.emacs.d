@@ -35,6 +35,9 @@
 (autoload 'ansi-color-for-comint-mode-on "ansi-color" nil t)
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)
 
+;; パスワードの入力を隠す
+(add-hook 'comint-output-filter-functions 'comint-watch-for-password-prompt)
+
 ;;
 ;; for cygwin shell
 ;;______________________________________________________________________
@@ -58,10 +61,6 @@
 
 ;; shellモードの時の^M抑制
 ;; (add-hook 'comint-output-filter-functions 'shell-strip-ctrl-m nil t)
-
-;; ;; パスワードの入力を隠す
-;; (add-hook 'comint-output-filter-functions
-;;           'comint-watch-for-password-prompt)
 
 ;; ;; shell-modeでの補完 (for drive letter)
 ;; (setq shell-file-name-chars "")

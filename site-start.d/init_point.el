@@ -96,30 +96,11 @@
 ;; (global-yascroll-bar-mode 1)
 
 ;;
-;; show-active-marks
+;; show-active-markers
 ;;______________________________________________________________________
 ;;; Emacsのマーク履歴にアイコン表示
 ;; http://dev.ariel-networks.com/Members/inoue/icon-on-emacs-marks/
-(defun show-active-marks ()
-  (interactive)
-  (if (not (boundp 'my-mark-overlays))
-      (setq my-mark-overlays nil))
-  (if (not (boundp 'my-mark-face))
-      (make-face 'my-mark-face))
-  (set-face-background 'my-mark-face  "red")
-  (set-face-foreground 'my-mark-face  "white")
-  ;; (set-face-bold-p 'my-mark-face t)
-  ;; (set-face-underline-p 'my-mark-face  "red")
-  (if my-mark-overlays
-      (while my-mark-overlays
-        (delete-overlay (car my-mark-overlays))
-        (setq my-mark-overlays (cdr my-mark-overlays)))
-    (mapcar
-     '(lambda (m)
-        (let ((ov (make-overlay (marker-position m) (1+ (marker-position m)))))
-          (overlay-put ov 'face 'my-mark-face)
-          (setq my-mark-overlays (cons ov my-mark-overlays)))) (cons (mark-marker) mark-ring))))
-
+(require 'my-active-markers)
 
 ;;
 ;; pop-mark
@@ -131,18 +112,33 @@
 ;;
 ;; customize scroll-up scroll-down
 ;;______________________________________________________________________
-;;; スクロール時画面にカーソルの位置を保持する
-(defadvice scroll-up (around scroll-up-relative activate)
-  "Scroll up relatively without move of cursor."
-  (let ((line (my-count-lines-window)))
-    ad-do-it
-    (move-to-window-line line)))
+;; スクロール時画面にカーソルの位置を保持する
+(defvar scroll-hold-cursor t)
 
-(defadvice scroll-down (around scroll-down-relative activate)
-  "Scroll down relatively without move of cursor."
-  (let ((line (my-count-lines-window)))
-    ad-do-it
-    (move-to-window-line line)))
+(when scroll-hold-cursor
+  (defadvice scroll-up (around scroll-up-relative activate)
+    "Scroll up relatively without move of cursor."
+    (if scroll-hold-cursor
+        (let ((line (my-count-lines-window)))
+          ad-do-it
+          (move-to-window-line line))
+      ad-do-it))
+
+  (defadvice scroll-down (around scroll-down-relative activate)
+    "Scroll down relatively without move of cursor."
+    (if scroll-hold-cursor
+        (let ((line (my-count-lines-window)))
+          ad-do-it
+          (move-to-window-line line))
+      ad-do-it))
+
+  (defadvice scroll-up-1 (around scroll-up-1-relative activate)
+    (let ((scroll-hold-cursor nil))
+      ad-do-it))
+
+  (defadvice scroll-down-1 (around scroll-down-1-relative activate)
+    (let ((scroll-hold-cursor nil))
+      ad-do-it)))
 
 (provide 'init_point)
 ;;; init_point.el ends here

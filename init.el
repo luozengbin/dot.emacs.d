@@ -91,6 +91,11 @@
 (defun my-work-dir (work-file) (concat my-work-dir work-file))
 (if (not (file-exists-p my-work-dir)) (mkdir my-work-dir t))
 
+;;; privateディレクトリ
+(defvar my-private-dir (concat user-emacs-directory "private/"))
+(defun my-private-file (append-path) (expand-file-name (concat my-private-dir append-path)))
+(if (not (file-exists-p my-private-dir)) (mkdir my-private-dir t))
+
 ;;
 ;; load path
 ;;______________________________________________________________________

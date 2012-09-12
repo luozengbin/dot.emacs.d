@@ -148,6 +148,9 @@
 ;; howm 初期設定
 (require 'init_howm)
 
+;; clmemo 設定
+(require 'init_clmemo)
+
 ;; picture mode, screenshoot 設定
 (require 'init_picture)
 

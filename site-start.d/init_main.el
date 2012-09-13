@@ -7,9 +7,6 @@
 ;; 環境変数
 (require 'init_setenv)
 
-;; パッケージ管理
-(require 'init_package)
-
 ;; help機能の設定
 (require 'init_help)
 

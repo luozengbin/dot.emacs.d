@@ -42,27 +42,47 @@
 
 (package-initialize)
 
-
-
 ;;; パッケージの自動インストール
 (defvar installing-package-list
   '(
+    sr-speedbar
+    revive
     ac-slime
     ace-jump-mode
     ctags
     dsvn
+    smooth-scroll
     undo-tree
+    yascroll
+    popwin
+    pos-tip
+    key-combo
+    key-chord
+    smartrep
+    paredit
+    wgrep
+    powerline
     oauth2
+    quickrun
+    twittering-mode
     google-weather
     google-maps
     google-contacts
+    deferred
+    calfw
+    calfw-gcal
+    concurrent
+    cacoo
+    ctable
     egg
     logito
     pcache
     gh
     gist
+    magit
     groovy-mode
     js2-mode
+    php-mode
     markdown-mode
     memory-usage
     highlight-parentheses
@@ -74,6 +94,58 @@
     smex
     svg-clock
     yaml-mode
+    expand-region
+    mark-multiple
+    multiple-cursors
+    helm
+    ;; helm-R
+    helm-c-moccur
+    helm-c-yasnippet
+    ;; helm-descbinds
+    helm-gist
+    helm-git
+    helm-gtags
+    helm-migemo
+    ;; helm-projectile
+    o-blog
+    org2blog
+    org-jekyll
+    gnuplot
+    ess
+    google-translate
+    xml-rpc
+    yaoddmuse
+    windresize
+    vline
+    ruby-block
+    ruby-electric
+    inf-ruby
+    inlineR
+    image-dired+
+    htmlize
+    hl-line+
+    info+
+    ;; igrep
+    ;; hexrgb
+    grep-a-lot
+    goto-chg
+    fold-dwim
+    epc
+    edit-list
+    dired+
+    diminish
+    cursor-chg
+    css-mode
+    crosshairs
+    autopair
+    bm
+    browse-kill-ring
+    c-eldoc
+    col-highlight
+    color-moccur
+    redo+
+    flymake-jslint
+    gtags
     ))
 
 (let ((not-installed (loop for x in installing-package-list
@@ -82,7 +154,8 @@
   (when not-installed
     (package-refresh-contents)
     (dolist (pkg not-installed)
-      (package-install pkg))))
+      (if (not (package-installed-p pkg))
+	  (package-install pkg)))))
 
 ;;
 ;; el-get

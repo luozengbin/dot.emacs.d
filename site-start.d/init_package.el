@@ -42,6 +42,48 @@
 
 (package-initialize)
 
+
+
+;;; パッケージの自動インストール
+(defvar installing-package-list
+  '(
+    ac-slime
+    ace-jump-mode
+    ctags
+    dsvn
+    undo-tree
+    oauth2
+    google-weather
+    google-maps
+    google-contacts
+    egg
+    logito
+    pcache
+    gh
+    gist
+    groovy-mode
+    js2-mode
+    markdown-mode
+    memory-usage
+    highlight-parentheses
+    pymacs
+    python-mode
+    rainbow-mode
+    rfringe
+    fringe-helper
+    smex
+    svg-clock
+    yaml-mode
+    ))
+
+(let ((not-installed (loop for x in installing-package-list
+                           when (not (package-installed-p x))
+                           collect x)))
+  (when not-installed
+    (package-refresh-contents)
+    (dolist (pkg not-installed)
+      (package-install pkg))))
+
 ;;
 ;; el-get
 ;;______________________________________________________________________

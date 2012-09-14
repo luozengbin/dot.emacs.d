@@ -137,18 +137,13 @@
 ;; my-powerline
 ;;______________________________________________________________________
 ;; (require 'my-powerline)
+;; (require 'powerline)
+;; (powerline-default)
 
 ;;
 ;; buffer backup & auto save
 ;;______________________________________________________________________
 ;; ---- emacs自身の自動保存機能
-
-;; バックアップOFFの設定
-;; (setq make-backup-files nil)
-;; (setq auto-save-default nil)
-;; 変更ファイルの番号つきバックアップ
-;; (setq version-control nil)
-
 ;; バックアップONの設定
 (let ((my-backup-dir (concat my-cache-dir "backups/")))
   (if (not (file-exists-p my-backup-dir)) (mkdir my-backup-dir t))
@@ -170,6 +165,13 @@
   ;; 古いバックアップファイルの削除
   (setq delete-old-versions t)
 )
+
+;; バックアップOFFの設定
+(setq make-backup-files nil)
+(setq auto-save-default nil)
+;; 変更ファイルの番号つきバックアップ
+(setq version-control nil)
+
 ;;; TRAMP のファイルに対して効果的に backup-directory-alist の効果を消します
 (add-to-list 'backup-directory-alist
              (cons tramp-file-name-regexp nil))

@@ -95,6 +95,21 @@
 (autoload 'find-dired-lisp "find-dired-lisp" "findr" t nil)
 (autoload 'find-grep-dired-lisp "find-dired-lisp" "findr" t nil)
 
+
+;;
+;; ディレクトリへの移動
+;;______________________________________________________________________
+(defun open-dired-from-recentf (keyword)
+  (interactive "s移動先パスの一部: ")
+  (with-temp-buffer
+    (mapcar (lambda (x) (insert (format "%s\n" x)))
+            recentf-list)
+    (goto-char (point-min))
+    (search-forward keyword)
+    (dired (file-name-directory (thing-at-point 'line)))
+    ))
+(global-set-key (kbd "C-x C-d") 'open-dired-from-recentf)
+
 ;;
 ;; speedbar 設定
 ;;______________________________________________________________________

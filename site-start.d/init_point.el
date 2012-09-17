@@ -37,7 +37,7 @@
 ;; (install-elisp "http://cvs.savannah.gnu.org/viewvc/*checkout*/bm/bm/bm.el")
 (require 'bm)
 ;; セーブファイル名の設定
-(setq bm-repository-file "~/.emacs.d/work/bm-repository")
+(setq bm-repository-file (my-cache-dir "bm-repository"))
 
 ;; 起動時に設定のロード
 (setq bm-restore-repository-on-load t)

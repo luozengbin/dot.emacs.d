@@ -40,12 +40,12 @@
                          ("marmalade" . "http://marmalade-repo.org/packages/")
                          ("melpa" . "http://melpa.milkbox.net/packages/")))
 
+(setq package-enable-at-startup nil)
 (package-initialize)
 
 ;;; パッケージの自動インストール
 (defvar installing-package-list
-  '(
-    sr-speedbar
+  '(sr-speedbar
     revive
     ac-slime
     ace-jump-mode
@@ -85,7 +85,11 @@
     php-mode
     markdown-mode
     memory-usage
+    ;; hl-line+
     highlight-parentheses
+    col-highlight
+    crosshairs
+    vline
     pymacs
     python-mode
     rainbow-mode
@@ -116,16 +120,14 @@
     xml-rpc
     yaoddmuse
     windresize
-    vline
     ruby-block
     ruby-electric
     inf-ruby
     inlineR
     image-dired+
     htmlize
-    hl-line+
     info+
-    ;; igrep
+    igrep
     ;; hexrgb
     grep-a-lot
     goto-chg
@@ -136,18 +138,22 @@
     diminish
     cursor-chg
     css-mode
-    crosshairs
     autopair
     bm
     browse-kill-ring
     c-eldoc
-    col-highlight
     color-moccur
     redo+
     flymake-jslint
-    gtags
-    ))
+    gtags))
 
+;;; switch package by version
+(add-to-list 'installing-package-list
+             (cond
+              (emacs23-p 'color-theme-buffer-local)
+              (emacs24-p 'load-theme-buffer-local)))
+
+;;; install package
 (let ((not-installed (loop for x in installing-package-list
                            when (not (package-installed-p x))
                            collect x)))

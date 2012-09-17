@@ -123,6 +123,8 @@
 (defvar my-private-emacs-path (concat user-emacs-directory "private/"))
 (add-to-load-path my-private-emacs-path "lisp")
 
+;; (global-hl-line-mode t)
+
 ;;
 ;; load init setting
 ;;______________________________________________________________________

@@ -112,7 +112,7 @@
 ;; javascript プログラミング
 (require 'init_javascript)
 
-;; ;; html プログラミング
+;; html プログラミング
 (require 'init_html)
 
 ;; ;; R プログラミング

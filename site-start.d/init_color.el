@@ -24,33 +24,32 @@
 (defvar my-random-color-theme-list
   (list
    `(progn (message "select default theme"))
+   ;;; `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "light"))
+   ;;; `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "dark"))
+   ;;; `(progn (apply-selected-ramdom-theme (quote (  tango      ))))
+   ;;; `(progn (apply-selected-ramdom-theme (quote (  tsdh-light ))))
+   ;;; `(progn (apply-selected-ramdom-theme (quote (  whiteboard ))))
+   ;; - `(progn (apply-selected-ramdom-theme (quote (  adwaita    ))))
+   ;; - `(progn (apply-selected-ramdom-theme (quote (  deeper-blue))))
+   ;; - `(progn (apply-selected-ramdom-theme (quote (  dichromacy ))))
+   ;; - `(progn (apply-selected-ramdom-theme (quote (  light-blue ))))
+   ;; - `(progn (apply-selected-ramdom-theme (quote (  manoj-dark ))))
+   ;; - `(progn (apply-selected-ramdom-theme (quote (  tsdh-dark  ))))
    `(progn (apply-selected-ramdom-theme 'color-theme-tangosoft t))
    `(progn (apply-selected-ramdom-theme 'color-theme-tangotango t))
    `(progn (apply-selected-ramdom-theme 'color-theme-ns t))
    `(progn (apply-selected-ramdom-theme 'color-theme-dark t))
-   `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "light"))
-   `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "dark"))
-   `(progn (apply-selected-ramdom-theme (quote (  adwaita    ))))
-   `(progn (apply-selected-ramdom-theme (quote (  deeper-blue))))
-   `(progn (apply-selected-ramdom-theme (quote (  dichromacy ))))
-   `(progn (apply-selected-ramdom-theme (quote (  light-blue ))))
-   `(progn (apply-selected-ramdom-theme (quote (  manoj-dark ))))
    `(progn (apply-selected-ramdom-theme (quote (  misterioso ))))
    `(progn (apply-selected-ramdom-theme (quote (  tango-dark ))))
-   `(progn (apply-selected-ramdom-theme (quote (  tango      ))))
-   `(progn (apply-selected-ramdom-theme (quote (  tsdh-dark  ))))
-   `(progn (apply-selected-ramdom-theme (quote (  tsdh-light ))))
    `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
-   `(progn (apply-selected-ramdom-theme (quote (  whiteboard ))))
    `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
    `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
-   ;; `(progn (message "change to pink-bliss style") (require 'pink-bliss) (pink-bliss) (tool-bar-mode nil))
-   `(progn
-      (cond
-       (emacs23-p
-        (apply-selected-ramdom-theme 'color-theme-zenburn t))
-       (emacs24-p
-         (apply-selected-ramdom-theme (quote (zenburn))))))
+   ;; `(progn
+   ;;    (cond
+   ;;     (emacs23-p
+   ;;      (apply-selected-ramdom-theme 'color-theme-zenburn t))
+   ;;     (emacs24-p
+   ;;       (apply-selected-ramdom-theme (quote (zenburn))))))
    ))
 
 (defun apply-selected-ramdom-theme (my-theme &optional old-format style-postfix)
@@ -101,6 +100,15 @@
 ;;   (running-my-random-color-theme)
 ;;   )
 (running-my-random-color-theme)
+
+
+;;
+;; load-theme-buffer-local.el
+;;______________________________________________________________________
+;;; Set emacs color themes by buffer
+;;; https://github.com/vic/color-theme-buffer-local
+(add-hook 'java-mode-hook (lambda nil
+                            (load-theme-buffer-local 'misterioso (current-buffer) t t)))
 
 ;;
 ;; modeline face カスタマイズ

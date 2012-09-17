@@ -42,7 +42,7 @@
 (setq viewer-modeline-color-view "orange")
 (viewer-change-modeline-color-setup)
 ;; view-modeのキーマップを再定義する
-(define-overriding-view-mode-map c-mode 
+(define-overriding-view-mode-map c-mode
   ("RET"    .   gtags-find-tag-from-here))
 (define-overriding-view-mode-map emacs-lisp-mode
   ("RET"    .   find-function-at-point))

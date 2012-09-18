@@ -165,6 +165,17 @@
   (autoload 'netcomp "mmemo-drive" "My network" t)
   )
 
+;;
+;; DiredDetails & DiredDetails+
+;;______________________________________________________________________
+;;; http://www.emacswiki.org/emacs/DiredDetails
+(require 'dired-details+)
+;; (setq dired-details-propagate-flag nil)
+;; (setq dired-details-hidden-string "")
+
+;;
+;; MyDired
+;;______________________________________________________________________
 ;; ソート、ハイライトの拡張設定
 (require 'my-dired)
 
@@ -174,8 +185,11 @@
             (define-key dired-mode-map "z" 'dired-open-dwim) ; luanch target with window application
             (define-key dired-mode-map "E" 'dired-exec-explorer) ; open with explorer
             (define-key dired-mode-map "Z" 'my-dired-do-compress)
-            (define-key dired-mode-map (kbd "C-z RET") 'dired-find-file-as-root)
-            (define-key dired-mode-map (kbd "C-z o") 'dired-find-file-other-window-as-root)))
+            (define-key dired-mode-map (kbd "C-z o") 'dired-find-file-other-window-as-root)
+            (define-key dired-mode-map (kbd "C-z s") 'occur-by-moccur)
+            (define-key dired-mode-map (kbd "SPC")   'my-dired-toggle-mark)
+            (if linux-p
+                (define-key dired-mode-map (kbd "C-z RET") 'dired-find-file-as-root))))
 ;;; exeplorer or finderを開く
 (define-key global-map (kbd "C-z E") 'my-exec-explorer-atpoint)
 (define-key dired-mode-map (kbd "C-z E") 'dired-exec-explorer)

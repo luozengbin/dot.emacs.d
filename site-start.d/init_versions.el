@@ -74,6 +74,10 @@
        (setq svn-status-hide-unknown nil)
        ;; ログにファイル名を出さない
        ;; (setq svn-status-default-log-arguments nil)
+       (setq svn-status-svn-process-coding-system 'utf-8)
+       (setq process-coding-system-alist '(("svn" . utf-8)))
+       (setq default-file-name-coding-system 'utf-8)
+       (setq svn-status-svn-file-coding-system 'utf-8)
        )))
 
 ;; Subversionで管理しているファイルを開くとPSVNマイナーモードを有効にする

@@ -405,5 +405,20 @@
   (interactive)
   (find-file-other-window (concat "/" anything-su-or-sudo "::" (dired-get-file-for-visit))))
 
+;;
+;; マークをトグル式にする
+;;______________________________________________________________________
+;;; http://www.bookshelf.jp/soft/meadow_25.html#SEC276
+(defun my-dired-toggle-mark (arg)
+  "Toggle the current (or next ARG) files."
+  ;; S.Namba Sat Aug 10 12:20:36 1996
+  (interactive "P")
+  (let ((dired-marker-char
+         (if (save-excursion (beginning-of-line)
+                             (looking-at " "))
+             dired-marker-char ?\040)))
+    (dired-mark arg)
+    (dired-previous-line 1)))
+
 (provide 'my-dired)
 ;;; my-dired.el ends here

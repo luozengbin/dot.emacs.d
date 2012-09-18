@@ -45,7 +45,10 @@
 
 ;;; パッケージの自動インストール
 (defvar installing-package-list
-  '(sr-speedbar
+  '(
+    dired-details
+    dired-details+
+    sr-speedbar
     revive
     ac-slime
     ace-jump-mode

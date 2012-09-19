@@ -169,9 +169,12 @@
 ;; DiredDetails & DiredDetails+
 ;;______________________________________________________________________
 ;;; http://www.emacswiki.org/emacs/DiredDetails
-(require 'dired-details+)
-;; (setq dired-details-propagate-flag nil)
-;; (setq dired-details-hidden-string "")
+(define-key dired-mode-map "(" 'dired-details-toggle)
+(define-key dired-mode-map ")" 'dired-details-toggle)
+(autoload 'dired-details-toggle "dired-details+" nil t)
+(eval-after-load "twittering-mode"
+  '(progn
+     (setq dired-details-propagate-flag t)))
 
 ;;
 ;; MyDired

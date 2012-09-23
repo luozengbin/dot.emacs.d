@@ -1,0 +1,49 @@
+#!/usr/bin/python2.7
+import os
+import os.path
+import pygtk
+pygtk.require("2.0")
+import gio
+import gtk
+import gnomevfs
+import sys
+
+def get_icon_filename(filename, size):
+    final_filename = ""
+    # Get the icon name
+    file = gio.File(filename)
+    file_info = file.query_info('standard::icon')
+    icon_theme = gtk.icon_theme_get_default()
+    for file_icon in file_info.get_icon().get_names():
+        # Get the icon file path
+        icon_filename = icon_theme.lookup_icon(file_icon, size, 0)
+        if icon_filename != None:
+            final_filename = icon_filename.get_filename()
+            return final_filename
+
+    if os.path.isdir(filename):
+        file_icon = gtk.STOCK_DIRECTORY
+    else:
+        file_icon = gtk.STOCK_FILE
+    icon_filename = icon_theme.lookup_icon(file_icon, size, 0)
+    if icon_filename != None:
+        final_filename = icon_filename.get_filename()
+        return final_filename
+
+# run from here
+
+mode = sys.argv[1]
+path = sys.argv[2]
+size = int(sys.argv[3])
+print ";; === result alist ==="
+if mode == "single":            # single
+    print "\"" + get_icon_filename(path, size) + "\""
+else:                           # complex
+    listing = os.listdir(path)
+    listing = [".", ".."] + listing
+    print "'("
+    for infile in listing:
+        filename = os.path.join(path, infile)
+        iconfile = get_icon_filename(filename, size)
+        print "(\"%(infile)s\" \"%(iconfile)s\")" % locals()
+    print ")"

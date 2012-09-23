@@ -98,6 +98,7 @@
 (defadvice jit-lock-stealth-fontify (around
 				     jit-lock-stealth-fontify-dired-dispicon
 				     activate)
+  (message "xxxx")
   (when (or (not (eq major-mode 'dired-mode))
 	    (not dired-dispicon-inhibit-stealth-fontify))
     ad-do-it))
@@ -221,62 +222,64 @@ If optional ASK is non-nil, ask the type."
   "A function for `jit-lock-register'.
 A region specified by BEG and END is fontified."
   (let ((buffer-read-only nil)
-	(inhibit-read-only t)
-	(after-change-functions nil)
-	(inhibit-point-motion-hooks t))
+        (inhibit-read-only t)
+        (after-change-functions nil)
+        (inhibit-point-motion-hooks t))
     (save-excursion
       (setq beg (or beg (point-min)))
       (setq end (or end (point-max)))
       (goto-char beg)
       (while (< (point) end)
-	(condition-case nil
-	    (when (dired-move-to-filename)
-	      (unless (get-text-property (point) 'dropfile)
-		(let ((beg (point))
-		      end file map)
-		  (add-text-properties
-		   beg
-		   (setq end (save-excursion
-			       (dired-move-to-end-of-filename)
-			       (point)))
-		   '(mouse-face highlight
-				help-echo
-				"mouse-1: visit this file in other window"
-				dropfile t))
-		  (setq file (buffer-substring beg end)
-			file (expand-file-name file dired-directory)
-			map (make-sparse-keymap))
-		  (define-key map [down-mouse-1] `(lambda ()
-						    (interactive)
-						    (dropfile ,file)))
-		  (let ((ovl (make-overlay beg end))
-			(ddir (expand-file-name dired-directory)))
-		    (if (and dired-dispicon-display-icon
-			     (or (string-match "^[a-zA-Z]:" ddir)
-				 (string-match "^//[^/]" ddir)))
-			(overlay-put ovl 'before-string
-				     (propertize
-				      (dired-dispicon
-				       file
-				       dired-dispicon-display-type
-				       (cond
-					((eq dired-dispicon-display-type
-					     'thumbnail)
-					 dired-dispicon-thumbnail-size)
-					((eq dired-dispicon-display-type
-					     'large)
-					 dired-dispicon-large-size)
-					(t
-					 (aref (font-info
-						(face-font
-						 'default (selected-frame)))
-					       3))))
-				      'keymap map)))
-		    (overlay-put ovl 'keymap map)
-		    (overlay-put ovl 'dispicon dired-dispicon-display-type)
-		    (overlay-put ovl 'evaporate t)))))
-	  (error nil))
-	(forward-line 1))
+        (condition-case nil
+            (when (dired-move-to-filename)
+              (unless (get-text-property (point) 'dropfile)
+                (let ((beg (point))
+                      end file map)
+                  (add-text-properties
+                   beg
+                   (setq end (save-excursion
+                               (dired-move-to-end-of-filename)
+                               (point)))
+                   '(
+                     ;; mouse-face highlight
+                     ;; help-echo "mouse-1: visit this file in other window"
+                     dropfile t))
+                  (setq file (buffer-substring beg end)
+                        file (expand-file-name file dired-directory)
+                        map (make-sparse-keymap))
+                  (define-key map [down-mouse-1] `(lambda ()
+                                                    (interactive)
+                                                    (dropfile ,file)))
+                  (let ((ovl (make-overlay beg end))
+                        (ddir (expand-file-name dired-directory)))
+                    (if (and dired-dispicon-display-icon
+                             ;; (or (string-match "^[a-zA-Z]:" ddir)
+                             ;;     (string-match "^//[^/]" ddir))
+                             )
+                        (message "xxx")
+                      (overlay-put ovl 'before-string
+                                   (propertize
+                                    (dired-dispicon
+                                     file
+                                     dired-dispicon-display-type
+                                     (cond
+                                      ((eq dired-dispicon-display-type
+                                           'thumbnail)
+                                       dired-dispicon-thumbnail-size)
+                                      ((eq dired-dispicon-display-type
+                                           'large)
+                                       dired-dispicon-large-size)
+                                      (t
+                                       (aref (font-info
+                                              (face-font
+                                               'default (selected-frame)))
+                                             3))))
+                                    'keymap map)))
+                    (overlay-put ovl 'keymap map)
+                    (overlay-put ovl 'dispicon dired-dispicon-display-type)
+                    (overlay-put ovl 'evaporate t)))))
+          (error nil))
+        (forward-line 1))
       (set-buffer-modified-p nil))))
 
 (defun dired-dispicon (filename &optional type

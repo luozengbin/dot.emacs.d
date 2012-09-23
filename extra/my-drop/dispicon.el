@@ -159,33 +159,34 @@ nil means to use the default face background."
     (propertize " " 'display image 'invisible t)))
 
 (defun dispicon-local-internal (filename &optional ignore-errors)
-  (lexical-let* ((filename (dispicon-unix-to-dos-filename filename))
-                 (output-icon (dispicon-unix-to-dos-filename
-                               (expand-file-name (my-cache-dir "disp-icons"))))
+  (lexical-let* ((icon-folder (expand-file-name (my-cache-dir "disp-icons")))
                  (temp-buffer (get-buffer-create " *GetFileIcon*"))
-                 image)
+                 (icon-file nil)
+                 (image nil))
     (cond
      ((file-exists-p filename)
       (with-current-buffer temp-buffer
         (erase-buffer)
-        ;; 同期プロセスでファイルアイコンをゲットする
-        (call-process "GetFileIcon" nil temp-buffer nil filename output-icon)
-        (setq output-icon (buffer-substring (point-min) (- (point-max) 1))))
-      ;; (deferred:$
-      ;;   (deferred:process "GetFileIcon" filename output-icon)
-      ;;   (deferred:nextc it (lambda (x) (message x)
-      ;;                        (setq output-icon x)))
-      ;;   (deferred:nextc it (lambda (x) (message x)
-      ;;                        (setq output-icon x)))
-      ;;   )
-      ;; (clear-image-cache)
-      (setq image (create-image output-icon nil nil :ascent 90))
-      (propertize " " 'display image 'invisible t)
-      )
-     ;; (ignore-errors
-     ;;   (propertize " " 'display nil 'invisible t))
-     ;; (t
-     ;;  (error "Error dispicon"))
+        ;; 同期プロセスでファイルアイコンのパスをゲットする
+        (case system-type
+          ('gnu/linux
+           (message (concat "filename -> " filename))
+           (call-process "GetFileIcon" nil temp-buffer nil filename "16")
+           (goto-char (point-min))
+           (when (re-search-forward ">>>\\(.+\\)<<<" nil t)
+             (setq icon-file (match-string 1))))
+          ('windows-nt
+           (setq filename (dispicon-unix-to-dos-filename filename))
+           (setq icon-folder (dispicon-unix-to-dos-filename icon-folder))
+           (call-process "GetFileIcon" nil temp-buffer nil filename icon-folder)
+           (setq icon-file (buffer-substring (point-min) (- (point-max) 1))))))
+      (message (concat "icon-file -> " icon-file))
+      (setq image (create-image icon-file nil nil :ascent 90))
+      (propertize " " 'display image 'invisible t))
+     (ignore-errors
+       (propertize " " 'display nil 'invisible t))
+     (t
+      (error "Error dispicon"))
      )))
 
 (defun dispicon (filename &optional type size depth bgcolor ignore-errors)

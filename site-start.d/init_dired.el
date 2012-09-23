@@ -108,7 +108,6 @@
     (search-forward keyword)
     (dired (file-name-directory (thing-at-point 'line)))
     ))
-(global-set-key (kbd "C-x C-d") 'open-dired-from-recentf)
 
 ;;
 ;; speedbar 設定
@@ -175,6 +174,18 @@
 (eval-after-load "twittering-mode"
   '(progn
      (setq dired-details-propagate-flag t)))
+
+
+;;
+;; my-dispcon.el アイコン表示
+;;______________________________________________________________________
+(when linux-p
+  (require 'my-dispicon)
+  (dired-dispicon-toggle t)
+  (add-hook 'dired-mode-hook
+            (lambda ()
+              (define-key dired-mode-map (kbd "/") 'dired-dispicon-toggle)
+              (define-key dired-mode-map (kbd "\\") 'dired-dispicon-toggle-local))))
 
 ;;
 ;; MyDired

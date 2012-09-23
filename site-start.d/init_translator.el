@@ -24,15 +24,36 @@
 
 ;;; Code:
 
-;; Web翻訳サービス, dict
-;; (auto-install-batch "text translator")
-;; M-x text-translator
+;;
+;; text-translator Web翻訳サービス
+;;______________________________________________________________________
+;;; (auto-install-batch "text translator")
+;;; M-x text-translator
 (require 'text-translator)
 (setq text-translator-auto-selection-func
       'text-translator-translate-by-auto-selection-enja)
 
-;; 単語翻訳
-(global-set-key (kbd "<C-f1>") 'text-translator)
+;;; show result in popwin way
+(require 'popwin)
+(push '("*translated*") popwin:special-display-config)
+(defadvice text-translator-all-by-auto-selection (after text-translator-popwin-result activate)
+  (display-buffer "*translated*"))
+
+;;; key bind for mouse and keyboard
+(require 'cl)
+(defun text-translator-all-by-mouse (e)
+  (interactive "e")
+  (flet ((text-translator-region-or-read-string
+          (&rest _)
+          (buffer-substring (posn-point (event-start e))
+                            (posn-point (event-end e)))))
+    (text-translator-all-by-auto-selection nil)))
+
+;;; C-S Drog Mouse
+(global-set-key [C-S-down-mouse-1] 'mouse-drag-region)
+(global-set-key [C-S-drag-mouse-1] 'text-translator-all-by-mouse)
+
+(global-set-key (kbd "M-t") 'text-translator-all-by-auto-selection)
 
 (provide 'init_translator)
 ;;; init_translator.el ends here

@@ -13,7 +13,7 @@
   (insert (propertize " " 'display image 'invisible nil)))
 
 ;;; usable image file type
-(mapcar (lambda (type) (cons type (image-type-available-p type))) image-types) ; =>
+(mapcar (lambda (type) (cons type (image-type-available-p type))) image-types) ; => 
 
 ;;; make temp folder
 (expand-file-name (user-login-name) (if (fboundp 'temp-directory)
@@ -35,7 +35,9 @@ for privacy/speed reasons."
 
 ;;; ------------------ setup for dired mode
 
-(insert (dispicon-local-internal "c:/.rnd"))
+(insert (dispicon-local-internal "/home/akira/.esd_auth"))
+
+(clear-image-cache)
 
 (autoload 'dired-dispicon-setup
           "dired-dispicon" "dispicon & dropfile on dired" t)
@@ -45,4 +47,7 @@ for privacy/speed reasons."
 	    ;; (define-key dired-mode-map "\C-c\C-t" 'dired-dispicon-toggle-type)
 	    ;; (define-key dired-mode-map "\C-c\C-v" 'dired-dispicon-do-view-thumbnail)
 	    (dired-dispicon-setup)))
+
+(setq dired-dispicon-default-display-icon t)
+
 

@@ -161,7 +161,7 @@ Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
                   (substring ret (match-end 0))
                 ret))
     (or
-     (loop for i downfrom (1- (length ret)) downto 0 do 
+     (loop for i downfrom (1- (length ret)) downto 0 do
            (if (/= 32 (char-syntax (aref ret i)))
                (return (substring ret 0 (1+ i)))))
      "")))
@@ -171,6 +171,9 @@ Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
   (or (if (string-match "^\\\\\\\\.+" smb-file-path)
           (replace-regexp-in-string "\\\\" "/" smb-file-path t t nil 1))
       smb-file-path))
+
+(defun my-unix-to-dos-filename (file)
+  (replace-regexp-in-string "/" "\\\\" file))
 
 (defun my-get-real-file-path ()
   "OSソフトが扱える物理パスを取得する"

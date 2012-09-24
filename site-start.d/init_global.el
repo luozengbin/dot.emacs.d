@@ -330,6 +330,7 @@
 
 ;; Fill column
 (setq fill-column 85)
+
 ;;
 ;; mini buffer
 ;;______________________________________________________________________
@@ -354,6 +355,21 @@
   (when (eq (selected-window) (active-minibuffer-window))
     (add-to-history minibuffer-history-variable (minibuffer-contents))))
 
+;;
+;; desktop-save-mode
+;;______________________________________________________________________
+;;; http://www.emacswiki.org/DeskTop
+
+;; (require 'desktop)
+;; (setq desktop-path `(,my-cache-dir))
+;; (setq desktop-dirname my-cache-dir)
+;; (setq desktop-base-file-name "emacs-desktop")
+
+;; ;; save mini buffer history
+;; (setq desktop-globals-to-save '(extended-command-history))
+;; (setq desktop-files-not-to-save "")
+
+;; (desktop-save-mode 1)
 
 (provide 'init_global)
 ;;; init_global.el ends here

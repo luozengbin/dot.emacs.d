@@ -179,13 +179,12 @@
 ;;
 ;; my-dispcon.el アイコン表示
 ;;______________________________________________________________________
-(when linux-p
-  (require 'my-dispicon)
-  (dired-dispicon-toggle t)
-  (add-hook 'dired-mode-hook
-            (lambda ()
-              (define-key dired-mode-map (kbd "/") 'dired-dispicon-toggle)
-              (define-key dired-mode-map (kbd "\\") 'dired-dispicon-toggle-local))))
+(require 'my-dispicon)
+(dired-dispicon-toggle t)
+(add-hook 'dired-mode-hook
+          (lambda ()
+            (define-key dired-mode-map (kbd "/") 'dired-dispicon-toggle)
+            (define-key dired-mode-map (kbd "\\") 'dired-dispicon-toggle-local)))
 
 ;;
 ;; MyDired
@@ -228,6 +227,7 @@
 ;; install --> git clone https://github.com/m2ym/direx-el.git
 (require 'direx)
 (require 'popwin)
+
 
 ;; direx:direx-modeのバッファをウィンドウ左辺に幅30でポップアップ
 ;; :dedicatedにtを指定することで、direxウィンドウ内でのバッファの切り替えが

@@ -29,6 +29,11 @@
 (require 'org-install)
 
 ;;
+;; change window buffer popup in popwin way
+;;______________________________________________________________________
+;; (push '("*Org Links*" :height 20 :position top) popwin:special-display-config)
+
+;;
 ;; auto-fill
 ;;______________________________________________________________________
 ;; org-modeのauto-fillの有効とsc-sources指定

@@ -73,7 +73,7 @@
     (setcdr (nthcdr (1- dired-dispicon-icon-alist-length)
                     dired-dispicon-icon-alist) nil)))
 
-(defun dired-dispicon-icon-file (icon-alist file)
+(defun dired-dispicon-icon-file (dir-path icon-alist file)
   "get icon file from cache. or get single icon file with single process mode if necessary"
   (let ((icon-file (car (assoc-default file icon-alist))))
     (if icon-file icon-file
@@ -83,8 +83,11 @@
               (dired-dispicon-call-process
                "single"
                (expand-file-name file dired-directory)))
-        (if icon-alist
-            (setq icon-alist (cons (cons file icon-file) icon-alist)))))
+        (when icon-alist
+          (setq dired-dispicon-icon-alist
+                (delete (cons dir-path icon-alist) dired-dispicon-icon-alist))
+          (setq icon-alist (cons `(,file ,icon-file) icon-alist))
+          (dired-dispicon-icon-alist-add dir-path icon-alist))))
     icon-file))
 
 (defun dired-dispicon-call-async-process (dir-path)
@@ -157,11 +160,12 @@ mode: single --> get icon file path
 (defun dired-dispicon-fontify-region (&optional beg end)
   "render icon in dired buffer with jit-lock event"
   (when dired-dispicon-display-icon
-    (let ((buffer-read-only nil)
+    (let* ((buffer-read-only nil)
           (inhibit-read-only t)
           (after-change-functions nil)
           (inhibit-point-motion-hooks t)
-          (icon-alist (dired-dispicon-icon-alist (expand-file-name dired-directory))))
+          (dir-path (expand-file-name dired-directory))
+          (icon-alist (dired-dispicon-icon-alist dir-path)))
       (save-excursion
         (setq beg (or beg (point-min)))
         (setq end (or end (point-max)))
@@ -173,9 +177,9 @@ mode: single --> get icon file path
                 (unless (get-text-property (point) 'dispicon)
                   (let* ((beg (point))
                          (end (save-excursion (dired-move-to-end-of-filename) (point)))
-                         (file (buffer-substring beg end))
+                         (file (buffer-substring-no-properties beg end))
                          (ovl (make-overlay beg end))
-                         (icon-file (dired-dispicon-icon-file icon-alist file)))
+                         (icon-file (dired-dispicon-icon-file dir-path icon-alist file)))
                     ;; add dispicon propertie on file name
                     (add-text-properties beg end '(dispicon t))
                     (when icon-file

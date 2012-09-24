@@ -284,5 +284,19 @@
     (funcall clear-selected-region current-buffer-name)
     ))
 
+(defun my-scroll-other-window (&optional ARG)
+  "scroll other windows in inertias way when inertias mode is on"
+  (interactive)
+  (let ((ow (other-window-for-scrolling)))
+    (if ow
+        (if inertias-global-minor-mode
+            (save-window-excursion
+              (select-window ow)
+              (if (eq 1 ARG)
+                  (inertias-up)
+                (inertias-down)))
+          (scroll-other-window ARG))
+      (message "There is no other window"))))
+
 (provide 'my-window)
 ;;; my-window.el ends here

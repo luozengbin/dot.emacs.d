@@ -3,10 +3,15 @@
 ;;=======================================================================
 
 ;; 時間文字列を獲得関数の制定
-(defun insert-date ()
+(defun my-insert-date-jp ()
   "Insert date at point."
   (interactive)
   (insert (format-time-string "%Y年%m月%e日 %l:%M %a %p")))
+
+(defun my-insert-date ()
+  "Insert date at point."
+  (interactive)
+  (insert (format-time-string "%Y/%m/%e")))
 
 ;; orgモードにて読み取りのみの時間を生成する
 (defun insert-org-readonly-datetime ()
@@ -23,7 +28,7 @@
 )
 (defun dos-mode()
   (interactive)
-  (progn 
+  (progn
     (setq shell-file-name "cmdproxy.exe")
     )
   )

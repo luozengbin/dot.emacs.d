@@ -188,5 +188,10 @@
               anything-c-source-info-python-dist-ja)
             (thing-at-point 'symbol) nil nil nil "*anything info*"))
 
+;;
+;; my-info.el (my info mode extention)
+;;______________________________________________________________________
+(require 'my-info)
+
 (provide 'init_help)
 ;;; init_help.el ends here

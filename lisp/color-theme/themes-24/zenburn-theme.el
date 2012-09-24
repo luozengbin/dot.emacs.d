@@ -142,7 +142,11 @@
      ((,class (:foreground ,zenburn-green-1
                            :background ,zenburn-bg-05
                            :box (:line-width -1 :style released-button)))))
-   `(region ((,class (:background ,zenburn-bg-1))))
+   ;; 2012/09/24 fix by akira
+   ;; `(region ((,class (:background ,zenburn-bg-1))))
+   `(region ((,class (:background "slate blue"))))
+   ;; :fix end
+
    `(secondary-selection ((,class (:background ,zenburn-bg+2))))
    `(trailing-whitespace ((,class (:background ,zenburn-red))))
    `(vertical-border ((,class (:foreground ,zenburn-fg))))

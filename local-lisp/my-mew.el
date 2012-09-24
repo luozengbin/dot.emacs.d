@@ -727,6 +727,40 @@
 ;;
 ;; キーバンド拡張機能
 ;;______________________________________________________________________
+;;; summary mode for scroll message buffer
+(define-key mew-summary-mode-map (kbd "[") 'my-mew-summary-scroll-down)
+(define-key mew-summary-mode-map (kbd "]") 'my-mew-summary-scroll-up)
+
+(define-key mew-message-mode-map (kbd "[") 'inertias-down)
+(define-key mew-message-mode-map (kbd "]") 'inertias-up)
+
+(defun my-mew-summary-scroll-up ()
+  (interactive)
+  (my-mew-summary-scroll t))
+
+(defun my-mew-summary-scroll-down ()
+  (interactive)
+  (my-mew-summary-scroll nil))
+
+(defun my-mew-summary-scroll (scroll-up)
+  (let ((next-msgp nil))
+    (save-window-excursion
+      (other-window 1)
+      (if (eq major-mode 'mew-message-mode)
+          (if scroll-up ;; scroll-up action
+              (if (eobp)
+                  (setq next-msgp t)
+                (inertias-up))
+            ;; scroll-down action
+            (if (equal (window-start) (point-min))
+                (setq next-msgp t)
+              (inertias-down)))))
+    (if next-msgp
+        (if scroll-up
+            (mew-summary-display-down)
+          (mew-summary-display-up)))))
+
+;;; start dired from summary mode
 (require 'direx)
 (define-key mew-summary-mode-map (kbd "C-z E") 'my-mew-exec-explorer)
 (defun my-mew-exec-explorer (inline)

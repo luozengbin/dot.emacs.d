@@ -58,57 +58,62 @@
     (require 'ediff-vers)
     (ediff-vc-internal fr to startup-hooks)))
 
-;;
-;; psvn
-;; http://emacswiki.org/emacs/SvnStatusMode
-;;______________________________________________________________________
-;;; (install-elisp "http://www.xsteve.at/prg/emacs/psvn.el")
-(when (executable-find "svn")
-  (autoload 'svn-status "psvn" "Run `svn status'." t)
-  (autoload 'svn-update "psvn" "Run `svn update'." t)
-  (eval-after-load "psvn"
-    '(progn
-       ;; O v で切り替える
-       (setq svn-status-verbose nil)    ;速度がアップする
-       (setq svn-status-hide-unmodified nil)
-       (setq svn-status-hide-unknown nil)
-       ;; ログにファイル名を出さない
-       ;; (setq svn-status-default-log-arguments nil)
-       (setq svn-status-svn-process-coding-system 'utf-8)
-       (setq process-coding-system-alist '(("svn" . utf-8)))
-       (setq default-file-name-coding-system 'utf-8)
-       (setq svn-status-svn-file-coding-system 'utf-8)
-       )))
+;; ;;
+;; ;; psvn
+;; ;; http://emacswiki.org/emacs/SvnStatusMode
+;; ;;______________________________________________________________________
+;; ;;; (install-elisp "http://www.xsteve.at/prg/emacs/psvn.el")
+;; (when (executable-find "svn")
+;;   (autoload 'svn-status "psvn" "Run `svn status'." t)
+;;   (autoload 'svn-update "psvn" "Run `svn update'." t)
+;;   (eval-after-load "psvn"
+;;     '(progn
+;;        ;; O v で切り替える
+;;        (setq svn-status-verbose nil)    ;速度がアップする
+;;        (setq svn-status-hide-unmodified nil)
+;;        (setq svn-status-hide-unknown nil)
+;;        ;; ログにファイル名を出さない
+;;        ;; (setq svn-status-default-log-arguments nil)
+;;        (setq svn-status-svn-process-coding-system 'utf-8)
+;;        (setq process-coding-system-alist '(("svn" . utf-8)))
+;;        (setq svn-status-svn-file-coding-system 'utf-8)
+;;        )))
 
-;; Subversionで管理しているファイルを開くとPSVNマイナーモードを有効にする
-;; プレフィクスをC-z vにする
-(defun define-svn-minor-mode ()
-  ;;(interactive)
-  (require 'psvn)
-  (define-minor-mode svn-minor-mode
-    "Subversion Minor Mode."
-    :global nil
-    :lighter " PSVN"
-    :keymap (list (cons (kbd "C-z v") svn-global-keymap)))
-  (define-key svn-global-keymap "l" 'svn-status-show-svn-log)
-  (define-key svn-global-keymap "g" 'svn-status-blame)
-  (define-key svn-global-keymap "e" 'svn-file-show-svn-ediff))
+;; ;; Subversionで管理しているファイルを開くとPSVNマイナーモードを有効にする
+;; ;; プレフィクスをC-z vにする
+;; (defun define-svn-minor-mode ()
+;;   ;;(interactive)
+;;   (require 'psvn)
+;;   (define-minor-mode svn-minor-mode
+;;     "Subversion Minor Mode."
+;;     :global nil
+;;     :lighter " PSVN"
+;;     :keymap (list (cons (kbd "C-z v") svn-global-keymap)))
+;;   (define-key svn-global-keymap "l" 'svn-status-show-svn-log)
+;;   (define-key svn-global-keymap "g" 'svn-status-blame)
+;;   (define-key svn-global-keymap "e" 'svn-file-show-svn-ediff))
 
-(defun svn-find-file-hook ()
-  (when (eq (vc-backend default-directory) 'SVN)
-    (if (not (functionp 'svn-minor-mode))
-        (define-svn-minor-mode))
-    (svn-minor-mode 1)))
-(add-hook 'find-file-hook 'svn-find-file-hook)
+;; (defun svn-find-file-hook ()
+;;   (when (eq (vc-backend default-directory) 'SVN)
+;;     (if (not (functionp 'svn-minor-mode))
+;;         (define-svn-minor-mode))
+;;     (svn-minor-mode 1)))
+;; (add-hook 'find-file-hook 'svn-find-file-hook)
 
 ;;
 ;; dsvn
 ;;______________________________________________________________________
 ;;; (list-packages) install dsvn
 ;;; or install from (install-elisp "http://svn.apache.org/repos/asf/subversion/trunk/contrib/client-side/emacs/psvn.el")
-;; (when (executable-find "svn")
-;;   (autoload 'svn-status "dsvn" "Run `svn status'." t)
-;;   (autoload 'svn-update "dsvn" "Run `svn update'." t))
+(when (executable-find "svn")
+  (autoload 'svn-status "dsvn" "Run `svn status'." t)
+  (autoload 'svn-update "dsvn" "Run `svn update'." t)
+  (eval-after-load "dsvn"
+    ;; load my custom elisp code
+    '(progn
+       (defvar svn-process-internal-coding nil)
+       (defvar svn-commit-file-coding "UTF-8")
+       (require 'my-dsvn))))
 
 ;;
 ;; tortoise-svn.el

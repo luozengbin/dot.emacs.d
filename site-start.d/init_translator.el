@@ -29,6 +29,12 @@
 ;;______________________________________________________________________
 ;;; (auto-install-batch "text translator")
 ;;; M-x text-translator
+(require 'text-translator-vars)
+;;; ocn.ne.jp利用できないため、削除する
+(setq text-translator-site-data-template-alist
+      (delete (assoc "ocn.ne.jp" text-translator-site-data-template-alist)
+              text-translator-site-data-template-alist))
+
 (require 'text-translator)
 (setq text-translator-auto-selection-func
       'text-translator-translate-by-auto-selection-enja)
@@ -38,6 +44,10 @@
 (push '("*translated*") popwin:special-display-config)
 (defadvice text-translator-all-by-auto-selection (after text-translator-popwin-result activate)
   (display-buffer "*translated*"))
+
+;;; TODO show result in popup tip
+;; (popup-tip (with-current-buffer "*translated*"
+;;              (buffer-string)))
 
 ;;; key bind for mouse and keyboard
 (require 'cl)

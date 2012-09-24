@@ -311,7 +311,7 @@
 (inertias-global-minor-mode 1)
 
 (setq inertias-initial-velocity-wheel 30) ; 初速マウス
-(setq inertias-initial-velocity 80)       ; 初速（大きいほど一気にスクロールする）
+(setq inertias-initial-velocity 70)       ; 初速（大きいほど一気にスクロールする）
 (setq inertias-friction 120)              ; 摩擦抵抗（大きいほどすぐ止まる）
 (setq inertias-rest-coef 0)               ; 画面端でのバウンド量（0はバウンドしない。1.0で弾性反発）
 (setq inertias-update-time 60)            ; 画面描画のwait時間（msec）
@@ -330,6 +330,7 @@
 
 ;; Fill column
 (setq fill-column 85)
+
 ;;
 ;; mini buffer
 ;;______________________________________________________________________
@@ -354,6 +355,21 @@
   (when (eq (selected-window) (active-minibuffer-window))
     (add-to-history minibuffer-history-variable (minibuffer-contents))))
 
+;;
+;; desktop-save-mode
+;;______________________________________________________________________
+;;; http://www.emacswiki.org/DeskTop
+
+;; (require 'desktop)
+;; (setq desktop-path `(,my-cache-dir))
+;; (setq desktop-dirname my-cache-dir)
+;; (setq desktop-base-file-name "emacs-desktop")
+
+;; ;; save mini buffer history
+;; (setq desktop-globals-to-save '(extended-command-history))
+;; (setq desktop-files-not-to-save "")
+
+;; (desktop-save-mode 1)
 
 (provide 'init_global)
 ;;; init_global.el ends here

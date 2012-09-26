@@ -46,27 +46,25 @@
 ;; TODO
 ;; 元々 C-tに割り当てた[transpose-chars]コマンドを別のキーに割り当てする
 
-;; ;; smartrepモードが有効になった時のカスタマイズ
-;; ;; モードラインに表示される文字列
-;; ;; (setq smartrep-mode-line-string-activated "========== SMARTREP ==========")
-;; ;; モードラインの背景色
-;; (setq smartrep-mode-line-active-bg (face-foreground 'mode-line))
+;; smartrepモードが有効になった時のカスタマイズ
+;; モードラインに表示される文字列
+(setq smartrep-mode-line-string-activated
+      (propertize
+       "========== SMARTREP =========="
+       'face
+       ;; 'mode-line-buffer-id
+       '(face (:foreground "green"))))
 
-;; ;; モードラインのフォント色
-;; (defvar smartrep-mode-line-active-fg (face-background 'mode-line))
-;; ;; モードランのフォント色を変えるアドバイスを設定する
-;; (defadvice smartrep-map-internal (around smartrep-mode-line-defadvice activate)
-;;   "change mode line foreground color when smartrep mode is on"
-;;   (let ((ml-original-fg (face-foreground 'mode-line))
-;;         (invert-buffer-id-face (face-foreground 'mode-line-buffer-id)))
-;;     (set-face-foreground 'mode-line smartrep-mode-line-active-fg)
-;;     (if invert-buffer-id-face
-;;         (invert-face 'mode-line-buffer-id))
-;;     ad-do-it
-;;     (set-face-foreground 'mode-line ml-original-fg)
-;;     (if invert-buffer-id-face
-;;         (invert-face 'mode-line-buffer-id))
-;;     ))
+;; モードラインの背景色
+(setq smartrep-mode-line-active-bg (face-background 'modeline))
+
+;;; resetup mode line format smartrep
+(setq mode-line-format (delete 'smartrep-mode-line-string mode-line-format))
+(let ((cell (or (memq 'mode-line-position mode-line-format)
+                (memq 'mode-line-buffer-identification mode-line-format)))
+      (newcdr '(:eval smartrep-mode-line-string)))
+  (unless (member newcdr mode-line-format)
+    (setcdr cell (cons newcdr (cdr cell)))))
 
 ;; キーバインドの設定
 (smartrep-define-key

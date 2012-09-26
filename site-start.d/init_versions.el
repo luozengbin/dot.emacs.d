@@ -58,6 +58,27 @@
     (require 'ediff-vers)
     (ediff-vc-internal fr to startup-hooks)))
 
+(defun log-view-ediff-setup ()
+  (set (make-local-variable 'ediff-keep-tmp-versions) t))
+
+(defvar log-view-ediff-window-configuration nil)
+(defun log-view-ediff-before-setup ()
+  (setq log-view-ediff-window-configuration
+        (if (eq this-command 'log-view-ediff)
+            (current-window-configuration)
+          nil)))
+(defun log-view-ediff-cleanup ()
+  (when log-view-ediff-window-configuration
+    (ignore-errors
+      (set-window-configuration log-view-ediff-window-configuration)))
+  (setq log-view-ediff-window-configuration nil))
+
+(require 'ediff-init)
+(add-hook 'ediff-mode-hook 'log-view-ediff-setup)
+(add-hook 'ediff-before-setup-hook 'log-view-ediff-before-setup)
+;; add it after ediff-cleanup-mess
+(add-hook 'ediff-quit-hook 'log-view-ediff-cleanup t)
+
 ;; ;;
 ;; ;; psvn
 ;; ;; http://emacswiki.org/emacs/SvnStatusMode

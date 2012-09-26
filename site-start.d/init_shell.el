@@ -39,6 +39,15 @@
 (add-hook 'comint-output-filter-functions 'comint-watch-for-password-prompt)
 
 ;;
+;; shell mode custom keybind
+;;______________________________________________________________________
+(smartrep-define-key
+    shell-mode-map"C-c" '(
+                          ("n"      . 'comint-next-prompt)
+                          ("p"      . 'comint-previous-prompt)
+                          ))
+
+;;
 ;; for cygwin shell
 ;;______________________________________________________________________
 

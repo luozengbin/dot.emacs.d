@@ -161,8 +161,7 @@
 ;; (install-elisp "http://www.bookshelf.jp/elc/mmemo-drive.el")
 (when windows-p
   (autoload 'netdir "mmemo-drive" "My computer" t)
-  (autoload 'netcomp "mmemo-drive" "My network" t)
-  )
+  (autoload 'netcomp "mmemo-drive" "My network" t))
 
 ;;
 ;; DiredDetails & DiredDetails+
@@ -195,6 +194,7 @@
 ;;; dired のキー割り当て追加
 (add-hook 'dired-mode-hook
           (lambda ()
+            (define-key dired-mode-map "v" 'dired-view-file-other-window)
             (define-key dired-mode-map "z" 'dired-open-dwim) ; luanch target with window application
             (define-key dired-mode-map "E" 'dired-exec-explorer) ; open with explorer
             (define-key dired-mode-map "Z" 'my-dired-do-compress)

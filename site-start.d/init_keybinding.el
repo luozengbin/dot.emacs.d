@@ -52,8 +52,9 @@
       (propertize
        "========== SMARTREP =========="
        'face
-       ;; 'mode-line-buffer-id
-       '(face (:foreground "green"))))
+       'mode-line-buffer-id
+       ;; '(face (:foreground "green"))
+       ))
 
 ;; モードラインの背景色
 (setq smartrep-mode-line-active-bg (face-background 'modeline))
@@ -155,11 +156,9 @@
 ;; キーボード同時押しでコマンドを実行する
 ;; (install-elisp "http://www.emacswiki.org/emacs/download/key-chord.el")
 (require 'key-chord)
-(setq key-chord-two-keys-delay 0.01)
+(setq key-chord-two-keys-delay 0.05)
 (key-chord-mode 1)
 
-;; グローバルキーマップ：kj で view-mode を実行する
-(key-chord-define-global "kj" 'view-mode)
 ;; emacs-lisp-mode メジャーモードで df で describe-functionを実行する
 (key-chord-define emacs-lisp-mode-map "df" 'describe-function)
 

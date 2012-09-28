@@ -132,6 +132,7 @@
 ;; マイナーモードの名称を非表示するためのラブラリ
 ;; (install-elisp "http://www.eskimo.com/~seldon/diminish.el")
 (require 'diminish)
+(require 'my-diminish)
 
 ;;
 ;; my-powerline

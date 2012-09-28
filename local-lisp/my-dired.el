@@ -420,5 +420,45 @@
     (dired-mark arg)
     (dired-previous-line 1)))
 
+
+;;
+;; diredからファイルをちら見する
+;;______________________________________________________________________
+(defun dired-view-file-other-window ()
+  (interactive)
+  (let ((file (dired-get-file-for-visit)))
+    (if (file-directory-p file)
+        (or (and (cdr dired-subdir-alist)
+                 (dired-goto-subdir file))
+            (dired file))
+      (view-file-other-window file)
+      )))
+
+(defun dired-view-file-next (&optional reverse)
+  (interactive)
+  (lexical-let ((dir-buffer  (assoc-default default-directory dired-buffers))
+                (win         (selected-window))
+                (dir-win     nil)
+                (disp-buffer nil))
+    (when dir-buffer
+      (View-quit)
+      (walk-windows '(lambda (xw)
+                       (when (eq (window-buffer xw) dir-buffer)
+                         (setq dir-win xw))))
+      (when dir-win
+        (select-window dir-win)
+        (if reverse (previous-line)
+          (next-line))
+        (save-window-excursion
+          (dired-view-file-other-window)
+          (setq disp-buffer (current-buffer)))
+        (when disp-buffer
+          (set-window-buffer win disp-buffer)
+          (select-window win))))))
+
+(defun dired-view-file-previous ()
+  (interactive)
+  (dired-view-file-next 1))
+
 (provide 'my-dired)
 ;;; my-dired.el ends here

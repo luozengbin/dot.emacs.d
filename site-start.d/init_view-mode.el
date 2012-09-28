@@ -35,12 +35,20 @@
 ;; viewer.elでview-modeを改善する
 ;; (install-elisp-from-emacswiki "viewer.el")
 (require 'viewer)
+
+(my-diminish 'view-mode '(:eval (propertize " View" 'face 'mode-line-buffer-id
+                                            ;; '(face (:foreground "blue"))
+                                            )))
+
 ;; 書き込み不可のファイルをview-modeから脱げないようにする
 (viewer-stay-in-setup)
 ;; 色名を指定する
-(setq viewer-modeline-color-unwritable "tomato")
-(setq viewer-modeline-color-view "orange")
-(viewer-change-modeline-color-setup)
+;; (viewer-change-modeline-color-setup)
+;; (setq viewer-modeline-color-unwritable nil)
+;; (setq viewer-modeline-color-view nil)
+;; (setq viewer-modeline-color-unwritable "tomato")
+;; (setq viewer-modeline-color-view "orange")
+
 ;; view-modeのキーマップを再定義する
 (define-overriding-view-mode-map c-mode
   ("RET"    .   gtags-find-tag-from-here))
@@ -61,6 +69,17 @@
 (define-key view-mode-map "K" 'View-scroll-line-backward)
 (define-key view-mode-map "b" 'scroll-down)
 (define-key view-mode-map " " 'scroll-up)
+
+;; バッファー形態に依存したキーバンド
+(add-hook 'view-mode-hook 'my-view-mode-hooks)
+(defun my-view-mode-hooks ()
+  (when (buffer-file-name (current-buffer))
+    (require 'my-dired)
+    (define-key view-mode-map "[" 'dired-view-file-previous)
+    (define-key view-mode-map "]" 'dired-view-file-next)))
+
+;; グローバルキーマップ：jk で view-mode を実行する
+(key-chord-define-global "jk" 'view-mode)
 
 ;; (install-elisp "http://taiyaki.org/elisp/word-count/src/word-count.el")
 ;; (autoload 'word-count-mode "word-count"

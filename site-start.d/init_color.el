@@ -23,27 +23,33 @@
 (setq my-last-random-color-theme-identify nil)
 (defvar my-random-color-theme-list
   (list
-   `(progn (message "select default theme"))
+   ;; `(progn (message "select default theme"))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-tangosoft t))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-tangotango t))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-ns t))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-dark t))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  misterioso ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  tango-dark ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
+   ;; --- [reverse-theme] ---
+   ;; https://raw.github.com/syohex/emacs-reverse-theme/master/reverse-theme.el
+   `(progn (apply-selected-ramdom-theme (quote (  reverse    ))))
+   ;; --- [theme 24 not good] ---
    ;;; `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "light"))
    ;;; `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "dark"))
    ;;; `(progn (apply-selected-ramdom-theme (quote (  tango      ))))
    ;;; `(progn (apply-selected-ramdom-theme (quote (  tsdh-light ))))
    ;;; `(progn (apply-selected-ramdom-theme (quote (  whiteboard ))))
+   ;; --- [theme 24 useable] ---
    ;; - `(progn (apply-selected-ramdom-theme (quote (  adwaita    ))))
    ;; - `(progn (apply-selected-ramdom-theme (quote (  deeper-blue))))
    ;; - `(progn (apply-selected-ramdom-theme (quote (  dichromacy ))))
    ;; - `(progn (apply-selected-ramdom-theme (quote (  light-blue ))))
    ;; - `(progn (apply-selected-ramdom-theme (quote (  manoj-dark ))))
    ;; - `(progn (apply-selected-ramdom-theme (quote (  tsdh-dark  ))))
-   `(progn (apply-selected-ramdom-theme 'color-theme-tangosoft t))
-   `(progn (apply-selected-ramdom-theme 'color-theme-tangotango t))
-   `(progn (apply-selected-ramdom-theme 'color-theme-ns t))
-   `(progn (apply-selected-ramdom-theme 'color-theme-dark t))
-   `(progn (apply-selected-ramdom-theme (quote (  misterioso ))))
-   `(progn (apply-selected-ramdom-theme (quote (  tango-dark ))))
-   `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
-   `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
-   `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
+   ;; --- [zenburn for emacs 23] ---
    ;; `(progn
    ;;    (cond
    ;;     (emacs23-p
@@ -241,6 +247,7 @@
 
 ;; 現在行に色を付ける
 (global-hl-line-mode t)
+
 ;; モード制約変数をローカル化
 (make-variable-buffer-local 'global-hl-line-mode)
 ;; 標準の hl-line だと結構邪魔なので拡張機能に変更

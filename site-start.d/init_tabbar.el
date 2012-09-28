@@ -58,6 +58,17 @@
 ;; (global-set-key (kbd "C-z <C-up>") 'tabbar-forward-group)
 ;; (global-set-key (kbd "C-z <C-down>") 'tabbar-backward-group)
 
+
+;;
+;; custom tabbar face
+;;______________________________________________________________________
+;; (set-face-background 'tabbar-default "grey20")
+;; (set-face-foreground 'tabbar-default "white")
+;; (set-face-foreground 'tabbar-selected "LightSkyBlue")
+;;; (face-foreground 'font-lock-function-name-face)
+;; (setq tabbar-background-color "grey20")
+;; (set-face-foreground 'tabbar-separator "grey20")
+
 (provide 'init_tabbar)
 ;;; init_tabbar.el ends here
 

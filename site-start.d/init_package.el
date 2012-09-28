@@ -1,3 +1,4 @@
+
 ;;; Commentary:
 
 ;; パッケージ管理、自動インストールなど
@@ -46,6 +47,7 @@
 ;;; パッケージの自動インストール
 (defvar installing-package-list
   '(
+    tabbar
     dired-details
     dired-details+
     sr-speedbar

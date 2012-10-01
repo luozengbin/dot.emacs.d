@@ -90,5 +90,16 @@ Return non-NIL if there was any output."
     (if window-conf
         (set-window-configuration window-conf))))
 
+(defvar my-svn-commit-msg-template nil)
+(defadvice svn-commit (around svn-commit activate)
+"customize svn commit message with my-svn-commit-msg-template"
+  (let ((result ad-do-it))
+    (file-exists-p my-svn-commit-msg-template)
+    (when (and my-svn-commit-msg-template
+             (file-exists-p my-svn-commit-msg-template))
+            (erase-buffer)
+            (insert-file-contents my-svn-commit-msg-template))
+    result))
+
 (provide 'my-dsvn)
 ;;; my-dsvn.el ends here

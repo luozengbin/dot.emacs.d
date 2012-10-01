@@ -134,7 +134,8 @@
     '(progn
        (defvar svn-process-internal-coding nil)
        (defvar svn-commit-file-coding "UTF-8")
-       (require 'my-dsvn))))
+       (require 'my-dsvn)
+       (setq my-svn-commit-msg-template (my-private-file "/configuration/.svn-commit-msg")))))
 
 ;;
 ;; tortoise-svn.el

@@ -30,6 +30,10 @@
 
 (require 'my-lisp-utils)
 
+;; Icon cache persistent
+(defvar dired-dispicon-persistent-file nil "icon alist persistent file")
+(defvar dired-dispicon-exclude-exts '("exe" "dll" "ico" "bmp") "not persistent into dired-dispicon-persistent-file")
+
 ;; Icon cache.
 (defvar dired-dispicon-icon-alist nil)
 (defvar dired-dispicon-icon-alist-length 1024)
@@ -39,8 +43,31 @@
 (defvar dired-dispicon-program-buffer " *GetFileIcon*")
 
 ;;; icon folder
-(defvar dired-dispicon-icon-folder (my-unix-to-dos-filename
-                                    (expand-file-name (my-cache-dir "disp-icons"))))
+(defvar dired-dispicon-icon-folder nil "icon folder")
+
+(defun dired-dispicon-save-icon-alist ()
+  "load icon alist cache from dired-dispicon-persistent-file"
+  (let ((icon-alist nil))
+      (when dired-dispicon-icon-alist
+        (setq icon-alist
+             (loop for x in dired-dispicon-icon-alist
+                   when (not
+                         (let ((icon-key (car x)))
+                           (if (string-match "^.+[.]\\([^.]+\\):$" icon-key)
+                               (when (member (match-string 1 (car x)) dired-dispicon-exclude-exts)
+                                 t))))
+                   collect x))
+        (with-temp-file dired-dispicon-persistent-file
+          (insert (pp-to-string icon-alist))))))
+
+(defun dired-dispicon-load-icon-alist ()
+  "save icon alist cache into dired-dispicon-persistent-file"
+  (when (file-exists-p dired-dispicon-persistent-file)
+    (setq dired-dispicon-icon-alist
+          (read
+           (with-temp-buffer
+             (insert-file-contents dired-dispicon-persistent-file)
+             (buffer-string))))))
 
 (defun dired-dispicon-icon-cache (filename &optional ignore-errors)
   "Wrapper function of `dispicon' which caches mini icons.
@@ -57,7 +84,7 @@ FILENAME, IGNORE-ERRORS are passed to `dispicon'."
       (setq ext "TXT"))
      ((string-match "\\.\\([^.]+\\)$" nondir)
       (setq ext (match-string 1 nondir))
-      (when (member ext '("exe" "dll" "ico" "bmp"))
+      (when (member ext dired-dispicon-exclude-exts)
         (setq ext name)))
      (t
       (setq ext "TXT")))

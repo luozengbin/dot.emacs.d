@@ -40,7 +40,9 @@
   ('gnu/linux
    (require 'my-dispicon-linux))
   ('windows-nt
-   (require 'my-dispicon-windows))
+   (require 'my-dispicon-windows)
+   (setq dired-dispicon-icon-folder (my-unix-to-dos-filename
+                                       (expand-file-name (my-cache-dir "disp-icons")))))
   (t
    (message "NOT SUPPORT dispicon yet!!!")))
 

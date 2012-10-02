@@ -185,6 +185,12 @@
             (define-key dired-mode-map (kbd "/") 'dired-dispicon-toggle)
             (define-key dired-mode-map (kbd "\\") 'dired-dispicon-toggle-local)))
 
+;;; load icon cache
+(when (boundp 'dired-dispicon-persistent-file)
+  (setq dired-dispicon-persistent-file (my-cache-dir "dired-dispicon-cache.el"))
+  (run-with-idle-timer 0.2 nil 'dired-dispicon-load-icon-alist)
+  (add-hook 'kill-emacs-hook ' dired-dispicon-save-icon-alist))
+
 ;;
 ;; MyDired
 ;;______________________________________________________________________

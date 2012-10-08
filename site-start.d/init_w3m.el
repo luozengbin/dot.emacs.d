@@ -24,25 +24,25 @@
 
 ;;; Code:
 
-(require 'w3m-load)
+(eval-after-load "w3m"
+  '(progn
+     (setq  w3m-command "w3m")
 
-(setq  w3m-command nil)
+     ;; (setq w3m-home-page "http://www.google.co.jp/") ;起動時に開くページ
+     (setq w3m-use-cookies t)           ;クッキーを使う
+     (setq w3m-bookmark-file (concat my-private-emacs-path "configuration/.w3m/bookmark.html")) ;ブックマークを保存するファイル
 
-;; (setq w3m-home-page "http://www.google.co.jp/") ;起動時に開くページ
-(setq w3m-use-cookies t) ;クッキーを使う
-(setq w3m-bookmark-file (concat my-private-emacs-path "configuration/.w3m/bookmark.html")) ;ブックマークを保存するファイル
+     ;; 検索エンジンの設定
+     (setq w3m-search-default-engin "google-ja")
 
-;; 検索エンジンの設定
-(setq w3m-search-default-engin "google-ja")
-
-;; キーバンドをカスタマイズする
-(add-hook 'w3m-mode-hook
-          (lambda ()
-            (define-key w3m-mode-map [up] 'previous-line)
-            (define-key w3m-mode-map [down] 'next-line)
-            (define-key w3m-mode-map [left] 'backward-char)
-            (define-key w3m-mode-map [right] 'forward-char)
-            ))
+     ;; キーバンドをカスタマイズする
+     (add-hook 'w3m-mode-hook
+               (lambda ()
+                 (define-key w3m-mode-map [up] 'previous-line)
+                 (define-key w3m-mode-map [down] 'next-line)
+                 (define-key w3m-mode-map [left] 'backward-char)
+                 (define-key w3m-mode-map [right] 'forward-char)
+                 ))))
 
 ;; ポインター位置のurlをw3mテキストブラウザで開く
 (global-set-key (kbd "C-z v") 'my-w3m-browse-url-at-point)

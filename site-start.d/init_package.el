@@ -48,6 +48,9 @@
 (defvar installing-package-list
   '(
     tabbar
+    w3m
+    stem
+    dic-lookup-w3m
     dired-details
     dired-details+
     sr-speedbar

@@ -27,6 +27,33 @@
         )))
 
 ;;
+;; load path
+;;______________________________________________________________________
+;; 引数を load-path へ追加
+;; normal-top-level-add-subdirs-to-load-path はディレクトリ中の中で
+;; [A-Za-z] で開始する物だけ追加するので、追加したくない物は . や _ を先頭に付与しておけばロードしない
+;; load-pathの追加関数
+(defun add-to-load-path (base-path &rest paths)
+  (let (path)
+    (dolist (path paths paths)
+      (let ((default-directory (expand-file-name (concat base-path path))))
+        (add-to-list 'load-path default-directory)
+        (if (fboundp 'normal-top-level-add-subdirs-to-load-path)
+            (normal-top-level-add-subdirs-to-load-path))))))
+
+;; Emacs Lisp のPathを通す
+(add-to-load-path user-emacs-directory
+                  "lisp"
+                  ;; 変更したり、自作の Emacs Lisp
+                  "local-lisp"
+                  ;; 初期設定ファイル
+                  "site-start.d")
+
+;; 公開しない部分
+(defvar my-private-emacs-path (concat user-emacs-directory "private/"))
+(add-to-load-path my-private-emacs-path "lisp")
+
+;;
 ;; emacsの起動と終了
 ;;______________________________________________________________________
 ;; 終了時バイトコンパイル
@@ -95,35 +122,6 @@
 (defvar my-private-dir (concat user-emacs-directory "private/"))
 (defun my-private-file (append-path) (expand-file-name (concat my-private-dir append-path)))
 (if (not (file-exists-p my-private-dir)) (mkdir my-private-dir t))
-
-;;
-;; load path
-;;______________________________________________________________________
-;; 引数を load-path へ追加
-;; normal-top-level-add-subdirs-to-load-path はディレクトリ中の中で
-;; [A-Za-z] で開始する物だけ追加するので、追加したくない物は . や _ を先頭に付与しておけばロードしない
-;; load-pathの追加関数
-(defun add-to-load-path (base-path &rest paths)
-  (let (path)
-    (dolist (path paths paths)
-      (let ((default-directory (expand-file-name (concat base-path path))))
-        (add-to-list 'load-path default-directory)
-        (if (fboundp 'normal-top-level-add-subdirs-to-load-path)
-            (normal-top-level-add-subdirs-to-load-path))))))
-
-;; Emacs Lisp のPathを通す
-(add-to-load-path user-emacs-directory
-          "lisp"
-          ;; 変更したり、自作の Emacs Lisp
-          "local-lisp"
-          ;; 初期設定ファイル
-          "site-start.d")
-
-;; 公開しない部分
-(defvar my-private-emacs-path (concat user-emacs-directory "private/"))
-(add-to-load-path my-private-emacs-path "lisp")
-
-;; (global-hl-line-mode t)
 
 ;;
 ;; load init setting

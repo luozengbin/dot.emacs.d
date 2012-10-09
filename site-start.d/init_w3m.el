@@ -24,10 +24,10 @@
 
 ;;; Code:
 
+(setq  w3m-command "w3m")
+
 (eval-after-load "w3m"
   '(progn
-     (setq  w3m-command "w3m")
-
      ;; (setq w3m-home-page "http://www.google.co.jp/") ;起動時に開くページ
      (setq w3m-use-cookies t)           ;クッキーを使う
      (setq w3m-bookmark-file (concat my-private-emacs-path "configuration/.w3m/bookmark.html")) ;ブックマークを保存するファイル

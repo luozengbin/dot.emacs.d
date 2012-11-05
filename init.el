@@ -123,6 +123,14 @@
 (defun my-private-file (append-path) (expand-file-name (concat my-private-dir append-path)))
 (if (not (file-exists-p my-private-dir)) (mkdir my-private-dir t))
 
+
+;;
+;; 描画が遅い問題の対応
+;______________________________________________________________________
+(when emacs24-p
+  (setq-default bidi-display-reordering nil
+                bidi-paragraph-direction (quote left-to-right)))
+
 ;;
 ;; load init setting
 ;;______________________________________________________________________

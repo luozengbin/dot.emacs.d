@@ -16,6 +16,7 @@ git remote add bitbicket https://luozengbin@bitbucket.org/luozengbin/octopress-s
 git remote rm octopress
 git remote add octopress https://github.com/imathis/octopress.git
 
+git checkout source
 git pull bitbicket source
 
 pushd

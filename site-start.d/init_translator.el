@@ -102,7 +102,7 @@
            40)
         (google-translate-select-language nil)
       (google-translate-select-language t)))
-  (google-translate-at-point beg end override-p))
+  (google-translate-at-point override-p))
 
 (require 'popup)
 (defun my-google-translate-with-popup (beg end &optional override-p)

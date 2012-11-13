@@ -6,6 +6,8 @@
 
 (message "init_edit ...")
 
+(require 'my-lisp-utils)
+
 ;;
 ;; copy paste cut
 ;;______________________________________________________________________
@@ -98,7 +100,11 @@
                        ("<"      . 'mark-previous-like-this)
                        (">"      . 'mark-next-like-this)
                        ("m"      . 'mark-more-like-this)
-                       ("*"      . 'mark-all-like-this)))
+                       ("*"      . 'mark-all-like-this)
+                       ;; work with register
+                       ("1"      . 'copy-to-register-1)
+                       ("2"      . 'paste-from-register-1)
+                       ))
 
 ;;; TODO move those code to corrent location
 ;; (require 'rename-sgml-tag)

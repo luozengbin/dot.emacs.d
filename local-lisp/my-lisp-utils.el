@@ -260,6 +260,25 @@ Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
     (insert str)
     (current-column)))
 
+;;; ----- copy & paste text with register
+(defun copy-to-register-1 ()
+  "Copy current line or text selection to register 1.
+See also: `paste-from-register-1', `copy-to-register'."
+  (interactive)
+  (let ((inputStr
+         (if (region-active-p)
+             (substring-no-properties (buffer-string) (region-beginning) (region-end))
+           (thing-at-point 'line))))
+    (with-temp-buffer
+      (insert inputStr)
+      (copy-to-register ?1 (point-min) (point-max))
+      (message "copied to register 1."))))
+
+(defun paste-from-register-1 ()
+  "paste text from register 1.
+See also: `copy-to-register-1', `insert-register'."
+  (interactive)
+  (insert-register ?1 t))
 
 (provide 'my-lisp-utils)
 ;;; my-lisp-utils.el ends here

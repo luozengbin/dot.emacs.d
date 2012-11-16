@@ -40,12 +40,8 @@
 ;; 	http://sheephead.homelinux.org/2012/01/30/6934/
 ;;______________________________________________________________________
 (require 'smartrep)
-;; プレフィックスキーの設定
-(defvar ctl-t-map (make-keymap))
-(define-key global-map "\C-t" ctl-t-map)
-;; TODO
-;; 元々 C-tに割り当てた[transpose-chars]コマンドを別のキーに割り当てする
-
+(require 'my-smartrep)
+;;; ------ モードラインのカスタマイズ ------
 ;; smartrepモードが有効になった時のカスタマイズ
 ;; モードラインに表示される文字列
 (setq smartrep-mode-line-string-activated
@@ -66,6 +62,12 @@
       (newcdr '(:eval smartrep-mode-line-string)))
   (unless (member newcdr mode-line-format)
     (setcdr cell (cons newcdr (cdr cell)))))
+
+;;; ------ C-t プレフィックスキーの設定 ------
+;; TODO
+;; 元々 C-tに割り当てた[transpose-chars]コマンドを別のキーに割り当てする
+(defvar ctl-t-map (make-keymap))
+(define-key global-map "\C-t" ctl-t-map)
 
 ;; キーバインドの設定
 (smartrep-define-key

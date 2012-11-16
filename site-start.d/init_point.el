@@ -10,7 +10,7 @@
 ;; common setting
 ;;______________________________________________________________________
 ;; カーソル点滅表示
-(blink-cursor-mode 0)
+(blink-cursor-mode 1)
 
 ;; 非アクティブウィンドウのカーソルを非表示
 (setq default-cursor-in-non-selected-windows nil)

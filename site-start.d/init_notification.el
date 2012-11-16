@@ -81,8 +81,21 @@
   '(progn
      (require 'deferred)
 
+     ;; 通知トグル変数
+     (defvar toggle-twmode-notify t)
+
      ;; hookに通知機能を埋め込む
      (add-hook 'twittering-new-tweets-hook 'my-twmode-growl-notify)
+
+     ;; 通知トグルＯＮ・ＯＦＦ切り替え
+     (defun toggle-twmode-notify ()
+       (interactive)
+       (if toggle-twmode-notify
+           (progn
+             (remove-hook 'twittering-new-tweets-hook 'my-twmode-growl-notify)
+             (message "Turn OFF twmode notify"))
+         (add-hook 'twittering-new-tweets-hook 'my-twmode-growl-notify)
+         (message "Turn ON twmode notify")))
 
      ;; すべてのメッセージの通知Facade関数
      (defun my-twmode-growl-notify ()
@@ -97,7 +110,7 @@
 
      ;; twmode-growl-notify-icon-mode変数より異なる通知スタイル関数の定義を行う
      (case twmode-growl-notify-icon-mode
-       ('text                         ;アイコン指定無しで表示する
+       ('text                           ;アイコン指定無しで表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
            ((and (equal spec twmode-growl-notify-mode)
@@ -106,7 +119,7 @@
               (insert "@" user "\n" text)
               (my-notification-1 "twmode" nil (buffer-string))
               )))))
-       ('simple                         ;twmodeの標準アイコンで表示する
+       ('simple                        ;twmodeの標準アイコンで表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
            ((and (equal spec twmode-growl-notify-mode)
@@ -114,7 +127,7 @@
             (with-temp-buffer
               (insert "@" user "\n" text)
               (my-notification-1 "twmode" nil (buffer-string) (expand-file-name twmode-growl-icon-path)))))))
-       ('normal                     ; 発信したユーザのアイコンを表示する
+       ('normal                   ; 発信したユーザのアイコンを表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
            ((and (equal spec twmode-growl-notify-mode)
@@ -133,7 +146,7 @@
               (deferred:nextc deferred-object
                 (lambda (x)
                   (my-notification-1 "twmode" (concat "@" user) text icon-base))))))))
-       ('fullimage                      ; 発信したユーザのアイコンをフルーサイズで表示する
+       ('fullimage  ; 発信したユーザのアイコンをフルーサイズで表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
            ((and (equal spec twmode-growl-notify-mode)

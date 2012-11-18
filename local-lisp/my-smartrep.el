@@ -27,20 +27,26 @@
 (defvar smartrep-help-buffer-name " *Smartrep Help*")
 (defvar smartrep-show-help nil)
 
-(require 'popwin)
-(push `(,smartrep-help-buffer-name :height 15 :position bottom :noselect t)
-      popwin:special-display-config)
-
 (defadvice smartrep-extract-fun (around smartrep-extract-fun-around activate)
-  (if (string= "63" (pp-to-string char))
-      (smartrep-show-help char alist)
+  (cond
+   ((string= "?" (single-key-description char))
+    (smartrep-show-help char alist))
+   ((string= "{" (single-key-description char))
+    (smartrep-scroll-help-buffer char alist))
+   ((string= "}" (single-key-description char))
+    (smartrep-scroll-help-buffer char alist))
+   (t
     ad-do-it
-    (message "smartrep-key: %s" char)))
+    (message "smartrep-key {%s} : %s" (single-key-description char) (pp-to-string last-command)))))
 
 (defadvice smartrep-define-key (before smartrep-define-key-before activate)
   ;; append "?" key define here
-  (if (not (assoc "?" alist))
-      (add-to-list 'alist '("?" "dummy command"))))
+  (unless (assoc "?" alist)
+      (add-to-list 'alist '("?" "show smartrep help buffer")))
+  (unless (assoc "{" alist)
+    (add-to-list 'alist '("{" "scroll smartrep help buffer down")))
+  (unless (assoc "}" alist)
+    (add-to-list 'alist '("}" "scroll smartrep help buffer up"))))
 
 (defadvice smartrep-map-internal (after smartrep-map-internal-after activate)
   (let* ((buf-name smartrep-help-buffer-name)
@@ -49,10 +55,20 @@
         (delete-window buf-win))
     (setq smartrep-show-help nil)))
 
+(defun smartrep-scroll-help-buffer (char alist)
+  (let* ((keystr (single-key-description char))
+         (buf-win (get-buffer-window smartrep-help-buffer-name)))
+    (if (and buf-win (member keystr '("{" "}")))
+        (with-selected-window buf-win
+          (if (string= "}" keystr)
+              (scroll-up)
+            (scroll-down)))
+      (execute-kbd-macro (read-kbd-macro keystr)))))
+
 (defun smartrep-show-help (char alist)
   (let* ((buf-name smartrep-help-buffer-name)
          (buf-win (get-buffer-window buf-name)))
-    (if smartrep-show-help
+    (if (and smartrep-show-help buf-win)
         ;; hidden help windows
         (progn
           (if buf-win
@@ -61,6 +77,9 @@
           (message "close smartrep help window"))
       ;; show help window
       (smartrep-render-help-buffer char alist)
+      (unless (assoc buf-name popwin:special-display-config)
+        (push `(,smartrep-help-buffer-name :height 15 :position bottom :noselect t)
+              popwin:special-display-config))
       (display-buffer buf-name)
       (setq smartrep-show-help t)
       (message "show smartrep help window"))))

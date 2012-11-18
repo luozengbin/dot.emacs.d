@@ -72,7 +72,9 @@
 (defvar twmode-growl-icon-path (concat user-emacs-directory "etc/icons/twitter-icon.png"))
 (defvar twmode-growl-notify-icon-path-directory (concat my-cache-dir "twmode"))
 (defvar twmode-growl-notify-icon-size-minimum 256)
-(defvar twmode-growl-notify-mode '(home))  ;replies
+(defvar twmode-growl-notify-tweets-count 10)
+(defvar twmode-growl-notify-replies '(;;(home)
+                                      (search "emacs")))
 (defvar twmode-growl-notify-icon-mode 'normal)  ;text, simple, normal, fullimage
 (if my-office-mode
     (setq twmode-growl-notify-icon-mode 'simple))
@@ -84,37 +86,44 @@
      ;; 通知トグル変数
      (defvar toggle-twmode-notify t)
 
-     ;; hookに通知機能を埋め込む
-     (add-hook 'twittering-new-tweets-hook 'my-twmode-growl-notify)
-
      ;; 通知トグルＯＮ・ＯＦＦ切り替え
      (defun toggle-twmode-notify ()
        (interactive)
        (if toggle-twmode-notify
            (progn
-             (remove-hook 'twittering-new-tweets-hook 'my-twmode-growl-notify)
-             (message "Turn OFF twmode notify"))
-         (add-hook 'twittering-new-tweets-hook 'my-twmode-growl-notify)
-         (message "Turn ON twmode notify")))
+             (ad-disable-advice 'twittering-add-statuses-to-timeline-data
+                                'after 'twittering-add-statuses-to-timeline-data-after)
+             (message "Turn OFF twmode notify")
+             (setq toggle-twmode-notify nil))
+         (ad-enable-advice 'twittering-add-statuses-to-timeline-data
+                            'after 'twittering-add-statuses-to-timeline-data-after)
+         (message "Turn ON twmode notify")
+         (setq toggle-twmode-notify t)))
+
+     (defadvice twittering-add-statuses-to-timeline-data (after twittering-add-statuses-to-timeline-data-after activate)
+       (my-twmode-growl-notify statuses spec))
 
      ;; すべてのメッセージの通知Facade関数
-     (defun my-twmode-growl-notify ()
-       (when
-           (equal twittering-new-tweets-spec twmode-growl-notify-mode)
+     (defun my-twmode-growl-notify (&optional my-statuses &optional my-spec)
+       (when (member my-spec twmode-growl-notify-replies)
+         (when (> (list-length my-statuses) twmode-growl-notify-tweets-count)
+           (message "tweets notify: %d/%d" twmode-growl-notify-tweets-count (list-length my-statuses))
+           (setq my-statuses
+                 (loop for i from 0 to (- twmode-growl-notify-tweets-count 1)
+                       collect (nth i my-statuses))))
          (mapc (lambda (status)
                  (my-twmode-growl-notify-1 (cdr (assq 'user-screen-name status))
                                            (cdr (assq 'text status))
-                                           twittering-new-tweets-spec
+                                           my-spec
                                            (cdr (assq 'user-profile-image-url status))))
-               twittering-new-tweets-statuses)))
+               my-statuses)))
 
      ;; twmode-growl-notify-icon-mode変数より異なる通知スタイル関数の定義を行う
      (case twmode-growl-notify-icon-mode
        ('text                           ;アイコン指定無しで表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
-           ((and (equal spec twmode-growl-notify-mode)
-                 (not (string= user twittering-username)))
+           ((not (string= user twittering-username))
             (with-temp-buffer
               (insert "@" user "\n" text)
               (my-notification-1 "twmode" nil (buffer-string))
@@ -122,16 +131,14 @@
        ('simple                        ;twmodeの標準アイコンで表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
-           ((and (equal spec twmode-growl-notify-mode)
-                 (not (string= user twittering-username)))
+           ((not (string= user twittering-username))
             (with-temp-buffer
               (insert "@" user "\n" text)
               (my-notification-1 "twmode" nil (buffer-string) (expand-file-name twmode-growl-icon-path)))))))
        ('normal                   ; 発信したユーザのアイコンを表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
-           ((and (equal spec twmode-growl-notify-mode)
-                 (not (string= user twittering-username)))
+           ((not (string= user twittering-username))
             (mkdir twmode-growl-notify-icon-path-directory t)
             (lexical-let* ((suffix (ffap-file-suffix icon-uri))
                            (icon-base (expand-file-name
@@ -149,8 +156,7 @@
        ('fullimage  ; 発信したユーザのアイコンをフルーサイズで表示する
         (defun my-twmode-growl-notify-1 (user text spec icon-uri)
           (cond
-           ((and (equal spec twmode-growl-notify-mode)
-                 (not (string= user twittering-username)))
+           ((not (string= user twittering-username))
             (mkdir twmode-growl-notify-icon-path-directory t)
             (lexical-let* ((icon-uri icon-uri)
                            (icon-base (expand-file-name

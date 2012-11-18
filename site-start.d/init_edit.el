@@ -88,6 +88,8 @@
                        (","      . 'er/expand-region)
                        ("."      . 'er/contract-region)
                        ("C-,"    . 'my-things-at-point)
+                       ("w"      . 'kill-ring-save)
+                       ("k"      . 'kill-region)
                        ;; ace-jump
                        ("j"      . 'ace-jump-mode)
                        ("i"      . 'ido-imenu-push-mark)

@@ -62,7 +62,7 @@
     smooth-scroll
     undo-tree
     yascroll
-    popwin
+    ;; popwin
     pos-tip
     key-combo
     key-chord

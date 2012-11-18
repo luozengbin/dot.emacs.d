@@ -56,7 +56,7 @@
   (interactive)
   (setq my-toggle-fullscreen-command (cond (windows-p 'w32-toggle-fullscreen) 
                                         ((fboundp 'ns-toggle-fullscreen) 'ns-toggle-fullscreen)
-                                        (t 'x-toggle-fullscreen)))
+                                        (t 'x-toggle-maximize)))
   (call-interactively my-toggle-fullscreen-command)
   (message "toggle-fullscreen"))
 (add-hook 'after-init-hook (lambda() (run-with-idle-timer 0 nil 'my-toggle-fullscreen)))

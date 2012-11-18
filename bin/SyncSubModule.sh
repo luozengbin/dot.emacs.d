@@ -21,7 +21,7 @@ git pull bitbicket source
 
 pushd
 
-# do not update yasnippet
-#pushd lisp/yasnippet
-#git co b4ccb6e9566c17fe38ab30310e2e64749bd2d7ce
-#pushd
+# do not change to stable version for popwin
+pushd lisp/popwin-el
+git co bd130a65d832669d6763cba170216937e04f692e
+pushd

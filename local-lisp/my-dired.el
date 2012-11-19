@@ -341,57 +341,55 @@
 
 (defun my-dired-do-command-output-filter (proc string)
   "プロセス出力テキストをバッファーに随時に反映するリスナー"
-  (let ((result-buffer (process-buffer proc))
-        (curwin (selected-window)))
-    (pop-to-buffer result-buffer)
-    (insert string)
-    (goto-char (point-max))
-    (select-window curwin)
-    ))
+  (let* ((result-buffer (process-buffer proc))
+         (popwin:special-display-config (if result-buffer `((,(buffer-name result-buffer))))))
+    (when result-buffer
+      (with-current-buffer result-buffer
+        (insert string)
+        (goto-char (point-max)))
+      (pop-to-buffer result-buffer))))
 
 (defun my-dired-do-unarchive-sentinel (proc state)
   "解凍処理プロセス完了後のリスナー定義"
-  (let ((ps (process-status proc))
+  (let* ((ps (process-status proc))
         (result-buffer-name (buffer-name (process-buffer proc)))
-        (curwin (selected-window))
-        begin-pos-1 end-pos-1 archive-file-name 
+        (popwin:special-display-config `((,result-buffer-name)))
+        begin-pos-1 end-pos-1 archive-file-name
         begin-pos-2 end-pos-2 dest-buffer-name
         dest-folder-name)
-    (cond 
+    (cond
      ((eq ps 'exit)
       ;; 出力バッファー名からファイル情報をゲットする
+      (toggle-read-only)                ; 出力バッファーをreadonlyにする
       (string-match "[\*]aunpack \\([^<]+\\)<\\([^>]+\\)>[\*].*" result-buffer-name)
       (setq begin-pos-1 (match-beginning 1))
       (setq end-pos-1 (match-end 1))
       (setq begin-pos-2 (match-beginning 2))
       (setq end-pos-2 (match-end 2))
-      (if (and begin-pos-1 end-pos-1 begin-pos-2 end-pos-2)
-          (progn 
-            ;; 解凍された圧縮ファイル名
-            (setq archive-file-name (substring result-buffer-name begin-pos-1 end-pos-1))
-            ;; 作業ディレクトリ
-            (setq dest-buffer-name (substring result-buffer-name begin-pos-2 end-pos-2))
-            (message (concat "result buffer name: " result-buffer-name))
-            (message (concat "archive file name: " archive-file-name))
-            (message (concat "dest buffer name: " dest-buffer-name))
-            (if (get-buffer dest-buffer-name)
-                (progn
-                  (pop-to-buffer result-buffer-name)
-                  ;; 出力バッファーから解凍先のディレクトリ名を探す
-                  (save-excursion 
-                    (goto-char (point-min))
-                    (re-search-forward "^.+extracted to [\`]\\(.+\\)'" nil t)
-                    (setq dest-folder-name (match-string 1))
-                    (message (concat "dest folder name: " dest-folder-name))
-                    )
-                  (pop-to-buffer dest-buffer-name)
-                  (revert-buffer)       ;diredバッファー更新
-                  (if dest-folder-name
-                      ;; 対象ファイルのハイライト
-                      (highlight-regexp (concat dest-folder-name "$")))
-                  (select-window curwin)))
-            (message (concat archive-file-name " 解凍完了しました！"))
-            )))
+      (when (and begin-pos-1 end-pos-1 begin-pos-2 end-pos-2)
+        ;; 解凍された圧縮ファイル名
+        (setq archive-file-name (substring result-buffer-name begin-pos-1 end-pos-1))
+        ;; 作業ディレクトリ
+        (setq dest-buffer-name (substring result-buffer-name begin-pos-2 end-pos-2))
+        (message (concat "result buffer name: " result-buffer-name))
+        (message (concat "archive file name: " archive-file-name))
+        (message (concat "dest buffer name: " dest-buffer-name))
+        (when (get-buffer dest-buffer-name)
+          ;; 出力バッファーから解凍先のディレクトリ名を探す
+          (save-excursion
+            (goto-char (point-min))
+            (re-search-forward "^.+extracted to [\`]\\(.+\\)'" nil t)
+            (setq dest-folder-name (match-string 1))
+            (message (concat "dest folder name: " dest-folder-name)))
+          (pop-to-buffer dest-buffer-name)
+          (revert-buffer)  ; diredバッファー更新
+          (when dest-folder-name
+            ;; 対象ファイルのハイライト
+            (highlight-regexp (concat dest-folder-name "$"))
+            (goto-char (point-min))
+            (re-search-forward (concat dest-folder-name "$") nil t)))
+        (display-buffer result-buffer-name)
+        (message (concat archive-file-name " 解凍完了しました！"))))
      (t nil))))
 
 (defun dired-find-file-as-root ()

@@ -60,8 +60,8 @@
   (call-interactively my-toggle-fullscreen-command)
   (message "toggle-fullscreen"))
 (add-hook 'after-init-hook (lambda() (run-with-idle-timer 0 nil 'my-toggle-fullscreen)))
-(global-set-key (kbd "M-<RET>") 'my-toggle-fullscreen)
-(global-set-key (kbd "C-z RET") 'my-toggle-fullscreen)
+(global-set-key (kbd "<C-f11>") 'my-toggle-fullscreen)
+
 
 ;;
 ;; winner mode setting

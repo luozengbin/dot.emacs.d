@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -558,7 +558,7 @@
               (setq my-summary-title-str (buffer-substring (match-beginning 2) (match-end 2)))
               (setq my-summary-content-str (buffer-substring (match-beginning 3) (match-end 3)))
               (my-mew-fetch-mail-log "receive new mail from" my-summary-from-str)
-              (my-notification my-summary-title-str my-summary-from-str
+              (my-notification my-summary-from-str my-summary-title-str
                                (my-notification-icon "email.png") nil t)))))))))
 
 ;;; 自動受信時message出力しないようにするため

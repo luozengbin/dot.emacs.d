@@ -47,113 +47,117 @@
 ;;; パッケージの自動インストール
 (defvar installing-package-list
   '(
-    tabbar
-    w3m
-    stem
-    dic-lookup-w3m
-    dired-details
-    dired-details+
-    sr-speedbar
-    revive
-    ac-slime
-    ace-jump-mode
-    ctags
-    dsvn
-    smooth-scroll
-    undo-tree
-    yascroll
+    ac-slime                 ; An auto-complete source using slime completions [source: github]
+    ace-jump-mode            ; a quick cursor location minor mode for emacs [source: github]
+    autopair                 ; Automagically pair braces and quotes like TextMate [source: github]
+    bm                       ; Visible bookmarks in buffer. [source: github]
+    browse-kill-ring         ; interactively insert items from kill-ring [source: github]
+    c-eldoc                  ; helpful description of the arguments to C functions [source: github]
+    cacoo                    ; Minor mode for Cacoo : http://cacoo.com
+    calfw                    ; Calendar view framework on Emacs [source: github]
+    calfw-gcal               ; edit Google calendar for calfw.el. [source: github]
+    col-highlight            ; Highlight the current column.
+    color-moccur             ; multi-buffer occur (grep) mode [source: github]
+    concurrent               ; Concurrent utility functions for emacs lisp [source: github]
+    crosshairs               ; Highlight the current line and column. [source: wiki]
+    ctable                   ; Table component for Emacs Lisp [source: github]
+    ctags                    ; Exuberant Ctags utilities for Emacs [source: hg]
+    cursor-chg               ; Change cursor dynamically, depending on the context. [source: wiki]
+    dash                     ; A modern list library for Emacs [source: github]
+    deferred                 ; Simple asynchronous functions for emacs lisp [source: github]
+    dic-lookup-w3m           ; look up dictionaries on the Internet [source: svn]
+    diminish                 ; Diminished modes are minor modes with no modeline display [source: github]
+    dired+                   ; Extensions to Dired. [source: wiki]
+    dired-details            ; Make file details hide-able in dired [source: wiki]
+    dired-details+           ; Enhancements to library `dired-details+.el'. [source: wiki]
+    dsvn                     ; Subversion interface [source: svn]
+    edit-list                ; edit a single list
+    egg                      ; Emacs Got Git - Emacs interface to Git [source: github]
+    epc                      ; A RPC stack for the Emacs Lisp [source: github]
+    ess                      ; No description available. [source: github]
+    expand-region            ; Increase selected region by semantic units. [source: github]
+    flymake-easy             ; Helpers for easily building flymake checkers [source: github]
+    flymake-jslint           ; A flymake handler for javascript using jslint [source: github]
+    fold-dwim                ; No description available. [source: github]
+    fringe-helper            ; helper functions for fringe bitmaps [source: github]
+    gh                       ; A GitHub library for Emacs [source: github]
+    gist                     ; Emacs integration for gist.github.com [source: github]
+    gnuplot                  ; drive gnuplot from within emacs [source: github]
+    golden-ratio             ; Automatic resizing of Emacs windows to the golden ratio [source: github]
+    google-contacts          ; Support for Google Contacts in Emacs [source: git]
+    google-maps              ; Access Google Maps from Emacs [source: git]
+    google-translate         ; Emacs interface to Google Translate [source: github]
+    google-weather           ; Fetch Google Weather forecasts. [source: git]
+    goto-chg                 ; goto last change [source: wiki]
+    grep-a-lot               ; manages multiple search results buffers for grep.el [source: github]
+    groovy-mode              ; Groovy mode derived mode [source: bzr]
+    gtags                    ; gtags facility for Emacs
+    helm                     ; Helm is an Emacs incremental and narrowing framework [source: github]
+    helm-c-moccur            ; helm source for color-moccur.el [source: github]
+    helm-c-yasnippet         ; helm source for yasnippet.el [source: github]
+    helm-gist                ; helm-sources and some utilities for gist. [source: github]
+    helm-git                 ; Helm extension for Git. [source: github]
+    helm-gtags               ; GNU GLOBAL helm interface [source: github]
+    helm-migemo              ; Migemo plug-in for helm [source: github]
+    highlight-parentheses    ; highlight surrounding parentheses [source: github]
+    htmlize                  ; Convert buffer text and decorations to HTML. [source: git]
+    igrep                    ; An improved interface to `grep` and `find`
+    image-dired+             ; Image-dired extensions
+    inf-ruby                 ; Run a ruby process in a buffer [source: github]
+    info+                    ; Extensions to `info.el'. [source: wiki]
+    inlineR                  ; insert Tag for inline image of R graphics [source: github]
+    js2-mode                 ; an improved JavaScript editing mode [source: github]
+    key-chord                ; map pairs of simultaneously pressed keys to commands [source: wiki]
+    key-combo                ; map key sequence to commands
+    load-theme-buffer-local  ; Install emacs24 color themes by buffer. [source: github]
+    logito                   ; logging library for Emacs [source: github]
+    magit                    ; Control Git from Emacs. [source: github]
+    mark-multiple            ; Sorta lets you mark several regions at once. [source: github]
+    markdown-mode            ; Emacs Major mode for Markdown-formatted text files [source: github]
+    memory-usage             ; Analyze the memory usage of Emacs in various ways
+    multiple-cursors         ; Multiple cursors for Emacs. [source: github]
+    o-blog                   ; Org-blog exporter [source: github]
+    oauth2                   ; OAuth 2.0 Authorization Protocol
+    org-jekyll               ; Export jekyll-ready posts form org-mode entries [source: github]
+    org2blog                 ; Blog from Org mode to wordpress [source: github]
+    paredit                  ; minor mode for editing parentheses [source: darcs]
+    pcache                   ; persistent caching for Emacs [source: github]
+    php-mode                 ; major mode for editing PHP code [source: github]
+    pos-tip                  ; Show tooltip at point -*- coding: utf-8 -*-
+    powerline                ; Rewrite of Powerline [source: github]
+    pymacs                   ; Interface between Emacs Lisp and Python
+    python-mode              ; Python major mode
+    quickrun                 ; Run commands quickly [source: github]
+    rainbow-mode             ; Colorize color names in buffers [source: github]
+    redo+                    ; Redo/undo system for Emacs [source: wiki]
+    revive                   ; Resume Emacs [source: github]
+    rfringe                  ; display the relative location of the region, in the fringe. [source: wiki]
+    ruby-block               ; highlight matching block [source: wiki]
+    ruby-electric            ; electric editing commands for ruby files [source: github]
+    smartrep                 ; Support sequential operation which omitted prefix keys. [source: github]
+    smex                     ; M-x interface with Ido-style fuzzy matching. [source: github]
+    smooth-scroll            ; Minor mode for smooth scrolling and in-place scrolling. [source: github]
+    sr-speedbar              ; Same frame speedbar [source: wiki]
+    stem                     ; - routines for stemming [source: github]
+    svg-clock                ; Analog clock using Scalable Vector Graphics
+    tabbar                   ; Display a tab bar in the header line  -*-no-byte-compile: t; -*-
+    twittering-mode          ; Major mode for Twitter [source: github]
+    undo-tree                ; Treat undo history as a tree [source: git]
+    vline                    ; show vertical line (column highlighting) mode.
+    w3m                      ; an Emacs interface to w3m [source: github]
+    wgrep                    ; Writable grep buffer and apply the changes to files [source: github]
+    windresize               ; Resize windows interactively
+    xml-rpc                  ; An elisp implementation of clientside XML-RPC [source: bzr]
+    yaml-mode                ; Major mode for editing YAML files [source: github]
+    yaoddmuse                ; Yet another oddmuse for Emacs [source: wiki]
+    yascroll                 ; Yet Another Scroll Bar Mode
     ;; popwin
-    pos-tip
-    key-combo
-    key-chord
-    smartrep
-    paredit
-    wgrep
-    powerline
-    oauth2
-    quickrun
-    twittering-mode
-    google-weather
-    google-maps
-    google-contacts
-    deferred
-    calfw
-    calfw-gcal
-    concurrent
-    cacoo
-    ctable
-    egg
-    logito
-    pcache
-    gh
-    gist
-    magit
-    groovy-mode
-    js2-mode
-    php-mode
-    markdown-mode
-    memory-usage
     ;; hl-line+
-    highlight-parentheses
-    col-highlight
-    crosshairs
-    vline
-    pymacs
-    python-mode
-    rainbow-mode
-    rfringe
-    fringe-helper
-    smex
-    svg-clock
-    yaml-mode
-    expand-region
-    mark-multiple
-    multiple-cursors
-    helm
     ;; helm-R
-    helm-c-moccur
-    helm-c-yasnippet
     ;; helm-descbinds
-    helm-gist
-    helm-git
-    helm-gtags
-    helm-migemo
     ;; helm-projectile
-    o-blog
-    org2blog
-    org-jekyll
-    gnuplot
-    ess
-    google-translate
-    xml-rpc
-    yaoddmuse
-    windresize
-    ruby-block
-    ruby-electric
-    inf-ruby
-    inlineR
-    image-dired+
-    htmlize
-    info+
-    igrep
     ;; hexrgb
-    grep-a-lot
-    goto-chg
-    fold-dwim
-    epc
-    edit-list
-    dired+
-    diminish
-    cursor-chg
-    css-mode
-    autopair
-    bm
-    browse-kill-ring
-    c-eldoc
-    color-moccur
-    redo+
-    flymake-jslint
-    gtags))
+    ))
 
 ;;; switch package by version
 (add-to-list 'installing-package-list
@@ -186,4 +190,3 @@
 
 (provide 'init_package)
 ;;; init_package.el ends here
-

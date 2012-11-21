@@ -54,7 +54,7 @@
 (defun my-toggle-fullscreen()
   "fullscreen/restore framesize"
   (interactive)
-  (setq my-toggle-fullscreen-command (cond (windows-p 'w32-toggle-fullscreen) 
+  (setq my-toggle-fullscreen-command (cond (windows-p 'w32-toggle-fullscreen)
                                         ((fboundp 'ns-toggle-fullscreen) 'ns-toggle-fullscreen)
                                         (t 'x-toggle-maximize)))
   (call-interactively my-toggle-fullscreen-command)
@@ -142,23 +142,28 @@
 ;; window移動
 (smartrep-define-key
     global-map "C-x" '(
-                       ("<C-down>"  . 'windmove-down)
-                       ("<C-up>"    . 'windmove-up)
-                       ("<C-left>"  . 'windmove-left)
-                       ("<C-right>" . 'windmove-right)
+                       ("<C-down>"   . 'windmove-down)
+                       ("<C-up>"     . 'windmove-up)
+                       ("<C-left>"   . 'windmove-left)
+                       ("<C-right>"  . 'windmove-right)
+                       ("<C-return>" . 'golden-ratio)
                        ))
 ;; 従来のやりかた
 ;; ウィンドウ移動
-(global-set-key (kbd "C-x <down>") 'windmove-down)
-(global-set-key (kbd "C-x <up>") 'windmove-up)
-(global-set-key (kbd "C-x <left>") 'windmove-left)
+(global-set-key (kbd "C-x <down>")  'windmove-down)
+(global-set-key (kbd "C-x <up>")    'windmove-up)
+(global-set-key (kbd "C-x <left>")  'windmove-left)
 (global-set-key (kbd "C-x <right>") 'windmove-right)
+(global-set-key (kbd "C-x <C-return>") 'golden-ratio)
 
-(global-set-key (kbd "C-x 4 4") 'split-window-4)
-(global-set-key (kbd "C-x 4 3") 'split-window-3)
-(global-set-key (kbd "C-x 4 c") (quote change-split-type-3))
+(global-set-key (kbd "C-x 4 4")  'split-window-4)
+(global-set-key (kbd "C-x 4 3")  'split-window-3)
+(global-set-key (kbd "C-x 4 c")  (quote change-split-type-3))
 (global-set-key (kbd "C-x 4 r")  (quote roll-v-3))
+
+;;; windmoveにより切り替え時にハイライトする
+(defadvice windmove-do-window-select (after after-windmove-do-window-select-hl activate)
+  (my-hl-current-window 0.3))
 
 (provide 'init_window)
 ;;; init_window.el ends here
-

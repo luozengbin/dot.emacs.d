@@ -120,16 +120,16 @@
 (global-set-key [f9] 'sr-speedbar-toggle)
 
 ;; delete-window時にsr-speedbar-windowの幅を一定に保つようする
-(defadvice delete-window (after delete-window-advice activate)
-  (if (sr-speedbar-window-exist-p sr-speedbar-window)
-      (let ((current-window (selected-window))
-            (win-width (sr-speedbar-current-window-take-width sr-speedbar-window)))
-        (unless (= win-width sr-speedbar-width)
-          (select-window sr-speedbar-window)
-          (if (< win-width sr-speedbar-width)
-              (enlarge-window-horizontally (- sr-speedbar-width win-width))
-            (shrink-window-horizontally (- win-width sr-speedbar-width)))
-          (select-window current-window)))))
+;; (defadvice delete-window (after delete-window-advice activate)
+;;   (if (sr-speedbar-window-exist-p sr-speedbar-window)
+;;       (let ((current-window (selected-window))
+;;             (win-width (sr-speedbar-current-window-take-width sr-speedbar-window)))
+;;         (unless (= win-width sr-speedbar-width)
+;;           (select-window sr-speedbar-window)
+;;           (if (< win-width sr-speedbar-width)
+;;               (enlarge-window-horizontally (- sr-speedbar-width win-width))
+;;             (shrink-window-horizontally (- win-width sr-speedbar-width)))
+;;           (select-window current-window)))))
 
 ;;; すべてのファイルを表示するように
 (setq speedbar-show-unknown-files t)

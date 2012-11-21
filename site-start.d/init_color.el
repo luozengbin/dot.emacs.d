@@ -23,16 +23,16 @@
 (setq my-last-random-color-theme-identify nil)
 (defvar my-random-color-theme-list
   (list
-   ;; `(progn (message "select default theme"))
-   ;; `(progn (apply-selected-ramdom-theme 'color-theme-tangosoft t))
-   ;; `(progn (apply-selected-ramdom-theme 'color-theme-tangotango t))
-   ;; `(progn (apply-selected-ramdom-theme 'color-theme-ns t))
-   ;; `(progn (apply-selected-ramdom-theme 'color-theme-dark t))
-   ;; `(progn (apply-selected-ramdom-theme (quote (  misterioso ))))
-   ;; `(progn (apply-selected-ramdom-theme (quote (  tango-dark ))))
-   ;; `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
-   ;; `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
-   ;; `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
+   `(progn (message "select default theme"))
+   `(progn (apply-selected-ramdom-theme 'color-theme-tangosoft t))
+   `(progn (apply-selected-ramdom-theme 'color-theme-tangotango t))
+   `(progn (apply-selected-ramdom-theme 'color-theme-ns t))
+   `(progn (apply-selected-ramdom-theme 'color-theme-dark t))
+   `(progn (apply-selected-ramdom-theme (quote (  misterioso ))))
+   `(progn (apply-selected-ramdom-theme (quote (  tango-dark ))))
+   `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
+   `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
+   `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
    ;; --- [reverse-theme] ---
    ;; https://raw.github.com/syohex/emacs-reverse-theme/master/reverse-theme.el
    `(progn (apply-selected-ramdom-theme (quote (  reverse    ))))
@@ -62,21 +62,21 @@
   "emacs バージョンよりテーマ適用ロジックを自動的に調整し、テーマを適用する"
   (if old-format
       (progn
-        (let ((theme-name (symbol-name my-theme))
-              (style-postfix (if style-postfix (concat "-" style-postfix) ""))
-              )
-          (message (concat "applying new theme --> " theme-name style-postfix))
-          (require 'color-theme)
-          (require my-theme)
-          (my-util-eval-string (concat
-                                "(" theme-name style-postfix ")"))))
+    (let ((theme-name (symbol-name my-theme))
+          (style-postfix (if style-postfix (concat "-" style-postfix) ""))
+          )
+      (message (concat "applying new theme --> " theme-name style-postfix))
+      (require 'color-theme)
+      (require my-theme)
+      (my-util-eval-string (concat
+                "(" theme-name style-postfix ")"))))
     (progn
       (message (concat "applying new theme --> " (symbol-name (car my-theme))))
       (cond
        (emacs23-p
-        (custom-set-variables '(custom-enabled-themes my-theme)))
+    (custom-set-variables '(custom-enabled-themes my-theme)))
        (emacs24-p
-        (load-theme (car my-theme) t))))))
+    (load-theme (car my-theme) t))))))
 
 ;; 臨機でテーマを適用する
 (defun my-random-color-theme ()
@@ -114,7 +114,7 @@
 ;;; Set emacs color themes by buffer
 ;;; https://github.com/vic/color-theme-buffer-local
 (add-hook 'java-mode-hook (lambda nil
-                            (load-theme-buffer-local 'misterioso (current-buffer) t t)))
+                (load-theme-buffer-local 'misterioso (current-buffer) t t)))
 
 ;;
 ;; modeline face カスタマイズ
@@ -137,10 +137,10 @@
 
 ;; text-mode font lock設定
 (add-hook 'text-mode-hook
-          '(lambda ()
-             (progn
-               (font-lock-mode t)
-               (font-lock-fontify-buffer))))
+      '(lambda ()
+         (progn
+           (font-lock-mode t)
+           (font-lock-fontify-buffer))))
 
 ;;
 ;; rainbow-mode の有効化
@@ -156,9 +156,9 @@
 ;;       (rainbow-mode 1))))
 ;; (my-rainbow-mode 1)
 (dolist (hook '(css-mode-hook
-                html-mode-hook
-                ;;emacs-lisp-mode-hook
-                )) (add-hook hook 'rainbow-mode))
+        html-mode-hook
+        ;;emacs-lisp-mode-hook
+        )) (add-hook hook 'rainbow-mode))
 
 ;;
 ;; whitespace mode setting
@@ -171,21 +171,25 @@
 (global-set-key (kbd "C-x w") 'global-whitespace-mode)
 ;; (global-whitespace-mode 1)
 
-(setq whitespace-style '(tabs tab-mark newline newline-mark spaces space-mark))
+(setq whitespace-style '(face tabs tab-mark space-before-tab space-after-tab
+                              spaces space-mark
+                              newline newline-mark
+                              trailing empty))
+
 (setq whitespace-display-mappings
       '(
-        ;; (space-mark 32 [183] [46]) ; normal space, ·
-        ;; (space-mark 160 [164] [95])
-        ;; (space-mark 2208 [2212] [95])
-        ;; (space-mark 2336 [2340] [95])
-        ;; (space-mark 3616 [3620] [95])
-        ;; (space-mark 3872 [3876] [95])
-        (space-mark ?\u3000 [?\u25a1])  ;全角
-        (newline-mark 10 [182 10]) ; newlne, ¶
-        ;;(newline-mark ?\n    [?\u21B5 ?\n] [?$ ?\n])
-        ;;(newline-mark ?\n    [?\u2193 ?\n] [?$ ?\n])
-        (tab-mark     ?\t    [?\xBB ?\t]   [?\\ ?\t]) ;タブ
-        ))
+    ;; (space-mark 32 [183] [46]) ; normal space, ·
+    ;; (space-mark 160 [164] [95])
+    ;; (space-mark 2208 [2212] [95])
+    ;; (space-mark 2336 [2340] [95])
+    ;; (space-mark 3616 [3620] [95])
+    ;; (space-mark 3872 [3876] [95])
+    (space-mark ?\u3000 [?\u25a1])  ;全角
+    (newline-mark 10 [182 10]) ; newlne, ¶
+    ;;(newline-mark ?\n    [?\u21B5 ?\n] [?$ ?\n])
+    ;;(newline-mark ?\n    [?\u2193 ?\n] [?$ ?\n])
+    (tab-mark     ?\t    [?\xBB ?\t]   [?\\ ?\t]) ;タブ
+    ))
 
 ;; newline のfaceをカスタマイズする
 (defvar whitespace-default-newline-face 'whitespace-default-newline-face)
@@ -202,12 +206,12 @@
   (setq show-trailing-whitespace t))
 ;; 有効化したいモードの指定
 (mapc (lambda (hook)
-        (add-hook hook 'fc-turn-on-show-trailing-whitespace))
+    (add-hook hook 'fc-turn-on-show-trailing-whitespace))
       '(text-mode-hook
-        scheme-mode-hook
-        c-mode-hook
-        emacs-lisp-mode-hook
-        java-mode-hook))
+    scheme-mode-hook
+    c-mode-hook
+    emacs-lisp-mode-hook
+    java-mode-hook))
 ;; フェーズのカスタマイズ
 (let ((trailing-whitespace-bg (face-background 'trailing-whitespace)))
       (set-face-background 'trailing-whitespace (face-background 'default))
@@ -258,20 +262,20 @@
 
 ;; hl-line-faceのカスタマイズ
 (let ((hl-line-bg (or (and (facep 'hl-line-face) (face-background 'hl-line-face))
-                      (and (facep 'hl-line) (face-background 'hl-line)))))
+              (and (facep 'hl-line) (face-background 'hl-line)))))
   (message "hl-line-bg --> %s" hl-line-bg)
   (when (or (eq hl-line-bg 'unspecified)
-            (eq hl-line-bg nil)
-            ;;(eq hl-line-bg 'inherit)
-            )
+        (eq hl-line-bg nil)
+        ;;(eq hl-line-bg 'inherit)
+        )
     (custom-set-faces
      '(hl-line ((((class color)
-                  (background dark))
-                 (:background "NavyBlue"));; 背景色が暗い色のとき
-                (((class color)
-                  (background light))
-                 (:background "LightGoldenrodYellow"));; 背景色が明るい色のとき
-                (t (:bold t)))))))
+          (background dark))
+         (:background "NavyBlue"));; 背景色が暗い色のとき
+        (((class color)
+          (background light))
+         (:background "LightGoldenrodYellow"));; 背景色が明るい色のとき
+        (t (:bold t)))))))
 
 (defun my-hl-line-mode-local-face (&optional new-hl-face)
   "ローカルバッファーのglobalハイライトを無効化しフェーズを変更する"

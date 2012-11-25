@@ -190,6 +190,9 @@
 ;; ブログ執筆環境
 (require 'init_blogger)
 
+;; 音楽環境
+(require 'init_music)
+
 ;; 自前関数のローディング
 (require 'my-funs)
 

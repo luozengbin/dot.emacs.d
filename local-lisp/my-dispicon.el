@@ -49,10 +49,11 @@
 (defun dired-dispicon-toggle (&optional args)
   "Toggle display icons in global scope.
 If optional ARGS are non-nil, force display icons."
-  (interactive)
-  (setq dired-dispicon-default-display-icon
-        (or args
-            (not dired-dispicon-default-display-icon)))
+  (interactive "P")
+  (if args
+      (setq dired-dispicon-default-display-icon (eq args t))
+    (setq dired-dispicon-default-display-icon
+          (not dired-dispicon-default-display-icon)))
   (if dired-dispicon-default-display-icon
       (add-hook 'dired-mode-hook 'dired-dispicon-setup)
     (remove-hook 'dired-mode-hook 'dired-dispicon-setup))

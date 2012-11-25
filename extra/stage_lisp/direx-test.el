@@ -21,6 +21,21 @@
                     (make-direx-item current-item (car (cdr child-data))))
                 current-item))))
 
+
+;; (make-instance 'direx:regular-file
+;;                :name (file-name-nondirectory filename)
+;;                :full-name (direx:canonical-filename filename))
+
+;; (defmethod direx:make-item ((file direx:regular-file) parent)
+;;   (let* ((filename (direx:file-full-name file))
+;;          (face (when (string-match direx:ignored-files-regexp filename)
+;;                  'dired-ignored)))
+;;     (make-instance 'direx:regular-file-item
+;;                    :tree file
+;;                    :parent parent
+;;                    :face face
+;;                    :keymap direx:file-keymap)))
+
 (defmethod direx:my-make-item ((dir direx:directory) parent)
   (make-instance 'direx:directory-item
                  :tree dir
@@ -36,8 +51,12 @@
 (defun direx:my-maybe-find-item (&optional item)
   (interactive)
   (let* ((item (direx:item-at-point!))
-         (file (direx:item-tree item)))
-    (message (direx:file-full-name file))))
+         (file (direx:item-tree item))
+         (item-key (direx:file-full-name file)))
+    (message "Switch to %s" item-key)
+    (other-window 1)
+    (mew-summary-visit-folder (concat "%" item-key))
+    ))
 
 (defun direx:my-add-root-item-into-buffer (root-item buffer)
   (with-current-buffer buffer
@@ -93,10 +112,11 @@
   (let* ((mew-root (make-instance 'direx:directory
                                   :name "mew"
                                   :full-name "/mew"))
-         (mew-root-item (direx:make-item mew-root nil))
+         (mew-root-item (direx:my-make-item mew-root nil))
          (folder-sets
-          (loop for (key . value) in (mew-local-folder-alist)
-                collect (split-string (substring key 1 (string-width key)) "/")))
+          (loop for (key . value) in (mew-imap-folder-alist)
+                ;; (mew-local-folder-alist)
+                collect (split-string (substring key 1 (length key)) "/")))
          (folder-items nil))
     (dolist (folder-set folder-sets)
       (let* ((item-key (car folder-set))
@@ -108,26 +128,31 @@
             (when item-key-1
               (setq current-item (cdr current-item))
               (setq child-item
-                    (direx:make-item
+                    (direx:my-make-item
                      (make-instance 'direx:directory
                                     :name item-key-1
-                                    :full-name (concat "/mew/" item-key "/" item-key-1))
+                                    :full-name (concat item-key "/" item-key-1)
+                                    ;; (concat "%" item-key "/" item-key-1)
+                                    )
                      current-item))
               (setq child-item-list (cons child-item (direx:item-children current-item)))
               (setf (direx:item-children current-item) child-item-list))
           ;; else
           (setq current-item
-                (direx:make-item
+                (direx:my-make-item
                  (make-instance 'direx:directory
                                 :name item-key
-                                :full-name (concat "/mew/" item-key))
+                                :full-name item-key ;; (concat "/mew/" item-key)
+                                ;;
+                                )
                  mew-root-item))
           (setq folder-items (cons (cons item-key current-item) folder-items)))
         ))
     (setf (direx:item-children mew-root-item)
           (loop for (key . value) in folder-items
                 collect value))
-    (pop-to-buffer (direx:my-add-root-item-into-buffer mew-root-item (direx:make-buffer mew-root)))))
+    (pop-to-buffer (direx:my-add-root-item-into-buffer mew-root-item (direx:make-buffer mew-root)))
+    ))
 
 
 ;; (defun direx:item-render-icon-part (item)

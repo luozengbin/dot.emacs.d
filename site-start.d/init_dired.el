@@ -179,7 +179,7 @@
 ;; my-dispcon.el アイコン表示
 ;;______________________________________________________________________
 (require 'my-dispicon)
-(dired-dispicon-toggle t)
+(dired-dispicon-toggle -1)
 (add-hook 'dired-mode-hook
           (lambda ()
             (define-key dired-mode-map (kbd "/") 'dired-dispicon-toggle)

@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -72,6 +72,17 @@ This is to update existing buffers after a Git pull of their underlying files."
               (revert-buffer t t)
               (message "Reverted %s\n" (buffer-file-name))))
           (buffer-list))))
+
+(defun revert-buffer-keep-undo (&rest -)
+  "Revert buffer but keep undo history."
+  (interactive)
+  (let ((inhibit-read-only t))
+    (erase-buffer)
+    (insert-file-contents (buffer-file-name))
+    (set-visited-file-modtime (visited-file-modtime))
+    (set-buffer-modified-p nil)))
+
+;; (setq revert-buffer-function 'revert-buffer-keep-undo)
 
 (provide 'init_buffer)
 ;;; init_buffer.el ends here

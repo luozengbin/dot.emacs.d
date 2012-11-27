@@ -60,6 +60,9 @@
   (defun magit-private-repo ()
     (interactive)
     (magit-status my-private-dir))
+  (defun magit-emacs-repo ()
+    (interactive)
+    (magit-status user-emacs-directory))
   )
 
 ;;

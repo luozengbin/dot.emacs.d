@@ -48,6 +48,11 @@
 ;; 終了時状態を保存する
 (add-hook 'kill-emacs-hook 'win-save-all-configurations)
 
+;; 「M-数字」でwindowを切り替えるように変更する
+(eval-when-compile (require 'cl))
+(loop for i from 1 to 9 do
+      (define-key esc-map (number-to-string i) 'win-switch-to-window))
+
 ;;
 ;; windowsの最大化
 ;;______________________________________________________________________

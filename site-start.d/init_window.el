@@ -51,7 +51,19 @@
 ;; 「M-数字」でwindowを切り替えるように変更する
 (eval-when-compile (require 'cl))
 (loop for i from 1 to 9 do
-      (define-key esc-map (number-to-string i) 'win-switch-to-window))
+      (define-key esc-map (number-to-string i) 'win-switch-smartrep-map))
+
+;; define smartrep-map for win witch call
+(defvar win-switch-smartrep-map (loop for i from 1 to 9 collect
+                                      (cons (number-to-string i)
+                                            `(quote (lambda ()
+                                                      (win-switch-to-window 0 ,i))))))
+;; append [t] key strock for open anything buffer
+(add-to-list 'win-switch-smartrep-map '("t" . 'my-anything))
+
+(defun win-switch-smartrep-map ()
+  (interactive)
+  (switch-smartrep-map-append 'win-switch-to-window win-switch-smartrep-map))
 
 ;;
 ;; windowsの最大化

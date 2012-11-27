@@ -20,15 +20,41 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
 (defvar smartrep-help-buffer-name " *Smartrep Help*")
 (defvar smartrep-show-help nil)
 
+(defadvice smartrep-do-fun (around smartrep-do-fun-around activate)
+  (if (and (boundp 'smartrep-skip-first-time)
+           smartrep-skip-first-time)
+      (setq smartrep-skip-first-time nil)
+    ad-do-it))
+
+(defun smartrep-execute-form (form)
+  (cond
+   ((commandp form)
+    (setq this-command form)
+    (unwind-protect
+        (call-interactively form)
+      (setq last-command form)))
+   ((functionp form) (funcall form))
+   ((and (listp form) (symbolp (car form))) (eval form))
+   (t (error "Unsupported form %s" form))))
+
+(defun switch-smartrep-map-append (form key-alist)
+"append smartrep map when running form"
+  (smartrep-execute-form form)
+  (let ((smartrep-skip-first-time t))
+    (setq key-alist (smartrep-append-help-key key-alist))
+    (smartrep-map-internal key-alist)))
+
 (defadvice smartrep-extract-fun (around smartrep-extract-fun-around activate)
   (cond
+   ((string= "q" (single-key-description char))
+    (execute-kbd-macro (read-kbd-macro "C-g")))
    ((string= "?" (single-key-description char))
     (smartrep-show-help char alist))
    ((string= "{" (single-key-description char))
@@ -40,13 +66,16 @@
     (message "smartrep-key {%s} : %s" (single-key-description char) (pp-to-string last-command)))))
 
 (defadvice smartrep-define-key (before smartrep-define-key-before activate)
+  (setq alist (smartrep-append-help-key alist)))
+
+(defun smartrep-append-help-key (alist)
   ;; append "?" key define here
-  (unless (assoc "?" alist)
-      (add-to-list 'alist '("?" "show smartrep help buffer")))
-  (unless (assoc "{" alist)
-    (add-to-list 'alist '("{" "scroll smartrep help buffer down")))
-  (unless (assoc "}" alist)
-    (add-to-list 'alist '("}" "scroll smartrep help buffer up"))))
+  (append alist (loop for elt in '(("q" "quite smartrep mode")
+                                   ("?" "show smartrep help buffer")
+                                   ("{" "scroll smartrep help buffer down")
+                                   ("}" "scroll smartrep help buffer up"))
+                      unless (assoc (car elt) alist)
+                      collect elt)))
 
 (defadvice smartrep-map-internal (after smartrep-map-internal-after activate)
   (let* ((buf-name smartrep-help-buffer-name)

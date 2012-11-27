@@ -205,6 +205,8 @@
 ;;______________________________________________________________________
 ;; anythingメニュー表示する
 (global-set-key (kbd "C-x t") 'my-anything)
+;; [M-z] に割り当てする
+(define-key esc-map "t"  'my-anything)
 ;;; hidden bufferの絞り込み
 (global-set-key (kbd "C-x y") 'my-anything-hidden-buffer-commands)
 

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  LuoZengbin
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -54,6 +54,12 @@
   ;;      (SVN 'svn-status)
   ;;      (t 'magit-status))))
   ;; (global-set-key (kbd "C-x v d") 'vc-status-dwim)
+
+  ;; global-hl-line-modeを無効化する
+  (add-hook 'magit-mode-hook (lambda () (my-hl-line-mode-local-face nil)))
+  (defun magit-private-repo ()
+    (interactive)
+    (magit-status my-private-dir))
   )
 
 ;;

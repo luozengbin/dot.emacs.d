@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  Zouhin.Ro
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -79,8 +79,8 @@
 (push '("*Google Translate*") popwin:special-display-config)
 
 ;;; keybind on [M-t]
-(global-set-key (kbd "M-t") 'my-google-translate-with-popup)
-(global-set-key (kbd "M-T") 'my-google-translate-at-point)
+(global-set-key (kbd "C-z z") 'my-google-translate-with-popup)
+(global-set-key (kbd "C-z C-z") 'my-google-translate-at-point)
 
 ;; C-S Drog Mouse
 (global-set-key [C-S-down-mouse-1] 'mouse-drag-region)

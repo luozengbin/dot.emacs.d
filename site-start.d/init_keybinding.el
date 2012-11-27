@@ -34,10 +34,10 @@
 ;; 導入：
 ;;	git clone https://github.com/myuhe/smartrep.el.git
 ;; ソース：
-;; 	https://github.com/myuhe/smartrep.el
+;;	https://github.com/myuhe/smartrep.el
 ;; 記事：
-;; 	http://sheephead.homelinux.org/2011/12/19/6930/
-;; 	http://sheephead.homelinux.org/2012/01/30/6934/
+;;	http://sheephead.homelinux.org/2011/12/19/6930/
+;;	http://sheephead.homelinux.org/2012/01/30/6934/
 ;;______________________________________________________________________
 (require 'smartrep)
 (require 'my-smartrep)
@@ -265,6 +265,11 @@
 
 ;; M-u に単語をupcase/downcase/capitalizeに動的にする
 (global-set-key "\M-u" 'toggle-letter-case)
+
+
+;; バッファーをクローズする
+(define-key  global-map (kbd "<M-f3>")
+  '(lambda () (interactive) (kill-buffer (buffer-name))))
 
 ;; 折り返し制御
 (global-set-key [f12] 'toggle-truncate-lines)

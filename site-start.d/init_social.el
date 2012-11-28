@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -67,6 +67,27 @@
 
      ;; debugモードの有効
      ;; (setq twittering-debug-mode t)
+
+     ;; timeline フォーマット
+     ;; (setq twittering-status-format "%i @%s / %S %p: \n %T\n [%@]%r %R %f%L\n")
+     ;; (setq twittering-retweet-format " RT @%s: %t")
+
+     ;; 起動時に読み込むタイムライン
+     (setq twittering-initial-timeline-spec-string
+           '(":home"
+             ":replies"
+             ":search/emacs/"))
+
+     ;; キーを設定
+     (add-hook 'twittering-mode-hook
+               '(lambda ()
+                  (define-key twittering-mode-map (kbd "F") 'twittering-favorite)
+                  (define-key twittering-mode-map (kbd "R") 'twittering-reply-to-user)
+                  (define-key twittering-mode-map (kbd "Q") 'twittering-organic-retweet)
+                  (define-key twittering-mode-map (kbd "T") 'twittering-native-retweet)
+                  (define-key twittering-mode-map (kbd "M") 'twittering-direct-message)
+                  (define-key twittering-mode-map (kbd "N") 'twittering-update-status-interactive)
+                  (define-key twittering-mode-map (kbd "C-c C-f") 'twittering-home-timeline)))
      ))
 
 ;;

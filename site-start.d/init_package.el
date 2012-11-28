@@ -92,6 +92,7 @@
     grep-a-lot               ; manages multiple search results buffers for grep.el [source: github]
     groovy-mode              ; Groovy mode derived mode [source: bzr]
     gtags                    ; gtags facility for Emacs
+    guide-key                ; Guide the following key bindings automatically and dynamically [source: github]
     helm                     ; Helm is an Emacs incremental and narrowing framework [source: github]
     helm-c-moccur            ; helm source for color-moccur.el [source: github]
     helm-c-yasnippet         ; helm source for yasnippet.el [source: github]

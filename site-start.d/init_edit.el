@@ -169,7 +169,7 @@
 ;; M-x undo-tree-switch-branch
 ;; 参照リンク:http://www.emacswiki.org/emacs/UndoTree
 (require 'undo-tree)
-(setq undo-tree-auto-save-history t)
+(setq undo-tree-auto-save-history nil)
 (setq undo-tree-history-directory-alist `(("." . ,(concat my-cache-dir "undo-tree"))))
 (global-undo-tree-mode t)
 (defalias 'redo 'undo-tree-redo)

@@ -235,6 +235,31 @@
 ;; (require 'one-key)
 
 ;;
+;; guide-key キー入力ガイド
+;; https://github.com/kbkbkbkb1/guide-key
+;;______________________________________________________________________
+(require 'guide-key)
+(setq guide-key/guide-key-sequence '("C-x r"
+                                     "C-x 4"
+                                     "C-," ; smartrep key map
+                                     "C-t" ; smartrep key map
+                                     ;; "C-z"
+                                     ))
+(setq guide-key/highlight-command-regexp "rectangle")
+;; (setq guide-key/highlight-command-regexp "rectangle\\|register")
+(setq guide-key/popup-window-position 'bottom)
+(setq guide-key/polling-time 1) ; delay for display guide buffer
+(guide-key-mode 1)  ; Enable guide-key-mode
+
+;;; for org mode
+(defun guide-key/my-hook-function-for-org-mode ()
+  (guide-key/add-local-guide-key-sequence "C-c")
+  (guide-key/add-local-guide-key-sequence "C-c C-x")
+  (guide-key/add-local-guide-key-sequence "C-c C-v")
+  (guide-key/add-local-highlight-command-regexp "org-"))
+(add-hook 'org-mode-hook 'guide-key/my-hook-function-for-org-mode)
+
+;;
 ;; OneTwoThreeMenu キー入力支援
 ;;______________________________________________________________________
 ;; (install-elisp "http://www.emacswiki.org/emacs/download/123-menu.el")

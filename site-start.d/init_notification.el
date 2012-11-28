@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -74,6 +74,8 @@
 (defvar twmode-growl-notify-icon-size-minimum 256)
 (defvar twmode-growl-notify-tweets-count 10)
 (defvar twmode-growl-notify-replies '(;;(home)
+                                      (replies)
+                                      (direct_messages)
                                       (search "emacs")))
 (defvar twmode-growl-notify-icon-mode 'normal)  ;text, simple, normal, fullimage
 (if my-office-mode

@@ -290,9 +290,9 @@
   (let ((ps (process-status proc))
         (result-buffer-name (buffer-name (process-buffer proc)))
         (curwin (selected-window))
-        begin-pos-1 end-pos-1 archive-file-name 
+        begin-pos-1 end-pos-1 archive-file-name
         begin-pos-2 end-pos-2 dest-buffer-name)
-    (cond 
+    (cond
      ((eq ps 'exit)
       ;; 出力バッファー名から、諸々情報を取り出す
       (string-match "[\*]apack \\([^<]+\\)<\\([^>]+\\)>[\*].*" result-buffer-name)
@@ -301,7 +301,7 @@
       (setq begin-pos-2 (match-beginning 2))
       (setq end-pos-2 (match-end 2))
       (if (and begin-pos-1 end-pos-1 begin-pos-2 end-pos-2)
-          (progn 
+          (progn
             ;; 圧縮ファイル名
             (setq archive-file-name (substring result-buffer-name begin-pos-1 end-pos-1))
             ;; 作業ディレクトリバッファー名
@@ -317,7 +317,8 @@
                   (pop-to-buffer dest-buffer-name)
                   (revert-buffer)       ;diredバッファーの更新
                   (highlight-regexp (concat archive-file-name "$")) ;圧縮ファイル名のハイライト
-                  (select-window curwin)))
+                  ;;(select-window curwin)
+                  ))
             (message (concat archive-file-name " 圧縮完了しました！"))
             )))
      (t nil))))

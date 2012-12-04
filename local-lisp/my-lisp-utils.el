@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  Zouhin.Ro
 
 ;; Author: Zouhin.Ro <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -51,7 +51,7 @@ When optional fourth argument is non-nil, treat the from as a regular expression
           (setq pos (length string)))))
     res))
 
-;; the more emacs way to do it is to use 
+;; the more emacs way to do it is to use
 ;; string-replace - which has the drawback of not knowing *where*
 ;; the replacement was done, so if you apply this technique to strings
 ;; you can end up in an infinite loop
@@ -279,6 +279,22 @@ See also: `paste-from-register-1', `copy-to-register'."
 See also: `copy-to-register-1', `insert-register'."
   (interactive)
   (insert-register ?1 t))
+
+;;; --- timer utils
+(defun push-to-timer-queue (timer-queue-s delay-time interval-time form)
+  (setf (symbol-value timer-queue-s)
+        (append (symbol-value timer-queue-s)
+                (list (run-with-timer delay-time interval-time form)))))
+
+(defun pop-from-timer-queue (timer-queue-s &optional cleanup-form)
+  (let* ((timer-queue (symbol-value timer-queue-s))
+         (len (length timer-queue))
+         (target-timer (nth (- len 1) timer-queue)))
+    (cancel-timer target-timer)
+    (setf (symbol-value timer-queue-s) (butlast timer-queue 1))
+    (if cleanup-form
+        (eval cleanup-form))))
+
 
 (provide 'my-lisp-utils)
 ;;; my-lisp-utils.el ends here

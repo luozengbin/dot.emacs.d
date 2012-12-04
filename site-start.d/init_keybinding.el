@@ -241,14 +241,14 @@
 (require 'guide-key)
 (setq guide-key/guide-key-sequence '("C-x r"
                                      "C-x 4"
-                                     "C-," ; smartrep key map
+                                     ;; "C-," ; smartrep key map
                                      "C-t" ; smartrep key map
                                      ;; "C-z"
                                      ))
 (setq guide-key/highlight-command-regexp "rectangle")
 ;; (setq guide-key/highlight-command-regexp "rectangle\\|register")
 (setq guide-key/popup-window-position 'bottom)
-(setq guide-key/polling-time 1) ; delay for display guide buffer
+(setq guide-key/polling-time 0.5) ; delay for display guide buffer
 (guide-key-mode 1)  ; Enable guide-key-mode
 
 ;;; for org mode

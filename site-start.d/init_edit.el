@@ -90,6 +90,7 @@
                        ("C-,"    . 'my-things-at-point)
                        ("w"      . 'kill-ring-save)
                        ("k"      . 'kill-region)
+                       ("y"      . 'cua-paste)
                        ;; ace-jump
                        ("j"      . 'ace-jump-mode)
                        ("i"      . 'ido-imenu-push-mark)

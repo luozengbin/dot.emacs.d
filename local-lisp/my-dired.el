@@ -243,6 +243,46 @@
   :type 'list
   :group 'dired)
 
+(defvar archive-unarchive-flashing-timers nil "timer queue")
+(defvar archive-unarchive-highlight-time 10 "highlight target archive unarchive file name for seconds")
+(defvar archive-unarchive-flashing-ferquence 0.6 "flashing ferquence")
+
+(defun my-dired-flashing-on-keyword (buffer-or-name regp &optional cleanup)
+  (with-current-buffer buffer-or-name
+    (goto-char (point-min))
+    (re-search-forward regp nil t)
+    (let ((buffer-read-only nil))
+      (if (not cleanup)
+          (let* ((pos (next-single-property-change (point-min) 'flashing-flag))
+                 (flashing-flag (if pos
+                                    (get-text-property pos 'flashing-flag)
+                                  "1")))
+            (put-text-property (point) (1+ (point))
+                               'flashing-flag
+                               (if (string= flashing-flag "1")
+                                   "0"
+                                 "1"))
+            (if (string= flashing-flag "1")
+                (highlight-regexp regp)
+              (unhighlight-regexp regp)))
+        ;; do clean up work
+        (unhighlight-regexp regp)
+        (put-text-property (point) (1+ (point)) 'flashing-flag nil)))))
+
+(defun my-dired-flashing (buf-name regp)
+  ;; ハイライトタイマーを起動する
+  (push-to-timer-queue 'archive-unarchive-flashing-timers
+                       0 archive-unarchive-flashing-ferquence
+                       `(lambda () (my-dired-flashing-on-keyword
+                                    ,buf-name ,regp)))
+  ;; ハイライトの停止タイマーを起動する
+  (run-with-timer archive-unarchive-highlight-time nil
+                  `(lambda ()
+                     (pop-from-timer-queue 'archive-unarchive-flashing-timers
+                                           '(my-dired-flashing-on-keyword
+                                             ,buf-name ,regp t)))))
+
+
 (defun my-dired-do-compress (&optional arg)
   "ファイル圧縮と解凍を自動的に識別し、処理を行う関数"
   (interactive "P")
@@ -287,11 +327,11 @@
 
 (defun my-dired-do-archive-sentinel (proc state)
   "圧縮処理プロセス完了後のリスナー定義"
-  (let ((ps (process-status proc))
-        (result-buffer-name (buffer-name (process-buffer proc)))
-        (curwin (selected-window))
-        begin-pos-1 end-pos-1 archive-file-name
-        begin-pos-2 end-pos-2 dest-buffer-name)
+  (let* ((ps (process-status proc))
+         (result-buffer (process-buffer proc))
+         (result-buffer-name (buffer-name result-buffer))
+         begin-pos-1 end-pos-1 archive-file-name
+         begin-pos-2 end-pos-2 dest-buffer-name)
     (cond
      ((eq ps 'exit)
       ;; 出力バッファー名から、諸々情報を取り出す
@@ -300,35 +340,32 @@
       (setq end-pos-1 (match-end 1))
       (setq begin-pos-2 (match-beginning 2))
       (setq end-pos-2 (match-end 2))
-      (if (and begin-pos-1 end-pos-1 begin-pos-2 end-pos-2)
-          (progn
-            ;; 圧縮ファイル名
-            (setq archive-file-name (substring result-buffer-name begin-pos-1 end-pos-1))
-            ;; 作業ディレクトリバッファー名
-            (setq dest-buffer-name (substring result-buffer-name begin-pos-2 end-pos-2))
-            (message (concat "result buffer name: " result-buffer-name))
-            (message (concat "archive file name: " archive-file-name))
-            (message (concat "dest buffer name: " dest-buffer-name))
-            (if (get-buffer dest-buffer-name)
-                (progn
-                  (pop-to-buffer result-buffer-name)
-                  (goto-char (point-max))
-                  (insert (concat "\nArchive To --> " archive-file-name "\n"))
-                  (pop-to-buffer dest-buffer-name)
-                  (revert-buffer)       ;diredバッファーの更新
-                  (highlight-regexp (concat archive-file-name "$")) ;圧縮ファイル名のハイライト
-                  ;;(select-window curwin)
-                  ))
-            (message (concat archive-file-name " 圧縮完了しました！"))
-            )))
+      (when (and begin-pos-1 end-pos-1 begin-pos-2 end-pos-2)
+        ;; 圧縮ファイル名
+        (setq archive-file-name (substring result-buffer-name begin-pos-1 end-pos-1))
+        ;; 作業ディレクトリバッファー名
+        (setq dest-buffer-name (substring result-buffer-name begin-pos-2 end-pos-2))
+        (message (concat "result buffer name: " result-buffer-name))
+        (message (concat "archive file name: " archive-file-name))
+        (message (concat "dest buffer name: " dest-buffer-name))
+        (when (get-buffer dest-buffer-name)
+          (goto-char (point-max))
+          (insert (concat "\nArchive To --> " archive-file-name "\n"))
+          (with-current-buffer dest-buffer-name
+            (revert-buffer)             ;diredバッファーの更新
+            ;; ハイライト制御
+            (my-dired-flashing dest-buffer-name (concat archive-file-name "$"))))
+        ;; show buffer with popwin style
+        (unless (eq popwin:popup-buffer result-buffer)
+          (popwin:popup-buffer result-buffer))
+        (message (concat archive-file-name " 圧縮完了しました！"))))
      (t nil))))
 
 (defun my-dired-do-unarchive (&optional arg)
   "unarchive selected files with aunpack command."
   (interactive "P")
   (let (archive-dest-folder buf proc
-        (selected-files (dired-get-marked-files t current-prefix-arg))
-        (curwin (selected-window)))
+        (selected-files (dired-get-marked-files t current-prefix-arg)))
     (dolist (archive-file selected-files)
       ;; (dired-do-shell-command "aunpack * &" nil (list archive-file))
       ;; 解凍プロセス処理で使う出力バッファーの作成
@@ -337,8 +374,7 @@
       (setq proc (start-process "aunpack" buf "aunpack" archive-file))
       (set-process-sentinel proc 'my-dired-do-unarchive-sentinel)
       (set-process-filter proc 'my-dired-do-command-output-filter)
-      (message (concat archive-file " 解凍中..."))
-      )))
+      (message (concat archive-file " 解凍中...")))))
 
 (defun my-dired-do-command-output-filter (proc string)
   "プロセス出力テキストをバッファーに随時に反映するリスナー"
@@ -348,20 +384,22 @@
       (with-current-buffer result-buffer
         (insert string)
         (goto-char (point-max)))
-      (pop-to-buffer result-buffer))))
+      ;; show buffer with popwin style
+      (unless (eq popwin:popup-buffer result-buffer)
+        (popwin:popup-buffer result-buffer)))))
 
 (defun my-dired-do-unarchive-sentinel (proc state)
   "解凍処理プロセス完了後のリスナー定義"
   (let* ((ps (process-status proc))
-        (result-buffer-name (buffer-name (process-buffer proc)))
-        (popwin:special-display-config `((,result-buffer-name)))
-        begin-pos-1 end-pos-1 archive-file-name
-        begin-pos-2 end-pos-2 dest-buffer-name
-        dest-folder-name)
+         (result-buffer (process-buffer proc))
+         (result-buffer-name (buffer-name result-buffer))
+         begin-pos-1 end-pos-1 archive-file-name
+         begin-pos-2 end-pos-2 dest-buffer-name
+         dest-folder-name)
     (cond
      ((eq ps 'exit)
       ;; 出力バッファー名からファイル情報をゲットする
-      (toggle-read-only)                ; 出力バッファーをreadonlyにする
+      (toggle-read-only)              ; 出力バッファーをreadonlyにする
       (string-match "[\*]aunpack \\([^<]+\\)<\\([^>]+\\)>[\*].*" result-buffer-name)
       (setq begin-pos-1 (match-beginning 1))
       (setq end-pos-1 (match-end 1))
@@ -382,14 +420,17 @@
             (re-search-forward "^.+extracted to [\`]\\(.+\\)'" nil t)
             (setq dest-folder-name (match-string 1))
             (message (concat "dest folder name: " dest-folder-name)))
-          (pop-to-buffer dest-buffer-name)
-          (revert-buffer)  ; diredバッファー更新
-          (when dest-folder-name
-            ;; 対象ファイルのハイライト
-            (highlight-regexp (concat dest-folder-name "$"))
-            (goto-char (point-min))
-            (re-search-forward (concat dest-folder-name "$") nil t)))
-        (display-buffer result-buffer-name)
+          (with-current-buffer (get-buffer dest-buffer-name)
+            (revert-buffer)             ; diredバッファー更新
+            (when dest-folder-name
+              ;; ハイライト制御
+              (my-dired-flashing dest-buffer-name (concat dest-folder-name "$"))
+              (goto-char (point-min))
+              (re-search-forward (concat dest-folder-name "$") nil t)
+              (dired-find-file-other-window))))
+        ;; show buffer with popwin style
+        (unless (eq popwin:popup-buffer result-buffer)
+          (popwin:popup-buffer result-buffer))
         (message (concat archive-file-name " 解凍完了しました！"))))
      (t nil))))
 

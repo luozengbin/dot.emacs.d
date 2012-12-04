@@ -54,7 +54,9 @@
 (defadvice smartrep-extract-fun (around smartrep-extract-fun-around activate)
   (cond
    ((string= "q" (single-key-description char))
-    (execute-kbd-macro (read-kbd-macro "C-g")))
+    (smartrep-close-help-buffer)
+    ;;(execute-kbd-macro (read-kbd-macro "C-g"))
+    )
    ((string= "?" (single-key-description char))
     (smartrep-show-help char alist))
    ((string= "{" (single-key-description char))
@@ -64,6 +66,11 @@
    (t
     ad-do-it
     (message "smartrep-key {%s} : %s" (single-key-description char) (pp-to-string last-command)))))
+
+(defun smartrep-close-help-buffer ()
+  "Close help buffer."
+  (when (eq popwin:popup-buffer (get-buffer smartrep-help-buffer-name))
+    (popwin:close-popup-window)))
 
 (defadvice smartrep-define-key (before smartrep-define-key-before activate)
   (setq alist (smartrep-append-help-key alist)))
@@ -100,8 +107,7 @@
     (if (and smartrep-show-help buf-win)
         ;; hidden help windows
         (progn
-          (if buf-win
-              (delete-window buf-win))
+          (smartrep-close-help-buffer)
           (setq smartrep-show-help nil)
           (message "close smartrep help window"))
       ;; show help window

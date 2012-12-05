@@ -193,8 +193,18 @@
 
 ;; ファイル末に不要な空白や行を削除する
 ;;______________________________________________________________________
-;; Trailing whitespace is unnecessary
-(add-hook 'before-save-hook (lambda () (whitespace-cleanup)))
+;; globaly scope
+;; (remove-hook 'before-save-hook (lambda () (whitespace-cleanup)))
+(add-hook 'emacs-lisp-mode-hook 'no-trailing-space)
+(add-hook 'java-mode-hook 'no-trailing-space)
+(add-hook 'python-mode-hook 'no-trailing-space)
+
+(defun no-trailing-space ()
+  "clean up space when saveing file"
+  ;; this hook is buffer local, can't add it globaly
+  (add-hook 'write-contents-functions 'delete-trailing-whitespace)
+  ;; (add-hook 'write-contents-functions (lambda () (whitespace-cleanup)))
+  )
 
 ;;; 最終行に必ず一行挿入する
 (setq require-final-newline t)

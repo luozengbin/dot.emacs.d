@@ -53,7 +53,9 @@
        ))
 
 ;; モードラインの背景色
-(setq smartrep-mode-line-active-bg (face-background 'modeline))
+(add-hook 'after-init-hook
+          (lambda() (setq smartrep-mode-line-active-bg
+                          (face-background 'modeline))))
 
 ;;; resetup mode line format smartrep
 (setq mode-line-format (delete 'smartrep-mode-line-string mode-line-format))
@@ -158,7 +160,7 @@
 ;; キーボード同時押しでコマンドを実行する
 ;; (install-elisp "http://www.emacswiki.org/emacs/download/key-chord.el")
 (require 'key-chord)
-(setq key-chord-two-keys-delay 0.05)
+(setq key-chord-two-keys-delay 0.01)
 (key-chord-mode 1)
 
 ;; emacs-lisp-mode メジャーモードで df で describe-functionを実行する

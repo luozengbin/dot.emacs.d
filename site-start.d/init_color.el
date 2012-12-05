@@ -23,19 +23,19 @@
 (setq my-last-random-color-theme-identify nil)
 (defvar my-random-color-theme-list
   (list
-   `(progn (message "select default theme"))
-   `(progn (apply-selected-ramdom-theme 'color-theme-tangosoft t))
-   `(progn (apply-selected-ramdom-theme 'color-theme-tangotango t))
-   `(progn (apply-selected-ramdom-theme 'color-theme-ns t))
-   `(progn (apply-selected-ramdom-theme 'color-theme-dark t))
+   ;; `(progn (message "select default theme"))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-tangosoft t))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-tangotango t))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-ns t))
+   ;; `(progn (apply-selected-ramdom-theme 'color-theme-dark t))
    `(progn (apply-selected-ramdom-theme (quote (  misterioso ))))
-   `(progn (apply-selected-ramdom-theme (quote (  tango-dark ))))
-   `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
-   `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
-   `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
-   ;; --- [reverse-theme] ---
-   ;; https://raw.github.com/syohex/emacs-reverse-theme/master/reverse-theme.el
-   `(progn (apply-selected-ramdom-theme (quote (  reverse    ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  tango-dark ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
+   ;; `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
+   ;; ;; --- [reverse-theme] ---
+   ;; ;; https://raw.github.com/syohex/emacs-reverse-theme/master/reverse-theme.el
+   ;; `(progn (apply-selected-ramdom-theme (quote (  reverse    ))))
    ;; --- [theme 24 not good] ---
    ;;; `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "light"))
    ;;; `(progn (apply-selected-ramdom-theme 'color-theme-solarized t "dark"))

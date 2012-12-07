@@ -148,7 +148,10 @@ Semantic, and Ansi-Color faces are included.")
    `(semantic-decoration-on-unparsed-includes
      ((,class (:background ,alum-5.5))))
    `(semantic-tag-boundary-face ((,class (:overline ,blue-1))))
-   `(semantic-unmatched-syntax-face ((,class (:underline ,red-1)))))
+   `(semantic-unmatched-syntax-face ((,class (:underline ,red-1))))
+   ;; mew faces
+   `(mew-face-mark-refile ((,class (:foreground ,cham-2))))
+   )
 
   (custom-theme-set-variables
    'tango-dark

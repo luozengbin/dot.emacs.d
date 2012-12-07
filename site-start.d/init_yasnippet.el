@@ -19,15 +19,44 @@
         ;;"~/.emacs.d/extras/imported"
         ))
 
-;; (yas/initialize)
 ;; (yas--initialize)
-(yas-global-mode 1)
+;; (yas-global-mode 1)
+(yas-reload-all)
 
-;; 補完snippetローディング関数
-(defun my-load-directory (dir-name)
-  (yas/load-directory
-   (concat user-emacs-directory
-           "lisp/yasnippet-0.6.1c/my_snippets/" dir-name)))
+(defvar yas-mode-hooks '(c++-mode-hook
+                         c-mode-hook
+                         cc-mode-hook
+                         cperl-mode-hook
+                         csharp-mode-hook
+                         css-mode-hook
+                         emacs-lisp-mode-hook
+                         erlang-mode-hook
+                         ess-mode-hook
+                         f90-mode-hook
+                         html-mode-hook
+                         java-mode-hook
+                         latex-mode-hook
+                         markdown-mode-hook
+                         nxml-mode-hook
+                         objc-mode-hook
+                         org-mode-hook
+                         perl-mode-hook
+                         python-mode-hook
+                         rst-mode-hook
+                         ruby-mode-hook
+                         scala-mode-hook
+                         sql-mode-hook
+                         ;; text-mode-hook
+                         weblogger-entry-mode-hook))
+
+(dolist (mode-hook yas-mode-hooks)
+  (add-hook mode-hook 'yas-minor-mode-on))
+
+;; ;; 補完snippetローディング関数
+;; (defun my-load-directory (dir-name)
+;;   (yas/load-directory
+;;    (concat user-emacs-directory
+;;            "lisp/yasnippet-0.6.1c/my_snippets/" dir-name)))
 
 ;; ac情報源をyasnippet
 ;;(yas/load-directory (concat user-emacs-directory "lisp/auto-complete/dict"))

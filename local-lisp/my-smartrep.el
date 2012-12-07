@@ -23,15 +23,10 @@
 ;;
 
 ;;; Code:
+(require 'guide-key)
 
 (defvar smartrep-help-buffer-name " *Smartrep Help*")
 (defvar smartrep-show-help nil)
-
-(defadvice smartrep-do-fun (around smartrep-do-fun-around activate)
-  (if (and (boundp 'smartrep-skip-first-time)
-           smartrep-skip-first-time)
-      (setq smartrep-skip-first-time nil)
-    ad-do-it))
 
 (defun smartrep-execute-form (form)
   (cond
@@ -51,27 +46,6 @@
     (setq key-alist (smartrep-append-help-key key-alist))
     (smartrep-map-internal key-alist)))
 
-(defadvice smartrep-extract-fun (around smartrep-extract-fun-around activate)
-  (cond
-   ((string= "q" (single-key-description char))
-    (smartrep-close-help-buffer)
-    ;;(execute-kbd-macro (read-kbd-macro "C-g"))
-    )
-   ((string= "?" (single-key-description char))
-    (smartrep-show-help char alist))
-   ((string= "{" (single-key-description char))
-    (smartrep-scroll-help-buffer char alist))
-   ((string= "}" (single-key-description char))
-    (smartrep-scroll-help-buffer char alist))
-   (t
-    ad-do-it
-    (message "smartrep-key {%s} : %s" (single-key-description char) (pp-to-string last-command)))))
-
-(defun smartrep-close-help-buffer ()
-  "Close help buffer."
-  (when (eq popwin:popup-buffer (get-buffer smartrep-help-buffer-name))
-    (popwin:close-popup-window)))
-
 (defadvice smartrep-define-key (before smartrep-define-key-before activate)
   (setq alist (smartrep-append-help-key alist)))
 
@@ -79,8 +53,9 @@
   ;; append "?" key define here
   (append alist (loop for elt in '(("q" "quite smartrep mode")
                                    ("?" "show smartrep help buffer")
-                                   ("{" "scroll smartrep help buffer down")
-                                   ("}" "scroll smartrep help buffer up"))
+                                   ;; ("{" "scroll smartrep help buffer down")
+                                   ;; ("}" "scroll smartrep help buffer up")
+                                   )
                       unless (assoc (car elt) alist)
                       collect elt)))
 
@@ -91,15 +66,50 @@
         (delete-window buf-win))
     (setq smartrep-show-help nil)))
 
-(defun smartrep-scroll-help-buffer (char alist)
-  (let* ((keystr (single-key-description char))
-         (buf-win (get-buffer-window smartrep-help-buffer-name)))
-    (if (and buf-win (member keystr '("{" "}")))
-        (with-selected-window buf-win
-          (if (string= "}" keystr)
-              (scroll-up)
-            (scroll-down)))
-      (execute-kbd-macro (read-kbd-macro keystr)))))
+(defadvice smartrep-extract-fun (around smartrep-extract-fun-around activate)
+  (cond
+   ((string= "q" (single-key-description char))
+    (smartrep-close-help-buffer)
+    ;;(execute-kbd-macro (read-kbd-macro "C-g"))
+    )
+   ((string= "?" (single-key-description char))
+    (smartrep-show-help char alist))
+   ;; ((string= "{" (single-key-description char))
+   ;;  (smartrep-scroll-help-buffer char alist))
+   ;; ((string= "}" (single-key-description char))
+   ;;  (smartrep-scroll-help-buffer char alist))
+   (t
+    ad-do-it
+    (message "smartrep-key {%s} : %s"
+             (single-key-description char)
+             (pp-to-string last-command)))))
+
+(defadvice smartrep-do-fun (around smartrep-do-fun-around activate)
+  (if (and (boundp 'smartrep-skip-first-time)
+           smartrep-skip-first-time)
+      (setq smartrep-skip-first-time nil)
+    ad-do-it))
+
+(defvar smartrep-this-prefix-vector nil)
+(defvar smartrep-last-prefix-vector nil)
+(defadvice smartrep-read-event-loop (before smartrep-read-event-loop-before activate)
+  (setq smartrep-this-prefix-vector
+        (vconcat(butlast (append (this-command-keys-vector) nil) 1))))
+
+;;; ---------------------- help-buffer controller
+(defun smartrep-popup-help-buffer ()
+  "Pop up smartrep help buffer"
+  (with-current-buffer (get-buffer smartrep-help-buffer-name)
+    (popwin:popup-buffer (current-buffer)
+                         :position 'bottom
+                         :noselect t
+                         :height (+ (count-lines (point-min) (point-max)) 3))))
+
+(defun smartrep-close-help-buffer ()
+  "Close help buffer."
+  (when (eq popwin:popup-buffer
+            (get-buffer smartrep-help-buffer-name))
+    (popwin:close-popup-window)))
 
 (defun smartrep-show-help (char alist)
   (let* ((buf-name smartrep-help-buffer-name)
@@ -111,14 +121,58 @@
           (setq smartrep-show-help nil)
           (message "close smartrep help window"))
       ;; show help window
-      (smartrep-render-help-buffer char alist)
-      (unless (assoc buf-name popwin:special-display-config)
-        (push `(,smartrep-help-buffer-name :height 15 :position bottom :noselect t)
-              popwin:special-display-config))
-      (display-buffer buf-name)
+      ;; (smartrep-render-help-buffer char alist)
+      (smartrep-prepare-help-buffer char alist)
+      (smartrep-popup-help-buffer)
       (setq smartrep-show-help t)
       (message "show smartrep help window"))))
 
+(defun smartrep-prepare-help-buffer (char alist)
+  (let ((key-seq smartrep-this-prefix-vector)
+        (dsc-buf (current-buffer))
+        (hi-regexp guide-key/highlight-command-regexp)
+        (max-width 0))
+    (unless (equal key-seq smartrep-last-prefix-vector)
+      (with-current-buffer (get-buffer-create smartrep-help-buffer-name)
+        (unless truncate-lines (setq truncate-lines t)) ; don't fold line
+        (when indent-tabs-mode (setq indent-tabs-mode nil)) ; don't use tab as white space
+        (erase-buffer)
+        (describe-buffer-bindings dsc-buf key-seq)
+        (smartrep-format-help-buffer alist key-seq hi-regexp))
+      (setq smartrep-last-prefix-vector key-seq))))
+
+(defun smartrep-format-help-buffer (alist key-seq hi-regexp)
+  (let ((fkey-list nil)      ; list of (following-key space command)
+        (fkey-str-list nil)  ; fontified string of `fkey-list'
+        (fkey-list-len 0)    ; length of above lists
+        (key-dsc (key-description key-seq)))
+    (untabify (point-min) (point-max))  ; replace tab to space
+    (goto-char (point-min))
+    ;; extract following keys from buffer bindings
+    (while (re-search-forward
+            (format "^%s \\([^ \t]+\\)\\([ \t]+\\)\\(\\(?:[^ \t\n]+ ?\\)+\\)$" key-dsc) nil t)
+      (add-to-list 'fkey-list
+                   (list (match-string 1) (match-string 2) (match-string 3)) t))
+    (erase-buffer)
+    (when (> (setq fkey-list-len (length fkey-list)) 0)
+      ;; fontify following keys as string
+      (setq fkey-str-list
+            (loop for (key space command) in fkey-list
+                  when (assoc key alist)
+                  collect (guide-key/fontified-string key space command hi-regexp)))
+      ;; insert a few following keys per line
+      (cond ((popwin:position-horizontal-p guide-key/popup-window-position)
+             (guide-key/insert-following-key
+              fkey-str-list (1+ (/ (length fkey-str-list) (1- (frame-height))))))
+            ((popwin:position-vertical-p guide-key/popup-window-position)
+             (guide-key/insert-following-key  ; caluculation of second argument is rough
+              fkey-str-list (/ (frame-width)
+                               (apply 'max (mapcar 'length fkey-str-list))))))
+      (align-regexp (point-min) (point-max) "\\(\\s-*\\) \\[" 1 1 t)
+      (goto-char (point-min)))
+    fkey-list-len))
+
+;;; --------------------------------------- old help buffer
 (defun smartrep-render-help-buffer (char alist)
   (if (get-buffer smartrep-help-buffer-name)
       (kill-buffer smartrep-help-buffer-name))
@@ -150,6 +204,16 @@
       (ctbl:cp-add-selection-change-hook cp (lambda () (message "CTable : Select Hook")))
       (ctbl:dest-ol-selection-clear (ctbl:component-dest cp))
       (ctbl:cp-get-buffer cp))))
+
+(defun smartrep-scroll-help-buffer (char alist)
+  (let* ((keystr (single-key-description char))
+         (buf-win (get-buffer-window smartrep-help-buffer-name)))
+    (if (and buf-win (member keystr '("{" "}")))
+        (with-selected-window buf-win
+          (if (string= "}" keystr)
+              (scroll-up)
+            (scroll-down)))
+      (execute-kbd-macro (read-kbd-macro keystr)))))
 
 (provide 'my-smartrep)
 ;;; my-smartrep.el ends here

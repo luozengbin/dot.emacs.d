@@ -28,9 +28,8 @@
 ;; ac-sourcesのカスタマイズ設置
 ;; (setq ac-sources '(.......))
 ;; 補完モード自動化対象モードの追加
-(add-to-list 'ac-modes 'org-mode)
-(add-to-list 'ac-modes 'text-mode)
 (add-to-list 'ac-modes 'html-mode)
+(add-to-list 'ac-modes 'sql-mode)
 (add-to-list 'ac-modes 'ess-mode)
 
 ;;

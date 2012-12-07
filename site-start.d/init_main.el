@@ -124,8 +124,8 @@
 ;; ;; ソースコースの折り畳む対応
 ;; (require 'init_hideshow)
 
-;; ;; ログ監視、ビューアツール
-;; (require 'init_logview)
+;; ログ監視、ビューアツール
+(require 'init_logview)
 
 ;; バージョン管理
 (require 'init_versions)

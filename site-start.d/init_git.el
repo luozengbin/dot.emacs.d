@@ -26,6 +26,12 @@
 
 (message "init_git ...")
 
+;;
+;; git-program
+;;______________________________________________________________________
+(when windows-p
+  (setq vc-git-program "C:/Program Files/Git/bin/git.exe")
+  (modify-coding-system-alist 'process "git" '(utf-8-dos . utf-8-unix)))
 
 ;;
 ;; magit for git
@@ -35,7 +41,7 @@
 (when (require 'magit nil t)
   ;; windowsの場合文字化けるため、プロセス通信文字コードを調整
   (when windows-p
-    (setq magit-git-executable "C:/Program Files/Git/bin/git.exe")
+    (setq magit-git-executable vc-git-program)
     (modify-coding-system-alist 'process "git" '(utf-8-dos . utf-8-unix)))
   ;; ;; integrates with git-svn. Hit 'N' to see your options.
   ;; (require 'magit-svn)
@@ -107,35 +113,41 @@
       ad-do-it)))
 
 ;;
-;; anythingでgitプロジェクトファイルを扱う
+;; helmでgitプロジェクトファイルを扱う
 ;;______________________________________________________________________
-(defun anything-c-sources-git-project-for (pwd)
+(defun helm-c-sources-git-project-for (pwd)
   (loop for elt in
-        '(("Modified files (%s)" . "--modified")
-          ("Untracked files (%s)" . "--others --exclude-standard")
-          ("All controlled files in this project (%s)" . ""))
+        '(("Modified files" . "--modified")
+          ("Untracked files" . "--others --exclude-standard")
+          ("All controlled files in this project" . nil))
+        for title  = (format "%s (%s)" (car elt) pwd)
+        for option = (cdr elt)
+        for cmd    = (format "\"%s\" ls-files %s" vc-git-program (or option ""))
         collect
-        `((name . ,(format (car elt) pwd))
+        `((name . ,title)
           (init . (lambda ()
-                    (unless (and ,(string= (cdr elt) "") ;update candidate buffer every time except for that of all project files
-                                 (anything-candidate-buffer))
-                      (with-current-buffer
-                          (anything-candidate-buffer 'global)
-                        (insert
-                         (shell-command-to-string
-                          ,(format "git ls-files $(git rev-parse --show-cdup) %s"
-                                   (cdr elt))))))))
+                    (unless (and (not ,option) (helm-candidate-buffer))
+                      (with-current-buffer (helm-candidate-buffer 'global)
+                        (call-process-shell-command ,cmd nil t nil)))))
           (candidates-in-buffer)
           (type . file))))
 
-(defun anything-git-project ()
-  (interactive)
-  (let* ((pwd default-directory)
-         (sources (anything-c-sources-git-project-for pwd)))
-    (anything-other-buffer sources
-                           (format "*Anything git project in %s*" pwd))))
+(defun helm-git-project-topdir ()
+  (file-name-as-directory
+   (replace-regexp-in-string
+    "\n" ""
+    (shell-command-to-string (format "\"%s\" rev-parse --show-toplevel" vc-git-program)))))
 
-(define-key global-map (kbd "C-;") 'anything-git-project)
+(defun helm-git-project ()
+  (interactive)
+  (let ((topdir (helm-git-project-topdir)))
+    (unless (file-directory-p topdir)
+      (error "I'm not in Git Repository!!"))
+    (let* ((default-directory topdir)
+           (sources (helm-c-sources-git-project-for default-directory)))
+      (helm-other-buffer sources "*helm git project*"))))
+
+(define-key global-map (kbd "C-;") 'helm-git-project)
 
 (provide 'init_git)
 ;;; init_git.el ends here

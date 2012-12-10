@@ -61,6 +61,9 @@
 ;; anything 設定
 (require 'init_anything)
 
+;; helm 設定
+(require 'init_helm)
+
 ;; dired 設定
 (require 'init_dired)
 

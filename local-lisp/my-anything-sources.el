@@ -49,7 +49,7 @@
         (insert candidate))))))
 
 ;;
-;; m-y でkill-ring一覧を表示する
+;; [2012-12-10 無効しました] m-y でkill-ring一覧を表示する
 ;;______________________________________________________________________
 ;; すべてのkillを表示
 (setq anything-kill-ring-threshold 0)
@@ -59,11 +59,11 @@
   (anything 'anything-c-source-kill-ring nil nil nil nil "*anything kill ring*"))
 
 ;; M-y でanything-kill-ringを呼び出すする
-(defadvice yank-pop (around anything-kill-ring-maybe activate)
-  (if (not (eq last-command 'yank))
-      (anything-kill-ring)
-      ;;(anything-show-kill-ring)
-    ad-do-it))
+;; (defadvice yank-pop (around anything-kill-ring-maybe activate)
+;;   (if (not (eq last-command 'yank))
+;;       (anything-kill-ring)
+;;       ;;(anything-show-kill-ring)
+;;     ad-do-it))
 
 ;;
 ;; 削除コマンドのanythingインタフェース定義

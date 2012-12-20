@@ -152,7 +152,7 @@
     yaml-mode                ; Major mode for editing YAML files [source: github]
     yaoddmuse                ; Yet another oddmuse for Emacs [source: wiki]
     yascroll                 ; Yet Another Scroll Bar Mode
-    ;; popwin
+    popwin
     ;; hl-line+
     ;; helm-R
     ;; helm-descbinds

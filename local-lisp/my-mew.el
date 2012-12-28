@@ -130,6 +130,26 @@
       (put-text-property (1- (point-max)) (point-max) 'signature-end t)
       )))
 
+(defvar my-mew-sig-dashes "-- ")
+(defun my-mew-remove-sig-dashes ()
+  (mew-cite-original arg)
+  (save-excursion
+    (goto-char (point-max))
+    (when (re-search-backward
+           (format "^%s%s$"
+                   mew-cite-default-prefix
+                   my-mew-sig-dashes) nil t)
+      (forward-line -1)
+      (when (string= (buffer-substring (point-at-bol) (point-at-eol))
+                     mew-cite-default-prefix)
+        (message "remove sig dashes from origin mail contents.")
+        (let ((signature-start-pos
+               (next-single-property-change (point) 'signature-start)))
+          (delete-region (point)
+                         (if signature-start-pos
+                             signature-start-pos
+                           (point-max))))))))
+
 ;;
 ;; 送信時DCCヘッダーの削除処理
 ;;______________________________________________________________________

@@ -70,7 +70,7 @@
   (cond
    ((string= "q" (single-key-description char))
     (smartrep-close-help-buffer)
-    ;;(execute-kbd-macro (read-kbd-macro "C-g"))
+    (execute-kbd-macro (read-kbd-macro "C-g"))
     )
    ((string= "?" (single-key-description char))
     (smartrep-show-help char alist))

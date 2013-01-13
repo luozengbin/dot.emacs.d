@@ -21,7 +21,3 @@ git pull bitbicket source
 
 pushd
 
-# do not change to stable version for popwin
-pushd lisp/popwin-el
-git co bd130a65d832669d6763cba170216937e04f692e
-pushd

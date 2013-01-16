@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  Zouhin.Ro
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -94,7 +94,8 @@
         ;;形式: ("名称" ?選択キー "テンプレート定義" "保存先" "タイトル")
         ("Note"         ?n "** []%?\n   %i\n   %a\n   %U"                "default-notes.org"  "Inbox")
         ("Event"        ?e "** APPT []%?\n   :PROPERTIES:\n   :LOCATION: \n   :Attachments: %a\n   :END:\n\n*** 内容\n %i\n*** 出席チェックリスト [/]\n - [ ] 参加者A\n - [ ] 参加者B\n\n   %U\n" "default-events.org" "Events")
-        ("SomeDay"      ?d "** SOMEDAY []%?\n   %i\n   %a\n   %U"           "default-tasks.org"  "Tasks")
+        ("PJ Event"     ?p "** APPT []%?\n   :PROPERTIES:\n   :LOCATION: \n   :Attachments: %a\n   :END:\n\n*** 内容\n %i\n*** 出席チェックリスト [/]\n - [ ] 参加者A\n - [ ] 参加者B\n\n   %U\n" "default-events.org" "ANA Project Events")
+        ("SomeDay"      ?s "** SOMEDAY []%?\n   %i\n   %a\n   %U"           "default-tasks.org"  "Tasks")
         ("Todo"         ?t "** TODO []%?\n   %i\n   %a\n   %U"           "default-tasks.org"  "Tasks")
         ("Work"         ?w "** TODO []%?   :work:\n   %i\n   %a\n   %U"  "default-tasks.org"  "Tasks")
         ("Home"         ?h "** TODO []%?   :home:\n   %i\n   %a\n   %U"  "default-tasks.org"  "Tasks")
@@ -109,7 +110,7 @@
 (global-set-key (kbd "<C-f9>") 'org-remember)
 
 ;; アジェンダに使うorgファイルのリストアップ
-(setq org-agenda-files (list 
+(setq org-agenda-files (list
                         (concat org-directory "default-events.org")
                         (concat org-directory "default-tasks.org")
                         (concat org-directory "emacs_todo.org")))
@@ -117,14 +118,14 @@
 
 ;; TAGの定義
 (setq org-tag-alist
-      '(("@OFFICE" . ?o) ("@HOME" . ?h) 
+      '(("@OFFICE" . ?o) ("@HOME" . ?h)
         ("SHOPPING" . ?s) ("MAIL" . ?m) ("PROJECT" . ?p)
         ("Emacs" . ?e) ("Java" . ?j) ("SOA" . ?a) (".NET" . ?d)
         ("QNES" . ?q)))
 
 ;; アジェンダビューのカスタマイズ
-;; (setq org-agenda-custom-commands 
-;;       '(("x" "My agenda view" 
+;; (setq org-agenda-custom-commands
+;;       '(("x" "My agenda view"
 ;;          ((agenda)
 ;;           (todo "WAITTING")
 ;;           (tags-todo "project")))
@@ -156,7 +157,7 @@
 (defvar org-code-reading-file "code-reading.org")
 (defun org-code-reading-read-software-name ()
   (set (make-local-variable 'org-code-reading-software-name)
-       (read-string "Code Reading Software: " 
+       (read-string "Code Reading Software: "
                     (or org-code-reading-software-name
                         (file-name-nondirectory
                          (buffer-file-name))))))

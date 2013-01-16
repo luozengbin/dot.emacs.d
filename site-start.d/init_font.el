@@ -8,26 +8,65 @@
 
 (require 'my-windows-os)
 
+;;  ASCIIフォント
+;; 日本語フォント
+(defun assign-fontspec (asciifont jpfont &optional twfont &optional zhfont &optional font-size)
+  (let* ((size (if font-size font-size)) ; ASCIIフォントのサイズ [9/10/12/14/15/17/19/20/...]
+         (h  (if font-size (* font-size 10))) ; 高さ
+         (fontspec (font-spec :family asciifont))
+         (jp-fontspec (font-spec :family jpfont))
+         (tw-fontspec (if twfont (font-spec :family twfont)))
+         (zh-fontspec (if zhfont (font-spec :family zhfont))))
+    (if h
+        (set-face-attribute 'default nil :family asciifont :height h)
+      (set-face-attribute 'default nil :family asciifont))
+    (if tw-fontspec (assign-tw-fontspec tw-fontspec)) ; tw code
+    (if zh-fontspec (assign-zh-fontspec zh-fontspec)) ; zh code
+    (assign-jp-fontspec jp-fontspec)                  ; jp code
+    (set-fontset-font nil '(#x0370 . #x03FF)        fontspec) ; ギリシャ文字
+    ))
+
+(defun assign-jp-fontspec (jp-fontspec)
+  "日本語字体設定"
+  ;; http://sakito.jp/moin/moin.cgi/EmacsFont を参考にして必要そうなものを追加
+  (set-fontset-font nil 'jisx0201                 jp-fontspec)
+  (set-fontset-font nil 'latin-jisx0201           jp-fontspec)
+  (set-fontset-font nil 'japanese-jisx0208        jp-fontspec)
+  (set-fontset-font nil 'japanese-jisx0208-1978   jp-fontspec)
+  (set-fontset-font nil 'japanese-jisx0212        jp-fontspec)
+  (set-fontset-font nil 'japanese-jisx0213-1      jp-fontspec)
+  (set-fontset-font nil 'japanese-jisx0213-2      jp-fontspec)
+  (set-fontset-font nil 'japanese-jisx0213-a      jp-fontspec)
+  (set-fontset-font nil 'japanese-jisx0213.2004-1 jp-fontspec)
+  (set-fontset-font nil 'katakana-sjis            jp-fontspec)
+  (set-fontset-font nil 'cp932-2-byte             jp-fontspec)
+  (set-fontset-font nil 'cp932                    jp-fontspec)
+  (set-fontset-font nil '(#x3040 . #x309f)        jp-fontspec) ; ひらがな
+  (set-fontset-font nil '(#x30a0 . #x30ff)        jp-fontspec) ; カタカナ
+  (set-fontset-font nil '(#xff00 . #xffef)        jp-fontspec) ; 半角・全角系
+  )
+
+(defun assign-zh-fontspec (zh-fontspec)
+  ;; 中国語簡体フォント
+  (set-fontset-font nil 'chinese-gb2312 zh-fontspec))
+
+(defun assign-tw-fontspec (tw-fontspec)
+  ;; 中国語繁体フォント
+  (set-fontset-font nil 'chinese-big5-1 tw-fontspec)
+  (set-fontset-font nil 'chinese-big5-2 tw-fontspec))
+
 ;;
 ;; font-setting
 ;;______________________________________________________________________
 (let ((my-font-style (cond (mac-p "monacokakumaru")
                            (windows-p "consolastakao")
                            (linux-p ;;"monacokakumaru"
-                                    "ricty"))))
+                            "ricty"))))
 
 ;;; -------------- for mac
   ;; ヒラギノ丸ゴ ProN + Monaco
   (when (equal my-font-style "monacokakumaru")
-    ;; 英数字フォント
-    (set-face-attribute 'default nil :family "Monaco" :height 140)
-    ;; 中国語繁体フォント
-    (set-fontset-font nil 'chinese-big5-1 (font-spec    :family "儷黑 Pro"))
-    (set-fontset-font nil 'chinese-big5-2 (font-spec    :family "儷黑 Pro"))
-    ;; 中国語簡体フォント
-    (set-fontset-font nil 'chinese-gb2312 (font-spec    :family "Hiragino Sans GB"))
-    ;; 日本語漢字 → Hiragino MaruGothic Pro
-    (set-fontset-font nil 'japanese-jisx0208 (font-spec :family "ヒラギノ丸ゴ Pro"))
+    (assign-fontspec "Monaco" "ヒラギノ丸ゴ Pro" "儷黑 Pro" "Hiragino Sans GB" 14)
     ;; 幅調調整
     (setq face-font-rescale-alist '(
                                     (".*Monaco.*"   . 1.0)
@@ -42,21 +81,9 @@
   ;; Takaoフォント：https://code.launchpad.net/takao-fonts/+download
   ;; Consolasフォント：http://www.microsoft.com/download/en/details.aspx?displaylang=en&id=17879
   (when (equal my-font-style "consolastakao")
-    ;; 英数字フォント → Consolas
     (if (is-windows-xp)
-        (set-face-attribute 'default nil :family "Consolas" :height 110)
-      (set-face-attribute 'default nil :family "Consolas"))
-
-    ;; 中国語繁体フォント
-    (set-fontset-font nil 'chinese-big5-1 (font-spec    :family "Microsoft JhengHei"))
-    (set-fontset-font nil 'chinese-big5-2 (font-spec    :family "Microsoft JhengHei"))
-    ;; 中国語簡体フォント
-    (set-fontset-font nil 'chinese-gb2312 (font-spec    :family "Microsoft Yahei"))
-
-    ;; 日本語漢字 → Takaoゴシック
-    (set-fontset-font nil 'japanese-jisx0208 (font-spec :family "Takaoゴシック"))
-    ;;(set-fontset-font nil 'japanese-jisx0208 (font-spec :family "メイリオ"))
-
+        (assign-fontspec "Consolas" "Takaoゴシック" "Microsoft JhengHei" "Microsoft Yahei" 11)
+      (assign-fontspec "Consolas" "Takaoゴシック" "Microsoft JhengHei" "Microsoft Yahei"))
     ;; ;; 幅調調整
     ;; (setq face-font-rescale-alist '(
     ;;                                 (".*Consolas.*"           . 1.0)
@@ -116,7 +143,7 @@
         (set-face-attribute 'default nil :family "Consolas" :height 110)
       (set-face-attribute 'default nil :family "Consolas"))
 
-  (dolist (target '(japanese-jisx0212
+    (dolist (target '(japanese-jisx0212
                       japanese-jisx0213-2
                       japanese-jisx0213.2004-1
                       katakana-jisx0201

@@ -885,6 +885,9 @@
      ("Open file externally (C-u to choose)" . anything-c-open-file-externally)
      ("Find file in hex dump" . hexl-find-file))))
 
+(defvar my-mew-definded-path-desc "^P:[\\].+")
+(defvar my-mew-definded-path "")
+
 (defun my-mew-file-at-point ()
   "get file path at mew message mode"
   (with-current-buffer anything-current-buffer
@@ -894,7 +897,12 @@
            (file-name
             (if (or linux-p mac-p)
                 (smb-file-backslash-to-slash (ffap-string-at-point))
-              (ffap-string-at-point))))
+              (ffap-string-at-point)))
+           ;; [P:\]で始まるパスの自動典展開
+           (file-name
+            (if (string-match my-mew-definded-path-desc file-name)
+                (concat my-mew-definded-path (substring file-name 2)))))
+      (message file-name)
       (if (and (> (string-width file-name) 0) (file-exists-p file-name))
           ;;(open-file-dwim (read-file-name "X on File: " file-name))
           (if (file-directory-p file-name)

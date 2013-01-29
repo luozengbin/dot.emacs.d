@@ -106,7 +106,6 @@
         ))
 
 ;; キーバンド
-(key-chord-define-global "mo" 'org-remember)
 (global-set-key (kbd "<C-f9>") 'org-remember)
 
 ;; アジェンダに使うorgファイルのリストアップ

@@ -97,7 +97,8 @@
 
 ;;; -------------- for linux
   (when (equal my-font-style "ricty")
-    (add-to-list 'default-frame-alist '(font . "ricty-13.5")))
+    (add-to-list 'default-frame-alist '(font . "ricty-13.5"))
+    (assign-fontspec "Ricty" "Ricty" "AR PL UKai TW" "AR PL UKai CN"))
 
   ;; ヒラギノ丸ゴ ProN + Menlo
   (when (equal my-font-style "menlokakumaru")

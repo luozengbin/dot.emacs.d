@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012  Zouhin.Ro
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -58,14 +58,11 @@
              (print ret)
              (setq edbi:ds-history-list ret)))))))
 
-
 ;;
 ;; e2wmとの連携
-;; edbi-e2wm.el : https://gist.github.com/1842966
 ;;______________________________________________________________________
-;; (install-elisp "https://raw.github.com/gist/1842966/98b5f0596096b138009bffcd5d2e3609719fb5d5/e2wm-edbi-pre.el")
-(require 'e2wm-edbi)
-(global-set-key (kbd "C-c 8") '(lambda () (interactive) (progn (e2wm:start-management) (e2wm:dp-edbi))))
+(autoload 'e2wm:dp-edbi "e2wm-edbi" nil t)
+(global-set-key (kbd "C-c 8") 'e2wm:dp-edbi)
 
 (provide 'init_edbi)
 ;;; init_edbi.el ends here

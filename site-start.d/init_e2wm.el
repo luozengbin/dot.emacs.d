@@ -36,7 +36,7 @@
 ;; Diredを2画面ファイラ化するe2wmのパースペクティブ拡張
 ;; http://mikio.github.com//article/2012/04/11_emacsdired2e2wm.html
 ;; (install-elisp "https://raw.github.com/gist/2357888/e6fea3452290c7b73dbeb2fe6123211356594c66/e2wm-wfiler.el")
-(require 'e2wm-wfiler)
+;; (require 'e2wm-wfiler)
 
 (setq e2wm:prefix-key "C-c ;")
 

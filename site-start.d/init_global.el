@@ -372,5 +372,12 @@
 
 ;; (desktop-save-mode 1)
 
+;;
+;; defnine alias for old version lisp code
+;;______________________________________________________________________
+(put 'modeline 'face-alias 'mode-line)
+(defvaralias 'last-command-char 'last-command-event)
+(defvaralias 'last-input-char 'last-input-event)
+
 (provide 'init_global)
 ;;; init_global.el ends here

@@ -13,9 +13,6 @@
 ;; キーボードとマウスの設定
 (require 'init_keyboard)
 
-;; プリンタの設定
-(require 'init_print)
-
 ;; 入力メッソドの設定
 ;; (if linux-p (require 'init_input))
 
@@ -42,6 +39,9 @@
 
 ;; バッファー初期設定
 (require 'init_buffer)
+
+;; プリンタの設定
+(require 'init_print)
 
 ;; カーソル動きの制御
 (require 'init_point)

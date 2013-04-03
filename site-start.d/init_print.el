@@ -44,6 +44,23 @@
 (global-set-key (kbd "C-z p") 'ps-print-buffer)
 (global-set-key (kbd "C-z P") 'ps-print-region)
 
+;;; sakuraで印刷する
+(defun my-sakura-print ()
+  "print buffer content with sakura"
+  (interactive)
+  (if buffer-file-name
+      (progn
+        (deferred:$
+          (deferred:process
+            "sakura.exe" "-R" "-M=PrintPreview()" "-MTYPE=mac"
+            (w32-convert-standard-filename buffer-file-name))
+          (deferred:nextc it
+            (lambda (x)
+              (message "print finished"))))
+        (message "start print preview"))
+    (message "save buffer before printing")))
+
+;;; windows 場合の印刷設定
 (when windows-p
   (progn
     (defun listsubdir (basedir)
@@ -63,7 +80,8 @@
           ps-printer-name nil
           ps-printer-name-option nil
           ps-print-header t             ; ヘッダの非表示
-          )))
+          )
+    (global-set-key (kbd "C-z p") 'my-sakura-print)))
 
 (provide 'init_print)
 ;;; init_print.el ends here

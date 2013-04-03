@@ -13,6 +13,9 @@
 ;; キーボードとマウスの設定
 (require 'init_keyboard)
 
+;; プリンタの設定
+(require 'init_print)
+
 ;; 入力メッソドの設定
 ;; (if linux-p (require 'init_input))
 

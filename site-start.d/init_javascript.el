@@ -39,7 +39,7 @@
 ;; javascript lint setting
 ;;______________________________________________________________________
 ;; JavaScript Lintで文法チェック
-;; 参照リンク: 
+;; 参照リンク:
 ;;      http://d.hatena.ne.jp/kazu-yamamoto/20071029/1193651325
 ;;      http://www.javascriptlint.com
 ;; flymake-mode: 動的構文チェッカ flymake-jsl.el
@@ -81,6 +81,14 @@
 ;;       (list "closure.sh" (list local-file))))
 ;;   (add-to-list 'flymake-allowed-file-name-masks
 ;;                '("\\.js\\'" flymake-closure-init)))
+
+;;
+;; format json by python
+;;______________________________________________________________________
+(defun json-format ()
+  (interactive)
+  (save-excursion
+    (shell-command-on-region (mark) (point) "python -m json.tool" (buffer-name) t)))
 
 
 (provide 'init_javascript)

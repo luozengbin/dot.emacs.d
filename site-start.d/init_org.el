@@ -84,6 +84,7 @@
 (setq org-icalendar-include-todo t)
 
 ;; org-remeberで瞬時メモを取る
+(require 'org-remember)
 (org-remember-insinuate)                ;org-remberの初期化
 ;; orgメモ格納先の指定
 (setq org-directory (concat my-private-emacs-path "myfiles/"))

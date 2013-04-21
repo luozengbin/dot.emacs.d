@@ -33,6 +33,7 @@
    `(progn (apply-selected-ramdom-theme (quote (  wheatgrass ))))
    `(progn (apply-selected-ramdom-theme (quote (  wombat     ))))
    `(progn (apply-selected-ramdom-theme (quote (  zenburn    ))))
+   `(progn (apply-selected-ramdom-theme (quote (  molokai    ))))
    ;; --- [reverse-theme] ---
    ;; https://raw.github.com/syohex/emacs-reverse-theme/master/reverse-theme.el
    `(progn (apply-selected-ramdom-theme (quote (  reverse    ))))

@@ -40,6 +40,9 @@
 ;; バッファー初期設定
 (require 'init_buffer)
 
+;; プリンタの設定
+(require 'init_print)
+
 ;; カーソル動きの制御
 (require 'init_point)
 

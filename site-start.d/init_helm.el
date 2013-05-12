@@ -23,17 +23,14 @@
 ;;
 
 ;;; Code:
+(message "init-helm ...")
+
 (require 'helm-config)
-
-
-;;
-;; helm-show-kill-ring
-;;______________________________________________________________________
-(define-key global-map (kbd "M-y") 'helm-show-kill-ring)
 
 ;;
 ;; helm-migemo
 ;;______________________________________________________________________
+;;; M-x helm-occur
 (when
     (and (executable-find "cmigemo")
          (require 'helm-migemo nil t))
@@ -52,14 +49,61 @@
 (defun my-helm ()
   "helm command for me "
   (interactive)
+  (require 'helm-files)
   (helm-other-buffer
    '(helm-c-source-buffers-list
      helm-c-source-bookmarks
      helm-c-source-recentf
-     ;; helm-c-source-files-in-current-dir ;; 遅い
+     helm-c-source-files-in-current-dir ;; 遅い
      helm-c-source-imenu
      helm-c-source-buffer-not-found)
    "*helm*"))
+
+;;
+;; helmキーバンディングのカスタマイズ
+;;______________________________________________________________________
+;; helm-commandのprefix-Keyを "<f5> a" → "C-z a"に変える
+(custom-set-variables '(helm-command-prefix-key "C-z a"))
+
+;; [C-SPC] → [C-@]
+;; helmでオブジェクト選択キーバンディングを変える
+(define-key helm-map (kbd "C-@") 'helm-toggle-visible-mark)
+
+;;
+;; helm-show-kill-ring
+;;______________________________________________________________________
+(define-key global-map (kbd "M-y") 'helm-show-kill-ring)
+
+;;
+;; describe-bindingsをhelmインタフェースに変えて、絞れるように改善する
+;;______________________________________________________________________
+;;(global-set-key (kbd "C-h b") 'helm-descbinds)
+(when (require 'helm-descbinds nil t)
+  ;; describe-bindingsをHelmに置き換える
+  (helm-descbinds-mode))
+
+;;
+;; helmによる補完
+;;______________________________________________________________________
+;; 補足：M-c 元はseq-capitalize-backward-wordコマンドに割り当てられている
+(require 'helm-elisp)
+(define-key emacs-lisp-mode-map (kbd "M-c") 'helm-lisp-completion-at-point)
+
+;;
+;; key binding
+;;______________________________________________________________________
+;; helmメニュー表示する
+(global-set-key (kbd "C-x t") 'my-helm)
+;; [M-z] に割り当てする
+(define-key esc-map "t"  'my-helm)
+;;; hidden bufferの絞り込み
+(global-set-key (kbd "C-x y") 'my-helm-hidden-buffer-commands)
+
+;;
+;; custom helm
+;;______________________________________________________________________
+;; 自作関数をローディングする
+(require 'my-helm-sources)
 
 (provide 'init_helm)
 ;;; init_helm.el ends here

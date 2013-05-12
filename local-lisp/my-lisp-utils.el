@@ -296,5 +296,11 @@ See also: `copy-to-register-1', `insert-register'."
         (eval cleanup-form))))
 
 
+;;; hiddenバッファー
+(defun my-hidden-buffer-list ()
+  (delq nil (mapcar '(lambda (x)
+                       (if (string-match "^ \\*.*" (buffer-name x))
+                           (buffer-name x))) (buffer-list))))
+
 (provide 'my-lisp-utils)
 ;;; my-lisp-utils.el ends here

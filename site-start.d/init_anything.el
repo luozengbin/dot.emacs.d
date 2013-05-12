@@ -75,6 +75,9 @@
  ;; anything-use-migemo nil
  )
 
+(setq anything-enable-shortcuts 'prefix)
+(define-key anything-map (kbd "@") 'anything-select-with-prefix-shortcut)
+
 ;; ------------> 目が疲れそう、コメントアウトしました。
 ;; バッファに対しては、カーソルを合わせただけで中身を表示する
 ;; (add-hook 'anything-move-selection-after-hook
@@ -127,32 +130,32 @@
 ;; 環境にあわせてanything-topコマンドの再定義
 ;; (setq anything-c-top-command "COLUMNS=%s top")
 
-;;
-;; anythingキーバンディングのカスタマイズ
-;;______________________________________________________________________
-;; anything-commandのprefix-Keyを "<f5> a" → "C-z a"に変える
-(custom-set-variables '(anything-command-map-prefix-key "C-z a"))
+;; ;;
+;; ;; anythingキーバンディングのカスタマイズ
+;; ;;______________________________________________________________________
+;; ;; anything-commandのprefix-Keyを "<f5> a" → "C-z a"に変える
+;; (custom-set-variables '(anything-command-map-prefix-key "C-z a"))
 
 ;; anything-local-mapによるanything-mapが無効の問題を解決する
 (setq anything-local-map-override-anything-map nil)
 
-;; [C-SPC] → [C-@]
-;; anythingでオブジェクト選択キーバンディングを変える
-(define-key anything-map (kbd "C-@") 'anything-toggle-visible-mark)
+;; ;; [C-SPC] → [C-@]
+;; ;; anythingでオブジェクト選択キーバンディングを変える
+;; (define-key anything-map (kbd "C-@") 'anything-toggle-visible-mark)
 
-;;
-;; describe-bindingsをanythingインタフェースに変えて、絞れるように改善する
-;;______________________________________________________________________
-;;(global-set-key (kbd "C-h b") 'descbinds-anything)
-(when (require 'descbinds-anything nil t)
-  ;; describe-bindingsをAnythingに置き換える
-  (descbinds-anything-install))
+;; ;;
+;; ;; describe-bindingsをanythingインタフェースに変えて、絞れるように改善する
+;; ;;______________________________________________________________________
+;; ;;(global-set-key (kbd "C-h b") 'descbinds-anything)
+;; (when (require 'descbinds-anything nil t)
+;;   ;; describe-bindingsをAnythingに置き換える
+;;   (descbinds-anything-install))
 
-;;
-;; anythingによる補完
-;;______________________________________________________________________
-;; 補足：M-c 元はseq-capitalize-backward-wordコマンドに割り当てられている
-(define-key emacs-lisp-mode-map (kbd "M-c") 'anything-lisp-complete-symbol-partial-match)
+;; ;;
+;; ;; anythingによる補完
+;; ;;______________________________________________________________________
+;; ;; 補足：M-c 元はseq-capitalize-backward-wordコマンドに割り当てられている
+;; (define-key emacs-lisp-mode-map (kbd "M-c") 'anything-lisp-complete-symbol-partial-match)
 
 ;; 何でもanythingで補完
 ;; (anything-completion-mode -1)
@@ -200,15 +203,24 @@
 (set-face-background 'anything-header (face-foreground 'default))
 (set-face-foreground 'anything-header (face-background 'default))
 
+;; ;;
+;; ;; key binding
+;; ;;______________________________________________________________________
+;; ;; anythingメニュー表示する
+;; (global-set-key (kbd "C-x t") 'my-anything)
+;; ;; [M-z] に割り当てする
+;; (define-key esc-map "t"  'my-anything)
+;; ;;; hidden bufferの絞り込み
+;; (global-set-key (kbd "C-x y") 'my-anything-hidden-buffer-commands)
+
+
 ;;
-;; key binding
+;; anythingでファイルシステムを検索する
 ;;______________________________________________________________________
-;; anythingメニュー表示する
-(global-set-key (kbd "C-x t") 'my-anything)
-;; [M-z] に割り当てする
-(define-key esc-map "t"  'my-anything)
-;;; hidden bufferの絞り込み
-(global-set-key (kbd "C-x y") 'my-anything-hidden-buffer-commands)
+;;; M-x anything-filelist
+;;; M-x anything-filelist+
+(setq anything-c-filelist-file-name "/tmp/all.filelist")
+(setq anything-grep-candidates-fast-directory-regexp "^/tmp")
 
 ;;
 ;; custom anything

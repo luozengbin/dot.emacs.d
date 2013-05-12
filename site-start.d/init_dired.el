@@ -108,7 +108,6 @@
     (search-forward keyword)
     (dired (file-name-directory (thing-at-point 'line)))
     ))
-
 ;;
 ;; speedbar 設定
 ;;______________________________________________________________________

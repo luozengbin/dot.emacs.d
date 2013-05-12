@@ -115,19 +115,13 @@
     (persistent-help . "Show this buffer"))
   "Buffer or buffer name.")
 
-;;; hiddenバッファー
-(defun my-anything-hidden-buffer-list ()
-  (delq nil (mapcar '(lambda (x)
-                       (if (string-match "^ \\*.*" (buffer-name x))
-                           (buffer-name x))) (buffer-list))))
-
 (defun my-anything-hidden-buffer-commands ()
   (interactive)
   (let* ((anything-enable-digit-shortcuts t)
          (anything-enable-shortcuts 'alphabet))
     (anything (list
                (list (cons 'name "Hidden Buffer List")
-                     (cons 'candidates (my-anything-hidden-buffer-list))
+                     (cons 'candidates (my-hidden-buffer-list))
                      (cons 'type 'hidden-buffer))) nil nil nil)))
 
 ;;

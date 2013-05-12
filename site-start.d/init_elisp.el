@@ -45,16 +45,29 @@
 (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
 
 ;;
-;; anythingよりemacs変数、関数、コマンド情報を探す
+;; helmよりemacs変数、関数、コマンド情報を探す
 ;;______________________________________________________________________
-(defun my-anything-emacs ()
-  "emacs information display with anything interface"
+;; (defun my-anything-emacs ()
+;;   "emacs information display with anything interface"
+;;   (interactive)
+;;   (anything-other-buffer
+;;    '(anything-c-source-emacs-variables
+;;      anything-c-source-emacs-functions
+;;      anything-c-source-emacs-commands)
+;;    "*my anything emacs*"))
+(require 'helm-elisp)
+(defun my-helm-emacs ()
+  "emacs information display with helm interface"
   (interactive)
-  (anything-other-buffer
-   '(anything-c-source-emacs-variables
-     anything-c-source-emacs-functions
-     anything-c-source-emacs-commands)
-   "*my anything emacs*"))
+  (let ((default (thing-at-point 'symbol)))
+    (helm :sources
+          (mapcar (lambda (func)
+                    (funcall func default))
+                  '(helm-def-source--emacs-commands
+                    helm-def-source--emacs-functions
+                    helm-def-source--emacs-variables))
+          :buffer "*helm apropos*"
+          :preselect (and default (concat "\\_<" (regexp-quote default) "\\_>")))))
 
 ;;
 ;; anythingより日本語Infoを引く

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  Zouhin.Ro
 
 ;; Author: Zouhin.Ro <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -47,9 +47,8 @@
                                           nil default-directory t))
                 (confirm (equal current-prefix-arg '(4))))
            (list regexp files dir confirm))))))
-  (setq grep-find-template (concat "find . -maxdepth 1 <X> -type f <F> -print0 | xargs -0 lgrep -n " (computeGrepOutputCodingOption) " -Ia <R> | grep <C> \"" regexp "\" --color=always "))
-  (rgrep regexp files dir confirm)
-)
+  (let ((grep-find-template (concat "find . -maxdepth 1 <X> -type f <F> -print0 | xargs -0 lgrep -n " (computeGrepOutputCodingOption) " -Ia <R> | grep <C> \"" regexp "\" --color=always ")))
+    (rgrep regexp files dir confirm)))
 
 (defun my-rgrep (regexp &optional files dir confirm)
   "rgrepのマルチバイト強化版"
@@ -68,9 +67,8 @@
                                           nil default-directory t))
                 (confirm (equal current-prefix-arg '(4))))
            (list regexp files dir confirm))))))
-  (setq grep-find-template (concat "find . <X> -type f <F> -print0 | xargs -0 lgrep -n  " (computeGrepOutputCodingOption) " -Ia <R> | grep <C> \"" regexp "\" --color=always "))
-  (rgrep regexp files dir confirm)
-  )
+  (let ((grep-find-template (concat "find . <X> -type f <F> -print0 | xargs -0 lgrep -n  " (computeGrepOutputCodingOption) " -Ia <R> | grep <C> \"" regexp "\" --color=always ")))
+    (rgrep regexp files dir confirm)))
 
 (defun computeGrepOutputCodingOption ()
   "Process I/Oのコーディング値よりgrep出力コーディングオプションを決定する"

@@ -25,6 +25,14 @@
 ;;; Code:
 
 ;;
+;; 英辞郎用の設定
+;;______________________________________________________________________
+(require 'eijiro)
+(setq eijiro-directory "/tmp/eijiro")
+(setq eijiro-display-function 'anything-default-display-buffer)
+(setq anything-grep-candidates-fast-directory-regexp "^/tmp")
+
+;;
 ;; sdic-mode 用の設定
 ;;______________________________________________________________________
 ;;; http://www.namazu.org/~tsuchiya/sdic/

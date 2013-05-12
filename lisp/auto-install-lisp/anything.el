@@ -39,7 +39,7 @@
 ;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
 
- 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;; Autodoc documentation:
@@ -54,7 +54,7 @@
 ;; `anything-resume'
 ;; Resurrect previously invoked `anything'.
 ;; `anything-resume-window-only'
-;; 
+;;
 ;; `anything-at-point'
 ;; Call anything with symbol at point as initial input.
 ;; `anything-force-update'
@@ -341,7 +341,7 @@
 
 ;; [EVAL] (autodoc-update-all)
 
- 
+
 ;;; Commentary:
 
 ;;
@@ -362,7 +362,7 @@
 ;; Here is Japanese translation of `anything-sources' attributes.  Thanks.
 ;; http://d.hatena.ne.jp/sirocco634/20091012/1255336649
 
- 
+
 ;;; Bug Report:
 ;;
 ;; If you have problems, send a bug report via C-c C-x C-b in anything session (best)
@@ -390,7 +390,7 @@
 ;;  You can also just report bug to:
 ;;  https://groups.google.com/group/emacs-anything?hl=en
 
- 
+
 ;; You can extend `anything' by writing plug-ins. As soon as
 ;; `anything' is invoked, `anything-sources' is compiled into basic
 ;; attributes, then compiled one is used during invocation.
@@ -626,16 +626,16 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
- 
+
 ;;; Code:
 
 (require 'cl)
 
-(defvar anything-version "1.3.8")
+(defvar anything-version "1.3.9")
 
 ;; (@* "User Configuration")
 
- 
+
 ;;; Variables
 ;;
 ;;
@@ -727,7 +727,7 @@ Other sources won't appear in the search results.
 If nil then there is no filtering.
 See also `anything-set-source-filter'.")
 
- 
+
 (defvar anything-map
   (let ((map (copy-keymap minibuffer-local-map)))
     (define-key map (kbd "<down>")          'anything-next-line)
@@ -777,7 +777,7 @@ See also `anything-set-source-filter'.")
     (define-key map (kbd "C-t")             'anything-toggle-resplit-window)
     (define-key map (kbd "C-}")             'anything-narrow-window)
     (define-key map (kbd "C-{")             'anything-enlarge-window)
-    
+
     (define-key map (kbd "C-c C-d")         'anything-delete-current-selection)
     (define-key map (kbd "C-c C-y")         'anything-yank-selection)
     (define-key map (kbd "C-c C-k")         'anything-kill-selection-and-quit)
@@ -796,7 +796,7 @@ See also `anything-set-source-filter'.")
     map)
   "Keymap for anything.")
 
- 
+
 (defgroup anything nil
   "Open anything."
   :prefix "anything-" :group 'convenience)
@@ -977,11 +977,7 @@ which affects `anything-samewindow'.")
 
 (defvar anything-delayed-init-executed nil)
 
-(defvar anything-mode-line-string "\\<anything-map>\\[anything-help]:help \
-\\[anything-select-action]:Acts \
-\\[anything-exit-minibuffer]/\\[anything-select-2nd-action-or-end-of-line]/\
-\\[anything-select-3rd-action]:NthAct \
-\\[anything-send-bug-report-from-anything]:BugReport"
+(defvar anything-mode-line-string nil
   "Help string displayed in mode-line in `anything'.
 It can be a string or a list of two args, in this case,
 first arg is a string that will be used as name for candidates number,
@@ -1017,7 +1013,7 @@ otherwise same keys in `anything-map' will take precedence."
   :group 'anything
   :type  'boolean)
 
- 
+
 ;; (@* "Internal Variables")
 (defvar anything-test-candidate-list nil)
 (defvar anything-test-mode nil)
@@ -1034,8 +1030,9 @@ otherwise same keys in `anything-map' will take precedence."
 (defvar anything-let-variables nil)
 (defvar anything-split-window-state nil)
 (defvar anything-selection-point nil)
+(defvar anything-alive-p nil)
 
- 
+
 ;; (@* "Utility: logging")
 (defun anything-log (format-string &rest args)
   "Log message if `debug-on-error' or `anything-debug' is non-nil.
@@ -1123,7 +1120,7 @@ ARGS are args given to `format'."
 ;; (anything-log "test")
 ;; (switch-to-buffer-other-window "*Anything Log*")
 
- 
+
 ;; (@* "Programming Tools")
 (defmacro anything-aif (test-form then-form &rest else-forms)
   "Like `if' but set the result of TEST-FORM in a temprary variable called `it'.
@@ -1139,7 +1136,7 @@ Otherwise make a list with one element."
       obj
       (list obj)))
 
- 
+
 ;; (@* "Anything API")
 
 (defun anything-buffer-get ()
@@ -1302,19 +1299,28 @@ Attributes:
                 anything-sources anything-compile-source-functions))
        (anything-log-eval anything-compiled-sources)))))
 
-(defun* anything-get-selection (&optional (buffer nil buffer-s) (force-display-part))
+(defun* anything-get-selection (&optional (buffer nil buffer-s)
+                                          force-display-part)
   "Return the currently selected item or nil.
 if BUFFER is nil or unspecified, use anything-buffer as default value.
-If FORCE-DISPLAY-PART is non-nil, return the display string."
+If FORCE-DISPLAY-PART is non-nil, return the display string.
+If FORCE-DISPLAY-PART value is 'withprop the display string is returned
+with its properties."
   (setq buffer (if (and buffer buffer-s) buffer anything-buffer))
   (unless (anything-empty-buffer-p buffer)
     (with-current-buffer buffer
-      (let ((selection
+      (let* ((disp-fn (if (eq force-display-part 'withprop)
+                          'buffer-substring
+                          'buffer-substring-no-properties))
+             (selection
              (or (and (not force-display-part)
                       (get-text-property (overlay-start
                                           anything-selection-overlay)
                                          'anything-realvalue))
-                 (let ((disp (buffer-substring-no-properties
+                 ;; It is needed to return properties of DISP in some case,
+                 ;; e.g for `anything-confirm-and-exit-minibuffer',
+                 ;; so use `buffer-substring' here when 'withprop is specified.
+                 (let ((disp (funcall disp-fn
                               (overlay-start anything-selection-overlay)
                               (1- (overlay-end anything-selection-overlay))))
                        (source (anything-get-current-source)))
@@ -1387,6 +1393,7 @@ filtered-candidate-transformer functions."
   "Perform an action after quitting `anything'.
 The action is to call FUNCTION with arguments ARGS."
   (setq anything-quit t)
+  (anything-kill-async-processes)
   (anything-log-eval function args)
   (apply 'run-with-idle-timer 0 nil function args)
   (anything-exit-minibuffer))
@@ -1451,7 +1458,7 @@ Otherwise, return VALUE itself."
       (apply function args)
       (push spec anything-once-called-functions))))
 
- 
+
 ;; (@* "Core: API helper")
 (defun* anything-empty-buffer-p (&optional (buffer anything-buffer))
   "Check if BUFFER have candidates.
@@ -1491,7 +1498,7 @@ BINDING is a list of \(VARNAME . VALUE\) pair."
        (funcall bodyfunc)
     (setq anything-let-variables nil)))
 
- 
+
 ;; (@* "Core: tools")
 (defun anything-current-line-contents ()
   "Current line string without properties."
@@ -1588,7 +1595,7 @@ This is used in transformers to modify candidates list."
       (cancel-timer it))
   (set variable timer))
 
- 
+
 ;; (@* "Core: entry point")
 (defconst anything-argument-keys
   '(:sources :input :prompt :resume :preselect :buffer :keymap :default :history))
@@ -1720,7 +1727,8 @@ ANY-KEYMAP ANY-DEFAULT ANY-HISTORY See `anything'."
                    anything-source-name
                    anything-in-persistent-action
                    anything-quit
-                   (case-fold-search t)
+                   ;; [2012-10-16] move to `anything-update' to show right value of `case-fold-search'
+                   ;; (case-fold-search t)
                    (anything-buffer (or any-buffer anything-buffer))
                    ;; cua-mode ; avoid error when region is selected
                    )
@@ -1744,7 +1752,7 @@ ANY-KEYMAP ANY-DEFAULT ANY-HISTORY See `anything'."
       (setq overriding-local-map old-overridding-local-map)
       (anything-log-save-maybe))))
 
- 
+
 ;;; Anything resume
 ;;
 ;;
@@ -1789,7 +1797,7 @@ Just check if ANY-RESUME value is t or window-only."
                 :buffer "*anything resume*")
       (keyboard-quit)))
 
- 
+
 ;;;###autoload
 (defun anything-at-point (&optional
                             any-sources any-input
@@ -1843,7 +1851,7 @@ Call `anything' with only ANY-SOURCES and ANY-BUFFER as args."
           (setq cursor-type t)
           (setq anything-current-buffer orig-anything-current-buffer))))))
 
- 
+
 ;;; Initialize
 ;;
 ;;
@@ -1887,7 +1895,7 @@ For ANY-RESUME ANY-INPUT and ANY-SOURCES See `anything'."
     (and m (set list-var (delq (car m) (symbol-value list-var))))
     (push elt (symbol-value list-var))))
 
- 
+
 ;;; (@* "Core: Accessors")
 ;;; rubikitch: I love to create functions to control variables.
 (defvar anything-current-position nil
@@ -1935,7 +1943,7 @@ window or frame configuration is saved/restored according to values of
                  (setq frame (selected-frame)))
                (select-frame-set-input-focus frame)))))
 
- 
+
 ;; (@* "Core: Display *anything* buffer")
 (defun anything-display-buffer (buf)
   "Display *anything* buffer BUF."
@@ -1949,7 +1957,7 @@ It use `switch-to-buffer' or `pop-to-buffer' depending of value of
 `anything-samewindow'."
   (funcall (if anything-samewindow 'switch-to-buffer 'pop-to-buffer) buf))
 
- 
+
 ;; (@* "Core: initialize")
 (defun anything-initial-setup ()
   "Initialize anything settings and set up the anything buffer."
@@ -1957,6 +1965,7 @@ It use `switch-to-buffer' or `pop-to-buffer' depending of value of
   (setq anything-current-prefix-arg nil)
   (setq anything-once-called-functions nil)
   (setq anything-delayed-init-executed nil)
+  (setq anything-alive-p t)
   (setq anything-current-buffer
         (if (minibuffer-window-active-p (minibuffer-window))
             ;; If minibuffer is active be sure to use it's buffer
@@ -1967,7 +1976,8 @@ It use `switch-to-buffer' or `pop-to-buffer' depending of value of
   (setq anything-issued-errors nil)
   (setq anything-compiled-sources nil)
   (setq anything-saved-current-source nil)
-  (if (or (not split-width-threshold)
+  (if (or (not (boundp 'split-width-threshold))
+          (not split-width-threshold)
           (and (integerp split-width-threshold)
                (>= split-width-threshold (+ (frame-width) 4))))
       (setq anything-split-window-state 'vertical)
@@ -1996,7 +2006,7 @@ For ANY-PRESELECT ANY-RESUME ANY-KEYMAP, See `anything'."
     (let ((src-keymap (assoc-default 'keymap (anything-get-current-source))))
       ;; Startup with the first keymap found either in current source
       ;; or anything arg, otherwise use global value of `anything-map'.
-      ;; This map with be used as a `minibuffer-local-map'.
+      ;; This map will be used as a `minibuffer-local-map'.
       ;; Maybe it will be overriden when changing source
       ;; by `anything-maybe-update-keymap'.
       (unless anything-local-map-override-anything-map
@@ -2024,7 +2034,7 @@ For ANY-PRESELECT ANY-RESUME ANY-KEYMAP, See `anything'."
                (read-from-minibuffer (or any-prompt "pattern: ")
                                      any-input anything-map
                                      nil any-history tap)))))))
-               
+
 (defun anything-maybe-update-keymap ()
   "Handle differents keymaps in multiples sources.
 This function is meant to be run in `anything-move-selection-after-hook'.
@@ -2102,7 +2112,7 @@ hooks concerned are `post-command-hook' and `minibuffer-setup-hook'."
         (dolist (args hooks) (apply 'add-hook args))
         (dolist (args (reverse hooks)) (apply 'remove-hook args)))))
 
- 
+
 ;; (@* "Core: clean up")
 ;;; TODO move
 (defun anything-cleanup ()
@@ -2125,6 +2135,7 @@ hooks concerned are `post-command-hook' and `minibuffer-setup-hook'."
   (anything-log-run-hook 'anything-cleanup-hook)
   (anything-hooks 'cleanup)
   (anything-frame-or-window-configuration 'restore)
+  (setq anything-alive-p nil)
   ;; This is needed in some cases where last input
   ;; is yielded infinitely in minibuffer after anything session.
   (anything-clean-up-minibuffer))
@@ -2138,7 +2149,7 @@ hooks concerned are `post-command-hook' and `minibuffer-setup-hook'."
       (with-current-buffer (window-buffer miniwin)
         (delete-minibuffer-contents)))))
 
- 
+
 ;; (@* "Core: input handling")
 (defun anything-check-minibuffer-input ()
   "Extract input string from the minibuffer and check if it needs to be handled."
@@ -2166,7 +2177,7 @@ hooks concerned are `post-command-hook' and `minibuffer-setup-hook'."
     (anything-log-eval anything-pattern anything-input)
     (anything-update)))
 
- 
+
 ;; (@* "Core: source compiler")
 (defvar anything-compile-source-functions-default anything-compile-source-functions
   "Plug-ins this file provides.")
@@ -2182,7 +2193,7 @@ Anything plug-ins are realized by this function."
            finally (return source)))
    sources))
 
- 
+
 ;; (@* "Core: plug-in attribute documentation hack")
 
 ;; `anything-document-attribute' is public API.
@@ -2198,7 +2209,7 @@ Anything plug-ins are realized by this function."
 ;; (documentation-property 'anything-sources 'variable-documentation)
 ;; (progn (ad-disable-advice 'documentation-property 'after 'anything-document-attribute) (ad-update 'documentation-property))
 
- 
+
 ;; (@* "Core: all candidates")
 (defun anything-process-delayed-init (source)
   "Initialize delayed SOURCE."
@@ -2250,7 +2261,7 @@ Cache the candidates if there is not yet a cached value."
                     (push candidate-cache anything-candidate-cache)))
              candidates)))))
 
- 
+
 ;;; (@* "Core: candidate transformers")
 (defun anything-transform-mapcar (function args)
   "`mapcar' for candidate-transformer.
@@ -2308,7 +2319,7 @@ This happen if PROCESS-P is non-nil."
     (anything-process-candidate-transformer candidates source) source process-p)
    source))
 
- 
+
 ;; (@* "Core: narrowing candidates")
 (defun anything-candidate-number-limit (source)
   "Apply candidate-number-limit attribute value.
@@ -2478,7 +2489,7 @@ when emacs is idle for `anything-idle-delay'."
         (anything-log-run-hook 'anything-update-hook))
       (anything-log-run-hook 'anything-after-update-hook))))
 
- 
+
 ;; (@* "Core: *anything* buffer contents")
 (defvar anything-input-local nil)
 (defvar anything-process-delayed-sources-timer nil)
@@ -2496,6 +2507,7 @@ is done on whole `anything-buffer' and not on current source."
     (when anything-enable-shortcuts
       (mapc 'delete-overlay anything-digit-overlays))
     (let (delayed-sources
+          (case-fold-search t)
           normal-sources)
       (unwind-protect ; Process normal sources and store delayed one's.
            (setq delayed-sources
@@ -2607,12 +2619,15 @@ call it before update."
   "Insert MATCH into `anything-buffer' with INSERT-FUNCTION for SOURCE.
 If MATCH is a list then insert the string intended to appear on the display
 and store the real value in a text property."
-  (let ((start (point-at-bol (point)))
-        (string (or (car-safe match) match))
+  (let ((start     (point-at-bol (point)))
+        (dispvalue (or (car-safe match) match))
         (realvalue (cdr-safe match)))
-    (when (symbolp string) (setq string (symbol-name string)))
-    (when (stringp string)
-      (funcall insert-function string)
+    (setq dispvalue
+          (cond ((symbolp dispvalue) (symbol-name dispvalue))
+                ((numberp dispvalue) (number-to-string dispvalue))
+                (t dispvalue)))
+    (when (stringp dispvalue)
+      (funcall insert-function dispvalue)
       ;; Some sources with candidates-in-buffer have already added
       ;; 'anything-realvalue property when creating candidate buffer.
       (unless (get-text-property start 'anything-realvalue)
@@ -2658,7 +2673,7 @@ after the source name by overlay."
                      (point-at-eol) 'anything-candidate-separator t)
   (insert "\n"))
 
- 
+
 ;; (@* "Core: async process")
 (defun anything-output-filter (process string)
   "From PROCESS process output STRING."
@@ -2726,7 +2741,7 @@ after the source name by overlay."
   (set-process-filter process nil)
   (delete-process process))
 
- 
+
 ;; (@* "Core: action")
 (defun anything-execute-selection-action (&optional
                                             selection action
@@ -2802,7 +2817,7 @@ If action buffer is selected, back to the anything buffer."
     (set (make-local-variable 'anything-digit-overlays) nil)
     (anything-initialize-overlays anything-action-buffer)))
 
- 
+
 ;; (@* "Core: selection")
 (defun anything-move-selection-common (move-func unit direction)
   "Move the selection marker to a new position wit function MOVE-FUNC.
@@ -3049,19 +3064,22 @@ If `minibuffer-completion-confirm' value is t,
 don't exit and send message 'no match'."
   (interactive)
   (let ((empty-buffer-p (with-current-buffer anything-buffer
-                          (eq (point-min) (point-max)))))
-      (cond ((and empty-buffer-p
-                  (eq minibuffer-completion-confirm 'confirm))
-             (setq anything-minibuffer-confirm-state
-                   'confirm)
-             (setq minibuffer-completion-confirm nil)
-             (minibuffer-message " [confirm]"))
-            ((and empty-buffer-p
-                  (eq minibuffer-completion-confirm t))
-             (minibuffer-message " [No match]"))
-            (t
-             (setq anything-minibuffer-confirm-state nil)
-             (anything-exit-minibuffer)))))
+                          (eq (point-min) (point-max))))
+        (unknow (string= (get-text-property
+                          0 'display (anything-get-selection nil 'withprop))
+                         "[?]")))
+    (cond ((and (or empty-buffer-p unknow)
+                (eq minibuffer-completion-confirm 'confirm))
+           (setq anything-minibuffer-confirm-state
+                 'confirm)
+           (setq minibuffer-completion-confirm nil)
+           (minibuffer-message " [confirm]"))
+          ((and (or empty-buffer-p unknow)
+                (eq minibuffer-completion-confirm t))
+           (minibuffer-message " [No match]"))
+          (t
+           (setq anything-minibuffer-confirm-state nil)
+           (anything-exit-minibuffer)))))
 (add-hook 'anything-after-update-hook 'anything-confirm-and-exit-hook)
 
 (defun anything-confirm-and-exit-hook ()
@@ -3117,7 +3135,7 @@ If action buffer is displayed, kill it."
   "Return t if the current line is a candidate separator."
   (get-text-property (point-at-bol) 'anything-candidate-separator))
 
- 
+
 ;; (@* "Core: help")
 (defun anything-help-internal (bufname insert-content-fn)
   "Show long message during `anything' session in BUFNAME.
@@ -3171,7 +3189,7 @@ to a list of forms.\n\n")
             (pp-to-string (with-current-buffer anything-buffer (eval v))) "\n"))
   (message "Calculating all anything-related values...Done"))
 
- 
+
 ;; (@* "Core: misc")
 (defun anything-kill-buffer-hook ()
   "Remove tick entry from `anything-tick-hash' when killing a buffer."
@@ -3258,7 +3276,7 @@ if optional NOUPDATE is non-nil, anything buffer is not changed."
   (anything-set-pattern ""))
 (defalias 'anything-delete-minibuffer-content 'anything-delete-minibuffer-contents)
 
- 
+
 ;;; Plugins
 ;;
 ;; (@* "Built-in plug-in: type")
@@ -3301,7 +3319,7 @@ if optional NOUPDATE is non-nil, anything buffer is not changed."
                 (accept-empty)
                 (match identity)
                 (filtered-candidate-transformer . anything-dummy-candidate)
-                (disable-shortcuts)
+                ;;(disable-shortcuts)
                 (volatile)))
       source))
 
@@ -3494,45 +3512,42 @@ Acceptable values of CREATE-OR-BUFFER:
 - other non-nil value
   Create a new local candidates buffer,
   named \" *anything candidates:SOURCE*ANYTHING-CURRENT-BUFFER\"."
-  (let* ((global-bname (format " *anything candidates:%s*" anything-source-name))
+  (let* ((global-bname (format " *anything candidates:%s*"
+                               anything-source-name))
          (local-bname (format " *anything candidates:%s*%s"
                               anything-source-name
-                              (buffer-name anything-current-buffer)))
-         (register-func
-          (lambda ()
-            (setq anything-candidate-buffer-alist
-                  (cons (cons anything-source-name create-or-buffer)
-                        (delete (assoc anything-source-name
-                                       anything-candidate-buffer-alist)
-                                anything-candidate-buffer-alist)))))
-         (kill-buffers-func
-          (lambda ()
-            (loop for b in (buffer-list)
-                  if (string-match (format "^%s" (regexp-quote global-bname))
-                                   (buffer-name b))
-                  do (kill-buffer b))))
-         (create-func
-          (lambda ()
-            (with-current-buffer
-                (get-buffer-create (if (eq create-or-buffer 'global)
-                                       global-bname
-                                       local-bname))
-              (buffer-disable-undo)
-              (erase-buffer)
-              (font-lock-mode -1))))
-         (return-func
-          (lambda ()
-            (or (get-buffer local-bname)
-                (get-buffer global-bname)
-                (anything-aif (assoc-default anything-source-name
-                                             anything-candidate-buffer-alist)
-                    (and (buffer-live-p it) it))))))
-    (when create-or-buffer
-      (funcall register-func)
-      (unless (bufferp create-or-buffer)
-        (and (eq create-or-buffer 'global) (funcall kill-buffers-func))
-        (funcall create-func)))
-    (funcall return-func)))
+                              (buffer-name anything-current-buffer))))
+    (flet ((register-func ()
+             (setq anything-candidate-buffer-alist
+                   (cons (cons anything-source-name create-or-buffer)
+                         (delete (assoc anything-source-name
+                                        anything-candidate-buffer-alist)
+                                 anything-candidate-buffer-alist))))
+           (kill-buffers-func ()
+             (loop for b in (buffer-list)
+                   if (string-match (format "^%s" (regexp-quote global-bname))
+                                    (buffer-name b))
+                   do (kill-buffer b)))
+           (create-func ()
+             (with-current-buffer
+                 (get-buffer-create (if (eq create-or-buffer 'global)
+                                        global-bname
+                                        local-bname))
+               (buffer-disable-undo)
+               (erase-buffer)
+               (font-lock-mode -1)))
+           (return-func ()
+             (or (get-buffer local-bname)
+                 (get-buffer global-bname)
+                 (anything-aif (assoc-default anything-source-name
+                                              anything-candidate-buffer-alist)
+                     (and (buffer-live-p it) it)))))
+      (when create-or-buffer
+        (register-func)
+        (unless (bufferp create-or-buffer)
+          (and (eq create-or-buffer 'global) (kill-buffers-func))
+          (create-func)))
+      (return-func))))
 
 (defun anything-compile-source--candidates-in-buffer (source)
   (anything-aif (assoc 'candidates-in-buffer source)
@@ -3541,7 +3556,7 @@ Acceptable values of CREATE-OR-BUFFER:
                 (volatile) (match identity)))
     source))
 
- 
+
 ;; (@* "Utility: resplit anything window")
 (defun anything-toggle-resplit-window ()
   "Toggle resplit anything window, vertically or horizontally."
@@ -3712,7 +3727,7 @@ second argument of `display-buffer'."
   (interactive)
   (anything-scroll-other-window-base 'scroll-down))
 
- 
+
 ;; (@* "Utility: Visible Mark")
 (defface anything-visible-mark
     '((((min-colors 88) (background dark))
@@ -3876,7 +3891,7 @@ You can paste it by typing \\[yank]."
      (message "Killed: %s" sel))
    (anything-get-selection nil t)))
 
- 
+
 ;; (@* "Utility: Automatical execution of persistent-action")
 (add-to-list 'minor-mode-alist '(anything-follow-mode " AFollow"))
 (defun anything-follow-mode ()
@@ -3900,7 +3915,7 @@ This happen after `anything-input-idle-delay' secs."
        (save-excursion
          (anything-execute-persistent-action))))
 
- 
+
 ;; (@* "Utility: Migrate `anything-sources' to my-anything command")
 (defun anything-migrate-sources ()
   "Help to migrate to new `anything' way."
@@ -3935,7 +3950,7 @@ It is automatically generated by `anything-migrate-sources'.\"
     (substitute-key-definition 'anything 'my-anything global-map)
     (pop-to-buffer (current-buffer))))
 
- 
+
 ;; (@* "Compatibility")
 
 ;; Copied assoc-default from XEmacs version 21.5.12
@@ -3986,7 +4001,7 @@ buffer as BUFFER."
           (length buffer-undo-list)
           (buffer-modified-tick)))))
 
- 
+
 ;; (@* "CUA workaround")
 (defadvice cua-delete-region (around anything-avoid-cua activate)
   (ignore-errors ad-do-it))
@@ -4330,7 +4345,7 @@ ANYTHING-ATTRIBUTE should be a symbol."
   "  Help message for this source.
   If not present, `anything-help-message' value will be used.")
 
- 
+
 ;; (@* "Bug Report")
 (defvar anything-maintainer-mail-address "emacs-anything@googlegroups.com")
 
@@ -4410,7 +4425,7 @@ Given pseudo `anything-sources' and `anything-pattern', returns list like
         anything-test-candidate-list
       (anything-cleanup))))
 
- 
+
 ;; (@* "Unit Tests")
 ;; See developer-tools/unit-test-anything.el
 

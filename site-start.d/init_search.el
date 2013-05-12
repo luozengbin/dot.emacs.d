@@ -48,6 +48,47 @@
     ad-do-it))
 
 ;;
+;; use ag (the_sliver_serach) command to do grep
+;; http://geoff.greer.fm/2011/12/27/the-silver-searcher-better-than-ack/
+;;______________________________________________________________________
+(require 'grep)
+(when (executable-find "agg")
+  (grep-apply-setting 'grep-command "agg ")
+  (grep-apply-setting 'grep-find-command "agg ")
+  (grep-apply-setting 'grep-find-template "agg <R>")
+  (grep-apply-setting 'grep-template "agg --depth 0 <R> <F>")
+  (setq grep-use-null-device nil))
+
+;;
+;; repository-root
+;; 使っているバージョン管理システムなどに合わせてルートディレクトを調整する
+;;______________________________________________________________________
+(require 'repository-root)
+(add-to-list 'repository-root-matchers repository-root-matcher/git)
+(add-to-list 'repository-root-matchers repository-root-matcher/bzr)
+(add-to-list 'repository-root-matchers repository-root-matcher/svn)
+(add-to-list 'repository-root-matchers repository-root-matcher/hg)
+(add-to-list 'repository-root-matchers repository-root-matcher/cvs)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/src)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/arch)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/git-submodules)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/ignore)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/autoconf)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/darcs)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/debian)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/kernel)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/bk)
+
+;;
+;; use ag (the_sliver_serach) command to do grep
+;; http://geoff.greer.fm/2011/12/27/the-silver-searcher-better-than-ack/
+;;______________________________________________________________________
+(require 'grep-o-matic)
+(global-set-key (kbd "M-g M-r") 'grep-o-matic-repository)
+(global-set-key (kbd "M-g M-d") 'grep-o-matic-current-directory)
+(global-set-key (kbd "M-g M-b") 'grep-o-matic-visited-files)
+
+;;
 ;; migemo
 ;; http://0xcc.net/
 ;; http://sourceforge.net/projects/migemo/
@@ -209,7 +250,7 @@ GNU grep is expected for COMMAND. The grep result is colorized."
 ;;   ""
 ;;   (let ((inhibit-read-only t))
 ;;     ad-do-it))
-;; ;; (progn (ad-disable-advice 'grep-edit-change-file 'around 'inhibit-read-only) (ad-update 'grep-edit-change-file)) 
+;; ;; (progn (ad-disable-advice 'grep-edit-change-file 'around 'inhibit-read-only) (ad-update 'grep-edit-change-file))
 ;; (defun my-grep-edit-setup ()
 ;;   (define-key grep-mode-map '[up] nil)
 ;;   (define-key grep-mode-map "\C-c\C-c" 'grep-edit-finish-edit)

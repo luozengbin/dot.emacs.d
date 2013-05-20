@@ -90,12 +90,14 @@
     google-weather           ; Fetch Google Weather forecasts. [source: git]
     goto-chg                 ; goto last change [source: wiki]
     grep-a-lot               ; manages multiple search results buffers for grep.el [source: github]
+    grep-o-matic             ; available  auto grep word under cursor
     groovy-mode              ; Groovy mode derived mode [source: bzr]
     gtags                    ; gtags facility for Emacs
     ;; guide-key             ; Guide the following key bindings automatically and dynamically [source: github]
     helm                     ; Helm is an Emacs incremental and narrowing framework [source: github]
     helm-c-moccur            ; helm source for color-moccur.el [source: github]
     helm-c-yasnippet         ; helm source for yasnippet.el [source: github]
+    helm-descbinds           ; available  Yet Another `describe-bindings' with `helm'. [github]
     helm-gist                ; helm-sources and some utilities for gist. [source: github]
     helm-git                 ; Helm extension for Git. [source: github]
     helm-gtags               ; GNU GLOBAL helm interface [source: github]
@@ -131,6 +133,7 @@
     quickrun                 ; Run commands quickly [source: github]
     rainbow-mode             ; Colorize color names in buffers [source: github]
     redo+                    ; Redo/undo system for Emacs [source: wiki]
+    repository-root          ; available  deduce the repository root directory for a given file
     revive                   ; Resume Emacs [source: github]
     rfringe                  ; display the relative location of the region, in the fringe. [source: wiki]
     ruby-block               ; highlight matching block [source: wiki]

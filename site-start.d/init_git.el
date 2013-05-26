@@ -147,7 +147,7 @@
            (sources (helm-c-sources-git-project-for default-directory)))
       (helm-other-buffer sources "*helm git project*"))))
 
-(define-key global-map (kbd "C-;") 'helm-git-project)
+(define-key global-map (kbd "C-z ;") 'helm-git-project)
 
 (provide 'init_git)
 ;;; init_git.el ends here

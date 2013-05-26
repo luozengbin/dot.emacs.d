@@ -26,16 +26,17 @@
 (message "init-helm ...")
 
 (require 'helm-config)
+(require 'helm-command)
 
 ;;
 ;; helm-migemo
 ;;______________________________________________________________________
 ;;; M-x helm-occur
-(when
-    (and (executable-find "cmigemo")
-         (require 'helm-migemo nil t))
-  ;; defaultでは無効にする
-  (setq helm-use-migemo nil))
+;; (when
+;;     (and (executable-find "cmigemo")
+;;          (require 'helm-migemo nil t))
+;;   ;; defaultでは無効にする
+;;   (setq helm-use-migemo nil))
 
 ;;
 ;; helm-imenu

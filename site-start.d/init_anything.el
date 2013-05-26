@@ -45,8 +45,8 @@
 (require 'anything-grep nil t)
 (require 'anything-match-plugin nil t)
 (require 'anything-show-completion nil t)
-(and (executable-find "cmigemo")
-     (require 'anything-migemo nil t))
+;; (and (executable-find "cmigemo")
+;;      (require 'anything-migemo nil t))
 ;; (require 'anything-c-moccur)
 ;; (require 'anything-startup)
 

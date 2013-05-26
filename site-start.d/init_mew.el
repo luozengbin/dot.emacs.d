@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  LuoZengbin
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,9 +31,6 @@
 ;; Mew を使う為の設定
 (autoload 'mew "mew" nil t)
 (autoload 'mew-send "mew" nil t)
-
-;; インストール時指定したiconフォルダー
-(setq mew-icon-directory (concat user-emacs-directory "etc/mew"))
 
 (defvar my-mew-config (concat my-private-emacs-path "mew-config/"))
 

@@ -93,7 +93,7 @@
     grep-o-matic             ; available  auto grep word under cursor
     groovy-mode              ; Groovy mode derived mode [source: bzr]
     gtags                    ; gtags facility for Emacs
-    ;; guide-key             ; Guide the following key bindings automatically and dynamically [source: github]
+    guide-key                ; Guide the following key bindings automatically and dynamically [source: github]
     helm                     ; Helm is an Emacs incremental and narrowing framework [source: github]
     helm-c-moccur            ; helm source for color-moccur.el [source: github]
     helm-c-yasnippet         ; helm source for yasnippet.el [source: github]
@@ -118,6 +118,8 @@
     mark-multiple            ; Sorta lets you mark several regions at once. [source: github]
     markdown-mode            ; Emacs Major mode for Markdown-formatted text files [source: github]
     memory-usage             ; Analyze the memory usage of Emacs in various ways
+    migemo                   ; Japanese incremental search through dynamic pattern expansion [github]
+    mew                      ; Messaging in the Emacs World [github]
     multiple-cursors         ; Multiple cursors for Emacs. [source: github]
     o-blog                   ; Org-blog exporter [source: github]
     oauth2                   ; OAuth 2.0 Authorization Protocol

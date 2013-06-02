@@ -4,9 +4,9 @@
 
 ;;; Code:
 
-;; 
+;;
 ;; ウィンドウズを最大化、元のサイズに戻すスイッチ
-;; 
+;;
 ;; -- windows 操作するコマンド番号
 ;; 61440 - resize the window via keyboard
 ;; 61456 - move window via keyboard
@@ -38,6 +38,11 @@
   (interactive)
   (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
                          '(2 "_NET_WM_STATE_FULLSCREEN" 0)))
+
+(defun x-wmctrl-full-screen ()
+  (interactive)
+  (shell-command (concat "wmctrl -i -r " (frame-parameter nil 'outer-window-id)
+                         " -btoggle,maximized_vert,maximized_horz")))
 
 (defun x-toggle-maximize (&optional f)
   (interactive)

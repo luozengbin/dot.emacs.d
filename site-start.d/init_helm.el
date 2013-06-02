@@ -94,7 +94,7 @@
 ;; key binding
 ;;______________________________________________________________________
 ;; helmメニュー表示する
-(global-set-key (kbd "C-x t") 'my-helm)
+(global-set-key (kbd "C-x c") 'my-helm)
 ;; [M-z] に割り当てする
 (define-key esc-map "t"  'my-helm)
 ;;; hidden bufferの絞り込み

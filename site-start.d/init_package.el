@@ -91,7 +91,7 @@
     goto-chg                 ; goto last change [source: wiki]
     grep-a-lot               ; manages multiple search results buffers for grep.el [source: github]
     grep-o-matic             ; available  auto grep word under cursor
-    groovy-mode              ; Groovy mode derived mode [source: bzr]
+    ;groovy-mode             ; Groovy mode derived mode [source: bzr]
     gtags                    ; gtags facility for Emacs
     guide-key                ; Guide the following key bindings automatically and dynamically [source: github]
     helm                     ; Helm is an Emacs incremental and narrowing framework [source: github]

@@ -193,11 +193,17 @@
 ;; 面白いものです
 (require 'init_funnythings)
 
+;; rss/atom 購読環境
+(require 'init_rss)
+
 ;; ブログ執筆環境
 (require 'init_blogger)
 
 ;; 音楽環境
 (require 'init_music)
+
+;; tools 初期化
+(require 'init_tools)
 
 ;; 自前関数のローディング
 (require 'my-funs)

@@ -112,6 +112,8 @@
     js2-mode                 ; an improved JavaScript editing mode [source: github]
     key-chord                ; map pairs of simultaneously pressed keys to commands [source: wiki]
     key-combo                ; map key sequence to commands
+    keywiz                   ; available Emacs key sequence quiz
+    litable                    ; dynamic evaluation replacement with emacs [github]
     load-theme-buffer-local  ; Install emacs24 color themes by buffer. [source: github]
     logito                   ; logging library for Emacs [source: github]
     magit                    ; Control Git from Emacs. [source: github]

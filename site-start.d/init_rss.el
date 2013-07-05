@@ -34,13 +34,16 @@
 (setq newsticker-url-list-defaults nil)
 
 ;; フィードのリスト
-;; (setq newsticker-url-list
-;;       '(;; ("gnu:whatsnew" "http://www.gnu.org/rss/whatsnew.rss")
-;;         ;; ("gnu:recent" "http://www.gnu.org/rss/quagga.rss")
-;;         ))
+(setq newsticker-url-list
+      '(;; ("gnu:whatsnew" "http://www.gnu.org/rss/whatsnew.rss")
+        ;; ("gnu:recent" "http://www.gnu.org/rss/quagga.rss")
+        ("SourceForge.JP" "http://sourceforge.jp/magazine/rss")
+        ("Publickey" "http://www.publickey1.jp/atom.xml")
+        ("Publickey Topics" "http://www.publickey2.jp/atom.xml")
+        ))
 
 ;; 30分おきに自動更新する。デフォルトで1時間。
-(setq newsticker-retrieval-interval 1800)
+(setq newsticker-retrieval-interval 60)
 
 ;; HTMLレンダリングの設定
 (setq newsticker-html-renderer 'w3m-region) ;emacs-w3m

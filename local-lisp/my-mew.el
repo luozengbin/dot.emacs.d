@@ -847,7 +847,8 @@
     ("削除(d)"             . "(mew-summary-delete)")
     ("ゴミ箱を空にする(D)" . "(mew-summary-clean-trash)")
     ("整理整頓(o)"         . "(mew-summary-refile)")
-    ("未読にする(U)"       . "(mew-summary-unread)")))
+    ("未読にする(U)"       . "(mew-summary-unread)")
+    ("アドレス帳に追加(C-c C-a). " "(mew-summary-addrbook-add)")))
 
 (defun my-mew-message-anything ()
   "anything command for mew message mode"

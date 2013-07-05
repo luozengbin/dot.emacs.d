@@ -302,5 +302,25 @@ See also: `copy-to-register-1', `insert-register'."
                        (if (string-match "^ \\*.*" (buffer-name x))
                            (buffer-name x))) (buffer-list))))
 
+
+;; マクロ定義
+;; ---------------------------------
+(defmacro add-hook-fn (name &rest body)
+  `(add-hook ,name #'(lambda () ,@body)))
+
+(defmacro append-to-list (to lst)
+  `(setq ,to (append ,lst ,to)))
+
+(defmacro req (lib &rest body)
+  `(when (locate-library ,(symbol-name lib))
+     (require ',lib) ,@body))
+
+(defmacro lazyload (func lib &rest body)
+  `(when (locate-library ,lib)
+     ,@(mapcar (lambda (f) `(autoload ',f ,lib nil t)) func)
+     (eval-after-load ,lib
+       '(progn
+          ,@body))))
+
 (provide 'my-lisp-utils)
 ;;; my-lisp-utils.el ends here

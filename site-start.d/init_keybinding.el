@@ -112,6 +112,7 @@
 
 ;;; カーソルスマート移動できるマクロの定義
 (defmacro my-seq-define-cursor-command (source-command &optional comp-form)
+  (message "define seq-%s" (pp-to-string source-command))
   (declare (indent 1))
   (setq comp-form (or comp-form
                       '(= seq-old-point seq-new-point)))
@@ -123,29 +124,80 @@
          (when ,comp-form
            (my-seq-next))))))
 
-;;; 前へ移動系コマンドの定義
-(my-seq-define-cursor-command back-to-indentation-or-beginning)
-(my-seq-define-cursor-command beginning-of-line)
-(my-seq-define-cursor-command beginning-of-defun)
-(my-seq-define-cursor-command beginning-of-buffer)
+(defun define-seq-command (name &rest commands)
+  (interactive)
+  (let ((exp-list `(define-sequential-command ,name)))
+    (dolist (command commands)
+      (setq exp-list (-concat exp-list
+                              `(,(eval `(my-seq-define-cursor-command,command))))))
+    (setq exp-list (-concat exp-list  '(seq-return)))
+    (eval exp-list)))
+
+(defun beginning-of-list ()
+  (interactive)
+  (when (not (eq last-command this-command))
+    (put this-command 'startp (point))
+    (put this-command 'tabp (save-excursion (back-to-indentation) (point)))
+    (put this-command 'bolp (line-beginning-position))
+    (put this-command 'forwarduplp (save-excursion
+                                     (condition-case ERR
+                                         (progn
+                                           (backward-up-list 1)
+                                           (point))
+                                       (scan-error (point))))))
+
+  (let* ((startp (get this-command 'startp))
+         (tabp (get this-command 'tabp))
+         (bolp (get this-command 'bolp))
+         (forwarduplp (get this-command 'forwarduplp))
+         (startp (get this-command 'startp))
+         (currp (point))
+         (poslist (-distinct (-sort '> (list startp tabp currp bolp forwarduplp))))
+         (nextp nil))
+    (if (< startp tabp)
+        (let ((tabep (position tabp poslist)))
+          (rotatef (nth tabep poslist)
+                   (nth (incf tabep) poslist))))
+    (setq nextp (car (cdr (member currp poslist))))
+    (goto-char (if nextp nextp (point)))))
+
+(defun end-of-list ()
+  (interactive)
+  (when (not (eq last-command this-command))
+    (put this-command 'startp (point))
+    (put this-command 'endp (line-end-position))
+    (put this-command 'uplp (save-excursion
+                                    (condition-case ERR
+                                        (progn
+                                          (up-list 1)
+                                          (point))
+                                      (scan-error (point))))))
+
+  (let* ((startp (get this-command 'startp))
+         (currp (point))
+         (endp (get this-command 'endp))
+         (uplp (get this-command 'uplp))
+         (poslist (-distinct (-sort '< (list startp currp endp uplp))))
+         (nextp nil))
+    (setq nextp (car (cdr (member currp poslist))))
+    (goto-char (if nextp nextp (point)))))
 
 ;; C-a キーバンディング再定義
-(define-sequential-command
-  seq-home                ;コマンドID
-  seq-back-to-indentation-or-beginning
-                          ;;back-to-indentation-or-beginning          ;行頭空白でないところ
-  seq-beginning-of-line   ;行頭
-  seq-beginning-of-defun  ;関数先頭へ
-  seq-beginning-of-buffer ;バッファー先頭
-  seq-return)             ;現在の位置に戻る
+(define-seq-command
+  'seq-home
+  'beginning-of-list
+  'beginning-of-list
+  'beginning-of-list
+  'beginning-of-defun
+  'beginning-of-buffer)
 
 ;; C-e キーバンディング再定義
-(define-sequential-command
-  seq-end                               ;コマンドID
-  end-of-line                           ;行末へ
-  end-of-defun                          ;関数終了ポイント
-  end-of-buffer                         ;バッファーの後尾
-  seq-return)                           ;元に戻る
+(define-seq-command
+  'seq-end                               ;コマンドID
+  'end-of-list                           ;行末へ
+  'end-of-list                           ;行末へ
+  'end-of-defun                          ;関数終了ポイント
+  'end-of-buffer)
 
 ;; ---- 定義済みコマンド
 ;; (global-set-key "\C-a" 'seq-home)

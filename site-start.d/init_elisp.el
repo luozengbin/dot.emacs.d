@@ -103,6 +103,20 @@
       (add-to-list 'anything-for-document-sources source))))
 
 ;;
+;; lisp関数の定義をpopwinで表示する
+;;______________________________________________________________________
+(defun popup-function-defun ()
+  (interactive)
+  (let* ((symb (function-called-at-point))
+         (funinfo (if symb (find-function-noselect symb) nil)))
+    (when funinfo
+      (popwin:popup-buffer (car funinfo) :position 'bottom)
+      (goto-char (cdr funinfo))
+      (recenter 0))))
+
+(define-key emacs-lisp-mode-map (kbd "C-h C-f") 'popup-function-defun)
+
+;;
 ;; 色定義をわかりやすくする
 ;;______________________________________________________________________
 ;; 定義参照 ./init_color.el:134

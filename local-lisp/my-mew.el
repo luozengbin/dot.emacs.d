@@ -560,12 +560,15 @@
       (setq last-form current-form))
     (setq matched-regp (concat matched-regp "\\(.*?$\\)"))))
 
+(defvar my-mew-notification-max 10)
+
 (defun my-mew-mail-notification ()
 "受信ボックスの件数差を見て、新たなメッセージ情報を通知する"
 (let* ((is-fetch-status (get 'my-mew-fetch-mail 'running))
        (old-inbox-line-count (get 'my-mew-fetch-mail 'old-inbox-line-count))
        (my-summary-matched-regp (my-summary-matched-regp))
-       my-summary-from-str my-summary-title-str my-summary-content-str count-line-inbox)
+       my-summary-from-str my-summary-title-str my-summary-content-str
+       count-line-inbox new-message-count)
   ;; 実行フラグをOFFにする
   (if is-fetch-status
       (put 'my-mew-fetch-mail 'running nil))
@@ -577,17 +580,25 @@
       (save-window-excursion
         (with-current-buffer (my-mew-get-summary-buffer-name)
           (setq count-line-inbox (count-lines (point-min) (point-max)))
+          (setq new-message-count (- count-line-inbox old-inbox-line-count))
           (my-mew-fetch-mail-log "[after fetch] count line in mail box: " count-line-inbox)
-          (my-mew-fetch-mail-log (format "you got %s new email. " (- count-line-inbox old-inbox-line-count)))
+          (my-mew-fetch-mail-log (format "you got %s new email. " new-message-count))
           (when (> count-line-inbox old-inbox-line-count)
             (goto-line (1+ old-inbox-line-count))
-            (while (search-forward-regexp my-summary-matched-regp nil t)
-              (setq my-summary-from-str (buffer-substring (match-beginning 1) (match-end 1)))
-              (setq my-summary-title-str (buffer-substring (match-beginning 2) (match-end 2)))
-              (setq my-summary-content-str (buffer-substring (match-beginning 3) (match-end 3)))
-              (my-mew-fetch-mail-log "receive new mail from" my-summary-from-str)
-              (my-notification my-summary-from-str my-summary-title-str
-                               (my-notification-icon "email.png") nil t)))))))))
+            (if (> new-message-count my-mew-notification-max)
+                (my-notification (format "着信%s件あり" new-message-count)
+                                 "Mew Notification"
+                                 (my-notification-icon "email.png") nil t))
+            (let ((notification-counter 0))
+              (while (and (< notification-counter my-mew-notification-max)
+                          (search-forward-regexp my-summary-matched-regp nil t))
+                (setq notification-counter (1+ notification-counter))
+                (setq my-summary-from-str (buffer-substring (match-beginning 1) (match-end 1)))
+                (setq my-summary-title-str (buffer-substring (match-beginning 2) (match-end 2)))
+                (setq my-summary-content-str (buffer-substring (match-beginning 3) (match-end 3)))
+                (my-mew-fetch-mail-log "receive new mail from" my-summary-from-str)
+                (my-notification my-summary-from-str my-summary-title-str
+                                 (my-notification-icon "email.png") nil t))))))))))
 
 ;;; 自動受信時message出力しないようにするため
 ;;; 一部の内部関数にアドバイザを適用し、messageの出力を制御する

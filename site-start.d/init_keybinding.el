@@ -4,6 +4,7 @@
 
 ;;; Code:
 (require 'my-lisp-utils)
+(require 'dash)
 
 (message "init_keybinding ...")
 

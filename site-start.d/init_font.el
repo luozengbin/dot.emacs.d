@@ -81,9 +81,7 @@
   ;; Takaoフォント：https://code.launchpad.net/takao-fonts/+download
   ;; Consolasフォント：http://www.microsoft.com/download/en/details.aspx?displaylang=en&id=17879
   (when (equal my-font-style "consolastakao")
-    (if (is-windows-xp)
-        (assign-fontspec "Consolas" "Takaoゴシック" "Microsoft JhengHei" "Microsoft Yahei" 11)
-      (assign-fontspec "Consolas" "Takaoゴシック" "Microsoft JhengHei" "Microsoft Yahei"))
+    (assign-fontspec "Consolas" "Takaoゴシック" "Microsoft JhengHei" "Microsoft Yahei" 11)
     ;; ;; 幅調調整
     ;; (setq face-font-rescale-alist '(
     ;;                                 (".*Consolas.*"           . 1.0)

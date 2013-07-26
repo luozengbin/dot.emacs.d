@@ -209,7 +209,7 @@
 (require 'my-funs)
 
 ;; ロード完了メッセージをGrowlで通知する
-(my-notification nil (format "Hello %s, welcome to Emacs!!!" user-login-name))
+(my-notification nil (format "Hello %s, welcome to Emacs!!!!" user-login-name))
 
 ;;
 ;; end

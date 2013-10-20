@@ -134,6 +134,7 @@
                                       ;; ("*Occur*" :noselect t)
                                       ("*VC-log*")
                                       ("*Process List*")
+                                      ("*cscope*")
                                       ;; ("*svn-info*")
                                       ))
 

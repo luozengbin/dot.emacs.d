@@ -83,5 +83,15 @@
             (thing-at-point 'symbol)
             nil nil nil "*anything for tags*"))
 
+
+;;
+;; xcscope linuxカーネルソースブラウジング
+;;______________________________________________________________________
+(when (require 'xcscope nil t)
+  (setq cscope-database-regexps
+        '(
+          ("^/usr/src/linux-3.11.5-1-ARCH"
+           ("/home/akira/cscope")))))
+
 (provide 'init_tags)
 ;;; init_tags.el ends here

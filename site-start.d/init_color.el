@@ -114,8 +114,8 @@
 ;;______________________________________________________________________
 ;;; Set emacs color themes by buffer
 ;;; https://github.com/vic/color-theme-buffer-local
-(add-hook 'java-mode-hook (lambda nil
-                (load-theme-buffer-local 'misterioso (current-buffer) t)))
+;; (add-hook 'java-mode-hook (lambda nil
+;;                 (load-theme-buffer-local 'misterioso (current-buffer) t)))
 
 ;;
 ;; modeline face カスタマイズ

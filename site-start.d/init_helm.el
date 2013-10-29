@@ -101,6 +101,13 @@
 (global-set-key (kbd "C-x y") 'my-helm-hidden-buffer-commands)
 
 ;;
+;; helm occur
+;;______________________________________________________________________
+(global-set-key (kbd "C-M-o") 'helm-occur) ;helm-occurの起動
+(define-key isearch-mode-map (kbd "C-o") 'helm-occur-from-isearch) ;isearchからhelm-occurを起動
+;; (define-key helm-map (kbd "C-c C-a") 'all-from-helm-occur) ; helm-occurからall-extに受け渡し
+
+;;
 ;; custom helm
 ;;______________________________________________________________________
 ;; 自作関数をローディングする

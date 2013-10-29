@@ -171,9 +171,10 @@
 (define-key anything-c-moccur-anything-map (kbd "<down>")  'anything-c-moccur-next-line)
 (define-key anything-c-moccur-anything-map (kbd "<up>")  'anything-c-moccur-previous-line)
 
-(global-set-key (kbd "M-o") 'anything-c-moccur-occur-by-moccur) ;バッファ内検索
-(global-set-key (kbd "C-M-o") 'anything-c-moccur-dmoccur) ;ディレクトリ
-(define-key isearch-mode-map (kbd "M-o") 'anything-c-moccur-from-isearch)
+;;; helm へ移行済み
+;; (global-set-key (kbd "M-o") 'anything-c-moccur-occur-by-moccur) ;バッファ内検索
+;; (global-set-key (kbd "C-M-o") 'anything-c-moccur-dmoccur) ;ディレクトリ
+;; (define-key isearch-mode-map (kbd "M-o") 'anything-c-moccur-from-isearch)
 ;; diredモードでマークされたファイルを検索対象にする、"O"に割り当て
 (add-hook 'dired-mode-hook ;dired
           '(lambda ()

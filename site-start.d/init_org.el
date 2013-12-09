@@ -183,6 +183,7 @@
  '((R . t)
    (ditaa . t)
    (dot . t)
+   (plantuml . t)
    (emacs-lisp . t)
    (gnuplot . t)
    (haskell . nil)

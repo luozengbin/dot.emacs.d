@@ -148,6 +148,9 @@
 ;; makedown 文書作成支援
 (require 'init_markdown)
 
+;; uml 文書作成支援
+(require 'init_plantuml)
+
 ;; howm 初期設定
 (require 'init_howm)
 

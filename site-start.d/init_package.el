@@ -130,6 +130,8 @@
     paredit                  ; minor mode for editing parentheses [source: darcs]
     pcache                   ; persistent caching for Emacs [source: github]
     php-mode                 ; major mode for editing PHP code [source: github]
+    pkgbuild-mode            ; Interface to the ArchLinux package manager
+    plantuml-mode            ; Major mode for plantuml
     pos-tip                  ; Show tooltip at point -*- coding: utf-8 -*-
     powerline                ; Rewrite of Powerline [source: github]
     pymacs                   ; Interface between Emacs Lisp and Python

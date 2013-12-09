@@ -198,6 +198,7 @@
 (add-hook 'emacs-lisp-mode-hook 'no-trailing-space)
 (add-hook 'java-mode-hook 'no-trailing-space)
 (add-hook 'python-mode-hook 'no-trailing-space)
+(add-hook 'nxml-mode-hook 'no-trailing-space)
 
 (defun no-trailing-space ()
   "clean up space when saveing file"

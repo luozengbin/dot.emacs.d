@@ -327,7 +327,8 @@ GNU grep is expected for COMMAND. The grep result is colorized."
 ;;______________________________________________________________________
 ;; (install-elisp "http://www.emacswiki.org/emacs/download/replace+.el")
 (require 'my-search)
-(define-key global-map (kbd "C-z r") 'my-replace-string)
+;; (define-key global-map (kbd "C-z r") 'my-replace-string)
+
 ;;
 ;; imenu 改善
 ;;______________________________________________________________________
@@ -349,6 +350,28 @@ GNU grep is expected for COMMAND. The grep result is colorized."
   "Emacs quick move minor mode"
   t)
 (define-key global-map (kbd "C-c SPC") 'ace-jump-mode)
+
+;;
+;; anzu-mode
+;; https://github.com/syohex/emacs-anzu
+;;______________________________________________________________________
+(global-anzu-mode +1)
+
+(custom-set-variables
+ '(anzu-mode-lighter "")         ; モードラインに表示されるマイナーモード名を空文字する
+ '(anzu-deactivate-region t)     ;
+ '(anzu-search-threshold 1000)   ; 全体のマッチ数これ以上ならカウントしない
+ '(anzu-use-migemo nil)          ; migemoの検索結果のカウント制御
+ )
+
+;;
+;; visual-regexp
+;; https://github.com/benma/visual-regexp.el
+;;______________________________________________________________________
+(define-key global-map (kbd "C-z r") 'vr/replace)
+(define-key global-map (kbd "C-z q") 'vr/query-replace)
+;; if you use multiple-cursors, this is for you:
+(define-key global-map (kbd "C-z m") 'vr/mc-mark)
 
 (provide 'init_search)
 ;;; init_search.el ends here

@@ -49,6 +49,7 @@
   '(
     ac-slime                 ; An auto-complete source using slime completions [source: github]
     ace-jump-mode            ; a quick cursor location minor mode for emacs [source: github]
+    anzu                       ; Show number of matches in mode-line while searching
     autopair                 ; Automagically pair braces and quotes like TextMate [source: github]
     bm                       ; Visible bookmarks in buffer. [source: github]
     browse-kill-ring         ; interactively insert items from kill-ring [source: github]
@@ -142,6 +143,7 @@
     repository-root          ; available  deduce the repository root directory for a given file
     revive                   ; Resume Emacs [source: github]
     rfringe                  ; display the relative location of the region, in the fringe. [source: wiki]
+    visual-regexp            ; A regexp/replace command for Emacs with interactive visual feedback
     ruby-block               ; highlight matching block [source: wiki]
     ruby-electric            ; electric editing commands for ruby files [source: github]
     smartrep                 ; Support sequential operation which omitted prefix keys. [source: github]

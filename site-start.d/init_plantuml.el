@@ -42,7 +42,7 @@
   (let ((code (buffer-string))
         out-file
         cmd)
-    (when (string-match "^\\s-*@startuml\\s-+\\(\\S-+\\)\\s*$" code)
+    (when (string-match "^\\s-*@startuml{\\(\\S-+\\)}.*$" code)
       (setq out-file (match-string 1 code)))
     (setq cmd (concat
                "java -jar " plantuml-java-options " "

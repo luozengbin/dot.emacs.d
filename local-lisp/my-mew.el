@@ -923,5 +923,24 @@
                (directory-files file-name))
             (list file-name))))))
 
+;;
+;; 返信時メールアドレスの訂正処理 for MS Exchange
+;;______________________________________________________________________
+
+(defadvice mew-to-cc-newsgroups (after mew-to-cc-newsgroups-fix activate)
+  ;; (message "+++++++++ %s" (pp-to-string ad-return-value))
+  (setq ad-return-value
+        (let ((new-list nil))
+          (loop for x in ad-return-value do
+                (setq new-list
+                      (if x
+                          (loop for addr in x
+                                when (string-match thing-at-point-email-regexp addr)
+                                collect addr)
+                        x))
+                collect new-list)))
+  ;; (message "-------- %s" (pp-to-string ad-return-value))
+  ad-return-value)
+
 (provide 'my-mew)
 ;;; my-mew.el ends here

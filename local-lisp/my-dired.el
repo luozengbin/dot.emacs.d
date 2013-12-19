@@ -243,44 +243,41 @@
   :type 'list
   :group 'dired)
 
-(defvar archive-unarchive-flashing-timers nil "timer queue")
 (defvar archive-unarchive-highlight-time 10 "highlight target archive unarchive file name for seconds")
-(defvar archive-unarchive-flashing-ferquence 0.6 "flashing ferquence")
 
-(defun my-dired-flashing-on-keyword (buffer-or-name regp &optional cleanup)
-  (with-current-buffer buffer-or-name
-    (goto-char (point-min))
-    (re-search-forward regp nil t)
-    (let ((buffer-read-only nil))
-      (if (not cleanup)
-          (let* ((pos (next-single-property-change (point-min) 'flashing-flag))
-                 (flashing-flag (if pos
-                                    (get-text-property pos 'flashing-flag)
-                                  "1")))
-            (put-text-property (point) (1+ (point))
-                               'flashing-flag
-                               (if (string= flashing-flag "1")
-                                   "0"
-                                 "1"))
-            (if (string= flashing-flag "1")
-                (highlight-regexp regp)
-              (unhighlight-regexp regp)))
-        ;; do clean up work
-        (unhighlight-regexp regp)
-        (put-text-property (point) (1+ (point)) 'flashing-flag nil)))))
+(defun my-dired-flashing-on-keyword (buffer-or-name folder-name &optional cleanup cln-buf-name)
+  "ハイライトオーバーレイの貼り付けと削除処理"
+  (let ((current-buf-name (buffer-name)))
+    (save-excursion
+      (with-current-buffer buffer-or-name
+        (goto-char (point-min))
+        (when (re-search-forward (concat folder-name "$") nil t)
+          (goto-char (- (point) (length folder-name)))
+          (let ((buffer-read-only nil))
+            (if (not cleanup)
+                ;; ハイライトオーバーレイを貼り付ける
+                (let ((ov (make-overlay (point) (+ (point) (length folder-name)) )))
+                  (overlay-put ov 'face 'region)
+                  (put-text-property (point) (1+ (point)) 'flashing-ov ov))
+              ;; クリンアップ
+              (let* ((pos (next-single-property-change (point-min) 'flashing-ov))
+                     (ov (if pos (get-text-property pos 'flashing-ov) nil)))
+                ;; ハイライトオーバーレイを削除する
+                (if ov (delete-overlay ov))
+                ;; バッファーの削除
+                (if (and  (get-buffer cln-buf-name)
+                          (not
+                           (string= current-buf-name cln-buf-name)) )
+                    (kill-buffer cln-buf-name))))))))))
 
-(defun my-dired-flashing (buf-name regp)
-  ;; ハイライトタイマーを起動する
-  (push-to-timer-queue 'archive-unarchive-flashing-timers
-                       0 archive-unarchive-flashing-ferquence
-                       `(lambda () (my-dired-flashing-on-keyword
-                                    ,buf-name ,regp)))
+(defun my-dired-flashing (buf-name folder-name result-buffer-name)
+  ;; ハイライトする
+  (my-dired-flashing-on-keyword buf-name folder-name)
+
   ;; ハイライトの停止タイマーを起動する
   (run-with-timer archive-unarchive-highlight-time nil
                   `(lambda ()
-                     (pop-from-timer-queue 'archive-unarchive-flashing-timers
-                                           '(my-dired-flashing-on-keyword
-                                             ,buf-name ,regp t)))))
+                     (my-dired-flashing-on-keyword ,buf-name ,folder-name t ,result-buffer-name))))
 
 
 (defun my-dired-do-compress (&optional arg)
@@ -351,13 +348,18 @@
         (when (get-buffer dest-buffer-name)
           (goto-char (point-max))
           (insert (concat "\nArchive To --> " archive-file-name "\n"))
-          (with-current-buffer dest-buffer-name
-            (revert-buffer)             ;diredバッファーの更新
-            ;; ハイライト制御
-            (my-dired-flashing dest-buffer-name (concat archive-file-name "$"))))
+          ;; カーソルを解凍後ディレクトリへ移動する
+          (let ((win (car (get-buffer-window-list dest-buffer-name))))
+            (when win
+              (select-window win)
+              (revert-buffer)          ; diredバッファー更新
+              ;; ハイライト制御
+              (my-dired-flashing dest-buffer-name archive-file-name result-buffer-name)
+              (goto-char (point-min))
+              (re-search-forward (concat archive-file-name "$") nil t)
+              (backward-char (length archive-file-name)))))
         ;; show buffer with popwin style
-        (unless (eq popwin:popup-buffer result-buffer)
-          (popwin:popup-buffer result-buffer))
+        (popwin:popup-buffer result-buffer)
         (message (concat archive-file-name " 圧縮完了しました！"))))
      (t nil))))
 
@@ -413,24 +415,28 @@
         (message (concat "result buffer name: " result-buffer-name))
         (message (concat "archive file name: " archive-file-name))
         (message (concat "dest buffer name: " dest-buffer-name))
-        (when (get-buffer dest-buffer-name)
+        (when (get-buffer result-buffer-name)
           ;; 出力バッファーから解凍先のディレクトリ名を探す
           (save-excursion
+            (set-buffer (get-buffer result-buffer-name))
             (goto-char (point-min))
             (re-search-forward "^.+extracted to [\`]\\(.+\\)'" nil t)
             (setq dest-folder-name (match-string 1))
             (message (concat "dest folder name: " dest-folder-name)))
-          (with-current-buffer (get-buffer dest-buffer-name)
-            (revert-buffer)             ; diredバッファー更新
-            (when dest-folder-name
+          ;; カーソルを解凍後ディレクトリへ移動する
+          (when dest-folder-name
+            (let ((win (car (get-buffer-window-list dest-buffer-name))))
+              (select-window win)
+              (revert-buffer)           ; diredバッファー更新
               ;; ハイライト制御
-              (my-dired-flashing dest-buffer-name (concat dest-folder-name "$"))
+              (my-dired-flashing dest-buffer-name (concat dest-folder-name) result-buffer-name)
               (goto-char (point-min))
-              (re-search-forward (concat dest-folder-name "$") nil t)
-              (dired-find-file-other-window))))
+              (re-search-forward dest-folder-name nil t)
+              (backward-char (length dest-folder-name))
+              ;; (dired-find-file-other-window)
+              )))
         ;; show buffer with popwin style
-        (unless (eq popwin:popup-buffer result-buffer)
-          (popwin:popup-buffer result-buffer))
+        (popwin:popup-buffer result-buffer)
         (message (concat archive-file-name " 解凍完了しました！"))))
      (t nil))))
 

@@ -54,7 +54,6 @@
     (shell-command cmd)
     (message "done")))
 
-
 ;;; for org-mode
 (setq org-plantuml-jar-path plantuml-jar-path)
 

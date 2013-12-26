@@ -39,7 +39,8 @@
 (setq package-archives '(("ELPA" . "http://tromey.com/elpa/")
                          ("gnu" . "http://elpa.gnu.org/packages/")
                          ("marmalade" . "http://marmalade-repo.org/packages/")
-                         ("melpa" . "http://melpa.milkbox.net/packages/")))
+                         ("melpa" . "http://melpa.milkbox.net/packages/")
+                         ("org" . "http://orgmode.org/elpa/")))
 
 (setq package-enable-at-startup nil)
 (package-initialize)
@@ -123,7 +124,8 @@
     migemo                   ; Japanese incremental search through dynamic pattern expansion [github]
     mew                      ; Messaging in the Emacs World [github]
     multiple-cursors         ; Multiple cursors for Emacs. [source: github]
-    org                        ; available Outline-based notes management and organizer [git]
+    org                      ; available Outline-based notes management and organizer [git]
+    org-plus-contrib         ; Outline-based notes management and organizer
     o-blog                   ; Org-blog exporter [source: github]
     oauth2                   ; OAuth 2.0 Authorization Protocol
     org-jekyll               ; Export jekyll-ready posts form org-mode entries [source: github]

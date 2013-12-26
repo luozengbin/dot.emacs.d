@@ -271,5 +271,21 @@ containing the properties `:guid' and `:item-full-text'."
 ;; (setq ps-right-header
 ;;       '("/pagenumberstring load" ps-time-stamp-yyyy-mm-dd ps-time-stamp-hh:mm:ss))
 
+;;
+;; s5 slideshow
+;;______________________________________________________________________
+(require 'ox-s5)
+(defun org-s5-publish ()
+  (interactive)
+  (let ((pub-filename
+         (if buffer-file-name
+             (concat (file-name-sans-extension buffer-file-name) ".html"))))
+    (message pub-filename)
+    (org-s5-export-as-html)
+    (if pub-filename
+        (with-current-buffer "*Org S5 Export*"
+          (write-file pub-filename)))))
+
+
 (provide 'init_org)
 ;;; init_org.el ends here

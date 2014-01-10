@@ -284,7 +284,8 @@ containing the properties `:guid' and `:item-full-text'."
     (org-s5-export-as-html)
     (if pub-filename
         (with-current-buffer "*Org S5 Export*"
-          (write-file pub-filename)))))
+          (write-file pub-filename)
+          (kill-buffer)))))
 
 
 (provide 'init_org)

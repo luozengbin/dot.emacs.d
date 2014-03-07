@@ -12,12 +12,12 @@
 ;; http://code.google.com/p/yasnippet/
 ;; wget http://yasnippet.googlecode.com/files/yasnippet-0.6.1c.tar.bz2
 (require 'yasnippet)
-(setq yas/snippet-dirs
-      '(
-        "~/.emacs.d/share/snippets"
-        ;;"~/.emacs.d/snippets"
-        ;;"~/.emacs.d/extras/imported"
-        ))
+;; (setq yas/snippet-dirs
+;;       '(
+;;         "~/.emacs.d/share/snippets"
+;;         ;;"~/.emacs.d/snippets"
+;;         ;;"~/.emacs.d/extras/imported"
+;;         ))
 
 ;; (yas--initialize)
 ;; (yas-global-mode 1)

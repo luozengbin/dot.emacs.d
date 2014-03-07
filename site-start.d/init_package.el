@@ -31,9 +31,9 @@
 ;; tips: http://xahlee.org/emacs/emacs_package_system.html
 ;;______________________________________________________________________
 ;;; install for emacs 23 (auto-install-from-url "http://tromey.com/elpa/package-install.el")
-(when emacs23-p
-    (load
-     (expand-file-name "~/.emacs.d/elpa/package.el")))
+;; (when emacs23-p
+;;     (load
+;;      (expand-file-name "~/.emacs.d/elpa/package.el")))
 
 (require 'package)
 (setq package-archives '(("ELPA" . "http://tromey.com/elpa/")
@@ -48,7 +48,7 @@
 ;;; パッケージの自動インストール
 (defvar installing-package-list
   '(
-    ac-slime                 ; An auto-complete source using slime completions [source: github]
+    ;; ac-slime                 ; An auto-complete source using slime completions [source: github]
     ace-jump-mode            ; a quick cursor location minor mode for emacs [source: github]
     anzu                       ; Show number of matches in mode-line while searching
     autopair                 ; Automagically pair braces and quotes like TextMate [source: github]
@@ -61,7 +61,7 @@
     col-highlight            ; Highlight the current column.
     color-moccur             ; multi-buffer occur (grep) mode [source: github]
     concurrent               ; Concurrent utility functions for emacs lisp [source: github]
-    crosshairs               ; Highlight the current line and column. [source: wiki]
+    ;; crosshairs               ; Highlight the current line and column. [source: wiki]
     ctable                   ; Table component for Emacs Lisp [source: github]
     ctags                    ; Exuberant Ctags utilities for Emacs [source: hg]
     cursor-chg               ; Change cursor dynamically, depending on the context. [source: wiki]
@@ -74,7 +74,7 @@
     dired-details+           ; Enhancements to library `dired-details+.el'. [source: wiki]
     dsvn                     ; Subversion interface [source: svn]
     edit-list                ; edit a single list
-    egg                      ; Emacs Got Git - Emacs interface to Git [source: github]
+    ;; egg                      ; Emacs Got Git - Emacs interface to Git [source: github]
     epc                      ; A RPC stack for the Emacs Lisp [source: github]
     ess                      ; No description available. [source: github]
     expand-region            ; Increase selected region by semantic units. [source: github]
@@ -166,6 +166,7 @@
     yaoddmuse                ; Yet another oddmuse for Emacs [source: wiki]
     yascroll                 ; Yet Another Scroll Bar Mode
     popwin
+    ztree                      ;text-tree applications
     ;; hl-line+
     ;; helm-R
     ;; helm-descbinds
@@ -173,7 +174,7 @@
     ;; hexrgb
     ))
 
-;;; switch package by version
+;; switch package by version
 (add-to-list 'installing-package-list
              (cond
               (emacs23-p 'color-theme-buffer-local)

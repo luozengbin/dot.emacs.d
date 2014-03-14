@@ -180,17 +180,19 @@
 ;; 曜日計算関数
 ;; mew-summary-formで利用される想定
 (defun mew-summary-form-youbi ()
-  (let ((s (MEW-DATE)))
-    (if (>= (length s) 3) (setq s (substring s 0 3)))
+  (let ((s (format-time-string "%u" (date-to-time (MEW-DATE)))))
     (cond
-     ((string= s "Mon") "(月)")
-     ((string= s "Tue") "(火)")
-     ((string= s "Wed") "(水)")
-     ((string= s "Thu") "(木)")
-     ((string= s "Fri") "(金)")
-     ((string= s "Sat") "(土)")
-     ((string= s "Sun") "(日)")
+     ((string= s "1") "(月)")
+     ((string= s "2") "(火)")
+     ((string= s "3") "(水)")
+     ((string= s "4") "(木)")
+     ((string= s "5") "(金)")
+     ((string= s "6") "(土)")
+     ((string= s "7") "(日)")
      (t "??"))))
+
+(defun mew-summary-form-xtime ()
+  (format-time-string "%H:%M" (date-to-time (MEW-DATE))))
 
 ;; メール日付表示の調整を行うための関数
 (defvar my-mew-message-date-overlay nil)

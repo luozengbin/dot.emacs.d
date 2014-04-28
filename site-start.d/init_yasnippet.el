@@ -12,6 +12,8 @@
 ;; http://code.google.com/p/yasnippet/
 ;; wget http://yasnippet.googlecode.com/files/yasnippet-0.6.1c.tar.bz2
 (require 'yasnippet)
+(append-to-list yas-snippet-dirs
+                '("~/.emacs.d/share/snippets"))
 ;; (setq yas/snippet-dirs
 ;;       '(
 ;;         "~/.emacs.d/share/snippets"

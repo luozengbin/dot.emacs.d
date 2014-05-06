@@ -26,6 +26,7 @@
 
 (require 'my-lisp-utils)
 (require 'my-notification)
+(require 'mew)
 
 ;; 返信ラベルを求める関数の再定義
 ;; ~/.emacs.d/lisp/mew/mew-draft.elの524行のmew-cite-strings関数を元に作成した

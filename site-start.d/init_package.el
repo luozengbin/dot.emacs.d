@@ -111,6 +111,7 @@
     info+                    ; Extensions to `info.el'. [source: wiki]
     inlineR                  ; insert Tag for inline image of R graphics [source: github]
     js2-mode                 ; an improved JavaScript editing mode [source: github]
+    jira                     ; Connect to JIRA issue tracking software
     key-chord                ; map pairs of simultaneously pressed keys to commands [source: wiki]
     key-combo                ; map key sequence to commands
     keywiz                   ; available Emacs key sequence quiz
@@ -154,6 +155,7 @@
     sr-speedbar              ; Same frame speedbar [source: wiki]
     stem                     ; - routines for stemming [source: github]
     svg-clock                ; Analog clock using Scalable Vector Graphics
+    systemtap-mode           ; A mode for SystemTap
     tabbar                   ; Display a tab bar in the header line  -*-no-byte-compile: t; -*-
     twittering-mode          ; Major mode for Twitter [source: github]
     undo-tree                ; Treat undo history as a tree [source: git]

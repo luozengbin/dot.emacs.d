@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  LuoZengbin
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -199,9 +199,9 @@
 ;;; install from emacswiki
 ;; (install-elisp-from-emacswiki "ipa.el")
 ;; (install-elisp-from-emacswiki "anything-ipa.el")
-(require 'ipa)
-(require 'anything-ipa)
-(setq ipa-file (my-cache-dir ".ipa"))
+;; (require 'ipa)
+;; (require 'anything-ipa)
+;; (setq ipa-file (my-cache-dir ".ipa"))
 
 (provide 'init_versions)
 ;;; init_versions.el ends here

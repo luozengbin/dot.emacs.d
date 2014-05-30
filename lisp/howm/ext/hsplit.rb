@@ -1,4 +1,5 @@
 #!/usr/bin/ruby -s
+# -*- coding: euc-jp -*-
 # -*- Ruby -*-
 
 def usage
@@ -6,8 +7,8 @@ def usage
   print <<EOU
 #{name}: howm メモを, 一メモ一ファイルに分割 (手抜き仕様)
 (例)
-  #{name} 2004_10_10.howm
-  → 2004_10_10.howm.aa, 2004_10_10.howm.ab, … ができる
+  #{name} 2004_10_10.txt
+  → 2004_10_10.txt.aa, 2004_10_10.txt.ab, … ができる
 (オプション例)
   -prefix=hoge.     → hoge.aa, hoge.ab, … ができる
   -help または -h   → このメッセージを表示

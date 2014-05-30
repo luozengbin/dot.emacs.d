@@ -1,7 +1,7 @@
 ;;; howm-mode.el --- Wiki-like note-taking tool
-;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
 ;;;   HIRAOKA Kazuyuki <khi@users.sourceforge.jp>
-;;; $Id: howm-mode.el,v 1.310.2.1 2011-01-02 12:05:56 hira Exp $
+;;; $Id: howm-mode.el,v 1.318 2012-12-29 08:57:18 hira Exp $
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -74,7 +74,11 @@ If it is a function, it is called to get template string with the argument <n>."
     ("m" howm-list-migemo t t)
     ("t" howm-list-todo t t)
     ("y" howm-list-schedule t t)
+    ("b" howm-list-buffers t t)
+    ("x" howm-list-mark-ring t t)
+    ("o" howm-occur t t)
     ("c" howm-create t t)
+    ("e" howm-remember t t)
     ("," howm-menu t t)
     ("." howm-find-today nil t)
     (":" howm-find-yesterday nil t)
@@ -349,8 +353,7 @@ key	binding
       ;; I don't understand this. [2004-12-18]
       (howm-fontify t)
       ;; make-local-hook is obsolete for emacs >= 21.1.
-      (when (fboundp 'make-local-hook)
-        (make-local-hook 'after-save-hook))
+      (howm-funcall-if-defined (make-local-hook 'after-save-hook))
       (add-hook 'after-save-hook 'howm-after-save t t))))
 
 (defun howm-after-save ()
@@ -568,13 +571,17 @@ key	binding
                  (howm-view-sort-by-reminder . howm-sort-items-by-reminder)
                  (howm-view-sort-by-mtime . howm-sort-items-by-mtime)
                  (howm-view-sort-by-reverse . howm-sort-items-by-reverse)))
-         (p (assoc old conv)))
+         (p (assoc old conv))
+         (q (assoc new conv)))
+    (when q
+      (message "Warning: %s is wrong for howm-normalizer. Use %s." (car q) (cdr q))
+      (setq new (cdr q)))
     (cond ((null old) (cons old new))
           (p (cons nil (cdr p)))
           (t (cons old #'identity)))))
 
-(put 'howm-with-normalizer 'lisp-indent-hook 0)
 (defmacro howm-with-normalizer (&rest body)
+  (declare (indent 0))
   (let ((g (howm-cl-gensym)))
     `(progn
        (when (howm-normalize-oldp)
@@ -998,16 +1005,15 @@ is necessary.")
   (setq keyword-list (if (stringp keyword-list)
                          (list keyword-list)
                        keyword-list))
-  (save-excursion
-    (set-buffer (howm-keyword-buffer))
-    (goto-char (point-max))
-    (mapc (lambda (k)
-            (when (howm-keyword-new-p k)
-              (insert k "\n")))
-          keyword-list)
-    (when (buffer-file-name)
-      (howm-basic-save-buffer))
-    ))
+  (with-current-buffer (howm-keyword-buffer)
+    (save-excursion
+      (goto-char (point-max))
+      (mapc (lambda (k)
+              (when (howm-keyword-new-p k)
+                (insert k "\n")))
+            keyword-list)
+      (when (buffer-file-name)
+        (howm-basic-save-buffer)))))
 
 (defun howm-keyword-new-p (str)
   (save-excursion
@@ -1204,6 +1210,15 @@ KEYWORD itself is always at the head of the returneded list.
           (setq keyword-list (cons key-str keyword-list))))
       (howm-keyword-add keyword-list)
       (message "%s" m))))
+(defun howm-keyword-add-items (items)
+  (let ((files (mapcar #'howm-view-item-filename items)))
+    (with-temp-buffer
+      (mapc (lambda (f)
+              (erase-buffer)
+              (insert-file-contents f)
+              (howm-set-configuration-for-file-name f)
+              (howm-keyword-add-current-buffer))
+            files))))
 
 (defun howm-keyword-read ()
   (let ((ks nil)

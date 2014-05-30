@@ -53,7 +53,7 @@ ChangeLog Memo 内で自己リンクを張ります.
 
 * 手順例
   * メニューファイルをコピー
-      cp ~/elisp/howm/ja/0000-00-00-000000.howm ~/.howm-menu
+      cp ~/elisp/howm/ja/0000-00-00-000000.txt ~/.howm-menu
   * 以下を .emacs に
       ;; 設定に応じて
       (setq load-path (cons "~/elisp/howm" load-path))

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  Zouhin.Ro
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -50,14 +50,21 @@
 ;;
 ;; anything-howm設定
 ;;______________________________________________________________________
-(require 'anything-howm)
-;; 「最近のメモ」をいくつ表示するか
-(setq anything-howm-recent-menu-number-limit 600)
-;; howm のデータディレクトリへのパス
-(setq anything-howm-data-directory howm-directory)
-;; キーバンディングの定義
-(define-key global-map (kbd "C-z h") 'anything-howm-menu-command)
-;; (define-key global-map (kbd "C-z c") 'anything-cached-howm-menu)
+;; (require 'anything-howm)
+;; ;; 「最近のメモ」をいくつ表示するか
+;; (setq anything-howm-recent-menu-number-limit 600)
+;; ;; howm のデータディレクトリへのパス
+;; (setq anything-howm-data-directory howm-directory)
+;; ;; キーバンディングの定義
+;; (define-key global-map (kbd "C-z h") 'anything-howm-menu-command)
+;; ;; (define-key global-map (kbd "C-z c") 'anything-cached-howm-menu)
+
+;;
+;; helm-howm設定
+;;______________________________________________________________________
+(require 'helm-howm)
+(setq hh:recent-menu-number-limit 600)
+(global-set-key (kbd "C-z h") 'hh:menu-command)
 
 ;;
 ;; calfw-howmの設定
@@ -81,9 +88,9 @@
 ;; TODO move this function to split el file
 (defun my-cfw-open-schedule-buffer ()
   (interactive)
-  (let* 
+  (let*
       ((date (cfw:cursor-to-nearest-date))
-       (howm-items 
+       (howm-items
         (howm-folder-grep
          howm-directory
          (regexp-quote my-howm-schedule-page))))

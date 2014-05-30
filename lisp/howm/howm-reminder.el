@@ -1,7 +1,7 @@
 ;;; howm-reminder.el --- Wiki-like note-taking tool
-;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
 ;;;   HIRAOKA Kazuyuki <khi@users.sourceforge.jp>
-;;; $Id: howm-reminder.el,v 1.77.2.1 2011-01-02 12:05:56 hira Exp $
+;;; $Id: howm-reminder.el,v 1.83 2012-12-29 08:57:18 hira Exp $
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -234,8 +234,8 @@ schedules outside the range in %reminder in the menu.")
 
 ;; Clean me.
 ;; I cannot remember why I wrote howm-with-schedule-summary-format.
-(put 'howm-with-schedule-summary-format 'lisp-indent-hook 0)
 (defmacro howm-with-schedule-summary-format (&rest body)
+  (declare (indent 0))
   `(let ((howm-view-summary-format (if howm-view-split-horizontally ;; dirty!
                                       ""
                                     howm-view-summary-format)))
@@ -266,15 +266,14 @@ schedules outside the range in %reminder in the menu.")
          (howm-action-lock-reminder-forward-rules t)))
     (action-lock-mode t)))
 
-(defcustom howm-highlight-date-regexp-format
-  (regexp-quote howm-date-format)
-  "Time format for highlight of today and tommorow.
+(let ((rs (mapcar #'regexp-quote
+                  (list howm-date-format howm-reminder-today-format))))
+  (defcustom howm-highlight-date-regexp-format (car rs)
+    "Time format for highlight of today and tommorow.
 This value is passed to `format-time-string', and the result must be a regexp."
-  :type (let ((cs (mapcar (lambda (f) `(const ,(regexp-quote f)))
-                          (list howm-reminder-today-format howm-date-format))))
-          `(radio ,@cs
-                  string))
-  :group 'howm-experimental)
+    :type `(radio ,@(mapcar (lambda (r) `(const ,r)) rs)
+                    string)
+    :group 'howm-faces))
 
 (defun howm-reminder-today-font-lock-keywords ()
   (let ((today    (howm-reminder-today 0 howm-highlight-date-regexp-format))
@@ -325,7 +324,7 @@ This value is passed to `format-time-string', and the result must be a regexp."
                   (string< (car rest) today))
         (setq rest (cdr rest)
               n (1+ n)))
-      (goto-line (1+ n)))))
+      (howm-goto-line (1+ n)))))
 
 (defun howm-schedule-menu (days &optional days-before)
   (let* ((today (howm-encode-day t)) 
@@ -616,8 +615,6 @@ When D is t, the beginning of today is encoded."
          (daysec (* 60 60 24.0)))
     (+ (* hi (/ 65536 daysec)) (/ low daysec))))
 
-(howm-defvar-risky howm-congrats-command nil)
-;; (setq howm-congrats-command '("play" "~/sound/level.wav"))
 (defun howm-congrats ()
   (setq howm-congrats-count (1+ howm-congrats-count))
   (let* ((n (length howm-congrats-format))
@@ -653,7 +650,7 @@ When D is t, the beginning of today is encoded."
 ;;; direct manipulation of items from todo list
 
 ;; I'm sorry for dirty procedure here.
-;; If we use naive howm-date-regexp, it matches to file name "2004-05-11.howm"
+;; If we use naive howm-date-regexp, it matches to file name "2004-05-11.txt"
 ;; in summary mode.
 (defun howm-action-lock-reminder-forward-rules (&optional summary-mode-p)
   (let* ((action-maker (lambda (pos)
@@ -681,8 +678,8 @@ When D is t, the beginning of today is encoded."
 (defun howm-action-lock-forward-escape ()
   (setq howm-action-lock-forward-wconf
         (current-window-configuration)))
-(put 'howm-action-lock-forward-block 'lisp-indent-hook 0)
 (defmacro howm-action-lock-forward-block (&rest body)
+  (declare (indent 0))
   `(prog2
        (setq howm-action-lock-forward-wconf nil)
        (progn
@@ -871,12 +868,14 @@ or TODO is t."
          (reminder-menu (or schedule-menu todo-menu)))
     ;; Don't modify howm-reminder-marks.
     ;; Otherwise, defcustom will be confused for howm-reminder-menu-types, etc.
-    (mapcar* (lambda (var flag) (howm-modify-reminder-types var letter flag))
-             '(howm-reminder-types
-               howm-schedule-types howm-todo-types
-               howm-schedule-menu-types howm-todo-menu-types
-               howm-reminder-menu-types)
-             (list t schedule todo schedule-menu todo-menu reminder-menu))))
+    (howm-cl-mapcar* (lambda (var flag)
+                       (howm-modify-reminder-types var letter flag))
+                     '(howm-reminder-types
+                       howm-schedule-types howm-todo-types
+                       howm-schedule-menu-types howm-todo-menu-types
+                       howm-reminder-menu-types)
+                     (list t schedule todo
+                           schedule-menu todo-menu reminder-menu))))
 
 (defun howm-modify-reminder-types (var letter flag)
   "Modify variable VAR whose value is \"[...]\".

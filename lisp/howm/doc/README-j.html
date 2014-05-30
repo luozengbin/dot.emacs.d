@@ -8,7 +8,7 @@
 </head>
 <body>
 <h1><a name="label-0" id="label-0">howm (一人お手軽 Wiki もどき)</a></h1><!-- RDLabel: "howm (一人お手軽 Wiki もどき)" -->
-<p>$Id: README-j.html,v 1.107.2.8 2011-12-28 09:21:41 hira Exp $</p>
+<p>$Id: README.ja.rd,v 1.337 2012-12-29 00:59:48 hira Exp $</p>
 <p>Emacs で断片的なメモをどんどんとるための環境です.
 分類機能はあえてつけません.
 かわりに, 全文検索とメモ間リンクが手軽にできるようにしました.
@@ -217,6 +217,7 @@ emacs 用検索ツール?[2001-08-13]       (新しい順)
 <ul>
 <li>作成
 <ul>
+<li>[速記] (C-c , e) → ぱぱっとメモとり (C-c C-c で保存) ★</li>
 <li>[新規] (C-c , c) → 新規メモ作成 (現リージョンがタイトル) ★</li>
 <li>[複製] (C-c , D) → 現メモを複製 (住所録テンプレートなどの用途を想定)</li>
 </ul></li>
@@ -234,6 +235,8 @@ emacs 用検索ツール?[2001-08-13]       (新しい順)
 <li>[履歴] (C-c , h) → 検索履歴 ★</li>
 <li>[予定] (C-c , y) → 予定表: <a href="#label-5">リマインダ</a>参照 ★</li>
 <li>[Todo] (C-c , t) → todo 一覧: <a href="#label-5">リマインダ</a>参照 ★</li>
+<li>[全バ] (C-c , b) → バッファ一覧 ★</li>
+<li>[mark] (C-c , x) → バッファ内のマーク位置一覧 ★</li>
 </ul></li>
 <li>検索
 <ul>
@@ -257,6 +260,7 @@ emacs 用検索ツール?[2001-08-13]       (新しい順)
 <ul>
 <li>(C-u 20 C-c , :) → 20 日前のメモ</li>
 </ul></li>
+<li>[バ内] (C-c , o) → バッファ内を正規表現検索 ★</li>
 </ul></li>
 <li>編集: 対象ファイルを(編集モードで)開いた状態からメニューを呼ぶこと
 <ul>
@@ -612,21 +616,20 @@ x → マークしたファイルたちを本当に消す</pre></li>
 <li><p>お好みで, ~/.emacs に設定を追加 (→<a href="#label-11">カスタマイズ</a>)</p>
 <pre>;; 設定例
 (define-key global-map [katakana] 'howm-menu) ; [カタカナ] キーでメニュー
-(setq howm-file-name-format "%Y/%m/%Y_%m_%d.howm") ; 1 日 1 ファイル
+(setq howm-file-name-format "%Y/%m/%Y_%m_%d.txt") ; 1 日 1 ファイル
 (setq howm-keyword-case-fold-search t) ; &lt;&lt;&lt; で大文字小文字を区別しない
 (setq howm-list-title nil) ; 一覧時にタイトルを表示しない
 (setq howm-menu-refresh-after-save nil) ; save 時にメニューを自動更新せず
 (setq howm-refresh-after-save nil) ; save 時に下線を引き直さない
-(setq howm-menu-expiry-hours 2) ; メニューを 2 時間キャッシュ
-(add-to-list 'auto-mode-alist '("\\.howm$" . rd-mode)) ; メモは rd-mode に</pre></li>
+(setq howm-menu-expiry-hours 2) ; メニューを 2 時間キャッシュ</pre></li>
 <li>なお, キーワード一覧は ~/.howm-keys に記録される
 <ul>
 <li>万一壊れても, 再構築は簡単. 大文字小文字の区別に応じて…
 <ul>
 <li><p>区別する場合</p>
-<pre>find ~/howm -name '*.howm' -print | xargs ruby -ne '$_ =~ /&lt;&lt;&lt;\s+(.+)$/ and puts $1.split(/\s*&lt;&lt;&lt;\s*/).join "\t"' | sort -u &gt; ~/.howm-keys</pre></li>
+<pre>find ~/howm -name '*.txt' -print | xargs ruby -ne '$_ =~ /&lt;&lt;&lt;\s+(.+)$/ and puts $1.split(/\s*&lt;&lt;&lt;\s*/).join "\t"' | sort -u &gt; ~/.howm-keys</pre></li>
 <li><p>区別しない場合</p>
-<pre>find ~/howm -name '*.howm' -print | xargs ruby -ne '$_ =~ /&lt;&lt;&lt;\s+(.+)$/ and puts $1.downcase.split(/\s*&lt;&lt;&lt;\s*/).join "\t"' | sort -u &gt; ~/.howm-keys</pre></li>
+<pre>find ~/howm -name '*.txt' -print | xargs ruby -ne '$_ =~ /&lt;&lt;&lt;\s+(.+)$/ and puts $1.downcase.split(/\s*&lt;&lt;&lt;\s*/).join "\t"' | sort -u &gt; ~/.howm-keys</pre></li>
 </ul></li>
 </ul></li>
 <li>注意
@@ -693,7 +696,7 @@ x → マークしたファイルたちを本当に消す</pre></li>
 <ul>
 <li>新たに make install しても, 個人のメニューファイルを上書き更新はしません.
     必要なら, メニューを自分で編集するか,
-    ja/0000-00-00-000000.howm を自分でコピーするかしてください.</li>
+    ja/0000-00-00-000000.txt を自分でコピーするかしてください.</li>
 </ul></li>
 </ul>
 <h3><a name="label-11" id="label-11">カスタマイズ</a></h3><!-- RDLabel: "カスタマイズ" -->
@@ -704,6 +707,18 @@ x → マークしたファイルたちを本当に消す</pre></li>
 <ul>
 <li>色
 <ul>
+<li><p>howm 関連の全バッファに共通の色設定</p>
+<pre>;; 「ほげ」と「[ふが]」に着色
+;; ・設定法の詳細は, 変数 font-lock-keywords のヘルプを参照
+;; ・face の一覧は M-x list-faces-display
+(setq howm-user-font-lock-keywords
+  '(
+    ("ほげ" . (0 'highlight prepend))
+    ("\\[ふが\\]" . (0 'font-lock-doc-face prepend))
+    ))</pre>
+<ul>
+<li>todo や予定の色わけにでも使ってはいかがかと.</li>
+</ul></li>
 <li><p>内容バッファに rd-mode な色をつける</p>
 <pre>;; rd-mode.el が読み込まれているという前提で
 (setq howm-view-contents-font-lock-keywords rd-font-lock-keywords)</pre></li>
@@ -722,13 +737,13 @@ x → マークしたファイルたちを本当に消す</pre></li>
 </ul></li>
 <li>保存場所
 <ul>
-<li><p>メモ置き場/年/年月日-時分秒.howm に</p>
-<pre>(setq howm-file-name-format "%Y/%Y%m%d-%H%M%S.howm")</pre>
+<li><p>メモ置き場/年/年月日-時分秒.txt に</p>
+<pre>(setq howm-file-name-format "%Y/%Y%m%d-%H%M%S.txt")</pre>
 <ul>
 <li>ファイル名自体に年月日が入っていないと, filter-by-date が機能しない</li>
 </ul></li>
-<li><p>1 日 1 ファイル (メモ置き場/年/月/年_月_日.howm に)</p>
-<pre>(setq howm-file-name-format "%Y/%m/%Y_%m_%d.howm")</pre>
+<li><p>1 日 1 ファイル (メモ置き場/年/月/年_月_日.txt に)</p>
+<pre>(setq howm-file-name-format "%Y/%m/%Y_%m_%d.txt")</pre>
 <ul>
 <li>不完全な点があります. 我慢できる人だけどうぞ
 <ul>
@@ -786,13 +801,26 @@ x → マークしたファイルたちを本当に消す</pre></li>
 </ul></li>
 </ul></li>
 <li><p>メニューをメモ扱いしない (メモ一覧・検索の対象外に)</p>
-<pre>;; mv ~/howm/0000-00-00-000000.howm ~/hoge/fuga/menu.howm しといて…
-(setq howm-menu-file "~/hoge/fuga/menu.howm")</pre></li>
+<pre>;; mv ~/howm/0000-00-00-000000.txt ~/hoge/fuga/menu.txt しといて…
+(setq howm-menu-file "~/hoge/fuga/menu.txt")</pre></li>
+<li><p>%reminder の仕切り例</p>
+<pre>(setq howm-menu-reminder-separators
+      '(
+        (-1  . "━━━━━━━今日↓↑超過━━━━━━━")
+        (0   . "━━━━━━━予定↓━━━━━━━")
+        (3   . "━━━━━━━もっと先↓↑3日後まで━━━━━━━")
+        (nil . "━━━━━━━todo↓━━━━━━━") ;予定とtodoの境
+        ))</pre></li>
 </ul></li>
 <li>もっと軽く (cf. <a href="http://pitecan.com/fugo.html">富豪的プログラミング</a>)
 <ul>
 <li>上述の M-x customize で [Howm Efficiency] を参照</li>
-<li>特に, 本気で使うには howm-view-use-grep の設定をおすすめします</li>
+<li>特に, 本気で使うには howm-view-use-grep の設定をおすすめします
+<ul>
+<li><p>grep 使用時の coding system 指定</p>
+<pre>(setq howm-process-coding-system 'euc-japan-unix) ;; 読み書き共通
+(setq howm-process-coding-system '(utf-8-unix . sjis-unix)) ;; (読.書)</pre></li>
+</ul></li>
 <li><p>Tips: gc-cons-threshold の値を増やすと速くなる場合がある.
     ref &gt; <a href="http://www.bookshelf.jp/2ch/unix/1077881095.html">220,234-236</a></p>
 <pre>(setq gc-cons-threshold (* 4000 10000))</pre></li>
@@ -913,6 +941,15 @@ In-Reply-To: &lt;/home/hira/sawfish/rich-title/rich-title.jl&gt; ←直前ファイル
 (setq howm-todo-priority-done-bottom -44444)</pre></li>
 <li>howm-todo-priority-normal-bottom 等. ソース(howm-reminder.el)参照.</li>
 </ul></li>
+<li><p>todo 一覧(M-x howm-list-todo)の仕切り例</p>
+<pre>(setq howm-todo-separators
+      '(
+        (0  . "━━━━━━━↑超過━━━━━━━")
+        (nil . "━━━━━━━潜伏中↓━━━━━━━")
+        ))</pre>
+<ul>
+<li>連結表示やソートをする場合にはじゃまかも…</li>
+</ul></li>
 </ul></li>
 <li>action-lock
 <ul>
@@ -953,11 +990,6 @@ In-Reply-To: &lt;/home/hira/sawfish/rich-title/rich-title.jl&gt; ←直前ファイル
                                  1)
             action-lock-default-rules))</pre></li>
 </ul></li>
-<li><p>メニューを更新するたびに, カレンダーへの export も更新 (→<a href="#label-12">外部ツール</a>)</p>
-<pre>(defun my-howm-menu-hook ()
-  (shell-command "tag2plan ~/howm/*/*/*.howm &gt; ~/.dayplan_tag &amp;")
-  (switch-to-buffer howm-menu-name))
-(add-hook 'howm-menu-hook 'my-howm-menu-hook)</pre></li>
 <li><a href="http://www.ruby-lang.org/ja/man/html/RD.html">RD</a>を使う場合:
   行頭の * でエントリの開閉ができるように
   → <a href="http://www.bookshelf.jp/2ch/unix/1063800495.html">237-238</a></li>
@@ -967,7 +999,8 @@ In-Reply-To: &lt;/home/hira/sawfish/rich-title/rich-title.jl&gt; ←直前ファイル
         "(´・ω・｀) %s"
         "(｀・ω・´) %s"
         ;; …以下略…
-        ))</pre></li>
+        ))
+(setq howm-congrats-command '("play" "~/sound/fanfare.wav"))</pre></li>
 <li>もっといろいろいじるには, *.el 冒頭を参照</li>
 </ul>
 <h3><a name="label-12" id="label-12">外部ツール</a></h3><!-- RDLabel: "外部ツール" -->
@@ -992,7 +1025,7 @@ In-Reply-To: &lt;/home/hira/sawfish/rich-title/rich-title.jl&gt; ←直前ファイル
 <li>カレンダー &amp; todo 一覧: hcal.rb (同梱. 要 ruby)
 <ul>
 <li><p>カレンダー(予定・〆切・済みの一覧)を出力</p>
-<pre>hcal.rb -schedule_mark='○' -deadline_mark='●' -done_mark='／' ~/howm/*/*/*.howm</pre>
+<pre>hcal.rb -schedule_mark='○' -deadline_mark='●' -done_mark='／' ~/howm/*/*/*.txt</pre>
 <ul>
 <li><p>こんな感じでずらずら</p>
 <pre>----------------&lt;6&gt;---------------- 2003
@@ -1003,7 +1036,7 @@ In-Reply-To: &lt;/home/hira/sawfish/rich-title/rich-title.jl&gt; ←直前ファイル
 <li>&lt;&lt;&lt;&lt;# は「今日」, #&gt;&gt;&gt;&gt; は「毎年の同月同日」
 <ul>
 <li><p>こんな感じで alias しとくと便利</p>
-<pre>alias hcal="hcal.rb -schedule_mark='○' -deadline_mark='●' -done_mark='／' ~/howm/*/*/*.howm | less '+/&lt;&lt;&lt;&lt;#'"</pre></li>
+<pre>alias hcal="hcal.rb -schedule_mark='○' -deadline_mark='●' -done_mark='／' ~/howm/*/*/*.txt | less '+/&lt;&lt;&lt;&lt;#'"</pre></li>
 </ul></li>
 </ul></li>
 <li>「旬度順 todo 一覧」を出力
@@ -1177,7 +1210,7 @@ In-Reply-To: &lt;/home/hira/sawfish/rich-title/rich-title.jl&gt; ←直前ファイル
 </ul></li>
 <li>howm-mkmenu.el
 <ul>
-<li>howm-menu-*.el を ja/0000-00-00-000000.howm 等から生成するスクリプト</li>
+<li>howm-menu-*.el を ja/0000-00-00-000000.txt 等から生成するスクリプト</li>
 <li>作者以外は使う必要ないはず</li>
 </ul></li>
 </ul></li>
@@ -1254,382 +1287,130 @@ make test</pre></li>
 <h3><a name="label-18" id="label-18">更新記録</a></h3><!-- RDLabel: "更新記録" -->
 <p>thx &gt; patch・改良案・指摘をくださった皆様</p>
 <ul>
-<li>リリース版 howm-1.3.9.2 [2011-12-28]
-<ul>
-<li>こまごま fix (howm-1.3.9.2rc4 と同内容です)
-<ul>
-<li>mac で grep 使用時にエラーが出ていた
-      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/787-790n">thx</a>
-      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/898-901n">thx</a>
-<ul>
-<li>grep のデフォルトオプションを設定する前に,
-        --exclude-dir が通るか確認するようにしました.</li>
-</ul></li>
-<li>大きいフレームで一覧表示をしたときの余計なウィンドウ分割を修正
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a></li>
-<li>howm-vars.elc ロード時の警告「old-style backqoute detected!」を回避.
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a></li>
-</ul></li>
-</ul></li>
-<li>リリース版 howm-1.3.9.1 [2011-01-02]
-<ul>
-<li>fix: emacs-24.0.50 でのエラー
-    (Symbol's function definition is void: make-local-hook).
-    thx &gt; 山本 宗宏 さん (munepi at vinelinux.org)</li>
-</ul></li>
-<li>リリース版 howm-1.3.9 [2010-12-30]
+<li>リリース版 howm-1.4.2 [2013-12-31]
 <ul>
 <li>Note
 <ul>
-<li>ほとんど変更はありませんが, また一年ほどたったのでリリースしておきます.</li>
-<li>howm-test100702 との違いは, ドキュメントの微修正や ext/tag2plan の削除だけ.</li>
-<li>このリリースが済んだら, デフォルト設定を変えて
-      隠し機能を公式化しただけのものを howm-1.4.0 としてリリースする予定です.</li>
+<li>emacs 24.3 に対応. 2013-12-25 時点の trunk (24.3.50.1) でも起動を確認.</li>
+<li>howm-test130321 や howm-1.4.2rc1 と同じ内容です</li>
+</ul></li>
+<li>改良
+<ul>
+<li>C-c , a (howm-list-all) を高速化
+      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a></li>
 </ul></li>
 <li>fix
 <ul>
-<li>メニューから y キー(または [予定] 上で RET)で予定表を開いたとき,
-      内容バッファがカーソル位置のメモになっていなかった.
-      <a href="http://pc12.2ch.net/test/read.cgi/unix/1141892764/826">thx</a></li>
+<li>emacs 24.3.1 でバイトコンパイルせずに実行したときのエラー
+      "Can't detect type of ..."
+      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a></li>
+<li>シンボリックリンク下で新規メモが howm-mode にならないバグ
+      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a></li>
+<li>バイトコンパイル時の警告</li>
+</ul></li>
+</ul></li>
+<li>リリース版 howm-1.4.1 [2012-12-27]
+<ul>
+<li>~/.howm-keys が無かったら, 全メモをスキャンして再生成
+    <a href="http://sourceforge.jp/projects/howm/lists/archive/eng/2012/000099.html">thx</a>
+    &gt; Albert-san (areiner at tph.tuwien.ac.at)</li>
+<li>fix: *.txt と *.howm が混在しても一覧モードの表示がずれないように
+    <a href="http://toro.2ch.net/test/read.cgi/unix/1141892764/940">thx</a></li>
+</ul></li>
+<li>リリース版 howm-1.4.0 [2012-08-16]
+<ul>
+<li>Note
+<ul>
+<li><em>非互換変更</em>に注意!
+<ul>
+<li><p>1.3.* どおりの挙動を望むなら↓</p>
+<pre>(setq howm-compatible-to-ver1dot3 t) ;; (require 'howm) より前に!</pre></li>
+<li>個別に設定したければ, M-x customize-group RET howm-compatibility RET</li>
+</ul></li>
+<li>長いこと隠し機能だったものを公式機能にしました.</li>
+<li>emacs-24 対応</li>
+<li>howm-1.4.0rc2 と同内容です.</li>
+</ul></li>
+<li>変更
+<ul>
+<li>howm-file-name-format のデフォルトを *.howm から *.txt に変更
+<ul>
+<li>拡張子のせいで他ツールとの連携に困っているらしい事例を見かけるので</li>
+</ul></li>
+<li>一ファイル複数メモのときも, 絞り込み等をファイル単位じゃなくメモ単位に.
+      ただし, date での絞り込みはファイル単位のまま.</li>
+<li>タイトルが空のときは本文の一行目をタイトルに.</li>
+</ul></li>
+<li>こまごま改良
+<ul>
+<li><p>メニューに以下を書けば, タイムスタンプ順でなくファイル名順の上位を表示.
+      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/890">thx</a></p>
+<pre>%here%(howm-menu-recent identity)</pre></li>
+<li><p>ディレクトリに対してもビューアを設定できるように.
+      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/891">thx</a></p>
+<pre>;; 「file://…/」や「&gt;&gt;&gt; …/」は open コマンド(mac 用)で開く
+(setq howm-view-external-viewer-assoc '(("/$" . "open %s")))</pre></li>
+<li>変数 howm-normalizer のありがちな設定ミスを察するように
+      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/865-870n">thx</a></li>
 <li>ドキュメントの古い箇所を手直し</li>
-<li>メンテされていないツール(ext/tag2plan)を削除</li>
+<li>rast まわりの試作を削除</li>
 </ul></li>
-</ul></li>
-<li>リリース版 howm-1.3.8 [2009-12-31]
+<li>隠し機能の公式化
 <ul>
-<li>Note
+<li>コマンド
 <ul>
-<li>大きな変更はありませんが, 一年たったのでリリースしておきます.</li>
-<li>howm-test090723 との違いは, howm-excluded-dirs に ".git" を
-      追加しただけです.</li>
+<li>C-c , e (howm-remember)
+        <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/24-25n">thx</a>
+        <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/61">thx</a>
+        <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/72-75n">thx</a>
+        <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/92-93n">thx</a>
+        <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/99">thx</a></li>
+<li>C-c , b (howm-list-buffers)</li>
+<li>C-c , x (howm-list-mark-ring)</li>
+<li>C-c , o (howm-occur)</li>
 </ul></li>
-<li>変更・改良
+<li>リマインダ
 <ul>
-<li>過ぎた〆切に着色
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/738">thx</a></li>
-<li>_darcs/ などを検索対象外に (howm-excluded-dirs).
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/708n">thx</a>
+<li>メニューに「%reminder」と書くと, 予定と todo の統合一覧
 <ul>
-<li><p>いまどきの GNU grep を使っているなら↓もしておくと無駄な検索を省けます.</p>
-<pre>(setq howm-view-grep-option "-Hnr --exclude-dir=_darcs")</pre></li>
-<li><p>さらに, *.howm だけ検索するようにしたければ…</p>
-<pre>(setq howm-view-grep-option "-Hnr --exclude-dir=_darcs --include=*.howm")</pre></li>
+<li>予定「@」は,
+          howm-menu-schedule-days-before 日前から
+          howm-menu-schedule-days 日後までを先頭に表示
+<ul>
+<li>[2004-12-03]@5 などと書くと, 「5 日間」の意
+            (当日も含むので「12月3日から12月7日まで」).
+            一覧から消えるのがそれだけ猶予される.
+            <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/516">thx</a></li>
 </ul></li>
-<li><a href="http://www.kt.rim.or.jp/~kbk/yagrep/index.html">yagrep</a> との
-      互換性のため, grep 呼び出し時にディレクトリ名末尾の / を削除.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/685-686n">thx</a></li>
-<li><a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?HidePrivateReminder">HidePrivateReminder</a>
-      のために内部を少し掃除.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/731">thx</a></li>
+<li>〆切「!」も, 〆切日がその範囲までなら一緒に表示</li>
+<li>それより下は従来どおり</li>
+<li>従来の %schedule + %todo とくらべると, スキャンが一回ですむぶん効率的</li>
 </ul></li>
-<li>fix
-<ul>
-<li>C-c , l (howm-list-recent)時に該当ファイルが多すぎるとエラー.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/733">thx</a>
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?Windows">thx</a>
-<ul>
-<li>howm-view-use-grep を設定している場合に発症.
-        meadow だと "Spawning child process: exec format error" になるらしい.</li>
-<li>grep 呼び出し時のコマンドラインが howm-command-length-limit 以上に
-        長いときは分割して呼び出すよう直しました.</li>
+<li>[2005-05-15 21:37]@ のような書式の予定は, 時刻順にソート
+        <a href="http://pc.2ch.net/test/read.cgi/unix/1063800495/141">thx</a>
+        <a href="http://pc.2ch.net/test/read.cgi/unix/1063800495/148">thx</a>
+        <a href="http://pc.2ch.net/test/read.cgi/unix/1063800495/597">thx</a>
+        <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/683">thx</a></li>
+<li><p>メニューからリマインダを直叩きしたときに,
+        対応バッファの行数が多少ずれていても許す.
+        <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/519">thx</a></p>
+<pre>(setq howm-action-lock-forward-fuzziness 5) ;; 何行までずれても許すか</pre></li>
 </ul></li>
-<li>(setq howm-list-title t) していたら,
-      come-from リンク上で RET したときもタイトル一覧を表示するように.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/762">thx</a>
+<li><a href="#label-11">カスタマイズ</a>
 <ul>
-<li>もし以前の動作がよければ,
-        M-x customize-variable RET howm-list-title RET し,
-        howm-keyword-search 以外をすべてセットしてください.</li>
-</ul></li>
-<li>メモを保存したときにメニューが自動更新されなくなっていた.
-      (howm-menu-expiry-hours を正に設定した場合のみ該当)</li>
-</ul></li>
-</ul></li>
-<li>リリース版 howm-1.3.7 [2008-12-31]
-<ul>
-<li>Note
-<ul>
-<li>内部的なコード整理と, こまごま改良・修正</li>
-<li>howm-1.3.6 (もしくは howm-test080531) 以前で
-      変数 howm-list-normalizer を設定していた場合は,
-      その設定を止め, 変数 howm-normalizer を設定してください
-<ul>
-<li>自動読みかえも一応試みてはいますが…</li>
-</ul></li>
-<li>howm-1.3.7rc4 とほぼ同じものです
-<ul>
-<li>不本意に "Wrote ..." が表示されるバグを直しました</li>
+<li>上記 %reminder や todo list 中の仕切り</li>
+<li>grep 使用時の coding system 指定
+        <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/784">thx</a></li>
+<li>howm 関連の全バッファに共通の色設定
+        <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/42">thx</a>
+        <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?Idea">thx</a>
+        &gt; taku さん</li>
+<li>todo を済ませたときに指定コマンドを実行 (howm-congrats-command)</li>
 </ul></li>
 </ul></li>
-<li>変更・改良
-<ul>
-<li>非互換な変更
-<ul>
-<li>旧変数 howm-list-normalizer から新変数 howm-normalizer へ
-<ul>
-<li>移行方法
-<ul>
-<li>M-x customize で設定していたなら,
-            M-x customize-variable howm-list-normalizer RET で
-            「Off」を設定し,
-            M-x customize-variable howm-normalizer RET で改めて設定しなおす</li>
-<li><p>.emacs 等で (setq howm-list-normalizer 'howm-view-sort-by-○○)
-            と設定していたなら, 次のように書きかえる</p>
-<pre>(setq howm-normalizer 'howm-sort-items-by-○○)</pre></li>
-<li>(setq howm-list-normalizer …それ以外の何か…)
-            と設定していたなら,
-<ul>
-<li>lisp がわかる方:
-              次の仕様変更にあわせて修正する
-<ul>
-<li>旧変数: 「現在の一覧を並べかえて表示し直す関数」を指定</li>
-<li>新変数: 「与えられたリストに対し, その並べかえを返す関数」を指定</li>
-</ul></li>
-<li>lisp がわからない方:
-              <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/l50">2ch UNIX 板 howm スレ</a>
-              か
-              <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?Comment">howm wiki の「なんでも」</a>
-              でご相談を</li>
-</ul></li>
-</ul></li>
-<li>もし旧変数をセットしたままにしておくと…
-<ul>
-<li>単純に読みかえられそうなら, 新変数に読みかえて新処理を実行</li>
-<li>読みかえられなかったら, 旧処理を実行 (非効率)</li>
-</ul></li>
-</ul></li>
-<li>「今日と明日の日付」は [YYYY-MM-DD] でなく YYYY-MM-DD を着色
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/275">thx</a>
-<ul>
-<li>一覧やメニューのファイル名も, マッチすれば着色</li>
-<li><p>前のように戻したければ…</p>
-<pre>;; 今日と明日の日付は, [YYYY-MM-DD] の形式だけ着色
-(setq howm-highlight-date-regexp-format (regexp-quote "[%Y-%m-%d]"))</pre></li>
-</ul></li>
-</ul></li>
-<li>一覧バッファ
-<ul>
-<li>検索時の内部的な一覧バッファ再表示を抑制</li>
-<li>一覧バッファからの X (dired-x) 時に, カーソルを対応ファイル名へ置く
-        <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReport">thx</a>
-        &gt; 797 さん
-<ul>
-<li>1.3.2 の隠し機能を公式化 &amp; デフォルト化.
-          変数 howm-view-dired-keep-cursor は削除しました.</li>
-</ul></li>
-<li>howm-view-summary-previous-section も「各ファイルの最初のヒット行」で
-        止まるよう変更
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/360">thx</a></li>
-<li>内容バッファで一アイテムだけ表示しているときは,
-        区切り線「====&gt;&gt;&gt; xxx.howm」を描かない.
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/314">thx</a></li>
-<li>一覧バッファのソート基準に summary-match-string を追加
-<ul>
-<li>指定した正規表現にマッチした文字列の順にソート
-<ul>
-<li>例: 「2006-06-..」を指定すれば, 2006年6月の項目を日付順に</li>
-</ul></li>
-<li>ちなみに, summary-match は, マッチしたものを上位にもってくるだけ
-<ul>
-<li>マッチしたものどうしの上下比較はしない</li>
-</ul></li>
-</ul></li>
-</ul></li>
-<li>メニュー
-<ul>
-<li>メニューの %recent や %random でもファイル名欄を桁そろえ.
-        <a href="http://lists.sourceforge.jp/mailman/archives/howm-eng/2007/000032.html">thx</a> &gt; Mielke-san (peter.mielke at gmail.com)
-<ul>
-<li>変数 howm-menu-list-format は %recent および %random 用に</li>
-<li>新変数 howm-menu-reminder-format が %schedule および %todo 用</li>
-</ul></li>
-<li>メニューの %random% で, 同じファイルからは一項目しか選ばれないように
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/563-566n">thx</a></li>
-<li><p>メニューの曜日表記をリストで指定するよう変更.
-        英語表記のデフォルトも "Sun" 等に直した.
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/147">thx</a></p>
-<pre>(setq howm-day-of-week-ja '("日" "月" "火" "水" "木" "金" "土"))
-(setq howm-day-of-week-en '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))</pre>
-<ul>
-<li>っていうか, わざわざ独自に定義せずに
-          (format-time-string "%a") 決め打ちでも構わない?</li>
-</ul></li>
-<li>初期メニューにボタンの説明を追加.
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/144">thx</a></li>
-</ul></li>
-<li>いろいろ
-<ul>
-<li><p>howm-view-grep-option に複数のオプションを書けるように.
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/458">thx</a></p>
-<pre>(setq howm-view-grep-option "-Hnr --include=*.howm") ;; *.howm のみ検索</pre>
-<ul>
-<li>単純に split-string してるだけ.
-          もっとまじめなのが必要ならお知らせください.</li>
-</ul></li>
-<li><p>単語の途中がたまたま come-from キーワードに一致しても下線を引かない設定.
-        <a href="http://lists.sourceforge.jp/mailman/archives/howm-eng/2007/000030.html">thx</a> &gt; Mielke-san (peter.mielke at gmail.com)</p>
-<pre>;; ASCII 文字のみのキーワードは, 単語途中にマッチしても下線を引かない
-(setq howm-check-word-break "^[[:ascii:]]+$")</pre></li>
-<li>予定表, ToDo リストにも超過日数を表示.
-        <a href="http://lists.sourceforge.jp/mailman/archives/howm-eng/2006/000028.html">thx</a> &gt; Mielke-san (peter.mielke at gmail.com)</li>
-<li>.howm-history まわりの挙動を改善.
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/179">thx</a>
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/193-194n">thx</a>
-<ul>
-<li>バッファ一覧に表示しない</li>
-<li>"Wrote ..." を表示しない</li>
-<li>make test 時に ~/.howm-history を汚さない</li>
-</ul></li>
-</ul></li>
-</ul></li>
-<li>fix
-<ul>
-<li>howm-menu-categorized-reminder で表示されない項目があった
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a></li>
-<li>(setq howm-view-list-title-type 2) のとき C-c , a でエラー
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/552">thx</a></li>
-<li>タイトルのないメモが C-c , a で表示されなかった</li>
-<li>howmoney が使えなくなっていた.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/503">thx</a>
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/514">thx</a></li>
-<li>予定や todo が一つもないときに予定表や todo リストを呼び出した場合.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/494">thx</a></li>
-<li>予定表や todo リストで action-lock-mode が不本意にトグル.</li>
-<li>howm2, howmkara の -exclude オプションに不具合.
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReport">thx</a> &gt; dareka さん</li>
-<li><a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?HidePrivateReminder">HidePrivateReminder</a>で C-c , t が「No match」に
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?HidePrivateReminder">thx</a> &gt; taku さん
-<ul>
-<li>互換性を修復</li>
-</ul></li>
-<li>howm-occur で一覧バッファの検索語がハイライトされなくなっていた</li>
-<li>「＜＜＜ テスト ＜＜＜ Test」の「Test」上で RET を叩いても「テスト」が
-      検索されなかった
-<ul>
-<li>howm-keyword-case-fold-search をセットしていたときの大文字小文字がらみ</li>
-</ul></li>
-<li>C-c , l でいちいち日付を聞かないように
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/340">thx</a>
-<ul>
-<li>[2007-04-02] に作り込んだバグ</li>
-</ul></li>
-<li>検索結果の一覧で「＜＜＜ ほげ」が先頭にこない場合があった
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/328">thx</a>
-<ul>
-<li>(setq howm-list-title t) していると発症</li>
-<li>remove-duplicates の仕様をよく知らなかったせい. 勉強になりました.</li>
-</ul></li>
-<li>(setq howm-list-title t) だと一覧バッファに前回の内容が表示されるバグ</li>
-<li>howm-view-contents-limit が効いていなかった</li>
-<li>日付での絞り込み結果が一日分多すぎた</li>
-<li>narrowing 関連の不具合(widen 抜け)
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/160-161n">thx</a></li>
-<li>メニューの「%reminder」の底に, 過ぎた予定が表示されていた.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/149">thx</a></li>
-<li>メニュー中の「&gt; 2006-07-26-015606 | …」の「7」上で RET を叩くとエラー.
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReport">thx</a> &gt; na さん
-<ul>
-<li>変数 howm-menu-list-regexp の定義をちょっと直しただけ</li>
-</ul></li>
-<li>異なるディレクトリの同名ファイルが一覧表示で混同されていた.
-      <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a></li>
-<li>howm-view-split-horizontally が t でも nil でもないときの特別な動作を廃止.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/591">thx</a>
-<ul>
-<li>howm-1.2 〜 1.3.7rc2 で壊れていたが, バグレポートなし.
-        きっと誰も使っていない ^^;</li>
-</ul></li>
-</ul></li>
-</ul></li>
-<li>リリース版 howm-1.3.6 [2008-05-31]
-<ul>
-<li>fix: 2008-02-24 以降の CVS 先端 emacs で, 他バッファの着色が乱れる.
-    <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/484-487n">thx</a>
-<ul>
-<li>minor mode が font-lock-keywords-only を直に触るのは行儀悪い?</li>
-<li>howm-test20080514 からのバックポート</li>
-</ul></li>
-<li>(howm-1.3.6rc1 と中身は同じです)</li>
-</ul></li>
-<li>リリース版 howm-1.3.5 [2007-12-09]
-<ul>
-<li>fix: 夏時間最終日に当日の予定がメニューに表示されなかった.
-    <a href="http://lists.sourceforge.jp/mailman/archives/howm-eng/2007/000034.html">thx</a> &gt; Mielke-san (peter.mielke at gmail.com)
-<ul>
-<li>howm-test071108 からのバックポート</li>
-</ul></li>
-<li>fix: 順不同でバイトコンパイルできるように
-<ul>
-<li>Wanderlust や Navi2ch を参考にして,
-      巡回依存の扱い方(require の書き方)を修正</li>
-<li>howm-test07-05-18 からのバックポート</li>
-</ul></li>
-<li>automake を 1.6 から 1.10 に
-<ul>
-<li>howm-test07-05-05 からのバックポート</li>
-<li>automake-1.10 の elisp-comp が使えるようになった</li>
-</ul></li>
-<li>(howm-1.3.5rc1 と中身は同じです)</li>
-</ul></li>
-<li>リリース版 howm-1.3.4 [2006-12-16]
-<ul>
-<li>セキュリティ修正
-    <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/207">thx</a>
-<ul>
-<li>何が問題?
-<ul>
-<li>Emacs には, ファイルごとにローカル変数を自動設定する機能があります.
-        これを悪用すると, howm 使用時に任意の命令を自動実行させることができます.
-        <a href="https://www.codeblog.org/blog/ueno/20060118.html">ref</a></li>
-</ul></li>
-<li>どう直した?
-<ul>
-<li>howm 関連の全シンボルに risky-local-variable 属性をセットし,
-        上述の自動設定時にチェックが入るようにしました.</li>
-</ul></li>
-<li>バージョンアップしたくない/できないのですが?
-<ul>
-<li><p>ソースの編集が可能なら,
-        howm.el の末尾に以下のコードを加えるのが確実です.
-        バイトコンパイルのしなおしもお忘れなく.</p>
-<pre>;; howm-1.2.2 以降用. howm 関連の全シンボルに risky-local-variable 属性.
-(mapcar (lambda (symbol) (put symbol 'risky-local-variable t))
-        (howm-symbols))</pre></li>
-<li><p>それが困難な場合は .emacs に以下を加えてください.</p>
-<pre>(eval-after-load "howm"  ; ← autoload/load/require の記述にあわせて
-  ;; howm-1.2.2 以降用. howm 関連の全シンボルに risky-local-variable 属性.
-  '(mapcar (lambda (symbol) (put symbol 'risky-local-variable t))
-           (howm-symbols)))</pre></li>
-<li>どちらにせよ, 修正が反映されたことをご確認ください.
-<ul>
-<li>emacs を立ち上げ直し, howm を起動</li>
-<li><p>以下を *scratch* バッファに貼り, 閉じ括弧の後にカーソルを置いて C-j を
-          押す</p>
-<pre>(get 'howm-version 'risky-local-variable)</pre></li>
-<li>t と表示されれば OK</li>
-</ul></li>
-</ul></li>
-<li>ローカル変数の自動設定をあえて使いたいときは?
-<ul>
-<li><p>以下のように変数ごとに解禁してください.</p>
-<pre>;; 例: 変数 howm-auto-narrow はファイルごとの自動設定を許可
-(put 'howm-auto-narrow 'risky-local-variable nil)</pre></li>
-</ul></li>
-<li>howm に限らず, ローカル変数の自動設定を一切使えなくするには?
-<ul>
-<li><p>.emacs に以下を加えてください.
-        ただし emacs のバージョンによっては不完全かもしれません.
-        <a href="http://www.kmc.gr.jp/~tak/memo/emacs-local-variable.html">ref</a></p>
-<pre>;; ローカル変数の自動設定をオフ
-(setq enable-local-variables nil)</pre></li>
-</ul></li>
-</ul></li>
-<li>fix: CVS 先端 emacs でメニューなどに色がつかない
-    <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/165-169n">thx</a>
-<ul>
-<li>修正は, cheat-font-lock-20040624-format-p の定義中の = を &gt;= に直すだけ</li>
-<li>howm-test061015 からのバックポート</li>
-</ul></li>
+<li>fix: 2012-01-21 以降の emacs-24 でエラー (void-variable inhibit-first-line-modes-regexps)
+    <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste">thx</a>
+    thx &gt; 佐々木 寛 さん (sasaki at fcc.ad.jp)</li>
 </ul></li>
 <li>隠し機能 (experimental)
 <ul>
@@ -1699,15 +1480,6 @@ make test</pre></li>
 </ul></li>
 <li>とりあえず叩き台. こんなんでいいんでしょうか?</li>
 </ul></li>
-<li><p>時刻も書ける
-        <a href="http://pc.2ch.net/test/read.cgi/unix/1063800495/141">thx</a>
-        <a href="http://pc.2ch.net/test/read.cgi/unix/1063800495/148">thx</a>
-        <a href="http://pc.2ch.net/test/read.cgi/unix/1063800495/597">thx</a></p>
-<pre>[2004-07-16 10:15]@ 会議</pre>
-<ul>
-<li>今のところ書けるだけ. 効果は何もなし.</li>
-<li>今後この方向に拡張するかも未定</li>
-</ul></li>
 </ul></li>
 <li>日付形式
 <ul>
@@ -1732,30 +1504,11 @@ make test</pre></li>
           「+ RET」で「+を挿入」にはしてみたけど…</li>
 </ul></li>
 </ul></li>
-<li>その他
-<ul>
-<li><p>おまけ</p>
-<pre>(setq howm-congrats-command '("play" "~/sound/level.wav"))</pre></li>
-</ul></li>
 </ul></li>
 <li>1.2.1
 <ul>
 <li>Major
 <ul>
-<li>メニューに「%reminder」と書くと, 予定と todo の統合一覧
-<ul>
-<li>予定「@」は,
-          howm-menu-schedule-days-before 日前から
-          howm-menu-schedule-days 日後までを先頭に表示
-<ul>
-<li>[2004-12-03]@5 などと書くと, 「5 日間」の意
-            (当日も含むので「12月3日から12月7日まで」).
-            一覧から消えるのがそれだけ猶予される.
-            <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/516">thx</a></li>
-</ul></li>
-<li>〆切「!」も, 〆切日がその範囲までなら一緒に表示</li>
-<li>それより下は従来どおり</li>
-</ul></li>
 <li>howm2 の作り直し? (ext/howmkara)
 <ul>
 <li>必要にせまられてでっちあげ. 名前もてきとう.
@@ -1772,12 +1525,6 @@ make test</pre></li>
 </ul></li>
 <li>Minor
 <ul>
-<li>[2004-09-01 23:26]@ とかも tag2plan で表示
-        <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/398">thx</a>
-<ul>
-<li>表示されるってだけ. おすすめしません.
-          この書式を本気でサポートするか未定なので.</li>
-</ul></li>
 <li>hcal.rb の「[2004-09-02]?」対応(自分専用そのばしのぎ)
         <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?TangledToDo">ref</a></li>
 <li>M-x howm-return-to-list → 一覧表示に戻る
@@ -1804,18 +1551,6 @@ make test</pre></li>
 </ul></li>
 <li>1.2.2
 <ul>
-<li>一覧
-<ul>
-<li>バッファ一覧: M-x howm-list-buffers
-<ul>
-<li>ここから絞り込みなどをすれば, 「全バッファ occur」相当のことができる</li>
-<li>C-u をつければ, 隠しバッファまですべて</li>
-<li><p>除外するバッファ名の設定</p>
-<pre>(setq howm-list-buffers-exclude
-      '("*Messages*" ".howm-keys" ".howm-history"))</pre></li>
-</ul></li>
-<li>現バッファの最近マーク一覧: M-x howm-list-mark-ring</li>
-</ul></li>
 <li>特殊フォルダ
 <ul>
 <li>namazu folder 試作
@@ -1851,109 +1586,8 @@ make test</pre></li>
 </ul></li>
 <li>ext/hcal.rb に iCalendar 出力を追加, …の最低限のとっかかりだけ</li>
 </ul></li>
-<li>1.3.0
-<ul>
-<li><p>一ファイル複数メモのときも, 絞り込み等をファイル単位じゃなくメモ単位に.
-      ただし, date での絞り込みはファイル単位のまま.</p>
-<pre>(setq howm-view-search-in-result-correctly t)</pre></li>
-<li><p>メニューの %reminder 中に仕切り</p>
-<pre>(setq howm-menu-reminder-separators
-      '(
-        (-1  . "━━━━━━━今日↓↑超過━━━━━━━")
-        (0   . "━━━━━━━予定↓━━━━━━━")
-        (3   . "━━━━━━━もっと先↓↑3日後まで━━━━━━━")
-        (nil . "━━━━━━━todo↓━━━━━━━") ;予定とtodoの境
-        ))</pre>
-<ul>
-<li>昔の小細工「[2005-05-17]_ ━━━━」は, そのうち廃止</li>
-</ul></li>
-<li><p>howm 関連の全バッファに共通の色設定</p>
-<pre>;; 「ほげ」と「[ふが]」に着色
-;; ・設定法の詳細は, 変数 font-lock-keywords のヘルプを参照
-;; ・face の一覧は M-x list-faces-display
-(setq howm-user-font-lock-keywords
-  '(
-    ("ほげ" . (0 'highlight prepend))
-    ("\\[ふが\\]" . (0 'font-lock-doc-face prepend))
-    ))</pre>
-<ul>
-<li>todo や予定の色わけにでも使ってはいかがかと.
-        <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/42">thx</a>
-        <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?Idea">thx</a>
-        &gt; taku さん</li>
-</ul></li>
-<li><p>今日の日付として, [2005-05-19] でなく 2005-05-19 をハイライト
-      <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/691">thx</a></p>
-<pre>(setq howm-highlight-date-regexp-format
-      (regexp-quote howm-date-format))</pre>
-<ul>
-<li>予定を [2005-05-19 20:54]@ のように書く人向け
-<ul>
-<li>前から言っているように,
-          「この書式をほんとにサポートするかは未定」です.
-          「[2005-05-19]@ 20:54 …」の方が無難.
-          <a href="http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?DateFormat">ref</a></li>
-</ul></li>
-</ul></li>
-<li><p>[2005-05-15 21:37]@ のような書式の予定は, 時刻順にソート
-      <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/683">thx</a></p>
-<pre>(setq howm-schedule-sort-by-time t)</pre>
-<ul>
-<li>テストよろしくです &gt; 683 さん.
-        いろんな場合を十分ためした上で OK と宣言していただけたら,
-        デフォルトにしようかと.</li>
-</ul></li>
-<li>全文検索システム <a href="http://www.netlab.jp/rast/index.html.ja">Rast</a>
-      の味見
-<ul>
-<li>rast-0.1.1 で試し</li>
-<li>外部コマンドとして ext/howm-rast-search.rb と ext/howm-rast-register.rb
-        が必要</li>
-<li>正規表現の検索には rast を使わない (→だいぶ遅くなる)
-<ul>
-<li>このため, メニューの予定表や todo リストも遅い</li>
-</ul></li>
-<li>使い方
-<ul>
-<li>rast データベースを前もって構築しておく</li>
-<li>どちらか選択
-<ul>
-<li><p>howm-directory を rast で検索する場合</p>
-<pre>;; rast データベースの位置と, メモが実際にあるディレクトリとを指定
-(setq howm-directory
-      (howm-make-folder:rast "/tmp/rastdb"
-                             (expand-file-name "~/howm/")))
-;; メニューファイルを陽に指定する必要あり
-(setq howm-menu-file
-      (expand-file-name "~/howm/0000-00-00-000000.howm"))
-;; お望みなら, ファイル保存時にデータベースを自動更新
-;; (更新失敗したときのことなんかは考えてない)
-;(setq howm-rast-register-command
-;      (expand-file-name "~/elisp/howm/ext/howm-rast-register.rb"))
-;(add-hook 'howm-after-save-hook
-;  (lambda () (howm-rast-register-current-buffer "/tmp/rastdb")))</pre></li>
-<li><p>howm-directory に加えて, 別のどこかを rast で検索する場合</p>
-<pre>;; rast データベースの位置
-(setq howm-search-path
-  (list (howm-make-folder:rast "/tmp/rastdb")))
-;; 正 = howm-search-path も探す
-(howm-toggle-search-other-dir 1)</pre></li>
-</ul></li>
-<li><p>両者共通で…</p>
-<pre>(setq howm-rast-search-command
-      (expand-file-name "~/elisp/howm/ext/howm-rast-search.rb"))</pre></li>
-</ul></li>
-</ul></li>
-</ul></li>
 <li>1.3.1
 <ul>
-<li><p>タイトルが空のときは本文の一行目をタイトルに. 重さが心配.</p>
-<pre>;; タイトル欄がこれにマッチしたときは, マッチしない最初の行を
-;; 代替タイトルとする
-(setq howm-view-title-skip-regexp
-      "\\(^=? *$\\)\\|\\(^\\[[-: 0-9]+\\]\\)")
-;; ↓も設定しておかないと↑は機能しない
-(setq howm-view-search-in-result-correctly t)</pre></li>
 <li>新しい「バグの指摘の手順」案
 <ul>
 <li>make test で emacs を起動</li>
@@ -1969,33 +1603,8 @@ make test</pre></li>
 <li>コメントを加えて 2ch に貼る</li>
 </ul></li>
 </ul></li>
-<li>1.3.2
-<ul>
-<li>M-x howm-occur で, カレントバッファを検索</li>
-<li><p>grep 使用時の coding system 指定
-      <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/784">thx</a></p>
-<pre>(setq howm-process-coding-system 'euc-japan-unix)</pre></li>
-</ul></li>
 <li>1.3.3
 <ul>
-<li>M-x howm-remember で
-      <a href="http://www.emacswiki.org/cgi-bin/emacs-en/RememberMode">remember-mode</a>
-      もどき
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/24-25n">thx</a>
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/61">thx</a>
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/72-75n">thx</a>
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/92-93n">thx</a>
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/99">thx</a>
-<ul>
-<li>書き込み用ウィンドウがポップアップするので…
-<ul>
-<li>べたっと書いて C-c C-c → メモを保存し, ポップアップを消す</li>
-<li>キャンセルするなら C-c C-k</li>
-</ul></li>
-<li>ひょっとして, 「むしろこっちをデフォルトにしろ」?</li>
-<li><p>一行目を howm-template の %title に, 残りを %cursor に,
-        としたければ</p>
-<pre>(setq howm-remember-first-line-to-title t)</pre></li>
 <li><p>新規メモ作成をすべて howm-remember にするには…</p>
 <pre>;; howm-create をすべて howm-remember にすりかえる
 (defadvice howm-create (around remember activate)
@@ -2006,8 +1615,7 @@ make test</pre></li>
         '(howm-remember current))  ;; [2006-05-15] 修正</pre>
 <ul>
 <li>メニュー上で c を押したとき, 「メニューの前に表示していたバッファ」
-          を出す方が好みなら, 「current」を「previous」と直してください</li>
-</ul></li>
+        を出す方が好みなら, 「current」を「previous」と直してください</li>
 </ul></li>
 <li>カテゴリ別の todo list
       <a href="http://pc8.2ch.net/test/read.cgi/unix/1077881095/885">thx</a>
@@ -2035,29 +1643,11 @@ make test</pre></li>
 (setq howm-view-summary-format "") ;; ファイル名を消したければ</pre></li>
 <li>C-c , M で「ファイル名を指定してメモを開く」
       <a href="http://lists.sourceforge.jp/mailman/archives/howm-eng/2005/000010.html">thx</a> &gt; Eduardo Ochs さん</li>
-<li>%reminder 中の仕切りについて
-<ul>
-<li>1.2.1 からの隠し機能だった↓を廃止
-<ul>
-<li><p>メモのどこかに下のように書いておくと, 今日の位置にそれが表示される</p>
-<pre>[2004-11-01]_0 ━━━━━━━━━━━━━</pre>
-<ul>
-<li>日付はダミー. 0 は「今日 - 0 日」の位置.</li>
-<li>(メニューじゃない) todo 一覧にも出てしまう弊害が…</li>
-</ul></li>
-</ul></li>
-<li>かわりに変数 howm-menu-reminder-separators を使ってください</li>
-<li>1.3.0 の隠し機能で宣言していたとおり</li>
-</ul></li>
 </ul></li>
 <li>1.3.7
 <ul>
-<li><p>メニューからリマインダを直叩きしたときに,
-      対応バッファの行数が多少ずれていても許す.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/519">thx</a></p>
-<pre>(setq howm-action-lock-forward-fuzziness 5) ;; 何行までずれても許すか</pre></li>
 <li><p>一覧時にウィンドウ分割を壊さない設定.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/507">thx</a></p>
+      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/507">thx</a></p>
 <pre>(setq riffle-keep-window t)
 (setq riffle-window-initializer nil)</pre>
 <ul>
@@ -2065,23 +1655,13 @@ make test</pre></li>
 <li>とりあえず叩き台. 今後変更の可能性あり.</li>
 </ul></li>
 <li>M-x howm-list-active-todo で, 現在有効な(＝潜伏中でない) todo のみを一覧.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/129-131n">thx</a>
+      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/129-131n">thx</a>
 <ul>
 <li>ついでに, M-x howm-list-sleeping-todo で, 潜伏中の todo のみを一覧.</li>
 <li>とりあえず関数だけ試作. インタフェースの案があればお聞かせください.</li>
 <li>ちなみに, メニューから潜伏中 todo を消すには,
         M-x customize-variable RET howm-menu-todo-priority RET で
         「Hide sleeping reminders」を設定してください.</li>
-</ul></li>
-<li><p>todo 一覧(M-x howm-list-todo)にも仕切りを表示</p>
-<pre>(setq howm-todo-separators
-      '(
-        (0  . "━━━━━━━↑超過━━━━━━━")
-        (nil . "━━━━━━━潜伏中↓━━━━━━━")
-        ))</pre>
-<ul>
-<li>M-x howm-list-active-todo への対案として試作.</li>
-<li>連結表示やソートをする場合にはじゃまかも…</li>
 </ul></li>
 <li><p>バッファ名を, ファイル名ではなくタイトルにする.
       <a href="http://lists.sourceforge.jp/mailman/archives/howm-eng/2006/000020.html">thx</a> &gt; Mielke-san (peter at exegenix.com),
@@ -2092,25 +1672,19 @@ make test</pre></li>
 (add-hook 'after-save-hook 'howm-mode-set-buffer-name)</pre>
 <ul>
 <li><p>タイトル「ほげ」のメモのバッファ名を「=ほげ」に
-        <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/333">thx</a></p>
+        <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/333">thx</a></p>
 <pre>;; タイトルが AAA ならバッファ名を =AAA に.
 ;; 下の howm-mode-set-buffer-name を設定した上で…
 (setq howm-buffer-name-format "=%s")</pre></li>
 <li>本当は howm と独立したツールにする方がいいけど,
         おっくうなのでひとまず.</li>
 </ul></li>
-<li><p>howm-occur の grep 設定</p>
-<pre>;; M-x howm-occur 時は外部コマンドの grep を使わないよう設定.
-;; ○ grep でなく emacs の正規表現を使用
-;; ○ 正規表現検索もハイライトされる
-;; × 極端に巨大なバッファだと遅いかも
-(setq howm-occur-force-fake-grep t)</pre></li>
 </ul></li>
 <li>1.3.8
 <ul>
 <li>M-x howm-extend-deadlines で,
       指定日を過ぎた〆切(!)をすべて一定日数後へ延期.
-      <a href="http://pc11.2ch.net/test/read.cgi/unix/1141892764/671">thx</a>
+      <a href="http://hibari.2ch.net/test/read.cgi/unix/1141892764/671">thx</a>
 <ul>
 <li>仕様もインタフェースもまだ叩き台.</li>
 <li>メモを勝手に書きかえる危険な操作なので, バックアップをとってから!</li>
@@ -2126,9 +1700,46 @@ make test</pre></li>
 <li>単に "断片的" としないのは, メニューファイル自身がヒットするのを避ける小細工</li>
 </ul></li>
 </ul></li>
+<li>1.4.2
+<ul>
+<li><p>一覧バッファで「ファイル | マッチ行」のかわりにこんな表示に.
+      このときタイトル先頭の「=」は表示しないように.
+      (experimental)
+      <a href="http://sourceforge.jp/projects/howm/lists/archive/eng/2012/000107.html">thx</a>
+      <a href="http://sourceforge.jp/projects/howm/lists/archive/eng/2012/000111.html">thx</a>
+      &gt; Albert-san (areiner at tph.tuwien.ac.at)</p>
+<pre>タイトル A|
+|マッチ行 A1
+|マッチ行 A2
+タイトル B|
+|マッチ行 B1
+|マッチ行 B2</pre>
+<ul>
+<li><p>設定</p>
+<pre>(setq howm-view-list-title-type 2) ;; Show title before summary.
+(setq howm-view-summary-format "") ;; If you want to delete file names.
+(setq howm-entitle-items-style2-max-length 50)
+(setq howm-entitle-items-style2-format "%-0s|%s") ;; for title and summary
+(setq howm-entitle-items-style2-title-line t) ;; independent title line?</pre></li>
+<li>さらに, M-x customize-variable RET howm-list-title RET も設定を</li>
+<li>制限: 一ファイル複数メモで C-c , a (howm-list-all) したときは
+        対応するタイトル行に飛んでくれない
+<ul>
+<li>そもそも行指向で作っていたので実装が無理矢理</li>
+<li>きちんと直すのはめんどう. 強い需要がなければ…</li>
+</ul></li>
+</ul></li>
+</ul></li>
 </ul></li>
 <li>…履歴抜粋… (<a href="OLD.rd">&lt;URL:OLD.rd&gt;</a> 参照)
 <ul>
+<li>[2010-12-30] 1.3.9 微修正</li>
+<li>[2009-12-31] 1.3.8 過ぎた〆切に着色</li>
+<li>[2008-12-31] 1.3.7 内部コード整理 (副作用を分離).
+    howm-list-normalizer から howm-normalizer へ.</li>
+<li>[2008-05-31] 1.3.6 着色の不具合修正</li>
+<li>[2007-12-09] 1.3.5 夏時間の不具合修正</li>
+<li>[2006-12-16] 1.3.4 セキュリティ修正</li>
 <li>[2005-08-02] 1.3.0 alias. M-x customize. タイトル表示.</li>
 <li>[2005-05-02] 1.2.2 バックエンド切り離し. gfunc.el</li>
 <li>[2004-08-24] 1.2 保留「~」の公式化. howm.el, riffle.el</li>

@@ -1,7 +1,7 @@
 ;;; howm-view.el --- Wiki-like note-taking tool
-;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
 ;;;   HIRAOKA Kazuyuki <khi@users.sourceforge.jp>
-;;; $Id: howm-view.el,v 1.238.2.1 2011-01-02 12:05:56 hira Exp $
+;;; $Id: howm-view.el,v 1.251 2012-12-29 08:57:18 hira Exp $
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -30,8 +30,7 @@
 (defvar howm-view-summary-format
   (let* ((path (format-time-string howm-file-name-format))
          (width (length (file-name-nondirectory path))))
-    (concat "%-" (format "%s" width) "s " howm-view-summary-sep " ")))
-;;     (concat "%-" (format "%s" width) "s | ")))
+    (concat "%-" (format "%s" (1+ width)) "s" howm-view-summary-sep " ")))
 (defvar howm-view-header-format
   "\n==========================>>> %s\n"
   "Format string of header for howm-view-contents.
@@ -118,6 +117,7 @@
 (defalias 'howm-view-persistent-p  #'riffle-persistent-p)  
 (defalias 'howm-view-kill-buffer   #'riffle-kill-buffer)   
 (defalias 'howm-view-set-place     #'riffle-set-place)     
+(defalias 'howm-view-get-place     #'riffle-get-place)     
 (defalias 'howm-view-summary-current-item  #'riffle-summary-current-item)
 (defalias 'howm-view-contents-current-item #'riffle-contents-current-item)
 (defalias 'howm-view-summary-to-contents   #'riffle-summary-to-contents)
@@ -144,7 +144,8 @@
 (defvar howm-view-font-lock-silent t
   "Inhibit font-lock-verbose if non-nil.")
 (howm-defvar-risky howm-view-summary-font-lock-keywords
-  '(("^[^ \t\r\n]+ +" . howm-view-name-face)
+  `((,(concat "\\(^[^ \t\r\n].*?\\)" (regexp-quote howm-view-summary-sep))
+     1 howm-view-name-face)
     ("^ +" . howm-view-empty-face)))
 (howm-defvar-risky howm-view-contents-font-lock-keywords nil)
 
@@ -565,19 +566,8 @@ But I'm not sure for multi-byte characters on other versions of emacsen."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; dir
 
-(defcustom howm-ruby-mode-bug nil
-  "Non nil if ruby-mode.el is old and has a bug around font-lock;
-global value of font-lock-keywords is set wrongly."
-  :type 'boolean
-  :group 'howm-experimental)
-
 (defun howm-view-directory (dir &optional recursive-p)
-  (howm-view-summary "" (howm-folder-items dir recursive-p))
-  (when howm-ruby-mode-bug
-    ;; sloppy!
-    ;; (for old ruby-mode.el which sets global value of font-lock-keywords)
-    (setq font-lock-keywords nil))
-  )
+  (howm-view-summary "" (howm-folder-items dir recursive-p)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; filter
@@ -665,10 +655,11 @@ global value of font-lock-keywords is set wrongly."
         (howm-view-remove-by-contents r)
       (howm-view-search-in-result r))))
 
-(defcustom howm-view-search-in-result-correctly nil
-  "*Non nil if search-in-result should be aware of paragraph."
-  :type 'boolean
-  :group 'howm-experimental)
+(howm-if-ver1dot3 nil
+  (defcustom howm-view-search-in-result-correctly t
+    "*Non nil if search-in-result should be aware of paragraph."
+    :type 'boolean
+    :group 'howm-search))
 
 (defun howm-view-search-in-result (regexp)
 ;;   (interactive "sSearch in result (grep): ")
@@ -873,19 +864,20 @@ global value of font-lock-keywords is set wrongly."
        (t2 (format "Skip \"%s \" and \"[xxxx-xx-xx xx:xx]\""
                    howm-view-title-header))
        (r2 (format "\\(%s\\)\\|\\(^\\[[-: 0-9]+\\]\\)" r1)))
-  (defcustom howm-view-title-skip-regexp nil
-    "*Regular expression for lines which should not be titles.
+  (howm-if-ver1dot3 nil
+    (defcustom howm-view-title-skip-regexp r2
+      "*Regular expression for lines which should not be titles.
 If the original title matches this regexp, the first non-matched line
 is shown as title instead.
 Nil disables this feature.
 
 This feature does not work when `howm-view-search-in-result-correctly' is nil."
-    :type `(radio (const :tag "Off" nil)
-                  (const :tag ,t1 ,r1)
-                  (const :tag ,t2 ,r2)
-                  regexp)
-    ;;   :group 'howm-efficiency
-    :group 'howm-experimental))
+      :type `(radio (const :tag "Off" nil)
+                    (const :tag ,t1 ,r1)
+                    (const :tag ,t2 ,r2)
+                    regexp)
+      :group 'howm-title
+      :group 'howm-efficiency)))
 
 (defcustom howm-view-list-title-type 1
   "*Type of showing title in summary buffer.
@@ -900,18 +892,7 @@ to see file names."
   :group 'howm-experimental)
 
 (defun howm-view-list-title (title-regexp)
-  (if (= howm-view-list-title-type 1)
-      (howm-view-list-title1 title-regexp)
-    (howm-view-list-title2 title-regexp)))
-
-(defun howm-view-list-title1 (title-regexp)
-  "Show title instead of summary."
-  (howm-view-summary-rebuild
-   (howm-entitle-items-style1 title-regexp (howm-view-item-list))))
-
-(defun howm-view-list-title2 (title-regexp)
-  "Show title before summary."
-  (howm-view-summary-rebuild (howm-entitle-items-style2
+  (howm-view-summary-rebuild (howm-entitle-items
                               title-regexp (howm-view-item-list))))
 
 (defun howm-entitle-items (title-regexp item-list)
@@ -920,16 +901,22 @@ to see file names."
     (howm-entitle-items-style2 title-regexp item-list)))
 
 (defun howm-entitle-items-style1 (title-regexp item-list)
+  "Put title instead of summary."
   (let ((items (howm-view-search-folder-items-fi title-regexp item-list)))
     (if howm-view-search-in-result-correctly
-        (let* ((hit-items (howm-item-list-filter items item-list))
-               (nohit-items (howm-item-list-filter item-list
-                                                   items t))
-               (all-items (if (null nohit-items)
-                              hit-items
-                            (append hit-items nohit-items))))
+        (let* ((r (howm-item-list-filter items item-list 'with-rest))
+               (hit-items (car r))
+               (nohit-items (cdr r))
+               ;; should I use (howm-classify #'howm-item-place nohit-items) ?
+               (noplace-nohit-items
+                (howm-cl-remove-if #'howm-item-place nohit-items))
+               (rest-items
+                (howm-item-list-filter (howm-cl-remove-if-not #'howm-item-place
+                                                              nohit-items)
+                                       items t))
+               (all-items (append hit-items noplace-nohit-items rest-items)))
           (when howm-view-title-skip-regexp
-            (mapcar #'howm-view-change-title all-items))
+            (mapc #'howm-view-change-title all-items))
           all-items)
       (let* ((pages (howm-cl-remove-duplicates* (mapcar #'howm-item-page
                                                         item-list)))
@@ -944,18 +931,38 @@ to see file names."
                           (append items nohit-items))))
         all-items))))
 
+(defvar howm-entitle-items-style2-max-length 20)
+(defvar howm-entitle-items-style2-format "%-13s | %s") ;; for title and summary
+(defvar howm-entitle-items-style2-title-line nil) ;; independent title line?
 (defun howm-entitle-items-style2 (title-regexp item-list)
-  (howm-cl-mapcan (lambda (item)
-                    (let ((orig (howm-item-summary item))
-                          (titles (howm-item-titles item)))
-                      (mapcar (lambda (s)
-                                (let ((i (howm-item-dup item)))
-                                  (howm-item-set-summary i (format "%-13s | %s"
-                                                                   s
-                                                                   orig))
-                                  i))
-                              (or titles (list "")))))
-                  item-list))
+  "Put title before summary."
+  ;; fix me: howm-item-place is not set for howm-list-all
+  (let ((last-title ""))
+    (howm-cl-mapcan
+     (lambda (item)
+       (let ((orig (howm-item-summary item))
+             (titles (howm-item-titles item)))
+         (howm-cl-mapcan
+          (lambda (s)
+            (if (string= s last-title)
+                (setq s "")
+              (setq last-title s))
+            (when (> (length s) howm-entitle-items-style2-max-length)
+              (setq s (substring s 0 howm-entitle-items-style2-max-length)))
+            (mapcar (lambda (x)
+                      (let ((i (howm-item-dup item)))
+                        (howm-item-set-summary i x)
+                        i))
+                    (if (and howm-entitle-items-style2-title-line
+                             (not (string= s "")))
+                        (list (format howm-entitle-items-style2-format
+                                      s "")
+                              (format howm-entitle-items-style2-format
+                                      "" orig))
+                      (list (format howm-entitle-items-style2-format
+                                    s orig)))))
+          (or titles (list "")))))
+     item-list)))
 
 ;;; detect items in same paragraph (= entry = memo. sorry for inconsistent terminology)
 
@@ -972,7 +979,7 @@ to see file names."
       (funcall proc item))))
 
 (defun howm-item-titles (item)
-"List of titles of ITEM.
+  "List of titles of ITEM.
 When place (see `howm-item-place') is specified, ITEM has at most one title.
 Otherwise, ITEM can have two or more titles."
   (howm-item-with-temp-buffer
@@ -985,7 +992,11 @@ Otherwise, ITEM can have two or more titles."
                (cons (buffer-substring-no-properties (match-beginning 0)
                                                      (line-end-position))
                      titles)))
-       (reverse titles)))))
+       (mapcar (lambda (x)
+                 (if (string-match howm-view-title-regexp x)
+                     (match-string-no-properties howm-view-title-regexp-pos x)
+                   x))
+               (reverse titles))))))
 
 (defun howm-item-range (item)
   "List of beginning-place and end-place of paragraph to which ITEM belongs."
@@ -1022,30 +1033,43 @@ Return value is assoc list; each element of it is a cons pair of page
 and rangeset which indicates ranges of places of paragraphs to which items
 in ITEM-LIST belongs."
   (let ((alist nil))  ;; key = page, value = rangeset of place
-    (mapc (lambda (item)
-            (let* ((page (howm-item-page item))
-                   (place (howm-item-place item))
-                   (rs (cdr (assoc page alist))))
-              (cond ((null rs)
-                     (setq alist (cons (cons page (howm-make-rangeset
-                                                   (howm-item-range item)))
-                                       alist)))
-                    ((howm-rangeset-belong-p place rs)
-                     nil)
-                    (t
-                     (howm-rangeset-add! rs (howm-item-range item))))))
-          item-list)
-    alist))
+    (labels ((add-to-alist (page rs)
+                           (setq alist (cons (cons page rs) alist))))
+      (mapc (lambda (item)
+              (let* ((page (howm-item-page item))
+                     (place (howm-item-place item))
+                     (rs (cdr (assoc page alist))))
+                (cond ((null place)
+                       (add-to-alist page (howm-make-rangeset)))
+                      ((null rs)
+                       (add-to-alist page (howm-make-rangeset
+                                           (howm-item-range item))))
+                      ((howm-rangeset-belong-p place rs)
+                       nil) ;; do nothing
+                      (t
+                       (howm-rangeset-add! rs (howm-item-range item))))))
+            item-list)
+      alist)))
 
 (defun howm-item-list-filter (item-list reference-item-list
                                         &optional remove-match)
   "Select items in ITEM-LIST according to REFERENCE-ITEM-LIST.
 When REMOVE-MATCH is nil, return value is list of items i in ITEM-LIST
 which satisfy the condition \"there exists i' in REFERENCE-ITEM-LIST
-such that i and i' belong to same paragraph\".
-When REMOVE-MATCH is non-nil, return value is complement of the above list;
-list of items in ITEM-LIST which do not satisfy the above condition."
-  ;; split no-place items
+such that i and i' belong to same paragraph\" (case 1).
+When REMOVE-MATCH is non-nil and not the symbol 'with-rest',
+return value is complement of the above list;
+list of items in ITEM-LIST which do not satisfy the above condition (case 2).
+When REMOVE-MATCH is the symbol 'with-rest',
+return value is (A . B), where A is the return value of case 1 and
+B is items in REFERENCE-ITEM-LIST that do not match in case 1."
+  ;; 
+  ;; split no-place items:
+  ;; Though implementation 1 calls grep many times,
+  ;; implementation 2 is slower in construction of folder from items.
+  ;; [2012-12-28]
+  ;; 
+  ;; implementation 1 (call grep many times)
   (setq item-list
         (howm-cl-mapcan (lambda (item)
                           (if (howm-item-place item)
@@ -1054,20 +1078,44 @@ list of items in ITEM-LIST which do not satisfy the above condition."
                                  (howm-view-title-regexp-grep) (list item))
                                 (list item))))
                         item-list))
+  ;; 
+  ;; ;; implementation 2 (making items-folder is slow)
+  ;; (let* ((place-items (howm-cl-remove-if-not #'howm-item-place item-list))
+  ;;        (no-place-items (howm-cl-remove-if #'howm-item-place item-list))
+  ;;        (split-items (howm-view-search-folder-items-fi
+  ;;                      (howm-view-title-regexp-grep) no-place-items))
+  ;;        ;;; !!!!!!!!! use CL !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ;;        (no-title-items (set-difference no-place-items split-items
+  ;;                                        :key #'howm-item-page)))
+  ;;   (setq item-list (append place-items split-items no-title-items)))
+  ;;
   (let* ((alist (howm-item-list-rangeset reference-item-list))
          (matcher (lambda (item)
                     (let* ((page (howm-item-page item))
                            (place (howm-item-place item))
                            (rs (cdr (assoc page alist))))
                       (cond ((null rs) nil)
-                            ((null place) t)
-                            (t (howm-rangeset-belong-p place rs)))))))
-    (if remove-match
-        (howm-cl-remove-if matcher item-list)
-      (howm-cl-remove-if-not matcher item-list))))
+                            ((howm-rangeset-belong-p place rs) rs)
+                            (t nil))))))
+    (cond ((eq remove-match 'with-rest)
+           (let ((match (howm-cl-remove-if-not
+                         (lambda (item)
+                           (let ((rs (funcall matcher item)))
+                             (and rs (howm-rangeset-hit! rs))))
+                         item-list)))
+             (cons match
+                   (howm-cl-mapcan
+                    (lambda (a) (and (not (howm-rangeset-hit-p (cdr a)))
+                                     (list (howm-make-item (car a)))))
+                    alist))))
+          (remove-match (howm-cl-remove-if matcher item-list))
+          (t (howm-cl-remove-if-not matcher item-list)))))
 
 ;;; rangeset
-;;; ex. (*rangeset* (1 . 4) (5 . 6) (8 . 14))
+;;; ex.
+;;; (*rangeset* (1 . 4) (5 . 6) (8 . 14))
+;;; (*rangeset*) ==> "almighty"
+;;; (*rangeset-hit* (1 . 4) (5 . 6) (8 . 14)) ==> "hit" is recorded
 
 (defun howm-make-rangeset (&optional beg-end)
   (if (null beg-end)
@@ -1076,11 +1124,13 @@ list of items in ITEM-LIST which do not satisfy the above condition."
       (howm-rangeset-add! rs beg-end))))
 
 (defun howm-rangeset-belong-p (point rs)
-  (howm-cl-member-if (lambda (pair)
-                       (and (<= (car pair) point) (<= point (cdr pair))))
-             (cdr rs)))
+  (or (null (cdr rs))
+      (howm-cl-member-if (lambda (pair)
+                           (and (<= (car pair) point) (<= point (cdr pair))))
+                         (cdr rs))))
 
 (defun howm-rangeset-add! (rs beg-end)
+  ;; "almighty" is ignored here. sorry for confusion...
   ;; c = cursor (pointing its cdr)
   ;; p = pair
   (let ((c rs)
@@ -1100,6 +1150,14 @@ list of items in ITEM-LIST which do not satisfy the above condition."
     (when beg
       (rplacd c (list (cons beg end)))))
   rs)
+
+(defvar howm-rangeset-hit-indicator '*rangeset-hit*)
+
+(defun howm-rangeset-hit! (rs)
+  (setcar rs howm-rangeset-hit-indicator))
+
+(defun howm-rangeset-hit-p (rs)
+  (eq (car rs) howm-rangeset-hit-indicator))
 
 ;; check
 
@@ -1160,7 +1218,9 @@ list of items in ITEM-LIST which do not satisfy the above condition."
   (when (string-match howm-view-title-skip-regexp (howm-item-summary item))
     (let ((title-line (with-temp-buffer
                         (howm-page-insert (howm-item-page item))
-                        (howm-view-set-place (howm-item-place item))
+                        (howm-view-set-place (or (howm-item-place item)
+                                                 (howm-view-get-place
+                                                  (point-min))))
                         (howm-view-get-title-line))))
       (howm-item-set-summary item title-line))))
 
@@ -1528,7 +1588,7 @@ RNAME must be relative name."
                                         (howm-view-item-list))))
       (setq *riffle-summary-check* nil) ;; dirty
       (howm-view-summary (howm-view-name) item-list)
-      (goto-line n)
+      (howm-goto-line n)
       (save-selected-window
         (let ((b (get-buffer "*Shell Command Output*")))
           (cond ((not (howm-buffer-empty-p b))

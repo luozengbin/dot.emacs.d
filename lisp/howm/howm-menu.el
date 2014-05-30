@@ -1,7 +1,7 @@
 ;;; howm-menu.el --- Wiki-like note-taking tool
-;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
 ;;;   HIRAOKA Kazuyuki <khi@users.sourceforge.jp>
-;;; $Id: howm-menu.el,v 1.101.2.1 2011-01-02 12:05:56 hira Exp $
+;;; $Id: howm-menu.el,v 1.106 2012-09-23 11:34:59 hira Exp $
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -656,12 +656,12 @@ When this is nil, delete-region is used instead, and bug appears.")
                                          howm-menu-todo-priority
                                          howm-menu-reminder-separators)))
 
-(defun howm-menu-recent (&optional random)
-  (howm-menu-general (if random "random" "recent")
+(defun howm-menu-recent (&optional evaluator label)
+  (howm-menu-general (or label "recent")
                      nil
-                     (howm-recent-menu howm-menu-recent-num random)))
+                     (howm-recent-menu howm-menu-recent-num evaluator)))
 
-(defun howm-menu-random () (howm-menu-recent t))
+(defun howm-menu-random () (howm-menu-recent t "random"))
 
 (defun howm-menu-general (label formatter item-list)
   "Generate output string for items in howm menu.
@@ -731,21 +731,22 @@ ITEM-LIST is list of items which should be shown."
 
 ;;; recent/random
 
-(defun howm-recent-menu (num &optional random)
+(defun howm-recent-menu (num &optional evaluator)
   ;; Bug: (length howm-recent-menu) can be smaller than NUM
   ;; when empty files exist.
-  (let* ((summarizer #'(lambda (file line content) content))
+  (let* ((randomp (eq evaluator t))
+         (summarizer #'(lambda (file line content) content))
          ;; Unique name is needed for dynamic binding. Sigh...
-         (h-r-m-evaluator (if random
+         (h-r-m-evaluator (if randomp
                               (lambda (f) (number-to-string (random)))
-                            #'howm-view-mtime))
+                            (or evaluator #'howm-view-mtime)))
          (sorted (howm-sort (lambda (f) (funcall h-r-m-evaluator f))
                             #'howm-view-string>
                             (mapcar #'howm-item-name
                                     (howm-folder-items howm-directory t))))
          (files (howm-first-n sorted num)))
     (let ((r (howm-menu-recent-regexp)))
-      (if random
+      (if randomp
           (howm-cl-mapcan (lambda (f)
                             (let ((is (howm-view-search-items r (list f)
                                                               summarizer)))
@@ -891,7 +892,7 @@ If you don't like misc. category, try
 
 (defun howm-menu-copy-skel (contents)
   (let ((menu-file (or howm-menu-file
-                       (expand-file-name "0000-00-00-000000.howm"
+                       (expand-file-name "0000-00-00-000000.txt"
                                          howm-directory)))
         (r "^="))
     (if (file-exists-p menu-file)
@@ -905,6 +906,7 @@ If you don't like misc. category, try
         (goto-char (point-min))
         (while (re-search-forward r nil t)
           (replace-match howm-view-title-header nil nil))
+        (howm-mode 1)
         (save-buffer)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,5 +1,5 @@
 =begin
-$Id: OLD.rd,v 1.14 2010-12-29 13:33:11 hira Exp $
+$Id: OLD.rd,v 1.18 2012-08-16 09:52:06 hira Exp $
 
 * 目次
   * ((<古い更新履歴>))
@@ -11,6 +11,274 @@ $Id: OLD.rd,v 1.14 2010-12-29 13:33:11 hira Exp $
 = 古い更新履歴
 
 == 1.3.x
+
+* リリース版 howm-1.3.9.2 [2011-12-28]
+  * こまごま fix (howm-1.3.9.2rc4 と同内容です)
+    * mac で grep 使用時にエラーが出ていた
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/787-790n>))
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/898-901n>))
+      * grep のデフォルトオプションを設定する前に,
+        --exclude-dir が通るか確認するようにしました.
+    * 大きいフレームで一覧表示をしたときの余計なウィンドウ分割を修正
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste>))
+    * howm-vars.elc ロード時の警告「old-style backqoute detected!」を回避.
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste>))
+
+* リリース版 howm-1.3.9.1 [2011-01-02]
+  * fix: emacs-24.0.50 でのエラー
+    (Symbol's function definition is void: make-local-hook).
+    thx > 山本 宗宏 さん (munepi at vinelinux.org)
+
+* リリース版 howm-1.3.9 [2010-12-30]
+  * Note
+    * ほとんど変更はありませんが, また一年ほどたったのでリリースしておきます.
+    * howm-test100702 との違いは, ドキュメントの微修正や ext/tag2plan の削除だけ.
+    * このリリースが済んだら, デフォルト設定を変えて
+      隠し機能を公式化しただけのものを howm-1.4.0 としてリリースする予定です.
+  * fix
+    * メニューから y キー(または [予定] 上で RET)で予定表を開いたとき,
+      内容バッファがカーソル位置のメモになっていなかった.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/826>))
+    * ドキュメントの古い箇所を手直し
+    * メンテされていないツール(ext/tag2plan)を削除
+
+* リリース版 howm-1.3.8 [2009-12-31]
+  * Note
+    * 大きな変更はありませんが, 一年たったのでリリースしておきます.
+    * howm-test090723 との違いは, howm-excluded-dirs に ".git" を
+      追加しただけです.
+  * 変更・改良
+    * 過ぎた〆切に着色
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/738>))
+    * _darcs/ などを検索対象外に (howm-excluded-dirs).
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/708n>))
+      * いまどきの GNU grep を使っているなら↓もしておくと無駄な検索を省けます.
+          (setq howm-view-grep-option "-Hnr --exclude-dir=_darcs")
+      * さらに, *.txt だけ検索するようにしたければ…
+          (setq howm-view-grep-option "-Hnr --exclude-dir=_darcs --include=*.txt")
+    * ((<yagrep|URL:http://www.kt.rim.or.jp/~kbk/yagrep/index.html>)) との
+      互換性のため, grep 呼び出し時にディレクトリ名末尾の / を削除.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/685-686n>))
+    * ((<HidePrivateReminder|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?HidePrivateReminder>))
+      のために内部を少し掃除.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/731>))
+  * fix
+    * C-c , l (howm-list-recent)時に該当ファイルが多すぎるとエラー.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/733>))
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?Windows>))
+      * howm-view-use-grep を設定している場合に発症.
+        meadow だと "Spawning child process: exec format error" になるらしい.
+      * grep 呼び出し時のコマンドラインが howm-command-length-limit 以上に
+        長いときは分割して呼び出すよう直しました.
+    * (setq howm-list-title t) していたら,
+      come-from リンク上で RET したときもタイトル一覧を表示するように.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/762>))
+      * もし以前の動作がよければ,
+        M-x customize-variable RET howm-list-title RET し,
+        howm-keyword-search 以外をすべてセットしてください.
+    * メモを保存したときにメニューが自動更新されなくなっていた.
+      (howm-menu-expiry-hours を正に設定した場合のみ該当)
+
+* リリース版 howm-1.3.7 [2008-12-31]
+  * Note
+    * 内部的なコード整理と, こまごま改良・修正
+    * howm-1.3.6 (もしくは howm-test080531) 以前で
+      変数 howm-list-normalizer を設定していた場合は,
+      その設定を止め, 変数 howm-normalizer を設定してください
+      * 自動読みかえも一応試みてはいますが…
+    * howm-1.3.7rc4 とほぼ同じものです
+      * 不本意に "Wrote ..." が表示されるバグを直しました
+  * 変更・改良
+    * 非互換な変更
+      * 旧変数 howm-list-normalizer から新変数 howm-normalizer へ
+        * 移行方法
+          * M-x customize で設定していたなら,
+            M-x customize-variable howm-list-normalizer RET で
+            「Off」を設定し,
+            M-x customize-variable howm-normalizer RET で改めて設定しなおす
+          * .emacs 等で (setq howm-list-normalizer 'howm-view-sort-by-○○)
+            と設定していたなら, 次のように書きかえる
+              (setq howm-normalizer 'howm-sort-items-by-○○)
+          * (setq howm-list-normalizer …それ以外の何か…)
+            と設定していたなら,
+            * lisp がわかる方:
+              次の仕様変更にあわせて修正する
+              * 旧変数: 「現在の一覧を並べかえて表示し直す関数」を指定
+              * 新変数: 「与えられたリストに対し, その並べかえを返す関数」を指定
+            * lisp がわからない方:
+              ((<2ch UNIX 板 howm スレ|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/l50>))
+              か
+              ((<howm wiki の「なんでも」|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?Comment>))
+              でご相談を
+        * もし旧変数をセットしたままにしておくと…
+          * 単純に読みかえられそうなら, 新変数に読みかえて新処理を実行
+          * 読みかえられなかったら, 旧処理を実行 (非効率)
+      * 「今日と明日の日付」は [YYYY-MM-DD] でなく YYYY-MM-DD を着色
+        ((<thx|URL:http://pc8.2ch.net/test/read.cgi/unix/1077881095/691>))
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/275>))
+        * 一覧やメニューのファイル名も, マッチすれば着色
+        * 前のように戻したければ…
+            ;; 今日と明日の日付は, [YYYY-MM-DD] の形式だけ着色
+            (setq howm-highlight-date-regexp-format (regexp-quote "[%Y-%m-%d]"))
+    * 一覧バッファ
+      * 検索時の内部的な一覧バッファ再表示を抑制
+      * 一覧バッファからの X (dired-x) 時に, カーソルを対応ファイル名へ置く
+        ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReport>))
+        > 797 さん
+        * 1.3.2 の隠し機能を公式化 & デフォルト化.
+          変数 howm-view-dired-keep-cursor は削除しました.
+      * howm-view-summary-previous-section も「各ファイルの最初のヒット行」で
+        止まるよう変更
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/360>))
+      * 内容バッファで一アイテムだけ表示しているときは,
+        区切り線「====>>> xxx.txt」を描かない.
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/314>))
+      * 一覧バッファのソート基準に summary-match-string を追加
+        * 指定した正規表現にマッチした文字列の順にソート
+          * 例: 「2006-06-..」を指定すれば, 2006年6月の項目を日付順に
+        * ちなみに, summary-match は, マッチしたものを上位にもってくるだけ
+          * マッチしたものどうしの上下比較はしない
+    * メニュー
+      * メニューの %recent や %random でもファイル名欄を桁そろえ.
+        ((<thx|URL:http://lists.sourceforge.jp/mailman/archives/howm-eng/2007/000032.html>)) > Mielke-san (peter.mielke at gmail.com)
+        * 変数 howm-menu-list-format は %recent および %random 用に
+        * 新変数 howm-menu-reminder-format が %schedule および %todo 用
+      * メニューの %random% で, 同じファイルからは一項目しか選ばれないように
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/563-566n>))
+      * メニューの曜日表記をリストで指定するよう変更.
+        英語表記のデフォルトも "Sun" 等に直した.
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/147>))
+          (setq howm-day-of-week-ja '("日" "月" "火" "水" "木" "金" "土"))
+          (setq howm-day-of-week-en '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
+        * っていうか, わざわざ独自に定義せずに
+          (format-time-string "%a") 決め打ちでも構わない?
+      * 初期メニューにボタンの説明を追加.
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/144>))
+    * いろいろ
+      * howm-view-grep-option に複数のオプションを書けるように.
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/458>))
+          (setq howm-view-grep-option "-Hnr --include=*.txt") ;; *.txt のみ検索
+        * 単純に split-string してるだけ.
+          もっとまじめなのが必要ならお知らせください.
+      * 単語の途中がたまたま come-from キーワードに一致しても下線を引かない設定.
+        ((<thx|URL:http://lists.sourceforge.jp/mailman/archives/howm-eng/2007/000030.html>)) > Mielke-san (peter.mielke at gmail.com)
+          ;; ASCII 文字のみのキーワードは, 単語途中にマッチしても下線を引かない
+          (setq howm-check-word-break "^[[:ascii:]]+$")
+      * 予定表, ToDo リストにも超過日数を表示.
+        ((<thx|URL:http://lists.sourceforge.jp/mailman/archives/howm-eng/2006/000028.html>)) > Mielke-san (peter.mielke at gmail.com)
+      * .howm-history まわりの挙動を改善.
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/179>))
+        ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/193-194n>))
+        * バッファ一覧に表示しない
+        * "Wrote ..." を表示しない
+        * make test 時に ~/.howm-history を汚さない
+  * fix
+    * howm-menu-categorized-reminder で表示されない項目があった
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste>))
+    * (setq howm-view-list-title-type 2) のとき C-c , a でエラー
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/552>))
+    * タイトルのないメモが C-c , a で表示されなかった
+    * howmoney が使えなくなっていた.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/503>))
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/514>))
+    * 予定や todo が一つもないときに予定表や todo リストを呼び出した場合.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/494>))
+    * 予定表や todo リストで action-lock-mode が不本意にトグル.
+    * howm2, howmkara の -exclude オプションに不具合.
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReport>)) > dareka さん
+    * ((<HidePrivateReminder|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?HidePrivateReminder>))で C-c , t が「No match」に
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?HidePrivateReminder>)) > taku さん
+      * 互換性を修復
+    * howm-occur で一覧バッファの検索語がハイライトされなくなっていた
+    * 「＜＜＜ テスト ＜＜＜ Test」の「Test」上で RET を叩いても「テスト」が
+      検索されなかった
+      * howm-keyword-case-fold-search をセットしていたときの大文字小文字がらみ
+    * C-c , l でいちいち日付を聞かないように
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/340>))
+      * [2007-04-02] に作り込んだバグ
+    * 検索結果の一覧で「＜＜＜ ほげ」が先頭にこない場合があった
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/328>))
+      * (setq howm-list-title t) していると発症
+      * remove-duplicates の仕様をよく知らなかったせい. 勉強になりました.
+    * (setq howm-list-title t) だと一覧バッファに前回の内容が表示されるバグ
+    * howm-view-contents-limit が効いていなかった
+    * 日付での絞り込み結果が一日分多すぎた
+    * narrowing 関連の不具合(widen 抜け)
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/160-161n>))
+    * メニューの「%reminder」の底に, 過ぎた予定が表示されていた.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/149>))
+    * メニュー中の「> 2006-07-26-015606 | …」の「7」上で RET を叩くとエラー.
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReport>)) > na さん
+      * 変数 howm-menu-list-regexp の定義をちょっと直しただけ
+    * 異なるディレクトリの同名ファイルが一覧表示で混同されていた.
+      ((<thx|URL:http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?BugReportPaste>))
+    * howm-view-split-horizontally が t でも nil でもないときの特別な動作を廃止.
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/591>))
+      * howm-1.2 〜 1.3.7rc2 で壊れていたが, バグレポートなし.
+        きっと誰も使っていない ^^;
+
+* リリース版 howm-1.3.6 [2008-05-31]
+  * fix: 2008-02-24 以降の CVS 先端 emacs で, 他バッファの着色が乱れる.
+    ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/484-487n>))
+    * minor mode が font-lock-keywords-only を直に触るのは行儀悪い?
+    * howm-test20080514 からのバックポート
+  * (howm-1.3.6rc1 と中身は同じです)
+
+* リリース版 howm-1.3.5 [2007-12-09]
+  * fix: 夏時間最終日に当日の予定がメニューに表示されなかった.
+    ((<thx|URL:http://lists.sourceforge.jp/mailman/archives/howm-eng/2007/000034.html>)) > Mielke-san (peter.mielke at gmail.com)
+    * howm-test071108 からのバックポート
+  * fix: 順不同でバイトコンパイルできるように
+    * Wanderlust や Navi2ch を参考にして,
+      巡回依存の扱い方(require の書き方)を修正
+    * howm-test07-05-18 からのバックポート
+  * automake を 1.6 から 1.10 に
+    * howm-test07-05-05 からのバックポート
+    * automake-1.10 の elisp-comp が使えるようになった
+  * (howm-1.3.5rc1 と中身は同じです)
+
+* リリース版 howm-1.3.4 [2006-12-16]
+  * セキュリティ修正
+    ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/207>))
+    * 何が問題?
+      * Emacs には, ファイルごとにローカル変数を自動設定する機能があります.
+        これを悪用すると, howm 使用時に任意の命令を自動実行させることができます.
+        ((<ref|URL:https://www.codeblog.org/blog/ueno/20060118.html>))
+    * どう直した?
+      * howm 関連の全シンボルに risky-local-variable 属性をセットし,
+        上述の自動設定時にチェックが入るようにしました.
+    * バージョンアップしたくない/できないのですが?
+      * ソースの編集が可能なら,
+        howm.el の末尾に以下のコードを加えるのが確実です.
+        バイトコンパイルのしなおしもお忘れなく.
+          ;; howm-1.2.2 以降用. howm 関連の全シンボルに risky-local-variable 属性.
+          (mapcar (lambda (symbol) (put symbol 'risky-local-variable t))
+                  (howm-symbols))
+      * それが困難な場合は .emacs に以下を加えてください.
+          (eval-after-load "howm"  ; ← autoload/load/require の記述にあわせて
+            ;; howm-1.2.2 以降用. howm 関連の全シンボルに risky-local-variable 属性.
+            '(mapcar (lambda (symbol) (put symbol 'risky-local-variable t))
+                     (howm-symbols)))
+      * どちらにせよ, 修正が反映されたことをご確認ください.
+        * emacs を立ち上げ直し, howm を起動
+        * 以下を *scratch* バッファに貼り, 閉じ括弧の後にカーソルを置いて C-j を
+          押す
+            (get 'howm-version 'risky-local-variable)
+        * t と表示されれば OK
+    * ローカル変数の自動設定をあえて使いたいときは?
+      * 以下のように変数ごとに解禁してください.
+          ;; 例: 変数 howm-auto-narrow はファイルごとの自動設定を許可
+          (put 'howm-auto-narrow 'risky-local-variable nil)
+    * howm に限らず, ローカル変数の自動設定を一切使えなくするには?
+      * .emacs に以下を加えてください.
+        ただし emacs のバージョンによっては不完全かもしれません.
+        ((<ref|URL:http://www.kmc.gr.jp/~tak/memo/emacs-local-variable.html>))
+          ;; ローカル変数の自動設定をオフ
+          (setq enable-local-variables nil)
+  * fix: CVS 先端 emacs でメニューなどに色がつかない
+    ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/165-169n>))
+    * 修正は, cheat-font-lock-20040624-format-p の定義中の = を >= に直すだけ
+    * howm-test061015 からのバックポート
 
 * リリース版 howm-1.3.3 [2006-06-05]
   * Note
@@ -37,7 +305,7 @@ $Id: OLD.rd,v 1.14 2010-12-29 13:33:11 hira Exp $
       * 隠したければ M-x customize-variable howm-menu-todo-priority
     * grep 時の文字コード設定 howm-process-coding-system で,
       入力と出力に別の値を指定できるようにした
-      ((<thx|URL:http://pc11.2ch.net/test/read.cgi/unix/1141892764/96>))
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/96>))
         ;; process (UTF-8)→ emacs
         ;; emacs →(SJIS) process
         (setq howm-process-coding-system '(utf-8-unix . sjis-unix))
@@ -85,10 +353,10 @@ $Id: OLD.rd,v 1.14 2010-12-29 13:33:11 hira Exp $
       ((<thx|URL:http://d.hatena.ne.jp/katase_n/20060519>))
       ((<thx|URL:http://d.hatena.ne.jp/AllStarMoves/20060602/p4>))
     * grep 時の howm-process-coding-system の処理タイミングにバグ
-      ((<thx|URL:http://pc11.2ch.net/test/read.cgi/unix/1141892764/63-83n>))
-      ((<thx|URL:http://pc11.2ch.net/test/read.cgi/unix/1141892764/94-95n>))
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/63-83n>))
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/94-95n>))
     * migemo-client のオプションを追加指定可能に
-      ((<thx|URL:http://pc11.2ch.net/test/read.cgi/unix/1141892764/9>))
+      ((<thx|URL:http://hibari.2ch.net/test/read.cgi/unix/1141892764/9>))
         (setq howm-migemo-client-option '("-H" "::1"))
       * howm-view-grep-option あたりとの不統一が気になるので,
         コマンド指定一般の拡張仕様案(とりあえず案だけ). おおげさすぎ?
@@ -1616,6 +1884,9 @@ $Id: OLD.rd,v 1.14 2010-12-29 13:33:11 hira Exp $
 * [2002/05/29] v0.1 公開
 
 = 古い告知
+
+* 夏時間のバグ 2007-11-09
+  * howm-1.3.5 の更新記録を参照
 
 * セキュリティ修正 2006-12-16
   * howm-1.3.4 の更新記録を参照

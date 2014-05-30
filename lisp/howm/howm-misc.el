@@ -1,7 +1,7 @@
 ;;; howm-misc.el --- Wiki-like note-taking tool
-;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+;;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
 ;;;   HIRAOKA Kazuyuki <khi@users.sourceforge.jp>
-;;; $Id: howm-misc.el,v 1.89.2.1 2011-01-02 12:05:56 hira Exp $
+;;; $Id: howm-misc.el,v 1.96 2012-12-29 08:57:18 hira Exp $
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -39,7 +39,10 @@
         (insert howm-menu-top "\n"))
       (set-buffer-modified-p t)
       (save-buffer)
-      (kill-buffer nil)))
+      (kill-buffer nil)
+      (message "Generating %s ..." howm-keyword-file)
+      (howm-keyword-add-items (howm-all-items))
+      (message "Done.")))
   howm-keyword-file)
 
 (add-hook 'howm-view-open-hook 'howm-set-mode)
@@ -55,7 +58,7 @@
            (howm-folder-territory-p hdir (buffer-file-name))))))
 
 (defun howm-normalize-file-name (filename)
-  (let ((f (expand-file-name filename)))
+  (let ((f (file-truename (expand-file-name filename))))
     ;; for meadow
     (if (string-match "^[A-Z]:" f)
         (let ((drive (substring f 0 1))
@@ -140,13 +143,16 @@
                 (set (make-local-variable symbol) value)))
             a))))
 
+(defmacro howm-if-unbound (var &rest alt-body)
+  `(if (boundp ',var) ,var ,@alt-body))
+
 ;; copied and modified from set-auto-mode in /usr/share/emacs/21.2/lisp/files.el
 ;; (I don't want to set the mode actually. Sigh...)
 (howm-dont-warn-free-variable auto-mode-interpreter-regexp)
 (defvar howm-auto-mode-interpreter-regexp
-  (if (boundp 'auto-mode-interpreter-regexp) ;; xemacs doesn't have it.
-      auto-mode-interpreter-regexp
-    "#![ \t]?\\([^ \t\n]*/bin/env[ \t]\\)?\\([^ \t\n]+\\)"))
+  (howm-if-unbound auto-mode-interpreter-regexp
+                   ;; xemacs doesn't have it.
+                   "#![ \t]?\\([^ \t\n]*/bin/env[ \t]\\)?\\([^ \t\n]+\\)"))
 (defun howm-auto-mode (&optional file-name)
   "Major mode appropriate for current buffer.
 This checks for a -*- mode tag in the buffer's text,
@@ -170,9 +176,11 @@ This function merely returns the mode; it does not set the mode.
       (and enable-local-variables
            ;; Don't look for -*- if this file name matches any
            ;; of the regexps in inhibit-first-line-modes-regexps.
-           (let ((temp inhibit-first-line-modes-regexps)
+           (let ((temp (howm-if-unbound inhibit-first-line-modes-regexps
+                                        inhibit-local-variables-regexps))
                  (name (file-name-sans-versions (or file-name ""))))
-             (while (let ((sufs inhibit-first-line-modes-suffixes))
+             (while (let ((sufs (howm-if-unbound inhibit-first-line-modes-suffixes
+                                                 inhibit-local-variables-suffixes)))
                       (while (and sufs (not (string-match (car sufs) name)))
                         (setq sufs (cdr sufs)))
                       sufs)
@@ -471,8 +479,8 @@ and replace a sub-expression, e.g.
 
 ;;; next/previous memo
 
-(put 'howm-save-narrowing 'lisp-indent-hook 0)
 (defmacro howm-save-narrowing (&rest body)
+  (declare (indent 0))
   `(let ((narrowp (howm-narrow-p)))
      (when narrowp
        (widen))
@@ -537,7 +545,7 @@ and replace a sub-expression, e.g.
 (defun howm-random-walk-summary ()
   (let ((n (length (riffle-item-list))))
     (goto-char (point-min))
-    (next-line (random n))
+    (forward-line (random n))
     (howm-view-summary-check)
     (sit-for howm-random-walk-wait)
     (howm-view-summary-open)))
@@ -587,7 +595,6 @@ and replace a sub-expression, e.g.
   (define-key m "\C-c\C-c" 'howm-remember-submit)
   (define-key m "\C-c\C-k" 'howm-remember-discard)
   (howm-defvar-risky howm-remember-mode-map m))
-(defvar howm-remember-first-line-to-title nil)
 
 (defun howm-remember ()
   "Add text to new note in howm."
@@ -725,8 +732,8 @@ When DOTS-STR is non-nil, it is used instead of \"...\"."
 (defun howm-memoize-reset (fname)
   (howm-memoize-put fname nil))
 
-(put 'howm-defun-memoize 'lisp-indent-hook 2)
 (defmacro howm-defun-memoize (fname args &rest body)
+  (declare (indent 2))
   `(progn
      (howm-memoize-reset ',fname)
      (defun ,fname ,args
@@ -1069,12 +1076,12 @@ When DOTS-STR is non-nil, it is used instead of \"...\"."
         (insert-file-contents template)
       (insert "Please copy the following text to your bug report.\n\n"))
     (goto-char (point-max))
-    (mapcar (lambda (sv)
-              (insert (format "%s: %s\n" (car sv) (cdr sv))))
-            `(
-              ("howm" . ,(howm-version-long))
-              ,@(honest-report-version-assoc)
-              ))
+    (mapc (lambda (sv)
+            (insert (format "%s: %s\n" (car sv) (cdr sv))))
+          `(
+            ("howm" . ,(howm-version-long))
+            ,@(honest-report-version-assoc)
+            ))
     (when (eq howm-view-use-grep t)
       (insert
        (format "grep: %s - %s\n"

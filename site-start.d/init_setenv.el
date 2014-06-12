@@ -36,6 +36,7 @@
                        "/sw/bin"
                        "/opt/local/bin"
                        emacs-local-bin
+                       (expand-file-name "~/.rbenv/bin")
                        (expand-file-name "~/.nvm/v0.6.0/bin")
                        (expand-file-name "~/toolkits/ImageMagick-6.7.4/bin")))
   ;; manドキュメントのパス

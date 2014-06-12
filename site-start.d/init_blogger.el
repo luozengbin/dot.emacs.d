@@ -107,6 +107,19 @@
 (setq org-octopress-directory-org-posts (concat user-emacs-directory "blogs/octopress/source/blog"))
 (setq org-octopress-setup-file          (concat user-emacs-directory "blogs/octopress/setupfile.org"))
 
+(defvar org-octopress-top
+  (concat user-emacs-directory "blogs/octopress/")
+  "octopressブログテンプレートディレクトリ")
+
+(defun org-octopress-deploy ()
+  (interactive)
+  (setq default-directory org-octopress-top)
+  (deferred:$
+    (deferred:process "deployblog.sh")
+    (deferred:nextc it
+      (lambda (x)
+        (message "---------- deploy blog ----------")
+        (message x)))))
 
 (provide 'init_blogger)
 ;;; init_blogger.el ends here

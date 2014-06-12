@@ -124,6 +124,7 @@
     memory-usage             ; Analyze the memory usage of Emacs in various ways
     migemo                   ; Japanese incremental search through dynamic pattern expansion [github]
     mew                      ; Messaging in the Emacs World [github]
+    moz                      ; Lets current buffer interact with inferior mozilla.
     multiple-cursors         ; Multiple cursors for Emacs. [source: github]
     org                      ; available Outline-based notes management and organizer [git]
     org-plus-contrib         ; Outline-based notes management and organizer
@@ -131,6 +132,7 @@
     oauth2                   ; OAuth 2.0 Authorization Protocol
     org-jekyll               ; Export jekyll-ready posts form org-mode entries [source: github]
     org2blog                 ; Blog from Org mode to wordpress [source: github]
+    org-octopress              ; available Compose octopress articles using org-mode.
     paredit                  ; minor mode for editing parentheses [source: darcs]
     pcache                   ; persistent caching for Emacs [source: github]
     php-mode                 ; major mode for editing PHP code [source: github]

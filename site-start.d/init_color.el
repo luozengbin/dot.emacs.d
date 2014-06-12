@@ -63,21 +63,21 @@
   "emacs バージョンよりテーマ適用ロジックを自動的に調整し、テーマを適用する"
   (if old-format
       (progn
-    (let ((theme-name (symbol-name my-theme))
-          (style-postfix (if style-postfix (concat "-" style-postfix) ""))
-          )
-      (message (concat "applying new theme --> " theme-name style-postfix))
-      (require 'color-theme)
-      (require my-theme)
-      (my-util-eval-string (concat
-                "(" theme-name style-postfix ")"))))
+        (let ((theme-name (symbol-name my-theme))
+              (style-postfix (if style-postfix (concat "-" style-postfix) ""))
+              )
+          (message (concat "applying new theme --> " theme-name style-postfix))
+          (require 'color-theme)
+          (require my-theme)
+          (my-util-eval-string (concat
+                                "(" theme-name style-postfix ")"))))
     (progn
       (message (concat "applying new theme --> " (symbol-name (car my-theme))))
       (cond
        (emacs23-p
-    (custom-set-variables '(custom-enabled-themes my-theme)))
+        (custom-set-variables '(custom-enabled-themes my-theme)))
        (emacs24-p
-    (load-theme (car my-theme) t))))))
+        (load-theme (car my-theme) t))))))
 
 ;; 臨機でテーマを適用する
 (defun my-random-color-theme ()

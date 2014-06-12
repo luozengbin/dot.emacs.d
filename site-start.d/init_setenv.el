@@ -1,4 +1,4 @@
-;;; Commentary: 
+;;; Commentary:
 
 ;; 環境変数関連の設定
 
@@ -113,7 +113,7 @@
 ;;______________________________________________________________________
 (when linux-p
     (setq browse-url-browser-function 'browse-url-generic
-          browse-url-generic-program "chromium"))
+          browse-url-generic-program "firefox"))
 
 (provide 'init_setenv)
 ;;; init_setenv.el ends here

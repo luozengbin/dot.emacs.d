@@ -33,20 +33,20 @@
 ;; deps
 ;;     (install-elisp "https://launchpad.net/xml-rpc-el/trunk/1.6.8/+download/xml-rpc.el")
 
-(require 'org2blog-autoloads)
+;; (require 'org2blog-autoloads)
 
-;; wordpress
-(setq org2blog/wp-blog-alist
-      '(("default"
-         :url "http://luozengbin.wordpress.com/xmlrpc.php"
-         :username "luozengbin"
-         ;; :password "xxx"
-         :tags-as-categories nil)
-        ))
+;; ;; wordpress
+;; (setq org2blog/wp-blog-alist
+;;       '(("default"
+;;          :url "http://luozengbin.wordpress.com/xmlrpc.php"
+;;          :username "luozengbin"
+;;          ;; :password "xxx"
+;;          :tags-as-categories nil)
+;;         ))
 
-;; Syntax Highlightとの連携
-(setq org2blog/wp-use-sourcecode-shortcode t)
-;; (setq org2blog/wp-sourcecode-default-params nil)
+;; ;; Syntax Highlightとの連携
+;; (setq org2blog/wp-use-sourcecode-shortcode t)
+;; ;; (setq org2blog/wp-sourcecode-default-params nil)
 
 ;;
 ;; org-googlecl
@@ -59,9 +59,9 @@
 ;; M-x googlecl-prompt-blog
 ;; 参照リンク:http://gihyo.jp/admin/serial/01/ubuntu-recipe/0130
 ;; install http://kikukawatei.blogspot.com/2011/01/org-googleclel-blogger_4570.html
-(require 'org-googlecl)
-(setq googlecl-blogname "懶人日記")
-(setq googlecl-username "jalen.cn@gmail.com")
+;; (require 'org-googlecl)
+;; (setq googlecl-blogname "懶人日記")
+;; (setq googlecl-username "jalen.cn@gmail.com")
 
 
 ;;
@@ -75,27 +75,38 @@
 ;;_____________________________________________________________________
 ;; http://juanreyero.com/open/org-jekyll/
 ;; (install-elisp "https://raw.github.com/juanre/org-jekyll/67dd3ff2d6ad54727a1f916c89aaef456f6930f7/org-jekyll.el")
-(require 'org-publish)
-(require 'org-jekyll)
-(setq org-publish-blog (concat my-private-emacs-path "luozengbin.github.com/source"))
-(setq blog-base-directory (concat my-private-emacs-path "luozengbin.github.com/source"))
-(add-to-list 'org-publish-project-alist
-             `("github-blog"
-               :base-directory ,blog-base-directory
-               :recursive t
-               :base-extension "org"
-               :publishing-directory ,org-publish-blog
-               :blog-publishing-directory ,org-publish-blog
-               :site-root "http://luozengbin.github.com/"
-               :jekyll-sanitize-permalinks t
-               :publishing-function org-publish-org-to-html
-               :section-numbers nil
-               :headline-levels 4
-               :table-of-contents t
-               :auto-index nil
-               :auto-preamble nil
-               :body-only t
-               :auto-postamble nil))
+;; (require 'org-publish)
+;; (require 'org-jekyll)
+;; (setq org-publish-blog (concat my-private-emacs-path "luozengbin.github.com/source"))
+;; (setq blog-base-directory (concat my-private-emacs-path "luozengbin.github.com/source"))
+;; (add-to-list 'org-publish-project-alist
+;;              `("github-blog"
+;;                :base-directory ,blog-base-directory
+;;                :recursive t
+;;                :base-extension "org"
+;;                :publishing-directory ,org-publish-blog
+;;                :blog-publishing-directory ,org-publish-blog
+;;                :site-root "http://luozengbin.github.com/"
+;;                :jekyll-sanitize-permalinks t
+;;                :publishing-function org-publish-org-to-html
+;;                :section-numbers nil
+;;                :headline-levels 4
+;;                :table-of-contents t
+;;                :auto-index nil
+;;                :auto-preamble nil
+;;                :body-only t
+;;                :auto-postamble nil))
+
+;;
+;; org-octopress
+;;_____________________________________________________________________
+(require 'org-octopress)
+(setq org-octopress-directory-top       (concat user-emacs-directory "blogs/octopress/source"))
+(setq org-octopress-directory-posts     (concat user-emacs-directory "blogs/octopress/source/_posts"))
+(setq org-octopress-directory-org-top   (concat user-emacs-directory "blogs/octopress/source"))
+(setq org-octopress-directory-org-posts (concat user-emacs-directory "blogs/octopress/source/blog"))
+(setq org-octopress-setup-file          (concat user-emacs-directory "blogs/octopress/setupfile.org"))
+
 
 (provide 'init_blogger)
 ;;; init_blogger.el ends here

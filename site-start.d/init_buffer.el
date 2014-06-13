@@ -84,5 +84,13 @@ This is to update existing buffers after a Git pull of their underlying files."
 
 ;; (setq revert-buffer-function 'revert-buffer-keep-undo)
 
+;;
+;; clenaup buffer
+;;______________________________________________________________________
+(defun cleanup-buffers ()
+  (interactive)
+  (loop for buffer being the buffers
+        do (kill-buffer buffer)))
+
 (provide 'init_buffer)
 ;;; init_buffer.el ends here

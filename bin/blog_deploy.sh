@@ -2,13 +2,14 @@
 #!/bin/sh
 ## Usage: blog_deploy.sh
 ##
-## Options:
+## Options: $1 octopressディレクトリの位置
 ##   
-## Comment: ~/.emacs.d/blogs/octopress配下にblog静的
+## Comment: octopress配下にblog静的
 ##          コンテンツの生成とデプロイ
 ##################################################################### 
 
 RUBY_VER="1.9.3-p0"
+OCTOPRESS_DIR=$1
 
 which rbenv
 if [ $? = 0 ]; then
@@ -19,7 +20,9 @@ if [ $? = 0 ]; then
     if [ $global_ver = $RUBY_VER ]; then
         # blogコンテンツ生成とデプロイ
         echo "run rake with `ruby --version`"
+        pushd $OCTOPRESS_DIR
         rake generate
         rake deploy
+        popd
     fi
 fi

@@ -117,12 +117,11 @@
   (message "deploy octopress content ....")
   (lexical-let* ((default-directory org-octopress-top))
     (deferred:$
-      (deferred:process-shell "blog_deploy.sh")
+      (deferred:process-shell "blog_deploy.sh" org-octopress-top)
       (deferred:nextc it
         (lambda (x)
           (message "*** deploy blog ***")
           (message x))))))
-
 
 (defun org-octopress-preview ()
   "preview octopress content by call external shell script."
@@ -131,13 +130,13 @@
   (lexical-let* ((default-directory org-octopress-top)
                  (preview-url "http://localhost:4000"))
     (deferred:$
-      (deferred:process-shell "blog_preview.sh")
-      (deferred:nextc it
-        (lambda (x)
-          (message "*** preview blog ***")
-          (message x)
-          (message "launch preview url %s" preview-url)
-          (browse-url preview-url))))))
+      (deferred:process-shell "blog_preview.sh" org-octopress-top))
+    (deferred:nextc it
+      (lambda (x)
+        (message "*** preview blog ***")
+        (message x)
+        (message "launch preview url %s" preview-url)
+        (browse-url preview-url)))))
 
 (provide 'init_blogger)
 ;;; init_blogger.el ends here

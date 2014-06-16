@@ -1,5 +1,4 @@
 #!/bin/sh
-#!/bin/sh
 ## Usage: blog_deploy.sh
 ##
 ## Options: $1 octopressディレクトリの位置

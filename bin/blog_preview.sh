@@ -23,7 +23,7 @@ if [ $? = 0 ]; then
         rake generate
         if [ -z "`netstat -nutl | grep 4000`" ] ; then
             echo ">>> Startup Preview"
-            rake preview &
+            nohup rake preview 2>&1  >/dev/null &
             sleep 2
         fi
         popd

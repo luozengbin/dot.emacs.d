@@ -117,7 +117,7 @@
   (interactive "r\nP")
   (save-window-excursion
     (my-google-translate-at-point beg end override-p))
-  (popup-tip (with-current-buffer "*Google Translate*" (buffer-string))))
+  (pos-tip-show (with-current-buffer "*Google Translate*" (buffer-string))))
 
 ;;; 日本語→英語の自動切り替え
 (defadvice google-translate-at-point (before google-translate-set-language activate)
@@ -161,6 +161,51 @@
   (push '("*translated*") popwin:special-display-config)
   (defadvice text-translator-all-by-auto-selection (after text-translator-popwin-result activate)
     (display-buffer "*translated*")))
+
+;;
+;; DDSKK 設定
+;;______________________________________________________________________
+(require 'skk-autoloads)
+(require 'skk-kakasi)
+
+;;; 辞書ファイルの指定
+(setq skk-large-jisyo (concat user-emacs-directory "etc/skk/SKK-JISYO.L"))
+;; (setq skk-cdb-large-jisyo "/your/path/to/SKK-JISYO.L.cdb")
+
+;;; 個人辞書の格納パス
+(setq skk-user-directory (my-cache-dir "ddskk/"))
+(if (not (file-exists-p skk-user-directory)) (mkdir skk-user-directory t))
+
+;;; ふり仮名変換tip
+(defun skk-hurigana-tip (start end &optional all)
+  "領域の漢字に全てふりがなを付け、ポップアップする。"
+  (interactive "r\nP")
+  (pos-tip-show (skk-hurigana-1 start end all)))
+
+;;; ふり仮名変換結果バッファ名
+(defvar skk-kakasi-popbuf-name " *skk-kakasi*" "ふり仮名変換結果バッファ名")
+
+;;; popupバッファで表示する
+(push `(,skk-kakasi-popbuf-name) popwin:special-display-config)
+
+(defun skk-hurigana-popup (start end &optional all)
+  (interactive "r\nP")
+  (let ((str0 (buffer-substring-no-properties start end))
+        (str1 (skk-hurigana-1 start end all))
+        (str2 (skk-gyakubiki-1 start end all)))
+    (with-current-buffer (get-buffer-create skk-kakasi-popbuf-name)
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (insert "KAKASI - 漢字→かな(ローマ字)変換結果:\n")
+      (insert "-------------------------------------\n\n")
+      (insert str0 "\n\n")
+      (insert str1 "\n\n")
+      (insert str2 "\n\n")
+      (setq buffer-read-only t))
+    (display-buffer (get-buffer skk-kakasi-popbuf-name))))
+
+(global-set-key (kbd "C-x x") 'skk-hurigana-tip)
+(global-set-key (kbd "C-x X") 'skk-hurigana-popup)
 
 (provide 'init_translator)
 ;;; init_translator.el ends here

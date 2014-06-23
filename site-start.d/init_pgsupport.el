@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -35,6 +35,8 @@
 ;; (install-elisp "http://www.emacswiki.org/emacs/download/flymake-cursor.el")
 (require 'rfringe)
 ;; (require 'flymake-cursor)
+
+;; *** TODO: update to flycheck-tip ***
 
 ;; flymake 現在行のエラーをpopup.elのツールチップで表示する
 (defun my-flymake-popup-display-error ()

@@ -62,6 +62,7 @@
     color-moccur             ; multi-buffer occur (grep) mode [source: github]
     concurrent               ; Concurrent utility functions for emacs lisp [source: github]
     ;; crosshairs               ; Highlight the current line and column. [source: wiki]
+    clippy                   ; Show tooltip with function documentation at point
     ctable                   ; Table component for Emacs Lisp [source: github]
     ctags                    ; Exuberant Ctags utilities for Emacs [source: hg]
     cursor-chg               ; Change cursor dynamically, depending on the context. [source: wiki]

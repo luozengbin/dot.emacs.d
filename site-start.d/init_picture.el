@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  Zouhin.Ro
 
 ;; Author: LuoZengbin <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 ;; imcap-capture
 ;;______________________________________________________________________
 ;; ImageCapture imcapで画面キャプチャする
-;; howm本家からソースを入手する 
+;; howm本家からソースを入手する
 ;; http://howm.sourceforge.jp/cgi-bin/hiki/hiki.cgi?ImageCapture
 ;; windows環境ではImageMagick の import は使えないので代替ソフトとして WinShot を使います。
 ;; download from http://www.woodybells.com/winshot.html
@@ -111,6 +111,12 @@
 ;; keisen.el 罫線引きプログラム (Emacs Lisp)
 ;;______________________________________________________________________
 ;; (install-elisp "http://www.pitecan.com/Keisen/keisen.el")
+;; wget http://www.bookshelf.jp/elc/keisen-mule.lzh
+(unless (fboundp 'sref) (defalias 'sref 'aref))
+
+(if window-system
+    (autoload 'keisen-mode "keisen-mouse" "MULE 版罫線モード + マウス" t)
+  (autoload 'keisen-mode "keisen-mule" "MULE 版罫線モード" t))
 
 ;; 文字端末の矢印キーで罫線を引く場合
 ;; (global-set-key "\eOA" 'keisen-up-move)

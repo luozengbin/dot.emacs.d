@@ -167,6 +167,7 @@
 ;;______________________________________________________________________
 (require 'skk-autoloads)
 (require 'skk-kakasi)
+(require 'pos-tip)
 
 ;;; 辞書ファイルの指定
 (setq skk-large-jisyo (concat user-emacs-directory "etc/skk/SKK-JISYO.L"))

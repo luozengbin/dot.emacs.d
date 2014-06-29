@@ -107,6 +107,8 @@
                        ;; work with register
                        ("1"      . 'copy-to-register-1)
                        ("2"      . 'paste-from-register-1)
+                       ("+"      .  'text-scale-increase)
+                       ("-"      .  'text-scale-decrease)
                        ))
 
 ;;; TODO move those code to corrent location

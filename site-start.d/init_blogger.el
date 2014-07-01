@@ -106,11 +106,63 @@
 (setq org-octopress-directory-org-top   (concat user-emacs-directory "blogs/octopress/source"))
 (setq org-octopress-directory-org-posts (concat user-emacs-directory "blogs/octopress/source/blog"))
 (setq org-octopress-setup-file          (concat user-emacs-directory "blogs/octopress/setupfile.org"))
+;;; コメント機能を有効化する
+(setq org-jekyll-comments "true")
+
+;;; ------------------------------
+;;; TagCloudの対応
+;;; ------------------------------
+(defcustom org-jekyll-tags ""
+  "Default comments (disqus) flag in Jekyll article."
+  :group 'org-export-jekyll
+  :type 'string)
+
+;;; add at 2017/07/01 TagCloud対応のため、エクスポートバックエンドの
+;;; 定義をカスタマイズする
+;;; 元ファイル：  elpa/org-octopress-20140106.164/ox-jekyll.el
+(org-export-define-derived-backend 'jekyll 'html
+  :export-block '("HTML" "JEKYLL")
+  :menu-entry
+  '(?j "Jekyll: export to HTML with YAML front matter."
+       ((?H "As HTML buffer" org-jekyll-export-as-html)
+        (?h "As HTML file" org-jekyll-export-to-html)))
+  :translate-alist
+  '((template . org-jekyll-template) ;; add YAML front matter.
+    (src-block . org-jekyll-src-block)
+    (inner-template . org-jekyll-inner-template)) ;; force body-only
+  :options-alist
+  '((:jekyll-layout "JEKYLL_LAYOUT" nil org-jekyll-layout)
+    (:jekyll-categories "JEKYLL_CATEGORIES" nil org-jekyll-categories)
+    (:jekyll-published "JEKYLL_PUBLISHED" nil org-jekyll-published)
+    (:jekyll-comments "JEKYLL_COMMENTS" nil org-jekyll-comments)
+    (:jekyll-tags "JEKYLL_TAGS" nil org-jekyll-tags) ; ★ ここが追加分です
+    ))
+
+;;; org → html変換時にヘッダ属性リストに tags 属性を追加する
+(defadvice org-jekyll--yaml-front-matter (after org-jekyll--yaml-front-matter-fix activate)
+  (setq ad-return-value
+        (with-temp-buffer
+          (insert ad-return-value)
+          (goto-char (point-min))
+          (replace-string "categories"
+                          (concat "tags: "
+                                  (org-jekyll--get-option info :jekyll-tags org-jekyll-tags)
+                                  "\n"
+                                  "categories"))
+          (buffer-string)))
+  ad-return-value)
+
+;;; 新規記事テンプレートのカスタマイズ
+(defadvice org-octopress-new-post (after org-octopress-new-post-fix activate)
+  (save-excursion
+    (replace-string "#+JEKYLL_CATEGORIES:" "#+JEKYLL_CATEGORIES: \n#+JEKYLL_TAGS: \n#+JEKYLL_COMMENTS true:"))
+  ad-return-value)
 
 (defvar org-octopress-top
   (concat user-emacs-directory "blogs/octopress/")
   "octopressブログテンプレートディレクトリ")
 
+;;; デプロイ自動化
 (defun org-octopress-deploy ()
   "deploy octopress content to github page service."
   (interactive)
@@ -123,6 +175,7 @@
           (message "*** deploy blog ***")
           (message x))))))
 
+;;; 記事プレビューの自動化
 (defun org-octopress-preview ()
   "preview octopress content by call external shell script."
   (interactive)

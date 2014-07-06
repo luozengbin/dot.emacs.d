@@ -205,6 +205,9 @@
 ;; 音楽環境
 (require 'init_music)
 
+;; ビデオ環境
+(require 'init_video)
+
 ;; tools 初期化
 (require 'init_tools)
 

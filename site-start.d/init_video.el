@@ -24,10 +24,15 @@
 
 ;;; Code:
 
-(defvar record-program
+(defvar record-win-program
   (concat
-   user-emacs-directory "bin/fsc.sh")
-  "program for recode video")
+   user-emacs-directory "bin/fsc-window.sh")
+  "program for recode window video")
+
+(defvar record-full-program
+  (concat
+   user-emacs-directory "bin/fsc-full.sh")
+  "program for recode full screen video")
 
 (defvar screencast-buffer "*Screencast*" "buffer name for screencast process")
 
@@ -36,8 +41,17 @@
 ;;; popupバッファで表示する
 (push `(,screencast-buffer) popwin:special-display-config)
 
-(defun my-screencast (file)
+(defun my-screencast-full (file)
   (interactive "FSave Screencast File: ")
+  (my-screencast record-full-program file)
+  (message "Screencast Start!"))
+
+(defun my-screencast-win (file)
+  (interactive "FSave Screencast File: ")
+  (my-screencast record-win-program file)
+  (message "録画対象Windowをカーソルで選択してください。"))
+
+(defun my-screencast (record-program file)
   (let* ((screencast-file (expand-file-name file))
          (proc
           (start-process "my-screencast" screencast-buffer record-program
@@ -46,8 +60,7 @@
     (with-current-buffer screencast-buffer
       (setq buffer-read-only t)
       (screencast-mode)
-      (set (make-local-variable 'screencast-file) screencast-file))
-    (display-buffer screencast-buffer)))
+      (set (make-local-variable 'screencast-file) screencast-file))))
 
 (defun my-screencast-stop ()
   (interactive)

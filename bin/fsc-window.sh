@@ -8,7 +8,7 @@ function even_round {
     fi
 }
 
-echo "録画対象Windowをカーソルで選択してください。"
+echo "\n録画対象Windowをカーソルで選択してください。"
 
 INFO=$(xwininfo -frame)
 WIN_GEO=$(echo $INFO | grep -oEe 'geometry [0-9]+x[0-9]+' | grep -oEe '[0-9]+x[0-9]+')

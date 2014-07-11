@@ -155,7 +155,7 @@
 ;;; 新規記事テンプレートのカスタマイズ
 (defadvice org-octopress-new-post (after org-octopress-new-post-fix activate)
   (save-excursion
-    (replace-string "#+JEKYLL_CATEGORIES:" "#+JEKYLL_CATEGORIES: \n#+JEKYLL_TAGS: \n#+JEKYLL_COMMENTS true:"))
+    (replace-string "#+JEKYLL_CATEGORIES:" "#+JEKYLL_CATEGORIES: \n#+JEKYLL_TAGS: \n#+JEKYLL_COMMENTS: true"))
   ad-return-value)
 
 (defvar org-octopress-top

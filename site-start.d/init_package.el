@@ -98,6 +98,7 @@
     gtags                    ; gtags facility for Emacs
     guide-key                ; Guide the following key bindings automatically and dynamically [source: github]
     helm                     ; Helm is an Emacs incremental and narrowing framework [source: github]
+    helm-ag                  ; the silver searcher with helm interface
     helm-c-yasnippet         ; helm source for yasnippet.el [source: github]
     helm-descbinds           ; available  Yet Another `describe-bindings' with `helm'. [github]
     helm-gist                ; helm-sources and some utilities for gist. [source: github]

@@ -100,10 +100,15 @@
 ;;______________________________________________________________________
 ;; helmメニュー表示する
 (global-set-key (kbd "C-x c") 'my-helm)
+(global-set-key (kbd "C-x z") 'helm-resume)
+
 ;; [M-z] に割り当てする
 (define-key esc-map "t"  'my-helm)
 ;;; hidden bufferの絞り込み
 (global-set-key (kbd "C-x y") 'my-helm-hidden-buffer-commands)
+
+(define-key global-map (kbd "M-x")     'helm-M-x)
+(define-key global-map (kbd "C-x i")     'helm-imenu)
 
 ;;
 ;; helm occur
@@ -111,6 +116,14 @@
 (global-set-key (kbd "C-M-o") 'helm-occur) ;helm-occurの起動
 (define-key isearch-mode-map (kbd "C-o") 'helm-occur-from-isearch) ;isearchからhelm-occurを起動
 ;; (define-key helm-map (kbd "C-c C-a") 'all-from-helm-occur) ; helm-occurからall-extに受け渡し
+
+;;
+;; helm-ag.el The Silver Searcherの helmインタフェースです
+;;______________________________________________________________________
+(require 'helm-ag)
+
+(setq helm-ag-base-command "ag --nocolor --nogroup --ignore-case")
+(setq helm-ag-thing-at-point 'symbol)
 
 ;;
 ;; custom helm

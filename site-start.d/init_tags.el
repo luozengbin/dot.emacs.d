@@ -93,5 +93,33 @@
           ("^/usr/src/linux-3.11.5-1-ARCH"
            ("/home/akira/cscope")))))
 
+
+;;
+;; helm-tags
+;; $ sudo pacman -S ctags
+;; for current file: M-x helm-ctags-current-file
+;; for project create tags file first. $ ctags --languages=C,C++,Lisp -eR
+;; then execute M-x helm-etags-select
+;;______________________________________________________________________
+(require 'helm-tags)
+(setq helm-ctags-modes
+      '( c-mode c++-mode awk-mode csharp-mode java-mode javascript-mode lua-mode
+                makefile-mode pascal-mode perl-mode cperl-mode php-mode python-mode
+                scheme-mode sh-mode slang-mode sql-mode tcl-mode
+                ;; Added more modes
+                lisp-mode emacs-lisp-mode asp-mode basic-mode cobol-mode
+                objc-mode css-mode js2-mode matlab-mode ocaml-mode
+                web-mode dos-mode batch-mode ntcmd-mode cmd-mode javascript-generic-mode
+                eiffel-mode erlang-mode fortran-mode go-mode html-mode ruby-mode
+                sml-mode tex-mode latex-mode yatex-mode vera-mode
+                verilog-mode vhdl-mode
+                ))
+
+(defun helm-ctags-current-file ()
+  (interactive)
+  (helm :sources 'helm-source-ctags
+        :buffer "*helm-ctags*"
+        :candidate-number-limit nil))
+
 (provide 'init_tags)
 ;;; init_tags.el ends here

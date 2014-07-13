@@ -126,6 +126,35 @@
 (setq helm-ag-thing-at-point 'symbol)
 
 ;;
+;; google 検索エンジンのインタフェース
+;;______________________________________________________________________
+(define-key global-map (kbd "C-x s")     'helm-google-suggest)
+(setq helm-google-suggest-use-curl-p (executable-find "curl"))
+(setq helm-google-suggest-search-url
+      "http://www.google.co.jp/search?hl=ja&num=100&as_qdr=y5&lr=lang_ja&ie=utf-8&oe=utf-8&q=")
+(setq helm-google-suggest-url
+      "http://google.co.jp/complete/search?ie=utf-8&oe=utf-8&hl=ja&output=toolbar&q=")
+
+;;
+;; surfraw 検索エンジンのインタフェース
+;; helm-surfraw.el
+;; install surfraw first: $ sudo pacman -S surfraw
+;; init setting file for surfraw
+;; ==== ~/.config/surfraw/conf
+;; SURFRAW_lang=jp
+;; # SURFRAW_text_browser='urxvtc -e w3m -o display_charset=utf-8'
+;; SURFRAW_google_country=jp
+;; SURFRAW_amazon_country=jp
+;; SURFRAW_google_country=jp
+;; SURFRAW_ixquick_lang=nihongo
+;; SURFRAW_graphical_browser=/usr/bin/firefox
+;; #SURFRAW_text_browser=/usr/bin/elinks
+;; SURFRAW_graphical=yes
+;; ====
+;;______________________________________________________________________
+(define-key global-map (kbd "C-x S")     'helm-surfraw)
+
+;;
 ;; custom helm
 ;;______________________________________________________________________
 ;; 自作関数をローディングする

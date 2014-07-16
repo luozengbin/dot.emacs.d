@@ -1,4 +1,5 @@
 ;;; emacs --script append_tostring.el ~/test.java
+;;; find ~/project -type f -name *.java -exec emacs --script append_tostring.el {} \;
 (defun append_tostring (java-file)
   "toString関数を自動付ける処理"
   (interactive)

@@ -42,37 +42,46 @@
 (push `(,screencast-buffer) popwin:special-display-config)
 
 (defun my-screencast-full (file)
-  (interactive "FSave Screencast File: ")
+  (interactive "F[FullScreen] Save Screencast File: ")
   (my-screencast record-full-program file)
   (message "Screencast Start!"))
 
 (defun my-screencast-win (file)
-  (interactive "FSave Screencast File: ")
+  (interactive "F[SelectedWindow] Save Screencast File: ")
   (my-screencast record-win-program file)
   (message "録画対象Windowをカーソルで選択してください。"))
 
-(defun my-screencast (record-program file)
-  (let* ((screencast-file (expand-file-name file))
-         (proc
-          (start-process "my-screencast" screencast-buffer record-program
-                         screencast-file)))
-    (set-process-filter proc 'screencast-output-filter)
-    (with-current-buffer screencast-buffer
-      (setq buffer-read-only t)
-      (screencast-mode)
-      (set (make-local-variable 'screencast-file) screencast-file))))
+(defun my-screencast (record-program file &optional winid)
+  (if (get-buffer-process screencast-buffer)
+      (message "There is a screencast already started. Abort this request.")
+    (let* ((screencast-file (expand-file-name file))
+           (proc
+            (if winid
+                (start-process "my-screencast" screencast-buffer record-program
+                               screencast-file winid)
+              (start-process "my-screencast" screencast-buffer record-program
+                             screencast-file))))
+      (set-process-filter proc 'screencast-output-filter)
+      (with-current-buffer screencast-buffer
+        (setq buffer-read-only t)
+        (screencast-mode)
+        (set (make-local-variable 'screencast-file) screencast-file)))))
 
 (defun my-screencast-stop ()
   (interactive)
-  (when (get-buffer screencast-buffer)
-    (display-buffer screencast-buffer)
-    (execute-kbd-macro (read-kbd-macro "q"))
-    (sit-for 0.3)
-    (with-current-buffer screencast-buffer
-      (setq buffer-read-only nil)
-      (goto-char (point-max))
-      (insert "\n\n>>> " screencast-file)
-      (setq buffer-read-only t))))
+  (if (get-buffer-process screencast-buffer)
+      (progn
+        (screencast-control "q")
+        ;; (execute-kbd-macro (read-kbd-macro "q"))
+        (sit-for 0.3)
+        (with-current-buffer screencast-buffer
+          (setq buffer-read-only nil)
+          (goto-char (point-max))
+          (insert "\n\n>>> " screencast-file)
+          (setq buffer-read-only t)
+          (message "Stop Screencast: %s" screencast-file))
+        (display-buffer screencast-buffer))
+    (message "No Screencast Started!")))
 
 (defun my-screencast-play ()
   (interactive)
@@ -122,6 +131,57 @@
   (loop for (key . str) in screencast-control-list
         do (define-key screencast-mode-map
              (vector key) 'screencast-control-command)))
+
+;;; helm interface support
+(defun xwindow-list-candidates ()
+  (let* ((winlist-cmd-0 (concat user-emacs-directory "bin/GetWindowInfo.py"))
+         (winlist-cmd (concat "wmctrl -l | awk '{print $1}' | xargs -L 1 "
+                              winlist-cmd-0 " | fgrep -v \"Xlib.protocol.request.QueryExtension\""))
+         current-line candidates)
+    (with-current-buffer
+        (get-buffer-create " *x-window-list*")
+      (erase-buffer)
+      (call-process-shell-command winlist-cmd nil t nil)
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(.+?\\),\\(.+?\\),\\(.+\\)$" nil t)
+        (setq current-line
+              (concat (propertize (match-string 1) 'invisible t)
+                      (propertize " " 'display (create-image (match-string 2) nil nil :ascent 90))
+                      (match-string 3)))
+        (append-to-list candidates (list current-line))))
+    (reverse candidates)))
+
+(defvar helm-xwindow-list-source
+  '((name       . "Window List")
+    (candidates . xwindow-list-candidates)
+    (action     . (("Take ScreenCast"  . take-screencast-action)
+                   ("Print Window ID"  . message)))))
+
+(defvar helm-xscreen-source
+  '((name       . "Screen Action")
+    (candidates . (("my-screencast-full : Take VideoCast for fullscreen")
+                   ("my-screencast-win  : Take VideoCast for special window")))
+    (action     . (("Execute Action" . xscreen-source-action)) )))
+
+(defun xscreen-source-action (cmdline)
+  (let* ((func-name (substring
+                     cmdline
+                     0
+                     (string-match " .+" cmdline))))
+    (command-execute (intern func-name))))
+
+(defun take-screencast-action (selected-window)
+  (let* ((winid (substring
+                 selected-window
+                 0
+                 (string-match " .+" selected-window))))
+    (my-screencast record-win-program
+                   (read-file-name "[SelectedWindow] Save Screencast File: ")
+                   winid)))
+
+(defun helm-xwindow-list ()
+  (interactive)
+  (helm-other-buffer '(helm-xwindow-list-source helm-xscreen-source) "*helm xwindow list*"))
 
 (provide 'init_video)
 ;;; init_video.el ends here

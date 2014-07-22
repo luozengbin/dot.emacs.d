@@ -146,7 +146,9 @@
       (while (re-search-forward "^\\(.+?\\),\\(.+?\\),\\(.+\\)$" nil t)
         (setq current-line
               (concat (propertize (match-string 1) 'invisible t)
-                      (propertize " " 'display (create-image (match-string 2) nil nil :ascent 90))
+                      (if (file-exists-p (match-string 2))
+                          (propertize " " 'display (create-image (match-string 2) nil nil :ascent 90))
+                        "  ")
                       (match-string 3)))
         (append-to-list candidates (list current-line))))
     (reverse candidates)))

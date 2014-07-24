@@ -128,6 +128,7 @@
     mew                      ; Messaging in the Emacs World [github]
     moz                      ; Lets current buffer interact with inferior mozilla.
     multiple-cursors         ; Multiple cursors for Emacs. [source: github]
+    nyan-mode                ; Nyan Cat shows position in current buffer in mode-line.
     org                      ; available Outline-based notes management and organizer [git]
     org-plus-contrib         ; Outline-based notes management and organizer
     o-blog                   ; Org-blog exporter [source: github]

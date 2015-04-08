@@ -138,15 +138,15 @@
 ;;______________________________________________________________________
 ;; shellシミュレーション
 ;; (install-elisp-from-emacswiki "multi-term.el")
-(require 'multi-term)
-(setq multi-term-program shell-file-name)
+;; (require 'multi-term)
+;; (setq multi-term-program shell-file-name)
 
-;; term 内での文字削除、ペーストを有効にする
-(add-hook 'term-mode-hook
-          '(lambda ()
-             (define-key term-raw-map (kbd "C-h") 'term-send-backspace)
-             (define-key term-raw-map (kbd "C-y") 'term-paste)
-             ))
+;; ;; term 内での文字削除、ペーストを有効にする
+;; (add-hook 'term-mode-hook
+;;           '(lambda ()
+;;              (define-key term-raw-map (kbd "C-h") 'term-send-backspace)
+;;              (define-key term-raw-map (kbd "C-y") 'term-paste)
+;;              ))
 
 ;;
 ;; emux.el

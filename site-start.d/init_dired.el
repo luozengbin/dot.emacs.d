@@ -144,8 +144,8 @@
 ;;______________________________________________________________________
 ;; DiredPlus拡張をロードする
 ;; (install-elisp "http://www.emacswiki.org/emacs/download/dired+.el")
+(setq diredp-hide-details-initially-flag nil)
 (require 'dired+)
-
 
 ;; diredを便利にする
 (load "dired-x")
@@ -162,16 +162,16 @@
   (autoload 'netdir "mmemo-drive" "My computer" t)
   (autoload 'netcomp "mmemo-drive" "My network" t))
 
-;;
-;; DiredDetails & DiredDetails+
-;;______________________________________________________________________
-;;; http://www.emacswiki.org/emacs/DiredDetails
-(define-key dired-mode-map "(" 'dired-details-toggle)
-(define-key dired-mode-map ")" 'dired-details-toggle)
-(autoload 'dired-details-toggle "dired-details+" nil t)
-(eval-after-load "twittering-mode"
-  '(progn
-     (setq dired-details-propagate-flag t)))
+;; ;;
+;; ;; DiredDetails & DiredDetails+
+;; ;;______________________________________________________________________
+;; ;;; http://www.emacswiki.org/emacs/DiredDetails
+;; (define-key dired-mode-map "(" 'dired-details-toggle)
+;; (define-key dired-mode-map ")" 'dired-details-toggle)
+;; (autoload 'dired-details-toggle "dired-details+" nil t)
+;; (eval-after-load "twittering-mode"
+;;   '(progn
+;;      (setq dired-details-propagate-flag t)))
 
 ;;
 ;; my-dispcon.el アイコン表示

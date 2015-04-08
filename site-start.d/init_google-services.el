@@ -3,7 +3,7 @@
 ;; Copyright (C) 2011  Zouhin.Ro
 
 ;; Author: Zouhin.Ro <jalen.cn@gmail.com>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -69,8 +69,8 @@ location." t)
 ;;______________________________________________________________________
 ;; install
 ;; git submodule add http://git.naquadah.org/git/google-weather.git lisp/google-weather
-(require 'google-weather)
-(require 'org-google-weather)
+;; (require 'google-weather)
+;; (require 'org-google-weather)
 
 
 (provide 'init_google-services)

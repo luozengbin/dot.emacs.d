@@ -56,13 +56,16 @@
   "helm command for me "
   (interactive)
   (require 'helm-files)
+  (unless helm-source-buffers-list
+    (setq helm-source-buffers-list
+          (helm-make-source "Buffers" 'helm-source-buffers)))
   (helm-other-buffer
-   '(helm-c-source-buffers-list
-     helm-c-source-bookmarks
-     helm-c-source-recentf
-     helm-c-source-files-in-current-dir ;; 遅い
-     helm-c-source-imenu
-     helm-c-source-buffer-not-found)
+   '(helm-source-buffers-list
+     helm-source-bookmarks
+     helm-source-recentf
+     helm-source-files-in-current-dir ;; 遅い
+     helm-source-imenu
+     helm-source-buffer-not-found)
    "*helm*"))
 
 ;;
@@ -99,7 +102,7 @@
 ;; key binding
 ;;______________________________________________________________________
 ;; helmメニュー表示する
-(global-set-key (kbd "C-x c") 'my-helm)
+(global-set-key (kbd "C-x c") 'helm-mini)
 (global-set-key (kbd "C-x z") 'helm-resume)
 
 ;; [M-z] に割り当てする

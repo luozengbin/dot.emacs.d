@@ -183,13 +183,38 @@
   (lexical-let* ((default-directory org-octopress-top)
                  (preview-url "http://localhost:4000"))
     (deferred:$
-      (deferred:process-shell "blog_preview.sh" org-octopress-top)
+      (deferred:process-shell "blog_generate.sh" org-octopress-top)
       (deferred:nextc it
         (lambda (x)
-          (message "*** preview blog ***")
+          (message "*** generate blog ***")
           (message x)
-          (message "launch preview url %s" preview-url)
-          (browse-url preview-url))))))
+          (deferred:$
+            (deferred:process-shell "blog_preview.sh" org-octopress-top)
+            (deferred:nextc it
+              (lambda (x)
+                (message "*** preview blog ***")
+                (message x)
+                (org-octopress-fix-ahref)
+                (message "launch preview url %s" preview-url)
+                (browse-url preview-url)))))))))
+
+(defun org-octopress-fix-ahref ()
+  (interactive)
+  (message "*** fix top page href ***")
+  (let ((top-html-file (concat org-octopress-top "public/index.html")))
+    (with-temp-buffer
+      (insert-file-contents top-html-file)
+      (goto-char (point-min))
+      (while (search-forward-regexp "<article>\\(.*\n\\)*? +<header>\\(.*\n\\)*? +<h1 class=\"entry-title\"><a href=\"\\(.+\\)?\">.+?</a></h1>\\(.*\n\\)*? +<div class=\"entry-content\">\\(.*\n\\)*? +</article>" (point-max) t)
+        (let ((entry-url (match-string-no-properties 3)))
+          (save-restriction
+            (narrow-to-region (match-beginning 0) (match-end 0))
+            (save-excursion
+              (goto-char (point-min))
+              (while (search-forward-regexp "<a href=\"#sec-" (point-max) t)
+                (replace-match (format "<a href=\"%s#sec-" entry-url) nil t)
+                )))))
+      (write-file top-html-file nil))))
 
 (provide 'init_blogger)
 ;;; init_blogger.el ends here

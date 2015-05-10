@@ -20,7 +20,7 @@ if [ $? = 0 ]; then
         # blogコンテンツ生成とデプロイ
         echo "run rake with `ruby --version`"
         pushd $OCTOPRESS_DIR
-        rake generate
+        # rake generate
         rake deploy
         popd
     fi

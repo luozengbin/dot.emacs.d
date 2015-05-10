@@ -1,10 +1,10 @@
 #!/bin/sh
-## Usage: blog_preview.sh
+## Usage: blog_generate.sh
 ##
 ## Options: $1 octopressディレクトリの位置
 ##   
 ## Comment: octopress配下にblog静的
-##          コンテンツのプレビュー
+##          コンテンツの生成
 ##################################################################### 
 
 RUBY_VER="1.9.3-p0"
@@ -17,14 +17,10 @@ if [ $? = 0 ]; then
     rbenv rehash
     global_ver=`rbenv global`
     if [ $global_ver = $RUBY_VER ]; then
-        # blogコンテンツのプレビュー
+        # blogコンテンツの生成
         echo "run rake with `ruby --version`"
         pushd $OCTOPRESS_DIR
-        if [ -z "`netstat -nutl | grep 4000`" ] ; then
-            echo ">>> Startup Preview"
-            nohup rake preview 2>&1  >/dev/null &
-            sleep 2
-        fi
+        rake generate
         popd
     fi
 fi

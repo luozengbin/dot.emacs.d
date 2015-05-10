@@ -62,14 +62,31 @@
 ;; 参照リンク: http://d.hatena.ne.jp/rubikitch/20090216/1234746280
 ;;             http://d.hatena.ne.jp/rubikitch/20090216/1234750398
 ;;             http://blog.livedoor.jp/tek_nishi/archives/3027665.html
-(require 'japanese-holidays)
-(setq calendar-holidays
-      (append japanese-holidays local-holidays other-holidays))
+;; (require 'japanese-holidays)
+;; (setq calendar-holidays
+;;       (append japanese-holidays local-holidays other-holidays))
 
-(add-hook 'today-visible-calendar-hook 'calendar-mark-today)
-(add-hook 'today-visible-calendar-hook 'calendar-mark-weekend)
-(add-hook 'today-invisible-calendar-hook 'calendar-mark-weekend)
+;; (add-hook 'today-visible-calendar-hook 'calendar-mark-today)
+;; (add-hook 'today-visible-calendar-hook 'calendar-mark-weekend)
+;; (add-hook 'today-invisible-calendar-hook 'calendar-mark-weekend)
 
+
+(eval-after-load "holidays"
+  '(progn
+     (require 'japanese-holidays)
+     (setq calendar-holidays ; 他の国の祝日も表示させたい場合は適当に調整
+           (append japanese-holidays holiday-local-holidays holiday-other-holidays))
+     (setq mark-holidays-in-calendar t) ; 祝日をカレンダーに表示
+     ;; 土曜日・日曜日を祝日として表示する場合、以下の設定を追加します。
+     ;; デフォルトで設定済み
+     (setq japanese-holiday-weekend '(0 6)     ; 土日を祝日として表示
+           japanese-holiday-weekend-marker     ; 土曜日を水色で表示
+           '(holiday nil nil nil nil nil japanese-holiday-saturday))
+     (add-hook 'calendar-today-visible-hook 'japanese-holiday-mark-weekend)
+     (add-hook 'calendar-today-invisible-hook 'japanese-holiday-mark-weekend)))
+
+;; “きょう”をマークするには以下の設定を追加します。
+(add-hook 'calendar-today-visible-hook 'calendar-mark-today)
 
 (provide 'init_calendar)
 ;;; init_calendar.el ends here

@@ -113,6 +113,7 @@
     inf-ruby                 ; Run a ruby process in a buffer [source: github]
     info+                    ; Extensions to `info.el'. [source: wiki]
     inlineR                  ; insert Tag for inline image of R graphics [source: github]
+    japanese-holidays        ; calendar functions for the Japanese calendar
     js2-mode                 ; an improved JavaScript editing mode [source: github]
     jira                     ; Connect to JIRA issue tracking software
     key-chord                ; map pairs of simultaneously pressed keys to commands [source: wiki]

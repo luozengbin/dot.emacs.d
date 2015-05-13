@@ -72,18 +72,18 @@
   ;; This is your old M-x.
   (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command))
 
-;;
-;; iswitchbモード
-;;______________________________________________________________________
-;; ---- idoモードの機能と競合があるため、片方を使用する
-;; iswitchbで C-x C-b を改善する
-(iswitchb-mode 1)
-;; バッファーを読取関数をiswitchbにする
-(setq read-buffer-function 'iswitchb-read-buffer)
-;; 部分文字マッチを使う、正規表現なら t にする
-(setq iswitchb-regexp nil)
-;; 新しいバッファーを作成するときにいちいち聞いてこない
-(setq iswitchb-prompt-newbuffer nil)
+;; ;;
+;; ;; iswitchbモード
+;; ;;______________________________________________________________________
+;; ;; ---- idoモードの機能と競合があるため、片方を使用する
+;; ;; iswitchbで C-x C-b を改善する
+;; (iswitchb-mode 1)
+;; ;; バッファーを読取関数をiswitchbにする
+;; (setq read-buffer-function 'iswitchb-read-buffer)
+;; ;; 部分文字マッチを使う、正規表現なら t にする
+;; (setq iswitchb-regexp nil)
+;; ;; 新しいバッファーを作成するときにいちいち聞いてこない
+;; (setq iswitchb-prompt-newbuffer nil)
 
 ;; C-x C-f でpoint現在のファイルやURLを開く
 (ffap-bindings)

@@ -39,6 +39,9 @@
 ;; git clone https://github.com/magit/magit.git
 ;; Magit で Gitを扱う
 (when (require 'magit nil t)
+
+  (setq magit-last-seen-setup-instructions "1.4.0")
+
   ;; windowsの場合文字化けるため、プロセス通信文字コードを調整
   (when windows-p
     (setq magit-git-executable vc-git-program)

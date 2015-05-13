@@ -162,29 +162,29 @@ function."
 ;; バッファにアナログ時計を表示するsvg-clock.el
 ;; http://sheephead.homelinux.org/2012/02/15/6968/
 ;;______________________________________________________________________
-(require 'svg-clock)
+;; (require 'svg-clock)
 
-(defun e2wm:def-plugin-svg-clock (frame wm winfo)
-  (let* ((buf (get-buffer-create "*clock*")))
-    (with-current-buffer buf
-      (unless svg-clock-timer
-        (setq svg-clock-timer
-              (run-with-timer 0 1 'svg-clock-update))
-        (svg-clock-mode)))
-    (wlf:set-buffer wm (wlf:window-name winfo) buf)))
+;; (defun e2wm:def-plugin-svg-clock (frame wm winfo)
+;;   (let* ((buf (get-buffer-create "*clock*")))
+;;     (with-current-buffer buf
+;;       (unless svg-clock-timer
+;;         (setq svg-clock-timer
+;;               (run-with-timer 0 1 'svg-clock-update))
+;;         (svg-clock-mode)))
+;;     (wlf:set-buffer wm (wlf:window-name winfo) buf)))
 
-(e2wm:plugin-register 'svg-clock
-                      "SVG-clock"
-                      'e2wm:def-plugin-svg-clock)
+;; (e2wm:plugin-register 'svg-clock
+;;                       "SVG-clock"
+;;                       'e2wm:def-plugin-svg-clock)
 
-(defun e2wm:dp-code-toggle-svg-clock-command ()
-  (interactive)
-  (let* ((wm (e2wm:pst-get-wm))
-         (prev (e2wm:pst-window-plugin-get wm 'history))
-         (next (if (eq prev 'history-list)
-                   'svg-clock 'history-list)))
-    (e2wm:pst-window-plugin-set wm 'history next)
-    (e2wm:pst-update-windows)))
+;; (defun e2wm:dp-code-toggle-svg-clock-command ()
+;;   (interactive)
+;;   (let* ((wm (e2wm:pst-get-wm))
+;;          (prev (e2wm:pst-window-plugin-get wm 'history))
+;;          (next (if (eq prev 'history-list)
+;;                    'svg-clock 'history-list)))
+;;     (e2wm:pst-window-plugin-set wm 'history next)
+;;     (e2wm:pst-update-windows)))
 
 (provide 'init_e2wm)
 ;;; init_e2wm.el ends here

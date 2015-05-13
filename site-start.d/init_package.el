@@ -50,7 +50,8 @@
   '(
     ;; ac-slime                 ; An auto-complete source using slime completions [source: github]
     ace-jump-mode            ; a quick cursor location minor mode for emacs [source: github]
-    anzu                       ; Show number of matches in mode-line while searching
+    apel                     ; APEL (A Portable Emacs Library) provides support for portable Emacs Lisp programs
+    anzu                     ; Show number of matches in mode-line while searching
     autopair                 ; Automagically pair braces and quotes like TextMate [source: github]
     bm                       ; Visible bookmarks in buffer. [source: github]
     browse-kill-ring         ; interactively insert items from kill-ring [source: github]
@@ -71,8 +72,8 @@
     dic-lookup-w3m           ; look up dictionaries on the Internet [source: svn]
     diminish                 ; Diminished modes are minor modes with no modeline display [source: github]
     dired+                   ; Extensions to Dired. [source: wiki]
-    dired-details            ; Make file details hide-able in dired [source: wiki]
-    dired-details+           ; Enhancements to library `dired-details+.el'. [source: wiki]
+    ;; dired-details            ; Make file details hide-able in dired [source: wiki]
+    ;; dired-details+           ; Enhancements to library `dired-details+.el'. [source: wiki]
     dsvn                     ; Subversion interface [source: svn]
     edit-list                ; edit a single list
     ;; egg                      ; Emacs Got Git - Emacs interface to Git [source: github]
@@ -90,7 +91,7 @@
     google-contacts          ; Support for Google Contacts in Emacs [source: git]
     google-maps              ; Access Google Maps from Emacs [source: git]
     google-translate         ; Emacs interface to Google Translate [source: github]
-    google-weather           ; Fetch Google Weather forecasts. [source: git]
+    ;; google-weather           ; Fetch Google Weather forecasts. [source: git]
     goto-chg                 ; goto last change [source: wiki]
     grep-a-lot               ; manages multiple search results buffers for grep.el [source: github]
     grep-o-matic             ; available  auto grep word under cursor
@@ -154,12 +155,13 @@
     visual-regexp            ; A regexp/replace command for Emacs with interactive visual feedback
     ruby-block               ; highlight matching block [source: wiki]
     ruby-electric            ; electric editing commands for ruby files [source: github]
+    scratch-log                ; available melpa Utility for *scratch* buffer.
     smartrep                 ; Support sequential operation which omitted prefix keys. [source: github]
     smex                     ; M-x interface with Ido-style fuzzy matching. [source: github]
     smooth-scroll            ; Minor mode for smooth scrolling and in-place scrolling. [source: github]
     sr-speedbar              ; Same frame speedbar [source: wiki]
     stem                     ; - routines for stemming [source: github]
-    svg-clock                ; Analog clock using Scalable Vector Graphics
+    ;; svg-clock                ; Analog clock using Scalable Vector Graphics
     systemtap-mode           ; A mode for SystemTap
     tabbar                   ; Display a tab bar in the header line  -*-no-byte-compile: t; -*-
     twittering-mode          ; Major mode for Twitter [source: github]

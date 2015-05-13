@@ -83,9 +83,12 @@
 ;; TODO項目をエクスポートするための設定
 (setq org-icalendar-include-todo t)
 
+
+;;; DEL at 2015/04/08
 ;; org-remeberで瞬時メモを取る
-(require 'org-remember)
-(org-remember-insinuate)                ;org-remberの初期化
+;; (require 'org-remember)
+;; (org-remember-insinuate)                ;org-remberの初期化
+
 ;; orgメモ格納先の指定
 (setq org-directory (concat my-private-emacs-path "myfiles/"))
 

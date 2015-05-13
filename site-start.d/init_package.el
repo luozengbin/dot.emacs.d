@@ -156,6 +156,7 @@
     visual-regexp            ; A regexp/replace command for Emacs with interactive visual feedback
     ruby-block               ; highlight matching block [source: wiki]
     ruby-electric            ; electric editing commands for ruby files [source: github]
+    scratch-log                ; available melpa Utility for *scratch* buffer.
     smartrep                 ; Support sequential operation which omitted prefix keys. [source: github]
     smex                     ; M-x interface with Ido-style fuzzy matching. [source: github]
     smooth-scroll            ; Minor mode for smooth scrolling and in-place scrolling. [source: github]

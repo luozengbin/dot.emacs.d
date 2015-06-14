@@ -112,8 +112,8 @@
 ;; python プログラミング
 (require 'init_python)
 
-;; ;; java プログラミング
-;; (require 'init_java)
+;; java プログラミング
+(require 'init_java)
 
 ;; javascript プログラミング
 (require 'init_javascript)

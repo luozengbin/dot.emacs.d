@@ -19,8 +19,7 @@
 ;; wget http://www.emacswiki.org/emacs/download/tabbar-ruler.el
 
 (require 'tabbar)
-(setq tabbar-mode nil)
-
+(tabbar-mode)
 
 ;; Ctrl-Tab, Ctrl-Shift-Tab でタブを切り替える
 ;; (dolist (func '(tabbar-mode tabbar-forward-tab tabbar-forward-group tabbar-backward-tab tabbar-backward-group))

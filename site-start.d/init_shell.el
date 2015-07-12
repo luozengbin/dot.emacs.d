@@ -160,10 +160,10 @@
 ;;______________________________________________________________________
 ;; 実行履歴を保存
 ;; (install-elisp-from-emacswiki "shell-history.el")
-(require 'shell-history)
-(require 'anything-complete)
-;; シェルコマンド履歴補完
-(anything-complete-shell-history-setup-key (kbd "C-o"))
+;; (require 'shell-history)
+;; (require 'anything-complete)
+;; ;; シェルコマンド履歴補完
+;; (anything-complete-shell-history-setup-key (kbd "C-o"))
 
 ;; ;; シェール終了時自動的にバッファーをクローズする
 ;; (add-hook 'shell-mode-hook 'wcy-shell-mode-hook-func)

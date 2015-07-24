@@ -206,7 +206,8 @@
       (insert-file-contents top-html-file)
       (goto-char (point-min))
       (while (search-forward-regexp "<article>\\(.*\n\\)*? +<header>\\(.*\n\\)*? +<h1 class=\"entry-title\"><a href=\"\\(.+\\)?\">.+?</a></h1>\\(.*\n\\)*? +<div class=\"entry-content\">\\(.*\n\\)*? +</article>" (point-max) t)
-        (let ((entry-url (match-string-no-properties 3)))
+          (message "entry-url ===> %s" (match-string 3))
+          (let ((entry-url (match-string 3)))
           (save-restriction
             (narrow-to-region (match-beginning 0) (match-end 0))
             (save-excursion

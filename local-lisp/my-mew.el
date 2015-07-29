@@ -70,6 +70,7 @@
                   (fill-region beg (point)))))
               (forward-line)))
           (buffer-string))))))
+
 ;; メールヘッダーから日付項目値取得時のフォーマット変換
 (defun my-mew-cite-get-value (field)
   (let ((value (mew-cite-get-value field)) time date )

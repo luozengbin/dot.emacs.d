@@ -38,7 +38,7 @@
 (require 'package)
 (setq package-archives '(("ELPA" . "http://tromey.com/elpa/")
                          ("gnu" . "http://elpa.gnu.org/packages/")
-                         ("marmalade" . "http://marmalade-repo.org/packages/")
+                         ;; ("marmalade" . "http://marmalade-repo.org/packages/")
                          ("melpa" . "http://melpa.milkbox.net/packages/")
                          ("org" . "http://orgmode.org/elpa/")))
 
@@ -93,6 +93,7 @@
     google-translate         ; Emacs interface to Google Translate [source: github]
     ;; google-weather           ; Fetch Google Weather forecasts. [source: git]
     goto-chg                 ; goto last change [source: wiki]
+    go-mode                  ; Major mode for the Go programming language
     grep-a-lot               ; manages multiple search results buffers for grep.el [source: github]
     grep-o-matic             ; available  auto grep word under cursor
     groovy-mode              ; Groovy mode derived mode [source: bzr]

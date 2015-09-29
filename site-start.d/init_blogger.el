@@ -212,8 +212,8 @@
             (narrow-to-region (match-beginning 0) (match-end 0))
             (save-excursion
               (goto-char (point-min))
-              (while (search-forward-regexp "<a href=\"#sec-" (point-max) t)
-                (replace-match (format "<a href=\"%s#sec-" entry-url) nil t)
+              (while (search-forward-regexp "<a href=\"#orgheadline" (point-max) t)
+                (replace-match (format "<a href=\"%s#orgheadline" entry-url) nil t)
                 )))))
       (write-file top-html-file nil))))
 

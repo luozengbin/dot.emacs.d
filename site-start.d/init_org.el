@@ -180,24 +180,24 @@
 ;; org-babel
 ;;______________________________________________________________________
 ;; org-babel-R機能を有効化する
-(require 'ob-R)
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((R . t)
-   (ditaa . t)
-   (dot . t)
-   (plantuml . t)
-   (emacs-lisp . t)
-   (gnuplot . t)
-   (haskell . nil)
-   (ocaml . nil)
-   (python . t)
-   (ruby . t)
-   (java . t)
-   (screen . nil)
-   (sh . t)
-   (sql . nil)
-   (sqlite . t)))
+;; (require 'ob-R)
+;; (org-babel-do-load-languages
+;;  'org-babel-load-languages
+;;  '((R . t)
+;;    (ditaa . t)
+;;    (dot . t)
+;;    (plantuml . t)
+;;    (emacs-lisp . t)
+;;    (gnuplot . t)
+;;    (haskell . nil)
+;;    (ocaml . nil)
+;;    (python . t)
+;;    (ruby . t)
+;;    (java . t)
+;;    (screen . nil)
+;;    (sh . t)
+;;    (sql . nil)
+;;    (sqlite . t)))
 
 ;;
 ;; RSS Reader

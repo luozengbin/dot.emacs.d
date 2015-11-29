@@ -206,8 +206,8 @@
       (insert-file-contents top-html-file)
       (goto-char (point-min))
       (while (search-forward-regexp "<article>\\(.*\n\\)*? +<header>\\(.*\n\\)*? +<h1 class=\"entry-title\"><a href=\"\\(.+\\)?\">.+?</a></h1>\\(.*\n\\)*? +<div class=\"entry-content\">\\(.*\n\\)*? +</article>" (point-max) t)
-          (message "entry-url ===> %s" (match-string 3))
-          (let ((entry-url (match-string 3)))
+        (message "entry-url ===> %s" (match-string 3))
+        (let ((entry-url (match-string 3)))
           (save-restriction
             (narrow-to-region (match-beginning 0) (match-end 0))
             (save-excursion
@@ -215,7 +215,11 @@
               (while (search-forward-regexp "<a href=\"#orgheadline" (point-max) t)
                 (replace-match (format "<a href=\"%s#orgheadline" entry-url) nil t)
                 )))))
-      (write-file top-html-file nil))))
+      (goto-char (point-min))
+      (while (search-forward-regexp "<img src=\"img/" (point-max) t)
+        (replace-match "<img src=\"blog/img/" nil t))
+      (write-file top-html-file nil)
+      )))
 
 (provide 'init_blogger)
 ;;; init_blogger.el ends here

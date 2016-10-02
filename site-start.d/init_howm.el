@@ -62,9 +62,9 @@
 ;;
 ;; helm-howm設定
 ;;______________________________________________________________________
-(require 'helm-howm)
-(setq hh:recent-menu-number-limit 600)
-(global-set-key (kbd "C-z h") 'hh:menu-command)
+;; (require 'helm-howm)
+;; (setq hh:recent-menu-number-limit 600)
+;; (global-set-key (kbd "C-z h") 'hh:menu-command)
 
 ;;
 ;; calfw-howmの設定

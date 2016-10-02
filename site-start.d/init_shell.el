@@ -31,6 +31,11 @@
 ;;                   (set-buffer-process-coding-system 'utf-8-unix
 ;;                                                     'utf-8-unix))))
 
+
+;; インデントの調節
+(setq sh-basic-offset 2)
+(setq sh-indentation 2)
+
 ;; エスケープを綺麗に表示する
 (autoload 'ansi-color-for-comint-mode-on "ansi-color" nil t)
 (add-hook 'shell-mode-hook 'ansi-color-for-comint-mode-on)

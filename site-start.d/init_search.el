@@ -63,12 +63,13 @@
 ;; repository-root
 ;; 使っているバージョン管理システムなどに合わせてルートディレクトを調整する
 ;;______________________________________________________________________
-(require 'repository-root)
-(add-to-list 'repository-root-matchers repository-root-matcher/git)
-(add-to-list 'repository-root-matchers repository-root-matcher/bzr)
-(add-to-list 'repository-root-matchers repository-root-matcher/svn)
-(add-to-list 'repository-root-matchers repository-root-matcher/hg)
-(add-to-list 'repository-root-matchers repository-root-matcher/cvs)
+;; (require 'repository-root)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/git)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/bzr)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/svn)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/hg)
+;; (add-to-list 'repository-root-matchers repository-root-matcher/cvs)
+
 ;; (add-to-list 'repository-root-matchers repository-root-matcher/src)
 ;; (add-to-list 'repository-root-matchers repository-root-matcher/arch)
 ;; (add-to-list 'repository-root-matchers repository-root-matcher/git-submodules)
@@ -83,10 +84,10 @@
 ;; use ag (the_sliver_serach) command to do grep
 ;; http://geoff.greer.fm/2011/12/27/the-silver-searcher-better-than-ack/
 ;;______________________________________________________________________
-(require 'grep-o-matic)
-(global-set-key (kbd "M-g M-r") 'grep-o-matic-repository)
-(global-set-key (kbd "M-g M-d") 'grep-o-matic-current-directory)
-(global-set-key (kbd "M-g M-b") 'grep-o-matic-visited-files)
+;; (require 'grep-o-matic)
+;; (global-set-key (kbd "M-g M-r") 'grep-o-matic-repository)
+;; (global-set-key (kbd "M-g M-d") 'grep-o-matic-current-directory)
+;; (global-set-key (kbd "M-g M-b") 'grep-o-matic-visited-files)
 
 ;;
 ;; migemo

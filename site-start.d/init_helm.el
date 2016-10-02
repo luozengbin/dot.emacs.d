@@ -161,7 +161,7 @@
 ;; custom helm
 ;;______________________________________________________________________
 ;; 自作関数をローディングする
-(require 'my-helm-sources)
+;; (require 'my-helm-sources)
 
 (provide 'init_helm)
 ;;; init_helm.el ends here

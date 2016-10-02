@@ -38,7 +38,7 @@
 (require 'package)
 (setq package-archives '(("ELPA" . "http://tromey.com/elpa/")
                          ("gnu" . "http://elpa.gnu.org/packages/")
-                         ;; ("marmalade" . "http://marmalade-repo.org/packages/")
+                         ;("marmalade" . "http://marmalade-repo.org/packages/")
                          ("melpa" . "http://melpa.milkbox.net/packages/")
                          ("org" . "http://orgmode.org/elpa/")))
 
@@ -95,15 +95,15 @@
     goto-chg                 ; goto last change [source: wiki]
     go-mode                  ; Major mode for the Go programming language
     grep-a-lot               ; manages multiple search results buffers for grep.el [source: github]
-    grep-o-matic             ; available  auto grep word under cursor
+    ;grep-o-matic             ; available  auto grep word under cursor
     groovy-mode              ; Groovy mode derived mode [source: bzr]
-    gtags                    ; gtags facility for Emacs
+    ;gtags                    ; gtags facility for Emacs
     guide-key                ; Guide the following key bindings automatically and dynamically [source: github]
     helm                     ; Helm is an Emacs incremental and narrowing framework [source: github]
     helm-ag                  ; the silver searcher with helm interface
     helm-c-yasnippet         ; helm source for yasnippet.el [source: github]
     helm-descbinds           ; available  Yet Another `describe-bindings' with `helm'. [github]
-    helm-gist                ; helm-sources and some utilities for gist. [source: github]
+    ;helm-gist                ; helm-sources and some utilities for gist. [source: github]
     helm-git                 ; Helm extension for Git. [source: github]
     helm-gtags               ; GNU GLOBAL helm interface [source: github]
     helm-migemo              ; Migemo plug-in for helm [source: github]
@@ -119,7 +119,7 @@
     jira                     ; Connect to JIRA issue tracking software
     key-chord                ; map pairs of simultaneously pressed keys to commands [source: wiki]
     key-combo                ; map key sequence to commands
-    keywiz                   ; available Emacs key sequence quiz
+    ;keywiz                   ; available Emacs key sequence quiz
     litable                    ; dynamic evaluation replacement with emacs [github]
     load-theme-buffer-local  ; Install emacs24 color themes by buffer. [source: github]
     logito                   ; logging library for Emacs [source: github]
@@ -146,12 +146,12 @@
     plantuml-mode            ; Major mode for plantuml
     pos-tip                  ; Show tooltip at point -*- coding: utf-8 -*-
     powerline                ; Rewrite of Powerline [source: github]
-    pymacs                   ; Interface between Emacs Lisp and Python
+    ;pymacs                   ; Interface between Emacs Lisp and Python
     python-mode              ; Python major mode
     quickrun                 ; Run commands quickly [source: github]
     rainbow-mode             ; Colorize color names in buffers [source: github]
     redo+                    ; Redo/undo system for Emacs [source: wiki]
-    repository-root          ; available  deduce the repository root directory for a given file
+    ;repository-root          ; available  deduce the repository root directory for a given file
     revive                   ; Resume Emacs [source: github]
     rfringe                  ; display the relative location of the region, in the fringe. [source: wiki]
     visual-regexp            ; A regexp/replace command for Emacs with interactive visual feedback
@@ -191,15 +191,11 @@
               (emacs23-p 'color-theme-buffer-local)
               (emacs24-p 'load-theme-buffer-local)))
 
+
 ;;; install package
-(let ((not-installed (loop for x in installing-package-list
-                           when (not (package-installed-p x))
-                           collect x)))
-  (when not-installed
-    (package-refresh-contents)
-    (dolist (pkg not-installed)
-      (if (not (package-installed-p pkg))
-	  (package-install pkg)))))
+;; (dolist (package installing-package-list)
+;;   (unless (package-installed-p package)
+;;     (package-install package)))
 
 ;;
 ;; el-get

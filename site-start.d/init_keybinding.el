@@ -319,7 +319,7 @@
 ;;______________________________________________________________________
 ;; (install-elisp "http://www.emacswiki.org/emacs/download/123-menu.el")
 (require '123-menu)
-(require 'my-123-menu)
+;;(require 'my-123-menu)
 
 ;;
 ;; general key bind
